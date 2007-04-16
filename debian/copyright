@@ -1,0 +1,23 @@
+
+This package was debianized by Torsten Landschoff <torsten@debian.org> on
+Wed, 29 Sep 1999 18:04:12 +0200
+
+The upstream source is available from 
+
+	ftp://pahoehoe.soest.hawaii.edu/pub/gmt/	(main site)
+	ftp://ftp.geologi.uio.no/pub/gmt/		(the mirror I used)
+
+The main upstream authors are
+
+	Paul Wessel <wessel@soest.hawaii.edu>
+  and 	Walter Smith <wsmith@nodc.noaa.gov>
+
+Copyright:
+
+This software is covered by the GNU Library General Public Licence
+(version 2, or if you choose, a later version).
+
+On Debian GNU/Linux systems, the complete text of the GNU General
+Public License can be found in `/usr/share/common-licenses/GPL'. If 
+you got the source archive you will find the license in the file COPYING 
+in the top directory.

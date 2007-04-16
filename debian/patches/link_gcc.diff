@@ -1,0 +1,12 @@
+Index: GMT4.2.0/configure
+===================================================================
+--- GMT4.2.0.orig/configure	2007-04-03 05:32:45.000000000 +0200
++++ GMT4.2.0/configure	2007-04-16 23:02:18.509532455 +0200
+@@ -4673,6 +4673,7 @@
+ 			LDFLAGS=$OPTS'-Wl,-R,$(libdir):'$NETCDFHOME/lib
+ 		fi
+ 	elif test "$os" = "Linux" ; then	# Need optimization when doing shared
++		LD=gcc
+ 		LD_OPT="-shared"
+ 		OPTGO="-O2 "
+ 		LDFLAGS=$OPTS'-Wl,-rpath,$(libdir):'$NETCDFHOME/lib

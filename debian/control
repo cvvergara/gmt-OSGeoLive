@@ -1,0 +1,91 @@
+Source: gmt
+Section: science
+Priority: extra
+Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
+Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco P. Lovergine <frankie@debian.org>
+Build-Depends: netcdfg-dev, tcsh | csh, debhelper (>= 4.0), bzip2, quilt, libxmu-headers, libxaw7-dev
+Build-Depends-Indep: debhelper (>= 4.0), bzip2, quilt
+Standards-Version: 3.6.2.1
+
+Package: gmt
+Architecture: any
+Depends: ${shlibs:Depends}
+Replaces: gmt-manpages
+Conflicts: gmt-manpages
+Recommends: gmt-coastline-data | gmt-coast-low, gmt-doc
+Suggests: gmt-tutorial-pdf, gmt-doc-pdf, gmt-examples
+Description: Generic Mapping Tools
+ GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
+ projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
+ ranging from simple x-y plots through contour maps to artificially illuminated
+ surfaces and 3-D perspective views in black and white, gray tone, hachure
+ patterns, and 24-bit color. 
+ .
+ GMT supports 25 common map projections plus linear, log, and power scaling,
+ and comes with support data such as coastlines, rivers, and political
+ boundaries. 
+
+Package: gmt-doc-pdf
+Architecture: all
+Description: PDF docs for GMT, the Generic Mapping Tools
+ GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
+ projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
+ ranging from simple x-y plots through contour maps to artificially illuminated
+ surfaces and 3-D perspective views in black and white, gray tone, hachure
+ patterns, and 24-bit color. 
+ .
+ GMT supports 25 common map projections plus linear, log, and power scaling,
+ and comes with support data such as coastlines, rivers, and political
+ boundaries. 
+
+
+Package: gmt-tutorial-pdf
+Architecture: all
+Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
+ GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
+ projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
+ ranging from simple x-y plots through contour maps to artificially illuminated
+ surfaces and 3-D perspective views in black and white, gray tone, hachure
+ patterns, and 24-bit color. 
+ .
+ GMT supports 25 common map projections plus linear, log, and power scaling,
+ and comes with support data such as coastlines, rivers, and political
+ boundaries. 
+
+
+Package: gmt-doc
+Architecture: all
+Description: HTML documentation for GMT, the Generic Mapping Tools
+ GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
+ projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
+ ranging from simple x-y plots through contour maps to artificially illuminated
+ surfaces and 3-D perspective views in black and white, gray tone, hachure
+ patterns, and 24-bit color. 
+ .
+ GMT supports 25 common map projections plus linear, log, and power scaling,
+ and comes with support data such as coastlines, rivers, and political
+ boundaries. 
+ .
+ This package contains the HTML documentation for GMT, consisting of 
+   - the tutorial
+   - the cookbook and technical reference
+   - the manpages converted to HTML.
+
+Package: gmt-examples
+Architecture: all
+Suggests: gmt
+Description: Example scripts illustrating the use of GMT
+ GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
+ projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
+ ranging from simple x-y plots through contour maps to artificially illuminated
+ surfaces and 3-D perspective views in black and white, gray tone, hachure
+ patterns, and 24-bit color. 
+ .
+ GMT supports 25 common map projections plus linear, log, and power scaling,
+ and comes with support data such as coastlines, rivers, and political
+ boundaries. 

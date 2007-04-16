@@ -1,0 +1,155 @@
+#! /usr/bin/make -f
+
+RELEASE		:= 4.2.0
+PARTS		:= man pdf src share scripts suppl tut web
+ARCHIVES	:= $(PARTS:%=upstream/GMT$(RELEASE)_%.tar.bz2)
+
+unpack:		stamps/unpack-stamp
+patch:		stamps/patch-stamp
+build:		stamps/build-stamp
+install:	stamps/install-stamp
+binary:		binary-arch binary-indep
+
+download-upstream:	$(ARCHIVES)
+
+create-orig-tar:	$(ARCHIVES)
+	dh_testdir
+	mkdir -p gmt-$(RELEASE).orig
+	ln $(ARCHIVES) gmt-$(RELEASE).orig
+	tar -cf - gmt-$(RELEASE).orig|gzip -9 > gmt-$(RELEASE).orig.tar.gz
+	mv gmt-$(RELEASE).orig.tar.gz ..
+	rm -R gmt-$(RELEASE).orig
+
+upstream/%:
+	dh_testdir
+	mkdir -p upstream
+	wget -O upstream/$*.partial ftp://ibis.grdl.noaa.gov/pub/gmt/4/$*
+	mv upstream/$*.partial upstream/$*
+
+stamps/unpack-stamp: 
+	dh_testdir
+	for i in $(ARCHIVES); do \
+		tar -xjf $$i || exit 1; \
+	done
+	mkdir -p stamps
+	touch $@
+
+stamps/patch-stamp:	stamps/unpack-stamp
+	dh_testdir
+	ln -sf ../debian/patches GMT$(RELEASE)/
+	cd GMT$(RELEASE) && quilt push -a --color=auto || [ $$? = 2 ]
+	touch $@
+
+unpatch:
+	dh_testdir
+	cd GMT$(RELEASE) && quilt pop -a
+
+PATHCONFIG	:= --prefix=/usr/lib/gmt
+DESTDIR		:= $(CURDIR)/debian/tmp
+PATHVARS	:= prefix=$(DESTDIR)/usr/lib/gmt
+
+stamps/build-stamp: stamps/patch-stamp
+	dh_testdir
+	cd GMT$(RELEASE) && ./configure \
+		--enable-mansect=1gmt --enable-shared $(PATHCONFIG)
+	make -C GMT$(RELEASE) CC_OPT="-fPIC -O2 -ansi -pedantic" all suppl
+	touch $@
+
+stamps/install-stamp: stamps/build-stamp
+	dh_testdir
+	dh_testroot
+
+	# Very tricky: GMT does not conform to FHS. As it proved to be very
+	# time consuming to bend this beast I'll create a fake GMT tree
+	# which links to the Debian accepted locations and install into
+	# that tree.
+	mkdir -p $(DESTDIR)/usr/lib/gmt/www $(DESTDIR)/usr/share/gmt 	\
+		$(DESTDIR)/usr/share/man $(DESTDIR)/usr/include/gmt \
+		$(DESTDIR)/usr/share/doc $(DESTDIR)/etc/gmt $(DESTDIR)/usr/bin
+	ln -s ../../share/man $(DESTDIR)/usr/lib/gmt/man
+	ln -s ../../include/gmt $(DESTDIR)/usr/lib/gmt/include
+	ln -s ../../share/gmt $(DESTDIR)/usr/lib/gmt/share
+
+	make -C GMT$(RELEASE) $(PATHVARS) install-all
+
+	# Okay, we still have to move the documentation (the trick above does
+	# not work because the Makefile would try to overwrite the link with
+	# a directory). So move the docs and link them to where GMT will look
+	# for them. 
+	mv $(DESTDIR)/usr/lib/gmt/www/gmt $(DESTDIR)/usr/share/doc/
+	ln -s ../../../share/doc/gmt $(DESTDIR)/usr/lib/gmt/www/gmt
+
+	# Move stuff from the doc directory up one level and replace the dir
+	# with a symlink to .
+	mv $(DESTDIR)/usr/share/doc/gmt/doc/* $(DESTDIR)/usr/share/doc/gmt/
+	rmdir $(DESTDIR)/usr/share/doc/gmt/doc
+	ln -s . $(DESTDIR)/usr/share/doc/gmt/doc
+
+	# Configuration files are still at the wrong place, let's fix this
+	mv $(DESTDIR)/usr/share/gmt/gmt.conf $(DESTDIR)/etc/gmt/
+	ln -s /etc/gmt/gmt.conf $(DESTDIR)/usr/share/gmt/
+	install -m644 debian/coastline.conf $(DESTDIR)/etc/gmt/
+	ln -s /etc/gmt/coastline.conf $(DESTDIR)/usr/share/gmt/
+
+	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
+	# So: Move it to /usr/bin
+	mv $(DESTDIR)/usr/lib/gmt/bin/GMT $(DESTDIR)/usr/bin/
+
+	# Move the manpages directory to the right place...
+	mv $(DESTDIR)/usr/share/man/man1gmt $(DESTDIR)/usr/share/man/man1
+
+	touch $@
+
+binary-arch: stamps/install-stamp
+	dh_testdir -a
+	dh_testroot -a
+	dh_install --list-missing --sourcedir=$(DESTDIR)
+	dh_installchangelogs -a
+	dh_installchangelogs -pgmt GMT$(RELEASE)/CHANGES
+	dh_installdocs -a
+	dh_installexamples -a
+	dh_installmenu -a
+#	dh_undocumented -a
+	dh_installman -a
+	dh_strip -a
+	dh_link -a
+	dh_compress -a -X.pdf
+	dh_fixperms -a
+#	dh_perl -a
+#	dh_python -a
+#	dh_makeshlibs -a
+	dh_installdeb -a
+	dh_shlibdeps -a
+	dh_gencontrol -a
+	dh_md5sums -a
+	dh_builddeb -a
+	
+
+binary-indep: stamps/install-stamp
+	dh_testdir -i
+	dh_testroot -i
+	dh_install --list-missing --sourcedir=$(DESTDIR)
+	dh_installchangelogs -i
+	dh_installdocs -i
+	dh_installexamples -i
+	dh_installmenu -i
+#	dh_undocumented -i
+	dh_installman -i
+	dh_strip -i
+	dh_link -i
+	dh_compress -i -X.pdf
+	dh_fixperms -i
+#	dh_perl -i
+#	dh_python -i
+#	dh_makeshlibs -i
+	dh_installdeb -i
+	dh_shlibdeps -i
+	dh_gencontrol -i
+	dh_md5sums -i
+	dh_builddeb -i
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -Rf stamps GMT$(RELEASE)
+	dh_clean

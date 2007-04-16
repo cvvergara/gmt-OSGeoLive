@@ -1,0 +1,175 @@
+gmt (4.2.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Hand over to Debian GIS team for group maintenance.
+
+ -- Torsten Landschoff <torsten@debian.org>  Wed, 11 Apr 2007 00:17:13 +0200
+
+gmt (4.1.2-1.1) unstable; urgency=low
+
+  * Non-maintainer upload to fix Failure To Build From Source due to missing
+    build-dependencies.  Thanks to Neil Williams for the patch. 
+    (Closes: #379214)
+  * debian/control: added libxmu-headers and libxaw7-dev as build-dependencies
+
+ -- Margarita Manterola <marga@debian.org>  Thu, 10 Aug 2006 18:26:59 -0300
+
+gmt (4.1.2-1) unstable; urgency=low
+
+  * Correct upstream release (closes: #369216).
+  * Include README.Debian file into gmt package (closes: #369215).
+  * Include upstream changelog (closes: #369217).
+  * Actually include examples in gmt-examples package (closes: #369214).
+
+ -- Torsten Landschoff <torsten@debian.org>  Sat,  3 Jun 2006 02:48:16 +0200
+
+gmt (4.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Use gcc instead of ld for linking libraries (closes: #361043, #352227).
+  * Fix package descriptions (closes: #209514, #209578, #209582).
+  * Add a README file about getting coastline data.
+  * Add build-depends for arch-independent build (closes: #189727, #189728, 
+    #189730).
+  * debian/rules: Stop dh_compress from compressing PDF files.
+
+ -- Torsten Landschoff <torsten@debian.org>  Fri, 26 May 2006 20:31:29 +0200
+
+gmt (4.0-2) unstable; urgency=low
+
+  * debian/control: Make gmt suggest/recommend all other gmt packages
+    (closes: #249369).
+  * debian/control: Add build dependency on bzip2 (closes: #326842). 
+    Kudos to Andreas Jochens.
+
+ -- Torsten Landschoff <torsten@debian.org>  Tue,  6 Sep 2005 09:04:17 +0200
+
+gmt (4.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * New packaging.
+
+ -- Torsten Landschoff <torsten@debian.org>  Sun,  4 Sep 2005 20:40:54 +0200
+ 
+gmt (3.4.4-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Torsten Landschoff <torsten@debian.org>  Wed, 28 Apr 2004 10:27:45 +0200
+
+gmt (3.4.3-1) unstable; urgency=low
+
+  * New upstream release (closes: #137446, #179809).
+  * debian/conffiles: Marked /etc/gmt/{coastline,gmt}.conf as such (lintian).
+
+ -- Torsten Landschoff <torsten@debian.org>  Wed, 12 Nov 2003 02:54:23 +0100
+
+gmt (3.4-2) unstable; urgency=low
+
+  * debian/rules: Fix the condition for running dh_strip so that 
+    the binaries are stripped if "nostrip" is /NOT/ given *arg*
+    (lintian).
+
+ -- Torsten Landschoff <torsten@debian.org>  Sun, 16 Sep 2001 23:11:39 +0200
+
+gmt (3.4-1) unstable; urgency=low
+
+  * New upstream release (closes: #98214). The link to the homepage was
+    updated upstream as well (closes: #98204).
+  * Applied fix for non-PIC code in libraries (closes: #108806)
+    Kudos to LaMont Jones for the patch.
+  * debian/copyright: Removed the "Library" before "General Public License"
+    which crept in somehow (closes: #106145). Thanks to 
+    Rafael Labossiere for pointing this out.
+  * src/Makefile: Make sure the .lo files are removed during the clean 
+    phase as well.
+
+ -- Torsten Landschoff <torsten@debian.org>  Fri, 14 Sep 2001 09:44:14 +0200
+
+gmt (3.3.5-2) unstable; urgency=low
+
+  * debian/control: Added missing build-dependency on debhelper
+    (closes: #69102)
+  * debian/rules: Obey DEB_BUILD_OPTIONS (policy).
+  * debian/control: Upgraded Standards-Version to 3.2.0.
+
+ -- Torsten Landschoff <torsten@debian.org>  Mon, 14 Aug 2000 12:03:51 +0200
+
+gmt (3.3.5-1) unstable; urgency=low
+
+  * New upstream release (closes: #62686).
+  * Undone the changes to the file searching code I did in the last 
+    release to fit GMT into Debian policy. Instead I am now using a 
+    link /usr/share/gmt/share, which links to ".". Therefore you 
+    can now set $GMTHOME as when compiling by hand (closes: #57485).
+  * Included errata from the GMT homepage as of 2000/08/04.
+
+ -- Torsten Landschoff <torsten@debian.org>  Fri, 11 Aug 2000 02:34:53 +0200
+
+gmt (3.3.3-3) unstable frozen; urgency=low
+
+  * Richard: This are only bugfixes from upstream. I am quite sure it will
+    not break anything but in case you don't want them for potato I don't 
+    see a big problem ;)
+  * Included bugfixes from http://www.soest.hawaii.edu/gmt/gmt/gmt_bugs.html
+    (closes: #56868).
+  * debian/README.Debian: Added comments about the changes to the directory 
+    layout I made and that you should not set GMTHOME (not reported as a bug
+    but I got a notice by mail).
+
+ -- Torsten Landschoff <torsten@debian.org>  Thu,  3 Feb 2000 19:05:27 +0100
+
+gmt (3.3.3-2) unstable; urgency=high
+
+  * debian/rules: Fixed compilation so that coastline data is searched 
+    in /usr/share/gmt (and installed there of course).
+  * debian/coastline.conf: Added the path where coastline data was installed
+    in older versions.
+
+ -- Torsten Landschoff <torsten@debian.org>  Fri, 21 Jan 2000 13:42:42 +0100
+
+gmt (3.3.3-1) unstable; urgency=low
+
+  * New upstream release.
+  * debian/control: Moved package into the science section (closes: #51248).
+  * debian/control: Added Build-Depends and moved to policy 3.1.0
+  * debian/README: Added information about current state of affairs
+    regarding coastline data in Debian.
+  * debian/rules: Build system has changed upstream. Adjusted rules file 
+    accordingly.
+  * Added README.coastlines which explains how to install coastline data 
+    manually.
+  * Added mirrors file with the list of known mirrors.
+  * debian/rules: Removed configure generated files in clean target.
+  * Included erratas from http://imina.soest.hawaii.edu/gmt/gmt/gmt_bugs.html.
+  * debian/rules: Override LDFLAGS from configure which sets rpath.
+
+ -- Torsten Landschoff <torsten@debian.org>  Fri, 14 Jan 2000 19:13:26 +0100
+
+gmt (3.3.2-4) unstable; urgency=low
+
+  * Included bugfixes from the GMT homepage.
+
+ -- Torsten Landschoff <torsten@debian.org>  Thu,  4 Nov 1999 17:31:39 +0100
+
+gmt (3.3.2-3) unstable; urgency=low
+
+  * Added reasoning for splitting the manpage package (closes: #47629).
+
+ -- Torsten Landschoff <torsten@debian.org>  Mon,  1 Nov 1999 14:15:09 +0100
+
+gmt (3.3.2-2) unstable; urgency=low
+
+  * Added example coastline.conf with internal documentation (closes: #47627)
+  * Moved gmt.conf to /etc/gmt/ where a config file belongs.
+  * *arg* I did not notice that Source-Version expands to upstream-debian.
+    Changed it in this version but the old one will not work with a new 
+    manpages package.
+
+ -- Torsten Landschoff <torsten@debian.org>  Mon, 18 Oct 1999 23:22:59 +0200
+
+gmt (3.3.2-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Torsten Landschoff <torsten@debian.org>  Wed, 11 Aug 1999 20:20:35 +0200
