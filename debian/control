@@ -3,9 +3,9 @@ Section: science
 Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco P. Lovergine <frankie@debian.org>
-Build-Depends: netcdfg-dev, tcsh | csh, debhelper (>= 4.0), bzip2, quilt, libxmu-headers, libxaw7-dev
-Build-Depends-Indep: debhelper (>= 4.0), bzip2, quilt
-Standards-Version: 3.6.2.1
+Build-Depends: netcdfg-dev, tcsh | csh | c-shell, debhelper (>= 5.0), bzip2, quilt, libxmu-headers, libxaw7-dev
+Build-Depends-Indep: debhelper (>= 5.0), bzip2, quilt
+Standards-Version: 3.7.2
 
 Package: gmt
 Architecture: any
@@ -25,9 +25,12 @@ Description: Generic Mapping Tools
  GMT supports 25 common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
+ .
+  Home page: http://gmt.soest.hawaii.edu/
 
 Package: gmt-doc-pdf
 Architecture: all
+Suggests: pdf-viewer
 Description: PDF docs for GMT, the Generic Mapping Tools
  GMT is a free collection of ~60 UNIX tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -39,10 +42,13 @@ Description: PDF docs for GMT, the Generic Mapping Tools
  GMT supports 25 common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
+ .
+  Home page: http://gmt.soest.hawaii.edu/
 
 
 Package: gmt-tutorial-pdf
 Architecture: all
+Suggests: pdf-viewer
 Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
  GMT is a free collection of ~60 UNIX tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -54,10 +60,13 @@ Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
  GMT supports 25 common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
+ .
+  Home page: http://gmt.soest.hawaii.edu/
 
 
 Package: gmt-doc
 Architecture: all
+Suggests: www-browser
 Description: HTML documentation for GMT, the Generic Mapping Tools
  GMT is a free collection of ~60 UNIX tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -74,6 +83,8 @@ Description: HTML documentation for GMT, the Generic Mapping Tools
    - the tutorial
    - the cookbook and technical reference
    - the manpages converted to HTML.
+ .
+  Home page: http://gmt.soest.hawaii.edu/
 
 Package: gmt-examples
 Architecture: all
@@ -89,3 +100,5 @@ Description: Example scripts illustrating the use of GMT
  GMT supports 25 common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
+ .
+  Home page: http://gmt.soest.hawaii.edu/

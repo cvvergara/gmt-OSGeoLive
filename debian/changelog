@@ -1,9 +1,17 @@
 gmt (4.2.0-1) unstable; urgency=low
 
+  [ Torsten Landschoff ]
   * New upstream release.
   * Hand over to Debian GIS team for group maintenance.
 
- -- Torsten Landschoff <torsten@debian.org>  Wed, 11 Apr 2007 00:17:13 +0200
+  [ Francesco Paolo Lovergine ]
+  * Moved to policy 3.7.2, without changes
+  * Debhelper level moved to 5
+  * Added html/pdf browser suggestions.
+  * Updated home page in copyright file.
+  * Added home page ini debian/control descriptions.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 22 Jun 2007 15:12:15 +0200
 
 gmt (4.1.2-1.1) unstable; urgency=low
 
