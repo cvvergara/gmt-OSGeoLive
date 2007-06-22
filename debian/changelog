@@ -2,6 +2,7 @@ gmt (4.2.0-1) unstable; urgency=low
 
   [ Torsten Landschoff ]
   * New upstream release.
+    (closes: #403838, #157744)
   * Hand over to Debian GIS team for group maintenance.
 
   [ Francesco Paolo Lovergine ]
@@ -10,8 +11,9 @@ gmt (4.2.0-1) unstable; urgency=low
   * Added html/pdf browser suggestions.
   * Updated home page in copyright file.
   * Added home page ini debian/control descriptions.
+    (closes: #416766)
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 22 Jun 2007 15:12:15 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 22 Jun 2007 17:39:54 +0200
 
 gmt (4.1.2-1.1) unstable; urgency=low
 
