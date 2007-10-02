@@ -12,8 +12,9 @@ gmt (4.2.0-1) unstable; urgency=low
   * Updated home page in copyright file.
   * Added home page ini debian/control descriptions.
     (closes: #416766)
+  * Introduced Homepage field in debian/control. 
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 22 Jun 2007 17:39:54 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 02 Oct 2007 11:54:35 +0200
 
 gmt (4.1.2-1.1) unstable; urgency=low
 
