@@ -29,6 +29,7 @@ Description: Generic Mapping Tools
 
 Package: gmt-doc-pdf
 Architecture: all
+Section: doc
 Suggests: pdf-viewer
 Description: PDF docs for GMT, the Generic Mapping Tools
  GMT is a free collection of ~60 UNIX tools that allow users to manipulate
@@ -44,6 +45,7 @@ Description: PDF docs for GMT, the Generic Mapping Tools
 
 Package: gmt-tutorial-pdf
 Architecture: all
+Section: doc
 Suggests: pdf-viewer
 Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
  GMT is a free collection of ~60 UNIX tools that allow users to manipulate
@@ -59,6 +61,7 @@ Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
 
 Package: gmt-doc
 Architecture: all
+Section: doc
 Suggests: www-browser
 Description: HTML documentation for GMT, the Generic Mapping Tools
  GMT is a free collection of ~60 UNIX tools that allow users to manipulate
