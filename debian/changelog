@@ -1,3 +1,12 @@
+gmt (4.2.1-1) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+  * New upstream release. There is no more a _man file, all manpages are in _src.
+    debian/rules changed as consequence.
+  * Revised man page installation in debian/rules, due to changes in the building system.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 17 Oct 2007 16:04:13 +0200
+
 gmt (4.2.0-1) unstable; urgency=low
 
   [ Torsten Landschoff ]
