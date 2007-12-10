@@ -4,8 +4,12 @@ gmt (4.2.1-1) UNRELEASED; urgency=low
   * New upstream release. There is no more a _man file, all manpages are in _src.
     debian/rules changed as consequence.
   * Revised man page installation in debian/rules, due to changes in the building system.
+  * In debian/rules: added LDFLAGS="-g" at build-time, in order to create unstripped binaries.
+    (closes: #437047)
+  * In debian/rules: added private libraries path to search for libs when
+    calling dh_shlibdeps
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 17 Oct 2007 16:04:13 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 10 Dec 2007 15:43:13 +0100
 
 gmt (4.2.0-1) unstable; urgency=low
 
