@@ -5,8 +5,10 @@ Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco P. Lovergine <frankie@debian.org>
 Build-Depends: netcdfg-dev, tcsh | csh | c-shell, debhelper (>= 5.0), bzip2, quilt, libxmu-headers, libxaw7-dev
 Build-Depends-Indep: debhelper (>= 5.0), bzip2, quilt
-Standards-Version: 3.7.2
+Standards-Version: 3.7.3
 Homepage: http://gmt.soest.hawaii.edu/
+Vcs-Browser: http://svn.debian.org/viewsvn/pkg-grass/packages/gmt/trunk
+Vcs-Svn: svn://svn.debian.org/svn/pkg-grass/packages/gmt/trunk
 
 Package: gmt
 Architecture: any

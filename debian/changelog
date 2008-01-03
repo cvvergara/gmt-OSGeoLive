@@ -8,8 +8,10 @@ gmt (4.2.1-1) UNRELEASED; urgency=low
     (closes: #437047)
   * In debian/rules: added private libraries path to search for libs when
     calling dh_shlibdeps
+  * Policy bumped to 3.7.3, without changes.
+  * Added Vcs-* fields to debian/control.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 10 Dec 2007 15:43:13 +0100
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 10 Dec 2007 16:32:18 +0100
 
 gmt (4.2.0-1) unstable; urgency=low
 
