@@ -15,8 +15,8 @@ download-upstream:	$(ARCHIVES)
 create-orig-tar:	$(ARCHIVES)
 	dh_testdir
 	mkdir -p gmt-$(RELEASE).orig
-	ln $(ARCHIVES) gmt-$(RELEASE).orig
-	tar -cf - gmt-$(RELEASE).orig|gzip -9 > gmt-$(RELEASE).orig.tar.gz
+	ln -f $(ARCHIVES) gmt-$(RELEASE).orig
+	tar cf - gmt-$(RELEASE).orig|gzip -9 > gmt-$(RELEASE).orig.tar.gz
 	mv gmt-$(RELEASE).orig.tar.gz ..
 	rm -R gmt-$(RELEASE).orig
 
@@ -29,20 +29,21 @@ upstream/%:
 stamps/unpack-stamp: 
 	dh_testdir
 	for i in $(ARCHIVES); do \
-		tar -xjf $$i || exit 1; \
+		tar xjf $$i || exit 1; \
 	done
 	mkdir -p stamps
 	touch $@
 
 stamps/patch-stamp:	stamps/unpack-stamp
 	dh_testdir
-	ln -sf ../debian/patches GMT$(RELEASE)/
-	cd GMT$(RELEASE) && quilt push -a --color=auto || [ $$? = 2 ]
+	ln -sf GMT$(RELEASE) GMT
+	QUILT_PATCH_OPTS="-p1" QUILT_PATCHES=debian/patches quilt push -a --color=auto || [ $$? = 2 ]
 	touch $@
 
 unpatch:
 	dh_testdir
-	cd GMT$(RELEASE) && quilt pop -a
+	QUILT_PATCH_OPTS="-p1" QUILT_PATCHES=debian/patches quilt pop -a || true
+	rm -f stamps/patch-stamp GMT
 
 PATHCONFIG	:= --prefix=/usr/lib/gmt
 DESTDIR		:= $(CURDIR)/debian/tmp
@@ -93,8 +94,8 @@ stamps/install-stamp: stamps/build-stamp
 	ln -fs /etc/gmt/coastline.conf $(DESTDIR)/usr/share/gmt/
 
 	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
-	# So: Move it to /usr/bin
-	mv $(DESTDIR)/usr/lib/gmt/bin/GMT $(DESTDIR)/usr/bin/
+	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var
+	sed -e 's/^exec /PATH=\$PATH:\${exec_prefix}\/bin exec /' /usr/bin/GMT >$(DESTDIR)/usr/bin/GMT
 
 	# Move the manpages directory into the right place...
 	for manpage in $(DESTDIR)/usr/lib/gmt/share/man/man1/*.1; do \

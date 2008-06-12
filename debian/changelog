@@ -1,8 +1,8 @@
-gmt (4.2.1-1) UNRELEASED; urgency=low
+gmt (4.2.1-1) unstable; urgency=low
 
-  * NOT RELEASED YET
   * New upstream release. There is no more a _man file, all manpages are in _src.
     debian/rules changed as consequence.
+    This partially fixes #181557 but project.1 is still a bit weird.
   * Revised man page installation in debian/rules, due to changes in the building system.
   * In debian/rules: added LDFLAGS="-g" at build-time, in order to create unstripped binaries.
     (closes: #437047)
@@ -10,8 +10,15 @@ gmt (4.2.1-1) UNRELEASED; urgency=low
     calling dh_shlibdeps
   * Policy bumped to 3.7.3, without changes.
   * Added Vcs-* fields to debian/control.
+  * Now installs some additional pdfs in gmt-doc-pdf.
+  * GMT wrapper changed to modify PATH before calling a GMT command.
+    Patch applied on fly in debian/rules.
+    (closes: #416869)
+  * Fixed patches and debian/rules to use quilt in top dir and support next generation 
+    source package.
+    (closes: #485163)
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 10 Dec 2007 16:32:18 +0100
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Thu, 12 Jun 2008 14:21:53 +0200
 
 gmt (4.2.0-1) unstable; urgency=low
 
