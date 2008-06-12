@@ -43,7 +43,8 @@ stamps/patch-stamp:	stamps/unpack-stamp
 unpatch:
 	dh_testdir
 	QUILT_PATCH_OPTS="-p1" QUILT_PATCHES=debian/patches quilt pop -a || true
-	rm -f stamps/patch-stamp GMT
+	rm -rf stamps/patch-stamp GMT 
+	rm -rf .pc
 
 PATHCONFIG	:= --prefix=/usr/lib/gmt
 DESTDIR		:= $(CURDIR)/debian/tmp
