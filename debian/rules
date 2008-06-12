@@ -96,7 +96,7 @@ stamps/install-stamp: stamps/build-stamp
 
 	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
 	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var
-	sed -e 's/^exec /PATH=\$PATH:\${exec_prefix}\/bin exec /' /usr/bin/GMT >$(DESTDIR)/usr/bin/GMT
+	sed -e 's/^exec /PATH=\$$PATH:\$${exec_prefix}\/bin exec /' /usr/bin/GMT >$(DESTDIR)/usr/bin/GMT
 
 	# Move the manpages directory into the right place...
 	for manpage in $(DESTDIR)/usr/lib/gmt/share/man/man1/*.1; do \
