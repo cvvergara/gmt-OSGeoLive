@@ -1,3 +1,21 @@
+gmt (4.3.1-1) UNRELEASED; urgency=low
+
+  * New upstream release
+    (closes: #480931)
+  * Fixed download URL. 
+  * Added a README.source file to document how creating the upstream tarball. 
+  * Patch disable_unsupported.diff dropped and moved to use appropriate configure flag.
+  * Added three new PDF documents in different formats.
+  * Policy bumped to 3.8.0.
+  * Now GMT is providing correct versioning and SONAMEs for shared libs, so
+    moving to supporting development libraries by splitting libgmt4 and libgmt-dev
+    binary packages. A long due wishlist finally managed, yeah!
+    (closes: #210611)
+  * Removed manpages duplicates.
+  * Fixed clean target to remove GMT symlink.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 13 Jun 2008 10:08:30 +0200
+
 gmt (4.2.1-1) unstable; urgency=low
 
   * New upstream release. There is no more a _man file, all manpages are in _src.
