@@ -3,7 +3,7 @@ Section: science
 Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco P. Lovergine <frankie@debian.org>
-Build-Depends: libnetcdf-dev, tcsh | csh | c-shell, debhelper (>= 5.0), bzip2, quilt, libxmu-headers, libxaw7-dev
+Build-Depends: libnetcdf-dev, debhelper (>= 5.0), bzip2, quilt, libxmu-headers, libxaw7-dev
 Build-Depends-Indep: debhelper (>= 5.0), bzip2, quilt
 Standards-Version: 3.8.0
 Homepage: http://gmt.soest.hawaii.edu/
@@ -18,14 +18,14 @@ Conflicts: gmt-manpages
 Recommends: gmt-coastline-data | gmt-coast-low, gmt-doc
 Suggests: gmt-tutorial-pdf, gmt-doc-pdf, gmt-examples
 Description: Generic Mapping Tools
- GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
  patterns, and 24-bit color. 
  .
- GMT supports 25 common map projections plus linear, log, and power scaling,
+ GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
 
@@ -61,14 +61,14 @@ Architecture: all
 Section: doc
 Suggests: pdf-viewer
 Description: PDF docs for GMT, the Generic Mapping Tools
- GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
  patterns, and 24-bit color. 
  .
- GMT supports 25 common map projections plus linear, log, and power scaling,
+ GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
 
@@ -77,14 +77,14 @@ Architecture: all
 Section: doc
 Suggests: pdf-viewer
 Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
- GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
  patterns, and 24-bit color. 
  .
- GMT supports 25 common map projections plus linear, log, and power scaling,
+ GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
 
@@ -93,14 +93,14 @@ Architecture: all
 Section: doc
 Suggests: www-browser
 Description: HTML documentation for GMT, the Generic Mapping Tools
- GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ GMT is a collection of UNIX tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
  patterns, and 24-bit color. 
  .
- GMT supports 25 common map projections plus linear, log, and power scaling,
+ GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
  .
@@ -113,13 +113,13 @@ Package: gmt-examples
 Architecture: all
 Suggests: gmt
 Description: Example scripts illustrating the use of GMT
- GMT is a free collection of ~60 UNIX tools that allow users to manipulate
+ GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
  patterns, and 24-bit color. 
  .
- GMT supports 25 common map projections plus linear, log, and power scaling,
+ GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
