@@ -3,7 +3,7 @@ Section: science
 Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco P. Lovergine <frankie@debian.org>
-Build-Depends: netcdfg-dev, tcsh | csh | c-shell, debhelper (>= 5.0), bzip2, quilt, libxmu-headers, libxaw7-dev
+Build-Depends: libnetcdf-dev, tcsh | csh | c-shell, debhelper (>= 5.0), bzip2, quilt, libxmu-headers, libxaw7-dev
 Build-Depends-Indep: debhelper (>= 5.0), bzip2, quilt
 Standards-Version: 3.8.0
 Homepage: http://gmt.soest.hawaii.edu/
@@ -31,6 +31,7 @@ Description: Generic Mapping Tools
 
 Package: libgmt4
 Architecture: any
+Section: libs
 Depends: ${shlibs:Depends}
 Suggests: gmt
 Description: Generic Mapping Tools Library
@@ -42,7 +43,8 @@ Description: Generic Mapping Tools Library
 
 Package: libgmt-dev
 Architecture: any
-Depends: ${shlibs:Depends}, libgmt4 (=${binary:Version})
+Section: libdevel
+Depends: ${shlibs:Depends}, libgmt4 (=${binary:Version}), libnetcdf-dev
 Suggests: gmt
 Description: Generic Mapping Tools Library
  These set of libraries allow manipulating geographic and Cartesian data sets

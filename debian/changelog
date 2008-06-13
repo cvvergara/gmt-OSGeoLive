@@ -3,26 +3,35 @@ gmt (4.3.1-1) UNRELEASED; urgency=low
   * New upstream release
     (closes: #480931)
   * Fixed download URL. 
-  * Added a README.source file to document how creating the upstream tarball. 
-  * Patch disable_unsupported.diff dropped and moved to use appropriate configure flag.
+  * Added a README.source file to document how creating the upstream
+    tarball.
+  * Patch disable_unsupported.diff dropped and moved to use appropriate
+    configure flag.
   * Added three new PDF documents in different formats.
   * Policy bumped to 3.8.0.
-  * Now GMT is providing correct versioning and SONAMEs for shared libs, so
-    moving to supporting development libraries by splitting libgmt4 and libgmt-dev
-    binary packages. A long due wishlist finally managed, yeah!
+  * Now GMT is providing correct versioning and SONAMEs for shared libs,
+    so moving to supporting development libraries by splitting libgmt4 and
+    libgmt-dev binary packages. A long due wishlist finally managed, yeah!
     (closes: #210611)
-  * Removed manpages duplicates.
+  * Removed manpages duplicates and changing man section to *gmt 
+    in man headers [lintian].
+  * Removed empty man directories.
   * Fixed clean target to remove GMT symlink.
+  * Fixed wrapping in debian/changelog [lintian]
+  * Added copyright notice to debian/copyright [lintian]
+  * Moved to libnetcdf-dev instead of old netcdfg-dev now obsolete.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 13 Jun 2008 10:08:30 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 13 Jun 2008 13:59:56 +0200
 
 gmt (4.2.1-1) unstable; urgency=low
 
-  * New upstream release. There is no more a _man file, all manpages are in _src.
-    debian/rules changed as consequence.
-    This partially fixes #181557 but project.1 is still a bit weird.
-  * Revised man page installation in debian/rules, due to changes in the building system.
-  * In debian/rules: added LDFLAGS="-g" at build-time, in order to create unstripped binaries.
+  * New upstream release. There is no more a _man file, all manpages
+    are in _src debian/rules changed as consequence This partially fixes
+    #181557 but project.1 is still a bit weird.
+  * Revised man page installation in debian/rules, due to changes in the
+    building system.
+  * In debian/rules: added LDFLAGS="-g" at build-time, in order to
+    create unstripped binaries.
     (closes: #437047)
   * In debian/rules: added private libraries path to search for libs when
     calling dh_shlibdeps
@@ -32,8 +41,8 @@ gmt (4.2.1-1) unstable; urgency=low
   * GMT wrapper changed to modify PATH before calling a GMT command.
     Patch applied on fly in debian/rules.
     (closes: #416869)
-  * Fixed patches and debian/rules to use quilt in top dir and support next generation 
-    source package.
+  * Fixed patches and debian/rules to use quilt in top dir and support
+    next generation source package.
     (closes: #485163)
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Thu, 12 Jun 2008 14:21:53 +0200
