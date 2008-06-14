@@ -4,6 +4,21 @@ RELEASE		:= 4.3.1
 PARTS		:= pdf src share scripts suppl tut web
 ARCHIVES	:= $(PARTS:%=upstream/GMT$(RELEASE)_%.tar.bz2)
 
+CFLAGS := -fPIC -ansi -pedantic
+
+# Some special build options
+ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
+   CFLAGS += -g -O0
+   LDFLAGS += -g
+else
+   CFLAGS += -O2
+endif
+
+ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
+   DH_VERBOSE=1
+   export DH_VERBOSE
+endif
+
 unpack:		stamps/unpack-stamp
 patch:		stamps/patch-stamp
 build:		stamps/build-stamp
@@ -53,7 +68,7 @@ stamps/build-stamp: stamps/patch-stamp
 	dh_testdir
 	cd GMT$(RELEASE) && ./configure \
 		--enable-shared $(PATHCONFIG) --disable-mex --enable-netcdf=/usr
-	$(MAKE) -C GMT$(RELEASE) CC_OPT="-fPIC -g -O2 -ansi -pedantic" LDFLAGS="-g" all suppl 
+	$(MAKE) -C GMT$(RELEASE) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" all suppl 
 	touch $@
 
 stamps/install-stamp: stamps/build-stamp
@@ -88,9 +103,8 @@ stamps/install-stamp: stamps/build-stamp
 
 	# Configuration files are still at the wrong place, let's fix this
 	mv $(DESTDIR)/usr/share/gmt/conf/*.conf $(DESTDIR)/etc/gmt/
-	ln -fs /etc/gmt/gmt.conf $(DESTDIR)/usr/share/gmt/
 	install -m644 debian/coastline.conf $(DESTDIR)/etc/gmt/
-	ln -fs /etc/gmt/coastline.conf $(DESTDIR)/usr/share/gmt/
+	ln -fs /etc/gmt/*.conf $(DESTDIR)/usr/share/gmt/
 
 	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
 	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var

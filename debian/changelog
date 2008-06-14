@@ -22,8 +22,10 @@ gmt (4.3.1-1) UNRELEASED; urgency=low
   * Moved to libnetcdf-dev instead of old netcdfg-dev now obsolete.
   * Build-dep on c-shell removed, because not more required.
   * Long description revised.
+  * CC_OPT is not more used in building, uses CFLAGS instead. 
+  * Added symlink to all *.conf files in /etc within /usr/share/gmt.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 13 Jun 2008 21:01:30 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Sat, 14 Jun 2008 00:03:01 +0200
 
 gmt (4.2.1-1) unstable; urgency=low
 
