@@ -104,7 +104,9 @@ stamps/install-stamp: stamps/build-stamp
 	# Configuration files are still at the wrong place, let's fix this
 	mv $(DESTDIR)/usr/share/gmt/conf/*.conf $(DESTDIR)/etc/gmt/
 	install -m644 debian/coastline.conf $(DESTDIR)/etc/gmt/
-	ln -fs /etc/gmt/*.conf $(DESTDIR)/usr/share/gmt/
+	for file in $(DESTDIR)/etc/gmt/*.conf; do \
+		ln -fs /etc/gmt/`basename $$file` $(DESTDIR)/usr/share/gmt/`basename $$file`; \
+	done
 
 	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
 	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var
@@ -158,6 +160,8 @@ binary-indep: stamps/install-stamp
 	dh_strip -i
 	dh_link -i
 	dh_compress -i -X.pdf
+	# Uncompress examples stuff 
+	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
 	dh_fixperms -i
 	dh_installdeb -i
 	dh_gencontrol -i

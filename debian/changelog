@@ -1,4 +1,4 @@
-gmt (4.3.1-1) UNRELEASED; urgency=low
+gmt (4.3.1-1) experimental; urgency=low
 
   * New upstream release
     (closes: #480931)
@@ -24,8 +24,13 @@ gmt (4.3.1-1) UNRELEASED; urgency=low
   * Long description revised.
   * CC_OPT is not more used in building, uses CFLAGS instead. 
   * Added symlink to all *.conf files in /etc within /usr/share/gmt.
+  * Fixed debian/gmt-examples.examples to install examples for true.
+  * Now avoids compression of examples/ stuff in debian/rules.
+  * A note has been added to README.Debian to explain how to run examples
+    scripts. 
+  * Added debian/watch file.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Sat, 14 Jun 2008 00:03:01 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 16 Jun 2008 14:16:11 +0200
 
 gmt (4.2.1-1) unstable; urgency=low
 

@@ -5,17 +5,23 @@ Note that coastline data is not available in the Debian archive at this
 time. To get GMT up and running, you should download the coastline data
 files
 
-	GMT4.1_coast.tar.bz2
-	GMT4.1_high.tar.bz2
-	GMT4.1_full.tar.bz2
+	GMT_coast.tar.bz2
+	GMT_high.tar.bz2
+	GMT_full.tar.bz2
 
-and untar them at a place you like. Then you need to edit
-/etc/gmt/coastline.conf and add the path to the files ending with .cfg 
-that you just extracted. Afterwards, GMT should be fully functional. 
+from ftp://ibis.grdl.noaa.gov/pub/gmt and untar them at a place you     
+like. Then you need to edit /etc/gmt/coastline.conf and add the path    
+to the files ending with .cfg that you just extracted. Afterwards, GMT  
+should be fully functional.                                             
 
 NOTE: By default, the gmt utilities are not included in $PATH, so you 
 either need to add /usr/lib/gmt/bin to your PATH or use the GMT wrapper, 
-see GMT(1gmt).
+see GMT(1gmt). Therefore, you also need to run do_examples.sh as
+
+./do_examples.sh /usr/lib/gmt/bin 
+
+if you would use gmt-examples to recreate GMT examples.
 
  -- Torsten Landschoff <torsten@debian.org>  Fri, 26 May 2006 22:56:49 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Sat, 14 Jun 2008 11:48:20 +0200
 
