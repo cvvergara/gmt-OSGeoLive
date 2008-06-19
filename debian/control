@@ -111,6 +111,7 @@ Description: HTML documentation for GMT, the Generic Mapping Tools
 
 Package: gmt-examples
 Architecture: all
+Section: doc
 Suggests: gmt
 Description: Example scripts illustrating the use of GMT
  GMT is a collection of tools that allow users to manipulate
