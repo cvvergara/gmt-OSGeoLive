@@ -1,8 +1,9 @@
-gmt (4.3.1-2) UNRELEASED; urgency=low
+gmt (4.3.1-2) unstable; urgency=low
 
+  * First upload to unstable.
   * gmt-examples section set to doc. 
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 17 Jun 2008 12:01:05 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 27 Jun 2008 10:01:49 +0200
 
 gmt (4.3.1-1) experimental; urgency=low
 
