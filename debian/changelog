@@ -1,3 +1,13 @@
+gmt (4.4.0-1) unstable; urgency=low
+
+  * NOT RELEASED.
+  * New upstream release.
+  * Moved to debhelper level 7.
+  * Added a dh_prep call at building start.
+  * Revised debian/rules to work with new upstream locations.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 17 Mar 2009 00:17:41 +0100
+
 gmt (4.3.1-3) unstable; urgency=medium
 
   * Removed headers from gmt binary package.

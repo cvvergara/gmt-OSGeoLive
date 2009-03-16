@@ -3,8 +3,8 @@ Section: science
 Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco P. Lovergine <frankie@debian.org>
-Build-Depends: libnetcdf-dev, debhelper (>= 5.0), bzip2, quilt, libxmu-headers, libxaw7-dev
-Build-Depends-Indep: debhelper (>= 5.0), bzip2, quilt
+Build-Depends: libnetcdf-dev, debhelper (>= 7.0), bzip2, quilt, libxmu-headers, libxaw7-dev
+Build-Depends-Indep: debhelper (>= 7.0), bzip2, quilt
 Standards-Version: 3.8.0
 Homepage: http://gmt.soest.hawaii.edu/
 Vcs-Browser: http://svn.debian.org/viewsvn/pkg-grass/packages/gmt/trunk
