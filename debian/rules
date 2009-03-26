@@ -110,8 +110,13 @@ stamps/install-stamp: stamps/build-stamp
 	done
 	
 	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
-	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var
-	sed -e 's/^exec /PATH=\$$PATH:\$${exec_prefix}\/bin exec /' $(DESTDIR)/usr/lib/gmt/bin/GMT >$(DESTDIR)/usr/bin/GMT
+	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var.
+	# Also use 'pager' instead of more as default pager in the script.
+	sed -e 's/^exec /PATH=\$$PATH:\$${exec_prefix}\/bin exec /' \
+	    -e 's/:-more/:-pager/' \
+	    	$(DESTDIR)/usr/lib/gmt/bin/GMT >$(DESTDIR)/usr/bin/GMT
+	# Use 'pager' instead of more as default pager 
+	sed -i -e 's/:-more/:-pager/' $(DESTDIR)/usr/bin/GMT
 	rm -f $(DESTDIR)/usr/lib/gmt/bin/GMT
 	
 	# Move the manpages directory into the right place...
