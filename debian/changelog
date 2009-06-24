@@ -1,7 +1,16 @@
+gmt (4.4.0-2) unstable; urgency=low
+
+  * NOT YET RELEASED.
+  * Policy bumped to 3.8.2. No changes.
+  * [lintian] Changed my dotted name in Uploaders to avoid annoying warnings.
+  * [lintian] Wrapped changelog line.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 24 Jun 2009 14:16:10 +0200
+
 gmt (4.4.0-1) unstable; urgency=low
 
-  * New upstream release. Note that /etc/gmt/gmt_formats.conf is no more installed
-    and all provided files are removed.
+  * New upstream release. Note that /etc/gmt/gmt_formats.conf is no more 
+    installed and all provided files are removed.
     (closes: #490268, #499648)
   * Moved to debhelper level 7.
   * Added a dh_prep call at building start.
