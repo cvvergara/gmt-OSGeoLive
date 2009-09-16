@@ -1,11 +1,13 @@
-gmt (4.4.0-2) unstable; urgency=low
+gmt (4.5.0-1) unstable; urgency=low
 
-  * NOT YET RELEASED.
-  * Policy bumped to 3.8.2. No changes.
+  * New upstream release.
+  * Policy bumped to 3.8.3. No changes.
   * [lintian] Changed my dotted name in Uploaders to avoid annoying warnings.
   * [lintian] Wrapped changelog line.
+  * Fixed creat-orig-tar rule in debian/rules for correct directory naming.
+  * Added ${misc:Depends} item in debian/control. 
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 24 Jun 2009 14:16:10 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 16 Sep 2009 10:04:06 +0200
 
 gmt (4.4.0-1) unstable; urgency=low
 

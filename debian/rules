@@ -1,6 +1,6 @@
 #! /usr/bin/make -f
 
-RELEASE		:= 4.4.0
+RELEASE		:= 4.5.0
 PARTS		:= doc share src suppl 
 ARCHIVES	:= $(PARTS:%=upstream/GMT$(RELEASE)_%.tar.bz2)
 
@@ -29,11 +29,11 @@ download-upstream:	$(ARCHIVES)
 
 create-orig-tar:	$(ARCHIVES)
 	dh_testdir
-	mkdir -p gmt-$(RELEASE).orig
-	ln -f $(ARCHIVES) gmt-$(RELEASE).orig
-	tar cf - gmt-$(RELEASE).orig|gzip -9 > gmt-$(RELEASE).orig.tar.gz
+	mkdir -p gmt-$(RELEASE)/upstream
+	ln -f $(ARCHIVES) gmt-$(RELEASE)/upstream
+	tar cf - gmt-$(RELEASE)|gzip -9 > gmt-$(RELEASE).orig.tar.gz
 	mv gmt-$(RELEASE).orig.tar.gz ..
-	rm -R gmt-$(RELEASE).orig
+	rm -R gmt-$(RELEASE)
 
 upstream/%:
 	dh_testdir

@@ -5,14 +5,14 @@ Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco Paolo Lovergine <frankie@debian.org>
 Build-Depends: libnetcdf-dev, debhelper (>= 7.0), bzip2, quilt, libxmu-headers, libxaw7-dev
 Build-Depends-Indep: debhelper (>= 7.0), bzip2, quilt
-Standards-Version: 3.8.2
+Standards-Version: 3.8.3
 Homepage: http://gmt.soest.hawaii.edu/
 Vcs-Browser: http://svn.debian.org/viewsvn/pkg-grass/packages/gmt/trunk
 Vcs-Svn: svn://svn.debian.org/svn/pkg-grass/packages/gmt/trunk
 
 Package: gmt
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Replaces: gmt-manpages
 Conflicts: gmt-manpages
 Recommends: gmt-coastline-data | gmt-coast-low, gmt-doc
@@ -32,7 +32,7 @@ Description: Generic Mapping Tools
 Package: libgmt4
 Architecture: any
 Section: libs
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: gmt
 Description: Generic Mapping Tools Library
  GMT libraries allow manipulating geographic and Cartesian data sets
@@ -44,7 +44,7 @@ Description: Generic Mapping Tools Library
 Package: libgmt-dev
 Architecture: any
 Section: libdevel
-Depends: ${shlibs:Depends}, libgmt4 (=${binary:Version}), libnetcdf-dev
+Depends: ${shlibs:Depends}, libgmt4 (=${binary:Version}), libnetcdf-dev, ${misc:Depends}
 Suggests: gmt
 Description: Generic Mapping Tools Library
  These set of libraries allow manipulating geographic and Cartesian data sets
