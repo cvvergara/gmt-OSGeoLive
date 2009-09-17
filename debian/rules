@@ -166,6 +166,8 @@ binary-indep: stamps/install-stamp
 	dh_compress -i -X.pdf
 	# Uncompress examples stuff 
 	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
+	# Remove +x 
+	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
 	dh_fixperms -i
 	dh_installdeb -i
 	dh_gencontrol -i

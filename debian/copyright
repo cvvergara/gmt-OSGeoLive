@@ -16,9 +16,9 @@ Copyright:
 Copyright (c) 1991-2008, P. Wessel & W. H. F. Smith
 
 This software is covered by the GNU Library General Public Licence
-(version 2, or if you choose, a later version).
+(version 2).
 
 On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL'. If 
+Public License can be found in `/usr/share/common-licenses/GPL-2'. If 
 you got the source archive you will find the license in the file COPYING 
 in the top directory.

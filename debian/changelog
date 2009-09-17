@@ -6,8 +6,9 @@ gmt (4.5.0-1) unstable; urgency=low
   * [lintian] Wrapped changelog line.
   * Fixed creat-orig-tar rule in debian/rules for correct directory naming.
   * Added ${misc:Depends} item in debian/control. 
+  * GMT uses GPL-2 strictly.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 16 Sep 2009 10:04:06 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 16 Sep 2009 12:53:52 +0200
 
 gmt (4.4.0-1) unstable; urgency=low
 
