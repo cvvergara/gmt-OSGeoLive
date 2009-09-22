@@ -1,4 +1,4 @@
-gmt (4.5.0-1) unstable; urgency=low
+gmt (4.5.1-1) unstable; urgency=low
 
   * New upstream release.
   * Policy bumped to 3.8.3. No changes.
@@ -8,7 +8,7 @@ gmt (4.5.0-1) unstable; urgency=low
   * Added ${misc:Depends} item in debian/control. 
   * GMT uses GPL-2 strictly.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 16 Sep 2009 12:53:52 +0200
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 21 Sep 2009 22:47:01 +0200
 
 gmt (4.4.0-1) unstable; urgency=low
 
