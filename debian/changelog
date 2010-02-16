@@ -2,6 +2,7 @@ gmt (4.5.2-1) unstable; urgency=low
 
   * New upstream release.
   * Policy bumped to 3.8.4. No changes.
+  * Added a NEWS file about new coastline data format.
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 15 Feb 2010 18:09:07 +0100
 
