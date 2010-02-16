@@ -1,0 +1,8 @@
+gmt (4.5.2-1) unstable; urgency=low
+
+    Starting from 4.5.2 a new format of coastline data is required, i.e. 
+    GSHHS 2.0.2 (or higher). It implies that current high/full coastline data
+    version (as available on the official ftp site) is not back-compatible.
+    You need to use 2.0.1 with any GMT version <= 4.5.1.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 16 Feb 2010 10:23:06 +0100
