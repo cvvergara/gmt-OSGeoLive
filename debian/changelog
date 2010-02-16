@@ -1,3 +1,10 @@
+gmt (4.5.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * Policy bumped to 3.8.4. No changes.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 15 Feb 2010 18:09:07 +0100
+
 gmt (4.5.1-1) unstable; urgency=low
 
   * New upstream release.
