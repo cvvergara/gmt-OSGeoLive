@@ -1,3 +1,13 @@
+gmt (4.5.5-1) unstable; urgency=low
+
+  * New upstream release.
+  * Moved from svn to git repository and changed Vcs-* as due.
+  * Policy bumped to 3.9.1.
+  * Compatibility level set to 8.
+  * Now using source format 3.0.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 07 Mar 2011 15:23:25 +0100
+
 gmt (4.5.2-1) unstable; urgency=low
 
   * New upstream release.

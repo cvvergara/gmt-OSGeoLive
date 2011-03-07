@@ -1,6 +1,6 @@
 #! /usr/bin/make -f
 
-RELEASE		:= 4.5.2
+RELEASE		:= 4.5.5
 PARTS		:= doc share src suppl 
 ARCHIVES	:= $(PARTS:%=upstream/GMT$(RELEASE)_%.tar.bz2)
 
