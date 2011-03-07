@@ -3,8 +3,8 @@ Section: science
 Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco Paolo Lovergine <frankie@debian.org>
-Build-Depends: libnetcdf-dev, debhelper (>= 8), bzip2, libxmu-headers, libxaw7-dev
-Build-Depends-Indep: debhelper (>= 8), bzip2
+Build-Depends: libnetcdf-dev, debhelper (>= 8), quilt, bzip2, libxmu-headers, libxaw7-dev
+Build-Depends-Indep: debhelper (>= 8), quilt, bzip2
 Standards-Version: 3.9.1
 Homepage: http://gmt.soest.hawaii.edu/
 Vcs-Browser: http://git.debian.org/?p=pkg-grass/gmt.git
