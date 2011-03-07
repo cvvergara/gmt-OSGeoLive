@@ -31,8 +31,8 @@ create-orig-tar:	$(ARCHIVES)
 	dh_testdir
 	mkdir -p gmt-$(RELEASE)/upstream
 	ln -f $(ARCHIVES) gmt-$(RELEASE)/upstream
-	tar cf - gmt-$(RELEASE)|gzip -9 > gmt-$(RELEASE).orig.tar.gz
-	mv gmt-$(RELEASE).orig.tar.gz ..
+	tar cf - gmt-$(RELEASE)|gzip -9 > gmt_$(RELEASE).orig.tar.gz
+	mv gmt_$(RELEASE).orig.tar.gz ..
 	rm -R gmt-$(RELEASE)
 
 upstream/%:
