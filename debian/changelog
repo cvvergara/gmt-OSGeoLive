@@ -1,3 +1,10 @@
+gmt (4.5.7-1) unstable; urgency=low
+
+  * New upstream version with a new compact distribution.
+  * Policy bumped to 3.9.3, no changes required.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 07 Mar 2012 09:56:12 +0100
+
 gmt (4.5.6-1) unstable; urgency=low
 
   * New upstream release.
