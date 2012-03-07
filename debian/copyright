@@ -1,24 +1,21 @@
+ormat: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: GMT
+Upstream-Contact: Paul Wessel <wessel@soest.hawaii.edu> and Walter Smith <wsmith@nodc.noaa.gov>
+Source: http://gmt.soest.hawaii.edu/
 
-This package was debianized by Torsten Landschoff <torsten@debian.org> on
-Wed, 29 Sep 1999 18:04:12 +0200
-
-The upstream source is available from 
-
-	http://gmt.soest.hawaii.edu/
-
-The main upstream authors are
-
-	Paul Wessel <wessel@soest.hawaii.edu>
-  and 	Walter Smith <wsmith@nodc.noaa.gov>
-
-Copyright:
-
-Copyright (c) 1991-2008, P. Wessel & W. H. F. Smith
-
-This software is covered by the GNU Library General Public Licence
-(version 2).
-
-On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL-2'. If 
-you got the source archive you will find the license in the file COPYING 
-in the top directory.
+File: *
+Copyright: 1991-2011 P.Wessel & W.H.F.Smith
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; version 2 or any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian GNU/Linux systems, the complete text of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-2'. If 
+ you got the source archive you will find the license in the file COPYING 
+ in the top directory.
