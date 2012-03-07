@@ -1,4 +1,4 @@
-ormat: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: GMT
 Upstream-Contact: Paul Wessel <wessel@soest.hawaii.edu> and Walter Smith <wsmith@nodc.noaa.gov>
 Source: http://gmt.soest.hawaii.edu/
