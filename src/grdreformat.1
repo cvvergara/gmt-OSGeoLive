@@ -1,0 +1,213 @@
+.TH GRDREFORMAT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+grdreformat \- Converting between different grid file formats.
+.SH SYNOPSIS
+\fBgrdreformat\fP \fIingrdfile\fP[\fI=id\fP[\fI/scale/offset\fP[\fI/NaNvalue\fP]]] 
+\fIoutgrdfile\fP[\fI=id\fP[\fI/scale/offset\fP[\fI/NaNvalue\fP]]] 
+[ \fB\-N\fP ] [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ] [ \fB\-V\fP ]
+.SH DESCRIPTION
+\fBgrdreformat\fP reads a grid file in one format and writes it out using another format.  As an option the
+user may select a subset of the data to be written and to specify scaling, translation, and NaN-value.
+.TP
+\fIingrdfile\fP
+The grid file to be read.  Append format =\fIid\fP code if not a standard COARDS-compliant netCDF grid file.
+If =\fIid\fP is set (see below), you may optionally append \fIscale\fP and \fIoffset\fP.
+These options will scale the data and then offset them with the specified amounts after reading.
+.br
+If \fIscale\fP and \fIoffset\fP
+are supplied you may also append a value that represents 'Not-a-Number' (for floating-point grids this
+is unnecessary since the IEEE NaN is used; however integers need a value which means no data available.)
+.TP
+\fIoutgrdfile\fP
+The grid file to be written.  Append format =\fIid\fP code if not a standard COARDS-compliant netCDF
+grid file.
+If =\fIid\fP is set (see below), you may optionally append \fIscale\fP and \fIoffset\fP.
+These options are particularly 
+practical when storing the data as integers, first removing an offset and then scaling down the values.
+Since the scale and offset are applied in reverse order when reading, this does not affect the data
+values (except for round-offs).
+.br
+If \fIscale\fP and \fIoffset\fP
+are supplied you may also append a value that represents 'Not-a-Number' (for floating-point grids this
+is unnecessary since the IEEE NaN is used; however integers need a value which means no data available.)
+.SH OPTIONS
+.TP
+\fB\-N\fP
+Suppress the writing of the \fBGMT\fP header structure.  This is useful when you want to write a native grid to
+be used by \fBgrdraster\fP.  It only applies to native grids and is ignored for netCDF output.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH FORMAT IDENTIFIER
+By default, grids will be written as floating point data stored in binary files using the netCDF format and
+meta-data structure. This format is conform the COARDS conventions. \fBGMT\fP versions prior to 4.1 produced
+netCDF files that did not conform to these conventions. Although these files are still supported, their use is
+deprecated. To write other than floating point COARDS-compliant netCDF files, append the =\fIid\fP suffix
+to the filename \fIoutgrdfile\fP.
+.br
+When reading files, \fBgrdreformat\fP and other \fBGMT\fP programs will automatically recognize any type
+of netCDF grid file. These can be in either COARDS-compliant or pre-4.1 format, and contain floating-point or
+integer data. To read other types of grid files, append the =\fIid\fP suffix to the filename \fIingrdfile\fP.
+.br
+.sp
+\fIid	GMT 3 netCDF legacy formats              \fP
+.br
+\fBcb\fP	GMT netCDF format (byte) (deprecated)                  
+.br
+\fBcs\fP	GMT netCDF format (short) (deprecated)                 
+.br
+\fBci\fP	GMT netCDF format (int) (deprecated)                   
+.br
+\fBcf\fP	GMT netCDF format (float) (deprecated)                 
+.br
+\fBcd\fP	GMT netCDF format (double) (deprecated)                
+.br
+.sp
+\fIid	GMT native binary formats                \fP
+.br
+\fBbm\fP	GMT native, C-binary format (bit-mask)                 
+.br
+\fBbb\fP	GMT native, C-binary format (byte)                     
+.br
+\fBbs\fP	GMT native, C-binary format (short)                    
+.br
+\fBbi\fP	GMT native, C-binary format (int)                      
+.br
+\fBbf\fP	GMT native, C-binary format (float)                    
+.br
+\fBbd\fP	GMT native, C-binary format (double)                   
+.br
+.sp
+\fIid	GMT 4 netCDF standard                    \fP
+.br
+\fBnb\fP	GMT netCDF format (byte)   (COARDS-compliant)          
+.br
+\fBns\fP	GMT netCDF format (short)  (COARDS-compliant)          
+.br
+\fBni\fP	GMT netCDF format (int)    (COARDS-compliant)          
+.br
+\fBnf\fP	GMT netCDF format (float)  (COARDS-compliant) [DEFAULT]
+.br
+\fBnd\fP	GMT netCDF format (double) (COARDS-compliant)          
+.br
+.sp
+\fIid	Misc formats                             \fP
+.br
+\fBrb\fP	SUN rasterfile format (8-bit standard)                 
+.br
+\fBrf\fP	GEODAS grid format GRD98 (NGDC)                        
+.br
+\fBsf\fP	Golden Software Surfer format 6 (float)                
+.br
+\fBsd\fP	Golden Software Surfer format 7 (double, read-only)    
+.br
+\fBaf\fP	Atlantic Geoscience Center format AGC (float)          
+.br
+\fBgd\fP	Import through GDAL (convert to float) -- NON-STANDARD 
+.br
+.SH GMT STANDARD NETCDF FILES
+The standard format used for grdfiles is based on netCDF and conforms to the COARDS conventions. Files written
+in this format can be read by numerous third-party programs and are platform-independent. Some disk-space
+can be saved by storing the data as bytes or shorts in stead of integers. Use the \fIscale\fP and \fIoffset\fP
+parameters to make this work without loss of data range or significance. For more details, see Appendix B.
+.PP
+\fBMulti-variable grid files\fP
+.br
+By default, \fBGMT\fP programs will read the first 2-dimensional grid contained in a COARDS-compliant netCDF file.
+Alternatively, use \fIingrdfile\fP\fB?\fP\fIvarname\fP (ahead of any optional suffix \fB=\fP\fIid\fP)
+to specify the requested variable \fIvarname\fP.
+Since \fB?\fP has special meaning as a wildcard, escape this meaning by placing the full filename and suffix
+between quotes.
+.PP
+\fBMulti-dimensional grids\fP
+.br
+To extract one \fIlayer\fP or \fIlevel\fP from a 3-dimensional grid stored in a COARDS-compliant netCDF file,
+append both the name of the variable and the index associated with the layer (starting at zero) in the form:
+\fIingrdfile\fP\fB?\fP\fIvarname\fP\fB[\fP\fIlayer\fP\fB]\fP.
+Alternatively, specify the value associated with that layer using parentheses in stead of brackets:
+\fIingridfile\fP\fB?\fP\fIvarname\fP\fB(\fP\fIlevel\fP\fB)\fP.
+.br
+In a similar way layers can be extracted from 4- or even 5-dimensional grids. For example, if a grid has the
+dimensions (parameter, time, depth, latitude, longitude), a map can be selected by using:
+\fIingridfile\fP\fB?\fP\fIvarname\fP\fB(\fP\fIparameter,time,depth\fP\fB)\fP.
+.br
+Since question marks, brackets and parentheses have special meanings on the command line, escape these meanings
+by placing the full filename and suffix between quotes.
+.SH NATIVE BINARY FILES
+For binary native \fBGMT\fP files the size of the \fBGMT\fP grdheader block is \fIhsize\fP = 892 bytes, and the total size of the file
+is \fIhsize\fP + \fInx\fP * \fIny\fP * \fIitem_size\fP, where \fIitem_size\fP is the size in bytes of each element (1, 2, 4).  Bit grids
+are stored using 4-byte integers, each holding 32 bits, so for these files the size equation is modified by
+using ceil (\fInx\fP / 32) * 4 instead of \fInx\fP.
+Note that these files are platform-dependent. Files written on Little Endian machines (e.g. PCs) can not be
+read on Big Endian machines (e.g. most workstations).  Also note that it is not possible for \fBGMT\fP to determine uniquely
+if a 4-byte grid is float or int; in such cases it is best to use the \fI=ID\fP mechanism to specify the file format.
+For header and grid details, see Appendix B.
+.SH GRID VALUES PRECISION
+Regardless of the precision of the input data, GMT programs that create
+grid files will internally hold the grids in 4-byte floating point
+arrays.  This is done to conserve memory and furthermore most if not all
+real data can be stored using 4-byte floating point values.  Data with
+higher precision (i.e., double precision values) will lose that precision
+once GMT operates on the grid or writes out new grids.  To limit loss
+of precision when processing data you should always consider normalizing
+the data prior to processing.
+.SH EXAMPLES
+To extract the second layer from a 3-dimensional grid named temp from a COARDS-compliant netCDF file
+climate.grd:
+.br
+.sp
+\fBgrdreformat\fP climate.grd?temp[1] temp.grd \fB-V\fP
+.br
+.sp
+To create a 4-byte native floating point grid from the COARDS-compliant netCDF file data.grd:
+.br
+.sp
+\fBgrdreformat\fP data.grd ras_data.b4=bf \fB\-V\fP
+.br
+.sp
+To make a 2-byte short integer file, scale it by 10, subtract 32000, setting
+NaNs to -9999, do
+.br
+.sp
+\fBgrdreformat\fP values.grd shorts.i2=bs/10/-32000/-9999 \fB\-V\fP
+.br
+.sp
+To create a Sun standard 8-bit rasterfile for a subset of the data file image.grd,
+assuming the range in image.grd is 0-1 and we need 0-255, run
+.br
+.sp
+\fBgrdreformat\fP image.grd \fB\-R\fP-60/-40/-40/-30 image.ras8=rb/255/0 \fB\-V\fP
+.br
+.sp
+To convert etopo2.grd to etopo2.i2 that can be used by \fBgrdraster\fP, try
+.br
+.sp
+\fBgrdreformat\fP etopo2.grd etopo2.i2=bs \fB\-N\fP \fB\-V\fP
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grdmath (1)

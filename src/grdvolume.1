@@ -1,0 +1,120 @@
+.TH GRDVOLUME 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+grdvolume \- Calculating volume under a surface within a contour
+.SH SYNOPSIS
+\fBgrdvolume\fP \fIgrdfile\fP [ \fB\-C\fP\fIcval\fP or \fB\-C\fP\fIlow/high/delta\fP ] 
+[ \fB\-L\fP\fIbase\fP ] [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-S\fP[\fBk\fP] ] [ \fB\-T\fP ] [ \fB\-V\fP[\fBl\fP] ] 
+[ \fB\-Z\fP\fIfact\fP[/\fIdelta\fP] ] [ \fB\-f\fP\fIcolinfo\fP ]
+.SH DESCRIPTION
+\fBgrdvolume\fP reads a 2-D binary grid file and calculates the volume contained
+between the surface and the plane specified by the given contour (or zero if not given)
+and reports the area, volume, and maximum mean height (volume/area).
+Alternatively, specify a range of contours to be tried and \fBgrdvolume\fP will determine
+the volume and area inside the contour for all contour values.  The contour that produced
+the maximum mean height is reported as well.  This feature may be used with
+\fBgrdfilter\fP in designing an Optimal Robust Separator [\fIWessel\fP, 1998].
+.TP
+\fIgrdfile\fP
+The name of the input 2-D binary grid file.
+(See GRID FILE FORMAT below.)
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-C\fP
+find area and volume inside the \fIcval\fP contour.  Alternatively, search using
+all contours from \fIlow\fP to \fIhigh\fP in steps of \fIdelta\fP.  [Default returns
+entire area and volume of grid].  The area is measured in the plane of the contour.
+.TP
+\fB\-L\fP
+Also add in the volume from the level of the contour down to \fIbase\fP [Default base is contour].
+.TP
+\fB\-S\fP
+Convert degrees to meters, append \fBk\fP for km [Default is Cartesian].
+.TP
+\fB\-T\fP
+Use curvature minimum rather than maximum height to find best contour value (when contour
+search is selected with \fB\-C\fP).
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+Append \fBl\fP to see all the results for each contour level tested (when contour search
+has been selected).
+.TP
+\fB\-Z\fP
+Optionally subtract \fIshift\fP before scaling data by \fIfact\fP. [Default is no scaling].
+(Numbers in \fB\-C\fP, \fB\-L\fP refer to values after this scaling has occurred).
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH GRID FILE FORMATS
+\fBGMT\fP is able to recognize many of the commonly used grid file formats, as well as the precision, scale and offset of the values
+contained in the grid file. When \fBGMT\fP needs a little help with that, you can add the suffix \fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]],
+where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When reading a netCDF file that contains multiple grids, \fBGMT\fP will read, by default, the first 2-dimensional grid that can find in that
+file. To coax \fBGMT\fP into reading another multi-dimensional variable in the grid file, append \fB?\fP\fIvarname\fP to the file name, where
+\fIvarname\fP is the name of the variable. Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+See \fBgrdreformat\fP(1) and Section 4.18 of the GMT Technical Reference and Cookbook for more information,
+particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
+.SH EXAMPLES
+To determine the volume in km^3 under the surface hawaii_topo.grd (height in km), use
+.br
+.sp
+\fBgrdvolume\fP hawaii_topo.grd \fB\-Sk\fP
+.br
+.sp
+To find the volume between the surface peaks.grd and the contour z = 250, use
+.br
+.sp
+\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-C\fP250
+.br
+.sp
+To search for the contour, between 100 and 300 in steps of 10, that maximizes the ratio of volume
+to surface area for the file peaks.grd, use
+.br
+.sp
+\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-C\fP100/300/10 > results.d
+.br
+.sp
+To see the areas and volumes for all the contours in the previous example, use
+.br
+.sp
+\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-Vl\fP \fB\-C\fP100/300/10 > results.d
+.SH "NOTES"
+\fBgrdvolume\fP distinguishes between gridline and gridcell oriented grids. In both cases the area and
+volume are computed up to the grid boundaries. That means that in the first case the gridcells on
+the boundary only contribute half their area (and volume), whereas in the second case all gridcells
+are fully used. The exception is when the \fB\-C\fP flag is used: since contours do not extend beyond
+the outermost gridpoint, both grid types are treated the same. That means the outer rim in gridcell
+oriented grids is ignored when using the \fB\-C\fP flag.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grdfilter (1)
+.SH REFERENCES
+Wessel, P., 1998, An empirical method for optimal robust regional-residual separation of geophysical data,
+\fIMath. Geol., 30(4)\fP, 391\-408.

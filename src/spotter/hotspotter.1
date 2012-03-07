@@ -1,0 +1,136 @@
+.TH HOTSPOTTER 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+hotspotter \- Create CVA image from seamount flowlines 
+.SH SYNOPSIS
+\fBhotspotter\fP [\fIinfile(s)\fP] \fB\-E\fP\fIstage_file\fP 
+\fB\-G\fP\fICVAgrid\fP \fB\-I\fP\fIxinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP][/\fIyinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP]] 
+\fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-C\fP ] [ \fB\-D\fP\fIfactor\fP ] [ \fB\-F\fP ] 
+[ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-N\fP\fIupper_age\fP ] [ \fB\-S\fP ] 
+[ \fB\-T\fP ] [ \fB\-V\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ]
+.SH DESCRIPTION
+\fBhotspotter\fP reads (longitude, latitude, amplitude, radius, age) records
+from \fIinfiles\fP  [or standard input] and calculates flowlines using the 
+specified stage pole (Euler) rotations.  These flowlines are convolved with
+the shape of the seamount (using a Gaussian shape given amplitude and radius
+= 6 sigma) and added up to give a Cumulative Volcano Amplitude grid (CVA).
+See option \fB\-:\fP on how to read (latitude,longitude,...) files.
+.br
+	No space between the option flag and the associated arguments.  Use upper case for the
+option flags and lower case for modifiers.
+.TP
+\fIinfile(s)\fP
+Data file(s) to be processed.  If not given, standard input is read.
+.TP
+\fB\-E\fP
+Give file with rotation parameters.  This file must contain
+one record for each rotation; each record must be of the following format:
+.br
+.sp
+	\fIlon lat tstart [tstop] angle\fP [ \fIkhat a b c d e f g df\fP ]
+.br
+.sp
+where \fItstart\fP and \fItstop\fP are in Myr and \fIlon lat angle\fP are in degrees.
+\fItstart\fP and \fItstop\fP are the ages of the old and young ends of a stage.  If \fB\-C\fP is set then a total
+reconstruction rotation is expected and \fItstop\fP is implicitly set to 0 and
+should not be specified in the file.  If a covariance matrix \fBC\fP for the rotation is available
+it must be specified in a format using the nine optional terms listed in brackets.
+Here, \fBC\fP = (\fIg\fP/\fIkhat\fP)*[ \fIa b d; b c e; d e f\fP ] which shows \fBC\fP
+made up of three row vectors.
+If the degrees of freedom (\fIdf\fP) in fitting the rotation is 0 or not given it is set to 10000.
+Blank lines and records whose first column contains # will be ignored.
+.TP
+\fB\-G\fP
+Specify name for output grid file.
+.TP
+\fB\-I\fP
+\fIx_inc\fP [and optionally \fIy_inc\fP] is the grid spacing. Optionally, append a suffix
+modifier.  \fBGeographical (degrees) coordinates\fP: Append \fBm\fP to
+indicate arc minutes or \fBc\fP to indicate arc seconds.  If one of the units \fBe\fP, \fBk\fP, \fBi\fP,
+or \fBn\fP is appended instead, the increment is assumed to be given in meter, km, miles, or
+nautical miles, respectively, and will be converted to the equivalent degrees longitude at
+the middle latitude of the region (the conversion depends on \fBELLIPSOID\fP).  If /\fIy_inc\fP is given but set to 0 it will be reset equal to
+\fIx_inc\fP; otherwise it will be converted to degrees latitude.  
+\fBAll coordinates\fP: If \fB=\fP is appended then
+the corresponding max \fIx\fP (\fIeast\fP) or \fIy\fP (\fInorth\fP) may be slightly adjusted to fit exactly the given increment
+[by default the increment may be adjusted slightly to fit the given domain].  Finally, instead
+of giving an increment you may specify the \fInumber of nodes\fP desired by appending \fB+\fP to
+the supplied integer argument; the increment is then recalculated from the number of nodes and the domain.
+The resulting increment value depends on whether you have selected a gridline-registered
+or pixel-registered grid; see Appendix B for details.  Note: if \fB\-R\fP\fIgrdfile\fP is used then
+grid spacing has already been initialized; use \fB\-I\fP to override the values.
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+.SH OPTIONS
+.TP
+\fB\-C\fP
+Expect Total Reconstruction Rotations rather than Forward Stage Rotations [Default].
+File format is similar to the stage pole format except that the \fItstart\fP column
+is not present (assumed to be 0 Ma).
+.TP
+\fB\-D\fP
+Modify the sampling interval along flowlines.  Default [0.5] gives approximately 2 points within
+each grid box.  Smaller factors gives higher resolutions at the expense of longer processing time.
+.TP
+\fB\-F\fP
+Force pixel registration [Default is grid registration].
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-N\fP
+Set the upper age to assign seamounts whose crustal age is unknown (i.e. NaN) [no upper age].
+.TP
+\fB\-S\fP
+Normalize the resulting CVA grid to percentages of the CVA maximum.
+.TP
+\fB\-T\fP
+Truncate seamount ages exceeding the upper age set with \fB\-N\fP [no truncation].
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 5 input columns].
+.SH EXAMPLES
+To create a CVA image from the Pacific (x,y,z,r,t) data in the file seamounts.d,
+using the DC85.d Euler poles, run
+.br
+.sp
+\fBhotspotter\fP seamounts.d \fB\-E\fPDC85.d \fB\-G\fPCVA.grd \fB\-R\fP130/260/-66/60 \fB\-I\fP10\fBm\fP \fB\-N\fP145 \fB\-T\fP \fB\-V\fP
+.br
+.sp
+This file can then be plotted with \fBgrdimage\fP.
+.SH COORDINATES
+Data coordinates are assumed to be geodetic and will automatically be converted to geocentric
+before spherical rotations are performed.  We convert back to geodetic coordinates for output.
+Note: If your data already are geocentric, you can avoid the conversion by using --ELLIPSOID=sphere.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grdimage (1),
+.IR grdrotater (1),
+.IR grdspotter (1),
+.IR project (1),
+.IR mapproject (1),
+.IR backtracker (1),
+.IR originator (1)
+.SH REFERENCES
+Wessel, P., 1999, "Hotspotting" tools released, EOS Trans. AGU, 80 (29), p. 319.
+.br

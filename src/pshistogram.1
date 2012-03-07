@@ -1,0 +1,203 @@
+.TH PSHISTOGRAM 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+pshistogram \- Bin data and plot histograms
+.SH SYNOPSIS
+\fBpshistogram\fP \fIfile\fP \fB\-Jx\fP|\fBX\fP\fIparameters\fP \fB\-W\fP\fIbin_width\fP [ \fB\-A\fP ] [ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] 
+[ \fB\-C\fP\fIcptfile\fP ] [ \fB\-E\fP\fIazimuth\fP/\fIelevation\fP ] [ \fB\-F\fP ] [ \fB\-G\fP\fIfill\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-Jz\fP|\fBZ\fP\fIparameters\fP ] 
+[ \fB\-I\fP[\fBo\fP|\fBO\fP] ] [ \fB\-K\fP ] [ \fB\-L\fP\fIpen\fP ] [ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-Q\fP ] 
+[ \fB\-R\fP\fIxmin\fP/\fIxmax\fP/\fIymin\fP/\fIymax\fP[\fBr\fP] ] [ \fB\-S\fP ] [ \fB\-T\fP\fIcol\fP ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ] [ \fB\-V\fP ]  
+[ \fB\-X\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIx-shift\fP[\fBu\fP]] ] [ \fB\-Y\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIy-shift\fP[\fBu\fP]] ] [ \fB\-Z\fP\fItype\fP ] [ \fB\-c\fP\fIcopies\fP ] 
+[ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ]
+.SH DESCRIPTION
+\fBpshistogram\fP reads \fIfile\fP [or standard input] and examines data column \fIcol\fP to
+calculate histogram parameters based on the bin-width provided.  Using these parameters,
+scaling, and optional range parameters it will generate \fIPostScript\fP code that plots a histogram.
+A cumulative histogram may also be specified.  
+.TP
+\fIfile\fP
+ASCII [or binary, see \fB\-b\fP] datafile. If no file is given, \fBpshistogram\fP will read standard input.
+.TP
+\fB\-Jx\fP
+\fIxscale[/yscale]\fP (Linear scale(s) in distance unit/data unit).
+.TP
+\fB\-W\fP
+Sets the bin width used for histogram calculations.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-A\fP
+Plot the histogram horizontally from x = 0 [Default is vertically from y = 0].
+.TP
+\fB\-B\fP
+Sets map boundary annotation and tickmark intervals; see the
+\fBpsbasemap\fP man page for all the details.
+.TP
+\fB\-C\fP
+Give a color palette file.  The mid x-value for each bar is used to look-up the bar color.
+.TP
+\fB\-E\fP
+Sets the viewpoint's azimuth and elevation (for perspective view) [180/90].\"'
+.TP
+\fB\-F\fP
+Center bin on each value. [Default is left edge].
+.TP
+\fB\-G\fP
+Select filling of bars [Default is no fill].
+(See SPECIFYING FILL below).
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-I\fP
+Inquire about min/max x and y after binning.  No plotting is done.  Append \fBo\fP
+to output an ASCII table of the resulting x,y data to stdout.  Alternatively, append
+\fBO\fP to output all x,y bin data even when y == 0.
+.TP
+\fB\-K\fP
+More \fIPostScript\fP code will be appended later [Default terminates the plot system].
+.TP
+\fB\-L\fP
+Draw bar outline using the specified pen thickness.  [Default is no outline].
+(See SPECIFYING PENS below).
+.TP
+\fB\-O\fP
+Selects Overlay plot mode [Default initializes a new plot system].
+.TP
+\fB\-P\fP
+Selects Portrait plotting mode [Default is Landscape, see \fBgmtdefaults\fP to change this].
+.TP
+\fB\-Q\fP
+Draw a cumulative histogram.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+If not given, \fBpshistogram\fP will automatically find reasonable values for the region.
+.TP
+\fB\-S\fP
+Draws a stairs-step diagram which does not include the internal bars of the default histogram.
+.TP
+\fB\-T\fP
+Specify which column to use for the histogram data.  First column is 0 [0].
+.TP
+\fB\-U\fP
+Draw Unix System time stamp on plot.
+By adding \fIjust/dx/dy/\fP, the user may specify the justification of the stamp and
+where the stamp should fall on the page relative to lower left corner of the plot.
+For example, BL/0/0 will align the lower left corner of the time stamp with the lower left corner of the plot.
+Optionally, append a \fIlabel\fP, or \fBc\fP (which will plot the command string.).
+The \fBGMT\fP parameters \fBUNIX_TIME\fP, \fBUNIX_TIME_POS\fP, and \fBUNIX_TIME_FORMAT\fP can affect the appearance;
+see the \fBgmtdefaults\fP man page for details.
+The time string will be in the locale set by the environment variable \fBTZ\fP (generally local time).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-X\fP \fB\-Y\fP
+Shift plot origin relative to the current origin by (\fIx-shift,y-shift\fP) and
+optionally append the length unit (\fBc\fP, \fBi\fP, \fBm\fP, \fBp\fP).
+You can prepend \fBa\fP to shift the origin back to the original position after plotting,
+or prepend  \fBr\fP [Default] to reset the current origin to the new location.
+If \fB\-O\fP is used then the default (\fIx-shift,y-shift\fP) is (0,0), otherwise it is
+(r1i, r1i) or (r2.5c, r2.5c).
+Alternatively, give \fBc\fP to align the center coordinate (x or y) of the plot with the center of the page
+based on current page size.
+.TP
+\fB\-Z\fP
+Choose between 6 types of histograms: 0 = counts [Default], 1 = frequency_percent,
+2 = log (1.0 + count), 3 = log (1.0 + frequency_percent),
+4 = log10 (1.0 + count), 5 = log10 (1.0 + frequency_percent).
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 2 input columns].
+.TP
+\fB\-c\fP
+Specifies the number of plot copies. [Default is 1].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SS SPECIFYING PENS
+.TP
+\fIpen\fP
+The attributes of lines and symbol outlines as defined by \fIpen\fP is a comma delimetered list of
+\fIwidth\fP, \fIcolor\fP and \fItexture\fP, each of which is optional.
+\fIwidth\fP can be indicated as a measure (points, centimeters, inches) or as \fBfaint\fP, \fBthin\fP[\fBner\fP|\fBnest\fP],
+\fBthick\fP[\fBer\fP|\fBest\fP], \fBfat\fP[\fBter\fP|\fBtest\fP], or \fBobese\fP.
+\fIcolor\fP specifies a gray shade or color (see SPECIFYING COLOR below).
+\fItexture\fP is a combination of dashes `-' and dots `.'.
+.SS SPECIFYING FILL
+.TP
+\fIfill\fP
+The attribute \fIfill\fP specifies the solid shade or solid \fIcolor\fP
+(see SPECIFYING COLOR below) or the pattern used for filling polygons.
+Patterns are specified as \fBp\fP\fIdpi/pattern\fP, where \fIpattern\fP gives
+the number of the built-in pattern (1-90) \fIor\fP the name of a Sun 1-, 8-,
+or 24-bit raster file. The \fIdpi\fP sets the resolution of the image. For
+1-bit rasters: use \fBP\fP\fIdpi/pattern\fP for inverse video, or append
+\fB:F\fP\fIcolor\fP[\fBB\fP[\fIcolor\fP]] to specify fore- and background
+colors (use \fIcolor\fP = - for transparency).
+See \fBGMT\fP Cookbook & Technical Reference Appendix E for information
+on individual patterns.
+.SS SPECIFYING COLOR
+.TP
+\fIcolor\fP
+The \fIcolor\fP of lines, areas and patterns can be specified by a valid color name;
+by a gray shade (in the range 0\-255); by a decimal color code (r/g/b, each in range 0\-255; h-s-v, ranges
+0\-360, 0\-1, 0\-1; or c/m/y/k, each in range 0\-1); or by a hexadecimal color code (#rrggbb, as used in HTML).
+See the \fBgmtcolors\fP manpage for more information and a full list of color names.
+.SH EXAMPLES
+To draw a histogram of the data v3206.t containing seafloor depths, using a 250 meter
+bin width, center bars, and draw bar outline, use:
+.br
+.sp
+\fBpshistogram\fP v3206.t \fB\-JX\fPh \fB\-W\fP250 \fB\-F\fP \fB\-L\fPP0.5\fBp\fP \fB\-V\fP > plot.ps
+.br
+.sp
+If you know the distribution of your data, you may explicitly specify range and scales.  E.g.,
+to plot a histogram of the y-values (2nd column) in the file errors.xy using a 1 meter
+bin width, plot from -10 to +10 meters @ 0.75 cm/m, annotate every 2 m and 100 counts,
+and use black bars, run:
+.br
+.sp
+\fBpshistogram\fP errors.xy \fB\-W\fP1 \fB\-R\fP-10/10/0/0 \fB\-Jx\fP0.75\fBc\fP/0.01\fBc\fP
+\fB\-B\fP2:Error:/100:Counts: \fB\-G\fPblack \fB\-T\fP1 \fB\-V\fP > plot.ps
+.br
+.sp
+Since no y-range was specified, pshistogram will calculate ymax in even increments of 100.
+.SH BUGS
+The \fB\-W\fP option does not yet work properly with time series data (e.g., \fB\-f\fP0T).  Thus, such
+variable intervals as months and years are not calculated.  Instead, specify your interval in the
+same units as the current setting of \fBTIME_UNIT\fP.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR gmtcolors (5),
+.IR psbasemap (1),
+.IR psrose (1),
+.IR psxy (1)

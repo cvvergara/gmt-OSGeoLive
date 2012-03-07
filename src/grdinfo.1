@@ -1,0 +1,90 @@
+.TH GRDINFO 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+grdinfo \- Get information about the contents of a 2-D grid file
+.SH SYNOPSIS
+\fBgrdinfo\fP \fIgrdfiles\fP [ \fB\-C\fP ] [ \fB\-F\fP ] 
+[ \fB\-I\fP[\fIdx\fP[/\fIdy\fP]] ][ \fB\-L\fP[\fB0\fP|\fB1\fP|\fP2\fP] ] 
+[ \fB\-M\fP ] [ \fB\-T\fP\fIdz\fP ] [ \fB\-V\fP ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ]
+.SH DESCRIPTION
+\fBgrdinfo\fP reads a 2-D binary grid file and reports various statistics for
+the (\fIx,y,z\fP) data in the grid file(s).  The output information contains the
+minimum/maximum values for \fIx\fP, \fIy\fP, and \fIz\fP, where the min/max of \fIz\fP occur, the
+\fIx\fP- and \fIy\fP-increments, and the number of \fIx\fP and \fIy\fP nodes, and [optionally] the
+mean, standard deviation, and/or the median, L1 scale of \fIz\fP, and number of
+nodes set to NaN.
+.TP
+\fIgrdfile\fP
+The name of one or several 2-D grid files.
+(See GRID FILE FORMATS below.)
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-C\fP
+Formats the report using tab-separated fields on a single line.  The output is
+\fIw e s n z0 z1 dx dy nx ny \fP[ \fIx0 y0 x1 y1\fP ] [ \fImed scale\fP ] [\fI mean std rms\fP] [\fIn_nan\fP].
+The data in brackets are output only if the corresponding options
+\fB\-M\fP, \fB\-L1\fP, \fB\-L2\fP, and \fB\-M\fP are used, respectively.
+If the \fB\-I\fP option is used, the output format is instead
+\fINF w e s n z0 z1\fP, where \fINF\fP is the total number of grids read and \fIw e s n\fP are rounded off (see \fB\-I\fP).
+.TP
+\fB\-F\fP
+Report grid domain and x/y-increments in world mapping format [Default is generic].
+Does not apply to the \fB\-C\fP option.
+.TP
+\fB\-I\fP
+Report the min/max of the region to the nearest multiple of \fIdx\fP and \fIdy\fP,
+and output this in the form \fB\-R\fP\fIw/e/s/n\fP (unless \fB\-C\fP is set).
+To report the actual grid region, select \fB\-I-\fP.  If no argument is given
+then we report the grid increment in the form \fB\-I\fP\fIxinc/yinc\fP.
+.TP
+\fB\-L0\fP
+Report range of z after actually scanning the data, not just reporting what the header says.
+.TP
+\fB\-L1\fP
+Report median and L1 scale of z (L1 scale = 1.4826 * Median Absolute Deviation (MAD)).
+.TP
+\fB\-L2\fP
+Report mean, standard deviation, and rms of z.
+.TP
+\fB\-M\fP
+Find and report the location of min/max z-values, and count and report the number of nodes
+set to NaN, if any.
+.TP
+\fB\-T\fP
+Determine min and max z-value, round off to multiples of \fIdz\fP, and report as the text string
+\fB\-T\fP\fIzmin/zmax/dz\fP for use by \fBmakecpt\fP.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH GRID FILE FORMATS
+\fBGMT\fP is able to recognize many of the commonly used grid file formats, as well as the precision, scale and offset of the values
+contained in the grid file. When \fBGMT\fP needs a little help with that, you can add the suffix \fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]],
+where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When reading a netCDF file that contains multiple grids, \fBGMT\fP will read, by default, the first 2-dimensional grid that can find in that
+file. To coax \fBGMT\fP into reading another multi-dimensional variable in the grid file, append \fB?\fP\fIvarname\fP to the file name, where
+\fIvarname\fP is the name of the variable. Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+See \fBgrdreformat\fP(1) and Section 4.18 of the GMT Technical Reference and Cookbook for more information,
+particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
+.SH EXAMPLES
+To obtain all the information about the data set in file hawaii_topo.grd:
+.br
+.sp
+\fBgrdinfo\fP \fB\-L1\fP \fB\-L2\fP \fB\-M\fP hawaii_topo.grd
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grd2cpt (1),
+.IR grd2xyz (1),
+.IR grdedit (1)

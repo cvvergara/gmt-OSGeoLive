@@ -1,0 +1,155 @@
+.TH GRDFFT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+grdfft \- Perform mathematical operations on grid files in the wavenumber (or frequency) domain 
+.SH SYNOPSIS
+\fBgrdfft\fP \fIin_grdfile\fP \fB\-G\fP\fIout_grdfile\fP [ \fB\-A\fP\fIazimuth\fP ] 
+[ \fB\-C\fP\fIzlevel\fP ] [ \fB\-D\fP[\fIscale\fP\fB|g\fP] ] [ \fB\-E\fP[\fBx|y\fP][\fBw\fP] ] 
+[ \fB\-F\fP[\fBx\fP|\fBy\fP]\fIparams\fP ] [ \fB\-I\fP[\fIscale\fP\fB|g\fP] ] [ \fB\-L\fP ] [ \fB\-M\fP ] 
+[ \fB\-N\fP\fIstuff\fP ] [ \fB\-S\fP\fIscale\fP ] [ \fB\-T\fP\fIte/rl/rm/rw/ri\fP ] [ \fB\-V\fP ]
+.SH DESCRIPTION
+\fBgrdfft\fP will take the 2-D forward Fast Fourier Transform and perform one or more mathematical
+operations in the frequency domain before transforming back to the space domain.  An option
+is provided to scale the data before writing the new values to an output file.  The
+horizontal dimensions of the grid are assumed to be in meters.  Geographical grids
+may be used by specifying the \fB\-M\fP option that scales degrees to meters.  If you
+have grids with dimensions in km, you could change this to meters using \fBgrdedit\fP
+or scale the output with \fBgrdmath\fP.
+.TP
+\fIin_grdfile\fP
+2-D binary grid file to be operated on.
+(See GRID FILE FORMATS below).
+.TP
+\fB\-G\fP
+Specify the name of the output grid file.
+(See GRID FILE FORMATS below).
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-A\fP
+Take the directional derivative in the \fIazimuth\fP direction measured in degrees CW from north.
+.TP
+\fB\-C\fP
+Upward (for \fIzlevel\fP > 0) or downward (for \fIzlevel\fP < 0) continue the field \fIzlevel\fP meters.
+.TP
+\fB\-D\fP
+Differentiate the field, i.e., take d(field)/dz.  This is equivalent to multiplying by kr in the frequency
+domain (kr is radial wave number).  Append a scale to multiply by (kr * \fIscale\fP) instead.  Alternatively,
+append \fBg\fP to indicate that your data are geoid heights in meters and output should be gravity anomalies in mGal. 
+[Default is no scale].
+.TP
+\fB\-E\fP
+Estimate power spectrum in the radial direction.  Place \fBx\fP or \fBy\fP immediately after \fB\-E\fP to
+compute the spectrum in the x or y direction instead.  No grid file is created; f (i.e., frequency or wave number),
+power[f], and 1 standard deviation in power[f] are written to stdout.
+Append \fBw\fP to write wavelength instead of frequency.
+.TP
+\fB\-F\fP
+Filter the data.  Place \fBx\fP or \fBy\fP immediately after \fB\-F\fP to filter \fIx\fP or \fIy\fP direction only; default is isotropic.
+Choose between a cosine-tapered band-pass, a Gaussian band-pass filter, or a Butterworth band-pass filter.
+Cosine-taper: Specify four wavelengths \fIlc\fP/\fIlp\fP/\fIhp\fP/\fIhc\fP in correct units (see \fB\-M\fP) to design a bandpass filter: wavelengths greater than 
+\fIlc\fP or less than \fIhc\fP will be cut, wavelengths greater than \fIlp\fP and less than \fIhp\fP will be 
+passed, and wavelengths in between will be cosine-tapered.  E.g., \fB\-F\fP1000000/250000/50000/10000 \fB\-M\fP 
+will bandpass, cutting wavelengths > 1000 km and < 10 km, passing wavelengths between 250 km and 50 km.  To make 
+a highpass or lowpass filter, give hyphens (-) for \fIhp\fP/\fIhc\fP or \fIlc\fP/\fIlp\fP.  E.g., \fB\-Fx\fP-/-/50/10 
+will lowpass \fIx\fP, passing wavelengths > 50 and rejecting wavelengths < 10.  \fB\-Fy\fP1000/250/-/- will highpass \fIy\fP, 
+passing wavelengths < 250 and rejecting wavelengths > 1000.  Gaussian band-pass: Append \fIlo\fP/\fIhi\fP, the two wavelengths in correct units
+(see \fB\-M\fP) to design a bandpass filter.  At the given wavelengths the Gaussian filter weights will be 0.5. To make
+a highpass or lowpass filter, give a hyphen (-) for the \fIhi\fP or \fIlo\fP wavelength, respectively.  E.g., \fB\-F\fP-/30
+will lowpass the data using a Gaussian filter with half-weight at 30, while \fB\-F\fP400/- will highpass the data.
+Butterworth band-pass: Append \fIlo\fP/\fIhi\fP/\fIorder\fP, the two wavelengths in correct units
+(see \fB\-M\fP) and the filter order (an integer) to design a bandpass filter.  At the given wavelengths the Butterworth filter weights will be 0.5. To make
+a highpass or lowpass filter, give a hyphen (-) for the \fIhi\fP or \fIlo\fP wavelength, respectively.  E.g., \fB\-F\fP-/30/2
+will lowpass the data using a 2nd-order Butterworth filter, with half-weight at 30, while \fB\-F\fP400/-/2 will highpass the data.
+.TP
+\fB\-I\fP
+Integrate the field, i.e., compute integral_over_z (field * dz).  This is equivalent to divide by kr
+in the frequency domain (kr is radial wave number).  Append a scale to divide by (kr * \fIscale\fP) instead.
+Alternatively, append \fBg\fP to indicate that your data set is gravity anomalies in mGal and output should be geoid
+heights in meters.  [Default is no scale].
+.TP
+\fB\-L\fP
+Leave trend alone.  By default, a linear trend will be removed prior to the transform.
+.TP
+\fB\-M\fP
+Map units.  Choose this option if your grid file is a geographical grid and you want to convert
+degrees into meters.  If the data are close to either pole, you should consider
+projecting the grid file onto a rectangular coordinate system using \fBgrdproject\fP.
+.TP
+\fB\-N\fP
+Choose or inquire about suitable grid dimensions for FFT.
+\fB\-Nf\fP will force the FFT to use the dimensions of the data.
+\fB\-Nq\fP will inQuire about more suitable dimensions.
+\fB\-N\fP\fInx/ny\fP will do FFT on array size \fInx/ny\fP (Must be >= grid file size).
+Default chooses dimensions >= data which optimize speed, accuracy of FFT.
+If FFT dimensions > grid file dimensions, data are extended and tapered to zero.
+.TP
+\fB\-S\fP
+Multiply each element by \fIscale\fP in the space domain (after the frequency domain operations).
+[Default is 1.0].
+.TP
+\fB\-T\fP
+Compute the isostatic compensation from the topography load (input grid file) on an elastic plate
+of thickness \fIte\fP.  Also append densities for load, mantle, water, and infill in SI units.
+If \fIte\fP == 0 then the Airy response is returned.  \fB\-T\fP implicitly sets \fB\-L\fP.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.SH GRID FILE FORMATS
+By default \fBGMT\fP writes out grid as single precision floats in a COARDS-complaint netCDF file format.
+However, \fBGMT\fP is able to produce grid files in many other commonly used grid file formats and also facilitates so called "packing" of grids,
+writing out floating point data as 2- or 4-byte integers. To specify the precision, scale and offset, the user should add the suffix
+\fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]], where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+When reading grids, the format is generally automatically recognized. If not, the same suffix can be added to input grid file names.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When reading a netCDF file that contains multiple grids, \fBGMT\fP will read, by default, the first 2-dimensional grid that can find in that
+file. To coax \fBGMT\fP into reading another multi-dimensional variable in the grid file, append \fB?\fP\fIvarname\fP to the file name, where
+\fIvarname\fP is the name of the variable. Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+The \fB?\fP\fIvarname\fP suffix can also be used for output grids to specify a variable name different from the default: "z".
+See \fBgrdreformat\fP(1) and Section 4.18 of the GMT Technical Reference and Cookbook for more information,
+particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
+.SH EXAMPLES
+To upward continue the sea-level magnetic anomalies in the file mag_0.grd to a level 800 m above sealevel:
+.br
+.sp
+\fBgrdfft\fP mag_0.grd \fB\-C\fP800 \fB\-V\fP \fB\-G\fPmag_800.grd 
+.br
+.sp
+To transform geoid heights in m (geoid.grd) on a geographical grid to free-air gravity anomalies in mGal:
+.br
+.sp
+\fBgrdfft\fP geoid.grd \fB\-Dg\fP \fB\-V\fP \fB\-G\fPgrav.grd
+.br
+.sp
+To transform gravity anomalies in mGal (faa.grd) to deflections of the vertical (in micro-radians) in the
+038 direction, we must first integrate gravity to get geoid, then take the directional derivative, and
+finally scale radians to micro-radians:
+.br
+.sp
+\fBgrdfft\fP faa.grd \fB\-Ig\fP38 \fB\-S\fP1e6 \fB\-V\fP \fB\-G\fPdefl_38.grd
+.br
+.sp
+Second vertical derivatives of gravity anomalies are related to the curvature of the field.  We can
+compute these as mGal/m^2 by differentiating twice:
+.br
+.sp
+\fBgrdfft\fP gravity.grd \fB\-D\fP \fB\-D\fP \fB\-V\fP \fB\-G\fPgrav_2nd_derivative.grd
+.br
+.sp
+The first order gravity anomaly (in mGal) due to the compensating surface caused 
+by the topography load topo.grd (in m) on a 20 km thick elastic plate, assumed to 
+be 4 km beneath the observation level can be computed as
+.br
+.sp
+\fBgrdfft\fP topo.grd \fB\-T\fP20000/2800/3330/1030/2300 \fB\-S\fP0.022 \fB\-C\fP4000 \fB\-G\fPcomp_faa.grd
+.br
+.sp
+where 0.022 is the scale needed for the first term in Parker's expansion for\"'
+computing gravity from topography (= 2 * PI * G * (rhom - rhol)).
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grdedit (1),
+.IR grdmath (1),
+.IR grdproject (1)

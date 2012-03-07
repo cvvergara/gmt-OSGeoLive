@@ -1,0 +1,336 @@
+.TH X2SYS_INIT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+x2sys_init \- Initialize x2sys data base for track data files
+.SH SYNOPSIS
+\fBx2sys_init\fP \fITAG\fP \fB\-D\fP\fIdeffile\fP [ \fB\-Cc\fP|\fBf\fP|\fBg\fP|\fBe\fP ] [ \fB\-E\fP\fIsuffix\fP ] 
+[ \fB\-F\fP ] [ \fB\-Gd\fP|\fBg\fP ] [ \fB\-I\fP\fIdx\fP[/\fIdy\fP] ] [ \fB\-Nd\fP|\fBs\fP\fIunit\fP ] 
+[ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-V\fP ] [ \fB\-Wt\fP|\fBd\fP\fIgap\fP ] [ \fB\-m\fP[\fBi\fP|\fBo\fP][\fIflag\fP] ]
+.SH DESCRIPTION
+\fBx2sys_init\fP is the starting point for anyone wishing to use x2sys; it initializes
+a set of data bases that are particular to one kind of track data.  These data,
+their associated data bases, and key parameters are given a short-hand
+notation called an x2sys TAG.   The TAG keeps track of settings such as file format,
+whether the data are geographic or not, and the binning resolution for track indices.
+Running \fBx2sys_init\fP is a prerequisite to running any of the other x2sys programs,
+such as \fBx2sys_binlist\fP, which will
+create a crude representation of where each data track go within the domain
+and which observations are available; this information serves as input to
+\fBx2sys_put\fP which updates the track data base. Then, \fBx2sys_get\fP can
+be used to find which tracks and data are available inside a given region.
+With that list of tracks you can use \fBx2sys_cross\fP to calculate track
+crossovers, use \fBx2sys_report\fP to report crossover statistics or
+\fBx2sys_list\fP to pull out selected crossover information
+that \fBx2sys_solve\fP can use to determine track-specific systematic corrections.  These
+corrections may be used with \fBx2sys_datalist\fP to extract corrected
+data values for use in subsequent work.
+.TP
+\fITAG\fP
+The unique name of this data type x2sys TAG.
+.TP
+\fB\-C\fP
+Select procedure for along-track distance calculation when needed by other programs:
+.br
+\fBc\fP Cartesian distances [Default, unless \fB\-G\fP is set].
+.br
+\fBf\fP Flat Earth distances.
+.br
+\fBg\fP Great circle distances [Default if \fB\-G\fP is set].
+.br
+\fBe\fP Geodesic distances on current \fBGMT\fP ellipsoid.
+.TP
+\fB\-D\fP
+Definition file prefix for this data set [See DEFINITION FILES below for more information].
+Specify full path if the file is not in the current directory.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-E\fP
+Specifies the file extension (suffix) for these data files.  If not given we use the
+definition file prefix as the suffix (see \fB\-D\fP).
+.TP
+\fB\-F\fP
+Force creating new files if old ones are present [Default will abort if old TAG files are found].
+.TP
+\fB\-G\fP
+Selects geographical coordinates.  Append \fBd\fP for discontinuity at the
+Dateline (makes longitude go from -180 to + 180) or \fBg\fP for discontinuity
+at Greenwich (makes longitude go from 0 to 360 [Default]).  If not given we
+assume the data are Cartesian.
+.TP
+\fB\-I\fP
+\fIx_inc\fP [and optionally \fIy_inc\fP] is the grid spacing. Append \fBm\fP to
+indicate minutes or \fBc\fP to indicate seconds for geographic data.  These
+spacings refer to the binning used in the track bin-index data base.
+.TP
+\fB\-m\fP
+Multiple segment file(s).  Segments are separated by a special record.
+For ASCII files the first character must be \fIflag\fP [Default is '>'].
+For binary files all fields must be NaN and \fB\-b\fP must
+set the number of output columns explicitly.  By default the \fB\-m\fP
+setting applies to both input and output.  Use \fB\-mi\fP and \fB\-mo\fP
+to give separate settings to input and output.
+.TP
+\fB\-N\fP
+Sets the units used for distance and speed when requested by other programs.
+Append \fBd\fP for distance or \fBs\fP for speed, then give the desired \fIunit\fP as
+\fBc\fP (Cartesian userdist or userdist/usertime), \fBe\fP (meter or m/s), \fBk\fP (km or km/hr), \fBm\fP (miles or miles/hr), or
+\fBn\fP (nautical miles or knots).  [Default is \fB\-Ndk\fP \fB\-Nse\fP (km and m/s) if \fB\-G\fP is set
+and \fB\-Ndc\fP and \fB\-Nsc\fP otherwise (Cartesian units)].
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For Cartesian data just give \fIxin/xmax/ymin/ymax\fP.  This sets the complete domain
+for the relevant track data set.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Give \fBt\fP or \fBd\fP and append the corresponding
+maximum time gap (in user units; this is typically seconds [Infinity]), or distance
+(for units, see \fB\-N\fP) gap [Infinity]) allowed between
+the two data points immediately on either side of a crossover.  If these limits are
+exceeded then a data gap is assumed and no COE will be determined.
+.SH DEFINITION FILES
+These *.def files contain information about the data file format and
+have two sections: (1) header information and (2) column information.  All
+header information starts with the character # in the first column, immediately
+followed by an upper-case directive.  If the directive takes an argument it is
+separated by white-space.  You may append a trailing # comments.
+Five directives are recognized:
+.br
+.sp
+\fBASCII\fP states that the data files are in ASCII format.
+.br
+\fBBINARY\fP states that the data files are native binary files.
+.br
+\fBNETCDF\fP states that the data files are COARDS-compliant 1-D netCDF files.
+.br
+\fBSKIP\fP takes an integer argument which is either the number of lines to
+skip (when reading ASCII files) or the number of bytes to skip (when reading
+native binary files). Not used with netCDF files.
+.br
+\fBGEO\fP indicates that these files are geographic data sets, with periodicities in
+the \fIx\fP-coordinate (longitudes).  Alternatively, use \fB\-G\fP.
+.br
+\fBMULTISEG\fP means each track consists of multiple segments separated
+by a \fBGMT\fP multisegment header (alternatively, use \fB\-m\fP when defining
+the system TAG). Not used with netCDF files.
+.br
+.sp
+The column information consists of one line per column in the order the
+columns appear in the data file.  For each column you must provide  seven
+attributes:
+.sp
+.br
+\fIname type NaN NaN-proxy scale offset oformat\fP
+.br
+.sp
+\fIname\fP is the name of the column variable.  It is expected that you will use
+the special names \fIlon\fP (or \fIx\fP if Cartesian) and \fIlat\fP (or \fIy\fP)
+for the two required coordinate columns, and \fItime\fP when optional time data
+are present.
+.br
+\fItype\fP is always \fBa\fP for ASCII representations of numbers, whereas for
+binary files you may choose among
+\fBc\fP for signed 1-byte character (-127,+128), \fBu\fP for unsigned
+byte (0-255), \fBh\fP for signed 2-byte integers (-32768,+32767),
+\fBi\fP for  signed 4-byte integers (-2,147,483,648,+2,147,483,647),
+\fBf\fP for 4-byte floating points and \fBd\fP for 8-byte double
+precision floating points.  For netCDF, simply use \fBd\fP as netCDF
+will automatically handle type-conversions during reading.
+.br
+\fINaN\fP is Y if certain values (e.g, -9999) are to be replaced by NAN, and N otherwise.
+.br
+\fINaN-proxy\fP is that special value (e.g., -9999).
+.br
+\fIscale\fP is used to multiply the data after reading.
+.br
+\fIoffset\fP is used to add to the scaled data.
+.br
+\fIoformat\fP is a C-style format string used to print values from this column.
+.br
+.sp
+If you give - as the \fIoformat\fP then \fBGMT\fP's formatting machinery will be used\"'
+instead (i.e., \fBD_FORMAT\fP, \fBPLOT_DEGREE_FORMAT\fP, \fBPLOT_DATE_FORMAT\fP, \fBPLOT_CLOCK_FORMAT\fP).
+Some file formats already have definition files premade.  These include
+mgd77 (for plain ASCII MGD77 data files), mgd77+ (for enhanced MGD77+
+netCDF files), gmt (for old mgg supplement binary files), xy (for plain ASCII
+x, y tables), xyz (same, with one z-column), geo (for plain ASCII longitude,
+latitude files), and geoz (same, with one z-column).
+.SH EXAMPLES
+If you have a large set of track data files you can organize them using the
+x2sys tools.  Here we will outline the steps.  Let us assume that your track
+data file format consist of 2 header records with text information followed
+by any number of identically formatted data records with 6 columns (lat,
+lon, time, obs1, obs2, obs3) and that files are called *.trk. We will call
+this the "line" format.  First, we create the line.def file:
+.br
+.sp
+\fB\fP# Define file for the line format
+.br
+\fB\fP#ASCII		# File is ASCII
+.br
+\fB\fP#SKIP 2		# Skip 2 header records
+.br
+\fB\fP#GEO		# Data are geographic
+.br
+\fB\fP#name	type 	NaN	NaN-proxy	scale offset oformat
+.br
+lat	a	N	0	1	0	%9.5f
+.br
+lon	a	N	0	1	0	%10.5f
+.br
+time	a	N	0	1	0	%7.1f
+.br
+obs1	a	N	0	1	0	%7.2f
+.br
+obs2	a	N	0	1	0	%7.2f
+.br
+obs3	a	N	0	1	0	%7.2f
+.br
+.sp
+.br
+Next we create the TAG and the TAG directory with the databases for these line track files.
+Assuming these contain geographic data and that we want to keep track of the
+data distribution at a 1 x 1 degree resolution, with distances in km calculated
+along geodesics and with speeds given in knots, we may run
+.br
+.sp
+\fBx2sys_init\fP LINE \fB\-V\fP \fB\-G\fP \fB\-D\fPline \fB\-Rg\fP \fB\-Ce\fP \fB\-Ndk\fP \fB\-NsN\fP \fB\-I\fP1/1 \fB\-E\fPtrk
+.br
+.sp
+where we have selected LINE to be our x2sys tag.  When x2sys tools try to read your
+line data files they will first look in the current directory and second look
+in the file \fITAG\fP_paths.txt for a list of additional directories to examine.
+Therefore, create such a file (here LINE_paths.txt) and stick the full paths to
+your data directories there.  All TAG-related files (definition files, tag files,
+and track data bases created) will be expected to be in the directory pointed to
+by \fB$X2SYS_HOME\fP/\fITAG\fP (in our case \fB$X2SYS_HOME\fP/LINE).  Note that
+the argument to \fB\-D\fP must contain the full path if the *.def file is not in
+the current directory.  \fBx2sys_init\fP will copy this file to the \fB$X2SYS_HOME\fP/\fITAG\fP
+directory where all other x2sys tools will expect to find it.
+.br
+.TP
+.B Create tbf file(s):
+Once the (empty) TAG databases have been initialized we go through a
+two-step process to populate them.  First we run \fBx2sys_binlist\fP on
+all our track files to create one (or more) multi-segment track bin-index
+files (tbf).  These contain information on which 1 x 1 degree bins (or any
+other blocksize; see \fB\-I\fP) each
+track has visited and which observations (in your case obs1, obs2, obs3)
+were actually observed (not all tracks may have all three kinds of
+observations everywhere).  For instance, if your tracks are listed in
+the file tracks.lis we may run this command:
+.br
+.sp
+\fBx2sys_binlist\fP \fB\-V\fP \fB\-T\fPLINE :tracks.lis > tracks.tbf
+.TP
+.B Update index data base:
+Next, the track bin-index files are fed to \fBx2sys_put\fP
+which will insert the information into the TAG databases:
+.br
+.sp
+\fBx2sys_put\fP \fB\-V\fP \fB\-T\fPLINE tracks.tbf
+.TP
+.B Search for data:
+You may now use \fBx2sys_get\fP to find all the tracks within a certain
+sub-region, and optionally limit the search to those tracks that have
+a particular combination of observables.  E.g., to find all the tracks
+which has both obs1 and obs3 inside the specified region, run
+.br
+.sp
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPLINE \fB\-R\fP20/40/-40/-20 \fB\-F\fPobs1,obs3 > tracks.tbf
+.TP
+.B MGD77[+] or GMT:
+Definition files already exist for MGD77 files (both standard ASCII and
+enhanced netCDF-based MGD77+ files) and the old *.gmt files manipulated by the
+mgg supplements; for these data sets the \fB\-C\fP and \fB\-N\fP will default to
+great circle distance calculation in km and speed in m/s.  There are also
+definition files for plain x,y[,z] and lon,lat[,z] tracks.
+To initiate new track databases to be used with MGD77 data from NGDC, try
+.br
+.sp
+\fBx2sys_init\fP MGD77 \fB\-V\fP \fB\-D\fPmgd77 \fB\-E\fPmgd77 \fB\-Rd\fP \fB\-Gd\fP \fB\-Nsn\fP \fB\-I\fP1/1 \fB\-Wt\fP900  \fB\-Wd\fP5
+.br
+.sp
+where we have chosen a 15 minute (900 sec) or 5 km threshold to indicate a data gap
+and selected knots as the speed; the other steps are similar.
+.TP
+.B Binary files:
+Let us pretend that your line files actually are binary files with a
+128-byte header structure (to be skipped) followed by the data records
+and where \fIlon\fP, \fIlat\fP, \fItime\fP are double precision numbers while the three
+observations are 2-byte integers which must be multiplied by 0.1.
+Finally, the first two observations may be -32768 which means there is
+no data available.
+All that is needed is a different line.def file:
+.br
+.sp
+\fB\fP# Define file for the binary line format
+.br
+\fB\fP#BINARY	# File is now binary
+.br
+\fB\fP#SKIP 128	# Skip 128 bytes
+.br
+\fB\fP#GEO		# Data are geographic
+.br
+\fB\fP#name	type	 NaN?	NaN-proxy	scale offset oformat
+.br
+lon	d	N	0	1	0	%10.5f
+.br
+lat	d	N	0	1	0	%9.5f
+.br
+time	d	N	0	1	0	%7.1f
+.br
+obs1	h	Y	-32768	0.1	0	%6.1f
+.br
+obs2	h	Y	-32768	0.1	0	%6.1f
+.br
+obs3	h	N	0	0.1	0	%6.1f
+.br
+.sp
+The rest of the steps are identical.  
+.TP
+.B COARDS 1-D netCDF files:
+Finally, suppose that your line files actually are netCDF files that
+conform to the COARDS convention, with data columns named
+\fIlon\fP, \fIlat\fP, \fItime\fP, \fIobs1\fP, \fIobs2\fP, and \fIobs3\fP.
+All that is needed is a different line.def file:
+.br
+.sp
+\fB\fP# Define file for the netCDF COARDS line format
+.br
+\fB\fP#NETCDF	# File is now netCDF
+.br
+\fB\fP#GEO		# Data are geographic
+.br
+\fB\fP#name	type	 NaN?	NaN-proxy	scale offset oformat
+.br
+lon	d	N	0	1	0	%10.5f
+.br
+lat	d	N	0	1	0	%9.5f
+.br
+time	d	N	0	1	0	%7.1f
+.br
+obs1	d	N	0	1	0	%6.1f
+.br
+obs2	d	N	0	1	0	%6.1f
+.br
+obs3	d	N	0	1	0	%6.1f
+.br
+.sp
+Note we use no scaling or NAN proxies since those issues are usually
+handled internally in the netCDF format description.
+.SH "SEE ALSO"
+.IR x2sys_binlist (1),
+.IR x2sys_datalist (1),
+.IR x2sys_get (1),
+.IR x2sys_list (1),
+.IR x2sys_put (1),
+.IR x2sys_report (1),
+.IR x2sys_solve (1)

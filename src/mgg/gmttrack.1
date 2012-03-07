@@ -1,0 +1,209 @@
+.TH GMTTRACK 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+gmttrack \- A shiptrack plotting program
+.SH SYNOPSIS
+\fBgmttrack\fP \fIleg-ids\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] \fB\-J\fP\fIparameters\fP 
+[ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] [ \fB\-M\fP\fItrackticks\fP ] [ \fB\-W\fP\fIpen\fP[\fIred/green/blue\fP][\fBOA\fP] ] 
+[ \fB\-A\fP[\fIsize\fP] ] [ \fB\-K\fP ] [ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ] [ \fB\-V\fP ] 
+[ \fB\-X\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIx-shift\fP[\fBu\fP]] ] [ \fB\-Y\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIy-shift\fP[\fBu\fP]] ] [ \fB\-c\fP\fIcopies\fP ]
+.SH DESCRIPTION
+\fBgmttrack\fP reads gmt cruises and creates \fIPostScript\fP code that will plot one or more ship tracks on a
+map using the specified projection.  The \fIPostScript\fP code is written to standard output.
+.TP
+\fIleg-ids\fP
+Can be one or more gmtleg-names, like c2104 v3206 etc.
+.TP
+\fB\-J\fP
+Selects the map projection. Scale is UNIT/degree, 1:xxxxx, or width in UNIT (upper case modifier).
+UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP setting in \.gmtdefaults4, but this can be
+overridden on the command line by appending \fBc\fP, \fBi\fP, or \fBm\fP to the scale/width value.
+When central meridian is optional, default is center of longitude range on \fB\-R\fP option.
+Default standard parallel is the equator.
+For map height, max dimension, or min dimension, append \fBh\fP, \fB+\fP, or \fB-\fP to the width,
+respectively.
+.br
+More details can be found in the \fBpsbasemap\fP man pages.
+.br
+.sp
+\fBCYLINDRICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jc\fP\fIlon0/lat0/scale\fP (Cassini)
+.br
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Stereographic)
+.br
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP (Miller)
+.br
+\fB\-Jm\fP[\fIlon0\fP/[\fIlat0/\fP]]\fIscale\fP (Mercator)
+.br
+\fB\-Jm\fP\fIlon0/lat0/scale\fP (Mercator - Give meridian and standard parallel)
+.br
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP (Oblique Mercator - point and azimuth)
+.br
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP (Oblique Mercator - two points)
+.br
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP (Oblique Mercator - point and pole)
+.br
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equidistant)
+.br
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP (TM - Transverse Mercator)
+.br
+\fB\-Ju\fP\fIzone/scale\fP (UTM - Universal Transverse Mercator)
+.br
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equal-Area) 
+.br
+.sp
+\fBCONIC PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP (Albers)
+.br
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP (Conic Equidistant)
+.br
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP (Lambert Conic Conformal)
+.br
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP ((American) Polyconic)
+.br
+.sp
+\fBAZIMUTHAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Lambert Azimuthal Equal-Area)
+.br
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Azimuthal Equidistant)
+.br
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Gnomonic)
+.br
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Orthographic)
+.br
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP (General Perspective).
+.br
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (General Stereographic)
+.br
+.sp
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP (Hammer)
+.br
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP (Sinusoidal)
+.br
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP (Eckert IV)
+.br
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP (Eckert VI)
+.br
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP (Robinson)
+.br
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP (Winkel Tripel)
+.br
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP (Van der Grinten)
+.br
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP (Mollweide)
+.br
+.sp
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+.br
+\fB\-Jx\fP\fIx-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP][\fI/y-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP]] (Linear, log, and power scaling)
+.br
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-B\fP
+Sets map boundary annotation and tickmark intervals; see the
+\fBpsbasemap\fP man page for all the details.
+.TP
+\fB\-A\fP
+Annotate each leg every time it enters the plot. Optional \fIsize\fP is character size in points.
+.TP
+\fB\-Da\fP
+Do not plot data collected before \fIstartdate\fP (mm/dd/yyyy/hh:mm)  [Default is first day].
+.TP
+\fB\-Db\fP
+Do not plot data collected after \fIstopdate\fP (mm/dd/yyyy/hh:mm). [Default is last day].
+.TP
+\fB\-K\fP
+More \fIPostScript\fP code will be appended later [Default terminates the plot system].
+.TP
+\fB\-M\fP
+To put time/distance Marks on the track. E.g. \fBa\fP500\fBka\fP24\fBht\fP6\fBh\fP means (\fBa\fP)nnotate
+every 500 km (\fBk\fP) and 24 \fBh\fP(ours), with (\fBt\fP)ickmarks every 500 km and 6 hours.
+.TP
+\fB\-O\fP
+Selects Overlay plot mode [Default initializes a new plot system].
+.TP
+\fB\-P\fP
+Selects Portrait plotting mode [Default is Landscape, see \fBgmtdefaults\fP to change this].
+.TP
+\fB\-Sa\fP
+Do not plot data that are less than \fIstartdist\fP km along track from port of departure. [Default is 0].
+.TP
+\fB\-Sb\fP
+Do not plot data that are more than \fIstopdist\fP km along track from port of departure. [Default is length of track].
+.TP
+\fB\-U\fP
+Draw Unix System time stamp on plot.
+By adding \fIjust/dx/dy/\fP, the user may specify the justification of the stamp and
+where the stamp should fall on the page relative to lower left corner of the plot.
+For example, BL/0/0 will align the lower left corner of the time stamp with the lower left corner of the plot.
+Optionally, append a \fIlabel\fP, or \fBc\fP (which will plot the command string.).
+The \fBGMT\fP parameters \fBUNIX_TIME\fP, \fBUNIX_TIME_POS\fP, and \fBUNIX_TIME_FORMAT\fP can affect the appearance;
+see the \fBgmtdefaults\fP man page for details.
+The time string will be in the locale set by the environment variable \fBTZ\fP (generally local time).
+.TP
+\fB\-W\fP
+\fIpen\fP is thickness of the trackline. [Default is 1].  Optionally, specify the rgb combination
+to obtain a colored trackline [Default is black].  Append \fBo\fP for d\fBo\fPtted line, \fBa\fP for d\fBa\fPshed. 
+[Default is solid].
+.TP
+\fB\-X\fP \fB\-Y\fP
+Shift plot origin relative to the current origin by (\fIx-shift,y-shift\fP) and
+optionally append the length unit (\fBc\fP, \fBi\fP, \fBm\fP, \fBp\fP).
+You can prepend \fBa\fP to shift the origin back to the original position after plotting,
+or prepend  \fBr\fP [Default] to reset the current origin to the new location.
+If \fB\-O\fP is used then the default (\fIx-shift,y-shift\fP) is (0,0), otherwise it is
+(r1i, r1i) or (r2.5c, r2.5c).
+Alternatively, give \fBc\fP to align the center coordinate (x or y) of the plot with the center of the page
+based on current page size.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-c\fP
+Specifies the number of plot copies. [Default is 1].
+.SH EXAMPLES
+To generate a Mercator plot of the track of cruises C2610 and V1512 in the area 150E to
+154E, 18N to 23N, using a Mercator scale of 1.5inch/degree, label the tracks with 10 points characters, annotate
+the boundaries every degree, and draw gridlines every 30 minutes, and send the plot to the default printer, enter the following command:
+.br
+.sp
+\fBgmttrack\fP c2610 v1512 \fB\-R\fP150/154/18/23 \fB\-Jm\fP1.5 \fB\-B\fP1\fBg\fP30\fBm \-A\fP10 | lpr
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR psbasemap (1)
+.SH REFERENCES
+Wessel, P., and W. H. F. Smith, 2011, The Generic Mapping Tools (GMT) version
+4.5.7 Technical Reference & Cookbook, SOEST/NOAA.
+.br
+Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
+Tools Released, EOS Trans., AGU, 79 (47), p. 579.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, EOS Trans., AGU, 76 (33), p. 329.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, http://www.agu.org/eos_elec/95154e.html, Copyright 1995 by the
+American Geophysical Union.
+.br
+Wessel, P., and W. H. F. Smith, 1991, Free Software Helps Map and Display Data,
+EOS Trans., AGU, 72 (41), p. 441.
+.br

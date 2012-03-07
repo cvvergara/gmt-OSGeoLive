@@ -1,0 +1,104 @@
+.TH IMG2GRD 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+img2grd \- Extract region of img in Mercator or geographic form 
+.SH SYNOPSIS
+\fBimg2grd\fP \fIimgfile\fP \fB\-G\fP\fIgrdfile\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] 
+\fB\-T\fP\fItype\fP  [ \fB\-C\fP ] [ \fB\-D\fP[\fIminlat/maxlat\fP] ] [ \fB\-E\fP ] [ \fB\-L\fP ] 
+[ \fB\-M\fP ] [ \fB\-N\fP\fInavg\fP ] [ \fB\-S\fP\fIscale\fP ] 
+[ \fB\-V\fP ] [ \fB\-W\fP\fImaxlon\fP ] [ \fB\-m\fP\fIminutes\fP ]
+.SH DESCRIPTION
+\fBimg2grd\fP is a front-end to \fBimg2mercgrd\fP which reads an img format file and creates a grid file.
+The \fB\-M\fP option dictates whether or not the Spherical Mercator 
+projection of the img file is preserved.
+.TP
+\fIimgfile\fP
+An img format file such as the marine gravity or seafloor topography fields estimated from 
+satellite altimeter data by Sandwell and Smith.  If the user has set an environment variable 
+\fB$GMT_DATADIR\fP, then \fBimg2mercgrd\fP will try to find \fIimgfile\fP in \fB$GMT_DATADIR\fP; else it 
+will try to open \fIimgfile\fP directly.
+.TP
+\fB\-G\fP
+\fIgrdfile\fP is the name of the output grid file.
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+.TP
+\fB\-T\fP
+\fItype\fP handles the encoding of constraint information.  \fItype\fP = 0 indicates that no 
+such information is encoded in the img file (used for pre-1995 versions of the gravity data) 
+and gets all data.  \fItype\fP > 0 indicates that constraint information is encoded (1995 and 
+later (current) versions of the img files) so that one may produce a grid file as follows: 
+\fB\-T\fP\fI1\fP gets data values at all points, \fB\-T\fP\fI2\fP gets data values at 
+constrained points and NaN at interpolated points; \fB\-T\fP\fI3\fP gets 1 at constrained 
+points and 0 at interpolated points. 
+.SH OPTIONS
+.TP
+\fB\-C\fP
+Set the x and y Mercator coordinates relative to projection center [Default is relative to
+lower left corner of grid].  Requires \fB\-M\fP.
+.TP
+\fB\-D\fP
+Use the extended latitude range -80.738/+80.738.  Alternatively, append \fIminlat/maxlat\fP
+as the latitude extent of the input img file.  [Default is -72.006/72.006].
+.TP
+\fB\-E\fP
+Can be used when \fB\-M\fP is not set to force the final grid to have the exact same region
+as requested with \fB\-R\fP.  By default, the final region is a direct projection of the
+original Mercator region and will typically extend slightly beyond the requested latitude
+range, and furthermore the grid increment in latitude does not match the longitude increment.
+However, the extra resampling introduces small interpolation errors and should only
+be used if the output grid must match the requested region and have x_inc = y_inc.  In
+this case the region set by \fB\-R\fP must be given in multiples of the increment (.e.g,
+\fB\-R\fP0/45/45/72).
+.TP
+\fB\-L\fP
+With no other arguments, list all *.img files found in the directory pointed to by
+\fB$GMT_DATADIR\fP, or the current directory if not defined.  Ignored if other options are
+present on the command line.
+.TP
+\fB\-M\fP
+Output a Spherical Mercator grid [Default is a geographic lon/lat grid].
+.TP
+\fB\-N\fP
+Average the values in the input img pixels into \fInavg\fP by \fInavg\fP squares, and 
+create one output pixel for each such square.  If used with \fB\-T\fP\fI3\fP it will 
+report an average constraint between 0 and 1.  If used with \fB\-T\fP\fI2\fP the output 
+will be average data value or NaN according to whether average constraint is > 0.5.  
+\fInavg\fP must evenly divide into the dimensions of the imgfile in pixels.  
+[Default \fI1\fP does no averaging].
+.TP
+\fB\-S\fP
+Multiply the img file values by \fIscale\fP before storing in grid file.  [Default is 1.0].  
+For recent img files: img topo files are stored in (corrected) meters [\fB\-S\fP1];
+free-air gravity files in mGal*10 [\fB\-S\fP0.1 to get mGal];
+vertical  deflection files in microradians*10 [\fB\-S\fP0.1 to get microradians],
+vertical gravity gradient files in Eotvos*50 [\fB\-S\fP0.02 to get Eotvos, or \fB\-S\fP0.002 to get mGal/km]).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+Particularly recommended here, as it is helpful to see how the coordinates are adjusted.
+.TP
+\fB\-m\fP
+Indicate \fIminutes\fP as the width of an input img pixel in minutes of longitude.  
+[Default is 2.0].
+.TP
+\fB\-W\fP
+Indicate \fImaxlon\fP as the maximum longitude extent of the input img file.  Versions 
+since 1995 have had \fImaxlon\fP = 360.0, while some earlier files had \fImaxlon\fP = 
+390.0.  [Default is 360.0].
+.SH EXAMPLES
+To extract data in the region \fB\-R\fP-40/40/-70/-30 from \fIworld_grav.img.7.2\fP and preserve
+the Mercator gridding:
+.br
+.sp
+\fBimg2grd\fP world_grav.img.7.2 \fB\-G\fPmerc_grav.grd \fB\-R\fP-40/40/-70/-30 \fB\-M\fP \fB\-T\fP1 \fB\-V\fP
+.br
+.sp
+Without the \fB\-M\fP option the same command will yield a geographic grid.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR img2mercgrd (1)

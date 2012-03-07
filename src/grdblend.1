@@ -1,0 +1,131 @@
+.TH GRDBLEND 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+grdblend \- Blend several partially over-lapping grids into one large grid
+.SH SYNOPSIS
+\fBgrdblend\fP \fIblendfile\fP \fB\-G\fP\fIgrdfile\fP \fB\-I\fP\fIxinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP][/\fIyinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP]] \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] 
+[ \fB\-N\fP\fInodata\fP ] [ \fB\-Q\fP ] [ \fB\-Z\fP\fIscale\fP ] 
+[ \fB\-V\fP ] [ \fB\-W\fP ] [ \fB\-f\fP\fIcolinfo\fP ]
+.SH DESCRIPTION
+\fBgrdblend\fP reads a listing of grid files and blend parameters and
+creates a binary grid file by blending the other grids using cosine-taper weights.
+\fBgrdblend\fP will report if some of the nodes are not filled in with
+data.  Such unconstrained nodes are set to a value specified by the user [Default is NaN].
+Nodes with more than one value will be set to the weighted average value.
+Note: Due to the row-by-row i/o nature of operations in grdblend we only support the
+netCDF and native binary grid formats for both input and output.
+.TP
+\fIblendfile\fP
+ASCII file with one record per grid file to include in the blend.  Each record must contain three items, separated by spaces or tabs:
+the gridfile name, the \fB\-R\fP-setting for the interior region, and the relative weight \fIwr\fP.
+In the combined weighting scheme, this grid will be given zero weight outside its domain, weight = \fIwr\fP
+inside the interior region, and a 2-D cosine-tapered weight between those end-members in the boundary strip.
+However, if a negative \fIwr\fP is given then the sense of tapering is inverted (i.e., zero weight inside its
+domain).  If the inner region should instead exactly match the grid region then specify a - instead of the \fB\-R\fP-setting.
+If the ASCII file is not given \fBgrdblend\fP will read standard input.
+.TP
+\fB\-G\fP
+\fIgrdfile\fP is the name of the binary output grid file.
+(See GRID FILE FORMATS below).  Only netCDF and native binary grid formats are supported.
+.TP
+\fB\-I\fP
+\fIx_inc\fP [and optionally \fIy_inc\fP] is the grid spacing. Optionally, append a suffix
+modifier.  \fBGeographical (degrees) coordinates\fP: Append \fBm\fP to
+indicate arc minutes or \fBc\fP to indicate arc seconds.  If one of the units \fBe\fP, \fBk\fP, \fBi\fP,
+or \fBn\fP is appended instead, the increment is assumed to be given in meter, km, miles, or
+nautical miles, respectively, and will be converted to the equivalent degrees longitude at
+the middle latitude of the region (the conversion depends on \fBELLIPSOID\fP).  If /\fIy_inc\fP is given but set to 0 it will be reset equal to
+\fIx_inc\fP; otherwise it will be converted to degrees latitude.  
+\fBAll coordinates\fP: If \fB=\fP is appended then
+the corresponding max \fIx\fP (\fIeast\fP) or \fIy\fP (\fInorth\fP) may be slightly adjusted to fit exactly the given increment
+[by default the increment may be adjusted slightly to fit the given domain].  Finally, instead
+of giving an increment you may specify the \fInumber of nodes\fP desired by appending \fB+\fP to
+the supplied integer argument; the increment is then recalculated from the number of nodes and the domain.
+The resulting increment value depends on whether you have selected a gridline-registered
+or pixel-registered grid; see Appendix B for details.  Note: if \fB\-R\fP\fIgrdfile\fP is used then
+grid spacing has already been initialized; use \fB\-I\fP to override the values.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.SH OPTIONS
+.TP
+\fB\-N\fP
+No data.  Set nodes with no input grid to this value [Default is NaN].
+.TP
+\fB\-Q\fP
+Create a header-less grid file suitable for use with \fBgrdraster\fP.  Requires that the output grid file
+is a native format (i.e., not netCDF).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Do not blend, just output the weights used for each node.  This option is valid when only one
+input grid is provided [Default makes the blend].
+.TP
+\fB\-Z\fP
+Scale output values by \fIscale\fP before writing to file. [1].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH GRID FILE FORMATS
+By default \fBGMT\fP writes out grid as single precision floats in a COARDS-complaint netCDF file format.
+However, \fBGMT\fP is able to produce grid files in many other commonly used grid file formats and also facilitates so called "packing" of grids,
+writing out floating point data as 2- or 4-byte integers. To specify the precision, scale and offset, the user should add the suffix
+\fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]], where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When writing a netCDF file, the grid is stored by default with the variable name "z". To specify another variable name \fIvarname\fP,
+append \fB?\fP\fIvarname\fP to the file name.  Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+.SH GEOGRAPHICAL AND TIME COORDINATES
+When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
+attributes of the input data or grid (if any) or on the
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
+specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
+In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
+.SH EXAMPLES
+To create a grid file from the four grid files piece_?.nc, make the blendfile like this
+.br
+.sp
+piece_1.nc	-R<subregion_1> 1
+.br
+piece_2.nc	-R<subregion_2> 1
+.br
+piece_3.nc	-R<subregion_3> 1
+.br
+piece_4.nc	-R<subregion_4> 1
+.br
+.sp
+Then run
+.br
+.sp
+\fBgrdblend\fP blend.job \fB\-G\fPblend.nc \fB\-R\fP<full_region> \fB\-I\fP<dx/dy> \fB-V\fP
+.SH RESTRICTIONS
+Currently, all grids processed must have the exact same node registration and grid spacing
+as the final output grid.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grd2xyz (1),
+.IR grdedit (1)
+.IR grdraster (1)

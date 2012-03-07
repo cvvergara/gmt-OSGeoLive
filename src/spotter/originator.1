@@ -1,0 +1,150 @@
+.TH ORIGINATOR 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+originator \- Associate seamounts with hotspot point sources 
+.SH SYNOPSIS
+\fBoriginator\fP [\fIinfile(s)\fP] \fB\-E\fP\fIstage_file\fP 
+\fB\-F\fP\fIhs_file\fP 
+[ \fB\-C\fP ] [ \fB\-D\fP\fId_km\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-L\fP[\fIflag\fP] ] [ \fB\-N\fP\fIupper_age\fP ] [ \fB\-Q\fP\fIr/t\fP ] 
+[ \fB\-S\fP[\fIn_hs\fP] ] [ \fB\-T\fP ] [ \fB\-V\fP ]  \fB\-W\fP\fImaxdist\fP ] [ \fB\-Z\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] 
+[ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ]
+.SH DESCRIPTION
+\fBoriginator\fP reads (longitude, latitude, height, radius, crustal_age) records from \fIinfiles\fP 
+[or standard input] and uses the given Absolute Plate Motion (APM) stage
+poles and the list of hotspot locations to determine the most likely origin (hotspot)
+for each seamount.  It does so by calculating flowlines back in time and determining
+the closest approach to all hotspots.  The output consists of the input records with
+four additional fields added for each of the \fIn_hs\fP closest hotspots.  The four fields
+are the hotspot id (e.g., HWI), the stage id of the flowline segment that came closest,
+the pseudo-age of the seamount, and the closest distance to the hotspot (in km).
+See option \fB\-:\fP on how to read (latitude, longitude,height, radius, crustal_age) files.
+.br
+	No space between the option flag and the associated arguments.  Use upper case for the
+option flags and lower case for modifiers.
+.TP
+\fIinfile(s)\fP
+Seamount data file(s) to be analyzed.  If not given, standard input is read.
+.TP
+\fB\-E\fP
+Give file with rotation parameters.  This file must contain
+one record for each rotation; each record must be of the following format:
+.br
+.sp
+	\fIlon lat tstart [tstop] angle\fP [ \fIkhat a b c d e f g df\fP ]
+.br
+.sp
+where \fItstart\fP and \fItstop\fP are in Myr and \fIlon lat angle\fP are in degrees.
+\fItstart\fP and \fItstop\fP are the ages of the old and young ends of a stage.  If \fB\-C\fP is set then a total
+reconstruction rotation is expected and \fItstop\fP is implicitly set to 0 and
+should not be specified in the file.  If a covariance matrix \fBC\fP for the rotation is available
+it must be specified in a format using the nine optional terms listed in brackets.
+Here, \fBC\fP = (\fIg\fP/\fIkhat\fP)*[ \fIa b d; b c e; d e f\fP ] which shows \fBC\fP
+made up of three row vectors.
+If the degrees of freedom (\fIdf\fP) in fitting the rotation is 0 or not given it is set to 10000.
+Blank lines and records whose first column contains # will be ignored.
+.TP
+\fB\-F\fP
+Give file with hotspot locations.  This file must contain
+one record for each hotspot to be considered; each record must be of the
+following format:
+.br
+.sp
+	lon lat hs_abbrev hs_id r t_off t_on create fit plot name
+.br
+.sp
+E.g., for Hawaii this may look like
+.br
+.sp
+205	20	HWI	1	25	0	90	Y	Y	Y	Hawaii
+.br
+.sp
+Most applications only need the first 4 columns which thus represents the minimal
+hotspot information record type.  The abbreviation may be maximum 3 characters long.
+The id must be an integer from 1-32.  The positional uncertainty of the hotspot is
+given by r (in km).  The t_off and t_on variables are used to indicate the active
+time-span of the hotspot.  The create, fit, and plot indicators are either Y or N and
+are used by some programs to indicate if the hotspot is included in the ID-grids used
+to determine rotations, if the hotspot chain will be used to determine rotations, and
+if the hotspot should be included in various plots.  The name is a 32-character maximum
+text string with the full hotspot name.
+Blank lines and records whose first column contains # will be ignored.
+.SH OPTIONS
+.TP
+\fB\-C\fP
+Expect Total Reconstruction Rotations rather than Forward Stage Rotations [Default].
+File format is similar to the stage pole format except that the \fItstart\fP column
+is not present (assumed to be 0 Ma).
+.TP
+\fB\-D\fP
+Sets the flowline sampling interval in km.  [Default is 5].
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-L\fP
+Output closest approach for nearest hotspot only (ignores \fB\-S\fP).
+Choose \fB\-Lt\fP for (\fItime, dist, z\fP) [Default], \fB\-Lw\fP for (\fIomega, dist, z\fP),
+and \fB\-Ll\fP for (lon, lat, time, dist, z).  Normally, \fIdist\fP is in km; use
+upper case modifiers \fBTWL\fP to get \fIdist\fP in spherical degrees.
+.TP
+\fB\-N\fP
+Set the maximum age to extend the oldest stage back in time [no extension].
+.TP
+\fB\-Q\fP
+.TP
+INput files only has (\fIx,y,z\fP); specify constant values for \fIr,t\fP that
+will be implied for each record.
+\fB\-S\fP
+Set the number of closest hotspots to report [Default is 1].
+.TP
+\fB\-T\fP
+Truncate seamount ages exceeding the upper age set with \fB\-N\fP [no truncation].
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Only report those seamounts whose flowlines came within \fImaxdist\fP to any hotspot
+[Default reports all seamounts].
+.TP
+\fB\-Z\fP
+Use the hotspot ID number rather than the name tag in output records.
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 5 input columns].
+.SH EXAMPLES
+To find the likely (hotspot) origins of the seamounts represented by the (x,y,z,r,tc) points
+in the file seamounts.d, using the DC85.d Euler poles and the pac_hs.d list of possible hotspots,
+and report the 2 most likely hotspot candidates for each seamount, run
+.br
+.sp
+\fBoriginator\fP seamounts.d \fB\-S\fP2 \fB\-E\fPDC85.d \fB\-F\fPpac_hs.d > origins.d
+.br
+.sp
+.SH COORDINATES
+Data coordinates are assumed to be geodetic and will automatically be converted to geocentric
+before spherical rotations are performed.  We convert back to geodetic coordinates for output.
+Note: If your data already are geocentric, you can avoid the conversion by using --ELLIPSOID=sphere.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR project (1),
+.IR grdrotater (1),
+.IR grdspotter (1),
+.IR mapproject (1),
+.IR backtracker (1),
+.IR hotspotter (1)
+.SH REFERENCES
+Wessel, P., 1999, "Hotspotting" tools released, EOS Trans. AGU, 80 (29), p. 319.
+.br

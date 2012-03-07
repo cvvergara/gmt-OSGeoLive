@@ -1,0 +1,59 @@
+.TH NC2XY 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+nc2xy \- Converting netCDF column file(s) to ASCII xy data
+.SH SYNOPSIS
+\fBnc2xy\fP \fIfiles\fP [ \fB\-F\fP\fIvar1/var2/...\fP ] [ \fB\-S\fP[\fBr\fP] ] [ \fB\-V\fP ]
+[ \fB\-f\fP\fIcolinfo\fP ] [ \fB\-b\fP\fBo\fP ] 
+.SH DESCRIPTION
+\fBnc2xy\fP reads one or more netCDF files with column data and writes out those columns in ASCII format
+to standard output, so that they can be used by \fBpsxy\fP, \fBpsxyz\fP, or \fBxyz2grd\fP.
+Modify the precision of the ASCII output format by editing the \fBD_FORMAT\fP parameter in your \.gmtdefaults4 file
+or use \fB\-\-D_FORMAT\fP=\fIvalue\fP on the command line.
+.TP
+\fIfiles\fP
+Names of netCDF files to be converted.
+.SH OPTIONS
+.TP
+\fB\-F\fP
+Specify up to 10 names of the variables (separated by slashes) to be printed out. All variables to be
+1-dimensional and be of equal length. When omited, the first two variables in the netCDF file will be printed.
+.TP
+\fB\-S\fP
+Suppress output for records with one or more NaN values [Default outputs all nodes].
+Append \fBr\fP to reverse the suppression, i.e., only output the records with at least one NaN value.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+See also \fBTIME COORDINATES\fP below.
+.SH TIME COORDINATES
+Time coordinates in netCDF files will be recognized as such.
+The variable's \fBunit\fP attribute is parsed to determine the unit and epoch of the time coordinate in the grid.
+Values are then converted to the internal time system specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults
+file or on the command line.
+The default output is relative time in that time system, or absolute time when using the option \fB\-f0T\fP, \fB\-f1T\fP, etc.
+.SH EXAMPLES
+To print out latitude, longitude and height in a netCDF file as ASCII records, while suppressing all NaN values:
+.br
+.sp
+\fBnc2xy\fP \fB\-F\fPlat/lon/height \fB\-S\fP trackfile.nc > trackfile.xy
+.SH "SEE ALSO"
+.IR gmtdefaults (1),
+.IR GMT (1),
+.IR psxy (1),
+.IR psxyz (1),
+.IR xyz2grd (1)

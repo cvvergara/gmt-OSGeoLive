@@ -1,0 +1,216 @@
+.TH XYZ2GRD 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+xyz2grd \- Converting an ASCII or binary table to grid file format
+.SH SYNOPSIS
+\fBxyz2grd\fP \fIxyzfile\fP \fB\-G\fP\fIgrdfile\fP \fB\-I\fP\fIxinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP][/\fIyinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP]] 
+\fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-A\fP[\fBn|z|u|l\fP] ] [ \fB\-D\fP\fIxname\fP/\fIyname\fP/\fIzname\fP/\fIscale\fP/\fIoffset\fP/\fItitle\fP/\fIremark\fP ] 
+[ \fB\-E\fP[\fInodata\fP] ] [ \fB\-F\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-N\fP\fInodata\fP ] [ \fB\-S\fP[\fIzfile\fP] ] [ \fB\-V\fP ] 
+[ \fB\-Z\fP[\fIflags\fP] ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP\fIcolinfo\fP ]
+.SH DESCRIPTION
+\fBxyz2grd\fP reads a z or xyz table and
+creates a binary grid file.  \fBxyz2grd\fP will report if some of the nodes are not filled in with
+data.  Such unconstrained nodes are set to a value specified by the user [Default is NaN].
+Nodes with more than one value will be set to the average value.  As an option (using \fB\-Z\fP),
+a 1-column z-table may be read assuming all nodes are present (z-tables can be in organized in a
+number of formats, see \fB\-Z\fP below.)
+.TP
+\fI[xy]zfile\fP
+ASCII [or binary] file holding z or (x,y,z) values.  xyz triplets do not
+have to be sorted (for binary triplets, see \fB\-b\fP).  1-column z tables must be sorted and the \fB\-Z\fP must be set). 
+.TP
+\fB\-G\fP
+\fIgrdfile\fP is the name of the binary output grid file.
+(See GRID FILE FORMAT below.)
+.TP
+\fB\-I\fP
+\fIx_inc\fP [and optionally \fIy_inc\fP] is the grid spacing. Optionally, append a suffix
+modifier.  \fBGeographical (degrees) coordinates\fP: Append \fBm\fP to
+indicate arc minutes or \fBc\fP to indicate arc seconds.  If one of the units \fBe\fP, \fBk\fP, \fBi\fP,
+or \fBn\fP is appended instead, the increment is assumed to be given in meter, km, miles, or
+nautical miles, respectively, and will be converted to the equivalent degrees longitude at
+the middle latitude of the region (the conversion depends on \fBELLIPSOID\fP).  If /\fIy_inc\fP is given but set to 0 it will be reset equal to
+\fIx_inc\fP; otherwise it will be converted to degrees latitude.  
+\fBAll coordinates\fP: If \fB=\fP is appended then
+the corresponding max \fIx\fP (\fIeast\fP) or \fIy\fP (\fInorth\fP) may be slightly adjusted to fit exactly the given increment
+[by default the increment may be adjusted slightly to fit the given domain].  Finally, instead
+of giving an increment you may specify the \fInumber of nodes\fP desired by appending \fB+\fP to
+the supplied integer argument; the increment is then recalculated from the number of nodes and the domain.
+The resulting increment value depends on whether you have selected a gridline-registered
+or pixel-registered grid; see Appendix B for details.  Note: if \fB\-R\fP\fIgrdfile\fP is used then
+grid spacing has already been initialized; use \fB\-I\fP to override the values.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.SH OPTIONS
+.TP
+\fB\-A\fP
+Add up multiple values that belong to the same node (same as \fB\-Az\fP).
+Append \fBn\fP to simply count the number of data points that were assigned to each node.
+Append \fBl\fP or \fBu\fP to find the lowest (minimum) or upper (maximum) value at each node, respectively. 
+[Default (no \fB\-A\fP option) will calculate mean value].  Ignored if \fB\-Z\fP is given.
+.TP
+\fB\-D\fP
+Give values for \fIxname, yname, zname, scale, offset, title,\fP and \fIremark\fP.
+To leave some of these values untouched, specify = as the value.
+Alternatively, to allow "/" to be part of one of the values, use any non-alphanumeric
+character (and not the equal sign) as separator by both starting and ending with it. For example:
+\fB\-D\fP:\fIxname\fP:\fIyname\fP:\fIzname\fP:\fIscale\fP:\fIoffset\fP:\fItitle\fP:\fIremark\fP:
+.TP
+\fB\-E\fP
+Convert an ESRI ArcInfo ASCII interchange grid format file to a \fBGMT\fP grid.  Append \fInodata\fP which is a data
+value that should be set to NaN in the grid [If we find the optional 6th record in the file we will use it instead].
+The values normally given by \fB\-R\fP, \fB\-I\fP, and \fB\-F\fP are determined from the ESRI header instead.
+.TP
+\fB\-F\fP
+Force pixel node registration [Default is gridline registration].
+(Node registrations are defined in \fBGMT\fP Cookbook Appendix B on grid file formats.)
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+Not used with binary data.
+.TP
+\fB\-N\fP
+No data.  Set nodes with no input xyz triplet to this value [Default is NaN].  For z-tables, this
+option is used to replace z-values that equal \fInodata\fP with NaN.
+.TP
+\fB\-S\fP
+Swap the byte-order of the input only.  No grid file is produced.  You must
+also supply the \fB\-Z\fP option.  The output is written to \fIzfile\fP (or
+stdout if not supplied).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-Z\fP
+Read a 1-column ASCII [or binary] table.  This assumes that all the nodes are
+present and sorted according to specified ordering convention contained in \fIflags\fP.
+If incoming data represents rows, make \fIflags\fP start with \fBT\fP(op) if first row is y = ymax
+or \fBB\fP(ottom) if first row is y = ymin.  Then, append \fBL\fP or \fBR\fP to indicate that first element is at left
+or right end of row.  Likewise for column formats: start with \fBL\fP or \fBR\fP to position first column,
+and then append \fBT\fP or \fBB\fP to position first element in a row.  
+For gridline registered grids:  If data are periodic in x but the
+incoming data do not contain the (redundant) column at x = xmax, append \fBx\fP.  For data periodic in y
+without redundant row at y = ymax, append \fBy\fP.  Append \fBs\fP\fIn\fP to skip the first \fIn\fP number
+of bytes (probably a header).  If the byte-order needs to be swapped, append \fBw\fP.  Select
+one of several data types (all binary except \fBa\fP):
+.br
+.sp
+	\fBA\fP  ASCII representation of one or more floating point values per record
+.sp
+	\fBa\fP  ASCII representation of a single item per record
+.br
+	\fBc\fP  signed 1-byte character
+.br
+	\fBu\fP  unsigned 1-byte character
+.br
+	\fBh\fP  short 2-byte integer
+.br
+	\fBi\fP  4-byte integer
+.br
+	\fBl\fP  long (4- or 8-byte) integer [architecture-dependent!]
+.br
+	\fBf\fP  4-byte floating point single precision
+.br
+	\fBd\fP  8-byte floating point double precision
+.br
+.sp
+Default format is scanline orientation of ASCII numbers: \fB\-ZTLa\fP.
+Note that \fB\-Z\fP only applies to 1-column input.  The difference between \fBA\fP and \fBa\fP is that
+the latter can decode both \fIdate\fPT\fIclock\fP and \fIddd:mm:ss[.xx]\fP formats while the former is
+strictly for regular floating point values.
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 3 input columns].  This option only applies to xyz input files; see \fB\-Z\fP for z tables.
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH GRID VALUES PRECISION
+Regardless of the precision of the input data, GMT programs that create
+grid files will internally hold the grids in 4-byte floating point
+arrays.  This is done to conserve memory and furthermore most if not all
+real data can be stored using 4-byte floating point values.  Data with
+higher precision (i.e., double precision values) will lose that precision
+once GMT operates on the grid or writes out new grids.  To limit loss
+of precision when processing data you should always consider normalizing
+the data prior to processing.
+.SH GRID FILE FORMATS
+By default \fBGMT\fP writes out grid as single precision floats in a COARDS-complaint netCDF file format.
+However, \fBGMT\fP is able to produce grid files in many other commonly used grid file formats and also facilitates so called "packing" of grids,
+writing out floating point data as 2- or 4-byte integers. To specify the precision, scale and offset, the user should add the suffix
+\fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]], where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When writing a netCDF file, the grid is stored by default with the variable name "z". To specify another variable name \fIvarname\fP,
+append \fB?\fP\fIvarname\fP to the file name.  Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+.SH GEOGRAPHICAL AND TIME COORDINATES
+When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
+attributes of the input data or grid (if any) or on the
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
+specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
+In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
+.SH EXAMPLES
+To create a grid file from the ASCII data in hawaii_grv.xyz, use
+.br
+.sp
+\fBxyz2grd\fP hawaii_grv.xyz \fB\-D\fPdegree/degree/mGal/1/0/"Hawaiian Gravity"/"GRS-80 Ellipsoid used"
+\fB\-G\fPhawaii_grv_new.grd \fB\-R\fP198/208/18/25 \fB\-I\fP5\fBm\fP \fB\-V\fP
+.br
+.sp
+To create a grid file from the raw binary (3-column, single-precision) scanline-oriented data raw.b, use
+.br
+.sp
+\fBxyz2grd\fP raw.b \fB\-D\fPm/m/m/1/0/=/= \fB\-G\fPraw.grd \fB\-R\fP0/100/0/100 \fB\-I\fP1 \fB\-V\fP \fB\-Z\fP \fB\-b\fP3
+.br
+.sp
+To make a grid file from the raw binary USGS DEM (short integer) scanline-oriented data topo30. on the NGDC
+global relief Data CD-ROM, with values of -9999 indicate missing data, one must on some machine reverse the byte-order.  On such machines (like Sun), use
+.br
+.sp
+\fBxyz2grd\fP topo30. \fB\-D\fPm/m/m/1/0/=/= \fB\-G\fPustopo.grd \fB\-R\fP234/294/24/50 \fB\-I\fP30c \fB\-N\fP-9999 \fB\-B\fP \fB\-ZTLhw\fP
+.br
+.sp
+Say you have received a binary file with 4-byte floating points that were
+written on a machine of different byte-order than yours.  You can swap the
+byte-order with
+.br
+.sp
+\fBxyz2grd\fP floats.bin \fB\-S\fPnew_floats.bin \fB\-V\fP \fB\-Zf\fP
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grd2xyz (1),
+.IR grdedit (1)

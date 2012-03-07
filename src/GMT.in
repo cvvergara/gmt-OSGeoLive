@@ -1,0 +1,168 @@
+#!/bin/sh -f
+#--------------------------------------------------------------------
+#	$Id: GMT.in,v 1.31 2011/01/02 20:09:35 guru Exp $
+#
+#	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+#	See LICENSE.TXT file for copying and redistribution conditions.
+#
+#	This program is free software; you can redistribute it and/or
+#	modify it under the terms of the GNU General Public License as
+#	published by the Free Software Foundation; version 2 of the
+#	License.
+#
+#	This program is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	Contact info: gmt.soest.hawaii.edu
+#--------------------------------------------------------------------
+#
+# GMT is a startup script that knows where the GMT binaries lives.
+# Its purpose is to preface the command argument with @bindir@
+# and, in the absence of any arguments, list the GMT programs
+#
+# Author:	Paul Wessel
+# Date:		01-JAN-2009
+# Version:	4.x
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+datarootdir=@datarootdir@
+
+if [ "x$1" = "x--version" ] || [ "x$1" = "x-v" ]; then
+	cat << EOF >&2
+GMT Version @PACKAGE_VERSION@
+Copyright 1991-@DOCYEAR@ Paul Wessel and Walter H. F. Smith
+
+This program comes with NO WARRANTY, to the extent permitted by law.
+You may redistribute copies of this program under the terms of the
+GNU General Public License.
+For more information about these matters, see the file named LICENSE.TXT.
+For a brief description of GMT programs, type GMT --help
+EOF
+	exit
+fi
+
+if [ $# = 0 ] || [ $1 = "help" ] || [ "x$1" = "x-help" ] || [ "x$1" = "x--help" ] || [ x$1 = "x-h" ]; then
+	${PAGER:-@PAGER@} >&2 << EOF
+
+GMT - The Generic Mapping Tools data processing and display software package
+			        Version @PACKAGE_VERSION@
+			     
+GMT is a collection of public-domain Unix tools that allows you to manipulate
+x,y and x,y,z data sets (filtering, trend fitting, gridding, projecting, etc.)
+and to produce PostScript illustrations ranging from simple x-y plots, via
+contour maps, to artificially illuminated surfaces and 3-D perspective views
+in black/white or full color.  Linear, log10, and power scaling are supported
+in additon to 25 common map projections.  The processing and display routines
+within GMT are completely general and will handle any (x,y) or (x,y,z) data
+as input.
+
+The following is a summary of all the programs supplied with GMT and
+a very short descriptions of their purpose. Detailed information about each program
+can be found in each program's manual page.
+
+	blockmean	L2 (x,y,z) data filter/decimator
+	blockmedian	L1 (x,y,z) data filter/decimator
+	blockmode	Mode (x,y,z) data filter/decimator
+	filter1d	Filter 1-D data sets (time series)
+	fitcircle	Finds best-fitting great circle to a set of points
+	gmt2rgb		Convert Sun rasterfile or grid to r, g, b grids
+	gmtconvert	Convert between ASCII and binary 1-D tables
+	gmtdefaults	List the current default settings
+	gmtmath		Mathematical operations on data tables
+	gmtset		Set individual default parameters
+	gmtselect	Extract data subsets based on spatial criteria
+	grd2cpt		Make color palette table from grid files
+	grd2xyz		Conversion from 2-D grid file to table data
+	grdblend	Blend several partially over-lapping grid files onto one grid
+	grdclip		Limit the z-range in gridded data
+	grdcontour	Contouring of 2-D gridded data
+	grdcut		Cut a sub-region from a grid file
+	grdedit		Modify header information in a 2-D grid file
+	grdfft		Operate on grid files in the wavenumber (or frequency) domain
+	grdfilter	Filter a 2-D grid file in the space (or time) domain
+	grdgradient	Compute directional gradient from grid files
+	grdhisteq	Histogram equalization for grid files
+	grdimage	Produce images from 2-D gridded data
+	grdinfo		Get information about grid files
+	grdlandmask	Create mask grid file from shoreline data base
+	grdmask		Reset nodes outside a clip path to a constant
+	grdmath		Mathematical operations on grid files
+	grdpaste	Paste together grid files along a common edge
+	grdproject	Project gridded data onto a new coordinate system
+	grdreformat	Converting between different grid file formats
+	grdsample	Resample a 2-D gridded data set onto a new grid
+	grdtrend	Fits polynomial trends to grid files
+	grdtrack	Sampling of 2-D data set along 1-D track
+	grdvector	Plot vector fields from grid files
+	grdview		3-D perspective imaging of 2-D gridded data
+	grdvolume	Volume calculations from 2-D gridded data
+	greenspline	Interpolation using Green's functions for splines in 1-3 dimensions
+	makecpt		Make color palette tables
+	mapproject	Forward or inverse map projections of table data
+	minmax		Find extreme values in data tables
+	nearneighbor	Nearest-neighbor gridding scheme
+	project		Project data onto lines/great circles
+	ps2raster	Crop and convert PostScript files to raster images, EPS, and PDF
+	psbasemap	Create a basemap plot
+	psclip		Use polygon files to define clipping paths
+	pscoast		Plot coastlines and filled continents on maps
+	pscontour	Contour xyz-data by triangulation
+	pshistogram	Plot a histogram
+	psimage		Plot images (EPS or Sun raster files) on maps
+	pslegend	Plot legend on maps
+	psmask		Create overlay to mask out regions on maps
+	psrose		Plot sector or rose diagrams
+	psscale		Plot gray scale or color scale on maps
+	pstext		Plot text strings on maps
+	pswiggle	Draw time-series along track on maps
+	psxy		Plot symbols, polygons, and lines on maps
+	psxyz		Plot symbols, polygons, and lines in 3-D
+	sample1d	Resampling of 1-D table data
+	spectrum1d	Compute various spectral estimates from time-series
+	splitxyz	Split xyz-files into several segments
+	surface		A continuous curvature gridding algorithm
+	trend1d		Fits polynomial or Fourier trends to y = f(x) data
+	trend2d		Fits polynomial trends to z = f(x,y) data
+	triangulate	Perform Delaunay triangulation and gridding
+	xyz2grd		Convert equidistant xyz data to a 2-D grid file
+
+Look up the individual man pages for more details and full syntax.
+Those man pages are installed in @mandir@/man?.
+Information is also available on the GMT World Wide Web home page
+(http://gmt.soest.hawaii.edu) and, if installed, locally from
+@wwwdir@/gmt/gmt_services.html.
+
+Default locations of GMT components:
+	executables	@bindir@
+	library		@libdir@
+	shared data	@datadir@
+	manual pages	@mandir@/man/man?
+	documentation	@docdir@
+
+The user has control over the following environment variables:
+
+	location of shared data (including subdirectories coast, cpt, etc.):
+		GMT_SHAREDIR = ${GMT_SHAREDIR:-@datadir@ (default)}
+
+	user-specific configurations (color tables, .gmtdefaults, etc.):
+		GMT_USERDIR = ${GMT_USERDIR:-$HOME/.gmt (default)}
+
+	user-specific data (grids, column data):
+		GMT_DATADIR = ${GMT_DATADIR:-(undefined)}
+
+	other deprecated data directories:
+		GMT_GRIDDIR = ${GMT_GRIDDIR:-(undefined)}
+		GMT_IMGDIR = ${GMT_IMGDIR:-(undefined)}
+EOF
+	exit
+fi
+
+# OK try to run the command by prefixing the GMT bin path
+# The bin path was generated by configure and should thus
+# correspond to the dir where GMT binaries were placed
+# 
+
+exec @bindir@/"$@"

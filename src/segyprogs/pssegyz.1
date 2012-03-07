@@ -1,0 +1,242 @@
+.TH PSSEGYZ 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+pssegyz \- Create imagemasked postscript from SEGY file
+.SH SYNOPSIS
+\fBpssegyz\fP \fISEGYfile\fP \fB\-J\fP\fIparameters\fP \fB\-Jz\fP|\fBZ\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[/\fIzmin\fP/\fIzmax\fP][\fBr\fP] \fB\-D\fP\fIdeviation\fP 
+\fB\-F\fP[\fIrgb\fP|\fIgray\fP]|\fB\-W\fP 
+[ \fB\-B\fP\fIbias\fP ] [ \fB\-C\fP\fIclip\fP ] [ \fB\-E\fP\fIazim\fP/\fIelev\fP[\fB+w\fP\fIlon\fP/\fIlat\fP[/\fIz\fP]][\fB+v\fP\fIx0\fP/\fIy0\fP] ] 
+[ \fB\-I\fP ] [ \fB\-K\fP ] [ \fB\-L\fP\fInsamp\fP ] [ \fB\-M\fP\fIntrace\fP ] [ \fB\-N\fP ] 
+[ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-S\fP\fIheader_x\fP/\fIheader_y\fP ] [ \fB\-U\fP\fIredvel\fP ] 
+[ \fB\-V\fP ] [ \fB\-X\fP\fIscale\fP ] [ \fB\-Y\fP\fIsample_int\fP ] [ \fB\-Z\fP ]
+.SH DESCRIPTION
+\fBpssegyz\fP reads a native (IEEE) format SEGY file and produces a
+\fIPostScript\fP image of the seismic data. The \fIimagemask\fP
+operator is used so that the seismic data are plotted as a 1-bit
+deep bitmap in a single
+(user-specified) color or gray shade, with a transparent background.
+The bitmap resolution is taken from the current \fBGMT\fP defaults.
+The seismic traces may be plotted at their true locations using information
+in the trace headers (in which case order of the
+traces in the file is not significant).
+Standard \fBGMT\fP geometry routines are used so that
+in principle any map projection may be used, however it is likely that the
+geographic projections will lead to unexpected results. Beware also
+that some parameters have non-standard meanings, and a couple of
+the options for \fBpssegy\fP are not available in \fBpssegyz\fP.
+Note that the order of operations before the seismic data are plotted is
+deviation*[clip]([bias]+[normalize](sample value)). Deviation determines
+how far \fIin the plot coordinates\fP a [normalized][biased][clipped] sample
+value of 1 plots from the trace location.
+The SEGY file should be a disk image of the tape format (ie 3200 byte
+text header, which is ignored, 400 byte binary reel header, and
+240 byte header for each trace) with samples as native real*4 (IEEE real
+on all the platforms to which I have access)
+.TP
+\fISEGYfile\fP
+Seismic data set to be imaged
+.TP
+\fB\-J\fP
+Selects the map projection. Scale is UNIT/degree, 1:xxxxx, or width in UNIT (upper case modifier).
+UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP setting in \.gmtdefaults4, but this can be
+overridden on the command line by appending \fBc\fP, \fBi\fP, or \fBm\fP to the scale/width value.
+When central meridian is optional, default is center of longitude range on \fB\-R\fP option.
+Default standard parallel is the equator.
+For map height, max dimension, or min dimension, append \fBh\fP, \fB+\fP, or \fB-\fP to the width,
+respectively.
+.br
+More details can be found in the \fBpsbasemap\fP man pages.
+.br
+.sp
+\fBCYLINDRICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jc\fP\fIlon0/lat0/scale\fP (Cassini)
+.br
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Stereographic)
+.br
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP (Miller)
+.br
+\fB\-Jm\fP[\fIlon0\fP/[\fIlat0/\fP]]\fIscale\fP (Mercator)
+.br
+\fB\-Jm\fP\fIlon0/lat0/scale\fP (Mercator - Give meridian and standard parallel)
+.br
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP (Oblique Mercator - point and azimuth)
+.br
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP (Oblique Mercator - two points)
+.br
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP (Oblique Mercator - point and pole)
+.br
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equidistant)
+.br
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP (TM - Transverse Mercator)
+.br
+\fB\-Ju\fP\fIzone/scale\fP (UTM - Universal Transverse Mercator)
+.br
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equal-Area) 
+.br
+.sp
+\fBCONIC PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP (Albers)
+.br
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP (Conic Equidistant)
+.br
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP (Lambert Conic Conformal)
+.br
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP ((American) Polyconic)
+.br
+.sp
+\fBAZIMUTHAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Lambert Azimuthal Equal-Area)
+.br
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Azimuthal Equidistant)
+.br
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Gnomonic)
+.br
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Orthographic)
+.br
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP (General Perspective).
+.br
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (General Stereographic)
+.br
+.sp
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP (Hammer)
+.br
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP (Sinusoidal)
+.br
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP (Eckert IV)
+.br
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP (Eckert VI)
+.br
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP (Robinson)
+.br
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP (Winkel Tripel)
+.br
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP (Van der Grinten)
+.br
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP (Mollweide)
+.br
+.sp
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+.br
+\fB\-Jx\fP\fIx-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP][\fI/y-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP]] (Linear, log, and power scaling)
+.br
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+.br
+.TP
+\fB\-D\fP
+gives the deviation in X units of the plot for 1.0 on the scaled trace,
+This may
+be a single number (applied equally in X and Y directions) or devX/devY
+.br 
+.TP
+\fB\-E\fP
+Sets the viewpoint's azimuth and elevation (for perspective view) [180/90].\"'
+For frames used for animation, you may want to append \fB+\fP to fix the center
+of your data domain (or specify a particular world coordinate point with \fB+w\fP\fIlon0\fP/\fIlat\fP[/\fIz\fP])
+which will project to the center of your page size (or specify the coordinates
+of the projected view point with \fB+v\fP\fIx0\fP/\fIy0).
+.TP
+\fB\-F\fP[\fIrgb\fP|\fIgray\fP]
+Fill trace (variable area, defaults to filling positive). rgb or gray gives
+the color with which the imagemask is filled.
+.TP
+\fB\-W\fP
+Draw wiggle trace.
+.TP
+You \fImust\fP specify at least one of \fB\-W\fP and \fB\-F\fP.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-A\fP
+Flip the default byte-swap state (default assumes data have a bigendian byte-order).
+.TP
+\fB\-B\fP
+Bias to apply to data (added to sample values).
+.TP
+\fB\-C\fP
+Sample value at which to clip data (clipping is applied to both positive and
+negative values).
+.TP
+\fB\-I\fP
+Fill negative rather than positive excursions.
+.TP
+\fB\-K\fP
+More \fIPostScript\fP code will be appended later [Default terminates the plot system].
+.TP
+\fB\-L\fP
+Override number of samples per trace in reel header (program attempts to
+determine number of samples from each trace header if possible to
+allow for variable length traces).
+.TP
+\fB\-M\fP
+Override number of traces specified in reel header. Program detects
+end of file (relatively) gracefully, but this parameter limits number
+of traces that the program attempts to read.
+.TP
+\fB\-N\fP
+Normalize trace by dividing by rms amplitude over full trace length.
+.TP
+\fB\-O\fP
+Selects Overlay plot mode [Default initializes a new plot system].
+.TP
+\fB\-P\fP
+Selects Portrait plotting mode [Default is Landscape, see \fBgmtdefaults\fP to change this].
+.TP
+\fB\-S\fP
+Read trace locations from trace headers: header is either c for CDP,
+o for offset, b<num> to read a long starting at byte <num> in the
+header (first byte corresponds to num=0), or a number to fix the location.
+ First parameter for x, second for y. Default has X and Y given by trace
+number.
+.TP
+\fB\-U\fP
+Apply reduction velocity by shifting traces \fIupwards\fP by redvel/|offset|.
+Negative velocity removes existing reduction. Units should be consistent with
+offset in trace header and sample interval.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-X\fP
+Multiply trace locations by scale before plotting.
+.TP
+\fB\-Y\fP
+Override sample interval in reel header.
+.TP
+\fB\-Z\fP
+Do not plot traces with zero rms amplitude.
+.br
+.sp
+.SH EXAMPLES
+To plot the SEGY file wa1.segy with normalized traces plotted at true offset 
+locations, clipped at +-3 and with wiggle trace and positive variable area
+shading in black, use
+.br
+.sp
+\fBpssegyz\fP wa1.segy \fB\-JX\fP5/\-5 \fB\-D\fP1 \fB\-Jz\fP0.05 \fB\-E\fP180/5 \fB\-R\fP0/100/0/10/0/10 \fB\-C\fP3 \fB\-N\fP \fB\-S\fPo \fB\-W\fP \fB\-F\fPblack > segy.ps
+.br
+.SH BUGS
+Variable area involves filling four-sided figures of distressing generality.
+I \fIknow\fP that some of the more complex degenerate cases are not
+dealt with correctly or at all; the incidence of such cases increases
+as viewing angles become more oblique, and particularly as the
+viewing elevation increases. Wiggle-trace plotting is not affected.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR pssegy (1)
