@@ -1,0 +1,35 @@
+.TH MAKEPATTERN 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+makepattern \- make GMT color pattern from b/w pattern or icon
+.SH SYNOPSIS
+\fBmakepattern\fP \fI1bit.ras\fP | \fIiconfile\fP \fB\-Cf\fP\fIr/g/b\fP \fB\-Cb\fP\fIr/g/b\fP
+.SH DESCRIPTION
+\fBmakepattern\fP reads either a Sun 1-bit rasterfile OR a Sun icon file.  It then accepts color choices for the foreground and
+background pixels and colorizes the pattern, writing it as a 8-bit Sun rasterfile on stdout.
+These patterns may then be used in \fBGMT\fP (3.1 or later) \fB\-Gp\fP settings or by \fBpsimage\fP.
+.TP
+\fI1bit.ras\fP | \fIiconfile\fP
+Either a 1-bit Sun rasterfile (standard format, no RLE) or a Sun icon file (as used in \fBGMT\fP 3.0).
+.TP
+\fB\-Cf\fP
+Sets the color for the foreground pixels (the ones) [black].
+.TP
+\fB\-Cb\fP
+Sets the color for the background pixels (the zeros) [white].
+.SH WIN32 fix
+Since binary redirection under WIN32 does not work, you must specify the
+output file with \fB\-G\fP\fInewfile.ras\fP.  This option is only available
+under WIN32.
+.SH EXAMPLES
+.sp
+To create a colorized red/blue 8-bit Sun rasterfile pattern from the old 3.0-style iconpattern
+stored in file custom.icon, run
+.sp
+\fBmakepattern\fP custom.icon \fB\-Cf\fPred \fB\-Cb\fPblue > custom.ras
+.sp
+To create a green/blue 8-bit Sun rasterfile pattern from a 1-bit Sun raster called bits.ras, run
+.sp
+\fBmakepattern\fP bits.ras \fB\-Cf\fPgreen \fB\-Cb\fPblue > colorbits.ras
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR psimage (1)

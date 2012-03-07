@@ -1,0 +1,729 @@
+.TH PSXY 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+psxy \- Plot lines, polygons, and symbols on maps
+.SH SYNOPSIS
+\fBpsxy\fP \fIfiles\fP \fB\-J\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP]
+[ \fB\-A\fP[\fBm\fP|\fBp\fP] ] [ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] [ \fB\-C\fP\fIcptfile\fP ] [ \fB\-D\fP\fIdx\fP/\fIdy\fP ]
+[ \fB\-E\fP[\fBx\fP|\fBy\fP|\fBX\fP|\fBY\fP][\fBn\fP][\fIcap\fP][/[\fB-\fP|\fB+\fP]\fIpen\fP] ]
+[ \fB\-G\fP\fIfill\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-I\fP\fIintens\fP ] [ \fB\-K\fP ] [ \fB\-L\fP ]
+[ \fB\-N\fP ] [ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-S\fP[\fIsymbol\fP][\fIsize\fP] ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ]
+[ \fB\-V\fP ] [ \fB\-W\fP[\fB-\fP|\fB+\fP][\fIpen\fP] ] [ \fB\-X\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIx-shift\fP[\fBu\fP]] ] [ \fB\-Y\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIy-shift\fP[\fBu\fP]] ]
+[ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-c\fP\fIcopies\fP ] [ \fB\-f\fP\fIcolinfo\fP ] [ \fB\-g\fP[\fBa\fP]\fBx\fP|\fBy\fP|\fBd\fP|\fBX\fP|\fBY\fP|\fBD\fP|[\fIcol\fP]\fBz\fP[+|-]\fIgap\fP[\fBu\fP] ] [ \fB\-m\fP[\fIflag\fP] ]
+.SH DESCRIPTION
+\fBpsxy\fP reads (\fIx\fP,\fIy\fP) pairs from \fIfiles\fP [or standard input] and
+generates \fIPostScript\fP code that will plot lines, polygons, or symbols at those locations on a map.
+If a symbol is selected and no symbol size given, then \fBpsxy\fP will interpret the third column of the
+input data as symbol size.  Symbols whose \fIsize\fP is <= 0 are skipped.
+If no symbols are specified then the symbol code (see \fB\-S\fP below)
+must be present as last column in the input.  Multiple segment files may be plotted using the \fB\-m\fP option.
+If \fB\-S\fP is not used, a line connecting the data points will be drawn instead.
+To explicitly close polygons, use \fB\-L\fP.  Select a fill with \fB\-G\fP.
+If \fB\-G\fP is set, \fB\-W\fP will control whether the polygon outline is drawn or not.
+If a symbol is selected, \fB\-G\fP and \fB\-W\fP determines the fill and outline/no outline, respectively.
+The \fIPostScript\fP code is written to standard output.
+.TP
+\fIfiles\fP
+List one or more file-names. If no files are given, \fBpsxy\fP will read standard input.
+Use \fB\-T\fP to ignore all input files, including standard input (see below).
+.TP
+\fB\-J\fP
+Selects the map projection. Scale is UNIT/degree, 1:xxxxx, or width in UNIT (upper case modifier).
+UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP setting in \.gmtdefaults4, but this can be
+overridden on the command line by appending \fBc\fP, \fBi\fP, or \fBm\fP to the scale/width value.
+When central meridian is optional, default is center of longitude range on \fB\-R\fP option.
+Default standard parallel is the equator.
+For map height, max dimension, or min dimension, append \fBh\fP, \fB+\fP, or \fB-\fP to the width,
+respectively.
+.br
+More details can be found in the \fBpsbasemap\fP man pages.
+.br
+.sp
+\fBCYLINDRICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jc\fP\fIlon0/lat0/scale\fP (Cassini)
+.br
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Stereographic)
+.br
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP (Miller)
+.br
+\fB\-Jm\fP[\fIlon0\fP/[\fIlat0/\fP]]\fIscale\fP (Mercator)
+.br
+\fB\-Jm\fP\fIlon0/lat0/scale\fP (Mercator - Give meridian and standard parallel)
+.br
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP (Oblique Mercator - point and azimuth)
+.br
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP (Oblique Mercator - two points)
+.br
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP (Oblique Mercator - point and pole)
+.br
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equidistant)
+.br
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP (TM - Transverse Mercator)
+.br
+\fB\-Ju\fP\fIzone/scale\fP (UTM - Universal Transverse Mercator)
+.br
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equal-Area) 
+.br
+.sp
+\fBCONIC PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP (Albers)
+.br
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP (Conic Equidistant)
+.br
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP (Lambert Conic Conformal)
+.br
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP ((American) Polyconic)
+.br
+.sp
+\fBAZIMUTHAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Lambert Azimuthal Equal-Area)
+.br
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Azimuthal Equidistant)
+.br
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Gnomonic)
+.br
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Orthographic)
+.br
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP (General Perspective).
+.br
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (General Stereographic)
+.br
+.sp
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP (Hammer)
+.br
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP (Sinusoidal)
+.br
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP (Eckert IV)
+.br
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP (Eckert VI)
+.br
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP (Robinson)
+.br
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP (Winkel Tripel)
+.br
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP (Van der Grinten)
+.br
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP (Mollweide)
+.br
+.sp
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+.br
+\fB\-Jx\fP\fIx-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP][\fI/y-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP]] (Linear, log, and power scaling)
+.br
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-A\fP
+By default line segments are drawn as great circle arcs. To draw them as straight lines,
+use the \fB\-A\fP flag. Alternatively, add \fBm\fP to draw the line by first following a meridian,
+then a parallel. Or append \fBp\fP to start following a parallel, then a meridian.
+(This can be practical to draw a lines along parallels, for example).
+.TP
+\fB\-B\fP
+Sets map boundary annotation and tickmark intervals; see the
+\fBpsbasemap\fP man page for all the details.
+.TP
+\fB\-C\fP
+Give a color palette file.  If \fB\-S\fP is set, let symbol fill color be determined by the
+z-value in the third column.  Additional fields are shifted over by one column
+(optional size would be 4th rather than 3rd field, etc.).
+If \fB\-S\fP is not set, then \fBpsxy\fP expects the user to supply a multisegment line or polygon file
+(requires \fB\-m\fP) where each segment header contains a \fB\-Z\fP\fIval\fP string.  The \fIval\fP
+will control the color of the line or polygon (if \fB\-L\fP is set) via the cpt file.
+.TP
+\fB\-D\fP
+Offset the plot symbol or line locations by the given amounts \fIdx/dy\fP [Default is no offset].
+If \fIdy\fP is not given it is set equal to \fIdx\fP.
+.TP
+\fB\-E\fP
+Draw error bars.  Append \fBx\fP and/or \fBy\fP to indicate which bars you want to draw (Default is both x and y).  The x and/or
+y errors must be stored in the columns after the (x,y) pair [or (x,y,size) triplet].  The
+\fIcap\fP parameter indicates the length of the end-cap on the error bars [0.25c (or 0.1i)].  Pen
+attributes for error bars may also be set (see SPECIFYING PENS below) [Defaults: width = 0.25p, color = black, texture = solid].
+A leading \fB+\fP will use the lookup color (via \fB\-C\fP) for both symbol fill and error pen color, while a leading
+\fB-\fP will set error pen color and turn off symbol fill.
+If upper case \fBX\fP and/or \fBY\fP is used we will instead draw "box-and-whisker" (or "stem-and-leaf") symbols.  The x (or y)
+coordinate is then taken as the median value, and 4 more columns are expected to contain the minimum (0% quantile), the 25%
+quantile, the 75% quantile, and the maximum (100% quantile) values.  The 25-75% box may be filled by using \fB\-G\fP.
+If \fBn\fP is appended to \fBX\fP (or \fBY\fP) we draw a notched "box-and-whisker" symbol where the notch width reflects
+the uncertainty in the median.  Then a 5th extra data column is expected to contain the number of points in the distribution.
+.TP
+\fB\-G\fP
+Select color or pattern for filling of symbols or polygons [Default is no fill].
+(See SPECIFYING FILL below).
+.br
+Note when \fB\-m\fP is chosen, \fBpsxy\fP will search for \fB\-G\fP and \fB\-W\fP
+strings in all the subheaders and let any values thus found over-ride the command line settings
+(see \fB\-m\fP below).
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-I\fP
+Use the supplied \fIintens\fP value (nominally in the -1 to + 1 range) to modulate the fill color by simulating illumination [none].
+.TP
+\fB\-K\fP
+More \fIPostScript\fP code will be appended later [Default terminates the plot system].
+.TP
+\fB\-L\fP
+Force closed polygons: connect the endpoints of the line-segment(s) and draw polygons.
+Also, in concert with \fB\-C\fP, \fB\-m\fP, and \fB\-Z\fP settings in the headers will use the implied
+color for polygon fill [Default is polygon pen color].
+.TP
+\fB\-N\fP
+Do NOT skip symbols that fall outside map border [Default plots points inside border only].
+The option does not apply to lines and polygons which are always clipped to the map region.
+.TP
+\fB\-O\fP
+Selects Overlay plot mode [Default initializes a new plot system].
+.TP
+\fB\-P\fP
+Selects Portrait plotting mode [Default is Landscape, see \fBgmtdefaults\fP to change this].
+.TP
+\fB\-S\fP
+Plot symbols.  If present, \fIsize\fP is symbol size in the unit set in \.gmtdefaults4
+(unless \fBc\fP, \fBi\fP, \fBm\fP, or \fBp\fP is appended).
+If \fIsize\fP is not given it is expected in the third (or 4th if \fB\-C\fP is used) column.  Any
+additional fields are shifted over by one column.
+If the symbol code (see below) is not given it will be read from the last column in the input data;
+this cannot be used in conjunction with \fB\-b\fP.  Optionally, append
+\fBc\fP, \fBi\fP, \fBm\fP, \fBp\fP to indicate that the size information in the
+input data is in units of cm, inch, meter, or point, respectively [Default is \fBMEASURE_UNIT\fP].
+Note: if you give both size and symbol via the input file you must use \fBMEASURE_UNIT\fP to
+indicate the units used for the symbol size.
+.br
+The uppercase symbols \fBA\fP, \fBC\fP, \fBD\fP, \fBG\fP, \fBH\fP, \fBI\fP, \fBN\fP, \fBS\fP, \fBT\fP
+are normalized to have the same area as a circle with diameter \fIsize\fP,
+while the size of the corresponding lowercase symbols refers to the diameter of a circumscribed circle.
+Choose between these symbol codes:
+.TP
+\fB\-S-\fP
+x-dash (-).  \fIsize\fP is the length of a short horizontal line segment.
+.TP
+\fB\-S+\fP
+plus (+).  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Sa\fP
+st\fBa\fPr.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Sb\fP
+Vertical \fBb\fPar extending from \fIbase\fP to y.  \fIsize\fP is bar width. Append \fBu\fP
+if \fIsize\fP is in x-units [Default is plot-distance units]. By default,
+\fIbase\fP = ymin.  Append \fBb\fP\fIbase\fP to change this value.
+.TP
+\fB\-SB\fP
+Horizontal \fBb\fPar extending from \fIbase\fP to x.  \fIsize\fP is bar width. Append \fBu\fP
+if \fIsize\fP is in y-units [Default is plot-distance units]. By default,
+\fIbase\fP = xmin.  Append \fBb\fP\fIbase\fP to change this value.
+.TP
+\fB\-Sc\fP
+\fBc\fPircle.  \fIsize\fP is diameter of circle.
+.TP
+\fB\-Sd\fP
+\fBd\fPiamond.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Se\fP
+\fBe\fPllipse.  Direction (in degrees counter-clockwise from horizontal), major_axis, and minor_axis must
+be found in columns 3, 4, and 5.
+.TP
+\fB\-SE\fP
+Same as \fB\-Se\fP, except azimuth (in degrees east of north) should be given instead of direction.  The azimuth will
+be mapped into an angle based on the chosen map projection (\fB\-Se\fP leaves the directions
+unchanged.)  Furthermore, the axes lengths must be given in km instead of plot-distance units.  An exception occurs for
+a linear projection in which we assume the ellipse axes are given in the same units as \fB\-R\fP.
+.TP
+\fB\-Sf\fP
+\fBf\fPront.  \fB\-Sf\fP\fIgap/size\fP[\fIdir\fP][\fItype\fP][:\fIoffset\fP].  Supply distance gap between symbols and symbol size.
+If \fIgap\fP is negative, it is interpreted to mean the number of symbols along the front instead.  Append \fIdir\fP to plot symbols
+on the \fBl\fPeft or \fBr\fPight side of the front [Default is centered].  Append \fItype\fP to specify which symbol
+to plot: \fBb\fPox, \fBc\fPircle, \fBf\fPault, \fBs\fPlip, or \fBt\fPriangle.  [Default is fault].
+Slip means left-lateral or right-lateral strike-slip arrows (centered is not an option).  Append :\fIoffset\fP to offset
+the first symbol from the beginning of the front by that amount [Default is 0].
+.TP
+\fB\-Sg\fP
+octa\fBg\fPon.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Sh\fP
+\fBh\fPexagon.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Si\fP
+\fBi\fPnverted triangle.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Sj\fP
+Rotated rectangle.  Direction (in degrees counter-clockwise from horizontal), x-dimension, and y-dimension must be found in columns 3, 4, and 5.
+.TP
+\fB\-SJ\fP
+Same as \fB\-Sj\fP, except azimuth (in degrees east of north) should be given instead of direction.  The azimuth will
+be mapped into an angle based on the chosen map projection (\fB\-Sj\fP leaves the directions
+unchanged.)  Furthermore, the dimensions must be given in km instead of plot-distance units.  An exception occurs for
+a linear projection in which we assume the dimensions are given in the same units as \fB\-R\fP.
+.TP
+\fB\-Sk\fP
+\fBk\fPustom symbol.  Append <name>/\fIsize\fP, and we will look for a definition file called
+<name>.def in (1) the current directory or (2) in ~/.gmt or (3) in \fB$GMT_SHAREDIR\fP/custom.  The symbol as defined
+in that file is of size 1.0 by default; the appended \fIsize\fP will scale symbol accordingly.
+Users may add their own custom *.def files; see CUSTOM SYMBOLS below.
+.TP
+\fB\-Sl\fP
+\fBl\fPetter or text string (less than 64 characters).  Give size, and append /\fIstring\fP after the size.
+Note that the size is only approximate; no individual scaling
+is done for different characters.  Remember to escape special characters like *.  Optionally, you may append %\fIfont\fP
+to select a particular font [Default is \fBANNOT_FONT_PRIMARY\fP].
+.TP
+\fB\-Sm\fP
+\fBm\fPath angle arc, optionally with one or two arrow heads.  The \fIsize\fP is the radius of the arc.
+Start and stop directions (in degrees counter-clockwise from horizontal) for arc
+must be found in columns 3 and 4.  Use \fB\-Smf\fP to add arrow head at first angle, \fB\-Sml\fP for arrow head at last angle, and \fB\-Smb\fP for both
+[Default is no arrow heads].
+.TP
+\fB\-Sn\fP
+pe\fBn\fPtagon.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Sp\fP
+\fBp\fPoint.  No size needs to be specified (1 pixel is used).
+.TP
+\fB\-Sq\fP
+\fBq\fPuoted line, i.e., lines with annotations such as contours.
+Append [\fBd\fP|\fBD\fP|\fBf\fP|\fBl\fP|\fBL\fP|\fBn\fP|\fBx\fP|\fBX\fP]\fIinfo\fP[:\fIlabelinfo\fP].
+The required argument controls the placement of labels along the quoted lines.
+Choose among five controlling algorithms:
+.RS
+.TP
+\fBd\fP\fIdist\fP[\fBc\fP|\fBi\fP|\fBm\fP|\fBp\fP] or \fBD\fP\fIdist\fP[\fBd\fP|\fBe\fP|\fBk\fP|\fBm\fP|\fBn\fP]
+For lower case \fBd\fP, give distances between labels on the plot in your preferred measurement unit
+\fBc\fP (cm), \fBi\fP (inch), \fBm\fP (meter), or \fBp\fP (points), while for upper case \fBD\fP, specify
+distances in map units and append the unit; choose among \fBe\fP (m), \fBk\fP (km), \fBm\fP (mile), \fBn\fP
+(nautical mile), or \fBd\fP (spherical degree).  [Default is 10\fBc\fP or 4\fBi\fP].  
+.TP
+\fBf\fP\fIffile.d\fP
+Reads the ascii file \fIffile.d\fP and places labels at locations in the file
+that matches locations along the quoted lines.
+Inexact matches and points outside the region are skipped.
+.TP
+\fBl|L\fP\fIline1\fP[,\fIline2\fP,...]
+Give \fIstart\fP and \fIstop\fP coordinates for one or
+more comma-separated straight line segments.  Labels will be placed where these lines intersect the
+quoted lines.  The format of each \fIline\fP specification is \fIstart/stop\fP, where \fIstart\fP and \fIstop\fP
+are either a specified point \fIlon/lat\fP or a 2-character \fBXY\fP key that uses the justification
+format employed in \fBpstext\fP to indicate a point on the map, given as [LCR][BMT].
+\fBL\fP will interpret the point pairs as defining great circles [Default is straight line].
+.TP
+\fBn\fP\fIn_label\fP
+Specifies the number of equidistant labels for quoted lines line [1].
+Upper case \fBN\fP starts labeling exactly at the start of the line [Default centers them along the line].
+\fBN\fP-1 places one justified label at start, while \fBN\fP+1 places one justified
+label at the end of quoted lines.
+Optionally, append /\fImin_dist\fP[c|i|m|p] to enforce that a minimum distance separation
+between successive labels is enforced.
+.TP
+\fBx|X\fP\fIxfile.d\fP
+Reads the multi-segment file \fIxfile.d\fP and places labels at the intersections
+between the quoted lines and the lines in\fIxfile.d\fP.  \fBX\fP will resample the lines first along
+great-circle arcs.
+.P
+In addition, you may optionally append \fB+r\fP\fIradius\fP[\fBc\fP|\fBi\fP|\fBm\fP|\fBp\fP] to set a minimum label separation in the
+x-y plane [no limitation].
+.RE
+.sp
+.RS
+The optional \fIlabelinfo\fP controls the specifics of the label formatting and consists of a concatenated string
+made up of any of the following control arguments:
+.RE
+.RS
+.TP
+\fB+a\fP\fIangle\fP
+For annotations at a fixed angle, \fB+an\fP for line-normal, or \fB+ap\fP for line-parallel [Default].
+.TP
+\fB+c\fP\fIdx\fP[/\fIdy\fP]
+Sets the clearance between label and optional text box.  Append \fBc|i|m|p\fP to specify
+the unit or % to indicate a percentage of the label font size [15%].
+.TP
+\fB+d\fP
+Turns on debug which will draw helper points and lines to illustrate the workings of the quoted line setup.
+.TP
+\fB+f\fP\fIfont\fP
+Sets the desired font [Default \fBANNOT_FONT_PRIMARY\fP].
+.TP
+\fB+g\fP[\fIcolor\fP]
+Selects opaque text boxes [Default is transparent]; optionally specify the color [Default is \fBPAGE_COLOR\fP].
+(See SPECIFYING COLOR below).
+.TP
+\fB+j\fP\fIjust\fP
+Sets label justification [Default is MC].  Ignored when -SqN|n+|-1 is used.
+.TP
+\fB+k\fP\fIcolor\fP
+Sets color of text labels [Default is \fBCOLOR_BACKGROUND\fP].
+(See SPECIFYING COLOR below).
+.TP
+\fB+l\fP\fIlabel\fP
+Sets the constant label text.
+.TP
+\fB+L\fP\fIflag\fP
+Sets the label text according to the specified flag:
+.RS
+.TP
+\fB+Lh\fP
+Take the label from the current multisegment header (first scan for an embedded
+\fB\-L\fP\fIlabel\fP option, if not use the first word following the segment flag).
+For multiple-word labels, enclose entire label in double quotes.
+.TP
+\fB+Ld\fP
+Take the Cartesian plot distances along the line as the label; append \fBc|i|m|p\fP
+as the unit [Default is \fBMEASURE_UNIT\fP].
+.TP
+\fB+LD\fP
+Calculate actual map distances; append \fBd|e|k|m|n\fP as the unit [Default is \fBd\fP(egrees),
+unless label placement was based on map distances along the lines in which case we use the same unit specified for that algorithm].
+Requires a map projection to be used.
+.TP
+\fB+Lf\fP
+Use text after the 2nd column in the fixed label location file as the label.  Requires the fixed label
+location setting.
+.TP
+\fB+Lx\fP
+As \fB+Lh\fP but use the headers in the \fIxfile.d\fP instead.  Requires the crossing file option.
+.RE
+.TP
+\fB+n\fP\fIdx\fP[/\fIdy\fP]
+Nudges the placement of labels by the specified amount (append \fBc|i|m|p\fP to specify the units).
+Increments are considered in the coordinate system defined by the orientation of the line; use
+\fB+N\fP to force increments in the plot x/y coordinates system [no nudging].
+.TP
+\fB+o\fP
+Selects rounded rectangular text box [Default is rectangular].  Not applicable for curved text (\fB+v\fP) and
+only makes sense for opaque text boxes.
+.TP
+\fB+p\fP[\fIpen\fP]
+Draws the outline of text boxsets [Default is no outline]; optionally specify pen for outline [Default is width = 0.25p, color = black, texture = solid].
+(See SPECIFYING PENS below).
+.TP
+\fB+r\fP\fImin_rad\fP
+Will not place labels where the line's radius of curvature is less than \fImin_rad\fP [Default is 0].\"'
+.TP
+\fB+s\fP\fIsize\fP
+Sets the desired font size in points [Default is 9].
+.TP
+\fB+u\fP\fIunit\fP
+Appends \fIunit\fP to all line labels. If \fIunit\fP starts with a leading hyphen (-) then there will be no space
+between label value and the unit.
+[Default is no unit].
+.TP
+\fB+v\fP
+Specifies curved labels following the path [Default is straight labels].
+.TP
+\fB+w\fP
+Specifies how many (\fIx, y\fP) points will be used to estimate label angles [Default is 10].
+.TP
+\fB+=\fP\fIprefix\fP
+Prepends \fIprefix\fP to all line labels.
+If \fIprefix\fP starts with a leading hyphen (-) then there will be no space
+between label value and the prefix. [Default is no prefix].
+.RE
+.TP
+\fB\-Sr\fP
+\fBr\fPectangle.  No size needs to be specified, but the x- and y-dimensions must be found in columns
+3 and 4.
+.TP
+\fB\-Ss\fP
+\fBs\fPquare.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-St\fP
+\fBt\fPriangle.  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Sv\fP
+\fBv\fPector.  Direction (in degrees counter-clockwise from horizontal) and length must be found in columns 3 and 4.
+\fIsize\fP, if present, will be interpreted as \fIarrowwidth/headlength/headwidth\fP
+[Default unit is 0.075\fBc\fP/0.3\fBc\fP/0.25\fBc\fP (or 0.03\fBi\fP/0.12\fBi\fP/0.1\fBi\fP)].
+By default arrow attributes remains invariant to the length
+of the arrow.  To have the size of the vector scale down with decreasing size,
+append \fBn\fP\fInorm\fP, where vectors shorter than \fInorm\fP will have their
+attributes scaled by length/\fInorm\fP.
+To center vector on balance point, use \fB\-Svb\fP; to align point with the vector head,
+use \fB\-Svh\fP; to align point with the vector tail, use \fB\-Svt\fP [Default].
+To give the head point's coordinates\"'
+instead of direction and length, use \fB\-Svs\fP.  Upper case \fBB, H, T, S\fP will draw a double-headed vector [Default is single head].
+.TP
+\fB\-SV\fP
+Same as \fB\-Sv\fP, except azimuth (in degrees east of north) should be given instead of direction.  The azimuth will
+be mapped into an angle based on the chosen map projection (\fB\-Sv\fP leaves the directions
+unchanged.)
+.TP
+\fB\-Sw\fP
+pie \fBw\fPedge.  Start and stop directions (in degrees counter-clockwise from horizontal) for pie slice
+must be found in columns 3 and 4.
+.TP
+\fB\-SW\fP
+Same as \fB\-Sw\fP, except azimuths (in degrees east of north) should be given instead of the two directions.  The azimuths will
+be mapped into angles based on the chosen map projection (\fB\-Sw\fP leaves the directions unchanged.)
+.TP
+\fB\-Sx\fP
+cross (x).  \fIsize\fP is diameter of circumscribing circle.
+.TP
+\fB\-Sy\fP
+y-dash (|).  \fIsize\fP is the length of a short vertical line segment.
+.TP
+\fB\-T\fP
+Ignore all input files, including standard input. This is the same as specifying /dev/null (or NUL for
+Windows users) as input file. Use this to activate only the options that are not related to plotting
+of lines or symbols, such as \fBpsxy\fP \fB\-R\fP \fB\-J\fP \fB\-O\fP \fB\-T\fP to terminate a sequence of
+\fBGMT\fP plotting commands without producing any plotting output.
+.TP
+\fB\-U\fP
+Draw Unix System time stamp on plot.
+By adding \fIjust/dx/dy/\fP, the user may specify the justification of the stamp and
+where the stamp should fall on the page relative to lower left corner of the plot.
+For example, BL/0/0 will align the lower left corner of the time stamp with the lower left corner of the plot.
+Optionally, append a \fIlabel\fP, or \fBc\fP (which will plot the command string.).
+The \fBGMT\fP parameters \fBUNIX_TIME\fP, \fBUNIX_TIME_POS\fP, and \fBUNIX_TIME_FORMAT\fP can affect the appearance;
+see the \fBgmtdefaults\fP man page for details.
+The time string will be in the locale set by the environment variable \fBTZ\fP (generally local time).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Set pen attributes for lines or the outline of symbols [Defaults: width = 0.25p, color = black, texture = solid].
+A leading \fB+\fP will use the lookup color (via \fB\-C\fP) for both symbol fill and outline pen color, while a leading
+\fB-\fP will set outline pen color and turn off symbol fill.
+(See SPECIFYING PENS below).
+.TP
+\fB\-X\fP \fB\-Y\fP
+Shift plot origin relative to the current origin by (\fIx-shift,y-shift\fP) and
+optionally append the length unit (\fBc\fP, \fBi\fP, \fBm\fP, \fBp\fP).
+You can prepend \fBa\fP to shift the origin back to the original position after plotting,
+or prepend  \fBr\fP [Default] to reset the current origin to the new location.
+If \fB\-O\fP is used then the default (\fIx-shift,y-shift\fP) is (0,0), otherwise it is
+(r1i, r1i) or (r2.5c, r2.5c).
+Alternatively, give \fBc\fP to align the center coordinate (x or y) of the plot with the center of the page
+based on current page size.
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is the required number of columns given the chosen settings].
+.TP
+\fB\-c\fP
+Specifies the number of plot copies. [Default is 1].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.TP
+\fB\-g\fP
+Examine the spacing between consecutive data points in order to impose breaks in the line.
+Append \fBx\fP|\fBX\fP or \fBy\fP|\fBY\fP to define a gap when there is a large enough change in the x or y coordinates, respectively,
+or \fBd\fP|\fBD\fP for distance gaps; use upper case to calculate gaps from projected coordinates.  For gap-testing on other columns
+use [\fIcol\fP]\fBz\fP; if \fIcol\fP is not prepended the it defaults to 2 (i.e., 3rd column).
+Append [+|-]\fIgap\fP and optionally a unit \fBu\fP.  Regarding optional signs: -ve means previous minus current column value must exceed
+|\fIgap\fP to be a gap, +ve means current minus previous column value must exceed \fIgap\fP, and no sign means the absolute value of the
+difference must exceed \fIgap\fP.
+For geographic data (\fBx\fP|\fBy\fP|\fBd\fP), the unit \fBu\fP may be m\fBe\fPter [Default], \fBk\fPilometer, \fBm\fPiles, or \fBn\fPautical miles.
+For projected data (\fBX\fP|\fBY\fP|\fBD\fP), choose from \fBi\fPnch, \fBc\fPentimeter, \fBm\fPeter, or \fBp\fPoints [Default unit set by MEASURE_UNIT].
+Note: For \fBx\fP|\fBy\fP|\fBz\fP with time data the unit is instead controlled by TIME_UNIT.
+Repeat the option to specify multiple criteria, of which any can be met to produce a line break.
+Issue an additional \fB\-ga\fP to indicate that all criteria must be met instead.
+The \fB\-g\fP option is ignored if \fB\-S\fP is set.
+.TP
+\fB\-m\fP
+Multiple segment file.  Segments are separated by a record whose first character is \fIflag\fP
+[Default is '>']. On these segment header records one or more of the following options can be added:
+.br
+\fB\-G\fP\fIfill\fP Use the new \fIfill\fP and turn filling on
+.br
+\fB\-G-\fP Turn filling off
+.br
+\fB\-G+\fP Revert to default fill (none if not set on command line)
+.br
+\fB\-W\fP\fIpen\fP Use the new \fIpen\fP and turn outline on
+.br
+\fB\-W-\fP Turn outline off
+.br
+\fB\-W+\fP Revert to default pen (none if not set on command line)
+.br
+\fB\-Z\fP\fIzval\fP Obtain fill via cpt lookup using z-value \fIzval\fP
+.br
+\fB\-ZNaN\fP Get the NaN color from the cpt file
+.SS SPECIFYING PENS
+.TP
+\fIpen\fP
+The attributes of lines and symbol outlines as defined by \fIpen\fP is a comma delimetered list of
+\fIwidth\fP, \fIcolor\fP and \fItexture\fP, each of which is optional.
+\fIwidth\fP can be indicated as a measure (points, centimeters, inches) or as \fBfaint\fP, \fBthin\fP[\fBner\fP|\fBnest\fP],
+\fBthick\fP[\fBer\fP|\fBest\fP], \fBfat\fP[\fBter\fP|\fBtest\fP], or \fBobese\fP.
+\fIcolor\fP specifies a gray shade or color (see SPECIFYING COLOR below).
+\fItexture\fP is a combination of dashes `-' and dots `.'.
+.SS SPECIFYING FILL
+.TP
+\fIfill\fP
+The attribute \fIfill\fP specifies the solid shade or solid \fIcolor\fP
+(see SPECIFYING COLOR below) or the pattern used for filling polygons.
+Patterns are specified as \fBp\fP\fIdpi/pattern\fP, where \fIpattern\fP gives
+the number of the built-in pattern (1-90) \fIor\fP the name of a Sun 1-, 8-,
+or 24-bit raster file. The \fIdpi\fP sets the resolution of the image. For
+1-bit rasters: use \fBP\fP\fIdpi/pattern\fP for inverse video, or append
+\fB:F\fP\fIcolor\fP[\fBB\fP[\fIcolor\fP]] to specify fore- and background
+colors (use \fIcolor\fP = - for transparency).
+See \fBGMT\fP Cookbook & Technical Reference Appendix E for information
+on individual patterns.
+.SS SPECIFYING COLOR
+.TP
+\fIcolor\fP
+The \fIcolor\fP of lines, areas and patterns can be specified by a valid color name;
+by a gray shade (in the range 0\-255); by a decimal color code (r/g/b, each in range 0\-255; h-s-v, ranges
+0\-360, 0\-1, 0\-1; or c/m/y/k, each in range 0\-1); or by a hexadecimal color code (#rrggbb, as used in HTML).
+See the \fBgmtcolors\fP manpage for more information and a full list of color names.
+.SH EXAMPLES
+To plot solid red circles (diameter = 0.25 cm) at the positions listed in the file DSDP.xy on a
+Mercator map at 5 cm/degree of the area 150E to 154E, 18N to 23N, with tickmarks every 1 degree
+and gridlines every 15 minutes, use
+.br
+.sp
+\fBpsxy\fP DSDP.xy \fB\-R\fP150/154/18/23 \fB\-Jm\fP5\fBc \-Sc\fP0.25\fBc\fP \fB\-G\fPred \fB\-B\fP1\fBg\fP15\fBm\fP | lpr
+.br
+.sp
+To plot the xyz values in the file quakes.xyzm as circles with size given by the magnitude in the
+4th column and color based on the depth in the third using the color palette cpt on a linear map, use
+.br
+.sp
+\fBpsxy\fP quakes.xyzm \fB\-R\fP0/1000/0/1000 \fB\-JX\fP6\fBi\fP \fB\-Sc\fP \fB\-C\fPcpt \fB\-B\fP200 > map.ps
+.br
+.sp
+To plot the file trench.xy on a Mercator map, with white triangles with sides 0.25 inch on the left
+side of the line, spaced every 0.8 inch, use
+.br
+.sp
+\fBpsxy\fP trench.xy \fB\-R\fP150/200/20/50 \fB\-Jm\fP0.15\fBi \-Sf\fP0.8\fBi\fP/0.1\fBilt\fP \fB\-G\fPwhite \fB\-W\fP \fB\-B\fP10 | lpr
+br
+.sp
+To plot the data in the file misc.d as symbols determined by the code in the last column, and with size given
+by the magnitude in the 4th column, and color based on the third column via the color palette cpt on a linear map, use
+.br
+.sp
+\fBpsxy\fP misc.d \fB\-R\fP0/100/-50/100 \fB\-JX\fP6\fBi\fP \fB\-S\fP \fB\-C\fPcpt \fB\-B\fP20 > t.ps
+.SH CUSTOM SYMBOLS
+\fBpsxy\fP and \fBpsxyz\fP allows users to define and plot their own custom symbols.
+This is done by encoding the symbol using a simple plotting code described below.  Put
+all the plotting codes for your new symbol in a file whose extension must be .def; you may then address
+the symbol without giving the extension (e.g., the symbol file tsunami.def is used by specifying \fB\-Sk\fP\fItsunami/size\fP.
+The definition file can contain any number of plot code records, as well as blank lines and comment lines (starting with #).
+\fBpsxy\fP and \fBpsxyz\fP will look for the definition files in (1) the current directory, (2) the ~/.gmt
+directory, and (3) the \fB$GMT_SHAREDIR\fP/custom directory, in that order.
+Freeform polygons (made up of straight line segments and arcs of circles) can be designed - these polygons can be
+painted and filled with a pattern.  Other standard geometric symbols can also be used. Generate freeform polygons
+by starting with an anchor point (append [ \fB\-W\fP\fIpen\fP ] and [ \fB\-G\fP\fIfill\fP ]
+to indicate pen and fill attributes):
+.br
+	\fIx0	y0\fP	\fBM\fP
+.br
+and draw a straight line from the current point to the next point with
+.br
+	\fIx	y\fP	\fBD\fP
+.br
+or add an arc by using
+.br
+	\fIxc	yc	r	dir1	dir2\fP	\fBA\fP
+.br
+When a record other than the \fBD\fP or \fBA\fP is encountered, the polygon is closed and considered complete.
+The optional pen and fill setting hardwires particular values for this feature.  If not present the polygon's\"'
+characteristics are determined by the command line settings for pen and fill.  To deactivate fill or outline
+for any given polygon, give \fB\-G\-\fP or \fB\-W\-\fP.  To add other geometric shapes
+to your custom symbol, add any number of the following plot code records (each accepts the optional
+[ \fB\-W\fP\fIpen\fP ] and [ \fB\-G\fP\fIfill\fP ] at the end):
+.br
+.sp
+circle:	\fIx	y	size\fP	\fBc\fP
+.br
+cross:	\fIx	y	size\fP	\fBx\fP
+.br
+diamond:	\fIx	y	size\fP	\fBd\fP
+.br
+ellipse:	\fIx	y	dir	major	minor\fP	\fBe\fP
+.br
+hexagon:	\fIx	y	size\fP	\fBh\fP
+.br
+invtriangle:	\fIx	y	size\fP	\fBi\fP
+.br
+letter:	\fIx	y	size	string\fP	\fBl\fP
+.br
+octagon:	\fIx	y	size\fP	\fBg\fP
+.br
+pentagon:	\fIx	y	size\fP	\fBn\fP
+.br
+plus:	\fIx	y	size\fP	\fB+\fP
+.br
+rect:	\fIx	y	xwidth	ywidth\fP	\fBr\fP
+.br
+square:	\fIx	y	size\fP	\fBs\fP
+.br
+star:	\fIx	y	size\fP	\fBa\fP
+.br
+triangle:	\fIx	y	size\fP	\fBt\fP
+.br
+wedge:	\fIx	y	radius	dir1	dir2\fP	\fBw\fP
+.br
+x-dash:	\fIx	y	size\fP	\fB-\fP
+.br
+y-dash:	\fIx	y	size\fP	\fBy\fP
+.br
+.sp
+When designing your symbol, the \fIx, y\fP and other dimensions are relative to a symbol of size 1, and all the
+dimensions will be scaled by the actual symbol size chosen at run-time.  To design a symbol, make a grid paper
+with \fBpsbasemap \-R\fP-0.5/0.5/-0.5/0.5 \fB\-JX\fP4\fBi\fP \fB\-Ba\fP0.1\gBg\gP0.05 \fB\-P\fP > grid.ps and
+draw your symbol, centering it on (0,0).  For examples of symbols, see the set supplied with \fBGMT\fP in
+\fB$GMT_SHAREDIR\fP/custom.
+.SH BUGS
+The \fB\-N\fP option does not adjust the BoundingBox information so you may
+have to post-process the \fIPostScript\fP output with \fBps2raster -A\fP to obtain
+the correct BoundingBox.
+.br
+\fBpsxy\fP cannot handle filling of polygons that contain the south or north pole.  For such a polygon,
+make a copy and split it into two and make each explicitly contain the polar point.  The two polygons
+will combine to give the desired effect when filled; to draw outline use the original polygon.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR gmtcolors (5),
+.IR psbasemap (1),
+.IR psxyz (1)

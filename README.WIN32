@@ -1,0 +1,52 @@
+	$Id: README.WIN32,v 1.26 2011/07/13 21:59:15 guru Exp $
+
+README file for installing GMT from scratch (i.e., compiling the
+source) under Windows.  If you only want to install executables,
+follow the GMT website link to our GMT Windows Installers.
+
+INSTALLATION:
+=============
+
+To compile GMT for your Windows you must
+
+1  Obtain precompiled netCDF files (netcdf.lib, netcdf.dll) and the
+   netcdf.h include file from the netCDF home page.
+2  Add HOME (your home directory, or C:\), GMTHOME (the top directory
+   where you install GMT), and GMT_SHAREDIR (where you plan to store
+   the run-time share files, typically %GMTHOME%\share) and modify
+   PATH in the environmental parameters via the system settings so
+   that %GMTHOME%\bin is included.
+   
+3  Also modify the entries for INCLUDE and LIB (create them if they
+   do not exist) so they include the paths to the netCDF library
+   netcdf.lib and the netCDF include file netcdf.h.  These are used
+   by the Microsoft (and other?) compilers and linkers to find these
+   files.
+
+4  Read the src\gmtinstall.bat and src\gmtsuppl.bat file instructions
+   and make whatever modifications you need to (e.g., if you want to
+   use static libraries or the optional TRIANGLE function.)
+
+5  Run gmtinstall.bat followed by gmtsuppl.bat.
+
+6. Note that these notes may get out of date; see the actual *.bat
+   files for the latest settings.
+
+ADDITIONAL MATERIAL:
+====================
+
+The complete GMT Documentation, including a Cookbook and Technical
+Reference Manual, a Tutorial and Short Course Manual, all examples,
+and UNIX man pages, all in HTML and PDF format are all included in
+the archive.  After installing, make a bookmark for the file
+
+	GMT/share/doc/gmt/html/gmt_sevices.html.
+
+To install the required GSHHS 2.2.0 coastlines, political borders, and
+rivers you must obtain gshhs-2.2.0.tar.bz2 as well. Extract from the
+directory that contains GMT.
+
+To view your GMT PostScript or EPS plots, we recommend you install gsview
+(see www.cs.wisc.edu/~ghost/gsview). It is required to run the do_view script.
+
+The GMT Team

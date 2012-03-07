@@ -1,0 +1,147 @@
+.TH GRDMASK 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+grdmask \- Create mask grid files from xy paths.
+.SH SYNOPSIS
+\fBgrdmask\fP \fIpathfiles\fP \fB\-G\fP\fImask_grd_file\fP] \fB\-I\fP\fIxinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP][/\fIyinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP]] 
+\fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-A\fP[\fBm\fP|\fBp\fP] ] [ \fB\-F\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] 
+[ \fB\-N\fP\fIout/edge/in\fP ] [ \fB\-S\fP\fIsearch_radius\fP[\fBm|c|k|K\fP] ] 
+[ \fB\-V\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP\fIcolinfo\fP ] [ \fB\-m\fP[\fIflag\fP] ]
+.SH DESCRIPTION
+\fBgrdmask\fP can operate in two different modes. 1. It reads one or more xy-files that each define a closed polygon.
+The nodes defined by the specified region and lattice spacing will be set equal to one of three possible values
+depending on whether the node is outside, on the polygon perimeter, or inside the polygon.  The
+resulting mask may be used in subsequent operations involving \fBgrdmath\fP to mask out
+data from polygonal areas. 2. The xy-files simply represent data point locations and the mask is set to the
+inside or outside value depending on whether a node is within a maximum distance from the nearest data point.
+If the distance specified is zero then only the nodes nearest each data point are considered "inside".
+.TP
+\fIpathfiles\fP
+The name of 1 or more ASCII [or binary, see \fB\-b\fP] files holding the polygon(s) or data points.
+.TP
+\fB\-G\fP
+Name of resulting output mask grid file.
+(See GRID FILE FORMATS below).
+.TP
+\fB\-I\fP
+\fIx_inc\fP [and optionally \fIy_inc\fP] is the grid spacing. Optionally, append a suffix
+modifier.  \fBGeographical (degrees) coordinates\fP: Append \fBm\fP to
+indicate arc minutes or \fBc\fP to indicate arc seconds.  If one of the units \fBe\fP, \fBk\fP, \fBi\fP,
+or \fBn\fP is appended instead, the increment is assumed to be given in meter, km, miles, or
+nautical miles, respectively, and will be converted to the equivalent degrees longitude at
+the middle latitude of the region (the conversion depends on \fBELLIPSOID\fP).  If /\fIy_inc\fP is given but set to 0 it will be reset equal to
+\fIx_inc\fP; otherwise it will be converted to degrees latitude.  
+\fBAll coordinates\fP: If \fB=\fP is appended then
+the corresponding max \fIx\fP (\fIeast\fP) or \fIy\fP (\fInorth\fP) may be slightly adjusted to fit exactly the given increment
+[by default the increment may be adjusted slightly to fit the given domain].  Finally, instead
+of giving an increment you may specify the \fInumber of nodes\fP desired by appending \fB+\fP to
+the supplied integer argument; the increment is then recalculated from the number of nodes and the domain.
+The resulting increment value depends on whether you have selected a gridline-registered
+or pixel-registered grid; see Appendix B for details.  Note: if \fB\-R\fP\fIgrdfile\fP is used then
+grid spacing has already been initialized; use \fB\-I\fP to override the values.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.SH OPTIONS
+.TP
+\fB\-A\fP
+If the input data are geographic (as indicated by \fB\-fi\fP) then the sides in the polygons will be
+approximated by great circle arcs.  When using the \fB\-A\fP sides will be regarded as straight lines.
+Alternatively, append \fBm\fP to have sides first follow meridians, then parallels. Or append \fBp\FP
+to first follow parallels, then meridians.
+.TP
+\fB\-F\fP
+Force pixel node registration [Default is gridline registration].
+(Node registrations are defined in \fBGMT\fP Cookbook Appendix B on grid file formats.)
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-N\fP
+Sets the values that will be assigned to nodes that are \fIout\fPside the polygons,
+on the \fIedge\fP, or \fIin\fPside.  Values can be any number, including the
+textstring NaN  [Default is 0/0/1].
+.TP
+\fB\-S\fP
+Set nodes depending on their distance from the nearest data point.  Nodes within \fIradius\fP [0] from
+a data point are considered inside.  Append \fBm\fP to indicate minutes
+or \fBc\fP to indicate seconds.  Append \fBk\fP to indicate km (implies \fB\-R\fP and \fB\-I\fP are in degrees, and
+we will use a fast flat Earth approximation to calculate distance).  For more accuracy, use uppercase \fBK\fP
+if distances should be calculated along geodesics.
+However, if the current \fBELLIPSOID\fP is spherical then great circle calculations are used.
+If \fB\-S\fP is not set then we consider the input data to define closed polygon(s) instead.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 2 input columns].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.TP
+\fB\-m\fP
+Multiple segment file.  Segments are separated by a record whose first character is \fIflag\fP.
+[Default is '>'].
+.SH GRID FILE FORMATS
+By default \fBGMT\fP writes out grid as single precision floats in a COARDS-complaint netCDF file format.
+However, \fBGMT\fP is able to produce grid files in many other commonly used grid file formats and also facilitates so called "packing" of grids,
+writing out floating point data as 2- or 4-byte integers. To specify the precision, scale and offset, the user should add the suffix
+\fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]], where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When writing a netCDF file, the grid is stored by default with the variable name "z". To specify another variable name \fIvarname\fP,
+append \fB?\fP\fIvarname\fP to the file name.  Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+.SH GEOGRAPHICAL AND TIME COORDINATES
+When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
+attributes of the input data or grid (if any) or on the
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
+specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
+In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
+.SH EXAMPLES
+To set all nodes inside and on the polygons coastline_*.xy to 0, and outside points
+to 1, do
+.sp
+\fBgrdmask\fP coastline_*.xy \fB\-R\fP-60/-40/-40/-30 \fB\-I\fP5\fBm\fP \fB\-N\fP1/0/0 \fB\-G\fPland_mask.grd \fB\-V\fP
+.br
+.sp
+To set nodes within 50 km of data points to 1 and other nodes to NaN, do
+.sp
+\fBgrdmask\fP data.xyz \fB\-R\fP-60/-40/-40/-30 \fB\-I\fP5\fBm\fP \fB\-N\fPNaN/1/1 \fB\-S\fP50\fBk\fP \fB\-G\fPdata_mask.grd \fB\-V\fP
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grdlandmask (1),
+.IR grdmath (1),
+.IR grdclip (1),
+.IR psmask (1),
+.IR psclip (1)

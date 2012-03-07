@@ -1,0 +1,184 @@
+.TH MGD77INFO 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+mgd77info \- Get information about MGD77[+] files
+.SH SYNOPSIS
+\fBmgd77info\fP \fINGDC-ids\fP [ \fB\-C\fP[\fBm\fP|\fBe\fP] ] [ \fB\-E\fP[\fBm\fP|\fBe\fP] ] 
+[ \fB\-I\fP\fIignore\fP ] [ \fB\-Mf\fP[\fIitem\fP]|\fBr\fP|\fBe\fP|\fBh\fP ] [ \fB\-L\fP[\fBv\fP] ] [ \fB\-V\fP ]
+.SH DESCRIPTION
+\fBmgd77info\fP reads <legid>.[mgd77|nc] files and produces a single record of information
+about each cruise specified.  The information includes beginning and end times, total
+track distances in km, longitude and latitude range, and the total number of geophysical
+observations.  Optionally, choose instead to see the original MGD77 header meta-data
+section or its individual members.
+.br
+If you need to know which tracks are crossing through a given region and what kinds
+of geophysical observations are available, consider using the x2sys tools to set up
+a tracks index data base (see \fBx2sys_init\fP for more information).
+.TP
+\fINGDC-ids\fP
+Can be one or more of five kinds of specifiers:
+.br
+1) 8-character NGDC IDs, e.g., 01010083, JA010010etc., etc.
+.br
+2) 2-character <agency> codes which will return all cruises from each agency.
+.br
+3) 4-character <agency><vessel> codes, which will return all cruises from those vessels.
+.br
+4) =<list>, where <list> is a table with NGDC IDs, one per line.
+.br
+5) If nothing is specified we return all cruises in the data base.
+.br
+(See mgd77info \fB\-L\fP for agency and vessel codes).
+The ".mgd77" or ".nc" extensions will automatically be appended, if needed (use \fB\-I\fP
+to ignore certain file types).  Cruise files will be looked for first in the current directory
+and second in all directories listed in \fB$MGD77_HOME\fP/mgd77_paths.txt [If \fB$MGD77_HOME\fP
+is not set it will default to \fB$GMT_SHAREDIR\fP/mgd77].
+.br
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-C\fP
+List abbreviations for all columns present in the MGD77[+] files.
+Append \fBm\fP or \fBe\fP to limit the display to the MGD77 standard or MGD77+ extended set only.
+.TP
+\fB\-E\fP
+Give a one-line summary for each cruise listed.
+.TP
+\fB\-M\fP
+List the meta-data (header) and (if present) the MGD77+ history for each cruise.  Append \fBf\fP for
+a formatted display.  This will list individual
+parameters and their values, one entry per output line, in a format
+that can be searched using standard UNIX text tools.  Alternatively, append the name of a particular
+parameter (you only need to give enough characters - starting at the beginning - to uniquely identify
+the item).  Give - to display the list of all parameter names.  You may also specify the number of a parameter.
+For the raw, punchcard-formatted MGD77 original header block, append \fBr\fP instead. 
+For the MGD77+ E77 status, append \fBe\fP instead. 
+Finally, for the MGD77+ history, append \fBh\fP instead. 
+.TP
+\fB\-I\fP
+Ignore certain data file formats from consideration. Append \fBa|c|t\fP to ignore
+MGD77 ASCII, MGD77+ netCDF, or plain tab-separated ASCII table files, respectively. The option may
+be repeated to ignore more than one format.  [Default ignores none].
+.TP
+\fB\-L\fP
+No cruise information is listed.  Instead, we just display a list of the GEODAS institution 2-character codes
+and their names.  Optionally, append \fBv\fP to also display the vessels and their 4-character codes for each
+institution.  The following is the list of institutions:
+.br
+(01) LAMONT (LDEO),
+(02) WOODS HOLE O.I.,
+(03) NOAA,
+(04) US ARMY,
+(05) NEW ZEALAND,
+(06) US GEOL. SURVEY,
+(07) OREGON ST. UNIV,
+(08) U.HAWAII SOEST,
+(09) US NAVY,
+(10) UNIV OF TEXAS,
+(11) RICE UNIV.,
+(12) CANADA,
+(13) UNIV OF CONN.,
+(14) U.MIAMI (RSMAS),
+(15) SCRIPPS INST.OC,
+(16) CHINA,
+(17) U RHODE ISLAND,
+(18) DUKE UNIVERSITY,
+(19) UNITED KINGDOM,
+(20) U.WASHINGTON,
+(22) WESTERN GEOPHY.,
+(23) TEXAS A&M UNIV.,
+(24) AUSTRALIA,
+(25) MONACO,
+(29) RUSSIA,
+(30) SPAIN,
+(35) NIMA,
+(58) NETHERLANDS,
+(60) MIN MGMT SVC,
+(63) ISRAEL,
+(67) FRANCE,
+(71) SOUTH AFRICA,
+(75) US COAST GUARD,
+(76) BRAZIL,
+(77) INT. GRAV. BUR,
+(83) GERMANY,
+(84) ORSTOM NEW CAL,
+(86) CUBA,
+(87) ARGENTINA,
+(88) US NSF,
+(89) INDIA,
+(90) PORTUGAL,
+(92) FINLAND,
+(93) CHILE,
+(J1) HYDR DEPT JAPAN,
+(J2) GEOL SRVY JAPAN,
+(J4) UNIV TOKYO,
+(J5) KOBE UNIV,
+(J7) UNIV OF RYUKYUS,
+(J8) J.O.D.C. JAPAN,
+(J9) CHIBA UNIV,
+(JA) INST.POLAR RES.,
+(ZZ) INST NOT CODED.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.SH EXAMPLES
+To get one-line summary information about the cruises 01010047.mgd77 and 01010008.mgd77, try
+.br
+.sp
+\fBmgd77info\fP 01010047 01010008 \fB\-E\fP > listing.lis
+.br
+.sp
+To see the original raw MGD77 header meta-data for cruise 01010047.mgd77, run
+.br
+.sp
+\fBmgd77info\fP 01010047 \fB\-Mr\fP
+.br
+.sp
+To determine all the parameters related to Gravity during cruise 01010047.mgd77, run
+.br
+.sp
+\fBmgd77info\fP 01010047 \fB\-Mf\fP | grep Gravity
+.br
+.sp
+To determine the Magnetic sampling rate used during cruise 01010047.mgd77, run
+.br
+.sp
+\fBmgd77info\fP 01010047 \fB\-Mf\fPMagnetics_Sampling_Rate
+.br
+.sp
+To see all the columns that the MGD77+ cruise 01010047.nc contains, run
+.br
+.sp
+\fBmgd77info\fP 01010047 \fB\-C\fP
+.br
+.sp
+To see the E77 status of all MGD77+ cruises collected by the University of Hawaii, run
+.br
+.sp
+\fBmgd77info\fP 08 \fB\-Ia\fP \fB\-Me\fP
+.SH "SEE ALSO"
+.IR mgd77list (1),
+.IR mgd77manage (1),
+.IR mgd77path (1),
+.IR mgd77track (1)
+.IR x2sys_init (1)
+.SH REFERENCES
+Wessel, P., and W. H. F. Smith, 2011, The Generic Mapping Tools (GMT) version
+4.5.7 Technical Reference & Cookbook, SOEST/NOAA.
+.br
+Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
+Tools Released, EOS Trans., AGU, 79 (47), p. 579.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, EOS Trans., AGU, 76 (33), p. 329.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, http://www.agu.org/eos_elec/95154e.html, Copyright 1995 by the
+American Geophysical Union.
+.br
+Wessel, P., and W. H. F. Smith, 1991, Free Software Helps Map and Display Data,
+EOS Trans., AGU, 72 (41), p. 441.
+.br
+The Marine Geophysical Data Exchange Format - "MGD77", see
+\fIhttp://www.ngdc.noaa.gov/mgg/dat/geodas/docs/mgd77.txt\fP
+.br

@@ -1,0 +1,72 @@
+.TH X2SYS_BINLIST 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+x2sys_binlist \- Create bin-index files from track data files
+.SH SYNOPSIS
+\fBx2sys_binlist\fP \fItrack(s)\fP \fB\-T\fP\fITAG\fP 
+[ \fB\-D\fP ] [ \fB\-E\fP ] [ \fB\-V\fP ]
+.SH DESCRIPTION
+\fBx2sys_binlist\fP reads one or more track data files and produces a
+multi-segment ASCII track bin-index file (tbf) with the track name in the header and
+one data record per bin crossed; these records contain \fIlon, lat, index, flags\fP[, \fIdist\fP],
+where \fIlon, lat\fP are the coordinates of the center of the bin, the \fIindex\fP is
+the 1-D number of the bin, and \fIflags\fP is a bitflag that describes which data
+fields were available in this bin.  The optional \fIdist\fP requires \fB\-D\fP.
+The input files can be of any format, which must be described and passed with the
+\fB\-T\fP option.  The bin-index listing is a crude representation of where
+the track goes and is used by the data archivist to build an x2sys track data base for
+miscellaneous track queries, such as when needing to determine which tracks
+should be compared in a crossover analysis.  You must run \fBx2ys_init\fP
+to initialize the tag before you can run the indexing.
+.TP
+\fItracks\fP
+Can be one or more ASCII, native binary, or COARDS netCDF 1-D data files.
+To supply the data files via a text file with a list of tracks (one per record),
+specify the name of the track list after a leading equal-sign
+(e.g., =tracks.lis).  If the names are missing their file extension we will
+append the suffix specified for this \fITAG\fP.  Track files will be searched
+for first in the current directory and second in all directories listed in
+\fB$X2SYS_HOME\fP/\fITAG\fP/\fITAG\fP_paths.txt (if it exists). [If \fB$X2SYS_HOME\fP
+is not set it will default to \fB$GMT_SHAREDIR\fP/x2sys]. (Note: MGD77 files will
+also be looked for via \fBMGD77_HOME\fP/mgd77_paths.txt and *.gmt files will be
+searched for via \fB$GMT_SHAREDIR\fP/mgg/gmtfile_paths).
+.TP
+\fB\-T\fP
+Specify the x2sys \fITAG\fP which tracks the attributes of this data type.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-D\fP
+Calculate the length of trackline segments per bin [Default skips this step].
+The length fragments are given as the 5th output column (after the \fIflags\fP).
+The length units are obtained via the TAB setting (see \fBx2sys_init\fP).
+.TP
+\fB\-E\fP
+Convert geographic data to a cylindrical equal-area projection prior to binning.  Basically, we
+apply the projection \fB\-JY\fP\fIlon0\fP/37:04:17.166076/360, where \fIlon0\fP is the
+mid-longitude of the region.  Requires \fB\-D\fP, geographical data, and a global region
+(e.g., \fB\-Rg\fP or \fB\-Rd\fP).  This option is useful for statistics related to trackline
+density but should not be used when preparing bin-index files for the x2sys track data bases.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.SH EXAMPLES
+To create a bin index file from the MGD77 file 01030061.mgd77 using the settings associated
+with the tag MGD77, do
+.br
+.sp
+\fBx2sys_binlist\fP 01030061.mgd77 \fB\-T\fPMGD77 > 01030061.tbf
+.br
+.sp
+To create a track bin index file of all MGD77+ files residing in the current directory
+using the settings associated with the tag MGD77+ and calculate track distances, run
+.br
+.sp
+\fBx2sys_binlist\fP *.nc \fB\-T\fPMGD77+ \-D\fP > all.tbf
+.SH "SEE ALSO"
+.IR x2sys_cross (1),
+.IR x2sys_datalist (1),
+.IR x2sys_get (1),
+.IR x2sys_init (1),
+.IR x2sys_put (1),
+.IR x2sys_report (1),
+.IR x2sys_solve (1)

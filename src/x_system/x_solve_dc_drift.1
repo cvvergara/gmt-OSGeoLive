@@ -1,0 +1,57 @@
+.TH X_SOLVE_DC_DRIFT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+\fBx_solve_dc_drift\fP \- Find Best-fitting D.C.-shift and Drift Estimates
+.SH SYNOPSIS
+\fBx_solve_dc_drift\fP [ \fB\-X\fP\fIxbase\fP ] [ \fB\-L\fP\fIlbase\fP ] [ \fB\-I\fP\fIignorefile\fP ] 
+[ \fB\-S\fP ] [ \fB\-C\fP\fIiteration\fP ] [ \fB\-M\fP\fImin_nx\fP ] 
+[ \fB\-R\fP\fIwest/east/south/north\fP ] 
+[ \fB\-U\fP\fIuselegsfile\fP ] [ \fB\-V\fP ] [ \fB\-B\fP\fIbinfile\fP ]  [ \fB\-A\fP\fIASCIIfile\fP ]
+.SH DESCRIPTION
+\fBx_solve_dc_drift\fP will read the database files and, by iterating, find the best-fitting
+regression line to the <time,COE> points for each leg that minimizes the overall standard
+deviation of the data set in a least squares sense. Finally, correction file(s) are created.
+.TP
+\fB\-X\fP
+Indicate an alternate database to read. [Default is \fIxx_base.b\fP].
+.TP
+\fB\-L\fP
+Indicate an alternate legbase to read. [Default is \fIxx_legs.b\fP].
+.TP
+\fB\-I\fP
+Ignore information for certain legs (that might be bad, etc).
+.TP
+\fB\-S\fP
+Reset the old d.c.-shift and drift estimates to zero before iterating.
+.TP
+\fB\-C\fP
+Specify how many iterations to do. Default is interactive session.
+.TP
+\fB\-M\fP
+Solve for drift only if the leg has more than \fImin_nx\fP cross-overs.
+.TP
+\fB\-R\fP
+Only take COEs inside this region into account. [Default is world].
+.TP
+\fB\-U\fP
+Solve for corrections involving COEs from legs in the \fIuselegsfile\fP only.
+.TP
+\fB\-B\fP
+Create a binary correction file (which can be read by \fBx_list\fP and \fBgmtlist\fP).
+.TP
+\fB\-A\fP
+Create an ASCII correction table. At least one of \fB\-A\fP and \fB\-B\fP must be specified.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.SH BEWARE
+The reason for the \fB\-M\fP option is that if the COEs are few, then a stable estimate of the slope may
+not be obtained (e.g. when most of the COEs occur midway between ports). However, in most
+cases the bulk of the COEs do occur near the ports so that a drift estimate can be computed.
+Conventional wisdom recommends plotting the time-series and the computed regression line to
+see if it makes sense.
+.SH SEE ALSO
+.IR GMT (1),
+.IR x_system (1)
+.SH REFERENCES
+Wessel, P. XOVER: A Cross-over Error Detector for Track Data,
+\fIComputers & Geosciences, 15\fP, 333-346.

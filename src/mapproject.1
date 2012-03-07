@@ -1,0 +1,515 @@
+.TH MAPPROJECT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+mapproject \- Forward and Inverse map transformation of 2-D coordinates 
+.SH SYNOPSIS
+\fBmapproject\fP \fIinfiles\fP \fB\-J\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] 
+[ \fB\-Ab\fP|\fBB\fP|\fBf\fP|\fBF\fP[\fIlon0\fP/\fIlat0\fP] ] [ \fB\-C\fP[\fIdx\fP/\fIdy\fP] ] [ \fB\-Dc\fP|\fBi\fP|\fBm\fP|\fBp\fP ] [ \fB\-E\fP[\fIdatum\fP] ] 
+[ \fB\-F\fP[\fBk\fP|\fBm\fP|\fBn\fP|\fBi\fP|\fBc\fP|\fBp\fP] ] [ \fB\-G\fP[\fIx0\fP/\fIy0\fP][\fB+\fP|\fB-\fP][/\fIunit\fP] ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-I\fP ] 
+[ \fB\-L\fP\fIline.xy\fP[/\fIunit\fP][\fB+\fP] ] [ \fB\-Q\fP[\fBd\fP|\fBe\fP ] [ \fB\-S\fP ] [ \fB\-T\fP[\fBh\fP]\fIfrom\fP[/\fIto\fP] ] 
+[ \fB\-V\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-b\fP[\fBi\fP|\fBo\fP][\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ] [ \fB\-g\fP[\fBa\fP]\fBx\fP|\fBy\fP|\fBd\fP|\fBX\fP|\fBY\fP|\fBD\fP|[\fIcol\fP]\fBz\fP[+|-]\fIgap\fP[\fBu\fP] ] [ \fB\-m\fP[\fBi\fP|\fBo\fP][\fIflag\fP] ]
+.SH DESCRIPTION
+\fBmapproject\fP reads (longitude, latitude) positions from \fIinfiles\fP [or standard input] and
+computes (x,y) coordinates using the specified map projection and scales.
+Optionally, it can read (x,y) positions and compute (longitude, latitude) values
+doing the inverse transformation.  This can be used to transform linear (x,y) points
+obtained by digitizing a map of known projection to geographical coordinates.  May also
+calculate distances along track, to a fixed point, or closest approach to a line.
+Finally, can be used to perform various datum conversions.
+Additional data fields are permitted after the first 2 columns which must have (longitude,latitude) or (x,y).
+See option \fB\-:\fP on how to read (latitude,longitude) files.
+.TP
+\fIinfiles\fP
+Data file(s) to be transformed.  If not given, standard input is read.
+.TP
+\fB\-J\fP
+Selects the map projection. The following character determines the projection. If the
+character is upper case then the argument(s) supplied as scale(s) is interpreted to be
+the map width (or axis lengths), else the scale argument(s) is the map scale (see its
+definition for each projection). UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP
+setting in \.gmtdefaults4, but this can be overridden on the command line by appending
+\fBc\fP, \fBi\fP, or \fBm\fP to the \fIscale\fP or \fIwidth\fP values.  Append \fBh\fP, \fB+\fP, or \fB-\fP
+to the given \fIwidth\fP if you instead want to set map height, the maximum dimension, or
+the minimum dimension, respectively [Default is \fBw\fP for width].
+.br
+In case the central meridian is an optional parameter and it is being omitted, then the
+center of the longitude range given by the \fB\-R\fP option is used. The default standard parallel
+is the equator.
+.br
+The ellipsoid used in the map projections is user-definable by editing the \.gmtdefaults4 file
+in your home directory. 73 commonly used ellipsoids and spheroids are currently
+supported, and users may also specify their own custum ellipsoid parameters [Default is WGS-84].
+Several GMT parameters can affect the projection: \fBELLIPSOID\fP, \fBINTERPOLANT\fP,
+\fBMAP_SCALE_FACTOR\fP, and \fBMEASURE_UNIT\fP; see the \fBgmtdefaults\fP man page for details.
+.br
+Choose one of the following projections (The \fBE\fP or \fBC\fP after projection names
+stands for Equal-Area and Conformal, respectively):
+.RS
+.PP
+\fBCYLINDRICAL PROJECTIONS:\fP
+.TP
+\fB\-Jc\fP\fIlon0/lat0/scale\fP or \fB\-JC\fP\fIlon0/lat0/width\fP (Cassini).
+Give projection center \fIlon0/lat0\fP and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP or \fB\-JCyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIwidth\fP (Cylindrical Stereographic).
+Give central meridian \fIlon0\fP (optional), standard parallel \fIlat0\fP (optional), and \fIscale\fP along parallel (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+The standard parallel is typically one of these (but can be any value):
+.RS
+.RS
+66.159467 - Miller's modified Gall
+.br
+55 - Kamenetskiy's First
+.br
+45 - Gall's Stereographic
+.br
+30 - Bolshoi Sovietskii Atlas Mira or Kamenetskiy's Second
+.br
+0 - Braun's Cylindrical
+.RE
+.RE
+.TP
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP or \fB\-JJ\fP[\fIlon0/\fP]\fIwidth\fP (Miller Cylindrical Projection).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jm\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP or \fB\-JM\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIwidth\fP
+Give central meridian \fIlon0\fP (optional), standard parallel \fIlat0\fP (optional), and \fIscale\fP along parallel (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jo\fP\fIparameters\fP (Oblique Mercator \fB[C]\fP).
+Specify one of:
+.RS
+.TP
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP or \fB\-JO\fP[\fBa\fP]\fIlon0/lat0/azimuth/width\fP
+Set projection center \fIlon0/lat0\fP, \fIazimuth\fP of oblique equator, and \fIscale\fP.
+.TP
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP or \fB\-JO\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP
+Set projection center \fIlon0/lat0\fP, another point on the oblique equator \fIlon1/lat1\fP, and \fIscale\fP.
+.TP
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP or \fB\-JOc\fP\fIlon0/lat0/lonp/latp/scale\fP
+Set projection center \fIlon0/lat0\fP, pole of oblique projection \fIlonp/latp\fP, and \fIscale\fP.
+.PP
+Give \fIscale\fP along oblique equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.RE
+.TP
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP or \fB\-JQ\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIwidth\fP (Cylindrical Equidistant).
+Give the central meridian \fIlon0\fP (optional), standard parallel \fIlat0\fP (optional), and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+The standard parallel is typically one of these (but can be any value):
+.RS
+.RS
+61.7 - Grafarend and Niermann, minimum linear distortion
+.br
+50.5 - Ronald Miller Equirectangular
+.br
+43.5 - Ronald Miller, minimum continental distortion
+.br
+42 - Grafarend and Niermann
+.br
+37.5 - Ronald Miller, minimum overall distortion
+.br
+0 - Plate Carree, Simple Cylindrical, Plain/Plane Chart
+.br
+.RE
+.RE
+.TP
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP or \fB\-JT\fP\fIlon0/\fP[\fIlat0/\fP]\fIwidth\fP
+Give the central meridian \fIlon0\fP, central parallel \fIlat0\fP (optional), and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Ju\fP\fIzone/scale\fP or \fB\-JU\fP\fIzone/width\fP (UTM - Universal Transverse Mercator \fB[C]\fP).
+Give the UTM zone (A,B,1-60[C-X],Y,Z)) and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.br
+Zones: If C-X not given, prepend - or + to enforce southern or northern hemisphere conventions [northern if south > 0].
+.TP
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP or \fB\-JY\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIwidth\fP (Cylindrical Equal-Area \fB[E]\fP).
+Give the central meridian \fIlon0\fP (optional), standard parallel \fIlat0\fP (optional), and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+The standard parallel is typically one of these (but can be any value):
+.RS
+.RS
+50 - Balthasart
+.br
+45 - Gall-Peters
+.br
+37.0666 - Caster
+.br
+37.4 - Trystan Edwards
+.br
+37.5 - Hobo-Dyer
+.br
+30 - Behrman
+.br
+0 - Lambert (default)
+.RE
+.RE
+.PP
+\fBCONIC PROJECTIONS:\fP
+.TP
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP or \fB\-JB\fP\fIlon0/lat0/lat1/lat2/width\fP (Albers \fB[E]\fP).
+Give projection center \fIlon0/lat0\fP, two standard parallels \fIlat1/lat2\fP, and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP or \fB\-JD\fP\fIlon0/lat0/lat1/lat2/width\fP (Conic Equidistant)
+Give projection center \fIlon0/lat0\fP, two standard parallels \fIlat1/lat2\fP, and \fIscale\fP (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP or \fB\-JL\fP\fIlon0/lat0/lat1/lat2/width\fP (Lambert \fB[C]\fP)
+Give origin \fIlon0/lat0\fP, two standard parallels \fIlat1/lat2\fP, and \fIscale\fP along these (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP or \fB\-JPoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIwidth\fP ((American) Polyconic).
+Give the central meridian \fIlon0\fP (optional), reference parallel \fIlat0\fP (optional, default = equator),
+and \fIscale\fP along central meridian (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.PP
+\fBAZIMUTHAL PROJECTIONS:\fP
+.sp
+Except for polar aspects, \fB\-R\fPw/e/s/n will be reset to \fB\-Rg\fP.  Use \fB\-R\fP<...>\fBr\fP for smaller regions.
+.TP
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JA\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (Lambert \fB[E]\fP).
+\fIlon0/lat0\fP specifies the projection center.
+\fIhorizon\fP specifies the max distance from projection center (in degrees, <= 180, default 90).
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP or \fIradius/lat\fP, where \fIradius\fP is distance
+in UNIT from origin to the oblique latitude \fIlat\fP.
+.TP
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JE\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (Azimuthal Equidistant).
+\fIlon0/lat0\fP specifies the projection center.
+\fIhorizon\fP specifies the max distance from projection center (in degrees, <= 180, default 180).
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP or \fIradius/lat\fP, where \fIradius\fP is distance
+in UNIT from origin to the oblique latitude \fIlat\fP.
+.TP
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JF\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (Gnomonic).
+\fIlon0/lat0\fP specifies the projection center.
+\fIhorizon\fP specifies the max distance from projection center (in degrees, < 90, default 60).
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP or \fIradius/lat\fP, where \fIradius\fP is distance
+in UNIT from origin to the oblique latitude \fIlat\fP.
+.TP
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JG\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (Orthographic).
+\fIlon0/lat0\fP specifies the projection center.
+\fIhorizon\fP specifies the max distance from projection center (in degrees, <= 90, default 90).
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP or \fIradius/lat\fP, where \fIradius\fP is distance
+in UNIT from origin to the oblique latitude \fIlat\fP.
+.TP
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP or \fB\-JG\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/width\fP (General Perspective).
+\fIlon0/lat0\fP specifies the projection center.
+\fIaltitude\fP is the height (in km) of the viewpoint above local sea level.
+If \fIaltitude\fP is less than 10, then it is the distance from the center of the earth
+to the viewpoint in earth radii. If \fIaltitude\fP has a suffix \fBr\fP then it is the radius
+from the center of the earth in kilometers.
+\fIazimuth\fP is measured to the east of north of view.
+\fItilt\fP is the upward tilt of the plane of projection. If \fItilt\fP is negative, then the
+viewpoint is centered on the horizon.
+Further, specify the clockwise \fItwist\fP, \fIWidth\fP, and
+\fIHeight\fP of the viewpoint in degrees.
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP or \fIradius/lat\fP, where \fIradius\fP is distance
+in UNIT from origin to the oblique latitude \fIlat\fP.
+.TP
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JS\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (General Stereographic \fB[C]\fP).
+\fIlon0/lat0\fP specifies the projection center.
+\fIhorizon\fP specifies the max distance from projection center (in degrees, < 180, default 90).
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat0\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat0\fP)
+or \fIradius/lat\fP (\fIradius\fP in UNIT from origin to the oblique latitude \fIlat\fP).
+Note if \fB1:\fP\fIxxxx\fP is used then to specify \fIhorizon\fP you must also specify the \fIlat0\fP as +-90 to avoid ambiguity.
+.PP
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.TP
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP or \fB\-JH\fP[\fIlon0/\fP]\fIwidth\fP (Hammer \fB[E]\fP).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP or \fB\-JI\fP[\fIlon0/\fP]\fIwidth\fP (Sinusoidal \fB[E]\fP).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP or \fB\-JKf\fP[\fIlon0/\fP]\fIwidth\fP (Eckert IV) \fB[E]\fP).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP or \fB\-JK\fP[\fBs\fP][\fIlon0/\fP]\fIwidth\fP (Eckert VI) \fB[E]\fP).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP or \fB\-JN\fP[\fIlon0/\fP]\fIwidth\fP (Robinson).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP \fB\-JR\fP[\fIlon0/\fP]\fIwidth\fP (Winkel Tripel).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP or \fB\-JV\fP[\fIlon0/\fP]\fIwidth\fP (Van der Grinten).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.TP
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP or \fB\-JW\fP[\fIlon0/\fP]\fIwidth\fP (Mollweide \fB[E]\fP).
+Give the central meridian \fIlon0\fP (optional) and \fIscale\fP along equator (\fB1:\fP\fIxxxx\fP or UNIT/degree).
+.PP
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.TP
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] or \fB\-JP\fP[\fBa\fP]\fIwidth\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+Optionally insert \fBa\fP after \fB\-Jp\fP [ or \fB\-JP\fP] for
+azimuths CW from North instead of directions CCW from East [Default].
+Optionally append /\fIorigin\fP in degrees to indicate an angular offset [0]).
+Finally, append \fBr\fP if r is elevations in degrees (requires s >= 0 and n <= 90)
+or \fBz\fP if you want to annotate depth rather than radius [Default].
+Give \fIscale\fP in UNIT/r-unit.
+.TP
+\fB\-Jx\fP\fIx-scale\fP[\fI/y-scale\fP] or \fB\-JX\fP\fIwidth\fP[\fI/height\fP] (Linear, log, and power scaling)
+Give \fIx-scale\fP (\fB1:\fP\fIxxxx\fP or UNIT/x-unit) and/or \fIy-scale\fP (\fB1:\fP\fIxxxx\fP or UNIT/y-unit); or
+specify \fIwidth\fP and/or \fIheight\fP in UNIT.
+\fIy-scale\fP=\fIx-scale\fP if not specified separately and using \fB1:\fP\fIxxxx\fP implies that x-unit and y-unit are in
+meters.
+Use negative scale(s) to reverse the direction of an axis (e.g., to have y be positive down). Set
+\fIheight\fP or \fIwidth\fP to 0 to have it recomputed based on the implied scale of the other axis.
+Optionally, append to \fIx-scale\fP, \fIy-scale\fP, \fIwidth\fP or \fIheight\fP one of the following:
+.RS
+.TP
+.B d
+Data are geographical coordinates (in degrees).
+.TP
+.B l
+Take log10 of values before scaling.
+.TP
+\fBp\fP\fIpower\fP
+Raise values to \fIpower\fP before scaling.
+.TP
+.B t
+Input coordinates are time relative to \fBTIME_EPOCH\fP.
+.TP
+.B T
+Input coordinates are absolute time.
+.PP
+Default axis lengths (see \fBgmtdefaults\fP) can be invoked
+using \fB\-JXh\fP (for landscape); \fB\-JXv\fP (for portrait) will swap the x- and y-axis lengths.
+The default unit for this installation is either cm or inch, as defined in the file
+share/gmt.conf. However, you may change this by editing your \.gmtdefaults4 file(s).
+.RE
+.RE
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+Special case for the UTM projection: If \fB\-C\fP is used and \fB\-R\fP is not given then the region is set to coincide with
+the given UTM zone so as to preserve the full ellipsoidal solution (See RESTRICTIONS for more information).
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fIinfile(s)\fP
+input file(s) with 2 or more columns. If no file(s) is given, \fBmapproject\fP will read the standard input.
+.TP
+\fB\-A\fP[\fBf\fP|\fBb\fP]
+\fB\-A\fP calculates the (forward) azimuth from fixed point \fIlon/lat\fP to each data point.  Use \fB\-Ab\fP to get
+back-azimuth from data points to fixed point.  Upper case \fBF\fP or \fBB\fP will convert from geodetic to
+geocentric latitudes and estimate azimuth of geodesics (assuming the current ellipsoid is not a sphere).
+If no fixed point is given then we compute the azimuth (or back-azimuth) from the previous point.
+.TP
+\fB\-C\fP
+Set center of projected coordinates to be at map projection center [Default is lower left corner].
+Optionally, add offsets in the projected units to be added (or subtracted when \fB\-I\fP is set) to (from)
+the projected coordinates, such as false eastings and northings for particular projection zones [0/0].
+The unit used for the offsets is the plot distance unit in effect (see \fBMEASURE_UNIT\fP) unless \fB\-F\fP is used,
+in which case the offsets are always in meters.
+.TP
+\fB\-D\fP
+Temporarily override \fBMEASURE_UNIT\fP and use \fBc\fP (cm), \fBi\fP (inch),
+\fBm\fP (meter), or \fBp\fP (points) instead.  Cannot be used with \fB\-F\fP.
+.TP
+\fB\-E\fP
+Convert from geodetic (lon, lat, height) to Earth Centered Earth Fixed (ECEF) (x,y,z) coordinates (add \fB\-I\fP for the
+inverse conversion).  Append
+datum ID (see \fB\-Qd\fP) or give \fIellipsoid\fP:\fIdx,dy,dz\fP
+where \fIellipsoid\fP may be an ellipsoid ID (see \fB\-Qe\fP) or given as \fIa\fP[,\fIinv_f\fP], where \fIa\fP is the
+semi-major axis and \fIinv_f\fP is the inverse flattening (0 if omitted).
+If \fIdatum\fP is - or not given we assume WGS-84.
+.TP
+\fB\-F\fP
+Force 1:1 scaling, i.e., output (or input, see \fB\-I\fP) data are in actual projected meters.  To specify other units,
+append \fBk\fP (km), \fBm\fP (mile), \fBn\fP (nautical mile), \fBi\fP (inch), \fBc\fP (cm), or \fBp\fP (points).
+Without \fB\-F\fP, the output (or input, see \fB\-I\fP) are in the units specified by \fBMEASURE_UNIT\fP (but see \fB\-D\fP).
+.TP
+\fB\-G\fP
+Calculate distances along track OR to the optional point set with \fB\-G\fP\fIx0/y0\fP.  Append \IT(unit), the distance unit;
+choose among \fBe\fP (m), \fBk\fP (km), \fBm\fP (mile), \fBn\fP (nautical mile), \fBd\fP (spherical degree),
+\fBc\fP (Cartesian distance using input coordinates) or \fBC\fP (Cartesian distance using projected coordinates).  The
+last unit requires \fB\-R\fP and \fB\-J\fP to be set.  Upper case  \fBE\fP, \fBK\fP, \fBM\fP, \fBN\fP, or \fBD\fP
+will use exact methods for geodesic distances (Rudoe's method for distances in length units and employing geocentric\"'
+latitudes in degree calculations, assuming the current ellipsoid is not spherical).  With no fixed point we
+calculate cumulate distances along track. To obtain incremental distance between successive points, use \fB\-G-\fP.
+To specify the 2nd point via two extra columns in the input file, choose \fB\-G+\fP.
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-I\fP
+Do the Inverse transformation, i.e. get (longitude,latitude) from (x,y) data.
+.TP
+\fB\-L\fP
+Determine the shortest distance from the input data points to the line(s) given in the ASCII multi-segment file \fIline.xy\fP.
+The distance and the coordinates of the nearest point will be appended to the output as three new columns.
+Append the distance unit; choose among \fBe\fP (m), \fBk\fP (km), \fBm\fP (mile), \fBn\fP (nautical mile), \fBd\fP (spherical degree),
+\fBc\fP (Cartesian distance using input coordinates) or \fBC\fP (Cartesian distance using projected coordinates).  The
+last unit requires \fB\-R\fP and \fB\-J\fP to be set.  A spherical approximation is used for geographic data.
+Finally, append \fB+\fP to report the line segment id and the fractional point number instead of lon/lat of the nearest point.
+.TP
+\fB\-Q\fP
+List all projection parameters.  To only list datums, use \fB\-Qd\fP.  To only list ellipsoids, use \fB\-Qe\fP.
+.TP
+\fB\-S\fP
+Suppress points that fall outside the region.
+.TP
+\fB\-T\fP
+Coordinate conversions between datums \fIfrom\fP and \fIto\fP using the standard Molodensky transformation.  Use \fB\-Th\fP if 3rd input column has
+height above ellipsoid [Default assumes height = 0, i.e., on the ellipsoid].  Specify datums using the
+datum ID (see \fB\-Qd\fP) or give \fIellipsoid\fP:\fIdx,dy,dz\fP
+where \fIellipsoid\fP may be an ellipsoid ID (see \fB\-Qe\fP) or given as \fIa\fP[,\fIinv_f\fP], where \fIa\fP is the
+semi-major axis and \fIinv_f\fP is the inverse flattening (0 if omitted).
+If \fIdatum\fP is - or not given we assume WGS-84.
+\fB\-T\fP may be used in conjunction with \fB\-R\fP \fB\-J\fP to change the datum before coordinate projection
+(add \fB\-I\fP to apply the datum conversion after the inverse projection).  Make sure that the
+\fBELLIPSOID\fP setting is correct for your case.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 2 input columns].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+[Default is same as input].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.TP
+\fB\-g\fP
+Examine the spacing between consecutive data points in order to impose breaks in the line.
+Append \fBx\fP|\fBX\fP or \fBy\fP|\fBY\fP to define a gap when there is a large enough change in the x or y coordinates, respectively,
+or \fBd\fP|\fBD\fP for distance gaps; use upper case to calculate gaps from projected coordinates.  For gap-testing on other columns
+use [\fIcol\fP]\fBz\fP; if \fIcol\fP is not prepended the it defaults to 2 (i.e., 3rd column).
+Append [+|-]\fIgap\fP and optionally a unit \fBu\fP.  Regarding optional signs: -ve means previous minus current column value must exceed
+|\fIgap\fP to be a gap, +ve means current minus previous column value must exceed \fIgap\fP, and no sign means the absolute value of the
+difference must exceed \fIgap\fP.
+For geographic data (\fBx\fP|\fBy\fP|\fBd\fP), the unit \fBu\fP may be m\fBe\fPter [Default], \fBk\fPilometer, \fBm\fPiles, or \fBn\fPautical miles.
+For projected data (\fBX\fP|\fBY\fP|\fBD\fP), choose from \fBi\fPnch, \fBc\fPentimeter, \fBm\fPeter, or \fBp\fPoints [Default unit set by MEASURE_UNIT].
+Note: For \fBx\fP|\fBy\fP|\fBz\fP with time data the unit is instead controlled by TIME_UNIT.
+Repeat the option to specify multiple criteria, of which any can be met to produce a line break.
+Issue an additional \fB\-ga\fP to indicate that all criteria must be met instead.
+.TP
+\fB\-m\fP
+Multiple segment file(s).  Segments are separated by a special record.
+For ASCII files the first character must be \fIflag\fP [Default is '>'].
+For binary files all fields must be NaN and \fB\-b\fP must
+set the number of output columns explicitly.  By default the \fB\-m\fP
+setting applies to both input and output.  Use \fB\-mi\fP and \fB\-mo\fP
+to give separate settings to input and output.
+.SH ASCII FORMAT PRECISION
+The ASCII output formats of numerical data are controlled by parameters in
+your \.gmtdefaults4 file.  Longitude and latitude are formatted according to
+\fBOUTPUT_DEGREE_FORMAT\fP, whereas other values are formatted according
+to \fBD_FORMAT\fP.  Be aware that the format in effect can lead to loss of
+precision in the output, which can lead to various problems downstream.  If
+you find the output is not written with enough precision, consider switching
+to binary output (\fB\-bo\fP if available) or specify more decimals using
+the \fBD_FORMAT\fP setting.
+.SH EXAMPLES
+To transform a file with (longitude,latitude) into (x,y) positions in cm on
+a Mercator grid for a given scale of 0.5 cm per degree, run
+.br
+.sp
+\fBmapproject\fP lonlatfile \fB\-R\fP20/50/12/25 \fB\-Jm\fP0.5\fBc\fP > xyfile
+.br
+.sp
+To transform several 2-column, binary, double precision files with (latitude,longitude) into (x,y) positions in inch on
+a Transverse Mercator grid (central longitude 75W) for scale = 1:500000 and suppress those points
+that would fall outside the map area, run
+.br
+.sp
+\fBmapproject\fP tracks.* \fB\-R\fP-80/-70/20/40 \fB\-Jt\fP-75/1:500000 \fB\-:\fP \fB\-S\fP \fB\-Di\fP \fB\-bo\fP \fB\-bi\fP2 > tmfile.b
+.br
+.sp
+To convert the geodetic coordinates (lon, lat, height) in the file old.dat from the NAD27 CONUS datum
+(Datum ID 131 which uses the Clarke-1866 ellipsoid) to WGS 84, run
+.br
+.sp
+\fBmapproject\fP old.dat \fB\-Th\fP131 > new.dat
+.br
+.sp
+To compute the closest distance (in km) between each point in the input file quakes.dat and the
+line segments given in the multi-segment ASCII file coastline.xy, run
+.br
+.sp
+\fBmapproject\fP quakes.dat \fB\-L\fPcoastline.xy/k > quake_dist.dat
+.SH RESTRICTIONS
+The rectangular input region set with \fB\-R\fP will in general be mapped into a
+non-rectangular grid.  Unless \fB\-C\fP is set, the leftmost point on this grid has xvalue = 0.0, and the
+lowermost point will have yvalue = 0.0. Thus, before you digitize a map, run the
+extreme map coordinates through \fBmapproject\fP using the appropriate scale and see
+what  (x,y) values they are mapped onto.  Use these values when setting up for
+digitizing in order to have the inverse transformation work correctly, or alternatively,
+use \fBawk\fP to scale and shift the (x,y) values before transforming.
+.br
+For some projection, a spherical solution may be used despite the user having
+selected an ellipsoid.  This occurs when the users \fB\-R\fP setting implies a
+region that exceeds the domain in which the ellipsoidal series expansions are
+valid.  These are the conditions: (1) Lambert Conformal Conic (\fB\-JL\fP)and Albers
+Equal-Area (\fB\-JB\fP) will use the spherical solution when the map scale exceeds
+1.0E7.  (2) Transverse Mercator (\fB\-JT\fP) and UTM (\fB\-JU\fP) will will use the
+spherical solution when either the west or east boundary given in \fB\-R\fP is
+more than 10 degrees from the central meridian, and (3) same for Cassini (\fB\-JC\fP)
+but with a limit of only 4 degrees.
+.SH ELLIPSOIDS AND SPHEROIDS
+\fBGMT\fP will use ellipsoidal formulae if they are implemented and the user have
+selected an ellipsoid as the reference shape (see \fBELLIPSOID\fP in \fBgmtdefaults\fP).  The user
+needs to be aware of a few potential pitfalls: (1)  For some projections,
+such as Transverse Mercator, Albers, and Lamberts conformal conic we use the
+ellipsoidal expressions when the areas mapped are small, and switch to the
+spherical expressions (and substituting the appropriate auxiliary latitudes)
+for larger maps.  The ellipsoidal formulae are used as follows: (a) Transverse
+Mercator: When all points are within 10 degrees of central meridian, (b) Conic
+projections when longitudinal range is less than 90 degrees, (c) Cassini
+projection when all points are within 4 degrees of central meridian. (2) When
+you are trying to match some historical data (e.g., coordinates obtained with
+a certain projection and a certain reference ellipsoid) you may find that \fBGMT\fP
+gives results that are slightly different.  One likely source of this mismatch
+is that older calculations often used less significant digits.  For instance,
+Snyder's examples often use the Clarke 1866 ellipsoid (defined by him as\"'
+having a flattening f = 1/294.98).  From f we get the eccentricity squared to
+be 0.00676862818 (this is what \fBGMT\fP uses), while Snyder rounds off and uses
+0.00676866.  This difference can give discrepancies of several tens of cm.
+If you need to reproduce coordinates projected with this slightly different
+eccentricity, you should specify your own ellipsoid with the same parameters
+as Clarke 1866, but with f = 1/294.97861076.  Also, be aware that older data
+may be referenced to different datums, and unless you know which datum was
+used and convert all data to a common datum you may experience mismatches of
+tens to hundreds of meters. (3) Finally, be aware that \fBMAP_SCALE_FACTOR\fP
+have certain default values for some projections so you may have to override
+the setting in order to match results produced with other settings.
+.SH "SEE ALSO"
+.IR gmtdefaults (1),
+.IR GMT (1),
+.IR project (1)
+.SH REFERENCES
+Bomford, G., 1952, Geodesy, Oxford U. Press.
+.br
+Snyder, J. P., 1987, Map Projections \- A Working Manual, U.S. Geological Survey Prof. Paper 1395.
+.br
+Vanicek, P. and Krakiwsky, E, 1982, Geodesy \- The Concepts, North-Holland Publ., ISBN: 0 444 86149 1.
+.br

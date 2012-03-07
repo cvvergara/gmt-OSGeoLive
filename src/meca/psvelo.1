@@ -1,0 +1,432 @@
+.TH PSVELO 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.SH NAME
+psvelo \- Plot velocity vectors, crosses, and wedges on maps
+.SH SYNOPSIS
+.br
+\fBpsvelo\fP \fIfiles\fP \fB\-J\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] 
+[ \fB\-D\fP\fIsigma_scale\fP ] [ \fB\-F\fP\fIcolor\fP ] 
+[ \fB\-E\fP\fIcolor\fP ] [ \fB\-G\fP\fIfill\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-K\fP ] [ \fB\-L\fP ] [ \fB\-N\fP ] 
+[ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-S\fP\fIsymbol\fP/\fIscale\fP/\fIconf\fP/\fIfont_size\fP ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ] 
+[ \fB\-V\fP ] [ \fB\-W\fP\fIpen\fP ] [ \fB\-X\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIx-shift\fP[\fBu\fP]] ] [ \fB\-Y\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIy-shift\fP[\fBu\fP]] ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-c\fP\fIcopies\fP ]
+.SH DESCRIPTION
+.br
+\fBpsvelo\fP \fRreads data values from \fIfiles\fP [or standard input]
+and generates \fIPostScript\fP code that will plot 
+velocity arrows on a map.  Most options are the same as for \fBpsxy\fP,
+except \fB\-S\fP.  The \fIPostScript\fP code is written to standard
+output. The previous version (\fBpsvelomeca\fP) is now obsolete. It has
+been replaced by \fBpsvelo\fP and \fBpsmeca\fP.
+.br
+.sp
+.SH ARGUMENTS
+\fIfiles\fP
+List one or more file-names. If no files are given, \fBpsvelo\fP will read standard input.
+.TP
+\fB\-J\fP
+Selects the map projection. Scale is UNIT/degree, 1:xxxxx, or width in UNIT (upper case modifier).
+UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP setting in \.gmtdefaults4, but this can be
+overridden on the command line by appending \fBc\fP, \fBi\fP, or \fBm\fP to the scale/width value.
+When central meridian is optional, default is center of longitude range on \fB\-R\fP option.
+Default standard parallel is the equator.
+For map height, max dimension, or min dimension, append \fBh\fP, \fB+\fP, or \fB-\fP to the width,
+respectively.
+.br
+More details can be found in the \fBpsbasemap\fP man pages.
+.br
+.sp
+\fBCYLINDRICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jc\fP\fIlon0/lat0/scale\fP (Cassini)
+.br
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Stereographic)
+.br
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP (Miller)
+.br
+\fB\-Jm\fP[\fIlon0\fP/[\fIlat0/\fP]]\fIscale\fP (Mercator)
+.br
+\fB\-Jm\fP\fIlon0/lat0/scale\fP (Mercator - Give meridian and standard parallel)
+.br
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP (Oblique Mercator - point and azimuth)
+.br
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP (Oblique Mercator - two points)
+.br
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP (Oblique Mercator - point and pole)
+.br
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equidistant)
+.br
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP (TM - Transverse Mercator)
+.br
+\fB\-Ju\fP\fIzone/scale\fP (UTM - Universal Transverse Mercator)
+.br
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equal-Area) 
+.br
+.sp
+\fBCONIC PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP (Albers)
+.br
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP (Conic Equidistant)
+.br
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP (Lambert Conic Conformal)
+.br
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP ((American) Polyconic)
+.br
+.sp
+\fBAZIMUTHAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Lambert Azimuthal Equal-Area)
+.br
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Azimuthal Equidistant)
+.br
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Gnomonic)
+.br
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Orthographic)
+.br
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP (General Perspective).
+.br
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (General Stereographic)
+.br
+.sp
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP (Hammer)
+.br
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP (Sinusoidal)
+.br
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP (Eckert IV)
+.br
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP (Eckert VI)
+.br
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP (Robinson)
+.br
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP (Winkel Tripel)
+.br
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP (Van der Grinten)
+.br
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP (Mollweide)
+.br
+.sp
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+.br
+\fB\-Jx\fP\fIx-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP][\fI/y-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP]] (Linear, log, and power scaling)
+.br
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+.br
+.sp
+\fB\-S\fPSelects the meaning of the columns in the data file and the
+figure to be plotted.
+.br
+.sp
+.TP
+\fB\-Se\fP\fIvelscale/confidence/fontsize\fP.
+Velocity ellipses in
+(N,E) convention.  \fIVscale\fP sets the scaling of the velocity arrows.
+This scaling gives inches (unless \fBc\fP, \fBi\fP, \fBm\fP, or \fBp\fP is appended).
+\fIConfidence\fP sets the 2-dimensional confidence limit for
+the ellipse, e.g., 0.95 for 95% confidence ellipse.  \fIFontsize\fP
+sets the size of the text in points.  The ellipse will be filled with
+the color or shade specified by the \fB\-G\fP option [default
+transparent].  The arrow and the circumference of the ellipse will be
+drawn with the pen attributes specified by the \fB\-W\fP option.
+Parameters are expected to be in the following columns:
+.TP
+.B 1,2
+longitude, latitude of station (\fB\-:\fP option interchanges order)
+.TP
+.B 3,4
+eastward, northward velocity (\fB\-:\fP option interchanges order)
+.TP
+.B 5,6
+uncertainty of eastward, northward velocities (1-sigma) (\fB\-:\fP
+option interchanges order)
+.TP
+.B 7
+correlation between eastward and northward components
+.TP
+.B 8
+name of station (optional).
+.br
+.sp
+.TP
+\fB\-Sn\fP\fIbarscale.\fP
+Anisotropy bars.  \fIBarscale\fP sets the scaling of the bars
+This scaling gives inches (unless \fBc\fP, \fBi\fP, \fBm\fP, or \fBp\fP is appended).
+Parameters are expected to be in the following columns:
+.TP
+.B 1,2
+longitude, latitude of station (\fB\-:\fP option interchanges order)
+.TP
+.B 3,4
+eastward, northward components of anisotropy vector (\fB\-:\fP option interchanges order)
+.br
+.br
+.sp
+.TP
+\fB\-Sr\fP\fIvelscale/confidence/fontsize\fP
+Velocity ellipses in rotated convention.  \fIVscale\fP sets the scaling of the velocity
+arrows. This scaling gives inches (unless \fBc\fP, \fBi\fP, \fBm\fP, or \fBp\fP is appended).
+\fIConfidence\fP sets the 2-dimensional confidence limit for
+the ellipse, e.g., 0.95 for 95% confidence ellipse.  \fIFontsize\fP
+sets the size of the text in points.
+The ellipse will be filled with the color or shade specified by the \fB\-G\fP option
+[default transparent].  The arrow and the circumference of the ellipse will
+be drawn with the pen attributes specified by the \fB\-W\fP option.
+Parameters are expected to be in
+the following columns:
+.TP
+.B 1,2
+longitude, latitude, of station (\fB\-:\fP option interchanges order)
+.TP
+.B 3,4
+eastward, northward velocity (\fB\-:\fP option interchanges order)
+.TP
+.B 5,6
+semi-major, semi-minor axes
+.TP
+.B 7
+counter-clockwise angle, in degrees, from horizontal axis to major axis of ellipse.
+.TP
+.B 8
+name of station (optional)
+.br
+.sp
+.TP
+\fB\-Sw\fP\fIwedge_scale/wedge_mag\fP.
+Rotational wedges.
+\fIWedge_scale\fP sets the size of the wedges in inches
+(unless \fBc\fP, \fBi\fP, \fBm\fP, or \fBp\fP is appended).  Values are
+multiplied by \fIWedge_mag\fP before plotting.  For example, setting
+\fIWedge_mag\fP to 1.e7 works well for rotations of the order of 100
+nanoradians/yr.  Use \fB\-G\fP to set the fill color or shade for the
+wedge, and \fB\-E\fP to set the color or shade for the uncertainty.
+Parameters are expected to be in the following columns:
+.TP
+.B 1,2
+longitude, latitude, of station (\fB\-:\fP option interchanges order)
+.TP
+.B 3
+rotation in radians
+.TP
+.B 4
+rotation uncertainty in radians
+.br
+.sp
+.TP
+\fB\-Sx\fP\fIcross_scale\fP
+gives Strain crosses.  \fICross_scale\fP sets the
+size of the cross in inches (unless \fBc\fP, \fBi\fP, \fBm\fP, or \fBp\fP 
+is appended).  Parameters are expected to be in the
+following columns:
+.TP
+.B 1,2
+longitude, latitude, of station (\fB\-:\fP option interchanges order)
+.TP
+.B 3
+eps1, the most extensional eigenvalue of strain tensor, with extension taken positive.
+.TP
+.B 4
+eps2, the most compressional eigenvalue of strain tensor, with extension taken positive.
+.TP
+.B 5
+azimuth of eps2 in degrees CW from North.
+.br
+.sp
+.br
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.br
+.TP
+\fB\-A\fP
+\fIArrow_width/Head_length/Head_width \fP
+Size of arrow in inches.  [Default is 0.03/0.12/0.09].
+.TP
+\fB\-B\fP
+Sets map boundary annotation and tickmark intervals; see the
+\fBpsbasemap\fP man page for all the details.
+.TP
+\fB\-C\fP
+\fROffset focal mechanisms to the latitude and longitude specified in the last
+two columns of the input file.
+.br
+.TP
+\fB\-D\fP
+\fISigma_scale \fP
+can be used to rescale the uncertainties of velocities (\fB\-Se\fP and
+\fB\-Sr\fP) and rotations (\fB\-Sw\fP).  Can be combined with the
+\fIconfidence \fP variable.
+.br
+.TP
+\fB\-F\fP\fIfill\fP
+\fRSets the color or shade used for frame and annotation. [Default is 0/0/0 (black)]
+.br
+.TP
+\fB\-E\fP\fIfill\fP
+\fRSets the color or shade used for filling uncertainty wedges (\fB\-Sw\fP)
+or velocity error ellipses (\fB\-Se\fP or \fB\-Sr\fP).  [If \fB\-E\fP is not
+specified, the uncertainty regions will be transparent.]
+.br
+.TP
+\fB\-G\fP\fIfill\fP
+\fRSelect filling of ellipses, wedges, and focal mechanisms.  By
+convention, the compressional quadrants of the focal mechanism beach
+balls are shaded.  Set the shade (0\-255) or color (r/g/b) [Default is
+0/0/0].  Optionally, specify \fB\-Gp\fP\fIicon_size/pattern\fP, where
+\fIpattern\fP gives the number of the image pattern (1-90) OR the name
+of a icon-format file.  \fIicon_size\fP sets the unit size in inches.
+To invert black and white pixels, use \fB\-GP\fP instead of
+\fB\-Gp\fP.  See \fBpspatterns\fP for information on individual
+patterns.
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-K\fP
+More \fIPostScript\fP code will be appended later [Default terminates the plot system].
+.TP
+\fB\-L\fP
+\fRDraw lines.  Ellipses and fault planes will have their outlines drawn using current pen (see \fB\-W\fP).
+.br
+.TP
+\fB\-N\fP
+\fRDo \fBNOT\fP skip symbols that fall outside the frame boundary specified by \fB\-R\fP.
+ [Default plots symbols inside frame only].
+.TP
+\fB\-O\fP
+Selects Overlay plot mode [Default initializes a new plot system].
+.TP
+\fB\-P\fP
+Selects Portrait plotting mode [Default is Landscape, see \fBgmtdefaults\fP to change this].
+.TP
+\fB\-U\fP
+Draw Unix System time stamp on plot.
+By adding \fIjust/dx/dy/\fP, the user may specify the justification of the stamp and
+where the stamp should fall on the page relative to lower left corner of the plot.
+For example, BL/0/0 will align the lower left corner of the time stamp with the lower left corner of the plot.
+Optionally, append a \fIlabel\fP, or \fBc\fP (which will plot the command string.).
+The \fBGMT\fP parameters \fBUNIX_TIME\fP, \fBUNIX_TIME_POS\fP, and \fBUNIX_TIME_FORMAT\fP can affect the appearance;
+see the \fBgmtdefaults\fP man page for details.
+The time string will be in the locale set by the environment variable \fBTZ\fP (generally local time).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+\fRSet pen attributes for velocity arrows, ellipse circumference and fault plane edges.
+ [Defaults: width = 1, color = 0/0/0, texture = solid].
+.TP
+\fB\-X\fP \fB\-Y\fP
+Shift plot origin relative to the current origin by (\fIx-shift,y-shift\fP) and
+optionally append the length unit (\fBc\fP, \fBi\fP, \fBm\fP, \fBp\fP).
+You can prepend \fBa\fP to shift the origin back to the original position after plotting,
+or prepend  \fBr\fP [Default] to reset the current origin to the new location.
+If \fB\-O\fP is used then the default (\fIx-shift,y-shift\fP) is (0,0), otherwise it is
+(r1i, r1i) or (r2.5c, r2.5c).
+Alternatively, give \fBc\fP to align the center coordinate (x or y) of the plot with the center of the page
+based on current page size.
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-c\fP
+Specifies the number of plot copies. [Default is 1].
+.SH EXAMPLES
+.sp
+The following should make big red arrows with green ellipses, outlined
+in red.  Note that the 39% confidence scaling will give an ellipse which
+fits inside a rectangle of dimension Esig by Nsig.
+.br
+.sp
+\fBpsvelo\fP << END \fB\-H\fP2 \fB\-R\fP-10/10/-10/10 \fB\-W\fP0.25p,red
+\fB\-G\fPgreen \fB\-L\fP \fB\-Se\fP0.2/0.39/18 \fB\-B\fP1g1 \fB\-Jx\fP0.4/0.4
+\fB\-A\fP0.1/0.3/0.3 \fB\-P\fP \fB\-V\fP  >! test.ps
+.br
+  Long.   Lat.   Evel   Nvel   Esig   Nsig  CorEN SITE
+.br
+  (deg)  (deg)    (mm/yr)        (mm/yr)
+.br
+   0.    -8.     0.0    0.0     4.0    6.0  0.500  4x6
+.br
+  -8.     5.     3.0    3.0     0.0    0.0  0.500  3x3
+.br
+   0.     0.     4.0    6.0     4.0    6.0  0.500
+.br
+  -5.    -5.     6.0    4.0     6.0    4.0  0.500  6x4
+.br
+   5.     0.    -6.0    4.0     6.0    4.0 -0.500  -6x4
+.br
+   0.    -5.     6.0   -4.0     6.0    4.0 -0.500  6x-4
+.br
+END
+.br
+This example should plot some residual rates of rotation in the
+Western Transverse Ranges, California.  The wedges will be
+dark gray, with light gray wedges to represent the 2-sigma
+uncertainties.
+.br
+.sp
+\fBpsvelo\fP <<END \fB\-Sw\fP0.4/1.e7 \fB\-W\fP0.75p \fB\-G\fPdarkgray \fB\-E\fPlightgray \fB\-H\fP1 \fB\-D\fP2
+\fB\-Jm\fP2.2 \fB\-R\fP240./243./32.5/34.75 \fB\-B\fPf10ma60m/WeSn \fB\-P\fP >! test.ps
+.br
+ lon     lat    spin(rad/yr) spin_sigma (rad/yr)
+.br
+241.4806 34.2073  5.65E-08 1.17E-08
+.br
+241.6024 34.4468 -4.85E-08 1.85E-08
+.br
+241.0952 34.4079  4.46E-09 3.07E-08
+.br
+241.2542 34.2581  1.28E-07 1.59E-08
+.br
+242.0593 34.0773 -6.62E-08 1.74E-08
+.br
+241.0553 34.5369 -2.38E-07 4.27E-08
+.br
+241.1993 33.1894 -2.99E-10 7.64E-09
+.br
+241.1084 34.2565  2.17E-08 3.53E-08
+.br
+END
+.br
+.sp
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR psbasemap (1),
+.IR psxy (1)
+.SH REFERENCES
+.br
+\fRBomford, G., Geodesy, 4th ed., Oxford University Press, 1980.
+.SH AUTHORS
+Kurt Feigl
+.br
+CNRS UMR 5562
+.br
+Toulouse, France
+.br
+(Kurt.Feigl@.cnes.fr)
+.br
+.br
+Genevieve Patau
+.br
+CNRS UMR 7580
+.br
+Seismology Dept.
+.br
+Institut de Physique du Globe de Paris
+.br
+(patau@ipgp.jussieu.fr)
