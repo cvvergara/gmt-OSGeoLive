@@ -1,9 +1,5 @@
 #! /usr/bin/make -f
 
-RELEASE		:= 4.5.7
-PARTS		:= doc share src suppl 
-ARCHIVES	:= $(PARTS:%=upstream/GMT$(RELEASE)_%.tar.bz2)
-
 CFLAGS := -fPIC -ansi -pedantic
 
 # Some special build options
@@ -19,60 +15,32 @@ ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
    export DH_VERBOSE
 endif
 
-unpack:		stamps/unpack-stamp
-patch:		stamps/patch-stamp
-build:		stamps/build-stamp
-install:	stamps/install-stamp
+build:		build-stamp
+install:	install-stamp
 binary:		binary-arch binary-indep
-
-download-upstream:	$(ARCHIVES)
-
-create-orig-tar:	$(ARCHIVES)
-	dh_testdir
-	mkdir -p gmt-$(RELEASE)/upstream
-	ln -f $(ARCHIVES) gmt-$(RELEASE)/upstream
-	tar cf - gmt-$(RELEASE)|gzip -9 > gmt_$(RELEASE).orig.tar.gz
-	mv gmt_$(RELEASE).orig.tar.gz ..
-	rm -R gmt-$(RELEASE)
-
-upstream/%:
-	dh_testdir
-	mkdir -p upstream
-	wget -O upstream/$*.partial ftp://ibis.grdl.noaa.gov/pub/gmt/$*
-	mv upstream/$*.partial upstream/$*
-
-stamps/unpack-stamp: 
-	dh_testdir
-	for i in $(ARCHIVES); do \
-		tar xjf $$i || exit 1; \
-	done
-	mkdir -p stamps
-	touch $@
-
-stamps/patch-stamp:	stamps/unpack-stamp
-	dh_testdir
-	ln -sf GMT$(RELEASE) GMT
-	QUILT_PATCH_OPTS="-p1" QUILT_PATCHES=debian/patches quilt push -a --color=auto || [ $$? = 2 ]
-	touch $@
-
-unpatch:
-	dh_testdir
-	QUILT_PATCH_OPTS="-p1" QUILT_PATCHES=debian/patches quilt pop -a || true
-	rm -rf stamps/patch-stamp GMT .pc
 
 PATHCONFIG	:= --prefix=/usr/lib/gmt
 DESTDIR		:= $(CURDIR)/debian/tmp
 PATHVARS	:= prefix=$(DESTDIR)/usr/lib/gmt
 
-stamps/build-stamp: stamps/patch-stamp
+build-stamp: 
 	dh_testdir
 	dh_prep
-	cd GMT$(RELEASE) && ./configure \
+	
+	# Use current autotools helpers
+	-test -r /usr/share/misc/config.sub && \
+		mv config.sub config.sub.original && \
+		cp -f /usr/share/misc/config.sub config.sub
+	-test -r /usr/share/misc/config.guess && \
+		mv config.guess config.guess.original && \
+		cp -f /usr/share/misc/config.guess config.guess
+	
+	$(CURDIR)/configure \
 		--enable-shared $(PATHCONFIG) --disable-mex --enable-netcdf=/usr
-	$(MAKE) -C GMT$(RELEASE) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" all suppl 
+	$(MAKE) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" all suppl 
 	touch $@
 
-stamps/install-stamp: stamps/build-stamp
+install-stamp: build-stamp
 	dh_testdir
 	dh_testroot
 	
@@ -87,7 +55,7 @@ stamps/install-stamp: stamps/build-stamp
 	ln -fs ../../include/gmt $(DESTDIR)/usr/lib/gmt/include
 	ln -fs ../../share/gmt $(DESTDIR)/usr/lib/gmt/share
 	
-	$(MAKE) -C GMT$(RELEASE) $(PATHVARS) install-all
+	$(MAKE) $(PATHVARS) install-all
 	
 	# Okay, we still have to move the documentation (the trick above does
 	# not work because the Makefile would try to overwrite the link with
@@ -95,12 +63,6 @@ stamps/install-stamp: stamps/build-stamp
 	# for them. 
 	mv $(DESTDIR)/usr/lib/gmt/share/doc/gmt $(DESTDIR)/usr/share/doc/
 	ln -fs ../../../share/doc/gmt $(DESTDIR)/usr/lib/gmt/share/doc/gmt
-	
-	# Move stuff from the doc directory up one level and replace the dir
-	# with a symlink to .
-#	mv $(DESTDIR)/usr/share/doc/gmt/doc/* $(DESTDIR)/usr/share/doc/gmt/
-#	rmdir $(DESTDIR)/usr/share/doc/gmt/doc
-#	ln -fs . $(DESTDIR)/usr/share/doc/gmt/doc
 	
 	# Configuration files are still at the wrong place, let's fix this
 	mv $(DESTDIR)/usr/share/gmt/conf/*.conf $(DESTDIR)/etc/gmt/
@@ -130,12 +92,12 @@ stamps/install-stamp: stamps/build-stamp
 	
 	touch $@
 
-binary-arch: stamps/install-stamp
+binary-arch: install-stamp
 	dh_testdir -a
 	dh_testroot -a
 	dh_install --list-missing --sourcedir=$(DESTDIR)
 	dh_installchangelogs -a
-	dh_installchangelogs -pgmt GMT$(RELEASE)/ChangeLog
+	dh_installchangelogs -pgmt ChangeLog
 	dh_installdocs -a
 	dh_installexamples -a
 	dh_installmenu -a
@@ -152,7 +114,7 @@ binary-arch: stamps/install-stamp
 	dh_builddeb -a
 	
 
-binary-indep: stamps/install-stamp
+binary-indep: install-stamp
 	dh_testdir -i
 	dh_testroot -i
 	dh_install --list-missing --sourcedir=$(DESTDIR)
@@ -177,5 +139,14 @@ binary-indep: stamps/install-stamp
 clean:
 	dh_testdir
 	dh_testroot
-	rm -Rf stamps GMT$(RELEASE) GMT .pc
+	rm -f install-stamp build-stamp
+	# Reset upstream autotools helpers
+	[ ! -f config.sub.original ] || mv -f config.sub.original config.sub 
+	[ ! -f config.guess.original ] || mv -f config.guess.original config.guess
+	[ ! -f Makefile ] || $(MAKE) distclean || true
+	# Remove a few files still around after upstream cleaning
+	rm -f src/mgg/libgmt_mgg.a \
+		  share/conf/gmt.conf \
+		  share/conf/gmtdefaults_SI \
+		  share/conf/gmtdefaults_US src/isogmt
 	dh_clean
