@@ -59,7 +59,8 @@ install-stamp: build-stamp
 	ln -fs ../../share/gmt $(DESTDIR)/usr/lib/gmt/share
 	
 	$(MAKE) $(PATHVARS) install-all
-	$(MAKE) -C src/mex DESTDIR=debian/tmp install
+	$(MAKE) -C src/mex DESTDIR=$(DESTDIR) install
+	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
 	
 	# Okay, we still have to move the documentation (the trick above does
 	# not work because the Makefile would try to overwrite the link with
@@ -99,7 +100,7 @@ install-stamp: build-stamp
 binary-arch: install-stamp
 	dh_testdir -a
 	dh_testroot -a
-	dh_install --list-missing --sourcedir=$(DESTDIR)
+	dh_install --list-missing 
 	dh_installchangelogs -a
 	dh_installchangelogs -pgmt ChangeLog
 	dh_installdocs -a
@@ -121,7 +122,7 @@ binary-arch: install-stamp
 binary-indep: install-stamp
 	dh_testdir -i
 	dh_testroot -i
-	dh_install --list-missing --sourcedir=$(DESTDIR)
+	dh_install --list-missing 
 	dh_installchangelogs -i
 	dh_installdocs -i
 	dh_installexamples -i
