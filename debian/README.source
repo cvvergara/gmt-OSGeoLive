@@ -1,0 +1,11 @@
+GMT for Debian
+--------------
+
+This package drops the optional non-free well-known triangle.* source for
+triangularization in both the orig tarball and Debian source.
+
+Just remember to do the same at every new upstream release, at least
+until Paul and others still will distribute it.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 13 Mar 2012 13:47:12 +0100
+
