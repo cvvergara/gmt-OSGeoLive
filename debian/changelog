@@ -1,6 +1,7 @@
 gmt (4.5.7-1) unstable; urgency=low
 
   * New upstream version with a new compact distribution.
+    (closes: #663099)
   * Policy bumped to 3.9.3, no changes required.
   * Now use in embedded mode quilt and all tar/unpack/patch target have been dropped.
   * Get-orig-source and all other special target dropped due to semplification
@@ -12,8 +13,12 @@ gmt (4.5.7-1) unstable; urgency=low
   * Splitted links helper in different files for each package to avoid 
     unresolved links.
   * This package requires GSHHS >= 2.2, as provided by a new separate package.
+  * Fixed some symlinks.
+    (closes: #343383)
+  * Added a patch kfreebsd to allow working with GNU/kFreeBSD.
+    (closes: #619960)
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 13 Mar 2012 12:02:41 +0100
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 13 Mar 2012 13:47:12 +0100
 
 gmt (4.5.6-1) unstable; urgency=low
 
