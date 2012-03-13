@@ -15,7 +15,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Replaces: gmt-manpages
 Conflicts: gmt-manpages
-Recommends: gmt-coastline-data | gmt-coast-low, gmt-doc
+Recommends: gmt-coastline-data | gmt-coast-low (>= 1:2.2.0), gmt-doc
 Suggests: gmt-tutorial-pdf, gmt-doc-pdf, gmt-examples
 Description: Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
