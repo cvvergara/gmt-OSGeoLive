@@ -36,7 +36,10 @@ build-stamp:
 		cp -f /usr/share/misc/config.guess config.guess
 	
 	$(CURDIR)/configure \
-		--enable-shared $(PATHCONFIG) --disable-mex --enable-netcdf=/usr
+		--enable-shared $(PATHCONFIG) --disable-mex --enable-netcdf=/usr \
+		--enable-octave \
+	    --enable-mex-mdir=$(shell octave-config --m-site-dir) \
+		--enable-mex-xdir=$(shell octave-config --oct-site-dir) 
 	$(MAKE) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" all suppl 
 	touch $@
 
@@ -56,6 +59,7 @@ install-stamp: build-stamp
 	ln -fs ../../share/gmt $(DESTDIR)/usr/lib/gmt/share
 	
 	$(MAKE) $(PATHVARS) install-all
+	$(MAKE) -C src/mex DESTDIR=debian/tmp install
 	
 	# Okay, we still have to move the documentation (the trick above does
 	# not work because the Makefile would try to overwrite the link with

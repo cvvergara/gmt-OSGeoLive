@@ -19,8 +19,10 @@ gmt (4.5.7-1) unstable; urgency=low
     (closes: #619960)
   * Fixed bashism in psbbox.sh with patch bashism.
     (closes: #581103)
+  * Added octave-gmt package for supporting grid files in GNU octave.
+  * Revised build-deps.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 13 Mar 2012 14:24:33 +0100
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 13 Mar 2012 16:38:45 +0100
 
 gmt (4.5.6-1) unstable; urgency=low
 

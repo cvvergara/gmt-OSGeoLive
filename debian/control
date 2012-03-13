@@ -3,8 +3,9 @@ Section: science
 Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Torsten Landschoff <torsten@debian.org>, Francesco Paolo Lovergine <frankie@debian.org>
-Build-Depends: libnetcdf-dev, debhelper (>= 8), bzip2, libxmu-headers, libxaw7-dev, autotools-dev
-Build-Depends-Indep: debhelper (>= 8), quilt, bzip2
+Build-Depends: libnetcdf-dev, debhelper (>= 8), bzip2, libxmu-headers,
+ libxaw7-dev, autotools-dev, octave-pkg-dev (>= 1.0.0)
+Build-Depends-Indep: debhelper (>= 8)
 Standards-Version: 3.9.3
 Homepage: http://gmt.soest.hawaii.edu/
 Vcs-Browser: http://git.debian.org/?p=pkg-grass/gmt.git
@@ -124,3 +125,18 @@ Description: Example scripts illustrating the use of GMT
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
+
+Package: octave-gmt
+Architecture: any
+Section: math
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${octave:Depends}
+Description: Support of GMT grid files for Octave
+ GMT is a collection of tools that allow users to manipulate
+ (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
+ projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
+ ranging from simple x-y plots through contour maps to artificially illuminated
+ surfaces and 3-D perspective views in black and white, gray tone, hachure
+ patterns, and 24-bit color. 
+ .
+ This package provides an interface for GNU Octave to query and read/write 
+ GMT grid files.
