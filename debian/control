@@ -61,6 +61,8 @@ Package: gmt-doc-pdf
 Architecture: all
 Section: doc
 Suggests: pdf-viewer
+Depends: ${misc:Depends}
+Suggests: gmt
 Description: PDF docs for GMT, the Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -77,6 +79,7 @@ Package: gmt-tutorial-pdf
 Architecture: all
 Section: doc
 Suggests: pdf-viewer
+Depends: ${misc:Depends}
 Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -93,6 +96,7 @@ Package: gmt-doc
 Architecture: all
 Section: doc
 Suggests: www-browser
+Depends: ${misc:Depends}
 Description: HTML documentation for GMT, the Generic Mapping Tools
  GMT is a collection of UNIX tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -114,6 +118,7 @@ Package: gmt-examples
 Architecture: all
 Section: doc
 Suggests: gmt
+Depends: ${misc:Depends}
 Description: Example scripts illustrating the use of GMT
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,

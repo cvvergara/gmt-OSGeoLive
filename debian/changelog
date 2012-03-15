@@ -1,16 +1,29 @@
+gmt (4.5.7-2) unstable; urgency=low
+
+  * Added Octave support and an ad-hoc new package for that.
+  * Added octave-gmt package for supporting grid files in GNU octave.
+  * Revised build-deps.
+  * Debhelper level set to 9.
+  * Lintian-based cleanups:
+    - Fixed debian/changelog for a couple of silly warnings.
+    - Added ${misc:Depends} to all pkgs.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Thu, 15 Mar 2012 13:51:59 +0100
+
 gmt (4.5.7-1) unstable; urgency=low
 
   * New upstream version with a new compact distribution.
     (closes: #663099)
   * Policy bumped to 3.9.3, no changes required.
-  * Now use in embedded mode quilt and all tar/unpack/patch target have been dropped.
+  * Now use in embedded mode quilt and all tar/unpack/patch target have been 
+    dropped.
   * Get-orig-source and all other special target dropped due to semplification
     of the distribution.
   * Added a build-dep on autotools-dev and provided usual snippets to override
     config.{sub,guess} files before configuring.
   * Moved to copyright format version 1.0. Note that in 4.5.6 GMT team added
     compatibility with any later version for GPL-2.
-  * Splitted links helper in different files for each package to avoid 
+  * Split links helper in different files for each package to avoid 
     unresolved links.
   * This package requires GSHHS >= 2.2, as provided by a new separate package.
   * Fixed some symlinks.
@@ -19,9 +32,6 @@ gmt (4.5.7-1) unstable; urgency=low
     (closes: #619960)
   * Fixed bashism in psbbox.sh with patch bashism.
     (closes: #581103)
-  * Added octave-gmt package for supporting grid files in GNU octave.
-  * Revised build-deps.
-  * Debhelper level set to 9.
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Tue, 13 Mar 2012 16:40:33 +0100
 
