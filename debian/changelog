@@ -1,3 +1,10 @@
+gmt (4.5.7-2) unstable; urgency=low
+
+  * A link moved from gmt to gmt-doc, so conflicting current gmt-doc with
+    old gmt.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 16 Mar 2012 14:14:25 +0100
+
 gmt (4.5.7-1) unstable; urgency=low
 
   * New upstream version with a new compact distribution.
