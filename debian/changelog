@@ -5,12 +5,19 @@ gmt (4.5.7-2~exp1) experimental; urgency=low
   * Revised build-deps.
   * Debhelper level set to 9.
   * Lintian-based cleanups:
-    - Fixed debian/changelog for a couple of silly warnings.
-    - Added ${misc:Depends} to all pkgs.
+      - Fixed debian/changelog for a couple of silly warnings.
+      - Added ${misc:Depends} to all pkgs.
   * Revised for Suggestions.
   * Fixed previous changelog for layout and contents.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 16 Mar 2012 11:38:26 +0100
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 16 Mar 2012 14:33:15 +0100
+
+gmt (4.5.7-2) unstable; urgency=low
+
+  * A link moved from gmt to gmt-doc, so conflicting current gmt-doc with
+    old gmt.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 16 Mar 2012 14:14:25 +0100
 
 gmt (4.5.7-1) unstable; urgency=low
 
