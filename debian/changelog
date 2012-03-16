@@ -1,11 +1,4 @@
-gmt (4.5.7-3) unstable; urgency=low
-
-  * Fixed a silly typo in old the package name in debian/control.
-    (closes: #664129)
-
- -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 16 Mar 2012 10:13:04 +0100
-
-gmt (4.5.7-2) unstable; urgency=low
+gmt (4.5.7-2~exp1) experimental; urgency=low
 
   * Added Octave support and an ad-hoc new package for that.
   * Added octave-gmt package for supporting grid files in GNU octave.
@@ -14,8 +7,10 @@ gmt (4.5.7-2) unstable; urgency=low
   * Lintian-based cleanups:
     - Fixed debian/changelog for a couple of silly warnings.
     - Added ${misc:Depends} to all pkgs.
+  * Revised for Suggestions.
+  * Fixed previous changelog for layout and contents.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Thu, 15 Mar 2012 13:51:59 +0100
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 16 Mar 2012 11:38:26 +0100
 
 gmt (4.5.7-1) unstable; urgency=low
 
@@ -24,7 +19,7 @@ gmt (4.5.7-1) unstable; urgency=low
   * Policy bumped to 3.9.3, no changes required.
   * Now use in embedded mode quilt and all tar/unpack/patch target have been 
     dropped.
-  * Get-orig-source and all other special target dropped due to semplification
+  * Get-orig-source and all other special target dropped due to simplification
     of the distribution.
   * Added a build-dep on autotools-dev and provided usual snippets to override
     config.{sub,guess} files before configuring.
@@ -32,7 +27,9 @@ gmt (4.5.7-1) unstable; urgency=low
     compatibility with any later version for GPL-2.
   * Split links helper in different files for each package to avoid 
     unresolved links.
-  * This package requires GSHHS >= 2.2, as provided by a new separate package.
+  * This package is compatible with GSHHS >= 2.2, as provided by a new separate 
+    package. Note that upstream no more distributes old datasets, so any 
+    previous package cannot use anymore high/full resolutions.
   * Fixed some symlinks.
     (closes: #343383)
   * Added a patch kfreebsd to allow working with GNU/kFreeBSD.
