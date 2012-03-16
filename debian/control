@@ -62,7 +62,6 @@ Architecture: all
 Section: doc
 Suggests: pdf-viewer
 Depends: ${misc:Depends}
-Suggests: gmt
 Description: PDF docs for GMT, the Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -135,6 +134,7 @@ Package: octave-gmt
 Architecture: any
 Section: math
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${octave:Depends}
+Suggests: gmt
 Description: Support of GMT grid files for Octave
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
