@@ -15,6 +15,8 @@ gmt (4.5.9-1) unstable; urgency=low
     (closes: #701431)
   * New upstream release. 
     (closes: #705022)
+  * Patch kfreebsd refreshed to include hurd case instead.
+    (closes: #676147)
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Fri, 16 Mar 2012 14:53:42 +0100
 
