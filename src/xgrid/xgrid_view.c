@@ -38,14 +38,12 @@ static Widget   saveChangesPopup;
 
 /****	Local procedures	****/
 
-static void getBaseName (); /* String fileName, String baseName */
-static void saveChanges (); /* Widget w, ViewData * view, void * callData */
-static void doSave (); /* Widget w, ViewData * view, void * callData */
-static void doDiscard (); /* Widget w, ViewData * view, void * callData */
+static void getBaseName (String fileName, String baseName);
+static void saveChanges (Widget w, XtPointer view, XtPointer callData);
+static void doSave (Widget w, XtPointer view, XtPointer callData);
+static void doDiscard (Widget w, XtPointer view, XtPointer callData);
 	  	
-static void getBaseName(fileName, baseName)
-	String fileName;
-	String baseName;
+static void getBaseName (String fileName, String baseName)
 {
   String slash, stop;
   
@@ -62,11 +60,10 @@ static void getBaseName(fileName, baseName)
     *stop = '\0';
 }
 
-Widget createView (fileName, parent, args, nargs)
-	String fileName;
-	Widget parent;
-	Arg    args[];
-	int    nargs;
+Widget createView (String fileName,
+	Widget parent,
+	Arg args[],
+	int nargs)
 {
   Widget result;
   char   widgetName[255];
@@ -78,7 +75,7 @@ Widget createView (fileName, parent, args, nargs)
   strcpy(theView.fileName, fileName);
   theView.grid = CreateGMTGrid();
   Trace("Reading grid file...");
-  ReadGridFromFile(theView.grid, fileName, &err);
+  ReadGridFromFile((Grid *)theView.grid, fileName, &err);
   if (err) {
     sprintf(msg, "Unable to read file %s: C error code %d", fileName, err);
     XtError(msg);
@@ -109,8 +106,7 @@ Widget createView (fileName, parent, args, nargs)
   return result;
 }
 
-void createFileCommands (parent)
-	Widget	parent;
+void createFileCommands (Widget parent)
 {
   Widget save;
   
@@ -124,15 +120,16 @@ void createFileCommands (parent)
 /****	When the user quits, be nice and offer to save
 	any changes made in a popup dialog	****/
 	
-static void saveChanges (w, view, callData)
-	Widget	   w;
-	ViewData * view;
-	void *	   callData;
+static void saveChanges (Widget	w,
+	XtPointer client_data,
+	XtPointer callData __attribute__((unused)))
 {
   Widget	dialog;
   XtAppContext	app;
   XEvent	event;
-  
+ 
+  ViewData *view = client_data;
+
   if (! gridHasChanged)
     return;
     
@@ -161,18 +158,19 @@ static void saveChanges (w, view, callData)
   }
 }
 
-static void doSave (w, view, callData)
-	Widget	   w;
-	ViewData * view;
-	void *	   callData;
+static void doSave (Widget w,
+	XtPointer client_data,
+	XtPointer callData __attribute__((unused)))
 {
   String saveName;
   int    err;
   char	 msg[256];
   
+  ViewData *view = client_data;
+
   saveName = XawDialogGetValueString(XtParent(w));
   strcpy(view->fileName, saveName);
-  WriteGridToFile(view->grid, view->fileName, &err);
+  WriteGridToFile((Grid *)view->grid, view->fileName, &err);
   if (err) {
     sprintf(msg, "Unable to save file %s: C error code %d", saveName, err);
     setMessageLine(msg);
@@ -187,15 +185,12 @@ static void doSave (w, view, callData)
   }
 }
 
-static void doDiscard (w, view, callData)
-	Widget	   w;
-	ViewData * view;
-	void *	   callData;
+static void doDiscard (Widget w __attribute__((unused)),
+	XtPointer view __attribute__((unused)),
+	XtPointer callData __attribute__((unused)))
 {
   XtPopdown(saveChangesPopup);
   XtDestroyWidget(saveChangesPopup);
   /* MUST do this, otherwise save dialog loops forever */
   saveChangesPopup = NULL;
 }
-
-

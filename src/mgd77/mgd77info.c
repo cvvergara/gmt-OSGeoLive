@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77info.c,v 1.75 2011/07/11 19:22:03 guru Exp $
+ *	$Id: mgd77info.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 2004-2011 by P. Wessel
+ *    Copyright (c) 2004-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -46,8 +46,6 @@ int main (int argc, char **argv)
 	struct MGD77_DATASET *D = NULL;
 		
 	argc = (int)GMT_begin (argc, argv);		/* Initialize GMT Machinery */
-	GMT_get_time_system ("unix", &(gmtdefs.time_system));						/* MGD77+ uses GMT's Unix time epoch */
-	GMT_init_time_system_structure (&(gmtdefs.time_system));
 	
 	/* Initialize MGD77 output order and other parameters*/
 	
@@ -165,14 +163,14 @@ int main (int argc, char **argv)
 		fprintf(stderr,"	   Append e for counting just the of non-NaN values for each extra field\n");
 		fprintf(stderr,"	-M Print header items (and MGD77+ history).  Append type of presentation:\n");
 		fprintf(stderr,"	     f: Print header items individually, one per line.  Append name of a particular\n");
-		fprintf(stderr,"	        item (e.g. Port_of_Departure), all [Default], or - to see a list of items.\n");
+		fprintf(stderr,"	        item (e.g., Port_of_Departure), all [Default], or - to see a list of items.\n");
 		fprintf(stderr,"	        You can also use the number of the item.\n");
 		fprintf(stderr,"	     r: Display raw original MGD77 header records.\n");
 		fprintf(stderr,"	     e: Display the MGD77+ file's E77 status.\n");
 		fprintf(stderr,"	     h: Display the MGD77+ file's history.\n");
 		if (header_flag == 1) MGD77_List_Header_Items (&M);
 		fprintf(stderr,"	-I Ignore certain data file formats from consideration. Append combination of act to ignore\n");
-		fprintf(stderr,"	   (a) MGD77 ASCII, (c) MGD77+ netCDF, or (t) plain table files. [Default ignores none]\n");
+		fprintf(stderr,"	   (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table files. [Default ignores none]\n");
 		fprintf(stderr,"	-L Just list all the institutions and their 2-character GEODAS codes.  Append v to also\n");
 		fprintf(stderr,"	   display the vessels and their 4-character codes for each institution\n");
 		fprintf(stderr,"	-V verbose, report progress\n");
@@ -300,7 +298,7 @@ int main (int argc, char **argv)
 				sprintf (buffer, "%s\n", D->H.history);
 				GMT_fputs (buffer, GMT_stdout);
 				for (i = 0; i < M.n_out_columns; i++) {
-					if ((M.order[i].set == MGD77_CDF_SET)) {
+					if (M.order[i].set == MGD77_CDF_SET) {
 						sprintf (buffer, "> %s%s%s%s%s%s%s", D->H.info[MGD77_CDF_SET].col[M.order[i].item].abbrev, gmtdefs.field_delimiter,
 						D->H.info[MGD77_CDF_SET].col[M.order[i].item].name, gmtdefs.field_delimiter,
 						D->H.info[MGD77_CDF_SET].col[M.order[i].item].units, gmtdefs.field_delimiter,

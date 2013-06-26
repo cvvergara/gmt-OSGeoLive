@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:50 2011 -->
+<!-- CreationDate: Wed Jan  2 08:40:16 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -46,8 +46,8 @@ files</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>mgd77convert</b>
-<i>NGDC-ids</i> <b>&minus;Fa</b>|<b>c</b>|<b>t
-&minus;T</b>[<b>+</b>]<b>a</b>|<b>b</b>|<b>t</b> [
+<i>NGDC-ids</i> <b>&minus;Fa</b>|<b>c</b>|<b>m</b>|<b>t
+&minus;T</b>[<b>+</b>]<b>a</b>|<b>b</b>|<b>m</b>|<b>t</b> [
 <b>&minus;L</b>[<b>w</b>][<b>e</b>][<b>+</b>] ] [
 <b>&minus;V</b> ] [ <b>&minus;4</b> ]</p>
 
@@ -100,7 +100,8 @@ listed in <b>$MGD77_HOME</b>/mgd77_paths.txt [If
 <p style="margin-top: 1em" valign="top">Specifies the
 format of the input (From) files. Choose from <b>a</b> for
 standard MGD77 ASCII table (with extension .mgd77), <b>c</b>
-for the new MGD77+ netCDF format (with extension .nc), and
+for the new MGD77+ netCDF format (with extension .nc),
+revised MGD77T (tab-delimited; with extension .m77t) and
 <b>t</b> for a plain ASCII tab-separated table dump (with
 extension .dat). Use <b>&minus;FC</b> to recover the
 original MGD77 setting from the MGD77+ file [Default will
@@ -119,7 +120,8 @@ apply any E77 corrections encoded in the file].</p></td>
 <p style="margin-top: 1em" valign="top">Specifies the
 format of the output (To) files. Choose from <b>a</b> for
 standard MGD77 ASCII table (with extension .mgd77), <b>c</b>
-for the new MGD77+ netCDF format (with extension .nc), and
+for the new MGD77+ netCDF format (with extension .nc),
+revised MGD77T (tab-delimited; with extension .m77t) and
 <b>t</b> for a plain ASCII tab-separated table dump (with
 extension .dat). We will refuse to create the file(s) if
 they already exist in the current directory. Prepend
@@ -234,8 +236,8 @@ mgd77convert</b> 01020051 <b>&minus;FC &minus;Ta
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>mgd77convert</b>
-handles three different formats. (1) The MGD77 ASCII tables
-are the established standard for distribution of underway
+handles four different formats. (1) The MGD77 ASCII tables
+are the conventional standard for distribution of underway
 geophysical data to and from the NGDC data center. Normally,
 only the ship-operations people and the cruise PI might be
 involved in <i>making</i> an MGD77 ASCII file for
@@ -246,11 +248,16 @@ scientists. It contains all the information of the original
 MGD77 file and if you convert back and forth you end up with
 the original. However, file sizes are typically ~30% of the
 original ASCII format and is much faster to operate on. (3)
-The plain ASCII tab-separated dump is available for users
-who need to manually edit the content of a MGD77 file. This
-is usually easier to do when the columns are tab-separated
-than when they are all crunched together in the MGD77
-punch-card format.</p>
+NGDC has now started to use a new tab-delimited version of
+the MGD77 data, called MGD77T. In addition to all the info
+in old MGD77 files it contains a few more quality flags for
+grav, mag, and bathymetry. (4) The plain ASCII tab-separated
+dump is available for users who need to manually edit the
+content of a MGD77 file. This is usually easier to do when
+the columns are tab-separated than when they are all
+crunched together in the MGD77 punch-card format. It differs
+from format MGD77T in that missing items are written as
+NaNs.</p>
 
 <a name="OTHER TOOLS"></a>
 <h2>OTHER TOOLS</h2>
@@ -275,8 +282,8 @@ ncView.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Wessel, P., and
-W. H. F. Smith, 2011, The Generic Mapping Tools (GMT)
-version 4.5.7 Technical Reference &amp; Cookbook,
+W. H. F. Smith, 2013, The Generic Mapping Tools (GMT)
+version 4.5.9 Technical Reference &amp; Cookbook,
 SOEST/NOAA. <br>
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version
 of Generic Mapping Tools Released, EOS Trans., AGU, 79 (47),

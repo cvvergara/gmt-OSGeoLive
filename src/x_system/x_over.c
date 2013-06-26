@@ -1,4 +1,4 @@
-/*	$Id: x_over.c,v 1.17 2011/07/11 19:22:07 guru Exp $
+/*	$Id: x_over.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * X_OVER will compute cross-overs between 2 legs (or internal cross-overs
  * if both legs are the same) and write out time,lat,lon,cross-over values,

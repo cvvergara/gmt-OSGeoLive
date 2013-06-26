@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcut.c,v 1.50 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdcut.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -119,7 +119,7 @@ int main (int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
 		fprintf (stderr, "\t<input_grd> is file to extract a subset from.\n");
-		fprintf (stderr, "\t-G specifies output grid file\n");
+		fprintf (stderr, "\t-G specifies output grid file.\n");
 		GMT_explain_option ('R');
 		fprintf (stderr, "\t   Obviously, the WESN you specify must be within the WESN of the input file.\n");
 		fprintf (stderr, "\t   If in doubt, run grdinfo first and check range of old file.\n");
@@ -127,7 +127,7 @@ int main (int argc, char **argv)
 		GMT_explain_option ('V');
 		fprintf (stderr, "\t-Z Specify a range and determine the corresponding rectangular region so that\n");
 		fprintf (stderr, "\t   all values outside this region are outside the range [-inf/+inf].\n");
-		fprintf (stderr, "\t   Use -Zn to consider NaNs outside as well [Default just ignores NaNs]\n");
+		fprintf (stderr, "\t   Use -Zn to consider NaNs outside as well [Default just ignores NaNs].\n");
 		GMT_explain_option ('f');
 		exit (EXIT_FAILURE);
 	}
@@ -166,7 +166,7 @@ int main (int argc, char **argv)
 			}
 		}
 		if (i0 == -1) {
-			fprintf (stderr, "%s: The sub-region is empty\n", GMT_program);
+			fprintf (stderr, "%s: The sub-region is empty - no file written\n", GMT_program);
 			GMT_free ((void *)grd);
 			exit (EXIT_FAILURE);
 		}
@@ -197,10 +197,17 @@ int main (int argc, char **argv)
 					j1 = j;
 			}
 		}
-		w_new = GMT_i_to_x (i0, header.x_min, header.x_max, header.x_inc, 0.5 * header.node_offset, header.nx);
-		e_new = GMT_i_to_x (i1, header.x_min, header.x_max, header.x_inc, 0.5 * header.node_offset, header.nx);
-		n_new = GMT_j_to_y (j0, header.y_min, header.y_max, header.y_inc, 0.5 * header.node_offset, header.ny);
-		s_new = GMT_j_to_y (j1, header.y_min, header.y_max, header.y_inc, 0.5 * header.node_offset, header.ny);
+		if (i0 == 0 && j0 == 0 && i1 == (header.nx-1) && j1 == (header.ny-1)) {
+			fprintf (stderr, "%s: Your -Z limits produced no subset - output grid is identical to input grid\n", GMT_program);
+			w_new = header.x_min;	e_new = header.x_max;
+			s_new = header.y_min;	n_new = header.y_max;
+		}
+		else {	/* Adjust boundaries inwards */
+			w_new = header.x_min + i0 * header.x_inc;
+			e_new = header.x_max - (header.nx - 1 - i1) * header.x_inc;
+			s_new = header.y_min + (header.ny - 1 - j1) * header.y_inc;
+			n_new = header.y_max - j0 * header.y_inc;
+		}
 		GMT_free ((void *)grd);
 	}
 	
@@ -216,7 +223,7 @@ int main (int argc, char **argv)
 			header.x_min += 360.0;
 			header.x_max += 360.0;
 		}
-		if (!GMT_360_RANGE (header.x_min, header.x_max) && (w_new < header.x_min || e_new > header.x_max)) error = TRUE;
+		if (!GMT_grd_is_global (&header) && (w_new < header.x_min || e_new > header.x_max)) error = TRUE;
 	}
 	else if (w_new < header.x_min || e_new > header.x_max)
 		error = TRUE;

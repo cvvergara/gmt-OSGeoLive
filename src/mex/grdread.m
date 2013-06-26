@@ -16,4 +16,4 @@
 %	
 %	See also GRDWRITE, GRDINFO
 	
-%	$Id: grdread.m,v 1.1.1.1 2000/12/28 01:23:45 gmt Exp $
+%	$Id: grdread.m 9545 2011-07-27 19:31:54Z pwessel $

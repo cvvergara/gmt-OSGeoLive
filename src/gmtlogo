@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	$Id: gmtlogo,v 1.1 2009/05/21 14:55:17 remko Exp $
+#	$Id: gmtlogo 9545 2011-07-27 19:31:54Z pwessel $
 #
 # usage: gmtlogo dx dy scale [-Gbackground] [-Wboxpen] >> t.ps
 #

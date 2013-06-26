@@ -1,4 +1,4 @@
-.TH MGD77LIST 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH MGD77LIST 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 mgd77list \- A data-extractor for MGD77[+] files
 .SH SYNOPSIS
@@ -55,6 +55,9 @@ The digital record type, usually 3 or 5 (for Y2K-compliant cruises).
 .TP
 .B id
 The survey ID string (leg name).
+.TP
+.B tz
+The time zone adjustment (in hours from -13 to +12)
 .TP
 .B ngdcid
 The 8-character NGDC cruise ID string (usually the file prefix).
@@ -127,6 +130,15 @@ Seismic Shot Point Number string.
 .TP
 .B nqc
 Navigation Quality Code (5 = suspected, by source institution, 6 = suspected, by NGDC, 9 = no problems identified).
+.TP
+.B bqc
+Bathymetry Quality Code (1 = good, 2 = fair, 3 = poor, 4 = bad, 5 = bad, suspected by source institution, 6 = bad, suspected by NGDC, 9 = not set).
+.TP
+.B mqc
+Magnetics Quality Code (1 = good, 2 = fair, 3 = poor, 4 = bad, 5 = bad, suspected by source institution, 6 = bad, suspected by NGDC, 9 = not set).
+.TP
+.B gqc
+Gravity Quality Code (1 = good, 2 = fair, 3 = poor, 4 = bad, 5 = bad, suspected by source institution, 6 = bad, suspected by NGDC, 9 = not set).
 .br
 .sp
 In addition, the following derived quantities can be requested:
@@ -148,6 +160,15 @@ The minutes of each record.
 .TP
 .B sec
 The decimal seconds of each record.
+.TP
+.B date
+The date in yyyymmdd string format.
+.TP
+.B hhmm
+The clock in hhmm.xxxx format (0-2359.xxxx).
+.TP
+.B dmin
+The decimal minutes of each record (0-59.xxxx).
 .TP
 .B dist
 Along-track distance from start of leg.  For method of calculation, see \fB\-C\fP [spherical great circle distances], and
@@ -178,11 +199,14 @@ Alternatively, specify the field directly using \fB\-Af\fP (see that option for 
 .sp
 The following short-hand flags are also recognized:
 .TP
-.B all
-This returns all data columns in the file.
-.TP
 .B mgd77
-This results in all 27 MGD77 fields being written out in the offical MGD77 order.
+This results in all 27 MGD77 fields being written out in the official MGD77 order.
+.TP
+.B mgd77t
+This results in all 26 MGD77T fields being written out in the official MGD77T order.
+.TP
+.B all
+as mgd77 or mgd77t but time is written as a single date-time string.
 .TP
 .B geo
 This limits the output to 10 fields (\fBtime\fP, \fBlon\fP, \fBlat\fP plus the seven geophysical observations
@@ -335,17 +359,14 @@ Do not list data after \fIstoprec\fP. [Default is the last record].
 Issue a header record with names for each data field.
 .TP
 \fB\-I\fP
-Ignore certain data file formats from consideration. Append \fBa|c|t\fP to ignore
-MGD77 ASCII, MGD77+ netCDF, or plain tab-separated ASCII table files, respectively. The option may
+Ignore certain data file formats from consideration. Append \fBa|c|m|t\fP to ignore
+MGD77 ASCII, MGD77+ netCDF, MGD77T ASCII or plain tab-separated ASCII table files, respectively. The option may
 be repeated to ignore more than one format.  [Default ignores none].
 .TP
 \fB\-L\fP
 Apply optimal corrections to columns where such corrections are available.  Append the correction
 table to use [Default uses the correction table mgd77_corrections.txt in the \fB$MGD77_HOME\fP directory].
 For the format of this file, see CORRECTIONS below.
-.TP
-\fB\-n\fP
-Issue a multi-segment header record with cruise ID for each cruise.
 .TP
 \fB\-N\fP
 Append \fBd\fP for distance or \fBs\fP for speed, then give the desired \fIunit\fP as
@@ -401,6 +422,9 @@ to swap bytes on output) [Default is ASCII].
 Note that if time is one of the binary output columns it will be stored as Unix-time (seconds
 since 1970).  To read this information in GMT to obtain absolute calendar time will require you
 to use --TIME_SYSTEM=unix.
+.TP
+\fB\-m\fP[\fIflag\fP]
+Issue a multi-segment header record with cruise ID for each cruise.
 .SH EXAMPLES
 To get a (distance, heading, gravity, bathymetry) listing from 01010047.mgd77,
 starting at June 3 1971 20:45 and ending at distance = 5000 km, use the following command:
@@ -500,14 +524,17 @@ trend removed, the magnetic anomaly (\fBmag\fP) should be corrected by a strange
 99999999 mag	0.5*cos(0.5*(azim-19))^2	1.0*exp(-1e-3(lat))^1.5
 .br
 99999999 gobs	-10
+.SH QUALITY CODES
+The MGD77T format added three quality codes for bathymetry (\fBbqc\fP), magnetics (\fBmqc\fP), and gravity (\fBgqc\fP).
+They are not present in the original MGD77 format, and if requested will return 9 or NULL.
 .SH "SEE ALSO"
 .IR mgd77convert (1),
 .IR mgd77info (1),
 .IR mgd77manage (1),
 .IR mgd77track (1)
 .SH REFERENCES
-Wessel, P., and W. H. F. Smith, 2011, The Generic Mapping Tools (GMT) version
-4.5.7 Technical Reference & Cookbook, SOEST/NOAA.
+Wessel, P., and W. H. F. Smith, 2013, The Generic Mapping Tools (GMT) version
+4.5.9 Technical Reference & Cookbook, SOEST/NOAA.
 .br
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
 Tools Released, EOS Trans., AGU, 79 (47), p. 579.

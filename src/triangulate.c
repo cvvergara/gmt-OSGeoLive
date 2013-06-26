@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: triangulate.c,v 1.80 2011/07/08 21:27:06 guru Exp $
+ *	$Id: triangulate.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -84,7 +84,7 @@ int main (int argc, char **argv)
 
 	float *grd = NULL;
 
-	char line[BUFSIZ], buffer[BUFSIZ], *not_used = NULL;
+	char line[BUFSIZ], buffer[BUFSIZ];
 #ifdef TRIANGLE_D
 	char *algorithm = "Shewchuk";
 #else
@@ -190,25 +190,25 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-Dx or -Dy takes derivative in that direction (only with -G) [Default is z value].\n");
 		fprintf (stderr, "\t-E value to use for empty nodes [Default is NaN].\n");
-		fprintf (stderr, "\t-F Force pixel registration (only with -G) [Default is gridline registration]\n");
-		fprintf (stderr, "\t-G Grid data. Give name of output grid file and specify -R -I\n");
+		fprintf (stderr, "\t-F Force pixel registration (only with -G) [Default is gridline registration].\n");
+		fprintf (stderr, "\t-G Grid data. Give name of output grid file and specify -R -I.\n");
 		GMT_explain_option ('H');
 		GMT_inc_syntax ('I', 0);
 		GMT_explain_option ('J');   
 #ifdef TRIANGLE_D
-		fprintf (stderr, "\t-Q Compute Voronoi polygon edges instead (requires -m and -R) [Delaunay triangulation]\n");
+		fprintf (stderr, "\t-Q Compute Voronoi polygon edges instead (requires -m and -R) [Delaunay triangulation].\n");
 #endif
 		GMT_explain_option ('R');
 		GMT_explain_option ('V');
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
-		fprintf (stderr, "\t-bo writes binary integer index table; ignored if -m is selected [Default is ASCII i/o]\n");
+		fprintf (stderr, "\t   Default is 2 input columns.\n");
+		fprintf (stderr, "\t-bo writes binary integer index table; ignored if -m is selected [Default is ASCII i/o].\n");
 		GMT_explain_option ('f');
 		fprintf (stderr, "\t-m output triangle edges as multiple segments separated by a record\n");
-		fprintf (stderr, "\t   whose first character is <flag> ['>']\n");
-		fprintf (stderr, "\t   [Default is to output the indices of vertices for each Delaunay triangle]\n");
+		fprintf (stderr, "\t   whose first character is <flag> ['>'].\n");
+		fprintf (stderr, "\t   [Default is to output the indices of vertices for each Delaunay triangle].\n");
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);
 	}
@@ -311,7 +311,7 @@ int main (int argc, char **argv)
 
 		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Reading file %s\n", GMT_program, argv[fno]);
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 
@@ -512,7 +512,7 @@ int main (int argc, char **argv)
 		i = GMT_fwrite ((void *)link, sizeof (int), (size_t)(3*np), GMT_stdout);
 	else
 		for (i = ij = 0; i < np; i++, ij += 3) {
-			sprintf (buffer, "%d\t%d\t%d\n", link[ij], link[ij+1], link[ij+2]);
+			sprintf (buffer, "%d%s%d%s%d\n", link[ij], gmtdefs.field_delimiter, link[ij+1], gmtdefs.field_delimiter, link[ij+2]);
 			GMT_fputs (buffer, GMT_stdout);
 		}
 

@@ -1,5 +1,5 @@
 #!/bin/csh
-#		$Id: job18.csh,v 1.16 2011/03/01 01:34:48 remko Exp $
+#		$Id: job18.csh 9606 2011-10-19 17:52:57Z pwessel $
 #		GMT EXAMPLE 18
 #
 # Purpose:	Illustrates volumes of grids inside contours and spatial
@@ -10,7 +10,7 @@
 
 # Use spherical projection since SS data define on sphere
 
-gmtset ELLIPSOID Sphere D_FORMAT %lg
+gmtset ELLIPSOID Sphere D_FORMAT %g
 
 # Define location of Pratt seamount
 

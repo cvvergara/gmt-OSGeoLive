@@ -1,4 +1,4 @@
-#	$Id: GMT_cyclic.cpt,v 1.2 2009/05/06 16:41:16 remko Exp $
+#	$Id: GMT_cyclic.cpt 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Cyclic spectrum, spans 360 degrees of hue
 # Designed by Remko Scharroo, Altimetrics LLC

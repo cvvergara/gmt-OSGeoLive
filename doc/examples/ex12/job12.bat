@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 12
 REM
-REM		$Id: job12.bat,v 1.11 2011/03/01 01:34:48 remko Exp $
+REM		$Id: job12.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM
 REM Purpose:	Illustrates Delaunay triangulation of points, and contouring
 REM GMT progs:	makecpt, minmax, pscontour, pstext, psxy, triangulate

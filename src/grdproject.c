@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdproject.c,v 1.62 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdproject.c 9946 2012-12-28 17:04:20Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -78,7 +78,7 @@ int main (int argc, char **argv)
 
 	char *infile = NULL, format[BUFSIZ], unit_name[GRD_UNIT_LEN], scale_unit_name[GRD_UNIT_LEN];
 
-	GMT_LONG i, j, unit = 0;
+	GMT_LONG i, j, unit = 0, n_read;
 	
 	GMT_LONG nm;
 	
@@ -117,8 +117,8 @@ int main (int argc, char **argv)
 				case 'C':
 					Ctrl->C.active = TRUE;
 					if (argv[i][2]) {	/* Also gave shifts */
-	 					n = sscanf (&argv[i][2], "%lf/%lf", &Ctrl->C.easting, &Ctrl->C.northing);
-						if (n != 2) {
+	 					n_read = sscanf (&argv[i][2], "%lf/%lf", &Ctrl->C.easting, &Ctrl->C.northing);
+						if (n_read != 2) {
 							fprintf (stderr, "%s: GMT SYNTAX ERROR.  Expected -C[<false_easting>/<false_northing>]\n", GMT_program);
 							error++;
 						}
@@ -201,30 +201,30 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<in_grdfile> is data set to be transformed\n");
-		fprintf (stderr, "\t-G name of output grid\n");
+		fprintf (stderr, "\t<in_grdfile> is data set to be transformed.\n");
+		fprintf (stderr, "\t-G name of output grid.\n");
 		GMT_explain_option ('J');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A force projected values to be in actual meters [Default uses the given map scale]\n");
-		fprintf (stderr, "\t   Specify another unit by appending k (km), m (miles), n (nautical miles), i (inch), c (cm), or p (points)\n");
-		fprintf (stderr, "\t-C coordinates relative to projection center [Default is relative to lower left corner]\n");
-		fprintf (stderr, "\t   Optionally append dx/dy to add (or subtract if -I) (i.e., false easting & northing) [0/0]\n");
+		fprintf (stderr, "\t-A force projected values to be in actual meters [Default uses the given map scale].\n");
+		fprintf (stderr, "\t   Specify another unit by appending k (km), m (miles), n (nautical miles), i (inch), c (cm), or p (points).\n");
+		fprintf (stderr, "\t-C coordinates relative to projection center [Default is relative to lower left corner].\n");
+		fprintf (stderr, "\t   Optionally append dx/dy to add (or subtract if -I) (i.e., false easting & northing) [0/0].\n");
 		GMT_inc_syntax ('D', 0);
-		fprintf (stderr, "\t-E sets dpi for output grid\n");
-		fprintf (stderr, "\t-F toggle between pixel and grid registration  [Default is same as input]\n");
-		fprintf (stderr, "\t-I Inverse transformation from rectangular to geographical\n");
-		fprintf (stderr, "\t-M Temporarily reset MEASURE_UNIT to be c (cm), i (inch), m (meter), or p (point)\n");
+		fprintf (stderr, "\t-E sets dpi for output grid.\n");
+		fprintf (stderr, "\t-F toggle between pixel and grid registration [Default is same as input].\n");
+		fprintf (stderr, "\t-I Inverse transformation from rectangular to geographical.\n");
+		fprintf (stderr, "\t-M Temporarily reset MEASURE_UNIT to be c (cm), i (inch), m (meter), or p (point).\n");
 		fprintf (stderr, "\t   Cannot be used if -A is set.\n");
-		fprintf (stderr, "\t-N sets the number of nodes for the new grid\n");
+		fprintf (stderr, "\t-N sets the number of nodes for the new grid.\n");
 		fprintf (stderr, "\t   Only one of -D, -E, and -N can be specified!\n");
-		fprintf (stderr, "\t   If none are specified, nx,ny of the input file is used\n");
+		fprintf (stderr, "\t   If none are specified, nx,ny of the input file is used.\n");
 		GMT_explain_option ('R');
 		fprintf (stderr, "\t-S Determines the interpolation mode (b = B-spline, c = bicubic, l = bilinear,\n");
-		fprintf (stderr, "\t   n = nearest-neighbor) [Default: bicubic]\n");
-		fprintf (stderr, "\t   Optionally, prepend - to switch off antialiasing [Default: on]\n");
+		fprintf (stderr, "\t   n = nearest-neighbor) [Default: bicubic].\n");
+		fprintf (stderr, "\t   Optionally, prepend - to switch off antialiasing [Default: on].\n");
 		fprintf (stderr, "\t   Append /<threshold> to change the minimum weight in vicinity of NaNs. A threshold of\n");
 		fprintf (stderr, "\t   1.0 requires all nodes involved in interpolation to be non-NaN; 0.5 will interpolate\n");
-		fprintf (stderr, "\t   about half way from a non-NaN to a NaN node [Default: 0.5]\n");
+		fprintf (stderr, "\t   about half way from a non-NaN to a NaN node [Default: 0.5].\n");
 		GMT_explain_option ('V');
 
 		exit (EXIT_FAILURE);

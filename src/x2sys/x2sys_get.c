@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_get.c,v 1.60 2011/03/06 02:09:57 guru Exp $
+ *	$Id: x2sys_get.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *      Copyright (c) 1999-2011 by P. Wessel
+ *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -197,7 +197,7 @@ int main (int argc, char **argv)
 		else {	/* Use all */
 			for (k = 0; k < n_tracks; k++) include[k] = TRUE;
 		}
-		matrix = (unsigned int *) GMT_memory (VNULL, (size_t)(n_tracks * n_flags), sizeof (unsigned int), GMT_program);
+		matrix = (unsigned int *) GMT_memory (VNULL, (size_t)(n_tracks * n_flags + n_tracks / 32), sizeof (unsigned int), GMT_program);
 		ids_in_bin = (int *) GMT_memory (VNULL, (size_t)n_tracks, sizeof (int), GMT_program);
 	}
 	else {	/* y_match will be TRUE for tracks that pass the -F test in at least one bin; same for n_match with the -N test */

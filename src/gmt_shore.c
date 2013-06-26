@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_shore.c,v 1.75 2011/07/13 21:07:03 guru Exp $
+ *	$Id: gmt_shore.c 9926 2012-12-20 00:17:04Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -169,10 +169,10 @@ GMT_LONG GMT_init_shore (char res, struct GMT_SHORE *c, double w, double e, doub
         if (nc_get_att_text (c->cdfid, NC_GLOBAL, "version", c->version) ||
                 sscanf (c->version, "%" GMT_LL "d.%" GMT_LL "d.%" GMT_LL "d", &major, &minor, &release) < 3 ||
                 major != 2 || minor < 1) {
-			fprintf (stderr, "GSHHS: Version 2.1.0 or newer is needed to use coastlines with GMT %s\n", GMT_VERSION);
-			fprintf (stderr, "GSHHS: CVS users must get the latest GSHHS %s tarballs from\n", GSHHS_VERSION);
-			fprintf (stderr, "GSHHS: ftp://ftp.soest.hawaii.edu/pwessel/gshhs/gshhs-%s.tar.bz2\n", GSHHS_VERSION);
-			fprintf (stderr, "GSHHS: or by running \"make get_gshhs_cvs\" from the top GMT directory.\n");
+			fprintf (stderr, "GSHHG: Version 2.2.1 or newer is needed to use coastlines with GMT %s\n", GMT_VERSION);
+			fprintf (stderr, "GSHHG: SVN users must get the latest GSHHG %s tarballs from\n", GSHHG_VERSION);
+			fprintf (stderr, "GSHHG: ftp://ftp.soest.hawaii.edu/pwessel/gshhg/gshhg-gmt-nc3-%s.tar.bz2\n", GSHHG_VERSION);
+			fprintf (stderr, "GSHHG: or by running \"make get_gshhg_svn\" from the top GMT directory.\n");
 			GMT_exit (EXIT_FAILURE);
 	}
         GMT_err_trap (nc_get_att_text (c->cdfid, NC_GLOBAL, "title", c->title));
@@ -200,11 +200,11 @@ GMT_LONG GMT_init_shore (char res, struct GMT_SHORE *c, double w, double e, doub
 	GMT_err_trap (nc_inq_varid (c->cdfid, "Id_of_GSHHS_ID", &c->seg_GSHHS_ID_id));
 
         if (nc_inq_varid (c->cdfid, "Ten_times_the_km_squared_area_of_polygons", &c->GSHHS_area_id) == NC_NOERR) {	/* Old file with 1/10 km^2 areas in int format*/
-		if (gmtdefs.verbose) fprintf (stderr, "GSHHS: Areas not accurate for small lakes and islands.  Consider getting GSHHS %s.\n", GSHHS_VERSION);
+		if (gmtdefs.verbose) fprintf (stderr, "GSHHG: Areas not accurate for small lakes and islands.  Consider getting GSHHG %s.\n", GSHHG_VERSION);
 		int_areas = TRUE;
 	}
 	else if (nc_inq_varid (c->cdfid, "The_km_squared_area_of_polygons", &c->GSHHS_area_id) != NC_NOERR) {	/* New file with km^2 areas as doubles */
-		fprintf (stderr, "GSHHS: Unable to determine how polygon areas were stored!\n");
+		fprintf (stderr, "GSHHG: Unable to determine how polygon areas were stored!\n");
 		GMT_exit (EXIT_FAILURE);
 	}
 
@@ -1122,20 +1122,37 @@ void shore_prepare_sides (struct GMT_SHORE *c, GMT_LONG dir)
 	}
 }
 
+GMT_LONG pick_path (char *dir, char *stem, char *path, char *ext[])
+{
+	int k;
+	for (k = 0; k < 2; k++) {	/* Try both file extensions */
+		sprintf (path, "%s/%s%s", dir, stem, ext[k]);
+		if (!access (path, R_OK)) {	/* Success, return path */
+			return (TRUE);
+		}
+	}
+	return (FALSE);
+}
+
 char *GMT_shore_getpathname (char *stem, char *path) {
 	/* Prepends the appropriate directory to the file name
 	 * and returns path if file is readable, NULL otherwise */
-	 
+	
+	int k;
 	FILE *fp = NULL;
-	char dir[BUFSIZ];
+	char dir[BUFSIZ], *ext[2] = {".nc", ".cdf"};	/* Two possible file extensions since GSHHS 2.2.2 was released with *.nc files */
 
 	/* This is the order of checking:
-	 * 1. Is there a file coastline.conf in current directory, GMT_USERDIR or GMT_SHAREDIR[/coast]?
+	 * 1. Was a GMT_GSHHG_PATH compiled in and exist?
+	 * 2. Is there a file coastline.conf in current directory, GMT_USERDIR or GMT_SHAREDIR[/coast]?
 	 *    If so, use its information
-	 * 2. Look in current directory, GMT_USERDIR or GMT_SHAREDIR[/coast] for file "name".
+	 * 3. Look in current directory, GMT_USERDIR or GMT_SHAREDIR[/coast] for file "name".
 	 */
-	 
-	/* 1. First check for coastline.conf */
+	
+	/* 1. First check for hard-wired compiled path */
+	if (pick_path (GMT_GSHHG_PATH, stem, path, ext)) return (path);
+		
+	/* 2. First check for coastline.conf */
 	
 	if (GMT_getsharepath ("conf", "coastline", ".conf", path) || GMT_getsharepath ("coast", "coastline", ".conf", path)) {
 
@@ -1145,18 +1162,22 @@ char *GMT_shore_getpathname (char *stem, char *path) {
 		while (fgets (dir, BUFSIZ, fp)) {	/* Loop over all input lines until found or done */
 			GMT_chop (dir);		/* Chop off LF or CR/LF */
 			if (dir[0] == '#' || dir[0] == '\0') continue;	/* Comment or blank */
-			sprintf (path, "%s/%s%s", dir, stem, ".cdf");
-			if (!access (path, R_OK)) {
-				fclose (fp);
-				return (path);
+			for (k = 0; k < 2; k++) {	/* Try both file extensions */
+				sprintf (path, "%s/%s%s", dir, stem, ext[k]);
+				if (!access (path, R_OK)) {	/* Success, return path */
+					fclose (fp);
+					return (path);
+				}
 			}
 		}
 		fclose (fp);
 	}
 	
-	/* 2. Then check for the named file itself */
+	/* 3. Then check for the named file itself in cwd, GMT_SHAREDIR and GMT_USERDIR */
 
-	if (GMT_getsharepath ("coast", stem, ".cdf", path)) return (path);
+	for (k = 0; k < 2; k++) {	/* Try both file extensions */
+		if (GMT_getsharepath ("coast", stem, ext[k], path)) return (path);
+	}
 
-	return (NULL);
+	return (NULL);	/* Not found, sorry */
 }

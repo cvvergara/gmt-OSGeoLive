@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_nan.h,v 1.9 2011/03/03 21:02:50 guru Exp $
+ *	$Id: gmt_nan.h 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -59,12 +59,12 @@
 #define GMT_is_fnan(x) isnanf((x))
 #elif defined(isnan)
 #define GMT_is_fnan(x) isnan((double)(x))
-#elif HAVE_ISNANF == 1
+#elif defined(HAVE_ISNANF)
 #define GMT_is_fnan(x) isnanf(x)
 extern int isnanf(float x);
-#elif HAVE_ISNAN == 1
+#elif defined(HAVE_ISNAN)
 #define GMT_is_fnan(x) isnan((double)(x))
-#elif HAVE_ISNAND == 1
+#elif defined(HAVE_ISNAND)
 #define GMT_is_fnan(x) isnand((double)(x))
 #else
 #define GMT_is_fnan(x) ((x) != (x))
@@ -76,10 +76,10 @@ extern int isnanf(float x);
 #define GMT_is_dnan(x) isnand((x))
 #elif defined(isnan)
 #define GMT_is_dnan(x) isnan((x))
-#elif HAVE_ISNAND == 1
+#elif defined(HAVE_ISNAND)
 #define GMT_is_dnan(x) isnand(x)
 extern int isnand(double x);
-#elif HAVE_ISNAN == 1
+#elif defined(HAVE_ISNAN)
 #define GMT_is_dnan(x) isnan(x)
 extern int isnan(double x);
 #else

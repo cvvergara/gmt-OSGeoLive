@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- * $Id: dimfilter.c,v 1.15 2011/07/11 19:22:06 guru Exp $
+ * $Id: dimfilter.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 2009-2011 by P. Wessel and Seung-Sep Kim
+ *	Copyright (c) 2009-2013 by P. Wessel and Seung-Sep Kim
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -696,14 +696,14 @@ fout2 = NULL;
 				if (slow) {	/* Take median or mode of each work array for each sector */
 					if (slow2) {
 						z2_min = DBL_MAX;
-						z2_max = -DBL_MIN;
+						z2_max = -DBL_MAX;
 					}
 					for (s = k = 0; s < n_sectors; s++) {
 						if (n_in_median[s]) {
 	#ifdef OBSOLETE											
 							if (trend) {
 								z_min = DBL_MAX;
-								z_max = -DBL_MIN;
+								z_max = -DBL_MAX;
 								for (ii = 0; ii < n_in_median[s]; ii++) {
 									work_array[s][ii] -= (intercept + slope_x * xx[s][ii] + slope_y * yy[s][ii]);
 									if (work_array[s][ii] < z_min) z_min = work_array[s][ii];

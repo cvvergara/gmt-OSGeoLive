@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	$Id: gmtget,v 1.1 2009/05/21 14:55:17 remko Exp $
+#	$Id: gmtget 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	gmtget - Return the current setting of the specified parameter
 #

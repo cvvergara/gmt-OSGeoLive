@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
- *	$Id: mgd77.h,v 1.123 2011/01/02 20:09:36 guru Exp $
+ *	$Id: mgd77.h 9923 2012-12-18 20:45:53Z pwessel $
  * 
- *    Copyright (c) 2005-2011 by P. Wessel
+ *    Copyright (c) 2005-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *
  *  File:	mgd77.h
@@ -11,7 +11,7 @@
  *  Authors:    Paul Wessel, Primary Investigator, SOEST, U. of Hawaii
  *				Michael Chandler, Ph.D. Student, SOEST, U. of Hawaii
  *		
- *  Version:	1.3
+ *  Version:	1.4
  *  Revised:	15-MAR-2006
  * 
  *-------------------------------------------------------------------------*/
@@ -21,7 +21,7 @@
 
 #include "gmt.h"
 
-#define MGD77_VERSION		"1.3"		/* Current version of MGD77 supplement */
+#define MGD77_VERSION		"1.4"		/* Current version of MGD77 supplement */
 #define MGD77_CDF_VERSION	"2006.04.15"	/* Current version of MGD77+ files created */
 #define MGD77_RECORD_LENGTH	120		/* Length of MGD77 ASCII data records */
 #define MGD77_HEADER_LENGTH	80		/* Length of MGD77 ASCII header records */
@@ -30,12 +30,18 @@
 #define MGD77_METERS_PER_M      1609.344	/* meters per statute mile */
 #define MGD77_OLDEST_YY		39		/* Y2K says YY < 39 is 20YY */
 #define MGD77_N_DATA_FIELDS	27		/* Original 27 data columns in MGD77 */
-#define MGD77_N_DATA_EXTENDED	28		/* The 27 plus time */
+#define MGD77_N_DATA_EXTENDED	31		/* The 27 plus time + 3 quality codes in MGD77T */
 #define MGD77_N_NUMBER_FIELDS	24		/* Original 24 numerical data columns in MGD77 */
 #define MGD77_N_STRING_FIELDS	3		/* Original 3 text data columns in MGD77 */
 #define MGD77_N_HEADER_ITEMS	72		/* Number of individual header items in the MGD77 header */
 #define MGD77_N_MAG_RF		18		/* Number of different Mag ref fields so far in MGD77 docs */
+/* Specific to MGD77T: */
+#define MGD77T_HEADER_LENGTH	4096		/* Length of MGD77 ASCII header records */
+#define MGD77T_N_NUMBER_FIELDS	27		/* Original 24+3 numerical data columns in MGD77T */
+#define MGD77T_N_HEADER_RECORDS	2		/* Number of MGD77T header records */
+#define MGD77T_N_HEADER_ITEMS	58		/* Number of MGD77T header records */
 /* The 28 MGD77 standard types (27 original + 1 conglomerate (time)) */
+/* First 0-23 are floats/ints; these serve as indices into number[k] */
 #define MGD77_RECTYPE		0
 #define MGD77_TZ		1
 #define MGD77_YEAR		2
@@ -60,10 +66,18 @@
 #define MGD77_EOT		21
 #define MGD77_FAA		22
 #define MGD77_NQC		23
+/* 24-26 are for text[0-2] */
 #define MGD77_ID		24
 #define MGD77_SLN		25
 #define MGD77_SSPN		26
+/* 27 are for time (combined from 1-6) */
 #define MGD77_TIME		27
+/* And then 24-26 (again) are the 3 new quality codes in MGD77T, these serve as indices into number[k]: */
+#define MGD77T_BQC		24
+#define MGD77T_MQC		25
+#define MGD77T_GQC		26
+
+#define MGD77T_HEADER	"SURVEY_ID	FORMAT_77	CENTER_ID	PARAMS_CO	DATE_CREAT	INST_SRC	COUNTRY	PLATFORM	PLAT_TYPCO	PLAT_TYP	CHIEF	PROJECT	FUNDING	DATE_DEP	PORT_DEP	DATE_ARR	PORT_ARR	NAV_INSTR	POS_INFO	BATH_INSTR	BATH_ADD	MAG_INSTR	MAG_ADD	GRAV_INSTR	GRAV_ADD	SEIS_INSTR	SEIS_FRMTS	LAT_TOP	LAT_BOTTOM	LON_LEFT	LON_RIGHT	BATH_DRATE	BATH_SRATE	SOUND_VEL	VDATUM_CO	BATH_INTRP	MAG_DRATE	MAG_SRATE	MAG_TOWDST	MAG_SNSDEP	MAG_SNSSEP	M_REFFL_CO	MAG_REFFLD	MAG_RF_MTH	GRAV_DRATE	GRAV_SRATE	G_FORMU_CO	GRAV_FORMU	G_RFSYS_CO	GRAV_RFSYS	GRAV_CORR	G_ST_DEP_G	G_ST_DEP	G_ST_ARR_G	G_ST_ARR	IDS_10_NUM	IDS_10DEG	ADD_DOC"
 
 #define ALL_NINES               "9999999999"	/* Typical text value meaning no-data */
 #define ALL_BLANKS "                      "	/* 32 blanks */
@@ -73,11 +87,12 @@
 #define MGD77_RESET_EXACT	2
 #define MGD77_SET_ALLEXACT	4
 
-#define MGD77_N_FORMATS		3
+#define MGD77_N_FORMATS		4
 #define MGD77_FORMAT_M77	0
 #define MGD77_FORMAT_CDF	1
 #define MGD77_FORMAT_TBL	2
-#define MGD77_FORMAT_ANY	3
+#define MGD77_FORMAT_M7T	3
+#define MGD77_FORMAT_ANY	4
 
 #define MGD77_READ_MODE		0
 #define MGD77_WRITE_MODE	1
@@ -184,7 +199,6 @@
 #define MGD77_BIT		6
 #define MGD77_NEQ		8
 
-
 typedef char byte;	/* Used to indicate 1-byte long integer */
 typedef char* Text;	/* Used to indicate character strings */
  
@@ -287,9 +301,9 @@ struct MGD77_CM4 {	/* For use with cm4field.c and initialized by MGD77_CM4_init 
  * structures are used to facilitate this process. */
 
 #ifdef USE_CM4
-#define N_MGD77_AUX	16		/* Number of auxilliary derived columns for MGD77 data, including optional CM4 */
+#define N_MGD77_AUX	19		/* Number of auxilliary derived columns for MGD77 data, including optional CM4 */
 #else
-#define N_MGD77_AUX	15		/* Number of auxilliary derived columns for MGD77 data */
+#define N_MGD77_AUX	18		/* Number of auxilliary derived columns for MGD77 data */
 #endif
 #define N_GENERIC_AUX	3		/* Number of auxilliary derived columns for general files (dist, azim, vel) */
 
@@ -301,15 +315,18 @@ struct MGD77_CM4 {	/* For use with cm4field.c and initialized by MGD77_CM4_init 
 #define MGD77_AUX_DY	5
 #define MGD77_AUX_HR	6
 #define MGD77_AUX_MI	7
-#define MGD77_AUX_SC	8
-#define MGD77_AUX_WT	9
-#define MGD77_AUX_RT	10
-#define MGD77_AUX_MG	11
-#define MGD77_AUX_CT	12
-#define MGD77_AUX_GR	13
-#define MGD77_AUX_ID	14
+#define MGD77_AUX_DM	8
+#define MGD77_AUX_SC	9
+#define MGD77_AUX_DA	10
+#define MGD77_AUX_HM	11
+#define MGD77_AUX_WT	12
+#define MGD77_AUX_RT	13
+#define MGD77_AUX_MG	14
+#define MGD77_AUX_CT	15
+#define MGD77_AUX_GR	16
+#define MGD77_AUX_ID	17
 #ifdef USE_CM4
-#define MGD77_AUX_CM	15
+#define MGD77_AUX_CM	18
 #endif
 
 struct MGD77_AUXLIST {
@@ -333,11 +350,11 @@ struct MGD77_AUX_INFO {
 
 struct MGD77_DATA_RECORD {	/* See MGD77 Documentation from NGDC for details */
 	/* This is the classic MGD77 portion of the data record */
-	double number[MGD77_N_NUMBER_FIELDS];	/* 24 fields that express numerical values */
+	double number[MGD77T_N_NUMBER_FIELDS];	/* 24 (or 27 for MGD77T) fields that express numerical values */
 	double time;				/* Time using current GMT absolute time conventions (J2000 UTC) */
 	char word[MGD77_N_STRING_FIELDS][10];	/* The 3 text strings in MGD77 records */
 	unsigned int bit_pattern;		/* Bit pattern indicating which of the 27 fields are present in current record */
-	GMT_LONG keep_nav;				/* Set to false when navigation is bad */
+	GMT_LONG keep_nav;			/* Set to false when navigation is bad */
 };
 
 struct MGD77_DATASET {	/* Info for an entire MGD77+ data set */
@@ -403,7 +420,7 @@ struct MGD77_CONTROL {
 	int nc_id;					/* netCDF ID for current open file (MGD77+ only) */
 	int nc_recid;					/* netCDF ID for dimension of records (time) */
 	GMT_LONG rec_no;					/* Current record to read/write for record-based i/o */
-	int format;					/* 0 if any file format, 1 if MGD77, and 2 if netCDF, 3 if ascii table */
+	int format;					/* 0 if any file format, 1 if MGD77, and 2 if netCDF, 3 if ascii table, 4 if MGD77T */
 	char rw_mode[1];				/* 'r' or 'w' for read/write mode. Use this to help with Win dll craziness. */
 	/* Format-related issues */
 	int time_format;				/* Either GMT_IS_ABSTIME or GMT_IS_RELTIME */
@@ -552,7 +569,7 @@ extern double *MGD77_Distances (double x[], double y[], GMT_LONG n, int dist_fla
 
 /* Global variables used by MGD77 programs */
 
-extern struct MGD77_RECORD_DEFAULTS mgd77defs[MGD77_N_DATA_FIELDS];
+extern struct MGD77_RECORD_DEFAULTS mgd77defs[MGD77_N_DATA_EXTENDED];
 extern double MGD77_NaN_val[7], MGD77_Low_val[7], MGD77_High_val[7];
 extern char *MGD77_suffix[MGD77_N_FORMATS];
 extern GMT_LONG MGD77_format_allowed[MGD77_N_FORMATS];	/* By default we allow opening of files in any format.  See MGD77_Ignore_Format() */

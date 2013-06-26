@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pslib.c,v 1.244 2011/07/14 20:50:58 guru Exp $
+ *	$Id: pslib.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -369,7 +369,7 @@ void ps_a85_encode (unsigned char quad[], PSL_LONG nbytes);
 PSL_LONG ps_shorten_path (double *x, double *y, PSL_LONG n, PSL_LONG *ix, PSL_LONG *iy);
 int ps_comp_int_asc (const void *p1, const void *p2);
 int ps_comp_long_asc (const void *p1, const void *p2);
-static void ps_bulkcopy (const char *fname, const char *version);
+static void ps_bulkcopy (const char *fname, PSL_LONG revision);
 static void ps_init_fonts (PSL_LONG *n_fonts, PSL_LONG *n_GMT_fonts);
 PSL_LONG ps_pattern_init(PSL_LONG image_no, char *imagefile);
 void ps_rgb_to_cmyk_char (unsigned char rgb[], unsigned char cmyk[]);
@@ -802,7 +802,7 @@ void ps_matharc (double x, double y, double radius, double az1, double az2, doub
 
 void get_origin (double xt, double yt, double xr, double yr, double r, double *xo, double *yo, double *b1, double *b2)
 { /* finds origin so that distance is r to the two points given */
-	double a0, b0, c0, A, B, C, q, sx1, sx2, sy1, sy2, r1, r2;
+	double a0, b0, c0, A, B, C, q, sx1, sx2, sy1, sy2;
 
 	a0 = (xt - xr) / (yr - yt);
 	b0 = 0.5 * (xr*xr + yr*yr - xt*xt - yt*yt)/(yr - yt);
@@ -816,9 +816,7 @@ void get_origin (double xt, double yt, double xr, double yr, double r, double *x
 	sy1 = b0 + a0 * sx1;
 	sy2 = b0 + a0 * sx2;
 
-	r1 = hypot (sx1, sy1);
-	r2 = hypot (sx2, sy2);
-	if (r1 < r) {
+	if (hypot (sx1, sy1) < r) {
 	    *xo = sx1;
 	    *yo = sy1;
 	}
@@ -1217,13 +1215,12 @@ void ps_epsimage (double x, double y, double xsize, double ysize, unsigned char 
 	 * nx,ny:	Size of image (in pixels)
 	 * ox,oy:	Coordinates of lower left corner (in pixels)
 	 */
-	int unused = 0;
 	fprintf (PSL->internal.fp, "PSL_eps_begin\n");
 	fprintf (PSL->internal.fp, "%g %g T %g %g scale\n", x * PSL->internal.scale, y * PSL->internal.scale, xsize * PSL->internal.scale / nx, ysize * PSL->internal.scale / ny);
 	fprintf (PSL->internal.fp, "%ld %ld T\n", -ox, -oy);
 	fprintf (PSL->internal.fp, "N %ld %ld M %ld %ld L %ld %ld L %ld %ld L P clip N\n", ox, oy, ox+nx, oy, ox+nx, oy+ny, ox, oy+ny);
 	fprintf (PSL->internal.fp, "%%%%BeginDocument: psimage.eps\n");
-	unused = (int)fwrite (buffer, (size_t)1, (size_t)size, PSL->internal.fp);
+	fwrite (buffer, (size_t)1, (size_t)size, PSL->internal.fp);
 	fprintf (PSL->internal.fp, "%%%%EndDocument\n");
 	fprintf (PSL->internal.fp, "PSL_eps_end\n");
 }
@@ -1233,7 +1230,6 @@ PSL_LONG ps_line (double *x, double *y, PSL_LONG n, PSL_LONG type, PSL_LONG clos
 	/* type:  1 means new anchor point, 2 means stroke line, 3 = both */
 	/* close: TRUE if a closed polygon */
 	PSL_LONG i, *ix, *iy;
-	PSL_LONG trim = FALSE;
 
 	/* First remove unnecessary points that have zero curvature */
 
@@ -1246,10 +1242,7 @@ PSL_LONG ps_line (double *x, double *y, PSL_LONG n, PSL_LONG type, PSL_LONG clos
 		return (0);
 	}
 
-	if (close && ix[0] == ix[n-1] && iy[0] == iy[n-1]) {
-		trim = TRUE;
-		n--;
-	}
+	if (close && ix[0] == ix[n-1] && iy[0] == iy[n-1]) n--;
 
 	if (type%2)
 		fprintf (PSL->internal.fp, "%ld %ld M\n", ix[0], iy[0]);
@@ -1404,7 +1397,7 @@ void ps_plotend (PSL_LONG lastpage)
 		fprintf (PSL->internal.fp, " 0 A\nshowpage\n");
 		if (!PSL->internal.eps_format) fprintf (PSL->internal.fp, "\n%%%%Trailer\n");
 		fprintf (PSL->internal.fp, "\nend\n");
-		if (!PSL->internal.eps_format) fprintf (PSL->internal.fp, "%%%%EOF\n");
+		fprintf (PSL->internal.fp, "%%%%EOF\n");
 	}
 	else if (PSL->internal.absolute)
 		fprintf (PSL->internal.fp, "%g %g T 0 A\n", -(PSL->init.origin[0] * PSL->internal.scale), -(PSL->init.origin[1] * PSL->internal.scale));
@@ -1660,12 +1653,12 @@ PSL_LONG ps_plotinit_hires (char *plotfile, PSL_LONG overlay, PSL_LONG mode, dou
 		fprintf (PSL->internal.fp, "%%%%EndComments\n\n");
 
 		fprintf (PSL->internal.fp, "%%%%BeginProlog\n");
-		ps_bulkcopy ("PSL_prologue", "v 1.28 ");	/* Version number should match that of PSL_prologue.ps */
-		ps_bulkcopy (PSL->init.encoding, "");
+		ps_bulkcopy ("PSL_prologue", 9545);	/* Version number should match that of PSL_prologue.ps */
+		ps_bulkcopy (PSL->init.encoding, 0);
 
 		def_font_encoding ();		/* Initialize book-keeping for font encoding and write font macros */
 
-		ps_bulkcopy ("PSL_label", "v 1.15 ");		/* Place code for label line annotations and clipping */
+		ps_bulkcopy ("PSL_label", 9545);		/* Place code for label line annotations and clipping */
 		fprintf (PSL->internal.fp, "%%%%EndProlog\n\n");
 
 		fprintf (PSL->internal.fp, "%%%%BeginSetup\n");
@@ -3058,7 +3051,7 @@ void ps_words (double x, double y, char **text, PSL_LONG n_words, double line_sp
 	/* Load PSL_text procedures from file for now */
 
 	if (!PSL->internal.text_init) {
-		ps_bulkcopy ("PSL_text", "v 1.11 ");
+		ps_bulkcopy ("PSL_text", 9545);
 		PSL->internal.text_init = TRUE;
 	}
 
@@ -3501,7 +3494,7 @@ char *ps_prepare_text (char *text)
 					break;
 				case 's':
 					strcat (string, psl_scandcodes[11][he-1]);
-					j += strlen(psl_scandcodes[1][he-1]); i++;
+					j += strlen(psl_scandcodes[11][he-1]); i++;
 					break;
 				case 'u':
 					strcat (string, psl_scandcodes[12][he-1]);
@@ -4025,7 +4018,7 @@ void ps_stream_dump (unsigned char *buffer, PSL_LONG nx, PSL_LONG ny, PSL_LONG n
 	 * encode	= binary (0), ascii85 (1) or hex (2) encoding
 	 * mask		= image (0), imagemask (1), or neither (2)
 	 */
-	PSL_LONG nbytes, i, unused = 0;
+	PSL_LONG nbytes, i;
 	unsigned char *buffer1, *buffer2;
 	char *kind_compress[3] = {"", "/RunLengthDecode filter", "/LZWDecode filter"};
 	char *kind_mask[2] = {"", "mask"};
@@ -4076,7 +4069,7 @@ void ps_stream_dump (unsigned char *buffer, PSL_LONG nx, PSL_LONG ny, PSL_LONG n
 	}
 	else {
 		/* Plain binary dump */
-		unused = fwrite ((void *)buffer, sizeof (unsigned char), (size_t)nbytes, PSL->internal.fp);
+		fwrite ((void *)buffer, sizeof (unsigned char), (size_t)nbytes, PSL->internal.fp);
 	}
 	if (mask == 2) fprintf (PSL->internal.fp, "%s", kind_compress[compress]);
 
@@ -4574,14 +4567,13 @@ int ps_comp_long_asc (const void *p1, const void *p2)
 
 /* This function copies a file called $GMT_SHAREDIR/pslib/<fname>.ps
  * to the postscript output verbatim.
- * If version is not "" then the first line should contain both $Id: and
- * the requested version string.
+ * If version is not "" then the first line should contain
+ * Id: <fname> <revision>
  */
-static void ps_bulkcopy (const char *fname, const char *version)
+static void ps_bulkcopy (const char *fname, PSL_LONG revision)
 {
 	FILE *in;
-	char buf[BUFSIZ];
-	char fullname[BUFSIZ];
+	char buf[BUFSIZ], fullname[BUFSIZ], version[BUFSIZ];
 	PSL_LONG i, j;
 	PSL_LONG first = TRUE;
 
@@ -4593,9 +4585,10 @@ static void ps_bulkcopy (const char *fname, const char *version)
 	}
 
 	while (fgets (buf, BUFSIZ, in)) {
-		if (version[0] && first) {
+		if (revision && first) {
+			sprintf (version, "$Id: %s.ps %ld", fname, revision);
 			first = FALSE;
-			if (!strstr (buf, "$Id:") || !strstr (buf, version)) fprintf (stderr, "Warning: PSL expects %sof %s\n", version, fullname);
+			if (!strstr (buf, version)) fprintf (stderr, "Warning: PSL expects rev %ld of %s\n", revision, fullname);
 		}
 		else if (PSL->internal.comments) {
 			/* We copy every line, including the comments, except those starting '%-' */

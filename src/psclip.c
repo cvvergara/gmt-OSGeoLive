@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psclip.c,v 1.66 2011/07/08 21:27:06 guru Exp $
+ *	$Id: psclip.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@ int main (int argc, char **argv)
 
 	GMT_LONG error = FALSE, nofile, done, first;
 
-	char line[BUFSIZ], *not_used = NULL;
+	char line[BUFSIZ];
 
 	double west, east, north, south, x0, y0, *in = NULL, *xx = NULL, *yy = NULL;
 
@@ -280,9 +280,9 @@ int main (int argc, char **argv)
 				sprintf (line, "File: %s", argv[fno]);
 				ps_comment (line);
 			}
-			if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+			if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 			if (GMT_io.multi_segments[GMT_IN]) {
-				not_used = GMT_fgets (line, BUFSIZ, fp);
+				GMT_fgets (line, BUFSIZ, fp);
 				if (gmtdefs.verbose) ps_comment (line);
 			}
 			n_fields = GMT_input (fp, &n_expected_fields, &in);

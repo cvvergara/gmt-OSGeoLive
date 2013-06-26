@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtselect.c,v 1.119 2011/07/08 21:27:06 guru Exp $
+ *	$Id: gmtselect.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -119,7 +119,7 @@ int main (int argc, char **argv)
 	double *in, west_border = 0.0, east_border = 0.0;
 	double xmin, xmax, ymin, ymax, lon, step = 0.0;
 
-	char buffer[BUFSIZ], ptr[BUFSIZ], za[GMT_TEXT_LEN], zb[GMT_TEXT_LEN], *not_used = NULL;
+	char buffer[BUFSIZ], ptr[BUFSIZ], za[GMT_TEXT_LEN], zb[GMT_TEXT_LEN];
 	char *shore_resolution[5] = {"full", "high", "intermediate", "low", "crude"};
 
 	FILE *fp = NULL;
@@ -303,18 +303,18 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t  If no file(s) is given, standard input is read.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		GMT_GSHHS_syntax ('A', "Place limits on coastline features from the GSHHS data base (ignored  unless -N is set).");
-		fprintf (stderr, "\t-C pass locations that are within <dist> of any point in the ASCII <ptfile>\n");
+		fprintf (stderr, "\t-C pass locations that are within <dist> of any point in the ASCII <ptfile>.\n");
 		fprintf (stderr, "\t   Give distance as 0 if 3rd column of <ptfile> has individual distances.\n");
 		fprintf (stderr, "\t   Distances are Cartesian and in user units [or spherical in km if -fg is used].\n");
 		fprintf (stderr, "\t   Use -Cf for approximate (flat earth) rather than exact geodesic distances.\n");
 		fprintf (stderr, "\t   If current ELLIPSOID is spherical then great circle distances replace geodesics.\n");
-		fprintf (stderr, "\t   Use -R -J to compute mapped Cartesian distances in cm, inch, m, or points [%s]\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t   Use -R -J to compute mapped Cartesian distances in cm, inch, m, or points [%s].\n", GMT_unit_names[gmtdefs.measure_unit]);
 		fprintf (stderr, "\t-D Choose one of the following resolutions: (Ignored unless -N is set)\n");
-		fprintf (stderr, "\t   f - full resolution (may be very slow for large regions)\n");
-		fprintf (stderr, "\t   h - high resolution (may be slow for large regions)\n");
-		fprintf (stderr, "\t   i - intermediate resolution\n");
-		fprintf (stderr, "\t   l - low resolution [Default]\n");
-		fprintf (stderr, "\t   c - crude resolution, for tasks that need crude continent outlines only\n");
+		fprintf (stderr, "\t   f - full resolution (may be very slow for large regions).\n");
+		fprintf (stderr, "\t   h - high resolution (may be slow for large regions).\n");
+		fprintf (stderr, "\t   i - intermediate resolution.\n");
+		fprintf (stderr, "\t   l - low resolution [Default].\n");
+		fprintf (stderr, "\t   c - crude resolution, for tasks that need crude continent outlines only.\n");
 		fprintf (stderr, "\t   Append + to use a lower resolution should the chosen one not be available [abort].\n");
 		fprintf (stderr, "\t-L Pass locations that are within <dist> of any line in ASCII <linefile>\n");
 		fprintf (stderr, "\t   Give distance as 0 if 2nd column of segment headers have individual distances.\n");
@@ -322,16 +322,16 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   If current ELLIPSOID is spherical then great circle distances replace geodesics.\n");
 		fprintf (stderr, "\t   Use -R -J to compute mapped Cartesian distances in cm, inch, m, or points [%s]\n", GMT_unit_names[gmtdefs.measure_unit]);
 		fprintf (stderr, "\t   Optionally, use -Lp to exclude points projecting beyond a line's endpoints.\n");
-		fprintf (stderr, "\t-F pass locations that are inside the polygons in the ASCII <polygon> file\n");
+		fprintf (stderr, "\t-F pass locations that are inside the polygons in the ASCII <polygon> file.\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I Used to reverse the tests, i.e. pass locations outside the region\n");
+		fprintf (stderr, "\t-I Used to reverse the tests, i.e., pass locations outside the region.\n");
 		fprintf (stderr, "\t   Supply a combination of cflrz where each flag means:\n");
-		fprintf (stderr, "\t   c will pass locations beyond the minimum distance to the points in -C\n");
-		fprintf (stderr, "\t   f will pass locations outside the polygons in -F\n");
-		fprintf (stderr, "\t   l will pass locations beyond the minimum distance to the lines in -L\n");
-		fprintf (stderr, "\t   r will pass locations outside the region given in -R [and -J]\n");
-		fprintf (stderr, "\t   s will pass locations that otherwise would be skipped in -N\n");
-		fprintf (stderr, "\t   z will pass locations outside the range given in -Z\n");
+		fprintf (stderr, "\t   c will pass locations beyond the minimum distance to the points in -C.\n");
+		fprintf (stderr, "\t   f will pass locations outside the polygons in -F.\n");
+		fprintf (stderr, "\t   l will pass locations beyond the minimum distance to the lines in -L.\n");
+		fprintf (stderr, "\t   r will pass locations outside the region given in -R [and -J].\n");
+		fprintf (stderr, "\t   s will pass locations that otherwise would be skipped in -N.\n");
+		fprintf (stderr, "\t   z will pass locations outside the range given in -Z.\n");
 		GMT_explain_option ('J');
 		fprintf (stderr, "\t-N set if a point outside or inside a geographic feature should be s(kipped) or k(ept).\n");
 		fprintf (stderr, "\t   Append o to let feature boundary be considered outside [Default is inside].\n");
@@ -347,7 +347,7 @@ int main (int argc, char **argv)
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns (3 if -Z is used)\n");
+		fprintf (stderr, "\t   Default is 2 input columns (3 if -Z is used).\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('f');
@@ -570,7 +570,7 @@ int main (int argc, char **argv)
 
 		if (GMT_io.io_header[GMT_IN]) {
 			for (i = 0; i < GMT_io.n_header_recs; i++) {
-				not_used = GMT_fgets (buffer, BUFSIZ, fp);
+				GMT_fgets (buffer, BUFSIZ, fp);
 				if (first && GMT_io.io_header[GMT_OUT]) GMT_fputs (buffer, GMT_stdout);
 			}
 			first = FALSE;
@@ -640,18 +640,7 @@ int main (int argc, char **argv)
 						/* Here we must do the full Cartesian polygon check */
 						inside = (GMT_non_zero_winding (xx, yy, pol->segment[i]->coord[GMT_X], pol->segment[i]->coord[GMT_Y], pol->segment[i]->n_rows) >= is_inside);
 					}
-					else {	/* Lon-lat data */
-						if (pol->segment[i]->pole) {	/* Special testing for polar caps */
-							if (pol->segment[i]->pole == +1 && yy < pol->segment[i]->min[GMT_Y]) continue;	/* Below a N-polar cap */
-							if (pol->segment[i]->pole == -1 && yy > pol->segment[i]->max[GMT_Y]) continue;	/* Above a S-polar cap */
-						}
-						else {
-							if (yy < pol->segment[i]->min[GMT_Y] || yy > pol->segment[i]->max[GMT_Y]) continue;	/* Outside polygon's y-range */
-							xx = lon - 360.0;
-							while (xx < pol->segment[i]->min[GMT_X]) xx += 360.0;	/* Wind to the east of the west boundary */
-							if (xx > pol->segment[i]->max[GMT_X]) continue;		/* Outside polygon's longitude-range */
-						}
-						/* Here we must do the full spherical polygon check */
+					else {	/* Lon-lat data: Here we must do the full spherical polygon check */
 						inside = (GMT_inonout_sphpol (xx, yy, pol->segment[i]) >= is_inside);
 					}
 				}

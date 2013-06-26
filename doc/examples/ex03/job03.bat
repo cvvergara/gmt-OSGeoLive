@@ -2,7 +2,7 @@
 REM
 REM		GMT EXAMPLE 03
 REM
-REM		$Id: job03.bat,v 1.16 2011/07/11 21:19:00 jluis Exp $
+REM		$Id: job03.bat 9769 2012-03-31 05:32:48Z pwessel $
 REM
 echo GMT EXAMPLE 03
 set master=y
@@ -22,7 +22,7 @@ REM
 project  sat.xyg -C330.169/-18.4207 -T52.7452/21.204 -S -Fpz -Q > sat.pg
 project ship.xyg -C330.169/-18.4207 -T52.7452/21.204 -S -Fpz -Q > ship.pg
 REM Now we can use sampr in gawk to make a sampling points file for sample1d:
-gmtmath -T8841/11176/1 -N1/0 = samp.x
+gmtmath -T-1167/1169/1 -N1/0 = samp.x
 REM
 REM Now we can resample the projected satellite data:
 REM
@@ -32,7 +32,7 @@ REM For reasons above, we use filter1d to pre-treat the ship data.  We also need
 REM because of the gaps over 1 km we found.  So we use filter1d and sample1d.  We also use the -E
 REM on filter1d to use the data all the way out to sampr1/sampr2 :
 REM
-filter1d ship.pg -Fm1 -T8841/11176/1 -E | sample1d -Nsamp.x > samp_ship.pg
+filter1d ship.pg -Fm1 -T-1167/1169/1 -E | sample1d -Nsamp.x > samp_ship.pg
 REM Now to do the cross-spectra, assuming that the ship is the input and the sat is the output 
 REM data, we do this:
 REM 

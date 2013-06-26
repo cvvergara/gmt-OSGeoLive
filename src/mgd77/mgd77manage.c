@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77manage.c,v 1.145 2011/07/11 19:22:04 guru Exp $
+ *	$Id: mgd77manage.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 2005-2011 by P. Wessel
+ *    Copyright (c) 2005-2013 by P. Wessel
  * mgd77manage is used to (1) remove data columns from mgd77+ files
  * or (2) add a new data column to mgd77+ files.  Data can be added
  * from data tables, created from reference field formulas, or by
@@ -92,8 +92,6 @@ int main (int argc, char **argv)
 	GMT_LONG got_default_answer (char *line, char *answer);
 
 	argc = (int)GMT_begin (argc, argv);		/* Initialize GMT Machinery */
-	GMT_get_time_system ("unix", &(gmtdefs.time_system));						/* MGD77+ uses GMT's Unix time epoch */
-	GMT_init_time_system_structure (&(gmtdefs.time_system));
 	
 	GMT_boundcond_init (&edgeinfo);
 	parameters[COL_SCALE]   = 1.0;	/* Output column scaling */
@@ -624,7 +622,7 @@ int main (int argc, char **argv)
 		}
 
 		if (delete) {	/* Must create a new file with everything except the fields to be deleted */
-			GMT_LONG id, c;
+			GMT_LONG id, c, reset_column = FALSE;
 			char oldfile[BUFSIZ];
 			
 			if (column != MGD77_NOT_SET) {	/* Get info about this existing column to see if it is compatible with new data */
@@ -661,6 +659,9 @@ int main (int argc, char **argv)
 				strcat (history, " ");
 				strcat (history, p);
 				n_delete++;
+				if (k == column && c == set) {	/* Just removed the old column by the same name, must unset column */
+					reset_column = TRUE;
+				}
 			}
 			
 			/* Rename the old file for now */
@@ -703,7 +704,10 @@ int main (int argc, char **argv)
 				fprintf (stderr, "%s: Error reading data set for cruise %s\n", GMT_program, list[argno]);
 				exit (EXIT_FAILURE);
 			}
-			n_changed++;
+			if (reset_column)
+				column = MGD77_NOT_SET;
+			else
+				n_changed++;
 		}
 
 		if (got_c == ADD_IGRF) {	/* Append IGRF column */

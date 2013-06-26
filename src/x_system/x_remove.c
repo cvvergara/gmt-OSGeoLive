@@ -1,4 +1,4 @@
-/*	$Id: x_remove.c,v 1.9 2011/03/05 20:46:26 guru Exp $
+/*	$Id: x_remove.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * XREMOVE will read a list of bad legs from a file, and then remove all
  * trace of these files from the x_system data base files. New x_system files

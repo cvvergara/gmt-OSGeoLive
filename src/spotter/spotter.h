@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: spotter.h,v 1.29 2011/07/05 18:28:29 guru Exp $
+ *	$Id: spotter.h 9923 2012-12-18 20:45:53Z pwessel $
  *
- *   Copyright (c) 1999-2011 by P. Wessel
+ *   Copyright (c) 1999-2013 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by

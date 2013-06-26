@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pslegend.c,v 1.127 2011/07/08 21:27:06 guru Exp $
+ *	$Id: pslegend.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -79,7 +79,7 @@ int main (int argc, char **argv)
 	char bar_cpt[GMT_LONG_TEXT], bar_gap[GMT_LONG_TEXT], bar_height[GMT_LONG_TEXT], bar_opts[BUFSIZ], mode, just, *opt = NULL;
 	char *barg = CNULL, *jarg = CNULL, *rarg = CNULL, *f = CNULL, *u = CNULL;
 	
-	GMT_LONG i, k, n, justify = 0, n_columns = 1, error = 0, column_number = 0, n_files = 0, n_scan, ifont, not_used = 0;
+	GMT_LONG i, k, n, justify = 0, n_columns = 1, error = 0, column_number = 0, n_files = 0, n_scan, ifont;
 	
 	double x_off, west, east, south, north, x, y, x0, y0, L, off_ss, off_tt, V = 0.0;
 	double half_line_spacing, quarter_line_spacing, one_line_spacing, font_size, y_start = 0.0, d_off;
@@ -226,8 +226,8 @@ int main (int argc, char **argv)
 		fprintf (stderr, "usage: pslegend [<infofile>] -D[x]<x0>/<y0>/w/h/just %s %s\n", GMT_J_OPT, GMT_Rgeo_OPT);
 		fprintf (stderr, "\t[%s] [-C<dx>/<dy>] [-F] [-G<fill>] [-K] [-L<spacing>] [-O] [-P] [-S[<script>]]\n", GMT_B_OPT);
 		fprintf (stderr, "\t[%s] [-V] [%s] [%s] [%s]\n\n", GMT_U_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT);
-		fprintf (stderr, "\tReads legend layout information from <infofile> [or stdin]\n");
-		fprintf (stderr, "\t(See manual page for more information)\n");
+		fprintf (stderr, "\tReads legend layout information from <infofile> [or stdin].\n");
+		fprintf (stderr, "\t(See manual page for more information).\n");
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
 		fprintf (stderr, "\t-D sets position and size of legend box.  Prepend x if coordinates are projected.\n");
@@ -236,15 +236,15 @@ int main (int argc, char **argv)
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-C sets the clearance between legend frame and internal items [0.05i/0.05i]\n");
-		fprintf (stderr, "\t-F Draw border around the legend (using FRAME_PEN) [Default is no border]\n");
+		fprintf (stderr, "\t-C sets the clearance between legend frame and internal items [0.05i/0.05i].\n");
+		fprintf (stderr, "\t-F Draw border around the legend (using FRAME_PEN) [Default is no border].\n");
 		GMT_fill_syntax ('G', "Set the fill for the legend box [Default is no fill].");
 		GMT_explain_option ('K');
-		fprintf (stderr, "\t-L Sets the linespacing factor in units of the current annotation font size [1.1]\n");
+		fprintf (stderr, "\t-L Sets the linespacing factor in units of the current annotation font size [1.1].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-S Dump legend script to stdout, or optionally to file <script>.\n");
-		fprintf (stderr, "\t   [Default is to write PostScript output]\n");
+		fprintf (stderr, "\t   [Default is to write PostScript output].\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_explain_option ('X');
@@ -620,15 +620,17 @@ int main (int argc, char **argv)
 	fprintf (fpo, "\n");
 
 	if (!Ctrl->S.active) {	/* Add auto-delete command at the end of the script and then execute it */
+		int err = 0;
 		if (fpo != stdout) fclose (fpo);
 		if (gmtdefs.verbose) fprintf (stderr, "%s: Executing and removing legend script\n", GMT_program);
 #ifdef WIN32
-		not_used = system (script);
+		err = system (script);
 #else
 		sprintf (sub, "sh %s", script);
-		not_used = system (sub);
+		err = system (sub);
 #endif
 		remove (script);
+		if (err) fprintf (stderr, "%s: System call return with non-zero status %d\n", GMT_program, err);
 	}
 	else if (fpo != stdout)
 		fclose (fpo);

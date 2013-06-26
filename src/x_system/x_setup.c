@@ -1,4 +1,4 @@
-/*	$Id: x_setup.c,v 1.17 2011/07/11 19:22:07 guru Exp $
+/*	$Id: x_setup.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * XSETUP will read the gmtindex files and create a list of
  * pairs of legs that cross the same bin. As an option, the

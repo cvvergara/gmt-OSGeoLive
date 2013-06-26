@@ -1,4 +1,4 @@
-/*	$Id: x_update.c,v 1.14 2011/07/11 19:22:07 guru Exp $
+/*	$Id: x_update.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * XUPDATE will read a xover.d-file that contains a series of crossovers. The first
  * record contains leg1 year1 leg2 year2, and the next n records has all the

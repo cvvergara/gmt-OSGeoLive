@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_init.c,v 1.466 2011/07/08 21:27:05 guru Exp $
+ *	$Id: gmt_init.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -3908,7 +3908,7 @@ GMT_LONG GMT_history (int argc, char ** argv)
 	GMT_LONG i, j, k;
 	GMT_LONG need_xy = FALSE, overlay = FALSE, found_old, found_new, done = FALSE, new_unique = FALSE;
 	char line[BUFSIZ], hfile[BUFSIZ], cwd[BUFSIZ];
-	char *newargv[GMT_N_UNIQUE], *new_j = CNULL, *old_j = CNULL, *not_used = NULL;
+	char *newargv[GMT_N_UNIQUE], *new_j = CNULL, *old_j = CNULL;
 	FILE *fp = NULL;	/* For .gmtcommands4 file */
 #ifdef FLOCK
 	struct flock lock;
@@ -3935,7 +3935,7 @@ GMT_LONG GMT_history (int argc, char ** argv)
 
 	/* If current directory is writable, use it; else use the home directory */
 
-	not_used = getcwd (cwd, (size_t)BUFSIZ);
+	getcwd (cwd, (size_t)BUFSIZ);
 	if (GMT_TMPDIR)			/* Isolation mode: Use GMT_TMPDIR/.gmtcommands4 */
 		sprintf (hfile, "%s/.gmtcommands4", GMT_TMPDIR);
 	else if (!access (cwd, W_OK))	/* Current directory is writable */
@@ -5084,7 +5084,7 @@ GMT_LONG GMT_parse_J_option (char *args)
 			if (txt_a[0]) error += GMT_verify_expectations (GMT_IS_LON, GMT_scanf (txt_a, GMT_IS_LON, &project_info.pars[0]), txt_a);
 			if (txt_b[0]) error += GMT_verify_expectations (GMT_IS_LAT, GMT_scanf (txt_b, GMT_IS_LAT, &project_info.pars[1]), txt_b);
 			error += GMT_scale_or_width (txt_c, &project_info.pars[2]);
-			error += ((project == GMT_CYL_EQ || project == GMT_MERCATOR || project == GMT_TM || project == GMT_POLYCONIC)
+			error += ((project == GMT_CYL_EQ || project == GMT_MERCATOR || project == GMT_POLYCONIC)
 				&& fabs(project_info.pars[1]) >= 90.0);
 			error += !(n = n_slashes + 1);
 			break;

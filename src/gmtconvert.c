@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtconvert.c,v 1.80 2011/07/08 21:27:06 guru Exp $
+ *	$Id: gmtconvert.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -71,7 +71,7 @@ int main (int argc, char **argv)
 
 	double	*in = NULL, *out = VNULL, *R_out = (double *)NULL;
 
-	char record_str[BUFSIZ], ptr[BUFSIZ], header[BUFSIZ], filename[BUFSIZ], *not_used = NULL;
+	char record_str[BUFSIZ], ptr[BUFSIZ], header[BUFSIZ], filename[BUFSIZ];
 	
 	FILE *fp_out = NULL;
 
@@ -169,21 +169,21 @@ int main (int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A Input files should be pAsted, not concatenated [Default is concatenated]\n");
-		fprintf (stderr, "\t-D writes individual segments to separate files [Default writes one multisegment file to stdout].\n");
-		fprintf (stderr, "\t   Append file name template which MUST contain a C-format specified for an integer (e.g., %%d).\n");
-		fprintf (stderr, "\t   [Default uses gmtconvert_segment_%%d.d]\n");
-		fprintf (stderr, "\t-E Extract first and last point per segment only [Default outputs all points]\n");
+		fprintf (stderr, "\t-A Input files should be pAsted, not concatenated [Default is concatenated].\n");
+		fprintf (stderr, "\t-D Writes individual segments to separate files [Default writes one multisegment file to stdout].\n");
+		fprintf (stderr, "\t   Append file name template which MUST contain a C-format specified for an integer (e.g., %%d)\n");
+		fprintf (stderr, "\t   [Default uses gmtconvert_segment_%%d.d].\n");
+		fprintf (stderr, "\t-E Extract first and last point per segment only [Default outputs all points].\n");
 		fprintf (stderr, "\t   Append f for first only or l for last only\n");
-		fprintf(stderr,"\t-F Give comma-separated list of desired columns or ranges (0 is first column) [Default is all]\n");
+		fprintf (stderr, "\t-F Give comma-separated list of desired columns or ranges (0 is first column) [Default is all].\n");
 		GMT_explain_option ('H');
-		fprintf (stderr,"\t-I Invert order of rows, i.e., outputting in reverse order\n");
-		fprintf (stderr, "\t-L Output all multisegment headers only, no data records (requires -m and ASCII data)\n");
-		fprintf (stderr, "\t-N Skip output records where all fields == NaN [Default writes all records]\n");
+		fprintf (stderr, "\t-I Invert order of rows, i.e., outputting in reverse order.\n");
+		fprintf (stderr, "\t-L Output all multisegment headers only, no data records (requires -m and ASCII data).\n");
+		fprintf (stderr, "\t-N Skip output records where all fields == NaN [Default writes all records].\n");
 		fprintf (stderr, "\t-S Only output segments whose segment headers contains the pattern \"string\".\n");
 		fprintf (stderr, "\t   Use -S~\"string\" to output segment that DO NOT contain this pattern.\n");
 		fprintf (stderr, "\t   If your pattern begins with ~, escape it with \\~.\n");
-		fprintf (stderr, "\t   (-S requires -m and ASCII data) [All segments]\n");
+		fprintf (stderr, "\t   (-S requires -m and ASCII data) [All segments].\n");
 		GMT_explain_option ('V');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
@@ -268,7 +268,7 @@ int main (int argc, char **argv)
 		if (!GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) {	/* Only ascii data can have header records */
 			for (i = 0; i < GMT_io.n_header_recs; i++) {
 				for (k = 0; k < n_files; k++) {
-					not_used = GMT_fgets (record_str, BUFSIZ, fp[k]);
+					GMT_fgets (record_str, BUFSIZ, fp[k]);
 					if (k < (n_files-1)) record_str[strlen(record_str)-1] = '\0';
 					if (k == 0)
 						strcpy (header, record_str);
@@ -459,7 +459,7 @@ int main (int argc, char **argv)
 
 			if (!GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) {
 				for (i = 0; i < GMT_io.n_header_recs; i++) {
-					not_used = GMT_fgets (record_str, BUFSIZ, fp);
+					GMT_fgets (record_str, BUFSIZ, fp);
 					n_total_read ++;
 					if (!GMT_io.binary[GMT_OUT] && GMT_io.io_header[GMT_OUT]) GMT_fputs (record_str, GMT_stdout);
 				}

@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 02
-#		$Id: job02.sh,v 1.16 2011/02/28 00:58:03 remko Exp $
+#		$Id: job02.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Make two color images based gridded data
 # GMT progs:	gmtset, grd2cpt, grdgradient, grdimage, makecpt, psscale, pstext

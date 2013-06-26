@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_io.c,v 1.230 2011/07/08 21:27:05 guru Exp $
+ *	$Id: gmt_io.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -274,13 +274,26 @@ void DOS_path_fix (char *dir)
 	for (k = 0; k < n; k++) {
 		if (dir[k] == '\\') dir[k] = '/';	/* Replace dumb backslashes with slashes */
 	}
-	
-	for (k = 0; k < n-2; k++) {
-		if (dir[k] == '/' && isalpha ((int)dir[k+1]) && dir[k+2] == '/') {
+
+	if (dir[0] == '/' && dir[2] == '\0') {
+		dir[0] = dir[1];
+		dir[1] = ':';
+		return;
+	}
+
+	/* Also take care that cases like c:/j/... (mine) don't turn into c:j:/... */
+	n = strlen (dir);
+	if (dir[0] == '/' && dir[2] == '/' && isalpha ((int)dir[1])) {
+		dir[0] = dir[1];
+		dir[1] = ':';
+	}
+	for (k = 4; k < n-2; k++) {
+		if ( (dir[k-1] == ';' && dir[k] == '/' && dir[k+2] == '/' && isalpha ((int)dir[k+1])) ) {
 			dir[k] = dir[k+1];
 			dir[k+1] = ':';
 		}
 	}
+	
 }
 #endif
 
@@ -2564,7 +2577,7 @@ GMT_LONG	GMT_scanf_geo (char *s, double *val)
 	ncolons = 0;
 	if ( (p = strpbrk (scopy, "dD")) ) {
 		/* We found a D or d.  */
-		if (strlen(p) < 1 || (strpbrk (&p[1], "dD:") ) ){
+		if (strlen(p) == 1 || (strpbrk (&p[1], "dD:") ) ){
 			/* It is at the end, or followed by a
 				colon or another d or D.  */
 			return (GMT_IS_NAN);
@@ -2575,7 +2588,7 @@ GMT_LONG	GMT_scanf_geo (char *s, double *val)
 	}
 	p = scopy;
 	while ( (p2 = strpbrk (p, ":")) ) {
-		if (strlen(p2) < 1) {
+		if (strlen(p2) == 1) {
 			/* Shouldn't end with a colon  */
 			return (GMT_IS_NAN);
 		}
@@ -3189,19 +3202,17 @@ GMT_LONG GMT_export_table (void *dest, GMT_LONG dest_type, struct GMT_TABLE *tab
 	/* Writes an entire multisegment data set to file or wherever */
 
 	char open_mode[4], file[BUFSIZ];
-	GMT_LONG ascii, close_file = FALSE;
+	GMT_LONG close_file = FALSE;
 	GMT_LONG row = 0, seg, col;
 	double *out = NULL;
 	FILE *fp = NULL;
 	PFL psave = NULL;
 
-	if (use_GMT_io) {	/* Use GMT_io settings to determine if input is ascii/binary, else it defaults to ascii */
+	/* Use GMT_io settings to determine if input is ascii/binary, else it defaults to ascii */
+	if (use_GMT_io)
 		strcpy (open_mode, GMT_io.w_mode);
-		ascii = !GMT_io.binary[GMT_OUT];
-	}
 	else {			/* Force ASCII mode */
 		strcpy (open_mode, "w");
-		ascii = TRUE;
 		psave = GMT_output;		/* Save the previous pointer since we need to change it back at the end */
 		GMT_output = GMT_output_ascii;	/* Override and use ascii mode */
 	}

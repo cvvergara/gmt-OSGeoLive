@@ -1,7 +1,11 @@
-	$Id: README.mgd77,v 1.18 2011/03/04 06:47:15 guru Exp $
+	$Id: README.mgd77 9700 2012-03-09 04:04:18Z pwessel $
 
 README file for GMT supplemental mgd77 programs.
 Distributed under the GNU Public License (see file ../LICENSE.TXT)
+
+Revision: 1.6 15-MAR-2012
+	Added support for NGDC's new MGD77T (tab-delimited) format
+
 
 AUTHORS:	Paul Wessel and Michael Chandler
 DATE:		01-MAY-2009

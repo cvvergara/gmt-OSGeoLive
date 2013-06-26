@@ -1,6 +1,6 @@
 #!/bin/csh
 #		GMT EXAMPLE 11
-#		$Id: job11.csh,v 1.16 2011/03/01 01:34:48 remko Exp $
+#		$Id: job11.csh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Create a 3-D RGB Cube
 # GMT progs:	gmtset, grdimage, grdmath, pstext, psxy

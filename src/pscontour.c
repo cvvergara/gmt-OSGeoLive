@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pscontour.c,v 1.126 2011/07/08 21:27:06 guru Exp $
+ *	$Id: pscontour.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 	double xx[3], yy[3], zz[3], xout[5], yout[5], *in, west, east, south, north;
 	double *xc = NULL, *yc = NULL, *zc = NULL, *x = NULL, *y = NULL, *z = NULL, *xp = NULL, *yp = NULL, current_contour = -DBL_MAX, xyz[2][3];
 
-	char line[BUFSIZ], cont_label[GMT_LONG_TEXT], format[GMT_LONG_TEXT], *not_used = NULL;
+	char line[BUFSIZ], cont_label[GMT_LONG_TEXT], format[GMT_LONG_TEXT];
 #ifdef TRIANGLE_D
 	char *algorithm = "Shewchuk";
 #else
@@ -253,34 +253,34 @@ int main(int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr,"\t-C Color palette table\n");
+		fprintf (stderr,"\t-C Color palette table.\n");
 		GMT_explain_option ('j');
 		GMT_explain_option ('Z');
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-A Annotation label information.\n");
-		fprintf (stderr, "\t   Give A- to disable all contour annotations implied in -C\n");
+		fprintf (stderr, "\t   Give A- to disable all contour annotations implied in -C.\n");
 		fprintf (stderr, "\t   <labelinfo> controls the specifics of the labels.  Append what you need:\n");
 		GMT_label_syntax (5, 0);
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-D to Dump contour lines to individual files (but see -m)\n");
+		fprintf (stderr, "\t-D to Dump contour lines to individual files (but see -m).\n");
 		GMT_explain_option ('E');
 		fprintf (stderr, "\t-G Controls placement of labels along contours.  Choose among five algorithms:\n");
 		GMT_cont_syntax (3, 0);
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I Color triangles using the cpt file\n");
+		fprintf (stderr, "\t-I Color triangles using the cpt file.\n");
 		GMT_explain_option ('K');
 		GMT_pen_syntax ('L', "draws the triangular mesh with the specified pen.");
-		fprintf (stderr,"\t-N do NOT clip contours/image at the border [Default clips]\n");
+		fprintf (stderr,"\t-N do NOT clip contours/image at the border [Default clips].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
-		fprintf (stderr,"\t-S Skip xyz points outside region [Default keeps all]\n");
+		fprintf (stderr,"\t-S Skip xyz points outside region [Default keeps all].\n");
 		fprintf (stderr,"\t-T file with triplets of point indices for each triangle\n");
-		fprintf (stderr,"\t   [Default performs the Delaunay triangulation on xyz-data]\n");
+		fprintf (stderr,"\t   [Default performs the Delaunay triangulation on xyz-data].\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_pen_syntax ('W', "selects contouring and sets contour pen attributes.");
-		fprintf (stderr, "\t   Use + to draw colored contours based on the cpt file\n");
+		fprintf (stderr, "\t   Use + to draw colored contours based on the cpt file.\n");
 		GMT_explain_option ('X');
 		GMT_explain_option ('c');
 		GMT_explain_option (':');
@@ -290,7 +290,7 @@ int main(int argc, char **argv)
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		fprintf (stderr, "\t-m Used with -D.   Create a single multiple segment file where contours are separated by a record\n");
-		fprintf (stderr, "\t   whose first character is <flag> ['>'].  This header also has the contour level value\n");
+		fprintf (stderr, "\t   whose first character is <flag> ['>'].  This header also has the contour level value.\n");
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);
 	}
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
 	y = (double *) GMT_memory (VNULL, (size_t)n_alloc, sizeof (double), GMT_program);
 	z = (double *) GMT_memory (VNULL, (size_t)n_alloc, sizeof (double), GMT_program);
 
-	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 	xyz[0][2] = DBL_MAX;	xyz[1][2] = -DBL_MAX;
 	n_read = n = 0;

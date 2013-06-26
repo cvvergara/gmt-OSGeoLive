@@ -1,7 +1,7 @@
 ECHO OFF
 REM ----------------------------------------------------
 REM
-REM	$Id: gmtinstall.bat,v 1.55 2011/03/05 19:48:58 guru Exp $
+REM	$Id: gmtinstall.bat 9926 2012-12-20 00:17:04Z pwessel $
 REM
 REM
 REM	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
@@ -59,6 +59,7 @@ REM	    GMT_SHARE_PATH is where GMT expects to find the shared data.
 REM	    It is ONLY used if the user does not set %GMT_SHAREDIR%.
 REM
 SET GMT_SHARE_PATH="\"C:\\programs\\GMT\\share\""
+SET GMT_GSHHG_PATH="\"C:\\programs\\GSHHG\""
 REM
 REM STEP e: If you WANT TO  use Shewchuk's triangulation
 REM	    routine, you must set TRIANGLE to "yes" or
@@ -100,6 +101,7 @@ SET BINDIR=..\bin%BITS%
 SET LIBDIR=..\lib
 SET INCDIR=..\include
 
+SET CDFLIB=netcdf.lib
 ECHO ON
 SET DLL_NETCDF=/DDLL_NETCDF
 IF %DLLCDF%=="no" SET DLL_NETCDF=
@@ -122,15 +124,16 @@ REM ----------------------------------------------------
 ECHO STEP 2: Make GMT library
 REM ----------------------------------------------------
 %CC% %COPT% /c %DLL% /DDLL_EXPORT /DMIRONE /DGMT_SHARE_PATH=%GMT_SHARE_PATH% gmt_bcr.c gmt_cdf.c gmt_nc.c gmt_customio.c gmt_grdio.c gmt_init.c
-%CC% %COPT% /c %DLL% /DDLL_EXPORT /DGMT_SHARE_PATH=%GMT_SHARE_PATH% gmt_io.c gmt_map.c gmt_plot.c gmt_proj.c gmt_shore.c
-%CC% %COPT% /c %DLL% /DDLL_EXPORT /DGMT_SHARE_PATH=%GMT_SHARE_PATH% gmt_stat.c gmt_calclock.c gmt_support.c gmt_vector.c
+%CC% %COPT% /c %DLL% /DDLL_EXPORT /DGMT_SHARE_PATH=%GMT_SHARE_PATH% gmt_io.c gmt_map.c gmt_plot.c gmt_proj.c gmt_version.c
+%CC% %COPT% /c %DLL% /DDLL_EXPORT /DGMT_SHARE_PATH=%GMT_SHARE_PATH% /DGMT_GSHHG_PATH=%GMT_GSHHG_PATH% gmt_shore.c
+%CC% %COPT% /c %DLL% /DDLL_EXPORT /DGMT_SHARE_PATH=%GMT_SHARE_PATH% gmt_stat.c gmt_calclock.c gmt_support.c gmt_vector.c gmt_notposix.c
 IF %TRIANGLE%=="yes" %CC% %COPT% /c /DNO_TIMER /DTRILIBRARY /DREDUCED /DCDT_ONLY triangle.c
-IF %CHOICE%=="dynamic" link %LOPT% /out:gmt%BITS%.dll /implib:gmt.lib gmt_*.obj %TROBJ% psl.lib libnetcdf.lib gdal_i.lib setargv.obj
+IF %CHOICE%=="dynamic" link %LOPT% /out:gmt%BITS%.dll /implib:gmt.lib gmt_*.obj %TROBJ% psl.lib %CDFLIB% gdal_i.lib setargv.obj
 IF %CHOICE%=="static" lib /out:gmt.lib gmt_*.obj %TROBJ%
 REM ----------------------------------------------------
 ECHO STEP 3: Make GMT programs 
 REM ----------------------------------------------------
-set GMTLIB=gmt.lib psl.lib libnetcdf.lib gdal_i.lib setargv.obj
+set GMTLIB=gmt.lib psl.lib %CDFLIB% gdal_i.lib setargv.obj
 %CC% %COPT% blockmean.c %GMTLIB%
 %CC% %COPT% blockmedian.c %GMTLIB%
 %CC% %COPT% blockmode.c %GMTLIB%
@@ -173,7 +176,7 @@ set GMTLIB=gmt.lib psl.lib libnetcdf.lib gdal_i.lib setargv.obj
 %CC% %COPT% minmax.c %GMTLIB%
 %CC% %COPT% nearneighbor.c %GMTLIB%
 %CC% %COPT% project.c %GMTLIB%
-%CC% %COPT% ps2raster.c %GMTLIB%
+%CC% %COPT% ps2raster.c %GMTLIB% advapi32.lib
 %CC% %COPT% psbasemap.c %GMTLIB%
 %CC% %COPT% psclip.c %GMTLIB%
 %CC% %COPT% pscoast.c %GMTLIB%
@@ -201,7 +204,9 @@ ECHO STEP 4: Clean up and install executables and libraries
 REM ----------------------------------------------------
 DEL *.obj
 MOVE *.exe %BINDIR%
-MOVE *.lib %LIBDIR%
+COPY *.lib %LIBDIR%
+MOVE *.lib %LIBDIR%%BITS%
 COPY *.h %INCDIR%
 IF %CHOICE%=="dynamic" MOVE *.dll %BINDIR%
-IF %CHOICE%=="dynamic" MOVE *.exp %LIBDIR%
+IF %CHOICE%=="dynamic" COPY *.exp %LIBDIR%
+IF %CHOICE%=="dynamic" MOVE *.exp %LIBDIR%%BITS%

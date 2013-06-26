@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: makepattern.c,v 1.32 2011/07/11 19:22:06 guru Exp $
+ *	$Id: makepattern.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *      Copyright (c) 1999-2011 by P. Wessel
+ *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify

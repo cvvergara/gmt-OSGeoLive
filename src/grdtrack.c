@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdtrack.c,v 1.88 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdtrack.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -72,7 +72,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG error = FALSE, pure_ascii = FALSE;
 
-	char line[BUFSIZ], *not_used = NULL;
+	char line[BUFSIZ];
 
 	GMT_LONG i, j, ix, iy, mx, my, nx, ny, n_fields;
 	GMT_LONG n_output = 0, n_expected_fields = 0;
@@ -200,8 +200,8 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<xyfile> is an multicolumn ASCII file with (lon,lat) in the first two columns\n");
-		fprintf (stderr, "\t-G <grdfile> is the name of the 2-D binary data set to sample\n");
+		fprintf (stderr, "\t<xyfile> is an multicolumn ASCII file with (lon,lat) in the first two columns.\n");
+		fprintf (stderr, "\t-G <grdfile> is the name of the 2-D binary data set to sample.\n");
 		fprintf (stderr, "\t   If the file is a Sandwell/Smith Mercator grid (IMG format) instead,\n");
 		fprintf (stderr, "\t   append comma-separated scale (0.1 or 1), mode, and optionally max latitude [%g].  Modes are\n", GMT_IMG_MAXLAT_80);
 		fprintf (stderr, "\t     0 = img file w/ no constraint code, interpolate to get data at track.\n");
@@ -212,11 +212,11 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		GMT_explain_option ('H');
 		fprintf (stderr, "\t-L sets boundary conditions.  <flag> can be either\n");
-		fprintf (stderr, "\t   g for geographic boundary conditions\n");
+		fprintf (stderr, "\t   g for geographic boundary conditions,\n");
 		fprintf (stderr, "\t   or one or both of\n");
-		fprintf (stderr, "\t   x for periodic boundary conditions on x\n");
-		fprintf (stderr, "\t   y for periodic boundary conditions on y\n");
-		fprintf (stderr, "\t   [Default is natural conditions for grids and geographic for IMG grids]\n");
+		fprintf (stderr, "\t   x for periodic boundary conditions on x.\n");
+		fprintf (stderr, "\t   y for periodic boundary conditions on y.\n");
+		fprintf (stderr, "\t   [Default is natural conditions for grids and geographic for IMG grids].\n");
 		fprintf (stderr, "\t-Q Quick mode, use bilinear rather than bicubic [Default] interpolation.\n");
 		fprintf (stderr, "\t   Alternatively, select interpolation mode by adding b = B-spline, c = bicubic,\n");
 		fprintf (stderr, "\t   l = bilinear, or n = nearest-neighbor.\n");
@@ -225,13 +225,13 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   from a non-NaN to a NaN node, while 0.1 will go about 90%% of the way, etc.\n");
 		fprintf (stderr, "\t   -Q0 will return the value of the nearest node instead of interpolating (Same as -Qn).\n");
 		GMT_explain_option ('R');
-		fprintf (stderr, "\t-S Suppress output when result equals NaN\n");
+		fprintf (stderr, "\t-S Suppress output when result equals NaN.\n");
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t-Z only output z-values [Default gives all columns]\n");
+		fprintf (stderr, "\t-Z only output z-values [Default gives all columns].\n");
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
+		fprintf (stderr, "\t   Default is 2 input columns.\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('f');
@@ -335,12 +335,12 @@ int main (int argc, char **argv)
 	
 	if (GMT_io.io_header[GMT_IN]) {	/* First echo headers, if any */
 		for (i = 0; i < GMT_io.n_header_recs - 1; i++) {
-			not_used = GMT_fgets (line, BUFSIZ, fp);
+			GMT_fgets (line, BUFSIZ, fp);
 			if (!GMT_io.binary[GMT_OUT] && GMT_io.io_header[GMT_OUT]) fprintf (stdout, "%s", line);
 		}
-		not_used = GMT_fgets (line, BUFSIZ, fp);
+		GMT_fgets (line, BUFSIZ, fp);
 		GMT_chop (line);
-		if (!GMT_io.binary[GMT_OUT] && GMT_io.io_header[GMT_OUT]) fprintf (stdout, "%s\tsample\n", line);
+		if (!GMT_io.binary[GMT_OUT] && GMT_io.io_header[GMT_OUT]) fprintf (stdout, "%s%ssample\n", line, gmtdefs.field_delimiter);
 	}
 
 	ix = (gmtdefs.xy_toggle[GMT_OUT]);	iy = 1 - ix;	/* These are used for output purposes only */
@@ -408,9 +408,9 @@ int main (int argc, char **argv)
 			/* First get rid of any commas that may cause grief */
 			for (i = 0; GMT_io.current_record[i]; i++) if (GMT_io.current_record[i] == ',') GMT_io.current_record[i] = ' ';
 			sscanf (GMT_io.current_record, "%*s %*s %[^\n]", line);
-			GMT_ascii_output_one (GMT_stdout, in[ix], ix);	GMT_fputs ("\t", GMT_stdout);
-			GMT_ascii_output_one (GMT_stdout, in[iy], iy);	GMT_fputs ("\t", GMT_stdout);
-			GMT_fputs (line, GMT_stdout);			GMT_fputs ("\t", GMT_stdout); 
+			GMT_ascii_output_one (GMT_stdout, in[ix], ix);	GMT_fputs (gmtdefs.field_delimiter, GMT_stdout);
+			GMT_ascii_output_one (GMT_stdout, in[iy], iy);	GMT_fputs (gmtdefs.field_delimiter, GMT_stdout);
+			GMT_fputs (line, GMT_stdout);			GMT_fputs (gmtdefs.field_delimiter, GMT_stdout); 
 			GMT_ascii_output_one (GMT_stdout, value, 2);	GMT_fputs ("\n", GMT_stdout);
 		}
 		else {	/* Simply copy other columns, append value, and output */

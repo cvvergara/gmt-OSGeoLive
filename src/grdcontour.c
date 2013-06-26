@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcontour.c,v 1.159 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdcontour.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -117,7 +117,10 @@ int main (int argc, char **argv)
 	
 	int rgb[3];
 
-	GMT_LONG error = FALSE, interior, begin, subset = FALSE, wrap_check;
+	GMT_LONG error = FALSE, interior, begin;
+#ifdef EXPERIMENT
+	GMT_LONG wrap_check;
+#endif
 
 	char *grdfile = NULL, line[BUFSIZ], *cont_type = NULL, *cont_do_tick = NULL;
 	char txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT];
@@ -332,68 +335,68 @@ int main (int argc, char **argv)
 		fprintf (stderr,"grdcontour %s - Contouring of 2-D gridded data sets\n\n", GMT_VERSION);
 		fprintf (stderr, "usage: grdcontour <grdfile> -C<cont_int> %s\n", GMT_J_OPT);
 		fprintf (stderr, "\t[-A[-|<annot_int>][<labelinfo>] [%s] [-D<dumpfile>] [%s] [-F[l|r]] [%s]\n", GMT_B_OPT, GMT_E_OPT, GMT_CONTG);
-		fprintf (stderr, "\t[-K] [-L<Low/high>] [-O] [-P] [-Q<cut>] [%s] [-S<smooth>]\n", GMT_Rgeo_OPT);
+		fprintf (stderr, "\t[-K] [-L<low/high>] [-O] [-P] [-Q<cut>] [%s] [-S<smooth>]\n", GMT_Rgeo_OPT);
 		fprintf (stderr, "\t[-T[+|-][<gap>[c|i|m|p]/<length>[c|i|m|p]][:LH]] [%s] [-V] [-W[+]<type><pen>]\n", GMT_U_OPT);
 		fprintf (stderr, "\t[%s] [%s] [-Z[<fact>[/shift>]][p]] [%s] [%s] [%s]\n\n", GMT_X_OPT, GMT_Y_OPT, GMT_bo_OPT, GMT_c_OPT, GMT_mo_OPT);
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<grdfile> is 2-D netCDF grid file to be contoured\n");
+		fprintf (stderr, "\t<grdfile> is 2-D netCDF grid file to be contoured.\n");
 		fprintf (stderr, "\t-C Contours to be drawn can be specified in one of three ways:\n");
-		fprintf (stderr, "\t   1. Fixed contour interval\n");
+		fprintf (stderr, "\t   1. Fixed contour interval.\n");
 		fprintf (stderr, "\t   2. Name of file with contour levels in col 1 and C(ont) or A(nnot) in col 2\n");
-		fprintf (stderr, "\t      [and optionally an individual annotation angle in col 3.]\n");
-		fprintf (stderr, "\t   3. Name of cpt-file\n");
+		fprintf (stderr, "\t      [and optionally an individual annotation angle in col 3].\n");
+		fprintf (stderr, "\t   3. Name of cpt-file.\n");
 		fprintf (stderr, "\t   If -T is used, only contours with upper case C or A is ticked\n");
-		fprintf (stderr, "\t     [cpt-file contours are set to C unless last column has flags; Use -A to force all to A]\n");
+		fprintf (stderr, "\t     [cpt-file contours are set to C unless last column has flags; Use -A to force all to A].\n");
 		GMT_explain_option ('j');
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-A Annotation label information. [Default is no annoted contours].\n");
-		fprintf (stderr, "\t   Give annotation interval OR - to disable all contour annotations implied in -C\n");
+		fprintf (stderr, "\t   Give annotation interval OR - to disable all contour annotations implied in -C.\n");
 		fprintf (stderr, "\t   <labelinfo> controls the specifics of the labels.  Append what you need:\n");
 		GMT_label_syntax (5, 0);
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-D to Dump contour lines to individual files (but see -m)\n");
-		fprintf (stderr, "\t   Append file prefix [contour].  Files will be called <dumpfile>_<cont>_#[_i].xyz|b\n");
-		fprintf (stderr, "\t   where <cont> is the contour value and # is a segment counter.\n");
+		fprintf (stderr, "\t-D to Dump contour lines to individual files (but see -m).\n");
+		fprintf (stderr, "\t   Append file prefix [contour].  Files will be called <dumpfile>_<cont>_#[_i].xyz|b,\n");
+		fprintf (stderr, "\t   where <cont> is the contour value and # is a segment counter;\n");
 		fprintf (stderr, "\t   _i is inserted for interior (closed) contours, with xyz (ascii) or b (binary) as extension.\n");
 		fprintf (stderr, "\t   However, if -D- is given then files are C#_e or C#_i plus extension, where # is a running number.\n");
 		GMT_explain_option ('E');
 		fprintf (stderr, "\t-F force dumped contours to be oriented so that the higher z-values are to the left (-Fl [Default])\n");
-		fprintf (stderr, "\t   or right (-Fr) as we move along the contour [Default is not oriented]\n");
+		fprintf (stderr, "\t   or right (-Fr) as we move along the contour [Default is not oriented].\n");
 		fprintf (stderr, "\t-G Controls placement of labels along contours.  Choose among five algorithms:\n");
 		GMT_cont_syntax (3, 0);
 		GMT_explain_option ('K');
-		fprintf (stderr, "\t-L only contour inside this range\n");
+		fprintf (stderr, "\t-L only contour inside the specified range.\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
-		fprintf (stderr, "\t-Q Do not draw closed contours with less than <cut> points [Draw all contours]\n");
+		fprintf (stderr, "\t-Q Do not draw closed contours with less than <cut> points [Draw all contours].\n");
 		GMT_explain_option ('R');
-		fprintf (stderr, "\t   [Default is extent of grid]\n");
+		fprintf (stderr, "\t   [Default is extent of grid].\n");
 		fprintf (stderr, "\t-S will Smooth contours by splining and resampling\n");
-		fprintf (stderr, "\t   at approximately gridsize/<smooth> intervals\n");
-		fprintf (stderr, "\t-T will embellish innermost, closed contours with ticks pointing in the downward direction\n");
-		fprintf (stderr, "\t   User may specify to tick only highs (-T+) or lows (-T-) [-T means both]\n");
-		fprintf (stderr, "\t   Append spacing/ticklength (append units) to change defaults [%g/%g %s]\n",
+		fprintf (stderr, "\t   at approximately gridsize/<smooth> intervals.\n");
+		fprintf (stderr, "\t-T will embellish innermost, closed contours with ticks pointing in the downward direction.\n");
+		fprintf (stderr, "\t   User may specify to tick only highs (-T+) or lows (-T-) [-T means both].\n");
+		fprintf (stderr, "\t   Append spacing/ticklength (append units) to change defaults [%g/%g %s].\n",
 			Ctrl->T.spacing*GMT_u2u[GMT_INCH][gmtdefs.measure_unit], Ctrl->T.length*GMT_u2u[GMT_INCH][gmtdefs.measure_unit], GMT_unit_names[gmtdefs.measure_unit]);
 		fprintf (stderr, "\t   Append :LH to plot the characters L and H in the center of closed contours\n");
-		fprintf (stderr, "\t   for local Lows and Highs (e.g, give :-+ to plot - and + signs)\n");
+		fprintf (stderr, "\t   for local Lows and Highs (e.g, give :-+ to plot - and + signs).\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
-		GMT_pen_syntax ('W', "sets pen attributes. Append a<pen> for annotated contours or c<pen> for regular contours [Default]");
-		fprintf (stderr, "\t   The default settings are\n");
+		GMT_pen_syntax ('W', "sets pen attributes. Append a<pen> for annotated contours or c<pen> for regular contours [Default].");
+		fprintf (stderr, "\t   The default settings are:\n");
 		fprintf (stderr, "\t   Contour pen:  width = %gp, color = (%d/%d/%d), texture = solid\n", Ctrl->W.pen[0].width, Ctrl->W.pen[0].rgb[0], Ctrl->W.pen[0].rgb[1], Ctrl->W.pen[0].rgb[2]);
 		fprintf (stderr, "\t   Annotate pen: width = %gp, color = (%d/%d/%d), texture = solid\n", Ctrl->W.pen[1].width, Ctrl->W.pen[1].rgb[0], Ctrl->W.pen[1].rgb[1], Ctrl->W.pen[1].rgb[2]);
-		fprintf (stderr, "\t   Use + to draw colored contours based on the cpt file\n");
+		fprintf (stderr, "\t   Use + to draw colored contours based on the cpt file.\n");
 		GMT_explain_option ('X');
 		fprintf (stderr, "\t-Z to subtract <shift> and multiply data by <fact> before contouring [1/0].\n");
-		fprintf (stderr, "\t   Append p for z-data that is periodic in 360 (i.e., phase data)\n");
+		fprintf (stderr, "\t   Append p for z-data that is periodic in 360 (i.e., phase data).\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('c');
 		GMT_explain_option ('f');
 		fprintf (stderr, "\t-m Used with -D.   Create a single multiple segment file where contours are separated by a record\n");
-		fprintf (stderr, "\t   whose first character is <flag> ['>'].  This header also has the contour level value\n");
+		fprintf (stderr, "\t   whose first character is <flag> ['>'].  This header also has the contour level value.\n");
 		exit (EXIT_FAILURE);
 	}
 
@@ -469,8 +472,6 @@ int main (int argc, char **argv)
 		south = header.y_min;
 		north = header.y_max;
 	}
-	else if (!(west == header.x_min && east == header.x_max && south == header.y_min && north == header.y_max))
-		subset = TRUE;
 	GMT_err_fail (GMT_map_setup (west, east, south, north), "");
 
 	/* Determine the wesn to be used to read the grid file */
@@ -634,7 +635,9 @@ int main (int argc, char **argv)
 	n_edges = header.ny * (int )ceil (header.nx / 16.0);
 	edge = (GMT_LONG *) GMT_memory (VNULL, (size_t)n_edges, sizeof (GMT_LONG), GMT_program);
 
+#ifdef EXPERIMENT
 	wrap_check = (GMT_io.in_col_type[0] == GMT_IS_LON && (fabs (header.x_max - header.x_min - 360.0) < GMT_SMALL));
+#endif
 	
 	GMT_plotinit (argc, argv);
 	if (project_info.three_D) ps_transrotate (-z_project.xmin, -z_project.ymin, 0.0);

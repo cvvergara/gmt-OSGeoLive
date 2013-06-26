@@ -1,4 +1,4 @@
-REM		$Id: job11.bat,v 1.14 2011/03/01 01:34:48 remko Exp $
+REM		$Id: job11.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM		GMT EXAMPLE 11
 REM
 REM Purpose:	Create a 3-D RGB Cube

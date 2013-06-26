@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdgradient.c,v 1.59 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdgradient.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -257,41 +257,41 @@ int main (int argc, char **argv)
 		fprintf (stderr, "[-E[s|p]<azim>/<elev[ambient/diffuse/specular/shine]>]\n");
 		fprintf (stderr, "[-L<flag>] [-M] [-N[t_or_e][<amp>[/<sigma>[/<offset>]]]] [-S<slopefile>] [-V]\n\n");
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-		fprintf (stderr,"\t<infile> is name of input grid file\n");
+		fprintf (stderr,"\t<infile> is name of input grid file.\n");
 		fprintf (stderr,"\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A sets azimuth (0-360 CW from North (+y)) for directional derivatives\n");
+		fprintf (stderr, "\t-A sets azimuth (0-360 CW from North (+y)) for directional derivatives.\n");
 		fprintf (stderr, "\t  -A<azim>/<azim2> will compute two directions and save the one larger in magnitude.\n");
 		fprintf (stderr, "\t-D finds the direction of grad z.\n");
-		fprintf (stderr, "\t   Append c to get cartesian angle (0-360 CCW from East (+x)) [Default:  azimuth]\n");
-		fprintf (stderr, "\t   Append o to get bidirectional orientations [0-180] rather than directions [0-360]\n");
-		fprintf (stderr, "\t   Append n to add 90 degrees to the values from c or o\n");
+		fprintf (stderr, "\t   Append c to get cartesian angle (0-360 CCW from East (+x)) [Default:  azimuth].\n");
+		fprintf (stderr, "\t   Append o to get bidirectional orientations [0-180] rather than directions [0-360].\n");
+		fprintf (stderr, "\t   Append n to add 90 degrees to the values from c or o.\n");
 		fprintf (stderr, "\t-E Compute Lambertian radiance appropriate to use with grdimage/grdview.\n");
 		fprintf (stderr, "\t   -E<azim/elev> sets azimuth and elevation of light vector.\n");
 		fprintf (stderr, "\t   -E<azim/elev/ambient/diffuse/specular/shine> sets azim, elev and\n");
 		fprintf (stderr, "\t    other parameters that control the reflectance properties of the surface.\n");
-		fprintf (stderr, "\t    Default values are: 0.55/0.6/0.4/10\n");
-		fprintf (stderr, "\t    Specify '=' to get the default value (e.g. -E60/30/=/0.5)\n");
+		fprintf (stderr, "\t    Default values are: 0.55/0.6/0.4/10.\n");
+		fprintf (stderr, "\t    Specify '=' to get the default value (e.g., -E60/30/=/0.5).\n");
 		fprintf (stderr, "\t   Append s to use a simpler Lambertian algorithm (note that with this form\n");
-		fprintf (stderr, "\t   you only have to provide the azimuth and elevation parameters)\n");
-		fprintf (stderr, "\t   Append p to use the Peucker piecewise linear approximation (simpler but faster algorithm)\n");
+		fprintf (stderr, "\t   you only have to provide the azimuth and elevation parameters).\n");
+		fprintf (stderr, "\t   Append p to use the Peucker piecewise linear approximation (simpler but faster algorithm).\n");
 		fprintf (stderr, "\t   Note that in this case the azimuth and elevation are hardwired to 315 and 45 degrees.\n");
 		fprintf (stderr, "\t   This means that even if you provide other values they will be ignored.\n");
-		fprintf (stderr, "\t-G output file for results from -A or -D\n");
-		fprintf (stderr, "\t-L sets boundary conditions.  <flag> can be either\n");
+		fprintf (stderr, "\t-G output file for results from -A or -D.\n");
+		fprintf (stderr, "\t-L sets boundary conditions.  <flag> can be either:\n");
 		fprintf (stderr, "\t   g for geographic boundary conditions\n");
 		fprintf (stderr, "\t   or one or both of\n");
 		fprintf (stderr, "\t   x for periodic boundary conditions on x\n");
 		fprintf (stderr, "\t   y for periodic boundary conditions on y\n");
-		fprintf (stderr, "\t   [Default:  Natural conditions]\n");
+		fprintf (stderr, "\t   [Default:  Natural conditions].\n");
 		fprintf (stderr, "\t-M to use map units.  In this case, dx,dy of grid\n");
 		fprintf (stderr, "\t   will be converted from degrees lon,lat into meters (Flat-earth approximation).\n");
 		fprintf (stderr, "\t   Default computes gradient in units of data/grid_distance.\n");
-		fprintf (stderr, "\t-N will normalize gradients so that max |grad| = <amp> [1.0]\n");
-		fprintf (stderr, "\t  -Nt will make atan transform, then scale to <amp> [1.0]\n");
-		fprintf (stderr, "\t  -Ne will make exp  transform, then scale to <amp> [1.0]\n");
+		fprintf (stderr, "\t-N will normalize gradients so that max |grad| = <amp> [1.0].\n");
+		fprintf (stderr, "\t  -Nt will make atan transform, then scale to <amp> [1.0].\n");
+		fprintf (stderr, "\t  -Ne will make exp  transform, then scale to <amp> [1.0].\n");
 		fprintf (stderr, "\t  -Nt<amp>/<sigma>[/<offset>] or -Ne<amp>/<sigma>[/<offset>] sets sigma\n");
-		fprintf (stderr, "\t     (and offset) for transform. [sigma, offset estimated from data]\n");
-		fprintf (stderr, "\t-S output file for |grad z|; requires -D\n");
+		fprintf (stderr, "\t     (and offset) for transform. [sigma, offset estimated from data].\n");
+		fprintf (stderr, "\t-S output file for |grad z|; requires -D.\n");
 		GMT_explain_option ('V');
 		exit (EXIT_FAILURE);
 	}

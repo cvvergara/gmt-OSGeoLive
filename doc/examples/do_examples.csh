@@ -1,6 +1,6 @@
 #!/bin/csh -f
 #
-#	$Id: do_examples.csh,v 1.16 2008/04/15 19:28:19 remko Exp $
+#	$Id: do_examples.csh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # csh script to test all GMT examples (csh versions).
 # If one argument is passed it is assumed to be the

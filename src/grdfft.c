@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdfft.c,v 1.61 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdfft.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -360,24 +360,24 @@ int main (int argc, char **argv)
 		
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 		
-		fprintf (stderr,"\tin_grdfile is the input netCDF grid file\n");
+		fprintf (stderr,"\tin_grdfile is the input netCDF grid file.\n");
 		fprintf (stderr, "\tOPTIONS:\n");
-		fprintf (stderr,"\t-G filename for output netCDF grid file\n");
+		fprintf (stderr,"\t-G filename for output netCDF grid file.\n");
 		fprintf (stderr,"\t-A<azimuth> Take azimuthal derivative along line <azimuth> degrees CW from North.\n");
 		fprintf (stderr,"\t-C<zlevel>  Continue field upward (+) or downward (-) to zlevel (meters).\n");
-		fprintf (stderr,"\t-D Differentiate, i.e., multiply by kr [ * scale].  Use -Dg to get mGal from m]\n");
+		fprintf (stderr,"\t-D Differentiate, i.e., multiply by kr [ * scale].  Use -Dg to get mGal from m.\n");
 		fprintf (stderr,"\t-E Estimate spEctrum of r [x] [y].  Write f, power[f], 1 std dev(power[f]) to stdout.\n");
 		fprintf (stderr,"\t\tAppend w to write wavelength instead of frequency.\n");
-		fprintf (stderr,"\t-F Filter r [x] [y] freq according to one of three kinds of filter specifications:.\n");
+		fprintf (stderr,"\t-F Filter r [x] [y] freq according to one of three kinds of filter specifications:\n");
 		fprintf (stderr,"\t   a) Cosine band-pass: Append four wavelengths <lc>/<lp>/<hp>/<hc>.\n");
 		fprintf (stderr,"\t      freq outside <lc>/<hc> are cut; inside <lp>/<hp> are passed, rest are tapered.\n");
-		fprintf (stderr,"\t      Replace wavelength by - to skip, e.g.  -F-/-/500/100 is a low-pass filter.\n");
+		fprintf (stderr,"\t      Replace wavelength by - to skip, e.g., -F-/-/500/100 is a low-pass filter.\n");
 		fprintf (stderr,"\t   b) Gaussian band-pass: Append two wavelengths <lo>/<hi> where filter amplitudes = 0.5.\n");
-		fprintf (stderr,"\t      Replace wavelength by - to skip, e.g.  -F300/- is a high-pass Gaussian filter.\n");
+		fprintf (stderr,"\t      Replace wavelength by - to skip, e.g., -F300/- is a high-pass Gaussian filter.\n");
 		fprintf (stderr,"\t   c) Butterworth band-pass: Append two wavelengths and order <lo>/<hi>/<order> where filter amplitudes = 0.5.\n");
-		fprintf (stderr,"\t      Replace wavelength by - to skip, e.g.  -F300/-/2 is a high-pass 2nd-order Butterworth filter.\n");
-		fprintf (stderr,"\t-I Integrate, i.e., divide by kr [ * scale].  Use -Ig to get m from mGal]\n");
-		fprintf (stderr,"\t-L Leave trend alone.  Do not remove least squares plane from data.  [Default removes plane].\n");
+		fprintf (stderr,"\t      Replace wavelength by - to skip, e.g., -F300/-/2 is a high-pass 2nd-order Butterworth filter.\n");
+		fprintf (stderr,"\t-I Integrate, i.e., divide by kr [ * scale].  Use -Ig to get m from mGal.\n");
+		fprintf (stderr,"\t-L Leave trend alone.  Do not remove least squares plane from data [Default removes plane].\n");
 		fprintf (stderr,"\t-M Map units used.  Convert grid dimensions from degrees to meters.\n");
 		fprintf (stderr,"\t-N<stuff>  Choose or inquire about suitable grid dimensions for FFT.\n");
 		fprintf (stderr,"\t\t-Nf will force the FFT to use the dimensions of the data.\n");
@@ -385,11 +385,11 @@ int main (int argc, char **argv)
 		fprintf (stderr,"\t\t-N<nx>/<ny> will do FFT on array size <nx>/<ny> (Must be >= grid size).\n");
 		fprintf (stderr,"\t\tDefault chooses dimensions >= data which optimize speed, accuracy of FFT.\n");
 		fprintf (stderr,"\t\tIf FFT dimensions > grid dimensions, data are extended and tapered to zero.\n");
-		fprintf (stderr,"\t-S multiply field by scale after inverse FFT [1.0]\n");
-		fprintf (stderr,"\t   Give -Sd to convert deflection of vertical to micro-radians\n");
+		fprintf (stderr,"\t-S multiply field by scale after inverse FFT [1.0].\n");
+		fprintf (stderr,"\t   Give -Sd to convert deflection of vertical to micro-radians.\n");
 		fprintf (stderr,"\t-T Compute isostatic response.  Input file is topo load. Append elastic thickness,\n");
-		fprintf (stderr,"\t   and densities of load, mantle, water, and infill, all in SI units\n");
-		fprintf (stderr,"\t   It also implicitly sets -L\n");
+		fprintf (stderr,"\t   and densities of load, mantle, water, and infill, all in SI units.\n");
+		fprintf (stderr,"\t   It also implicitly sets -L.\n");
 		GMT_explain_option ('V');
 		fprintf (stderr,"\tList operations in the order desired for execution.\n");
 		exit (EXIT_FAILURE);

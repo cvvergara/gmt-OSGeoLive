@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 07
-#		$Id: job07.sh,v 1.10 2011/02/28 00:58:03 remko Exp $
+#		$Id: job07.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Make a basemap with earthquakes and isochrons etc
 # GMT progs:	pscoast, pstext, psxy

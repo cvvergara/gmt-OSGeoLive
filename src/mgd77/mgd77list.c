@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77list.c,v 1.120 2011/07/11 19:22:03 guru Exp $
+ *	$Id: mgd77list.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 2004-2011 by P. Wessel
+ *    Copyright (c) 2004-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -28,15 +28,19 @@
  *		31-MAR-2006: Changed -X to -L to avoid GMT collision
  *		23-MAY-2006: Added -Q for limits on speed/azimuths
  *		21-FEB-2008: Added -Ga|b<rec> for limits on rec range
- *
+ *		08-MAR-2012: Deal with MGD77T format files and add more aux
+ *				columns to recreate orig format (date, tz, hhmm, dmin)
  *
  */
  
 #include "mgd77.h"
 
-#define MGD77_ALL "id,time,lat,lon,ptc,twt,depth,bcc,btc,mtf1,mtf2,mag,msens,diur,msd,gobs,eot,faa,nqc,sln,sspn"
-#define MGD77_GEO "time,lat,lon,twt,depth,mtf1,mtf2,mag,gobs,faa"
-#define MGD77_AUX "dist,azim,vel,weight"
+#define MGD77_FMT  "drt,id,tz,year,month,day,hour,dmin,lat,lon,ptc,twt,depth,bcc,btc,mtf1,mtf2,mag,msens,diur,msd,gobs,eot,faa,nqc,sln,sspn"
+#define MGD77_ALL  "drt,id,time,lat,lon,ptc,twt,depth,bcc,btc,mtf1,mtf2,mag,msens,diur,msd,gobs,eot,faa,nqc,sln,sspn"
+#define MGD77T_FMT "id,tz,date,hhmm,lat,lon,ptc,nqc,twt,depth,bcc,btc,bqc,mtf1,mtf2,mag,msens,diur,msd,mqc,gobs,eot,faa,gqc,sln,sspn"
+#define MGD77T_ALL "id,time,lat,lon,ptc,nqc,twt,depth,bcc,btc,bqc,mtf1,mtf2,mag,msens,diur,msd,mqc,gobs,eot,faa,gqc,sln,sspn"
+#define MGD77_GEO  "time,lat,lon,twt,depth,mtf1,mtf2,mag,gobs,faa"
+#define MGD77_AUX  "dist,azim,vel,weight"
 
 #define ADJ_CT	0
 #define ADJ_DP	1
@@ -82,7 +86,10 @@ int main (int argc, char **argv)
 		{ "day",     MGD77_AUX_DY, 0, 0, "day"},
 		{ "hour",    MGD77_AUX_HR, 0, 0, "hour"},
 		{ "min",     MGD77_AUX_MI, 0, 0, "minute"},
+		{ "dmin",    MGD77_AUX_DM, 0, 0, "dec-minute"},
 		{ "sec",     MGD77_AUX_SC, 0, 0, "second"},
+		{ "date",    MGD77_AUX_DA, 1, 0, "date"},
+		{ "hhmm",    MGD77_AUX_HM, 0, 0, "hourmin"},
 		{ "weight",  MGD77_AUX_WT, 0, 0, "weight"},
 		{ "drt",     MGD77_AUX_RT, 0, 0, "rectype"},
 		{ "igrf",    MGD77_AUX_MG, 0, 0, "IGRF"},
@@ -238,14 +245,32 @@ int main (int argc, char **argv)
 	
 			case 'F':	/* Selected output fields */
 				strcpy (f_setting, &argv[i][2]);
+				if (!strcmp (f_setting, "mgd77")) strcpy (f_setting, MGD77_FMT);
+				if (!strcmp (f_setting, "mgd77+")) {
+					strcpy (f_setting, MGD77_FMT);
+					strcat (f_setting, ",");
+					strcat (f_setting, MGD77_AUX);
+				}
+				if (!strcmp (f_setting, "mgd77t")) strcpy (f_setting, MGD77T_FMT);
+				if (!strcmp (f_setting, "mgd77t+")) {
+					strcpy (f_setting, MGD77T_FMT);
+					strcat (f_setting, ",");
+					strcat (f_setting, MGD77_AUX);
+				}
 				if (!strcmp (f_setting, "all")) strcpy (f_setting, MGD77_ALL);
 				if (!strcmp (f_setting, "all+")) {
 					strcpy (f_setting, MGD77_ALL);
 					strcat (f_setting, ",");
 					strcat (f_setting, MGD77_AUX);
 				}
-				if (!strcmp (f_setting, "mgd77")) strcpy (f_setting, MGD77_GEO);
-				if (!strcmp (f_setting, "mgd77+")) {
+				if (!strcmp (f_setting, "allt")) strcpy (f_setting, MGD77T_ALL);
+				if (!strcmp (f_setting, "allt+")) {
+					strcpy (f_setting, MGD77T_ALL);
+					strcat (f_setting, ",");
+					strcat (f_setting, MGD77_AUX);
+				}
+				if (!strcmp (f_setting, "geo")) strcpy (f_setting, MGD77_GEO);
+				if (!strcmp (f_setting, "geo+")) {
 					strcpy (f_setting, MGD77_GEO);
 					strcat (f_setting, ",");
 					strcat (f_setting, MGD77_AUX);
@@ -428,7 +453,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t-F <dataflags> is a comma-separated string made up of one or more of these abbreviations\n");
 		fprintf (stderr, "\t   (for standard MGD77 files - use mgd77info to probe for other columns in MGD77+ files):\n");
 		fprintf (stderr, "\t   >Track information:\n");
-		fprintf (stderr, "\t     time:    Choose between Absolute time [default], Relative time, or fractioan year:\n");
+		fprintf (stderr, "\t     time:    Choose between Absolute time [default], Relative time, or fractional year:\n");
 		fprintf (stderr, "\t       atime: Absolute time (formatted according to OUTPUT_DATE_FORMAT, OUTPUT_CLOCK_FORMAT)\n");
 		fprintf (stderr, "\t       rtime: Relative time (formatted according to D_FORMAT and TIME_SYSTEM (or TIME_EPOCH, TIME_UNIT))\n");
 		fprintf (stderr, "\t       ytime: Absolute time as decimal year (formatted according to D_FORMAT)\n");
@@ -438,6 +463,10 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t       hour:  Record hour(0-23)\n");
 		fprintf (stderr, "\t       min:   Record minute (0-59)\n");
 		fprintf (stderr, "\t       sec:   Record second (0-60)\n");
+		fprintf (stderr, "\t       dmin:  Decimal minute (0-59.xxxx)\n");
+		fprintf (stderr, "\t       hhmm:  Clock hhmm.xxxx (0-2359.xxxx)\n");
+		fprintf (stderr, "\t       date:  yyyymmdd string\n");
+		fprintf (stderr, "\t       tz :   Time zone adjustment in hours (-13 to +12)\n");
 		fprintf (stderr, "\t     lon:     Longitude (formatted according to OUTPUT_DEGREE_FORMAT)\n");
 		fprintf (stderr, "\t     lat:     Latitude (formatted according to OUTPUT_DEGREE_FORMAT)\n");
 		fprintf (stderr, "\t     id:      Survey leg ID [TEXTSTRING]\n");
@@ -454,6 +483,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t     gobs:    Observed gravity (mGal)\n");
 		fprintf (stderr, "\t     faa:     Free-air gravity anomaly (mGal)\n");
 		fprintf (stderr, "\t   >Codes, Corrections, and Information:\n");
+		fprintf (stderr, "\t     drt:     Data record type [5]\n");
 		fprintf (stderr, "\t     ptc:     Position type code\n");
 		fprintf (stderr, "\t     bcc:     Bathymetric correction code\n");
 		fprintf (stderr, "\t     btc:     Bathymetric type code\n");
@@ -471,11 +501,16 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t     sspn:    Seismic shot point number string [TEXTSTRING]\n");
 		fprintf (stderr, "\t     weight:  Give weight specified in -W\n");
 		fprintf (stderr, "\t     nqc:     Navigation quality code\n");
+		fprintf (stderr, "\t     bqc:     Bathymetric quality code, if available\n");
+		fprintf (stderr, "\t     mqc:     Magnetics quality code, if available\n");
+		fprintf (stderr, "\t     gqc:     Gravity quality code, if available\n");
 		fprintf (stderr, "\t  The data are written in the order specified in <dataflags>\n");
 		fprintf (stderr, "\t  Shortcut flags are:\n");
-		fprintf (stderr, "\t     all:     All the columns defined in the data set\n");
-		fprintf (stderr, "\t     mgd77:   The full set of all 27 columns in the MGD77 specification\n");
+		fprintf (stderr, "\t     mgd77:   The full set of all 27 fields in the MGD77 specification\n");
+		fprintf (stderr, "\t     mgd77t:  The full set of all 26 columns in the MGD77T specification\n");
 		fprintf (stderr, "\t     geo:     time,lon,lat + the 7 geophysical observations\n");
+		fprintf (stderr, "\t     all:     As mgd77 but with time items written as a date-time string\n");
+		fprintf (stderr, "\t     allt:    As mgd77t but with time items written as a date-time string\n");
 		fprintf (stderr, "\t    Append + to include the 4 derived quantities dist, azim, vel, and weight [see -W]\n");
 		fprintf (stderr, "\t    [Default is all]\n");
 		fprintf (stderr, "\t  Abbreviations in UPPER CASE will suppress records where any such column is NaN.\n");
@@ -542,7 +577,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t  b<rec> lists up to given record [End of cruise]\n");
 		fprintf (stderr, "\t-H Write one header record with column names\n");
 		fprintf (stderr, "\t-I Ignore certain data file formats from consideration. Append combination of act to ignore\n");
-		fprintf (stderr, "\t   (a) MGD77 ASCII, (c) MGD77+ netCDF, or (t) plain table files. [Default ignores none]\n");
+		fprintf (stderr, "\t   (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table files. [Default ignores none]\n");
 		fprintf (stderr, "\t-L Subtract systematic corrections from the data. If no correction file is given,\n");
 		fprintf (stderr, "\t   the default file mgd77_corrections.txt in $MGD77_HOME is assumed.\n");
 		fprintf (stderr, "\t-N Append (d)istances or (s)peed, and your choice for unit. Choose among:\n");
@@ -552,7 +587,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   n Nautical units (nautical miles, knots)\n");
 		fprintf (stderr, "\t   [Default is -Ndk -Nse]\n");
 		fprintf (stderr, "\t-Q Only return data whose azimuth (-Qa) or velocity (-Qv) fall inside specified range:\n");
-		fprintf (stderr, "\t   -Qa<min_az>/<max_az>, where <min_az> < <max_az> [all azimuths, i.e. 0/360]\n");
+		fprintf (stderr, "\t   -Qa<min_az>/<max_az>, where <min_az> < <max_az> [all azimuths, i.e., 0/360]\n");
 		fprintf (stderr, "\t   -Qv<min_vel>[/<max_vel>], where <max_vel> is optional [all velocities, i.e., 0/infinity]\n");
 		fprintf (stderr, "\t      Velocities are given in m/s unless changed by -Ns\n");
 		fprintf (stderr, "\t-R Only return data inside the specified region [0/360/-90/90]\n");
@@ -605,6 +640,7 @@ int main (int argc, char **argv)
 		if (n_items) GMT_free ((void *)item_names);
 	}
 	aux_tvalue[MGD77_AUX_ID] = (char *)GMT_memory (VNULL, (size_t)GMT_TEXT_LEN, sizeof (char), GMT_program);	/* Just in case */
+	aux_tvalue[MGD77_AUX_DA] = (char *)GMT_memory (VNULL, (size_t)GMT_TEXT_LEN, sizeof (char), GMT_program);	/* Just in case */
 	use = (M.original) ? MGD77_ORIG : MGD77_REVISED;
 	
 	/* Most auxillary columns depend on values in the data columns.  If the user did not specify the required data columns
@@ -615,7 +651,7 @@ int main (int argc, char **argv)
 	 
 	need_distances = (limit_on_dist || auxlist[MGD77_AUX_SP].requested || auxlist[MGD77_AUX_DS].requested || auxlist[MGD77_AUX_AZ].requested);	/* Distance is requested */
 	need_lonlat = (auxlist[MGD77_AUX_MG].requested || auxlist[MGD77_AUX_GR].requested || auxlist[MGD77_AUX_CT].requested || adj_code[ADJ_MG] > 1 || adj_code[ADJ_DP] & 4 || adj_code[ADJ_CT] >= 2 || adj_code[ADJ_GR] > 1 || fake_times);	/* Need lon, lat to calculate reference fields or Carter correction */
-	need_time = (auxlist[MGD77_AUX_YR].requested || auxlist[MGD77_AUX_MO].requested || auxlist[MGD77_AUX_DY].requested || auxlist[MGD77_AUX_HR].requested || auxlist[MGD77_AUX_MI].requested || auxlist[MGD77_AUX_MG].requested || (adj_code[ADJ_MG] > 1));
+	need_time = (auxlist[MGD77_AUX_YR].requested || auxlist[MGD77_AUX_MO].requested || auxlist[MGD77_AUX_DY].requested || auxlist[MGD77_AUX_HR].requested || auxlist[MGD77_AUX_MI].requested || auxlist[MGD77_AUX_SC].requested || auxlist[MGD77_AUX_DM].requested || auxlist[MGD77_AUX_HM].requested || auxlist[MGD77_AUX_DA].requested || auxlist[MGD77_AUX_MG].requested || (adj_code[ADJ_MG] > 1));
 #ifdef USE_CM4
 	if (auxlist[MGD77_AUX_CM].requested) need_lonlat = need_time = TRUE;
 #endif
@@ -757,7 +793,7 @@ int main (int argc, char **argv)
 			for (i = 0, string_output = FALSE ; i < n_cols_to_process; i++) {	/* Prepare GMT output formatting machinery */
 				if (D->H.info[M.order[i].set].col[M.order[i].item].text) string_output = TRUE;
 			}
-			if (auxlist[MGD77_AUX_ID].requested) string_output = TRUE;
+			if (auxlist[MGD77_AUX_ID].requested || auxlist[MGD77_AUX_DA].requested) string_output = TRUE;
 			if (string_output && GMT_io.binary[1]) {
 				fprintf(stderr, "%s: ERROR: Cannot specify binary output with text fields\n", GMT_program);
 				exit (EXIT_FAILURE);
@@ -950,7 +986,10 @@ int main (int argc, char **argv)
 				aux_dvalue[MGD77_AUX_HR] = (double)cal.hour;
 				aux_dvalue[MGD77_AUX_MI] = (double)cal.min;
 				aux_dvalue[MGD77_AUX_SC] = cal.sec;
+				aux_dvalue[MGD77_AUX_DM] = cal.min + cal.sec / 60.0;
+				aux_dvalue[MGD77_AUX_HM] = 100.0 * cal.hour + aux_dvalue[MGD77_AUX_DM];
 				date = MGD77_cal_to_fyear (&cal);	/* Get date as decimal year */
+				if (auxlist[MGD77_AUX_DA].requested) sprintf (aux_tvalue[MGD77_AUX_DA], "%4.4ld%2.2ld%2.2ld", cal.year, cal.month, cal.day_m);
 				need_date = FALSE;
 			}
 			else
@@ -1097,8 +1136,13 @@ int main (int argc, char **argv)
 					if (i >= n_cols_to_process) continue;
 					c  = M.order[i].set;
 					id = M.order[i].item;
-					if (D->H.info[c].col[id].text)
-						for (k = 0; k < D->H.info[c].col[id].text && tvalue[i][rec*D->H.info[c].col[id].text+k]; k++) GMT_fputc ((int)tvalue[i][rec*D->H.info[c].col[id].text+k], GMT_stdout);
+					if (D->H.info[c].col[id].text) {
+						if (tvalue[i][rec*D->H.info[c].col[id].text] == 0)
+							GMT_fputs ("NaN", GMT_stdout);
+						else {
+							for (k = 0; k < D->H.info[c].col[id].text && tvalue[i][rec*D->H.info[c].col[id].text+k]; k++) GMT_fputc ((int)tvalue[i][rec*D->H.info[c].col[id].text+k], GMT_stdout);
+						}
+					}
 					else if (id == time_column) {	/* Time */
 						if (GMT_io.out_col_type[pos] == GMT_IS_FLOAT) {	/* fractional year */
 							if (need_date) {	/* Did not get computed already */

@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77sniffer.c,v 1.205 2011/07/11 19:22:04 guru Exp $
+ *	$Id: mgd77sniffer.c 9923 2012-12-18 20:45:53Z pwessel $
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2004-2011 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2004-2013 by P. Wessel and M. T. Chandler
  *	File:	mgd77sniffer.c
  *
  *	mgd77sniffer scans MGD77 files for errors in three ways: one, point-
@@ -109,8 +109,6 @@ int main (int argc, char **argv) {
 #ifdef DEBUG
 	GMT_memtrack_off (GMT_mem_keeper);
 #endif
-	GMT_get_time_system ("unix", &(gmtdefs.time_system));						/* MGD77+ uses GMT's Unix time epoch */
-	GMT_init_time_system_structure (&(gmtdefs.time_system));
 	strncpy (gmtdefs.output_clock_format, "hh:mm:ss.xx", (size_t)GMT_TEXT_LEN);
 	GMT_clock_C_format (gmtdefs.output_clock_format, &GMT_io.clock_output, 1);
 	MGD77_Init (&M);
@@ -418,7 +416,7 @@ int main (int argc, char **argv) {
 		fprintf (stderr, "\tScan MGD77 files for errors using point-by-point sanity checking,\n");
 		fprintf (stderr, "\t\talong-track detection of excessive slopes and comparison of cruise\n");
 		fprintf (stderr, "\t\tdata with global bathymetry and gravity grids.");
-		fprintf (stderr, "\twhere <cruises> is one or more MGD77 legnames, e.g. 08010001 etc.\n");
+		fprintf (stderr, "\twhere <cruises> is one or more MGD77 legnames, e.g., 08010001 etc.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-A Apply scale factor and DC adjustment to specified data field. Allows adjustment of\n");
 		fprintf (stderr, "\t   cruise data prior to along-track analysis. CAUTION: data must be thoroughly examined\n");
@@ -519,7 +517,7 @@ int main (int argc, char **argv) {
 		fprintf (stderr, "\t-g: Img files must be of Sandwell/Smith signed two-byte integer (i2) type with no header.\n");
 		fprintf (stderr, "\t-G: Grid files can be any type of GMT grid file (native or netCDF) with header\n");
 		fprintf (stderr, "\tA correctly formatted grid file can be generated as follows:\n");
-		fprintf (stderr, "\t   e.g. gmtset GRIDFILE_SHORTHAND TRUE\n");
+		fprintf (stderr, "\t   e.g., gmtset GRIDFILE_SHORTHAND TRUE\n");
 		fprintf (stderr, "\t\tCreate/edit .gmt_io file to include the following rows:\n");
 		fprintf (stderr, "\t\t\t# GMT I/O shorthand file\n");
 		fprintf (stderr, "\t\t\t# suffix   format_id scale offset       NaN\n");
@@ -812,7 +810,7 @@ int main (int argc, char **argv) {
 	 	}
 
 		/* Read MGD77 header */
-		if (MGD77_Read_Header_Record_asc (argv[argno], &M, &H))
+		if (MGD77_Read_Header_Record (argv[argno], &M, &H))
 			fprintf (stderr, "%s: Cruise %s has no header.\n", GMT_program, list[argno]);
 
 		/* Allocate memory for data records */
@@ -1440,7 +1438,7 @@ int main (int argc, char **argv) {
 										}
 									}
 								}
-								else if ((this_grid[i].col == MGD77_FAA)) {
+								else if (this_grid[i].col == MGD77_FAA) {
 									/*check faa rls slope (two sided test) */
 									for (j = 0; faa_v_grid[j].cd < percent_limit/200.0 && j < RLS_N_FAA_ROWS-2; j++);
 									for (n = RLS_N_FAA_ROWS-1; 1-percent_limit/200.0 < faa_v_grid[n].cd && n > 1; n--);

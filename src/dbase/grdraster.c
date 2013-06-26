@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdraster.c,v 1.70 2011/07/11 19:22:02 guru Exp $
+ *	$Id: grdraster.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *    Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* grdraster.c -- read a rasterfile and extract a region as a grid file.
@@ -64,7 +64,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG xyz_out = FALSE;
 
-#if WORDS_BIGENDIAN == 0
+#ifndef WORDS_BIGENDIAN
 	char my_endian = 'L';	/* This machine is Little endian */
 #else
 	char my_endian = 'B';	/* This machine is Big endian */
@@ -159,7 +159,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "------------------------------------------------------------------------------------\n");
 		for (i = 0; i < nrasters; i++) fprintf (stderr, "%s\n", rasinfo[i].h.command);
 		fprintf (stderr, "------------------------------------------------------------------------------------\n\n");
-#if WORDS_BIGENDIAN == 0
+#ifndef WORDS_BIGENDIAN
 		fprintf (stderr, "grdraster default binary byte order is Little-endian\n");
 #else
 		fprintf (stderr, "grdraster default binary byte order is Big-endian\n");

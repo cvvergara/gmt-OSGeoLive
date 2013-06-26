@@ -10,4 +10,4 @@
 %	
 %	See also GRDREAD, GRDWRITE
 	
-%  $Id: grdinfo.m,v 1.1.1.1 2000/12/28 01:23:45 gmt Exp $
+%  $Id: grdinfo.m 9545 2011-07-27 19:31:54Z pwessel $

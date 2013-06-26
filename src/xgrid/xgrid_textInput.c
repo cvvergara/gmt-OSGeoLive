@@ -76,9 +76,7 @@ static Widget	inputArea;
 static Widget	inputField;
 static Widget	undoButton;
 
-Widget createTextInputArea (parent)
-	Widget parent;
-{
+Widget createTextInputArea (Widget parent) {
   Widget label;
   
   undoButton = XtVaCreateManagedWidget("undo", commandWidgetClass, parent,
@@ -113,9 +111,7 @@ Widget createTextInputArea (parent)
   
 }
 
-void setViewForInput (data)
-	TextViewData * data;
-{
+void setViewForInput (TextViewData *data) {
   theView = data;
   clearInputSelection();
   clearUndo();
@@ -138,10 +134,7 @@ static void clearUndo ()
   XtSetSensitive(undoButton, False);
 }
 
-void setInputSelection (col, row)
-	int	col;
-	int	row;
-{
+void setInputSelection (int col, int row) {
   char str[64];
 
   selection.col = col;
@@ -158,20 +151,17 @@ void setInputSelection (col, row)
   XawTextSetInsertionPoint(inputField, strlen(str));
 }
 
-static void Beep (w, event, params, nparams)
-	Widget		w;
-	XEvent *	event;
-	String *	params;
-	Cardinal *	nparams;
-{
+static void Beep (Widget w,
+	XEvent *	event __attribute__((unused)),
+	String *	params __attribute__((unused)),
+	Cardinal *	nparams __attribute__((unused))) {
   XBell(XtDisplay(w), 100);
 }
 
-static void EnterNewValue (w, event, params, nparams)
-	Widget		w;
-	XEvent *	event;
-	String *	params;
-	Cardinal *	nparams;
+static void EnterNewValue (Widget w __attribute__((unused)),
+	XEvent * event __attribute__((unused)),
+	String * params __attribute__((unused)),
+	Cardinal * nparams __attribute__((unused)))
 {
   GridValue newValue;
   String    field;
@@ -198,10 +188,9 @@ static void EnterNewValue (w, event, params, nparams)
   gridHasChanged = True;
 }
 
-static void undoNewValue (w, clientData, callData)
-	Widget	w;
-	void *	clientData;
-	void *	callData;
+static void undoNewValue (Widget w __attribute__((unused)),
+	void * clientData __attribute__((unused)),
+	void * callData __attribute__((unused)))
 {
   XPoint    index;
   GridPoint coord;

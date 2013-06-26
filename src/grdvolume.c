@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvolume.c,v 1.56 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdvolume.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -152,18 +152,18 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<grdfile> is the name of the 2-D binary data set\n");
+		fprintf (stderr, "\t<grdfile> is the name of the 2-D binary data set.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-C find area and volume inside the <cval> contour\n");
+		fprintf (stderr, "\t-C find area, volume, average height inside the <cval> contour\n");
 		fprintf (stderr, "\t   OR search using all contours from low to high\n");
-		fprintf (stderr, "\t   [Default returns entire area and volume of grid]\n");
-		fprintf (stderr, "\t-L Add volume from <base> up to contour [Default is from contour and up only]\n");
-		fprintf (stderr, "\t-S Convert degrees to m, append k for km [Default is Cartesian]\n");
-		fprintf (stderr, "\t-T Use curvature rather than maximum to find best contour value\n");
+		fprintf (stderr, "\t   [Default returns area, volume, average height of entire grid].\n");
+		fprintf (stderr, "\t-L Add volume from <base> up to contour [Default is from contour and up only].\n");
+		fprintf (stderr, "\t-S Convert degrees to m, append k for km [Default is Cartesian].\n");
+		fprintf (stderr, "\t-T Use max curvature rather than max height to find best contour value.\n");
 		GMT_explain_option ('R');
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t   Append l for listing of all results (when contour search is selected)\n");
-		fprintf (stderr, "\t-Z Subtract <shift> and then multiply data by <fact> before processing [1/0]\n");
+		fprintf (stderr, "\t   Append l for listing of all results (when contour search is selected).\n");
+		fprintf (stderr, "\t-Z Subtract <shift> and then multiply data by <fact> before processing [1/0].\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);
@@ -366,18 +366,18 @@ int main (int argc, char **argv)
 
 	/* Print out final estimates */
 
-        sprintf (format, "%s\t%s\t%s\t%s\n", gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
+        sprintf (format, "%s%s%s%s%s%s%s\n", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
 
 	if (full) {
-		sprintf (format, "%s\t%s\t%s\t%s\n", gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
+		sprintf (format, "%s%s%s%s%s%s%s\n", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
 		for (c = 0; c < n_contours; c++) fprintf (stdout, format, Ctrl->C.low + c * Ctrl->C.inc, area[c], vol[c], height[c]);
 	}
 	else if (Ctrl->C.active) {
-        	sprintf (format, "%s\t%s\t%s\t%s\n", gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
+        	sprintf (format, "%s%s%s%s%s%s%s\n", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
 		fprintf (stdout, format, Ctrl->C.low + c * Ctrl->C.inc, area[c], vol[c], height[c]);
 	}
 	else {
-        	sprintf (format, "%s\t%s\t%s\n", gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
+        	sprintf (format, "%s%s%s%s%s\n", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
 		fprintf (stdout, format, area[c], vol[c], height[c]);
 	}
 

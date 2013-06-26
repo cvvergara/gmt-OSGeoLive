@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.h,v 1.203 2011/03/03 21:02:50 guru Exp $
+ *	$Id: gmt.h 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -32,11 +32,13 @@ extern "C" {
 #ifndef _GMT_H
 #define _GMT_H
 
-/*  GMT is POSIX.1 COMPLIANT  */
+/*  GMT is no longer POSIX.1 COMPLIANT  */
 
+/*
 #ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE 1
 #endif
+*/
 
 /* Declaration modifiers for DLL support (MSC et al) */
 
@@ -100,7 +102,6 @@ extern "C" {
  *			GMT CONSTANTS MACRO DEFINITIONS
  *--------------------------------------------------------------------*/
 
-#define BOOLEAN GMT_LONG
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -663,6 +664,10 @@ EXTERN_MSC GMT_LONG GMT_min_meminc, GMT_max_meminc;
 #define GMT_free(array) GMT_free_func(array,__FILE__,__LINE__)
 extern struct MEMORY_TRACKER *GMT_mem_keeper;
 #endif
+
+/* Define GMT_version here, and not in gmt_version.h */
+
+EXTERN_MSC char *GMT_version ();
 
 #endif  /* _GMT_H */
 #ifdef __cplusplus

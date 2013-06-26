@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.c,v 1.153 2011/07/11 19:22:06 guru Exp $
+ *	$Id: x2sys.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *      Copyright (c) 1999-2011 by P. Wessel
+ *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -246,6 +246,10 @@ int x2sys_initialize (char *TAG, char *fname, struct GMT_IO *G,  struct X2SYS_IN
 	X->n_data_cols = x2sys_n_data_cols (X);
 	X->rec_size = (8 + X->n_data_cols) * sizeof (double);
 
+	if (X->geographic) {
+		G->in_col_type[0] = G->out_col_type[0] = GMT_IS_LON;
+		G->in_col_type[1] = G->out_col_type[1] = GMT_IS_LAT;
+	}
 	*I = X;
 	return (X2SYS_NOERROR);
 }
@@ -1420,7 +1424,7 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 	char line[BUFSIZ], txt[BUFSIZ], kind[BUFSIZ], fmt[BUFSIZ], trk[2][GMT_TEXT_LEN], t_txt[2][GMT_TEXT_LEN], start[2][GMT_TEXT_LEN];
 	char x_txt[GMT_TEXT_LEN], y_txt[GMT_TEXT_LEN], d_txt[2][GMT_TEXT_LEN], h_txt[2][GMT_TEXT_LEN], v_txt[2][GMT_TEXT_LEN], z_txt[2][GMT_TEXT_LEN];
 	char stop[2][GMT_TEXT_LEN], info[2][3*GMT_TEXT_LEN], **trk_list = NULL, **ignore = NULL, *t = NULL;
-	GMT_LONG p, n_pairs;
+	GMT_LONG p, n_pairs, rec_no = 0;
 	int i, k, n_alloc_x, n_alloc_p, n_alloc_t, year[2], id[2], n_ignore = 0, n_tracks = 0, n_items, our_item = -1;
 	GMT_LONG more, skip, two_values = FALSE, check_box, keep = TRUE, no_time = FALSE;
 	double x, m, lon, dist[2], d_val;
@@ -1435,6 +1439,7 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 	P = (struct X2SYS_COE_PAIR *) GMT_memory (VNULL, (size_t)n_alloc_p, sizeof (struct X2SYS_COE_PAIR), GMT_program);
 
 	while (fgets (line, BUFSIZ, fp) && line[0] == '#') {	/* Process header recs */
+		rec_no++;
 		GMT_chop (line);	/* Get rid of [CR]LF */
 		/* Looking to process these two [three] key lines:
 		 * # Tag: MGD77
@@ -1500,8 +1505,12 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 	while (more) {	/* Read dbase until EOF */
 		GMT_chop (line);	/* Get rid of [CR]LF */
 		if (line[0] == '#') {	/* Skip a comment lines */
-			while (fgets (line, BUFSIZ, fp) && line[0] == '#');	/* Skip header recs */
+			while (fgets (line, BUFSIZ, fp) && line[0] == '#') rec_no++;	/* Skip header recs */
 			continue;	/* Return to top of while loop */
+		}
+		if (line[0] != '>') {	/* Trouble */
+			fprintf (stderr, "%s: Error: No segment header found [line %ld]\n", GMT_program, rec_no);
+			exit (EXIT_FAILURE);
 		}
 		n_items = sscanf (&line[2], "%s %d %s %d %s %s", trk[0], &year[0], trk[1], &year[1], info[0], info[1]);
 		for (i = 0; i < (int)strlen (trk[0]); i++) if (trk[0][i] == '.') trk[0][i] = '\0';
@@ -1514,7 +1523,7 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 			for (i = 0; !skip && i < n_ignore; i++) if (!strcmp (trk[0], ignore[i]) || !strcmp (trk[1], ignore[i])) skip = TRUE;
 		}
 		if (skip) {	/* Skip this pair's data records */
-			while ((t = fgets (line, BUFSIZ, fp)) && line[0] != '>');
+			while ((t = fgets (line, BUFSIZ, fp)) && line[0] != '>') rec_no++;
 			more = (t != NULL);
 			continue;	/* Back to top of loop */
 		}
@@ -1533,12 +1542,12 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 		/* Sanity check - make sure we dont already have this pair */
 		for (p = 0, skip = FALSE; !skip && p < n_pairs; p++) {
 			if ((P[p].id[0] == id[0] && P[p].id[1] == id[1]) || (P[p].id[0] == id[1] && P[p].id[1] == id[0])) {
-				fprintf (stderr, "%s: Warning: Pair %s and %s appear more than once - skipped\n", GMT_program, trk[0], trk[1]);
+				fprintf (stderr, "%s: Warning: Pair %s and %s appear more than once - skipped [line %ld]\n", GMT_program, trk[0], trk[1], rec_no);
 				skip = TRUE;
 			}
 		}
 		if (skip) {
-			while ((t = fgets (line, BUFSIZ, fp)) && line[0] != '>');	/* Skip this pair's data records */
+			while ((t = fgets (line, BUFSIZ, fp)) && line[0] != '>') rec_no++;	/* Skip this pair's data records */
 			more = (t != NULL);
 			continue;	/* Back to top of loop */
 		}
@@ -1557,11 +1566,11 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 				P[p].start[k] = P[p].stop[k] = GMT_d_NaN;
 			else {
 				if (GMT_verify_expectations (GMT_IS_ABSTIME, GMT_scanf (start[k], GMT_IS_ABSTIME, &P[p].start[k]), start[k])) {
-					fprintf (stderr, "%s: ERROR: Header time specification tstart%d (%s) in wrong format\n", GMT_program, (k+1), start[k]);
+					fprintf (stderr, "%s: ERROR: Header time specification tstart%d (%s) in wrong format [line %ld]\n", GMT_program, (k+1), start[k], rec_no);
 					exit (EXIT_FAILURE);
 				}
 				if (GMT_verify_expectations (GMT_IS_ABSTIME, GMT_scanf (stop[k], GMT_IS_ABSTIME, &P[p].stop[k]), stop[k])) {
-					fprintf (stderr, "%s: ERROR: Header time specification tstop%d (%s) in wrong format\n", GMT_program, (k+1), stop[k]);
+					fprintf (stderr, "%s: ERROR: Header time specification tstop%d (%s) in wrong format [line %ld]\n", GMT_program, (k+1), stop[k], rec_no);
 					exit (EXIT_FAILURE);
 				}
 			}
@@ -1576,6 +1585,7 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 		P[p].COE = (struct X2SYS_COE *) GMT_memory (VNULL, (size_t)n_alloc_x, sizeof (struct X2SYS_COE), GMT_program);
 		k = 0;
 		while ((t = fgets (line, BUFSIZ, fp)) && !(line[0] == '>' || line[0] == '#')) {	/* As long as we are reading data records */
+			rec_no++;
 			GMT_chop (line);	/* Get rid of [CR]LF */
 			sscanf (line, fmt, x_txt, y_txt, t_txt[0], t_txt[1], d_txt[0], d_txt[1], h_txt[0], h_txt[1], v_txt[0], v_txt[1], z_txt[0], z_txt[1]);
 			if (GMT_scanf (x_txt, GMT_IS_FLOAT, &d_val) == GMT_IS_NAN) d_val = GMT_d_NaN;
@@ -1599,7 +1609,7 @@ GMT_LONG x2sys_read_coe_dbase (struct X2SYS_INFO *S, char *dbase, char *ignorefi
 				if (no_time || !strcmp (t_txt[i], "NaN"))
 					P[p].COE[k].data[i][COE_T] = GMT_d_NaN;
 				else if (GMT_verify_expectations (GMT_IS_ABSTIME, GMT_scanf (t_txt[i], GMT_IS_ABSTIME, &P[p].COE[k].data[i][COE_T]), t_txt[i])) {
-					fprintf (stderr, "%s: ERROR: Time specification t%d (%s) in wrong format\n", GMT_program, (i+1), t_txt[i]);
+					fprintf (stderr, "%s: ERROR: Time specification t%d (%s) in wrong format [line %ld]\n", GMT_program, (i+1), t_txt[i], rec_no);
 					exit (EXIT_FAILURE);
 				}
 			}

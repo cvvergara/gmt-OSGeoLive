@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdfilter.c,v 1.91 2011/07/08 22:39:06 guru Exp $
+ *	$Id: grdfilter.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -106,7 +106,7 @@ struct FILTER_INFO {
 int main (int argc, char **argv)
 {
 	GMT_LONG	nx_out, ny_out, n_in_median, n_nan = 0, visit_check = FALSE;
-	GMT_LONG	j_origin, i_out, j_out, half_nx, i_orig = 0, go_on, nm;
+	GMT_LONG	j_origin, i_out, j_out, go_on, nm;
 	GMT_LONG	i_in, j_in, ii, jj, i, j, ij_in, ij_out, ij_wt, effort_level;
 	GMT_LONG	filter_type, one_or_zero = 1, GMT_n_multiples = 0, nx_wrap = 0;
 	
@@ -114,7 +114,7 @@ int main (int argc, char **argv)
 
 
 	GMT_LONG error, new_range, fast_way, slow = FALSE, same_grid = FALSE;
-	GMT_LONG wrap_case_x = FALSE, wrap_case_y = FALSE;
+	GMT_LONG wrap_case_x = FALSE;
 	GMT_LONG full_360, full_180;
 
 	float	*input = NULL, *output = NULL, *A = NULL;
@@ -270,11 +270,11 @@ int main (int argc, char **argv)
 		GMT_inc_syntax ('I', 0);
 		fprintf(stderr,"\t   The new xinc and yinc should be divisible by the old ones (new lattice is subset of old).\n");
 		fprintf(stderr, "\t-N specifies how NaNs in the input grid should be treated.  There are three options:\n");
-		fprintf(stderr, "\t   -Ni skips all NaN values and returns a filtered value unless all are NaN [Default]\n");
+		fprintf(stderr, "\t   -Ni skips all NaN values and returns a filtered value unless all are NaN [Default].\n");
 		fprintf(stderr, "\t   -Np sets filtered output to NaN is any NaNs are found inside filter circle.\n");
 		fprintf(stderr, "\t   -Nr sets filtered output to NaN if the corresponding input node was NaN.\n");
 		fprintf(stderr, "\t      (only possible if the input and output grids are coregistered).\n");
-		fprintf(stderr, "\t-T Toggles between grid and pixel registration for output grid [Default is same as input registration]\n");
+		fprintf(stderr, "\t-T Toggles between grid and pixel registration for output grid [Default is same as input registration].\n");
 		fprintf(stderr, "\t-R for new Range of output grid; enter <WESN> (xmin, xmax, ymin, ymax) separated by slashes.\n");
 		GMT_explain_option ('V');
 		GMT_explain_option ('f');
@@ -341,7 +341,7 @@ int main (int argc, char **argv)
 
 	GMT_err_fail (GMT_read_grd (fin, &h, input, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), fin);
 	
-	full_360 = (Ctrl->D.mode && GMT_360_RANGE (h.x_max, h.x_min));	/* Periodic geographic grid */
+	full_360 = (Ctrl->D.mode && GMT_grd_is_global (&h));		/* Periodic geographic grid */
 	full_180 = (Ctrl->D.mode && GMT_180_RANGE (h.y_min, h.y_max));	/* Full latitude range for geographic grid */
 
 	last_median = 0.5 * (h.z_min + h.z_max);
@@ -436,21 +436,18 @@ int main (int argc, char **argv)
 			y_scale = project_info.DIST_KM_PR_DEG;
 			F.radius_func = FlatEarthRadius;
 			if (full_360) wrap_case_x = TRUE;		/* For periodic boundaries */
-			if (full_180) wrap_case_y = wrap_case_x;	/* For spherical caps */
 			break;
 		case 3:	/* Flat Earth Cartesian distances, xscale reset for each latitude */
-			x_scale = project_info.DIST_KM_PR_DEG * ((fabs (south_new) > north_new) ? cosd (south_new) : cosd (north_new));
+			x_scale = project_info.DIST_KM_PR_DEG * MIN (cosd (south_new), cosd (north_new));
 			y_scale = project_info.DIST_KM_PR_DEG;
 			F.radius_func = FlatEarthRadius;
 			if (full_360) wrap_case_x = TRUE;		/* For periodic boundaries */
-			if (full_180) wrap_case_y = wrap_case_x;	/* For spherical caps */
 			break;
-		case 4:	/* Great circle distances */
-			x_scale = 0.0;
+		case 4:	/* Great circle distances; same as -D3 but consider input grid extent */
+			x_scale = project_info.DIST_KM_PR_DEG * MIN (cosd (h.y_min), cosd (h.y_max));
 			y_scale = project_info.DIST_KM_PR_DEG;
 			F.radius_func = SphericalRadius;
 			if (full_360) wrap_case_x = TRUE;		/* For spherical filtering */
-			if (full_180) wrap_case_y = wrap_case_x;	/* For spherical filtering */
 			break;
 		case 5:	/* Great circle distances with Mercator coordinates */
 			/* Get the max |lat| extent of the grid */
@@ -546,7 +543,6 @@ int main (int argc, char **argv)
 		effort_level = 3;
 	
 	if (effort_level == 1) set_weight_matrix (&F, weight, 0.0, par, x_fix, y_fix);
-	half_nx = (h.node_offset) ? h.nx / 2 : (h.nx - 1) / 2;
 	
 	for (j_out = 0; j_out < ny_out; j_out++) {
 
@@ -591,7 +587,6 @@ int main (int argc, char **argv)
 					if (wrap_case_x) {	/* Just wrap around the globe */
 						if (i_in < 0) i_in += nx_wrap;
 						else if (i_in >= nx_wrap) i_in -= nx_wrap;
-						i_orig = i_in;
 					}
 					if ( (i_in < 0) || (i_in >= h.nx)) continue;
 				

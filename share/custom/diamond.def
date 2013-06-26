@@ -1,4 +1,4 @@
-#	$Id: diamond.def,v 1.1 2001/09/21 03:01:12 pwessel Exp $
+#	$Id: diamond.def 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	Definition file for diamond symbol.  Use in psxy
 #	as -Skdiamond/size.  Unlike -Sd, this allows for

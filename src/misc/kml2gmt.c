@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: kml2gmt.c,v 1.16 2011/03/03 21:02:51 guru Exp $
+ *	$Id: kml2gmt.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 2009-2011 by P. Wessel
+ *	Copyright (c) 2009-2013 by P. Wessel
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -184,9 +184,9 @@ int main (int argc, char **argv)
 			for (i = 0; i < (GMT_LONG)strlen (line) && line[i] != '>'; i++);		/* Find end of <coordinates> */
 			sscanf (&line[i+1], "%lg,%lg,%lg", &out[GMT_X], &out[GMT_Y], &out[GMT_Z]);
 			if (gmtdefs.xy_toggle[GMT_OUT]) d_swap (out[GMT_X], out[GMT_Y]);		/* Output lat/lon instead of lon/lat */
-			ascii_output_one (out[GMT_X], GMT_X);	printf ("\t");
+			ascii_output_one (out[GMT_X], GMT_X);	printf ("%s", gmtdefs.field_delimiter);
 			ascii_output_one (out[GMT_Y], GMT_Y);	
-			if (ncol == 3) { printf ("\t"); ascii_output_one (out[GMT_Z], GMT_Z);}
+			if (ncol == 3) { printf ("%s", gmtdefs.field_delimiter); ascii_output_one (out[GMT_Z], GMT_Z);}
 			printf ("\n");
 		}
 		else {
@@ -194,9 +194,9 @@ int main (int argc, char **argv)
 			name[0] = description[0] = 0;
 			while (fscanf (fp, "%lg,%lg,%lg", &out[GMT_X], &out[GMT_Y], &out[GMT_Z])) {
 				if (gmtdefs.xy_toggle[GMT_OUT]) d_swap (out[GMT_X], out[GMT_Y]);		/* Output lat/lon instead of lon/lat */
-				ascii_output_one (out[GMT_X], GMT_X);	printf ("\t");
+				ascii_output_one (out[GMT_X], GMT_X);	printf ("%s", gmtdefs.field_delimiter);
 				ascii_output_one (out[GMT_Y], GMT_Y);	
-				if (ncol == 3) { printf ("\t"); ascii_output_one (out[GMT_Z], GMT_Z);}
+				if (ncol == 3) { printf ("%s", gmtdefs.field_delimiter); ascii_output_one (out[GMT_Z], GMT_Z);}
 				printf ("\n");
 			}
 		}

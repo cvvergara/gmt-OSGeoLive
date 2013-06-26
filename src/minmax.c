@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: minmax.c,v 1.75 2011/07/08 21:27:06 guru Exp $
+ *    $Id: minmax.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@ int main (int argc, char **argv)
 	GMT_LONG  error = FALSE, nofile = TRUE, done = FALSE, got_stuff = FALSE, first, give_r_string = FALSE;
 	GMT_LONG  dateline = FALSE, brackets = FALSE, work_on_abs_value, special = FALSE, quad[4] = {FALSE, FALSE, FALSE, FALSE};
 
-	char line[BUFSIZ], file[BUFSIZ], chosen[BUFSIZ], buffer[BUFSIZ], *not_used = NULL;
+	char line[BUFSIZ], file[BUFSIZ], chosen[BUFSIZ], buffer[BUFSIZ];
 
 	GMT_LONG i, j, ncol, n_files = 0, fno, n_args, n_read, n_fields, n_expected_fields, quad_no, n;
 	
@@ -164,12 +164,12 @@ int main (int argc, char **argv)
              
               	if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
  
-		fprintf (stderr, "\t-C formats the min and max into separate columns\n");
-		fprintf (stderr, "\t-E Return the record with extreme value in specified column <col>\n");
+		fprintf (stderr, "\t-C formats the min and max into separate columns.\n");
+		fprintf (stderr, "\t-E Return the record with extreme value in specified column <col>.\n");
 		fprintf (stderr, "\t   Specify l or h for min or max value, respectively.  Upper case L or H\n");
 		fprintf (stderr, "\t   means we operate instead on the absolute values of the data.\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I returns textstring -Rw/e/s/n to nearest multiple of dx/dy (assumes 2+ col data)\n");
+		fprintf (stderr, "\t-I returns textstring -Rw/e/s/n to nearest multiple of dx/dy (assumes 2+ col data).\n");
 		fprintf (stderr, "\t   If -C is set then no -R string is issued.  Instead, the number of increments\n");
 		fprintf (stderr, "\t   given determines how many columns are rounded off to the nearest multiple.\n");
 		fprintf (stderr, "\t   If only one increment is given we also use it for the second column (for backwards compatibility).\n");
@@ -178,12 +178,12 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   -Sx leaves space for horizontal error bar using value in third (2) column.\n");
 		fprintf (stderr, "\t   -Sy leaves space for vertical error bar using value in third (2) column.\n");
 		fprintf (stderr, "\t   -S or -Sxy leaves space for both error bars using values in third&fourth (2&3) columns.\n");
-		fprintf (stderr, "\t-T returns textstring -Tzmin/zmax/dz to nearest multiple of the given dz\n");
-		fprintf (stderr, "\t   Calculations are based on the first (0) column only.  Append /<col> to use another column\n");
+		fprintf (stderr, "\t-T returns textstring -Tzmin/zmax/dz to nearest multiple of the given dz.\n");
+		fprintf (stderr, "\t   Calculations are based on the first (0) column only.  Append /<col> to use another column.\n");
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
+		fprintf (stderr, "\t   Default is 2 input columns.\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('m');
 		GMT_explain_option ('.');
@@ -292,7 +292,7 @@ int main (int argc, char **argv)
 			}
 		}
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		n = ncol = n_read = 0;
 		n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : GMT_MAX_COLUMNS;
@@ -311,6 +311,7 @@ int main (int argc, char **argv)
 
 			if (GMT_io.status & GMT_IO_MISMATCH) {
 				fprintf (stderr, "%s: Mismatch between actual (%ld) and expected (%ld) fields near line %ld (skipped)\n", GMT_program, n_fields, n_expected_fields, n_read);
+				n_fields = GMT_input (fp, &n_expected_fields, &in);
 				continue;
 			}
 
@@ -441,7 +442,7 @@ int main (int argc, char **argv)
 			east  = MAX (east, xyzmax[Ctrl->T.col]);
 		}
 		else if (!Ctrl->E.active && n > 0) {
-			if (!Ctrl->C.active) {sprintf (buffer, "%s: N = %ld\t", file, n);	GMT_fputs (buffer, GMT_stdout);}
+			if (!Ctrl->C.active) {sprintf (buffer, "%s: N = %ld%s", file, n, gmtdefs.field_delimiter);	GMT_fputs (buffer, GMT_stdout);}
 			for (i = 0; i < ncol; i++) {
 				if (xyzmin[i] == DBL_MAX) {
 					low = high = GMT_d_NaN;
@@ -456,10 +457,10 @@ int main (int argc, char **argv)
 				}
 				if (brackets) GMT_fputs ("<", GMT_stdout);
 				GMT_ascii_output_one (GMT_stdout, low, i);
-				(Ctrl->C.active) ? GMT_fputs ("\t", GMT_stdout) : GMT_fputs ("/", GMT_stdout);
+				(Ctrl->C.active) ? GMT_fputs (gmtdefs.field_delimiter, GMT_stdout) : GMT_fputs ("/", GMT_stdout);
 				GMT_ascii_output_one (GMT_stdout, high, i);
 				if (brackets) GMT_fputs (">", GMT_stdout);
-				if (i < (ncol - 1)) GMT_fputs ("\t", GMT_stdout);
+				if (i < (ncol - 1)) GMT_fputs (gmtdefs.field_delimiter, GMT_stdout);
 			}
 			GMT_fputs ("\n", GMT_stdout);
 		}

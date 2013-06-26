@@ -1,5 +1,5 @@
 #!/bin/sh
-#	$Id: sph_ex_3.sh,v 1.4 2009/05/16 00:46:08 guru Exp $
+#	$Id: sph_ex_3.sh 9545 2011-07-27 19:31:54Z pwessel $
 # Example of computing distances with sphdistance
 PS=`basename $0 '.sh'`.ps
 # Get the crude GSHHS data, select GMT -m format, and decimate to ~20%:

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psrose.c,v 1.86 2011/07/08 21:27:06 guru Exp $
+ *	$Id: psrose.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -100,7 +100,7 @@ int main (int argc, char **argv)
 	GMT_LONG error = FALSE, find_mean = FALSE, half_only = FALSE, windrose = TRUE;
 	GMT_LONG automatic = FALSE, sector_plot = FALSE;
 
-	char text[BUFSIZ], *file = CNULL, format[BUFSIZ], *choice[2] = {"OFF", "ON"}, *not_used = NULL;
+	char text[BUFSIZ], *file = CNULL, format[BUFSIZ], *choice[2] = {"OFF", "ON"};
 	char txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT], txt_c[GMT_LONG_TEXT], txt_d[GMT_LONG_TEXT];
 
 	GMT_LONG n_bins, n_annot;
@@ -264,43 +264,43 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<infile> (in ASCII or binary) has (length,azimuth) pairs.  If not given read standard input\n");
+		fprintf (stderr, "\t<infile> (in ASCII or binary) has (length,azimuth) pairs.  If not given read standard input.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A sector width in degrees for sector diagram [Default is windrose]\n");
-		fprintf (stderr, "\t   append r to get rose diagram\n");
+		fprintf (stderr, "\t-A sector width in degrees for sector diagram [Default is windrose].\n");
+		fprintf (stderr, "\t   append r to get rose diagram.\n");
 		GMT_explain_option ('B');
-		fprintf (stderr, "\t   (Remember: radial is x-direction, azimuthal is y-direction)\n");
-		fprintf (stderr, "\t-C plot vectors listed in the <modes> file.  If no file, use mean direction\n");
-		fprintf (stderr, "\t-D will center the sectors\n");
-		fprintf (stderr, "\t-E set azimuth and elevation of viewpoint for 3-D perspective [180/90]\n");
-		fprintf (stderr, "\t-F Do not draw the scale length bar [Default plots scale in lower right corner]\n");
+		fprintf (stderr, "\t   (Remember: radial is x-direction, azimuthal is y-direction).\n");
+		fprintf (stderr, "\t-C plot vectors listed in the <modes> file.  If no file, use mean direction.\n");
+		fprintf (stderr, "\t-D will center the sectors.\n");
+		fprintf (stderr, "\t-E set azimuth and elevation of viewpoint for 3-D perspective [180/90].\n");
+		fprintf (stderr, "\t-F Do not draw the scale length bar [Default plots scale in lower right corner].\n");
 		GMT_fill_syntax ('G', "Specifies color for diagram [Default is no fill].");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I for inquire.  Only compute statistics - no plot is created\n");
+		fprintf (stderr, "\t-I for inquire.  Only compute statistics - no plot is created.\n");
 		GMT_explain_option ('K');
-		fprintf (stderr, "\t-L Override default labels [Default is WEST/EAST/SOUTH/NORTH for full circle and 90W/90E/-/0 for half-circle]\n");
-		fprintf (stderr, "\t   If no argument is given then labels will be disabled.  Give - to disable an individual label\n");
-		fprintf (stderr, "\t-M Append tailwidth/headlength/headwidth/r/g/b to set arrow attributes [0.03i/0.12i/0.1i/0/0/0\n");
-		fprintf (stderr, "\t-N normalizes rose plots for area, i.e. takes sqrt(r) before plotting [FALSE]\n");
-		fprintf (stderr, "\t   Only applicable if normalization has been specified with -S<radius>n\n");
+		fprintf (stderr, "\t-L Override default labels [Default is WEST/EAST/SOUTH/NORTH for full circle and 90W/90E/-/0 for half-circle].\n");
+		fprintf (stderr, "\t   If no argument is given then labels will be disabled.  Give - to disable an individual label.\n");
+		fprintf (stderr, "\t-M Append tailwidth/headlength/headwidth/r/g/b to set arrow attributes [0.03i/0.12i/0.1i/0/0/0].\n");
+		fprintf (stderr, "\t-N normalizes rose plots for area, i.e., takes sqrt(r) before plotting [FALSE].\n");
+		fprintf (stderr, "\t   Only applicable if normalization has been specified with -S<radius>n.\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-R specifies the region.  (r0 = 0, r1 = max_radius.  For azimuth:\n");
-		fprintf (stderr, "\t   Specify theta0/theta1 = -90/90 (half-circle) or 0/360 only)\n");
+		fprintf (stderr, "\t   Specify theta0/theta1 = -90/90 (half-circle) or 0/360 only).\n");
 		fprintf (stderr, "\t   If r0 = r1 = 0, psrose will compute a reasonable r1 value.\n");
-		fprintf (stderr, "\t-S specifies the radius of the unit circle in %s [%g]. Normalize r if n is appended\n", GMT_unit_names[gmtdefs.measure_unit], Ctrl->S.scale);
-		fprintf (stderr, "\t-T indicates that the vectors are oriented (two-headed), not directed [Default]\n");
+		fprintf (stderr, "\t-S specifies the radius of the unit circle in %s [%g]. Normalize r if n is appended.\n", GMT_unit_names[gmtdefs.measure_unit], Ctrl->S.scale);
+		fprintf (stderr, "\t-T indicates that the vectors are oriented (two-headed), not directed [Default].\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_pen_syntax ('W', "sets pen attributes for outline of rose. [Default is no outline].");
 		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z multiply the radii by scale before plotting\n");
+		fprintf (stderr, "\t-Z multiply the radii by scale before plotting.\n");
 		GMT_explain_option ('c');
-		fprintf (stderr, "\t-: Expect (azimuth,radius) input rather than (radius,azimuth) [%s]\n", choice[gmtdefs.xy_toggle[GMT_IN]]);
+		fprintf (stderr, "\t-: Expect (azimuth,radius) input rather than (radius,azimuth) [%s].\n", choice[gmtdefs.xy_toggle[GMT_IN]]);
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
 		fprintf (stderr, "\t   Default is 2 input columns.\n");
-		fprintf (stderr, "\t(See man page for gmtdefaults to set these and other defaults to ON or OFF)\n");
+		fprintf (stderr, "\t(See man page for gmtdefaults to set these and other defaults to ON or OFF).\n");
 		exit (EXIT_FAILURE);
 	}
 
@@ -391,7 +391,7 @@ int main (int argc, char **argv)
 	azimuth = (double *) GMT_memory (VNULL, (size_t)n_alloc, sizeof (double), GMT_program);
 	length = (double *) GMT_memory (VNULL, (size_t)n_alloc, sizeof (double), GMT_program);
 
-	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (text, BUFSIZ, fp);
+	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (text, BUFSIZ, fp);
 
 	/* Read data and do some stats */
 
@@ -423,6 +423,9 @@ int main (int argc, char **argv)
 			if (azimuth[n] > 90.0 && azimuth[n] <= 270.0) azimuth[n] -= 180.0;
 			if (azimuth[n] > 270.0) azimuth[n] -= 360.0;
 		}
+		else if (Ctrl->T.active) {
+			azimuth[n] = 0.5 * fmod (2.0 * azimuth[n], 360.0);
+		}
 
 		/* Double angle to find mean azimuth */
 
@@ -453,6 +456,11 @@ int main (int argc, char **argv)
 				this_az = azimuth[i];
 			bin = (int) ((this_az + az_offset) / Ctrl->A.inc);
 			sum[bin] += length[i];
+			if (Ctrl->T.active) {	/* Also count its other end */
+				this_az += 180.0;	if (this_az >= 360.0) this_az -= 360.0;
+				bin = (int) ((this_az + az_offset) / Ctrl->A.inc);
+				sum[bin] += length[i];
+			}
 		}
 	}
 
@@ -526,7 +534,10 @@ int main (int argc, char **argv)
 			radius = length[i] * Ctrl->S.scale;
 			x = radius * c;
 			y = radius * s;
-			plot3d (0.0, 0.0, 3);
+			if (Ctrl->T.active)
+				plot3d (-x, -y, 3);
+			else
+				plot3d (0.0, 0.0, 3);
 			plot3d (x, y, -2);
 		}
 	}

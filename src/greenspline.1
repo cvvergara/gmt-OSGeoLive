@@ -1,4 +1,4 @@
-.TH GREENSPLINE 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH GREENSPLINE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 greenspline \- Interpolate 1-D, 2-D, 3-D Cartesian or spherical surface data using Green's function splines.
 .SH SYNOPSIS
@@ -133,7 +133,7 @@ The next is a 2-D or 3-D spline:
 The last two are spherical surface splines and both imply \fB\-D\fP4 \fB\-fg\fP:
 (\fBp\fP) Minimum curvature spline [\fIParker\fP, 1994],
 (\fBq\fP) Continuous curvature spline in tension [\fIWessel and Becker\fP, 2008]; append \fItension\fP.
-The G(\fBx\fP; \fBx'\fP) for the last method is slower to compute; by specifying OPT(SQ) you can speed up calculations
+The G(\fBx\fP; \fBx'\fP) for the last method is slower to compute; by specifying \fB\-SQ\fP you can speed up calculations
 by first pre-calculating G(\fBx\fP; \fBx'\fP) for a dense set of \fBx\fP values (e.g., 100,001 nodes between -1 to +1)
 and store them in look-up tables.  Optionally append /\fIN\fP (an odd integer) to specify how many points in the spline to set [100001]
 .TP

@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 16
 REM
-REM		$Id: job16.bat,v 1.12 2011/03/01 01:34:48 remko Exp $
+REM		$Id: job16.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM
 REM Purpose:	Illustrates interpolation methods using same data as Example 12.
 REM GMT progs:	gmtset, grdview, grdfilter, pscontour, psscale, pstext, surface, triangulate

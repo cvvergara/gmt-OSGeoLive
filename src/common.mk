@@ -1,6 +1,6 @@
-#	$Id: common.mk,v 1.5 2011/01/02 20:09:35 guru Exp $
+#	$Id: common.mk 9923 2012-12-18 20:45:53Z pwessel $
 #
-#	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+#	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
 #	See LICENSE.TXT file for copying and redistribution conditions.
 #
 #	This program is free software; you can redistribute it and/or modify

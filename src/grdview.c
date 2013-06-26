@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdview.c,v 1.122 2011/07/08 22:39:06 guru Exp $
+ *	$Id: grdview.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -124,7 +124,7 @@ struct GRDVIEW_POINT {
 int main (int argc, char **argv)
 {
 	GMT_LONG get_contours, bad, set_z = FALSE, error = FALSE, pen_not_set;
-	GMT_LONG first, begin, saddle, subset = FALSE, no_nans, drape_resample = FALSE;
+	GMT_LONG first, begin, saddle, no_nans, drape_resample = FALSE;
 
 	char *topofile = NULL;
 	char *c_method[2] = {"colorimage", "colortiles",};
@@ -139,7 +139,7 @@ int main (int argc, char **argv)
 	float *grd[3], *zgrd = NULL, *intensity = NULL, *topo = NULL;
 
 	double cval, x_left, x_right, y_top, y_bottom, small = GMT_SMALL, z_ave, this_intensity = 0.0, *xval, *yval;
-	double dx2, dy2, take_out, west = 0.0, east = 0.0, south = 0.0, north = 0.0, new_z_level = 0.0;
+	double dx2, dy2, west = 0.0, east = 0.0, south = 0.0, north = 0.0, new_z_level = 0.0;
 	double data_west, data_east, data_south, data_north, delx, dely, z_val, next_up = 0.0, xmesh[4], ymesh[4];
 	double x_pixel_size, y_pixel_size, *x_imask = NULL, *y_imask = NULL, x_inc[4], y_inc[4], *x = NULL, *y = NULL, *z = NULL, *v = NULL, *xx = NULL, *yy = NULL;
 
@@ -365,25 +365,25 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<topofile> is data set to be plotted\n");
+		fprintf (stderr, "\t<topofile> is data set to be plotted.\n");
 		GMT_explain_option ('j');
 		GMT_explain_option ('Z');
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-C Color palette file\n");
+		fprintf (stderr, "\t-C Color palette file.\n");
 		GMT_explain_option ('E');
 		fprintf (stderr, "\t-G <drapefile> rather than <topofile> is the data set to color-code.\n");
 		fprintf (stderr, "\t   Use <topofile> as the relief and \'drape\' the image on top.\n");
-		fprintf (stderr, "\t   Note that -Jz and -N always refers to the <topofile>\n");
+		fprintf (stderr, "\t   Note that -Jz and -N always refers to the <topofile>.\n");
 		fprintf (stderr, "\t   Alternatively, give three grid files with the red, green, and blue components in 0-255 range.\n");
 		fprintf (stderr, "\t   If so you must also choose -Qi.\n");
-		fprintf (stderr, "\t-I gives name of intensity file and selects illumination\n");
+		fprintf (stderr, "\t-I gives name of intensity file and selects illumination.\n");
 		fprintf (stderr, "\t-L sets boundary conditions when resampling the grid.  <flags> can be either\n");
-		fprintf (stderr, "\t   g for geographic boundary conditions\n");
+		fprintf (stderr, "\t   g for geographic boundary conditions,\n");
 		fprintf (stderr, "\t   or one or both of\n");
-		fprintf (stderr, "\t   x for periodic boundary conditions on x\n");
-		fprintf (stderr, "\t   y for periodic boundary conditions on y\n");
-		fprintf (stderr, "\t   If no <flags> are set, use bilinear rather than bicubic [Default] resampling \n");
+		fprintf (stderr, "\t   x for periodic boundary conditions on x.\n");
+		fprintf (stderr, "\t   y for periodic boundary conditions on y.\n");
+		fprintf (stderr, "\t   If no <flags> are set, use bilinear rather than bicubic [Default] resampling.\n");
 		GMT_explain_option ('Z');
 		GMT_explain_option ('K');
 		fprintf (stderr, "\t-N<level> will draw a plane at z = level.  Append color [/r/g/b] to paint\n");
@@ -391,31 +391,31 @@ int main (int argc, char **argv)
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-Q sets plot reQuest. Choose one of the following:\n");
-		fprintf (stderr, "\t   -Qm for Mesh plot [Default].  Append /color for mesh paint [%d/%d/%d]\n", Ctrl->Q.fill.rgb[0], Ctrl->Q.fill.rgb[1], Ctrl->Q.fill.rgb[2]);
+		fprintf (stderr, "\t   -Qm for Mesh plot [Default].  Append /color for mesh paint [%d/%d/%d].\n", Ctrl->Q.fill.rgb[0], Ctrl->Q.fill.rgb[1], Ctrl->Q.fill.rgb[2]);
 		fprintf (stderr, "\t   -Qs[m] for colored or shaded Surface.  Append m to draw meshlines on the surface.\n");
 		fprintf (stderr, "\t   -Qi for scanline converting polygons to rasterimage.  Append effective dpi [100].\n");
 		fprintf (stderr, "\t   -Qc. As -Qi but use PS Level 3 colormasking for nodes with z = NaN.  Append effective dpi [100].\n");
-		fprintf (stderr, "\t   To force a monochrome image using the GMT_YIQ transformation, append g\n");
+		fprintf (stderr, "\t   To force a monochrome image using the GMT_YIQ transformation, append g.\n");
 		GMT_explain_option ('R');
-		fprintf (stderr, "\t-S will smooth contours first (see grdcontour for <smooth> value info).\n");
-		GMT_pen_syntax ('T', "will image the data without interpolation by painting polygonal tiles\n\t   Append s to skip tiles for nodes with z = NaN [Default paints all tiles]\n\t   Append o[<pen>] to draw tile outline [Default uses no outline]");
+		fprintf (stderr, "\t-S will smooth contours first (see grdcontour for <smooth> value info) [no smoothing].\n");
+		GMT_pen_syntax ('T', "will image the data without interpolation by painting polygonal tiles.\n\t   Append s to skip tiles for nodes with z = NaN [Default paints all tiles].\n\t   Append o[<pen>] to draw tile outline [Default uses no outline].");
 		fprintf (stderr, "\t   Cannot be used with -Jz|Z as it produces a flat image.\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
-		GMT_pen_syntax ('W', "sets pen attributes for various features in form <type><pen>");
-		fprintf (stderr, "\t   <type> can be c for contours, m for mesh, and f for facade\n");
-		fprintf (stderr, "\t   c draw scontours on top of surface or mesh.  [Default is no contours]\n");
+		GMT_pen_syntax ('W', "sets pen attributes for various features in form <type><pen>.");
+		fprintf (stderr, "\t   <type> can be c for contours, m for mesh, and f for facade.\n");
+		fprintf (stderr, "\t   c draw scontours on top of surface or mesh [Default is no contours].\n");
 		fprintf (stderr, "\t     Optionally append pen attributes [width = %gp, color = (%d/%d/%d), solid line].\n", 
 			Ctrl->W.pen[0].width, Ctrl->W.pen[0].rgb[0], Ctrl->W.pen[0].rgb[1], Ctrl->W.pen[0].rgb[2]);
-		fprintf (stderr, "\t   m sets attributes for mesh lines [[width = %gp, color = (%d/%d/%d), solid line].\n", 
+		fprintf (stderr, "\t   m sets attributes for mesh lines [width = %gp, color = (%d/%d/%d), solid line].\n", 
 			Ctrl->W.pen[1].width, Ctrl->W.pen[1].rgb[0], Ctrl->W.pen[1].rgb[1], Ctrl->W.pen[1].rgb[2]);
 		fprintf (stderr, "\t     Requires -Qm or -Qsm to take effect.\n");
-		fprintf (stderr, "\t   f sets attributes for facade outline [[width = %gp, color = (%d/%d/%d), solid line].\n", 
+		fprintf (stderr, "\t   f sets attributes for facade outline [width = %gp, color = (%d/%d/%d), solid line].\n", 
 			Ctrl->W.pen[2].width, Ctrl->W.pen[2].rgb[0], Ctrl->W.pen[2].rgb[1], Ctrl->W.pen[2].rgb[2]);
 		fprintf (stderr, "\t     Requires -N to take effect.\n");
 		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [0]\n");
+		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [0].\n");
 		GMT_explain_option ('c');
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);
@@ -519,8 +519,6 @@ int main (int argc, char **argv)
 		south = t_head.y_min;
 		north = t_head.y_max;
 	}
-	else if (!(west == t_head.x_min && east == t_head.x_max && south == t_head.y_min && north == t_head.y_max))
-		subset = TRUE;
 
 	if (project_info.z_bottom == 0.0 && project_info.z_top == 0.0) {
 		project_info.z_bottom = t_head.z_min;
@@ -621,11 +619,15 @@ int main (int argc, char **argv)
 	y_inc[0] = y_inc[1] = 0.0;	y_inc[2] = y_inc[3] = header.y_inc;
 
 	if (get_contours) {	/* Need to find contours */
+		float *z_orig = NULL;
 		if (gmtdefs.verbose) fprintf (stderr, "%s: Find contours\n", GMT_program);
 		n_edges = header.ny * (GMT_LONG )ceil (header.nx / 16.0);
 		edge = (GMT_LONG *) GMT_memory (VNULL, (size_t)n_edges, sizeof (GMT_LONG), GMT_program);
 		binij = (struct GRDVIEW_BIN *) GMT_memory (VNULL, (size_t)nm, sizeof (struct GRDVIEW_BIN), GMT_program);
 		small = GMT_SMALL * (header.z_max - header.z_min);
+		if (small < 1.0e-7) small = 1.0e-7;	/* Make sure it is not smaller than single-precision EPS */
+		z_orig = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
+		memcpy ((void *)z_orig, (void *)zgrd, (size_t)(nm * sizeof (float)));
 		if (gmtdefs.verbose) fprintf (stderr, "%s: Trace and bin contours...\n", GMT_program);
 		first = TRUE;
 		for (c = 0; c < GMT_n_colors+1; c++) {	/* For each color change */
@@ -637,10 +639,9 @@ int main (int argc, char **argv)
 			if (cval < header.z_min || cval > header.z_max) continue;
 
 			if (gmtdefs.verbose) fprintf (stderr, "%s: Now tracing contour interval %8g\r", GMT_program, cval);
-			take_out = (first) ? cval : cval - GMT_lut[c-1].z_low;
 			first = FALSE;
-			for (i = 0; i < nm; i++) {
-				if (!GMT_is_fnan (zgrd[i])) zgrd[i] -= (float)take_out;
+			for (i = 0; i < nm; i++) {	/* Must use z_orig since incremental subtraction builds up round-off */
+				if (!GMT_is_fnan (z_orig[i])) zgrd[i] = z_orig[i] - (float)cval;
 				if (zgrd[i] == 0.0) zgrd[i] += (float)small;
 			}
 
@@ -669,6 +670,7 @@ int main (int argc, char **argv)
 
 		/* Remove temporary variables */
 
+		GMT_free ((void *)z_orig);
 		GMT_free ((void *)edge);
 
 		/* Go back to beginning and reread since grd has been destroyed */
@@ -1140,6 +1142,30 @@ int main (int argc, char **argv)
 		GMT_LONG start_side, entry_side, exit_side, next_side, low, ncont, nw_se_diagonal, check;
 		GMT_LONG corner[2], bad_side[2][2], p, p1, p2, saddle_sign;
 		double *xcont, *ycont, *zcont, *vcont, X_vert[4], Y_vert[4], saddle_small;
+		float Z_vert[4];
+
+		/* PW: Bugs fixed in Nov, 2011: Several problems worth remembering:
+			1) Earlier [2004] we had fixed grdcontour but not grdview in dealing with the current zero contour.  Because
+			   of float precision we cannot take the grid and repeatedly subtract the difference in contour values.
+			   Instead for each contour value cval, we must subtract cval from the original grid to get the tmp grid.
+			2) To avoid never to have contours go through nodes EXACTLY, we check if there are nodes that equal zero.
+			   If so, we add small (a small amount to make it different from zero).  We then get contours.  However,
+			   for -Qs we again use the grid node values to determine which way to loop around a polygon piece when
+			   stitching it together from pieces of contours and node values. Thus it is important that we use node
+			   values that have been adjusted as above and not the original nodes.
+			3) We should make sure that the small value exceeeds single-precision EPS (~ 1.2e-7), otherwise adding small
+			   will not make the node non-zero.  This does not seem to have been a problem yet but I added a new check
+			   just in case and if so set small to 1.0e-7.
+			4) Given zgrd is float, there is a difference between zgrd[node] -= (float)cval and zgrd[node] -= cval,
+			   since cval is double precision.  We had the cast during the contouring but here under -Qs we had some
+			   comparisions without the cast, the result being both sides got promoted to double prior to the test and
+			   we can get a different result.
+			5) In the case of no contour we paint the entire tile.  However, in the case of discontinuous CPT files we
+			   based the color on the lower-left node value (since it should not matter which corner we pick).  But it
+			   does: If that node HAPPENS to be one that had small added to it and as a result no contour goes through,
+			   we have no way of adjusting the node accordingly.  Consequently, it is safer to always take the average
+			   of the 4 nodes as the other 3 will pull the average into the middle somewhere.
+		*/
 
 		xcont = (double *) GMT_memory (VNULL, (size_t)max, sizeof (double), GMT_program);
 		ycont = (double *) GMT_memory (VNULL, (size_t)max, sizeof (double), GMT_program);
@@ -1177,6 +1203,11 @@ int main (int argc, char **argv)
 
 				X_vert[0] = X_vert[3] = x_left;	X_vert[1] = X_vert[2] = x_right;
 				Y_vert[0] = Y_vert[1] = y_bottom;	Y_vert[2] = Y_vert[3] = y_top;
+				
+				/* Also get z-values at the 4 nodes.  Because some nodes may have been adjusted by small during
+				 * the contouring stage we need to make the same adjustments below */
+				
+				for (k = 0; k < 4; k++) Z_vert[k] = zgrd[bin+bin_inc[k]];	/* First a straight copy */
 
 				if (get_contours && binij[bin].first_cont) {	/* Contours go thru here */
 
@@ -1190,6 +1221,13 @@ int main (int argc, char **argv)
 						else
 							this_cont = this_cont->next_cont;
 					}
+					for (k = 0; k < 4; k++) {	/* Deal with the fact that some nodes may have had small added to them */
+						Z_vert[k] -= (float)this_cont->value;	/* Note we cast to float to get the same precision as for contours */
+						if (Z_vert[k] == 0.0) Z_vert[k] += (float)small;
+						Z_vert[k] += (float)this_cont->value;
+					}
+					/* Here, Z_vert reflects what the grid was when contouring was determined */
+					
 					if (saddle) {	/* Must deal with this separately */
 
 						this_point = this_cont->first_point;
@@ -1197,16 +1235,15 @@ int main (int argc, char **argv)
 						while (this_point->next_point) this_point = this_point->next_point;	/* Go to end */
 						exit_side  = get_side (this_point->x, this_point->y, x_left, y_bottom, header.x_inc, header.y_inc, dx2, dy2);
 
-
-						if (MIN (zgrd[bin+bin_inc[1]], zgrd[bin+bin_inc[3]]) > MAX (zgrd[bin], zgrd[bin+bin_inc[2]])) {
+						if (MIN (Z_vert[1], Z_vert[3]) > MAX (Z_vert[0], Z_vert[2])) {
 							saddle_sign = +1;
 							check = TRUE;
 						}
-						else if (MAX (zgrd[bin+bin_inc[1]], zgrd[bin+bin_inc[3]]) < MIN (zgrd[bin], zgrd[bin+bin_inc[2]])) {
+						else if (MAX (Z_vert[1], Z_vert[3]) < MIN (Z_vert[0], Z_vert[2])) {
 							saddle_sign = -1;
 							check = TRUE;
 						}
-						else if (MIN (zgrd[bin], zgrd[bin+bin_inc[2]]) > MAX (zgrd[bin+bin_inc[1]], zgrd[bin+bin_inc[3]])) {
+						else if (MIN (Z_vert[0], Z_vert[2]) > MAX (Z_vert[1], Z_vert[3])) {
 							saddle_sign = +1;
 							check = FALSE;
 						}
@@ -1232,7 +1269,7 @@ int main (int argc, char **argv)
 
 							low = corner[p];
 							n = 0;
-							add_node (x, y, z, v, &n, low, X_vert, Y_vert, topo, zgrd, ij+ij_inc[low], bin+bin_inc[low]);
+							add_node (x, y, z, v, &n, low, X_vert, Y_vert, topo, Z_vert, ij+ij_inc[low], bin+bin_inc[low]);
 							start_side = next_side = low;
 							way = 0;
 
@@ -1285,7 +1322,7 @@ int main (int argc, char **argv)
 								copy_points_fw (x, y, z, v, xcont, ycont, zcont, vcont, ncont, &n);
 								next_side = exit_side;
 								start_side = entry_side;
-								way = (zgrd[bin+bin_inc[low]] < this_cont->value) ? -1 : 1;
+								way = (Z_vert[low] < (float)this_cont->value) ? -1 : 1;
 							}
 
 							/* Final contour needs to add diagonal */
@@ -1298,8 +1335,8 @@ int main (int argc, char **argv)
 								p1 = (next_side % 3) ? 2 : 0;
 								p2 = (next_side % 3) ? 0 : 2;
 							}
-							add_node (x, y, z, v, &n, p1, X_vert, Y_vert, topo, zgrd, ij+ij_inc[p1], bin+bin_inc[p1]);
-							add_node (x, y, z, v, &n, p2, X_vert, Y_vert, topo, zgrd, ij+ij_inc[p2], bin+bin_inc[p2]);
+							add_node (x, y, z, v, &n, p1, X_vert, Y_vert, topo, Z_vert, ij+ij_inc[p1], bin+bin_inc[p1]);
+							add_node (x, y, z, v, &n, p2, X_vert, Y_vert, topo, Z_vert, ij+ij_inc[p2], bin+bin_inc[p2]);
 
 							/* Compute the xy from the xyz triplets */
 
@@ -1319,12 +1356,12 @@ int main (int argc, char **argv)
 
 						/* Find lowest corner (id = low) */
 
-						for (k = 1, low = 0; k < 4; k++) if (zgrd[bin+bin_inc[k]] < zgrd[bin+bin_inc[low]]) low = k;
+						for (k = 1, low = 0; k < 4; k++) if (Z_vert[k] < Z_vert[low]) low = k;
 
 						/* Set this points as the start anchor */
 
 						n = 0;
-						add_node (x, y, z, v, &n, low, X_vert, Y_vert, topo, zgrd, ij+ij_inc[low], bin+bin_inc[low]);
+						add_node (x, y, z, v, &n, low, X_vert, Y_vert, topo, Z_vert, ij+ij_inc[low], bin+bin_inc[low]);
 						start_side = next_side = low;
 						way = 1;
 
@@ -1349,7 +1386,7 @@ int main (int argc, char **argv)
 
 							while (!(next_side == entry_side || next_side == exit_side)) {	/* Must add intervening corner */
 								if (way == 1) next_side = (next_side + 1) % 4;
-								add_node (x, y, z, v, &n, next_side, X_vert, Y_vert, topo, zgrd, ij+ij_inc[next_side], bin+bin_inc[next_side]);
+								add_node (x, y, z, v, &n, next_side, X_vert, Y_vert, topo, Z_vert, ij+ij_inc[next_side], bin+bin_inc[next_side]);
 								if (way == -1) next_side = (next_side - 1 + 4) % 4;
 							}
 							if (next_side == entry_side) {	/* Just hook up */
@@ -1364,7 +1401,7 @@ int main (int argc, char **argv)
 
 							while (!(start_side == next_side)) {	/* Must add intervening corner */
 								if (way == 1) next_side = (next_side + 1) % 4;
-								add_node (x, y, z, v, &n, next_side, X_vert, Y_vert, topo, zgrd, ij+ij_inc[next_side], bin+bin_inc[next_side]);
+								add_node (x, y, z, v, &n, next_side, X_vert, Y_vert, topo, Z_vert, ij+ij_inc[next_side], bin+bin_inc[next_side]);
 								if (way == -1) next_side = (next_side - 1 + 4) % 4;
 							}
 
@@ -1383,7 +1420,7 @@ int main (int argc, char **argv)
 							copy_points_fw (x, y, z, v, xcont, ycont, zcont, vcont, ncont, &n);
 							next_side = exit_side;
 							start_side = entry_side;
-							way = (zgrd[bin+bin_inc[start_side]] < this_cont->value) ? -1 : 1;
+							way = (Z_vert[start_side] < (float)this_cont->value) ? -1 : 1;
 
 							this_cont = this_cont->next_cont;	/* Goto next contour */
  						}
@@ -1392,7 +1429,7 @@ int main (int argc, char **argv)
 
 						while (!(start_side == next_side)) {	/* Must add intervening corner */
 							if (way == 1) next_side = (next_side +1) % 4;
-							add_node (x, y, z, v, &n, next_side, X_vert, Y_vert, topo, zgrd, ij+ij_inc[next_side], bin+bin_inc[next_side]);
+							add_node (x, y, z, v, &n, next_side, X_vert, Y_vert, topo, Z_vert, ij+ij_inc[next_side], bin+bin_inc[next_side]);
 							if (way == -1) next_side = (next_side - 1 + 4) % 4;
 						}
 
@@ -1433,17 +1470,13 @@ int main (int argc, char **argv)
 				}
 				else {	/* No Contours */
 
-					if (GMT_continuous) {	/* Take the color corresponding to the average value of the four corners */
-						for (n = 0, z_ave = 0.0; n < 4; n++) z_ave += zgrd[bin+bin_inc[n]];
-						z_ave *= 0.25;
-					}
-					else	/* Take the value of any corner */
-						z_ave = zgrd[bin];
+					/* Take the color corresponding to the average value of the four corners */
+					z_ave = 0.25 * (Z_vert[0] + Z_vert[1] + Z_vert[2] + Z_vert[3]);
 						
 					/* Now paint the polygon piece */
 
 					for (k = 0; k < 4; k++) GMT_geoz_to_xy (X_vert[k], Y_vert[k], (double)(topo[ij+ij_inc[k]]), &xmesh[k], &ymesh[k]);
-					paint_it (xmesh, ymesh, 4, z_ave, Ctrl->I.active, Ctrl->Q.monochrome, this_intensity, Ctrl->Q.outline);
+					paint_it (xmesh, ymesh, 4, z_ave+small, Ctrl->I.active, Ctrl->Q.monochrome, this_intensity, Ctrl->Q.outline);
 				}
 			}
 		}
@@ -1702,7 +1735,7 @@ void add_node (double x[], double y[], double z[], double v[], GMT_LONG *k, GMT_
 	x[*k] = X_vert[node];
 	y[*k] = Y_vert[node];
 	z[*k] = topo[ij];
-	v[*k] = zgrd[bin];
+	v[*k] = zgrd[node];
 	(*k)++;
 }
 
@@ -1748,7 +1781,6 @@ void *New_grdview_Ctrl () {	/* Allocate and initialize a new control structure *
 	C->Q.dpi = 100;
 	GMT_init_fill (&C->Q.fill, 255 - gmtdefs.basemap_frame_rgb[0], 255 - gmtdefs.basemap_frame_rgb[0], 255 - gmtdefs.basemap_frame_rgb[0]);
 	C->L.interpolant = BCR_BICUBIC; C->L.threshold = 1.0;
-	C->S.value = 1;
 	return ((void *)C);
 }
 

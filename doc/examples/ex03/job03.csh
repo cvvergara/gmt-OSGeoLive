@@ -1,5 +1,5 @@
 #!/bin/csh
-#		$Id: job03.csh,v 1.19 2011/05/01 20:35:44 guru Exp $
+#		$Id: job03.csh 9545 2011-07-27 19:31:54Z pwessel $
 #		GMT EXAMPLE 03
 #
 # Purpose:	Resample track data, do spectral analysis, and plot

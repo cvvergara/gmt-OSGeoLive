@@ -1,4 +1,4 @@
-/*	$Id: nrutil.h,v 1.7 2009/05/13 21:06:43 guru Exp $
+/*	$Id: nrutil.h 9545 2011-07-27 19:31:54Z pwessel $
  *    Public Domain NR stuff.
  */
 #ifndef _NR_UTILS_H_

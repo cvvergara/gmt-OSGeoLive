@@ -1,4 +1,4 @@
-/*	$Id: x_report.c,v 1.8 2008/03/24 08:58:33 guru Exp $
+/*	$Id: x_report.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * XREPORT reads the xx_legs.b file and reports statistics for one or
  * all or the legs. The information reported are legname, year-of-cruise,

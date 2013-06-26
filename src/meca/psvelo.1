@@ -1,9 +1,9 @@
-.TH PSVELO 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH PSVELO 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 psvelo \- Plot velocity vectors, crosses, and wedges on maps
 .SH SYNOPSIS
 .br
-\fBpsvelo\fP \fIfiles\fP \fB\-J\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] 
+\fBpsvelo\fP \fIfiles\fP \fB\-J\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-A\fP\fIArrow_width/Head_length/Head_width\fP ] [ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] 
 [ \fB\-D\fP\fIsigma_scale\fP ] [ \fB\-F\fP\fIcolor\fP ] 
 [ \fB\-E\fP\fIcolor\fP ] [ \fB\-G\fP\fIfill\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-K\fP ] [ \fB\-L\fP ] [ \fB\-N\fP ] 
 [ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-S\fP\fIsymbol\fP/\fIscale\fP/\fIconf\fP/\fIfont_size\fP ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ] 
@@ -257,11 +257,6 @@ Size of arrow in inches.  [Default is 0.03/0.12/0.09].
 Sets map boundary annotation and tickmark intervals; see the
 \fBpsbasemap\fP man page for all the details.
 .TP
-\fB\-C\fP
-\fROffset focal mechanisms to the latitude and longitude specified in the last
-two columns of the input file.
-.br
-.TP
 \fB\-D\fP
 \fISigma_scale \fP
 can be used to rescale the uncertainties of velocities (\fB\-Se\fP and
@@ -280,9 +275,8 @@ specified, the uncertainty regions will be transparent.]
 .br
 .TP
 \fB\-G\fP\fIfill\fP
-\fRSelect filling of ellipses, wedges, and focal mechanisms.  By
-convention, the compressional quadrants of the focal mechanism beach
-balls are shaded.  Set the shade (0\-255) or color (r/g/b) [Default is
+Specify color (for symbols/polygons) or pattern (for polygons).
+Set the shade (0\-255) or color (r/g/b) [Default is
 0/0/0].  Optionally, specify \fB\-Gp\fP\fIicon_size/pattern\fP, where
 \fIpattern\fP gives the number of the image pattern (1-90) OR the name
 of a icon-format file.  \fIicon_size\fP sets the unit size in inches.

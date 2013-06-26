@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: project.c,v 1.85 2011/07/08 21:27:06 guru Exp $
+ *	$Id: project.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -113,13 +113,13 @@ int main (int argc, char **argv)
 	FILE *fp = NULL;
 
 	char	modifier, record_str[BUFSIZ], heading[PROJECT_N_FARGS][GMT_TEXT_LEN], buffer[GMT_TEXT_LEN];
-	char	txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT], *not_used = NULL;
+	char	txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT];
 
 	struct PROJECT_DATA *p_data = NULL;
 	struct PROJECT_CTRL *Ctrl = NULL;
 
 	int	compare_distances (const void *point_1, const void *point_2);
-	double	oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given);
+	double	oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given, GMT_LONG generate);
 	void	oblique_transform (double xlat, double xlon, double *x_t_lat, double *x_t_lon, double *p, double *c);
 	void	make_euler_matrix (double *p, double *e, double theta);
 	void	matrix_3v (double *a, double *x, double *b);
@@ -295,9 +295,9 @@ int main (int argc, char **argv)
 		fprintf(stderr,"\t  r,s is the projected position of x,y (taking q = 0) in the (x,y) coordinate system.\n");
 		fprintf(stderr,"\t  p,q may be scaled from degrees into kilometers by the -Q option.  See -L, -Q, -W.\n");
 		fprintf(stderr,"\t  Note z refers to all input data columns beyond the required x,y\n");
-		fprintf(stderr,"\t  [Default is all fields, i.e. -Fxyzpqrs]\n");
-		fprintf(stderr,"\t  If -G is set, -F is not available and output defaults to rsp\n");
-		fprintf(stderr,"\t-G means Generate (r,s,p) points along profile every <dist> units. (No input data used.)\n");
+		fprintf(stderr,"\t  [Default is all fields, i.e., -Fxyzpqrs].\n");
+		fprintf(stderr,"\t  If -G is set, -F is not available and output defaults to rsp.\n");
+		fprintf(stderr,"\t-G means Generate (r,s,p) points along profile every <dist> units (No input data used).\n");
 		fprintf(stderr,"\t   If E given, will generate from C to E; else must give -L<l_min>/<l_max> for length.\n");
 		GMT_explain_option ('H');
 		fprintf(stderr,"\t-L Check the Length along the projected track and use only certain points.\n");
@@ -317,7 +317,7 @@ int main (int argc, char **argv)
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf(stderr,"\t  Default is 2 input columns (x, y)\n");
+		fprintf(stderr,"\t  Default is 2 input columns (x, y).\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('f');
@@ -457,7 +457,7 @@ int main (int argc, char **argv)
 	}
 	else {
 		if (Ctrl->T.active) {
-			sin_lat_to_pole = oblique_setup(Ctrl->T.y, Ctrl->T.x, pole, &Ctrl->C.y, &Ctrl->C.x, center, Ctrl->C.active);
+			sin_lat_to_pole = oblique_setup(Ctrl->T.y, Ctrl->T.x, pole, &Ctrl->C.y, &Ctrl->C.x, center, Ctrl->C.active, Ctrl->G.active);
 		}
 		else {
 			sphere_project_setup(Ctrl->C.y, Ctrl->C.x, a, Ctrl->E.y, Ctrl->E.x, b, Ctrl->A.azimuth, pole, center, Ctrl->E.active);
@@ -520,9 +520,14 @@ int main (int argc, char **argv)
 			}
 		}
 		else {
-			GMT_geo_to_cart(Ctrl->C.y, Ctrl->C.x, x, TRUE);
+			double C[3], N[3];
+			GMT_geo_to_cart(Ctrl->C.y, Ctrl->C.x, C, TRUE);
+			GMT_cross3v (pole, C, N);		/* This is vector normal to meridian plan */
+			GMT_normalize3v (N);			/* Make it a unit vector */
+			make_euler_matrix (N, e, 90.0);		/* Rotation matrix e about N */
+			matrix_3v (e, pole, x);			/* x is the generating vector for our circle */
 			for (i = 0; i < n_used; i++) {
-				make_euler_matrix(pole, e, p_data[i].a[2] / sin_lat_to_pole);
+				make_euler_matrix (pole, e, p_data[i].a[2]);
 				matrix_3v(e,x,xt);
 				GMT_cart_to_geo(&(p_data[i].a[5]), &(p_data[i].a[4]), xt, TRUE);
 				while (greenwich && p_data[i].a[4] < 0.0) p_data[i].a[4] += 360.0;
@@ -542,12 +547,12 @@ int main (int argc, char **argv)
 		/* Now output generated track */
 
 		if (!GMT_io.binary[GMT_OUT]) {
-			if (GMT_io.io_header[GMT_OUT]) {sprintf (buffer, "lon\tlat\tdist\n");	GMT_fputs(buffer, GMT_stdout);}
+			if (GMT_io.io_header[GMT_OUT]) {sprintf (buffer, "lon%slat%sdist\n", gmtdefs.field_delimiter, gmtdefs.field_delimiter);	GMT_fputs(buffer, GMT_stdout);}
+		}
 
-			for (i = 0; i < n_used; i++) {
-				for (j = 0; j < n_outputs; j++) out[j] = p_data[i].a[output_choice[j]];
-				GMT_output (GMT_stdout, n_outputs, out);
-			}
+		for (i = 0; i < n_used; i++) {
+			for (j = 0; j < n_outputs; j++) out[j] = p_data[i].a[output_choice[j]];
+			GMT_output (GMT_stdout, n_outputs, out);
 		}
 	}
 
@@ -580,14 +585,14 @@ int main (int argc, char **argv)
 			if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
 
 			if (GMT_io.io_header[GMT_IN]) {
-				not_used = GMT_fgets (record_str, BUFSIZ, fp);
+				GMT_fgets (record_str, BUFSIZ, fp);
 				sscanf (record_str, "%s %s %s", heading[0], heading[1], heading[6]);
 				if (! (heading[6]) ) strcpy (heading[6],"Z");
 				strcpy (heading[2],"p");
 				strcpy (heading[3],"q");
 				strcpy (heading[4],"r");
 				strcpy (heading[5],"s");
-				for (i = 1; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (record_str, BUFSIZ, fp);
+				for (i = 1; i < GMT_io.n_header_recs; i++) GMT_fgets (record_str, BUFSIZ, fp);
 			}
 
 			n_fields = GMT_input (fp, &n_expected_fields, &in);
@@ -711,7 +716,7 @@ int main (int argc, char **argv)
 								GMT_fputs (heading[6], GMT_stdout);
 							else
 								GMT_fputs (heading[output_choice[j]], GMT_stdout);
-							(j == (n_outputs - 1)) ? GMT_fputs ("\n", GMT_stdout) : GMT_fputs ("\t", GMT_stdout);
+							(j == (n_outputs - 1)) ? GMT_fputs ("\n", GMT_stdout) : GMT_fputs (gmtdefs.field_delimiter, GMT_stdout);
 						}
 						first = FALSE;
 					}
@@ -731,7 +736,7 @@ int main (int argc, char **argv)
 								sprintf (buffer, gmtdefs.d_format, p_data[i].a[output_choice[j]]);
 								GMT_fputs (buffer, GMT_stdout);
 							}
-							(j == (n_outputs - 1)) ? GMT_fputs ("\n", GMT_stdout) : GMT_fputs ("\t", GMT_stdout);
+							(j == (n_outputs - 1)) ? GMT_fputs ("\n", GMT_stdout) : GMT_fputs (gmtdefs.field_delimiter, GMT_stdout);
 						}
 					}
 				}
@@ -795,7 +800,7 @@ int compare_distances (const void *point_1, const void *point_2)
 		return (0);
 }
 
-double oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given)
+double oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given, GMT_LONG generate)
 {
 	/* routine sets up a unit 3-vector p, the pole of an 
 	   oblique projection, given plat, plon, the position 
@@ -827,10 +832,46 @@ double oblique_setup (double plat, double plon, double *p, double *clat, double 
 	GMT_cross3v(x, p, c);
 	GMT_normalize3v(c);
 	cp = GMT_dot3v (p, c);
-	GMT_cart_to_geo(clat, clon, c, TRUE);	/* return the possibly adjusted center  */
+	if (!generate) memcpy ((void *)c, (void *)x, 3*sizeof(double));
+	if (!c_given) GMT_cart_to_geo(clat, clon, c, TRUE);	/* return the possibly adjusted center  */
 	sin_lat_to_pole = d_sqrt (1.0 - cp * cp);
 	return (sin_lat_to_pole);
 }
+
+#if 0
+double oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given)
+{
+	/* routine sets up a unit 3-vector p, the pole of an 
+	   oblique projection, given plat, plon, the position 
+	   of this pole in the usual coordinate frame.
+	   c_given = TRUE means that clat, clon are to be used
+	   as the usual coordinates of a point through which the
+	   user wants the central meridian of the oblique
+	   projection to go.  If such a point is not given, then
+	   the central meridian will go through p and the usual
+	   N pole.  In either case, a unit 3-vector c is created
+	   which is the directed normal to the plane of the central
+	   meridian, pointing in the positive normal (east) sense.
+	   Latitudes and longitudes are in degrees. */
+
+	double	s[3];  /* s points to the south pole  */
+	double cp, sin_lat_to_pole;
+
+	s[0] = s[1] = 0.0;
+	s[2] = -1.0;
+
+	GMT_geo_to_cart(plat, plon, p, TRUE);
+
+	if (c_given) {	/* s points to user's clat, clon  */
+		GMT_geo_to_cart(*clat, *clon, s, TRUE);
+	}
+	GMT_cross3v(p, s, c);
+	GMT_normalize3v(c);
+	cp = GMT_dot3v (p, s);
+	sin_lat_to_pole = d_sqrt (1.0 - cp * cp);
+	return (sin_lat_to_pole);
+}
+#endif
 
 void oblique_transform (double xlat, double xlon, double *x_t_lat, double *x_t_lon, double *p, double *c)
 {

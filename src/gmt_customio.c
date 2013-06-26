@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_customio.c,v 1.95 2011/07/08 21:27:05 guru Exp $
+ *	$Id: gmt_customio.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -1325,8 +1325,8 @@ float GMT_decode (void *vptr, GMT_LONG k, GMT_LONG type)
  
 struct srf_header6 {	/* Surfer 6 file header structure */
 	char id[4];		/* ASCII Binary identifier (DSBB) */
-	short int nx;		/* Number of columns */
-	short int ny;		/* Number of rows */
+	unsigned short int nx;	/* Number of columns -- NOTE: original definition by GoldenSoft is "short int"*/
+	unsigned short int ny;	/* Number of rows */
 	double x_min;		/* Minimum x coordinate */
 	double x_max;		/* Maximum x coordinate */
 	double y_min;		/* Minimum y coordinate */

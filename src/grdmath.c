@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdmath.c,v 1.69 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdmath.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -148,8 +148,8 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\tA, B, etc are grid files, constants, or symbols (see below)\n");
-		fprintf (stderr, "\tThe stack can hold up to %d entries (given enough memory)\n", GRDMATH_STACK_SIZE);
+		fprintf (stderr, "\tA, B, etc are grid files, constants, or symbols (see below).\n");
+		fprintf (stderr, "\tThe stack can hold up to %d entries (given enough memory).\n", GRDMATH_STACK_SIZE);
 		fprintf (stderr, "\tTrigonometric operators expect radians.\n");
 		fprintf (stderr, "\tThe operators and number of input and output arguments are:\n\n");
 		fprintf (stderr, "\tName    #args   Returns\n");
@@ -172,11 +172,11 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   will be converted from degrees lon,lat into meters (Flat-earth approximation).\n");
 		fprintf (stderr, "\t   Default computes derivatives in units of data/grid_distance.\n");
 		fprintf (stderr, "\t-N Do not perform strict domain check if several grids are involved\n");
-		fprintf (stderr, "\t   [Default checks that domain is within %g * [xinc or yinc] of each other\n", GMT_SMALL);
+		fprintf (stderr, "\t   [Default checks that domain is within %g * [xinc or yinc] of each other].\n", GMT_SMALL);
 		GMT_explain_option ('R');
 		GMT_explain_option ('V');
 		GMT_explain_option ('i');
-		fprintf (stderr, "\t   (Only applies to the input files for operators LDIST, PDIST, and INSIDE)\n");
+		fprintf (stderr, "\t   (Only applies to the input files for operators LDIST, PDIST, and INSIDE).\n");
 		GMT_explain_option ('f');
 		exit (EXIT_FAILURE);
 	}

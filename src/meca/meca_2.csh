@@ -1,5 +1,5 @@
 #!/bin/csh -f
-#	$Id: meca_2.csh,v 1.4 2010/01/24 17:58:07 jluis Exp $
+#	$Id: meca_2.csh 9545 2011-07-27 19:31:54Z pwessel $
 
 \rm -f .gmtdefaults4
 gmtset MEASURE_UNIT inch TICK_LENGTH 0.075i FRAME_WIDTH 0.1i \

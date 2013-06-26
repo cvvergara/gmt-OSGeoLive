@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdreformat.c,v 1.60 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdreformat.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -93,8 +93,8 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\tingrdfile is the grid file to convert\n");
-		fprintf (stderr, "\toutgrdfile is the new converted grid file\n");
+		fprintf (stderr, "\tingrdfile is the grid file to convert.\n");
+		fprintf (stderr, "\toutgrdfile is the new converted grid file.\n");
 		fprintf( stderr, "\tscale and offset, if given, will multiply data by scale and add offset.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-N  Do NOT write the header (native grids only - ignored otherwise).\n");
@@ -113,7 +113,7 @@ int main (int argc, char **argv)
 	}
 
 	if (nfiles != 2) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR: Must specify both input and output file names\n", GMT_program);
+		fprintf (stderr, "%s: GMT SYNTAX ERROR: Must specify both input and output file names.\n", GMT_program);
 		error++;
 	}
 
@@ -148,7 +148,7 @@ int main (int argc, char **argv)
 	GMT_err_fail (GMT_read_grd_info (file[0], &grd), fname[0]);
 
 	if (e > w && n > s) {
-		global = (fabs (grd.x_max - grd.x_min) == 360.0);
+		global = GMT_grd_is_global (&grd);
 		if (!global && (w < grd.x_min || e > grd.x_max)) error = TRUE;
 		if (s < grd.y_min || n > grd.y_max) error = TRUE;
 		if (error) {

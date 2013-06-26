@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdsample.c,v 1.70 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdsample.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  * grdsample reads a grid file and evaluates the grid at new grid positions
  * specified by new dx/dy values using a 2-D Taylor expansion of order 3.
  * In order to evaluate derivatives along the edges of the surface, I assume 
- * natural bicubic spline conditions, i.e. both the second and third normal 
+ * natural bicubic spline conditions, i.e., both the second and third normal 
  * derivatives are zero, and that the dxdy derivative in the corners are zero, too.
  *
  * Author:	Paul Wessel
@@ -168,17 +168,17 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<old_grdfile> is data set to be resampled\n");
-		fprintf (stderr, "\t-G sets the name of the interpolated output grid file\n");
+		fprintf (stderr, "\t<old_grdfile> is data set to be resampled.\n");
+		fprintf (stderr, "\t-G sets the name of the interpolated output grid file.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-F Force pixel registration  [Default is same as input]\n");
+		fprintf (stderr, "\t-F Force pixel registration [Default is same as input].\n");
 		GMT_inc_syntax ('I', 0);
 		fprintf (stderr, "\t   When omitted: grid spacing is copied from input grid.\n");
 		fprintf (stderr, "\t-L sets boundary conditions.  <flag> can be either\n");
-		fprintf (stderr, "\t   g for geographic boundary conditions\n");
+		fprintf (stderr, "\t   g for geographic boundary conditions,\n");
 		fprintf (stderr, "\t   or one or both of\n");
-		fprintf (stderr, "\t   x for periodic boundary conditions on x\n");
-		fprintf (stderr, "\t   y for periodic boundary conditions on y\n");
+		fprintf (stderr, "\t   x for periodic boundary conditions on x.\n");
+		fprintf (stderr, "\t   y for periodic boundary conditions on y.\n");
 		fprintf (stderr, "\t-Q Quick mode, use bilinear rather than bicubic [Default] interpolation.\n");
 		fprintf (stderr, "\t   Alternatively, select interpolation mode by adding b = B-spline, c = bicubic,\n");
 		fprintf (stderr, "\t   l = bilinear, or n = nearest-neighbor.\n");
@@ -186,8 +186,8 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   4 or 16 nodes to be non-NaN.], <threshold> = 0.5 will interpolate about 1/2 way\n");
 		fprintf (stderr, "\t   from a non-NaN to a NaN node, while 0.1 will go about 90%% of the way, etc.\n");
 		fprintf (stderr, "\t   -Q0 will return the value of the nearest node instead of interpolating (Same as -Qn).\n");
-		fprintf (stderr, "\t-R specifies a subregion [Default is old region]\n");
-		fprintf (stderr, "\t-T Toggles between grid registration and pixel registration\n");
+		fprintf (stderr, "\t-R specifies a subregion [Default is old region].\n");
+		fprintf (stderr, "\t-T Toggles between grid registration and pixel registration.\n");
 		GMT_explain_option ('V');
 		GMT_explain_option ('f');
 

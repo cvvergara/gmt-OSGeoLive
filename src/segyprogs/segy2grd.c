@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: segy2grd.c,v 1.42 2011/07/11 19:22:06 guru Exp $
+ *	$Id: segy2grd.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by T. Henstock
+ *	Copyright (c) 1991-2013 by T. Henstock
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,11 @@ int main (int argc, char **argv)
 {
 	GMT_LONG error = FALSE, got_input = FALSE, read_cont = FALSE, count = FALSE, average = TRUE;
 	GMT_LONG nodata_set = FALSE, read_cdp = FALSE, read_offset = FALSE;
-	GMT_LONG swap_bytes = !WORDS_BIGENDIAN;
+#ifdef WORDS_BIGENDIAN
+	GMT_LONG swap_bytes = FALSE;
+#else
+	GMT_LONG swap_bytes = TRUE;
+#endif
 
 	GMT_LONG i, ij, ii, jj, nm, n_read = 0, n_filled = 0, n_used = 0, one_or_zero, *flag = NULL;
 	GMT_LONG n_empty = 0, n_stuffed = 0, n_bad = 0, n_confused = 0;

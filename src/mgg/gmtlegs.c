@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtlegs.c,v 1.20 2011/07/11 19:22:06 guru Exp $
+ *	$Id: gmtlegs.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *    Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*

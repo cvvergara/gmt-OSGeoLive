@@ -1,4 +1,4 @@
-/*	$Id: x_solve_dc_drift.c,v 1.13 2010/03/24 02:36:45 guru Exp $
+/*	$Id: x_solve_dc_drift.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * x_solve_dc_drift reads the xx_* databases and computes the best
  * fitting drift and dc values using a least squares method.

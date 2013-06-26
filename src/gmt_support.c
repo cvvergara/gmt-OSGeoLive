@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_support.c,v 1.468 2011/07/08 21:27:06 guru Exp $
+ *	$Id: gmt_support.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -389,7 +389,7 @@ void GMT_init_fill (struct GMT_FILL *fill, int r, int g, int b)
 
 GMT_LONG GMT_getfill (char *line, struct GMT_FILL *fill)
 {
-	GMT_LONG n, end, pos, i, error = 0;
+	GMT_LONG n, end, pos, i, len, error = 0;
 	int fb_rgb[3];
 	char f, word[GMT_LONG_TEXT];
 
@@ -402,7 +402,9 @@ GMT_LONG GMT_getfill (char *line, struct GMT_FILL *fill)
 	if ((line[0] == 'p' || line[0] == 'P') && isdigit((int)line[1])) {	/* Image specified */
 		n = sscanf (&line[1], "%" GMT_LL "d/%s", &fill->dpi, fill->pattern);
 		if (n != 2) error = 1;
-		for (i = 0, pos = -1; fill->pattern[i] && pos == -1; i++) if (fill->pattern[i] == ':') pos = i;
+		/* Determine if there are colorizing options applied, i.e. [:F<rgb>B<rgb>] */
+		len = strlen (fill->pattern);
+		for (i = 0, pos = -1; fill->pattern[i] && pos == -1; i++) if (fill->pattern[i] == ':' && i < len && (fill->pattern[i+1] == 'B' || fill->pattern[i+1] == 'F')) pos = i;
 		if (pos > -1) fill->pattern[pos] = '\0';
 		fill->pattern_no = atoi (fill->pattern);
 		if (fill->pattern_no == 0) fill->pattern_no = -1;
@@ -411,7 +413,8 @@ GMT_LONG GMT_getfill (char *line, struct GMT_FILL *fill)
 
 		/* See if fore- and background colors are given */
 
-		for (i = 0, pos = -1; line[i] && pos == -1; i++) if (line[i] == ':') pos = i;
+		len = strlen (line);
+		for (i = 0, pos = -1; line[i] && pos == -1; i++) if (line[i] == ':' && i < len && (line[i+1] == 'B' || line[i+1] == 'F')) pos = i;
 		pos++;
 
 		if (pos > 0 && line[pos]) {	/* Gave colors */
@@ -2724,7 +2727,6 @@ void GMT_contlabel_init (struct GMT_CONTOUR *G, GMT_LONG mode)
 GMT_LONG GMT_contlabel_specs (char *txt, struct GMT_CONTOUR *G)
 {
 	GMT_LONG k, bad = 0, pos = 0;
-	GMT_LONG g_set = FALSE;
 	char p[BUFSIZ], txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT], c;
 	char *specs = NULL;
 
@@ -2787,7 +2789,6 @@ GMT_LONG GMT_contlabel_specs (char *txt, struct GMT_CONTOUR *G)
 			case 'g':	/* Box Fill specification */
 				if (GMT_getrgb (&p[1], G->rgb)) bad++;
 				G->transparent = FALSE;
-				g_set = TRUE;
 				break;
 
 			case 'j':	/* Justification specification */
@@ -3644,11 +3645,10 @@ void GMT_orient_contour (float *grd, struct GRD_HEADER *h, double *x, double *y,
 	/* Determine handedness of the contour and if opposite of orient reverse the contour */
 	GMT_LONG reverse;
 	GMT_LONG i, j, side[2], z_dir;
-	GMT_LONG ij, k, k2;
+	GMT_LONG ij_ul, ij_ur, ij_ll, ij_lr, k, k2;
 	double fx[2], fy[2], dx, dy;
 
-	if (orient == 0) return;	/* Nothing to be done when no orientation specified */
-	if (n < 2) return;		/* Cannot work on a single point */
+	if (n < 2) return;	/* Cannot work on a single point */
 
 	for (k = 0; k < 2; k++) {	/* Calculate fractional node numbers from left/top */
 		fx[k] = (x[k] - h->x_min) / h->x_inc - h->xy_off;
@@ -3662,8 +3662,10 @@ void GMT_orient_contour (float *grd, struct GRD_HEADER *h, double *x, double *y,
 
 	i = (GMT_LONG) floor (0.5 * (fx[0] + fx[1]));
 	j = (GMT_LONG) ceil  (0.5 * (fy[0] + fy[1]));
-	ij = GMT_IJ (j, i, h->nx);
-	z_dir = (grd[ij] > 0.0) ? +1 : -1;	/* +1 if lower-left node is higher than contour value, else -1 */
+	ij_ll = GMT_IJ (j, i, h->nx);     /* lower left corner  */
+	ij_lr = GMT_IJ (j, i+1, h->nx);   /* lower right corner */
+	ij_ul = GMT_IJ (j-1, i, h->nx);   /* upper left corner  */
+	ij_ur = GMT_IJ (j-1, i+1, h->nx); /* upper right corner */
 
 	for (k = 0; k < 2; k++) {	/* Determine which edge the contour points lie on (0-3) */
 		/* We KNOW that for each k, either x[k] or y[k] lies EXACTLY on a gridline.  This is used
@@ -3681,34 +3683,22 @@ void GMT_orient_contour (float *grd, struct GRD_HEADER *h, double *x, double *y,
 			side[k] = (fy[k] > fy[k2]) ? 0 : 2;	/* Same for fy */
 	}
 
-	switch (side[0]) {	/* Entry side */
-		case 0:	/* Bottom: Regardless of exit the LL node is to the left of line vector */
-			reverse = (z_dir == orient);
+	switch (side[0]) {	/* Entry side: check heights of corner points.*/
+	                        /* if point to the right of the line is higher z_dir = +1 else -1 */
+		case 0:	/* Bottom: check heights of lower left and lower right nodes */
+			z_dir = (grd[ij_lr] > grd[ij_ll]) ? +1 : -1;
 			break;
-		case 1:	/* Right: Must check exit */
-			switch (side[1]) {
-				case  0:	/* Bottom: LL Node is the the right of vector */
-					reverse = (z_dir != orient);
-					break;
-				default:	/* left and top it is to the left */
-					reverse = (z_dir == orient);
-					break;
-			}
+		case 1:	/* Right */
+			z_dir = (grd[ij_ur] > grd[ij_lr]) ? +1 : -1;
 			break;
-		case 2:	/* Top: Must check exit */
-			switch (side[1]) {
-				case 3:		/* Left: LL node is to the left of vector */
-					reverse = (z_dir == orient);
-					break;
-				default:	/* Bottom and right: LL node is to the right of vector */
-					reverse = (z_dir != orient);
-					break;
-			}
+		case 2:	/* Top */
+			z_dir = (grd[ij_ul] > grd[ij_ur]) ? +1 : -1;
 			break;
-		default:/* Left: LL node is always to the right of line vector */
-			reverse = (z_dir != orient);
+		default:/* Left (3) */
+			z_dir = (grd[ij_ll] > grd[ij_ul]) ? +1 : -1;
 			break;
 	}
+	reverse = (z_dir != orient);
 
 	if (reverse) {	/* Must reverse order of contour */
 		for (i = 0, j = n-1; i < n/2; i++, j--) {
@@ -3725,7 +3715,7 @@ GMT_LONG GMT_trace_contour (float *grd, struct GRD_HEADER *header, GMT_LONG test
 	GMT_LONG ij, ij_in, kk_in, edge_word, edge_bit, ij0;
 	GMT_LONG more;
 	float z[5];
-	double xk[5], *xx = NULL, *yy = NULL;
+	double xk[5], dist1, dist2, *xx = NULL, *yy = NULL;
 	GMT_LONG p[5];
 	static GMT_LONG i_off[5] = {0, 1, 0, 0, 0}, j_off[5] = {0, 0, -1, 0, 0}, k_off[5] = {0, 1, 0, 1, 0};
 
@@ -3826,7 +3816,20 @@ GMT_LONG GMT_trace_contour (float *grd, struct GRD_HEADER *header, GMT_LONG test
 		}
 		else if (n_exits == 3) {	/* Saddle point: Turn to the correct side */
 			k0_opposite = (k0 + 2) % 4;	/* Opposite side */
-			if (xk[k0] + xk[k0_opposite] > xk[k0+1] + xk[k0_opposite+1])
+			dist1 = xk[k0] + xk[k0_opposite];
+			dist2 = xk[k0+1] + xk[k0_opposite+1];
+			if (dist1 == dist2) {	/* Perfect saddle, must use fixed saddle decision to avoid a later crossing */
+				/* Connect S with W and E with N in this case */
+				if (k0 == 0)
+					kk = 3;
+				else if (k0 == 1)
+					kk = 2;
+				else if (k0 == 2)
+					kk = 1;
+				else
+					kk = 0;
+			}
+			else if (dist1 > dist2)
 				kk = (k0 + 1) % 4;
 			else
 				kk = (k0 + 3) % 4;
@@ -4067,7 +4070,7 @@ void GMT_hold_contour (double **xxx, double **yyy, GMT_LONG nn, double zval, cha
 
 void GMT_hold_contour_sub (double **xxx, double **yyy, GMT_LONG nn, double zval, char *label, char ctype, double cangle, GMT_LONG closed, struct GMT_CONTOUR *G)
 {	/* The xx, yy are expected to be projected x/y inches */
-	GMT_LONG i, j, start = 0;
+	GMT_LONG i, j, start = 0, is_closed;
 	size_t n_alloc = GMT_SMALL_CHUNK;
 	double dx, dy, width, f, this_dist, step, stept, *track_dist = NULL, *map_dist = NULL, *value_dist = NULL, *radii = NULL;
 	double this_value_dist, lon[2], lat[2], *xx = NULL, *yy = NULL;
@@ -4078,6 +4081,7 @@ void GMT_hold_contour_sub (double **xxx, double **yyy, GMT_LONG nn, double zval,
 
 	xx = *xxx;	yy = *yyy;
 	G->n_label = 0;
+	is_closed = (closed > 0);
 
 	/* OK, line is long enough to be added to array of lines */
 
@@ -4208,8 +4212,8 @@ void GMT_hold_contour_sub (double **xxx, double **yyy, GMT_LONG nn, double zval,
 					this_value_dist = (G->n_cont > 1) ? i * value_dist[nn-1] / (G->n_cont - 1) : 0.5 * (G->number_placement + 1.0) * value_dist[nn-1];
 				}
 				else {
-					dist = (i + 1 - 0.5 * closed) * track_dist[nn-1] / (G->n_cont + 1 - closed);
-					this_value_dist = (i + 1 - 0.5 * closed) * value_dist[nn-1] / (G->n_cont + 1 - closed);
+					dist = (i + 1 - 0.5 * is_closed) * track_dist[nn-1] / (G->n_cont + 1 - is_closed);
+					this_value_dist = (i + 1 - 0.5 * is_closed) * value_dist[nn-1] / (G->n_cont + 1 - is_closed);
 				}
 				while (j < nn && track_dist[j] < dist) j++;
 				if (j == nn) j--;	/* Safety precaution */
@@ -4788,7 +4792,8 @@ GMT_LONG GMT_non_zero_winding (double xp, double yp, double *x, double *y, GMT_L
 
 GMT_LONG GMT_inonout_sphpol (double plon, double plat, const struct GMT_LINE_SEGMENT *P)
 /* This function is used to see if some point P is located inside, outside, or on the boundary of the
- * spherical polygon S read by GMT_import_table.
+ * spherical polygon S read by GMT_import_table.  Note GMT_io.skip_duplicates must be TRUE when the polygon
+ * was read so there are NO duplicate (repeated) points.
  * Returns the following values:
  *	0:	P is outside of S
  *	1:	P is inside of S
@@ -4802,12 +4807,14 @@ GMT_LONG GMT_inonout_sphpol (double plon, double plat, const struct GMT_LINE_SEG
 	 *		odd: P is outside; even: P is inside
 	 * Case 2: S does not contain a pole
 	 *	   a) If P is outside range of latitudes then P is outside
+	 *	   b) If P is outside range of longitudes (adjusted for periodicities) then P is outside
 	 *	   c) Draw meridian through P and count intersections:
 	 *		odd: P is inside; even: P is outside
 	 * In all cases, we check if P is on the outline of S
 	 */
 
 	GMT_LONG count[2];
+	double lon;
 
 	if (P->pole) {	/* Case 1 of an enclosed polar cap */
 		if (P->pole == +1) {	/* N polar cap */
@@ -4833,7 +4840,14 @@ GMT_LONG GMT_inonout_sphpol (double plon, double plat, const struct GMT_LINE_SEG
 
 	if (plat < P->min[GMT_Y] || plat > P->max[GMT_Y]) return (GMT_OUTSIDE_POLYGON);
 
-	/* Longitudes are tricker and are tested with the tallying of intersections */
+	/* Longitudes are tricker. First see if we are outside the polygon boundingbox */
+
+	lon = plon;
+	while (lon > P->min[GMT_X]) lon -= 360.0;		/* Wind to the left of the west boundary */
+	while (lon < P->min[GMT_X]) lon += 360.0;		/* Wind to the east of the west boundary */
+	if (lon > P->max[GMT_X]) return (GMT_OUTSIDE_POLYGON);	/* Outside polygon's longitude-range */
+
+	/* Now we must tested with the tallying of intersections */
 
 	if (GMT_inonout_sphpol_count (plon, plat, P, count)) return (GMT_ONSIDE_POLYGON);	/* Found P is on S */
 
@@ -4842,9 +4856,22 @@ GMT_LONG GMT_inonout_sphpol (double plon, double plat, const struct GMT_LINE_SEG
 	return (GMT_OUTSIDE_POLYGON);	/* Nothing triggered the tests; we are outside */
 }
 
+GMT_LONG gmt_getprevpoint (double plon, double lon[], GMT_LONG n, GMT_LONG this)
+{	/* Return the previous point that does NOT equal plon */
+	GMT_LONG ip = (this == 0) ? n - 2 : this - 1;	/* Previous point (-2 because last is a duplicate of first) */
+	while (GMT_IS_ZERO (plon - lon[ip]) || GMT_IS_ZERO (fabs(plon - lon[ip]) - 360.0)) {	/* Same as plon */
+		ip--;
+		if (ip == -1) ip = n - 2;
+	}
+	return (ip);
+}
+
+#define GMT_SAME_LONGITUDE(A,B) (GMT_IS_ZERO (fmod (A - B, 360.0)))	/* A and B are the same longitude */
+#define GMT_SAME_LATITUDE(A,B)  (GMT_IS_ZERO (A - B))			/* A and B are the same latitude */
+
 GMT_LONG GMT_inonout_sphpol_count (double plon, double plat, const struct GMT_LINE_SEGMENT *P, GMT_LONG count[])
 {	/* Case of a polar cap */
-	GMT_LONG i, in, ip, cut;
+	GMT_LONG i, in, ip, cut, prev;
 	double W, E, S, N, lon, lon1, lon2, dlon, x_lat;
 
 	/* Draw meridian through P and count all the crossings with the line segments making up the polar cap S */
@@ -4859,22 +4886,24 @@ GMT_LONG GMT_inonout_sphpol_count (double plon, double plat, const struct GMT_LI
 		 * Since we want to obtain either ONE or ZERO intersections per segment we will skip to next
 		 * point if case (2) occurs: this avoids counting a crossing twice for consequtive segments.
 		 */
-
+		if (GMT_SAME_LONGITUDE (plon, P->coord[GMT_X][i]) && GMT_SAME_LATITUDE (plat, P->coord[GMT_Y][i])) return (1);	/* Point is on the perimeter */
 		in = i + 1;			/* Next point index */
-		/* First skip duplicate consecutive points */
-		/* if (GMT_IS_ZERO (P->coord[GMT_X][i] - P->coord[GMT_X][in]) && GMT_IS_ZERO (P->coord[GMT_Y][i] - P->coord[GMT_Y][in])) continue; */
 		/* First skip segments that have no actual length: consecutive points with both latitudes == -90 or +90 */
 		if (fabs (P->coord[GMT_Y][i]) == 90.0 && GMT_IS_ZERO (P->coord[GMT_Y][i] - P->coord[GMT_Y][in])) continue;
-		/* First deal with case when the longitude of P goes ~right through the second of the line nodes */
-		lon2 = P->coord[GMT_X][in];	/* Copy the second of two longitudes since we may need to mess with them */
-		if (GMT_IS_ZERO (plon - lon2) || GMT_IS_ZERO (fabs(plon - lon2) - 360.0)) continue;	/* Line goes through the 2nd node - ignore */
+		/* Next deal with case when the longitude of P goes ~right through the second of the line nodes */
+		if (GMT_SAME_LONGITUDE (plon, P->coord[GMT_X][in])) continue;	/* Line goes through the 2nd node - ignore */
 		lon1 = P->coord[GMT_X][i];	/* Copy the first of two longitudes since we may need to mess with them */
-		if (GMT_IS_ZERO (plon - lon1) || GMT_IS_ZERO (fabs(plon - lon1) - 360.0)) {		/* Line goes through the 1st node */
+		lon2 = P->coord[GMT_X][in];	/* Copy the second of two longitudes since we may need to mess with them */
+		if (GMT_SAME_LONGITUDE (plon, lon1)) {	/* Line goes through the 1st node */
+			ip = gmt_getprevpoint (plon, P->coord[GMT_X], P->n_rows, i);	/* Index of previous point != plon */
 			/* Must check that the two neighboring points are on either side; otherwise it is just a tangent line */
-			ip = (i == 0) ? P->n_rows - 2 : i - 1;	/* Previous point (-2 because last is a duplicate of first) */
 			if ((lon2 >= lon1 && P->coord[GMT_X][ip] > lon1) || (lon2 <= lon1 && P->coord[GMT_X][ip] < lon1)) continue;	/* Both on same side */
 			cut = (P->coord[GMT_Y][i] > plat) ? 0 : 1;	/* node is north (0) or south (1) of P */
 			count[cut]++;
+			prev = ip + 1;	/* Always exists because ip is <= n-2 */
+			/* If prev < i then we have a vertical segment of 2 or more points; prev points to the other end of the segment.
+			 * We must then check if our points plat is within that range, meaning the point lies on the segment */
+			if (prev < i && ((plat <= P->coord[GMT_Y][prev] && plat >= P->coord[GMT_Y][i]) || (plat <= P->coord[GMT_Y][i] && plat >= P->coord[GMT_Y][prev]))) return (1);	/* P is on segment boundary; we are done*/
 			continue;
 		}
 		/* OK, not exactly on a node, deal with crossing a line */
@@ -4908,6 +4937,7 @@ GMT_LONG GMT_inonout_sphpol_count (double plon, double plat, const struct GMT_LI
 			return (1);	/* P is on segment boundary; we are done*/
 		}
 		/* Calculate latitude at intersection */
+		if (GMT_SAME_LATITUDE (P->coord[GMT_Y][i], P->coord[GMT_Y][in]) && GMT_SAME_LATITUDE (plat, P->coord[GMT_Y][in])) return (1);	/* P is on S boundary */
 		x_lat = P->coord[GMT_Y][i] + ((P->coord[GMT_Y][in] - P->coord[GMT_Y][i]) / (lon2 - lon1)) * (lon - lon1);
 		if (GMT_IS_ZERO (x_lat - plat)) return (1);	/* P is on S boundary */
 
@@ -5873,7 +5903,7 @@ void GMT_set_xy_domain (double wesn_extended[], struct GRD_HEADER *h)
 	 */
 
 	off = 0.5 * (1 - h->node_offset);
-	if (GMT_io.in_col_type[0] == GMT_IS_LON && GMT_360_RANGE (h->x_max, h->x_min))	/* Global longitude range */
+	if (GMT_io.in_col_type[0] == GMT_IS_LON && GMT_grd_is_global (h))	/* Global longitude range */
 		wesn_extended[0] = h->x_min, wesn_extended[1] = h->x_max;
 	else
 		wesn_extended[0] = h->x_min - off * h->x_inc, wesn_extended[1] = h->x_max + off * h->x_inc;
@@ -6879,6 +6909,38 @@ int GMT_ysort (const void *p1, const void *p2)
 	return (0);
 }
 
+GMT_LONG gmt_lon_adjuster (double x[], GMT_LONG nx)
+{
+	/* We seek to ensure that longitudes are continuous within the range of the data.
+	 * Thus, we first determine if the data crosses Greenwhich or Dateline or both.
+	 * Based on this info we adjust the longitudes accordingly. We assume a jump of
+	 * > 180 degrees longitude means crossing Greenwhich (all x in 0-360 range).
+	 */
+	GMT_LONG k, cross = 0;
+	double this_x, last_x;
+	if (GMT_io.in_col_type[GMT_X] != GMT_IS_LON) return (0);	/* No need to check x */
+	/* Here, x is longitude and we must check if crossing dateline or Greenwhich */
+	last_x = (x[0] < 0.0) ? x[0] + 360.0 : x[0];	/* Set to 0-360 */
+	for (k = 1; k < nx; k++) {
+		this_x = (x[k] < 0.0) ? x[k] + 360.0 : x[k];	/* Set to 0-360 */
+		if (fabs (last_x - this_x) > 180.0)
+			cross |= 1;	/* Cross Greenwhich */
+		else if ((this_x < 180.0 && last_x >= 180.0) || (this_x > 180.0 && last_x <= 180.0))
+			cross |= 2;	/* Cross Greenwhich */
+		this_x = last_x;
+	}
+	if (cross == 3) {
+		fprintf (stderr, "gmt_lon_adjuster: Path crossing both Dateline and Greenwhich, might be trouble\n");
+	}
+	else if (cross == 1) {	/* Enforce -180/180 range */
+		for (k = 0; k < nx; k++) if (x[k] > 180.0) x[k] -= 360.0;
+	}
+	else if (cross == 2) {	/* Enforce 0/360 range */
+		for (k = 0; k < nx; k++) if (x[k] < 0.0) x[k] += 360.0;
+	}
+	return (cross);
+}
+
 GMT_LONG GMT_crossover (double xa[], double ya[], GMT_LONG *sa0, struct GMT_XSEGMENT A[], GMT_LONG na, double xb[], double yb[], GMT_LONG *sb0, struct GMT_XSEGMENT B[], GMT_LONG nb, GMT_LONG internal, struct GMT_XOVER *X)
 {
 	GMT_LONG this_a, this_b, n_seg_a;
@@ -6889,6 +6951,8 @@ GMT_LONG GMT_crossover (double xa[], double ya[], GMT_LONG *sa0, struct GMT_XSEG
 
 	if (na < 2 || nb < 2) return (0);	/* Need at least 2 points to make a segment */
 
+	gmt_lon_adjuster (xa, na);	/* Adjust longitudes, if necessary */
+	if (xa != xb) gmt_lon_adjuster (xb, nb);	/* Adjust longitudes, if necessary */
 	this_a = this_b = nx = 0;
 	new_a = new_b = TRUE;
 	nx_alloc = GMT_SMALL_CHUNK;
@@ -6953,7 +7017,6 @@ GMT_LONG GMT_crossover (double xa[], double ya[], GMT_LONG *sa0, struct GMT_XSEG
 			}
 
 			/* OK, first check for any overlap in x range */
-
 			if (xa_OK && xb_OK && !((xa[xa_stop] < xb[xb_start]) || (xa[xa_start] > xb[xb_stop]))) {
 
 				/* We have segment overlap in x.  Now check if the segments cross  */
@@ -7207,7 +7270,6 @@ GMT_LONG GMT_crossover (double xa[], double ya[], GMT_LONG *sa0, struct GMT_XSEG
 						}
 					}
 				}
-
 				if (nx == nx_alloc) {
 					nx_alloc <<= 1;
 					GMT_x_alloc (X, nx_alloc);

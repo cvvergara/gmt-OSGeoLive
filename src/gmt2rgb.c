@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt2rgb.c,v 1.66 2011/07/08 21:27:05 guru Exp $
+ *	$Id: gmt2rgb.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -58,7 +58,7 @@ struct GMT2RGB_CTRL {
 
 int main (int argc, char **argv)
 {
-	GMT_LONG i, error = 0, index, entry, one_or_zero, pos, nm, k, k3;
+	GMT_LONG i, error = 0, entry, one_or_zero, pos, nm, k, k3;
 	int irgb[3];
 	GMT_LONG guess = FALSE;
 	float *z = NULL;
@@ -167,16 +167,16 @@ int main (int argc, char **argv)
 		fprintf (stderr,"\n\tOPTIONS:\n");
 		fprintf (stderr,"\t-C color palette file to convert z to rgb.  If given, we assume a z grid file is provided,\n");
 		fprintf (stderr,"\t   else we will try to read a Sun rasterfile.\n");
-		fprintf (stderr, "\t-F will force pixel registration [Default is grid registration]\n");
+		fprintf (stderr, "\t-F will force pixel registration [Default is grid registration].\n");
 		fprintf (stderr,"\t-G Give outputfile name template for the three red, green, blue grid files.\n");
-		fprintf (stderr,"\t   The template MUST contain the format code %%c which will be replaced with r, g, and b.\n");
-		fprintf (stderr,"\t   [Default is gmt2rgb_%%c.grd]\n");
-		fprintf (stderr, "\t-I specifies grid size(s).  Append m (or c) to <dx> and/or <dy> for minutes (or seconds)\n");
-		fprintf (stderr, "\t-L Only output the given layer (r, g, or b) [Default output all three]\n");
+		fprintf (stderr,"\t   The template MUST contain the format code %%c which will be replaced with r, g, and b\n");
+		fprintf (stderr,"\t   [Default is gmt2rgb_%%c.grd].\n");
+		fprintf (stderr, "\t-I specifies grid size(s).  Append m (or c) to <dx> and/or <dy> for minutes (or seconds).\n");
+		fprintf (stderr, "\t-L Only output the given layer (r, g, or b) [Default output all three].\n");
 		GMT_explain_option ('R');
 		GMT_explain_option ('V');
 		fprintf (stderr, "\t-W sets the size of the raw raster file. By default an RGB file (which has 3 bytes/pixel)\n");
-		fprintf (stderr, "\t   is assumed. For RGBA files use n_bytes = 4\n");
+		fprintf (stderr, "\t   is assumed. For RGBA files use n_bytes = 4.\n");
 		fprintf (stderr, "\t   Use -W for guessing the image size of a RGB raw file, and -W=/=/4\n");
 		fprintf (stderr, "\t   if the raw image is of the RGBA type. Notice that this might be a\n");
 		fprintf (stderr, "\t   bit slow because the guessing algorithm makes uses of FFTs.\n");
@@ -251,7 +251,7 @@ int main (int argc, char **argv)
 			sprintf (grdfile, Ctrl->G.name, rgb[i]);
 			sprintf (grd.remark, "Grid of %s components in the 0-255 range", comp[i]);
 			for (k = 0; k < nm; k++) {
-				index = GMT_get_rgb_from_z (z[k], irgb);
+				GMT_get_rgb_from_z (z[k], irgb);
 				z[k] = (float)irgb[i];
 			}
 			GMT_err_fail (GMT_write_grd (grdfile, &grd, z, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), grdfile);

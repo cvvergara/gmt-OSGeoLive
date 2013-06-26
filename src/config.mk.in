@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-#	$Id: config.mk.in,v 1.2 2009/10/23 18:33:11 remko Exp $
+#	$Id: config.mk.in 9925 2012-12-18 23:39:43Z pwessel $
 #
 #	Standard Makefile Macro Setup for GMT 4
 #
@@ -35,7 +35,9 @@ FTPSITE		= @FTPSITE@
 # GMT version number
 GMT_VERSION	= @PACKAGE_VERSION@
 # GSHHS version number
-GSHHS_VERSION	= @GSHHS_VERSION@
+GSHHG_VERSION	= @GSHHG_VERSION@
+# GSHHS dir, if set
+GSHHG_DIR	= @GSHHG_DIR@
 
 # Compiler, if $CC not set in environment
 CC		= @CC@
@@ -189,7 +191,7 @@ ALPHA_SINCOS_O	= @ALPHA_SINCOS_O@
 #
 #-------------------------------------------------------------------------------
 #	TXT2MAN is the macro for the C-preprocessor call to make the manpages
-#	(only needed when compiled from CVS source).
+#	(only needed when compiled from Subversion source).
 #-------------------------------------------------------------------------------
 #
 TXT2MAN		= @TXT2MAN@

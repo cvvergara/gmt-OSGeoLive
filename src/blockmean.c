@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: blockmean.c,v 1.78 2011/07/08 21:27:04 guru Exp $
+ *    $Id: blockmean.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -75,7 +75,7 @@ int main (int argc, char **argv)
 	GMT_LONG	n_files = 0, fno, n_args, ij, n_blocks;
 	GMT_LONG	n_cells_filled, n_read, n_lost, n_pitched, *np = NULL;
 	
-	char	modifier, line[BUFSIZ], format[BUFSIZ], *not_used = NULL;
+	char	modifier, line[BUFSIZ], format[BUFSIZ];
 	
 	struct GRD_HEADER h;
 
@@ -171,10 +171,10 @@ int main (int argc, char **argv)
 		GMT_inc_syntax ('I', 0);
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-C Output center of block and mean z-value.  [Default outputs (mean x, mean y) location]\n");
-		fprintf (stderr, "\t-E Extend output with st.dev (s), low (l), and high (h) value per block, i,e,\n");
+		fprintf (stderr, "\t-C Output center of block and mean z-value [Default outputs (mean x, mean y) location].\n");
+		fprintf (stderr, "\t-E Extend output with st.dev (s), low (l), and high (h) value per block, i.e.,\n");
 		fprintf (stderr, "\t   output (x,y,z,s,l,h[,w]) [Default outputs (x,y,z[,w]); see -W regarding w.\n");
-		fprintf (stderr, "\t-F Offsets registration so block edges are on gridlines (pixel reg.).  [Default: grid reg.]\n");
+		fprintf (stderr, "\t-F Offsets registration so block edges are on gridlines (pixel reg.) [Default: grid reg.].\n");
 		GMT_explain_option ('H');
 		fprintf (stderr, "\t-Sz report block sums rather than mean values [Default is mean values].\n");
 		fprintf (stderr, "\t   -Sw reports weight sums instead of data sums.\n");
@@ -305,7 +305,7 @@ int main (int argc, char **argv)
 
 		if (GMT_io.io_header[GMT_IN]) {
 			for (i = 0; i < GMT_io.n_header_recs; i++) {
-				not_used = GMT_fgets (line, BUFSIZ, fp);
+				GMT_fgets (line, BUFSIZ, fp);
 				GMT_chop (line);
 				if (first && GMT_io.io_header[GMT_OUT]) {
 					(Ctrl->W.weighted[GMT_OUT] && !(Ctrl->W.weighted[GMT_IN])) ? sprintf (format, "%s weights\n", line) : sprintf (format, "%s\n", line);

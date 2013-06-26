@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	$Id: segyprogs_2.sh,v 1.1 2001/04/13 20:44:49 pwessel Exp $
+#	$Id: segyprogs_2.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # script to plot mendo wa1 combined data
 #

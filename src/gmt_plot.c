@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.c,v 1.304 2011/07/13 12:00:46 remko Exp $
+ *	$Id: gmt_plot.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -363,10 +363,12 @@ void GMT_linear_map_boundary (double w, double e, double s, double n)
 	x_length = fabs (x2 - x1);
 	y_length = fabs (y2 - y1);
 
+	ps_command ("gsave 2 setlinecap");	/* Temporarily change linecap to close corner gaps */
 	if (frame_info.side[3]) GMT_xy_axis (x1, y1, y_length, s, n, &frame_info.axis[1], TRUE,  frame_info.side[3] == 2);	/* West or left y-axis */
 	if (frame_info.side[1]) GMT_xy_axis (x2, y1, y_length, s, n, &frame_info.axis[1], FALSE, frame_info.side[1] == 2);	/* East or right y-axis */
 	if (frame_info.side[0]) GMT_xy_axis (x1, y1, x_length, w, e, &frame_info.axis[0], TRUE,  frame_info.side[0] == 2);	/* South or lower x-axis */
 	if (frame_info.side[2]) GMT_xy_axis (x1, y2, x_length, w, e, &frame_info.axis[0], FALSE, frame_info.side[2] == 2);	/* North or upper x-axis */
+	ps_command ("grestore");		/* Restore prior settings */
 
 	if (!frame_info.header[0] || frame_info.plotted_header) return;	/* No header today */
 
@@ -405,10 +407,10 @@ void GMT_xy_axis (double x0, double y0, double length, double val0, double val1,
 	GMT_LONG do_tick;		/* TRUE unless we are dealing with bits of weeks */
 	double *knots = NULL, *knots_p = NULL;	/* Array pointers with tick/annotation knots, the latter for primary annotations */
 	double tick_len[6];		/* Ticklengths for each of the 6 axis items */
-	double x, sign, len, t_use;	/* Misc. variables */
+	double x, sign, t_use;		/* Misc. variables */
 	double font_size;			/* Annotation font size (ANNOT_FONT_SIZE_PRIMARY or ANNOT_FONT_SIZE_SECONDARY) */
 	struct GMT_PLOT_AXIS_ITEM *T;	/* Pointer to the current axis item */
-	char string[GMT_CALSTRING_LENGTH];	/* Annotation string */
+	char string[GMT_LONG_TEXT];		/* Annotation string */
 	char format[GMT_LONG_TEXT];		/* format used for non-time annotations */
 	char xy[2] = {'h', 'w'};
 	char cmd[BUFSIZ];
@@ -421,7 +423,6 @@ void GMT_xy_axis (double x0, double y0, double length, double val0, double val1,
 		np = GMT_coordinate_array (val0, val1, &A->item[primary], &knots_p);		/* Get all the primary tick annotation knots */
 	}
 	if (axis == 1) below = !below;
-	len = (gmtdefs.tick_length > 0.0) ? gmtdefs.tick_length : 0.0;				/* Tick length if directed outward */
 	sign = (below) ? -1.0 : 1.0;								/* since annotations go either below or above */
 	tick_len[0] = tick_len[2] = sign * gmtdefs.tick_length;					/* Initialize the tick lengths */
 	tick_len[1] = 3.0 * sign * gmtdefs.tick_length;
@@ -981,7 +982,7 @@ double GMT_fancy_frame_straight_outline (double lonA, double latA, double lonB, 
 
 double GMT_fancy_frame_curved_outline (double lonA, double latA, double lonB, double latB, GMT_LONG side, GMT_LONG secondary_too)
 {
-	double scale[2] = {1.0, 1.0}, escl, x1, x2, y1, y2, radius, dr, r_inc, az1, az2, da0, da, width, s;
+	double scale[2] = {1.0, 1.0}, escl, x1, x2, y1, y2, radius, r_inc, az1, az2, da0, da, width, s;
 
 	if (!frame_info.side[side]) return (0.0);
 
@@ -991,7 +992,6 @@ double GMT_fancy_frame_curved_outline (double lonA, double latA, double lonB, do
 	GMT_geo_to_xy (lonA, latA, &x1, &y1);
 	GMT_geo_to_xy (lonB, latB, &x2, &y2);
 	radius = hypot (x1 - project_info.c_x0, y1 - project_info.c_y0);
-	dr = 0.5 * width;
 	s = ((project_info.north_pole && side == 2) || (!project_info.north_pole && side == 0)) ? -1.0 : +1.0;	/* North: needs shorter radius.  South: Needs longer radius (opposite in S hemi) */
 	r_inc = s*scale[0] * width;
 	if (GMT_IS_AZIMUTHAL && GMT_360_RANGE (lonA, lonB)) {	/* Full 360-degree cirle */
@@ -1247,10 +1247,12 @@ void GMT_rect_map_boundary (double x0, double y0, double x1, double y1)
 
 	GMT_setpen (&gmtdefs.frame_pen);
 
+	ps_command ("gsave 2 setlinecap");	/* Temporarily change linecap to close corner gaps */
 	if (frame_info.side[3]) ps_segment (xt[0], yt[0], xt[3], yt[3]);	/* West */
 	if (frame_info.side[1]) ps_segment (xt[1], yt[1], xt[2], yt[2]);	/* East */
 	if (frame_info.side[0]) ps_segment (xt[0], yt[0], xt[1], yt[1]);	/* South */
 	if (frame_info.side[2]) ps_segment (xt[3], yt[3], xt[2], yt[2]);	/* North */
+	ps_command ("grestore");		/* Restore prior settings */
 }
 
 GMT_LONG GMT_genper_map_boundary (double w, double e, double s, double n)
@@ -2157,11 +2159,11 @@ void GMT_vertical_axis (GMT_LONG mode)
 	/* Mode means: 1 = background axis, 2 = foreground axis, 3 = all */
 	GMT_LONG go[4], fore, back;
 	GMT_LONG i, j;
-	double xp[2], yp[2], z_annot;
+	double xp[2], yp[2];
 
 	if (!frame_info.axis[2].item[GMT_ANNOT_UPPER].active) return;
 
-	z_annot = GMT_get_map_interval (2, GMT_ANNOT_UPPER);
+	GMT_get_map_interval (2, GMT_ANNOT_UPPER);
 	fore = (mode > 1);	back = (mode % 2);
 	for (i = 0; i < 4; i++) go[i] = (mode == 3) ? TRUE : ((back) ? z_project.draw[i] : !z_project.draw[i]);
 
@@ -2209,13 +2211,12 @@ void GMT_xyz_axis3D (GMT_LONG axis_no, char axis, struct GMT_PLOT_AXIS *A, GMT_L
 	double annot_off, label_off, *knots = NULL, sign, dy, tmp, xyz[3][2], len, x0, x1, y0, y1;
 	double pp[3], w[3], xp, yp, del_y, val_xyz[3], phi, val0, val1;
 
-	PFI xyz_forward, xyz_inverse;
+	PFI xyz_inverse;
 
 	char annotation[GMT_LONG_TEXT], format[GMT_LONG_TEXT], cmd[GMT_LONG_TEXT];
 
 	id = (axis == 'x') ? 0 : ((axis == 'y') ? 1 : 2);
 	j = (id == 0) ? 1 : ((id == 1) ? 0 : z_project.k);
-	xyz_forward = (PFI) ((id == 0) ? GMT_x_to_xx : ((id == 1) ? GMT_y_to_yy : GMT_z_to_zz));
 	xyz_inverse = (PFI) ((id == 0) ? GMT_xx_to_x : ((id == 1) ? GMT_yy_to_y : GMT_zz_to_z));
 	phi = (id < 2 && axis_no > 1) ? z_project.phi[id] + 180.0 : z_project.phi[id];
 
@@ -4172,7 +4173,7 @@ struct EPS *GMT_epsinfo (char *program)
 {
 	/* Supply info about the EPS file that will be created */
 
-	GMT_LONG fno[6], id, i, n_fonts, last, move_up = FALSE, not_used = 0;
+	GMT_LONG fno[6], id, i, n_fonts, last, move_up = FALSE;
 	double old_x0, old_y0, old_x1, old_y1;
 	double tick_space, frame_space, u_dx, u_dy;
 	double dy, x0, y0, orig_x0 = 0.0, orig_y0 = 0.0;
@@ -4192,7 +4193,7 @@ struct EPS *GMT_epsinfo (char *program)
 	/* First crudely estimate the boundingbox coordinates */
 
 	if (GMT_ps.overlay && (fp = fopen (info, "r")) != NULL) {	/* Must get previous boundingbox values */
-		not_used = fscanf (fp, "%d %d %lf %lf %lf %lf %lf %lf\n", &(new->portrait), &(new->clip_level), &orig_x0, &orig_y0, &old_x0, &old_y0, &old_x1, &old_y1);
+		(void)fscanf (fp, "%d %d %lf %lf %lf %lf %lf %lf\n", &(new->portrait), &(new->clip_level), &orig_x0, &orig_y0, &old_x0, &old_y0, &old_x1, &old_y1);
 		fclose (fp);
 		x0 = orig_x0;
 		y0 = orig_y0;

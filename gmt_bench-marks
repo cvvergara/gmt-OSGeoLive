@@ -1,4 +1,4 @@
-#	$Id: gmt_bench-marks,v 1.10 2007/04/23 00:23:57 pwessel Exp $
+#	$Id: gmt_bench-marks 9545 2011-07-27 19:31:54Z pwessel $
 #
 # This contains a list of execution times for various computers
 # running the entire set of 20 GMT examples.  If your machine

@@ -1,9 +1,9 @@
-.TH MDG77TOGMT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH MDG77TOGMT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 mgd77togmt \- Convert an MGD-77 ASCII file to a binary gmt file
 .SH SYNOPSIS
 \fBmgd77togmt\fP [ \fB\-L\fP\fIlist\fP ] [ \fImgd77file\fP ] \fB\-F\fP\fIlegid\fP \fB\-Y\fP\fIstart_year\fP 
-[ \fB\-A\fP\fIinformation\fP ] [ \fB\-I\fP\fItime_increment\fP ] [\fB\-T\fP[\fI<offset>\fP]] [\fB\-W\fP[\fI<cable_length>\fP]] [ \fB\-V\fP ]
+[ \fB\-A\fP\fIinformation\fP ] [ \fB\-I\fP\fItime_increment\fP ] [\fB\-T\fP[\fIoffset\fP]] [\fB\-W\fP[\fIcable_length\fP]] [ \fB\-V\fP ]
 .SH DESCRIPTION
 \fBmgd77togmt\fP reads an ASCII MGD-77 format file [or standard
 input] and creates a binary gmt file.  The 16 header records specified in
@@ -35,16 +35,16 @@ fake times.
 .TP
 \fB\-T\fP
 Extracts Total field instead of anomaly. Since F does not hold in a 2 byte signed variable
-we subtract a constant [default = 40000] but you can provide another value in \fI<offset>\fP.
+we subtract a constant [default = 40000] but you can provide another value in \fIoffset\fP.
 .TP
 \fB\-W\fP
 Take into account that the magnetometer is not at ship's position.
-\fI<cable>\fP is magnetometer tow distance [default = 200 meters].
-If \fB\-W\fP only is given (e.g. no <cable>) and like with the \fB\-Y\fP option, we try
+\fIcable_length\fP is magnetometer tow distance [default = 200 meters].
+If \fB\-W\fP only is given (e.g., no \fIcable_length\fP) and like with the \fB\-Y\fP option, we try
 to get the tow distance from the header file. Failing, defaults to 200 meters.
 Note that this option will throw away the first points whose accumulated.
-distance since the start of magnetic acquisition is less than cable.
-length, and likewise for the end of the mag profile.
+distance since the start of magnetic acquisition is less than \fIcable_length\fP,
+and likewise for the end of the mag profile.
 .TP
 \fB\-V\fP
 Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
@@ -63,8 +63,8 @@ To create new gmt files from all the mgd77 files listed in \fIlist.d\fP:
 .IR dat2gmt (1),
 .IR GMT (1)
 .SH REFERENCES
-Wessel, P., and W. H. F. Smith, 2011, The Generic Mapping Tools (GMT) version
-4.5.7 Technical Reference & Cookbook, SOEST/NOAA.
+Wessel, P., and W. H. F. Smith, 2013, The Generic Mapping Tools (GMT) version
+4.5.9 Technical Reference & Cookbook, SOEST/NOAA.
 .br
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
 Tools Released, EOS Trans., AGU, 79 (47), p. 579.

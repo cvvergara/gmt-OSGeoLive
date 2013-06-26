@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77togmt.c,v 1.32 2011/07/11 19:22:06 guru Exp $
+ *	$Id: mgd77togmt.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *    Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -148,7 +148,7 @@ int main (int argc, char **argv) {
 		fprintf (stderr, "\t   we subtract a constant [default = 40000] but you can provide another value in <offset>.\n");
 		fprintf (stderr, "\t-W Take into account that the magnetometer is not at ship's position.\n");
 		fprintf (stderr, "\t   <cable> is magnetometer tow distance [default = 200 meters].\n");
-		fprintf (stderr, "\t   If -W only is given (e.g. no <cable>) and like with the -Y option, we try\n");
+		fprintf (stderr, "\t   If -W only is given (e.g., no <cable_length>) and like with the -Y option, we try\n");
 		fprintf (stderr, "\t   to get the tow distance from the header file. Failing, defaults to 200 meters.\n");
 		fprintf (stderr, "\t   Note that this option will throw away the first points whose accumulated.\n");
 		fprintf (stderr, "\t   distance since the start of magnetic acquisition is less than cable.\n");

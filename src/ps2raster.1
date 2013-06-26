@@ -1,4 +1,4 @@
-.TH PS2RASTER 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH PS2RASTER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 ps2raster \- Converts one or several \fIPostScript\fP file(s) to other formats using GhostScript
 .SH SYNOPSIS
@@ -16,7 +16,7 @@ ESRI type world files used to reference, for instance, tif files and make them b
 .TP
 \fIpsfiles\fP
 Names of \fIPostScript\fP files to be converted. The output files will have the same name (unless \fB\-F\fP is used) but with the
-conventional extension name associated to the raster format (e.g. .jpg for the jpeg format).  Use
+conventional extension name associated to the raster format (e.g., .jpg for the jpeg format).  Use
 \fB\-D\fP to redirect the output to a different directory.
 .SH OPTIONS
 .TP
@@ -42,8 +42,12 @@ to provide a different name, but without extension. Extension is still determine
 \fB\-G\fP
 Full path to your GhostScript executable.
 NOTE: For Unix systems this is generally not necessary.
-However, under Windows, GhostScript is not added to the system's path. So either you do it yourself,\"'
-or give the full path here. (e.g., \fB\-G\fPc:\\programs\\gs\\gs7.05\\bin\\gswin32c).
+Under Windows, ghostscript path is now fetch from the registry.
+If this fails you can still add the GS path to system's path or give the full path here.
+(e.g., \fB\-G\fPc:\\programs\\gs\\gs9.02\\bin\\gswin32c). WARNING: because of the poor decision
+of embedding the bits on the gs exe name we cannot satisfy both the 32 and 64 bits ghostscript
+executable names. So in case of 'get from registry' failure the default name (when no \fB\-G\fP is used)
+is the one of the 64 bits version, or gswin32c
 .TP
 \fB\-L\fP
 The \fIlistfile\fP is an ASCII file with the names of the \fIPostScript\fP files to be converted.

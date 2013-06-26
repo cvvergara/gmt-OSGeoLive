@@ -1,6 +1,6 @@
 #!/bin/csh
 #		GMT EXAMPLE 30
-#		$Id: job30.csh,v 1.3 2011/03/01 01:34:48 remko Exp $
+#		$Id: job30.csh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Show graph mode and math angles
 # GMT progs:	gmtmath, psbasemap, pstext and psxy

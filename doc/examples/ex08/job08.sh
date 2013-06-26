@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 08
-#		$Id: job08.sh,v 1.13 2011/02/28 00:58:03 remko Exp $
+#		$Id: job08.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Make a 3-D bar plot
 # GMT progs:	grd2xyz, pstext, psxyz

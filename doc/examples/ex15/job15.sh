@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 15
-#		$Id: job15.sh,v 1.12 2011/02/28 00:58:03 remko Exp $
+#		$Id: job15.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Gridding and clipping when data are missing
 # GMT progs:	blockmedian, gmtconvert, grdclip, grdcontour, grdinfo, minmax

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: xyz2grd.c,v 1.104 2011/07/08 21:27:06 guru Exp $
+ *	$Id: xyz2grd.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -88,7 +88,7 @@ int main (int argc, char **argv)
 
 	float no_data_f, *a = VNULL;
 
-	char line[BUFSIZ], *not_used = NULL;
+	char line[BUFSIZ];
 
 	FILE *fp = NULL;
 
@@ -196,7 +196,7 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\txyzfile(s) is a 1- or 3-column file [or standard input] with [x,y,]z values\n");
+		fprintf (stderr, "\txyzfile(s) is a 1- or 3-column file [or standard input] with [x,y,]z values.\n");
 		fprintf (stderr, "\t-G to name the output grid file.\n");
 		GMT_inc_syntax ('I', 0);
 		GMT_explain_option ('R');
@@ -205,47 +205,47 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   Append n (-An): Count number of multiple entries per node instead.\n");
 		fprintf (stderr, "\t   Append u (-Au): Keep maximum value if multiple entries per node.\n");
 		fprintf (stderr, "\t   Append l (-Al): Keep minimum value if multiple entries per node.\n");
-		fprintf (stderr, "\t   [Default (no -A option) will compute mean values]\n");
-		fprintf (stderr, "\t-D to enter header information.  Specify '=' to get default value\n");
+		fprintf (stderr, "\t   [Default (no -A option) will compute mean values].\n");
+		fprintf (stderr, "\t-D to enter header information.  Specify '=' to get default value.\n");
 		fprintf (stderr, "\t-E input is an ESRI ArcInfo interchange ASCII grid.  Optionally,\n");
 		fprintf (stderr, "\t   append the nodata value that represents nodes that should be NaN\n");
 		fprintf (stderr, "\t   [Normally, a nodata_value declaration may be found in the ESRI grid].\n");
 		fprintf (stderr, "\t   Information for -R , -I, and -F are obtained from the ESRI file.\n");
-		fprintf (stderr, "\t-F will force pixel registration [Default is grid registration]\n");
+		fprintf (stderr, "\t-F will force pixel registration [Default is grid registration].\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-N set value for nodes without input xyz triplet [Default is NaN]\n");
-		fprintf (stderr, "\t   Z-table entries that equal <nodata> are replaced by NaN\n");
+		fprintf (stderr, "\t-N set value for nodes without input xyz triplet [Default is NaN].\n");
+		fprintf (stderr, "\t   Z-table entries that equal <nodata> are replaced by NaN.\n");
 		fprintf (stderr, "\t-S Requires -Z and will swap the byte-order of the input data and write\n");
 		fprintf (stderr, "\t   the result to <zfile> (or stdout if no file given).  No grid file created!\n");
 		fprintf (stderr, "\t   For this option, only one input file (or stdin) is allowed.\n");
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t-Z sets exact specification of incoming 1-column z-table\n");
-		fprintf (stderr, "\t   If data is in row format, state if first row is at T(op) or B(ottom)\n");
-		fprintf (stderr, "\t     Then, append L or R to indicate starting point in row\n");
-		fprintf (stderr, "\t   If data is in column format, state if first columns is L(left) or R(ight)\n");
-		fprintf (stderr, "\t     Then, append T or B to indicate starting point in column\n");
-		fprintf (stderr, "\t   To skip a header of size <n> bytes, append s<n> [<n> = 0]\n");
-		fprintf (stderr, "\t   To swap byte-order in 2-byte words, append w\n");
-		fprintf (stderr, "\t   Append x if gridline-registered, periodic data in x without repeating column at xmax\n");
-		fprintf (stderr, "\t   Append y if gridline-registered, periodic data in y without repeating row at ymax\n");
+		fprintf (stderr, "\t-Z sets exact specification of incoming 1-column z-table.\n");
+		fprintf (stderr, "\t   If data is in row format, state if first row is at T(op) or B(ottom).\n");
+		fprintf (stderr, "\t     Then, append L or R to indicate starting point in row.\n");
+		fprintf (stderr, "\t   If data is in column format, state if first columns is L(left) or R(ight).\n");
+		fprintf (stderr, "\t     Then, append T or B to indicate starting point in column.\n");
+		fprintf (stderr, "\t   To skip a header of size <n> bytes, append s<n> [<n> = 0].\n");
+		fprintf (stderr, "\t   To swap byte-order in 2-byte words, append w.\n");
+		fprintf (stderr, "\t   Append x if gridline-registered, periodic data in x without repeating column at xmax.\n");
+		fprintf (stderr, "\t   Append y if gridline-registered, periodic data in y without repeating row at ymax.\n");
 		fprintf (stderr, "\t   Specify one of the following data types (all binary except a):\n");
-		fprintf (stderr, "\t     A  Ascii (multiple floating point values per record)\n");
-		fprintf (stderr, "\t     a  Ascii (one value per record)\n");
-		fprintf (stderr, "\t     c  signed 1-byte character\n");
-		fprintf (stderr, "\t     u  unsigned 1-byte character\n");
-		fprintf (stderr, "\t     h  signed short 2-byte integer\n");
-		fprintf (stderr, "\t     H  unsigned short 2-byte integer\n");
-		fprintf (stderr, "\t     i  signed 4-byte integer\n");
-		fprintf (stderr, "\t     I  unsigned 4-byte integer\n");
-		fprintf (stderr, "\t     l  signed long (4- or 8-byte) integer\n");
-		fprintf (stderr, "\t     f  4-byte floating point single precision\n");
-		fprintf (stderr, "\t     d  8-byte floating point double precision\n");
-		fprintf (stderr, "\t   [Default format is scanline orientation in ASCII representation: -ZTLa]\n");
+		fprintf (stderr, "\t     A  Ascii (multiple floating point values per record).\n");
+		fprintf (stderr, "\t     a  Ascii (one value per record).\n");
+		fprintf (stderr, "\t     c  signed 1-byte character.\n");
+		fprintf (stderr, "\t     u  unsigned 1-byte character.\n");
+		fprintf (stderr, "\t     h  signed short 2-byte integer.\n");
+		fprintf (stderr, "\t     H  unsigned short 2-byte integer.\n");
+		fprintf (stderr, "\t     i  signed 4-byte integer.\n");
+		fprintf (stderr, "\t     I  unsigned 4-byte integer.\n");
+		fprintf (stderr, "\t     l  signed long (4- or 8-byte) integer.\n");
+		fprintf (stderr, "\t     f  4-byte floating point single precision.\n");
+		fprintf (stderr, "\t     d  8-byte floating point double precision.\n");
+		fprintf (stderr, "\t   [Default format is scanline orientation in ASCII representation: -ZTLa].\n");
 		fprintf (stderr, "\t   This option assumes all nodes have data values.\n");
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 3 input columns\n");
+		fprintf (stderr, "\t   Default is 3 input columns.\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);
@@ -358,7 +358,7 @@ int main (int argc, char **argv)
 		a = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
 		flag = (GMT_LONG *) GMT_memory (VNULL, (size_t)nm, sizeof (GMT_LONG), GMT_program);
 
-		n_expected_fields = (Ctrl->Z.active) ? 1 : 3;
+		n_expected_fields = (Ctrl->Z.active) ? 1 : Ctrl->A.mode == 'n' ? 2 : 3;
 		z = (Ctrl->Z.active) ? 0 : 2;
 	}
 
@@ -388,6 +388,10 @@ int main (int argc, char **argv)
 			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
 			continue;
 		}
+		else if ((fp = GMT_fopen (argv[fno], GMT_io.r_mode)) == NULL) {
+			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
+			continue;
+		}
 #else
 		else if ((fp = GMT_fopen (argv[fno], GMT_io.r_mode)) == NULL) {
 			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
@@ -397,7 +401,7 @@ int main (int argc, char **argv)
 
 		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		if (Ctrl->S.active) {	/* Just swap data and exit */
 			FILE *fps = NULL;
@@ -452,33 +456,33 @@ int main (int argc, char **argv)
 			float value;
 			
 			grd.node_offset = 0;
-			not_used = fgets (line, BUFSIZ, fp);
+			(void)fgets (line, BUFSIZ, fp);
 			GMT_chop (line);					/* Rid the world of CR/LF */
 			if (sscanf (line, "%*s %d", &grd.nx) != 1) {
 				fprintf (stderr, "%s: Error decoding ncols record\n", GMT_program);
 				exit (EXIT_FAILURE);
 			}
-			not_used = fgets (line, BUFSIZ, fp);
+			(void)fgets (line, BUFSIZ, fp);
 			GMT_chop (line);					/* Rid the world of CR/LF */
 			if (sscanf (line, "%*s %d", &grd.ny) != 1) {
 				fprintf (stderr, "%s: Error decoding ncols record\n", GMT_program);
 				exit (EXIT_FAILURE);
 			}
-			not_used = fgets (line, BUFSIZ, fp);	GMT_str_tolower (line);
+			(void)fgets (line, BUFSIZ, fp);	GMT_str_tolower (line);
 			GMT_chop (line);					/* Rid the world of CR/LF */
 			if (sscanf (line, "%*s %lf", &grd.x_min) != 1) {
 				fprintf (stderr, "%s: Error decoding xll record\n", GMT_program);
 				exit (EXIT_FAILURE);
 			}
 			if (!strncmp (line, "xllcorner", (size_t)9)) grd.node_offset = 1;	/* Pixel grid */
-			not_used = fgets (line, BUFSIZ, fp);	GMT_str_tolower (line);
+			(void)fgets (line, BUFSIZ, fp);	GMT_str_tolower (line);
 			GMT_chop (line);					/* Rid the world of CR/LF */
 			if (sscanf (line, "%*s %lf", &grd.y_min) != 1) {
 				fprintf (stderr, "%s: Error decoding yll record\n", GMT_program);
 				exit (EXIT_FAILURE);
 			}
 			if (!strncmp (line, "yllcorner", (size_t)9)) grd.node_offset = 1;	/* Pixel grid */
-			not_used = fgets (line, BUFSIZ, fp);
+			(void)fgets (line, BUFSIZ, fp);
 			GMT_chop (line);					/* Rid the world of CR/LF */
 			if (sscanf (line, "%*s %lf", &grd.x_inc) != 1) {
 				fprintf (stderr, "%s: Error decoding cellsize record\n", GMT_program);
@@ -496,7 +500,7 @@ int main (int argc, char **argv)
 
 			a = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
 			if (!Ctrl->E.set) {	/* Only read if not specified in -E */
-				not_used = fgets (line, BUFSIZ, fp);
+				(void)fgets (line, BUFSIZ, fp);
 				GMT_chop (line);					/* Rid the world of CR/LF */
 				if (sscanf (line, "%*s %lf", &Ctrl->E.nodata) != 1) {
 					fprintf (stderr, "%s: Error decoding nodata_value record\n", GMT_program);

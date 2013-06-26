@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtlist.c,v 1.37 2011/07/11 19:22:06 guru Exp $
+ *	$Id: gmtlist.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *    Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -215,7 +215,7 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf(stderr,"	<cruises> is one or more legnames, e.g. c2104 v3206 etc.\n");
+		fprintf(stderr,"	<cruises> is one or more legnames, e.g., c2104 v3206 etc.\n");
 		fprintf(stderr,"	OPTIONS:\n\n");
 		fprintf(stderr,"	-C<file> applies crossover corrections to the data. If no file name\n");
 		fprintf(stderr,"	   is given, the default correction file is assumed\n");

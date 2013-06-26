@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 04
-#		$Id: job04.sh,v 1.12 2011/02/28 00:58:03 remko Exp $
+#		$Id: job04.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	3-D mesh plot of Hawaiian topography and geoid
 # GMT progs:	grdcontour, grdview, pscoast, pstext

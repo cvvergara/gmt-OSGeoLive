@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:40 2011 -->
+<!-- CreationDate: Wed Jan  2 08:39:58 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -81,7 +81,7 @@ psfiles</i></p>
 files to be converted. The output files will have the same
 name (unless <b>&minus;F</b> is used) but with the
 conventional extension name associated to the raster format
-(e.g. .jpg for the jpeg format). Use <b>&minus;D</b> to
+(e.g., .jpg for the jpeg format). Use <b>&minus;D</b> to
 redirect the output to a different directory.</p>
 
 <a name="OPTIONS"></a>
@@ -180,10 +180,17 @@ automatically.</p> </td>
 
 <p style="margin-top: 1em" valign="top">Full path to your
 GhostScript executable. NOTE: For Unix systems this is
-generally not necessary. However, under Windows, GhostScript
-is not added to the system&rsquo;s path. So either you do it
-yourself, or give the full path here. (e.g.,
-<b>&minus;G</b>c:\programs\gs\gs7.05\bin\gswin32c).</p> </td>
+generally not necessary. Under Windows, ghostscript path is
+now fetch from the registry. If this fails you can still add
+the GS path to system&rsquo;s path or give the full path
+here. (e.g.,
+<b>&minus;G</b>c:\programs\gs\gs9.02\bin\gswin32c). WARNING:
+because of the poor decision of embedding the bits on the gs
+exe name we cannot satisfy both the 32 and 64 bits
+ghostscript executable names. So in case of &rsquo;get from
+registry&rsquo; failure the default name (when no
+<b>&minus;G</b> is used) is the one of the 64 bits version,
+or gswin32c</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">

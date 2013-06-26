@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pswiggle.c,v 1.76 2011/07/08 21:27:06 guru Exp $
+ *	$Id: pswiggle.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -90,7 +90,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG error = FALSE, nofile = TRUE, paint_wiggle, done;
 
-	char line[BUFSIZ], *units = CNULL, txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT], *not_used = NULL;
+	char line[BUFSIZ], *units = CNULL, txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT];
 
 	GMT_LONG i, j, n, n_alloc = GMT_CHUNK;
 	GMT_LONG k, n_files = 0, fno, n_args, n_expected_fields, n_fields, n_read, wantx, wanty;
@@ -238,13 +238,13 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<xyz_files> is one or more files.  If none, read standard input\n");
+		fprintf (stderr, "\t<xyz_files> is one or more files.  If none, read standard input.\n");
 		GMT_explain_option ('j');
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A set azimuth for preferred positive wiggle orientation [0.0 (north)]\n");
+		fprintf (stderr, "\t-A set azimuth for preferred positive wiggle orientation [0.0 (north)].\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-C sets center value to be removed from z before plotting. [0]\n");
+		fprintf (stderr, "\t-C sets center value to be removed from z before plotting [0].\n");
 		fprintf (stderr, "\t-D means there is a datagap if 2 points are more than <gap> distance units apart.\n");
 		fprintf (stderr, "\t   For map projections, <gap> is assumed to be in km.\n");
 		fprintf (stderr, "\t   Use -Dx to specify gaps in projected distances (append unit c|i|m|p).\n");
@@ -252,24 +252,24 @@ int main (int argc, char **argv)
 		GMT_explain_option ('E');
 		GMT_fill_syntax ('G', "Specify color/pattern for positive areas.");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I set fixed projection azimuths for wiggles\n");
+		fprintf (stderr, "\t-I set fixed projection azimuths for wiggles.\n");
 		GMT_explain_option ('K');
-		fprintf (stderr, "\t-N Fill negative wiggles instead [Default is positive]\n");
+		fprintf (stderr, "\t-N Fill negative wiggles instead [Default is positive].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-S draws a simple vertical scale centered on <lon0>/<lat0>.  Use -Sx to specify cartesian coordinates instead.\n");
-		fprintf (stderr, "\t   <length> is in z-units, append unit name for labeling\n");
-		fprintf (stderr, "\t-T specifies track pen attributes. [Default is no track]\n");
+		fprintf (stderr, "\t   <length> is in z-units, append unit name for labeling.\n");
+		fprintf (stderr, "\t-T specifies track pen attributes. [Default is no track].\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_pen_syntax ('W', "specifies outline pen attributes [Default is no outline].");
 		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z gives the wiggle scale in data-units per %s\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t-Z gives the wiggle scale in data-units per %s.\n", GMT_unit_names[gmtdefs.measure_unit]);
 		GMT_explain_option ('c');
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 3 input columns\n");
+		fprintf (stderr, "\t   Default is 3 input columns.\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('m');
 		GMT_explain_option ('.');
@@ -388,9 +388,9 @@ int main (int argc, char **argv)
 			ps_comment (line);
 		}
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 		if (GMT_io.multi_segments[GMT_IN]) {
-			not_used = GMT_fgets (line, BUFSIZ, fp);
+			GMT_fgets (line, BUFSIZ, fp);
 			if (gmtdefs.verbose) ps_comment (line);
 		}
 		n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 3;

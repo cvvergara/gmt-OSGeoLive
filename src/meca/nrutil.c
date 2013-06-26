@@ -1,4 +1,4 @@
-/*	$Id: nrutil.c,v 1.5 2009/05/13 21:06:43 guru Exp $
+/*	$Id: nrutil.c 9545 2011-07-27 19:31:54Z pwessel $
  *    Public Domain NR stuff.
  */
  

@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 04c
-#		$Id: job04c.sh,v 1.3 2011/02/28 00:58:03 remko Exp $
+#		$Id: job04c.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # 3-D perspective color plot of Hawaiian topography and geoid
 # GMT progs:	grdcontour, grdview, pscoast, pstext

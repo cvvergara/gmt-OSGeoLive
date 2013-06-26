@@ -1,11 +1,11 @@
-.TH GMTLOGO 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH GMTLOGO 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 gmtlogo \- Adding a GMT graphics logo overlay to an illustration
 .SH SYNOPSIS
-\fBgmtlogo\fP \fIdx\fP \fIdy\fP [ \fB\-G\fP\fIfill\fP ] [ \fB\-W\fP[\fIpen\fP] ] >> \fIplot.ps\fP
+\fBgmtlogo\fP \fIdx\fP \fIdy\fP \fIscale\fP [ \fB\-G\fP\fIfill\fP ] [ \fB\-W\fP[\fIpen\fP] ] >> \fIplot.ps\fP
 .SH DESCRIPTION
 This scrips appends the \fBGMT\fP logo to an "open" PostScript file.
-The logo is 2 inches wide and 1 inch high and will be positioned with the lower left corner
+The logo is 2 times \fIscale\fP wide and \fIscale\fP high and will be positioned with the lower left corner
 at the position (\fIdx\fP,\fIdy\fP) relative to the current plot origin.
 .SH OPTIONS
 .TP 

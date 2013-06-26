@@ -1,4 +1,4 @@
-#	$Id: Makefile,v 1.62 2010/11/01 22:31:53 remko Exp $
+#	$Id: Makefile 9700 2012-03-09 04:04:18Z pwessel $
 #
 #		Makefile for GMT mgd77 supplements
 #
@@ -23,7 +23,7 @@ include $(GMTSRCDIR)common.mk
 INCLUDES	= -I$(srcdir) $(NETCDF_INC) $(GDAL_INC)
 
 LIB_O		= mgd77.o
-LIB_H		= mgd77.h mgd77_functions.h mgd77defaults.h mgd77_recalc.h cm4_functions.h
+LIB_H		= mgd77.h mgd77_functions.h mgd77defaults.h mgd77_recalc.h cm4_functions.h mgd77_init.h
 LIB		= libmgd77.$(LIBEXT)
 
 PROGS_H		= mgd77_IGF_coeffs.h mgd77sniffer.h mgd77snifferdefaults.h mgd77magref.h mgd77_codes.h

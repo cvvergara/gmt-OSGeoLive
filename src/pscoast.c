@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pscoast.c,v 1.111 2011/07/08 21:27:06 guru Exp $
+ *	$Id: pscoast.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -125,7 +125,7 @@ struct PSCOAST_CTRL {
 
 int main (int argc, char **argv)
 {
-	int i, np, ind, bin, base, anti_bin = -1, level, np_new, k, last_k, err;
+	int i, np, ind, bin, base, anti_bin = -1, np_new, k, last_k, err;
 	int level_to_be_painted = 0, direction, start_direction, stop_direction, last_pen_level;
 	int n_blevels = 0, n_rlevels = 0, bin_trouble;
 
@@ -404,69 +404,69 @@ int main (int argc, char **argv)
 		GMT_GSHHS_syntax ('A', "Place limits on coastline features from the GSHHS data base.");
 		GMT_explain_option ('b');
 		GMT_fill_syntax ('C', "Sets separate color for lakes and riverlakes [Default is same as ocean].");
-		fprintf (stderr, "\t   Alternatively, set custom fills below.  Repeat the -C option as needed\n");
+		fprintf (stderr, "\t   Alternatively, set custom fills below.  Repeat the -C option as needed.\n");
 		fprintf (stderr, "\t      l = Lakes\n");
 		fprintf (stderr, "\t      r = River-lakes\n");
 		fprintf (stderr, "\t-D Choose one of the following resolutions:\n");
-		fprintf (stderr, "\t   f - full resolution (may be very slow for large regions)\n");
-		fprintf (stderr, "\t   h - high resolution (may be slow for large regions)\n");
-		fprintf (stderr, "\t   i - intermediate resolution\n");
-		fprintf (stderr, "\t   l - low resolution [Default]\n");
-		fprintf (stderr, "\t   c - crude resolution, for busy plots that need crude continent outlines only\n");
+		fprintf (stderr, "\t   f - full resolution (may be very slow for large regions).\n");
+		fprintf (stderr, "\t   h - high resolution (may be slow for large regions).\n");
+		fprintf (stderr, "\t   i - intermediate resolution.\n");
+		fprintf (stderr, "\t   l - low resolution [Default].\n");
+		fprintf (stderr, "\t   c - crude resolution, for busy plots that need crude continent outlines only.\n");
 		fprintf (stderr, "\t   Append + to use a lower resolution should the chosen one not be available [abort].\n");
 		GMT_explain_option ('E');
 		GMT_fill_syntax ('G', "Paint or clip \"dry\" areas.");
 		fprintf (stderr, "\t   6) c to issue clip paths for land areas.\n");
 		GMT_pen_syntax ('I', "draws rivers.  Specify feature and optionally append pen [Default is solid line of unit thickness].");
-		fprintf (stderr, "\t   Choose from the features below.  Repeat the -I option as many times as needed\n");
-		fprintf (stderr, "\t      0 = Double-lined rivers (river-lakes)\n");
-		fprintf (stderr, "\t      1 = Permanent major rivers\n");
-		fprintf (stderr, "\t      2 = Additional major rivers\n");
-		fprintf (stderr, "\t      3 = Additional rivers\n");
-		fprintf (stderr, "\t      4 = Minor rivers\n");
-		fprintf (stderr, "\t      5 = Intermittent rivers - major\n");
-		fprintf (stderr, "\t      6 = Intermittent rivers - additional\n");
-		fprintf (stderr, "\t      7 = Intermittent rivers - minor\n");
-		fprintf (stderr, "\t      8 = Major canals\n");
-		fprintf (stderr, "\t      9 = Minor canals\n");
-		fprintf (stderr, "\t     10 = Irrigation canals\n");
-		fprintf (stderr, "\t      a = All rivers and canals (0-10)\n");
-		fprintf (stderr, "\t      r = All permanent rivers (0-4)\n");
-		fprintf (stderr, "\t      i = All intermittent rivers (5-7)\n");
-		fprintf (stderr, "\t      c = All canals (8-10)\n");
+		fprintf (stderr, "\t   Choose from the features below.  Repeat the -I option as many times as needed.\n");
+		fprintf (stderr, "\t      0 = Double-lined rivers (river-lakes).\n");
+		fprintf (stderr, "\t      1 = Permanent major rivers.\n");
+		fprintf (stderr, "\t      2 = Additional major rivers.\n");
+		fprintf (stderr, "\t      3 = Additional rivers.\n");
+		fprintf (stderr, "\t      4 = Minor rivers.\n");
+		fprintf (stderr, "\t      5 = Intermittent rivers - major.\n");
+		fprintf (stderr, "\t      6 = Intermittent rivers - additional.\n");
+		fprintf (stderr, "\t      7 = Intermittent rivers - minor.\n");
+		fprintf (stderr, "\t      8 = Major canals.\n");
+		fprintf (stderr, "\t      9 = Minor canals.\n");
+		fprintf (stderr, "\t     10 = Irrigation canals.\n");
+		fprintf (stderr, "\t      a = All rivers and canals (0-10).\n");
+		fprintf (stderr, "\t      r = All permanent rivers (0-4).\n");
+		fprintf (stderr, "\t      i = All intermittent rivers (5-7).\n");
+		fprintf (stderr, "\t      c = All canals (8-10).\n");
 		GMT_explain_option ('K');
-		GMT_mapscale_syntax ('L', "Draws a simple map scale centered on <lon0>/<lat0>");
+		GMT_mapscale_syntax ('L', "Draws a simple map scale centered on <lon0>/<lat0>.");
 		GMT_pen_syntax ('N', "draws boundaries.  Specify feature and optionally append pen [Default is solid line of unit thickness].");
-		fprintf (stderr, "\t   Choose from the features below.  Repeat the -N option as many times as needed\n");
-		fprintf (stderr, "\t     1 = National boundaries\n");
-		fprintf (stderr, "\t     2 = State boundaries within the Americas\n");
-		fprintf (stderr, "\t     3 = Marine boundaries\n");
-		fprintf (stderr, "\t     a = All boundaries (1-3)\n");
+		fprintf (stderr, "\t   Choose from the features below.  Repeat the -N option as many times as needed.\n");
+		fprintf (stderr, "\t     1 = National boundaries.\n");
+		fprintf (stderr, "\t     2 = State boundaries within the Americas.\n");
+		fprintf (stderr, "\t     3 = Marine boundaries.\n");
+		fprintf (stderr, "\t     a = All boundaries (1-3).\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
-		fprintf (stderr,"\t-Q means terminate previously set clip-paths\n");
+		fprintf (stderr,"\t-Q means terminate previously set clip-paths.\n");
 		GMT_fill_syntax ('S', "Paint of clip \"wet\" areas.");
 		fprintf (stderr, "\t   6) c to issue clip paths for water areas.\n");
-		GMT_maprose_syntax ('T', "Draws a north-pointing map rose centered on <lon0>/<lat0>");
+		GMT_maprose_syntax ('T', "Draws a north-pointing map rose centered on <lon0>/<lat0>.");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_pen_syntax ('W', "draw shorelines.  Append pen [Default is solid black line of unit thickness for all levels].");
-		fprintf (stderr, "\t   Alternatively, set custom pens below.  Repeat the -W option as many times as needed\n");
-		fprintf (stderr, "\t      1 = Coastline\n");
-		fprintf (stderr, "\t      2 = Lake shores\n");
-		fprintf (stderr, "\t      3 = Island in lakes shores\n");
-		fprintf (stderr, "\t      4 = Lake in island in lake shores\n");
+		fprintf (stderr, "\t   Alternatively, set custom pens below.  Repeat the -W option as many times as needed.\n");
+		fprintf (stderr, "\t      1 = Coastline.\n");
+		fprintf (stderr, "\t      2 = Lake shores.\n");
+		fprintf (stderr, "\t      3 = Island in lakes shores.\n");
+		fprintf (stderr, "\t      4 = Lake in island in lake shores.\n");
 		fprintf (stderr, "\t   When feature-specific pens are used, those not set are deactivated\n");
 		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [0]\n");
+		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [0].\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('c');
 		fprintf (stderr, "\t-m Dump a multisegment ascii (or binary, see -bo) file to standard output.  No plotting occurs\n");
 		fprintf (stderr, "\t   Specify any combination of -W, -I, -N.  Optionally, append 1-char\n");
-		fprintf (stderr, "\t   segment header <flag> [%c]\n", GMT_io.EOF_flag[GMT_OUT]);
+		fprintf (stderr, "\t   segment header <flag> [%c].\n", GMT_io.EOF_flag[GMT_OUT]);
 #ifdef DEBUG
-		fprintf (stderr, "\t-+ Print only a single bin (debug option)\n");
+		fprintf (stderr, "\t-+ Print only a single bin (debug option).\n");
 #endif
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);
@@ -597,7 +597,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "%s: %s resolution political boundary data base not installed\n", GMT_program, shore_resolution[base]);
 		Ctrl->N.active = FALSE;
 	}
-	if (need_coast_base && gmtdefs.verbose == 2) fprintf (stderr, "GSHHS version %s\n%s\n%s\n", c.version, c.title, c.source);
+	if (need_coast_base && gmtdefs.verbose == 2) fprintf (stderr, "GSHHG version %s\n%s\n%s\n", c.version, c.title, c.source);
 
 	if (Ctrl->I.active && GMT_init_br ('r', Ctrl->D.set, &r, project_info.w, project_info.e, project_info.s, project_info.n)) {
 		fprintf (stderr, "%s: %s resolution river data base not installed\n", GMT_program, shore_resolution[base]);
@@ -802,7 +802,6 @@ int main (int argc, char **argv)
 			else {	/* Simply paints all polygons as is */
 				for (k = 0; k < np_new; k++) {
 					if (p[k].n == 0 || p[k].level < level_to_be_painted) continue;
-					level = (int)p[k].level;
 					if (donut_hell && GMT_non_zero_winding (anti_x, anti_y, p[k].lon, p[k].lat, p[k].n)) {	/* Antipode inside polygon, must do donut */
 						n = GMT_map_clip_path (&xtmp, &ytmp, &donut);
 						ps_line (xtmp, ytmp, n, 1, TRUE);

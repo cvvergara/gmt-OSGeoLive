@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 29
-#		$Id: job29.sh,v 1.5 2011/02/28 00:58:03 remko Exp $
+#		$Id: job29.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Illustrates spherical surface gridding with Green's function of splines
 # GMT progs:	makecpt, grdcontour, grdgradient, grdimage, grdmath greenspline, psscale, pstext

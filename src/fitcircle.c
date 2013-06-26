@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: fitcircle.c,v 1.53 2011/07/08 21:27:05 guru Exp $
+ *    $Id: fitcircle.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -82,7 +82,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG	error = FALSE, greenwich = FALSE, allocate;
 
-	char	format[BUFSIZ], *not_used = NULL;
+	char	format[BUFSIZ];
 
 	GMT_LONG	imin, imax, nrots, n_fields, n_expected_fields, n_read;
 	GMT_LONG	i, j, k, n_alloc, n_data, n, np;
@@ -203,9 +203,9 @@ int main (int argc, char **argv)
 
 	data = (struct FITCIRCLE_DATA *) GMT_memory (VNULL, (size_t)n_alloc, sizeof(struct FITCIRCLE_DATA), GMT_program);
 
-	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (format, BUFSIZ, fp);
+	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (format, BUFSIZ, fp);
 
-	sprintf (format, "%s\t%s", gmtdefs.d_format, gmtdefs.d_format);
+	sprintf (format, "%s%s%s", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
 	n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 2;
 
 	while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
@@ -256,7 +256,7 @@ int main (int argc, char **argv)
 		GMT_cart_to_geo (&latsum, &lonsum, meanv, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		fprintf (stdout, format, lonsum, latsum);
-		fprintf (stdout, "\tL1 Average Position (Fisher's Method)\n");
+		fprintf (stdout, "%sL1 Average Position (Fisher's Method)\n", gmtdefs.field_delimiter);
 
 		cross_sum[0] = cross_sum[1] = cross_sum[2] = 0.0;
 		for (i = 0; i < n_data; i++) {
@@ -278,12 +278,12 @@ int main (int argc, char **argv)
 		GMT_cart_to_geo (&latsum, &lonsum, cross_sum, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		fprintf (stdout, format, lonsum, latsum);
-		fprintf (stdout, "\tL1 N Hemisphere Great Circle Pole (Cross-Averaged)\n");
+		fprintf (stdout, "%sL1 N Hemisphere Great Circle Pole (Cross-Averaged)\n", gmtdefs.field_delimiter);
 		latsum = -latsum;
 		lonsum = d_atan2d(-cross_sum[1], -cross_sum[0]);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		fprintf (stdout, format, lonsum, latsum);
-		fprintf (stdout, "\tL1 S Hemisphere Great Circle Pole (Cross-Averaged)\n");
+		fprintf (stdout, "%sL1 S Hemisphere Great Circle Pole (Cross-Averaged)\n", gmtdefs.field_delimiter);
 		if (Ctrl->S.active) {
 			if (gmtdefs.verbose) fprintf (stderr,"Fitting small circle using L1 norm.\n");
 			rad = get_small_circle (data, n_data, meanv, gcpole, scpole, 1, work, Ctrl->S.mode, Ctrl->S.lat);
@@ -291,14 +291,14 @@ int main (int argc, char **argv)
 				GMT_cart_to_geo (&latsum, &lonsum, scpole, TRUE);
 				if (greenwich && lonsum < 0.0) lonsum += 360.0;
 				fprintf (stdout, format, lonsum, latsum);
-				fprintf (stdout, "\tL1 Small Circle Pole.  ");
+				fprintf (stdout, "%sL1 Small Circle Pole.  ", gmtdefs.field_delimiter);
 				sprintf(format, "Distance from Pole to L1 Small Circle (degrees):     %s\n", gmtdefs.d_format);
 				fprintf (stdout, format, rad);
 			}
 		}
 	}
 
-	sprintf (format, "%s\t%s", gmtdefs.d_format, gmtdefs.d_format);
+	sprintf (format, "%s%s%s", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
 	if (Ctrl->L.norm/2) {
 
 		n = 3;
@@ -327,7 +327,7 @@ int main (int argc, char **argv)
 		GMT_cart_to_geo (&latsum, &lonsum, meanv, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		fprintf (stdout, format, lonsum, latsum);
-		fprintf (stdout, "\tL2 Average Position (Eigenval Method)\n");
+		fprintf (stdout, "%sL2 Average Position (Eigenval Method)\n", gmtdefs.field_delimiter);
 
 		if (v[imin*np+2] < 0.0)	/* Eigvec is in S Hemisphere  */
 			for (i = 0; i < 3; i++) gcpole[i] = -v[imin*np+i];
@@ -337,12 +337,12 @@ int main (int argc, char **argv)
 		GMT_cart_to_geo (&latsum, &lonsum, gcpole, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		fprintf (stdout, format, lonsum, latsum);
-		fprintf (stdout, "\tL2 N Hemisphere Great Circle Pole (Eigenval Method)\n");
+		fprintf (stdout, "%sL2 N Hemisphere Great Circle Pole (Eigenval Method)\n", gmtdefs.field_delimiter);
 		latsum = -latsum;
 		lonsum = d_atan2d(-gcpole[1], -gcpole[0]);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		fprintf (stdout, format, lonsum, latsum);
-		fprintf (stdout, "\tL2 S Hemisphere Great Circle Pole (Eigenval Method)\n");
+		fprintf (stdout, "%sL2 S Hemisphere Great Circle Pole (Eigenval Method)\n", gmtdefs.field_delimiter);
 
 		GMT_free ((void *)v);
 		GMT_free ((void *)z);
@@ -357,7 +357,7 @@ int main (int argc, char **argv)
 				GMT_cart_to_geo (&latsum, &lonsum, scpole, TRUE);
 				if (greenwich && lonsum < 0.0) lonsum += 360.0;
 				fprintf (stdout, format, lonsum, latsum);
-				fprintf (stdout, "\tL2 Small Circle Pole.  ");
+				fprintf (stdout, "%sL2 Small Circle Pole.  ", gmtdefs.field_delimiter);
 				sprintf(format, "Distance from Pole to L2 Small Circle (degrees):     %s\n", gmtdefs.d_format);
 				fprintf (stdout, format, rad);
 			}

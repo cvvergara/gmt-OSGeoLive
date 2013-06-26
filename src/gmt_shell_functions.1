@@ -1,4 +1,4 @@
-.TH GMT_SHELL_FUNCTIONS.SH 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH GMT_SHELL_FUNCTIONS.SH 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 gmt_shell_functions.sh \- Practical functions to be used in GMT bourne shell scripts
 .SH SYNOPSIS
@@ -46,7 +46,7 @@ do some scripting more easily than otherwise. The functions made available are:
 .B gmt_init_tmpdir
 Creates a temporary directory in \fB/tmp\fP or (when defined) in the directory specified by the
 environment variable \fBTMPDIR\fP. The name of the temporary directory is returned as environment
-variable \fBGMT_TMPDIR\fP. This function also causes \fBGMT\fP to run in `isolation mode', i.e. all
+variable \fBGMT_TMPDIR\fP. This function also causes \fBGMT\fP to run in `isolation mode', i.e., all
 temporary files will be created in \fBGMT_TMPDIR\fP and the \.gmtdefaults file will not be adjusted.
 .TP
 .B gmt_remove_tmpdir

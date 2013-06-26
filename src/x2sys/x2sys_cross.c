@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_cross.c,v 1.94 2011/07/11 19:22:07 guru Exp $
+ *	$Id: x2sys_cross.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *      Copyright (c) 1999-2011 by P. Wessel
+ *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -101,6 +101,7 @@ int main (int argc, char **argv)
 	double xx, yy;				/* Temporary projection variables */
 	double dist_scale;			/* Scale to give selected distance units */
 	double vel_scale;			/* Scale to give selected velocity units */
+	double t_scale;				/* Scale to give time in seconds */
 
 
 	struct X2SYS_INFO *s = NULL;				/* Data format information  */
@@ -371,7 +372,7 @@ int main (int argc, char **argv)
 			if (col == s->x_col[GMT_IN] || col == s->y_col[GMT_IN] || col == s->t_col[GMT_IN]) continue;
 			col_number[k++] = col;
 		}
-		col_alloc = n_data_col * sizeof (int);
+		col_alloc = n_data_col * sizeof (GMT_LONG);
 		if (s->t_col[GMT_IN] < 0 && gmtdefs.verbose) fprintf (stderr, "%s: No time column, use dummy times\n", GMT_program);
 	}
 
@@ -423,6 +424,7 @@ int main (int argc, char **argv)
 		default:	/*Cartesian */
 			break;
 	}
+	t_scale = gmtdefs.time_system.scale;	/* Convert user's TIME_UNIT to seconds */
 	
 	for (A = 0; A < n_tracks; A++) {	/* Loop over all files */
 		if (duplicate[A]) continue;
@@ -434,6 +436,12 @@ int main (int argc, char **argv)
 
 		x2sys_err_fail ((s->read_file) (trk_name[A], &data[0], s, &data_set[0], &GMT_io, &n_rec[0]), trk_name[A]);
 
+		if (n_rec[0] == 0) {	/* No data in track A */
+			if (gmtdefs.verbose) fprintf (stderr, "%s: Track %s has no data points - skipped\n", GMT_program, trk_name[A]);
+			x2sys_free_data (data[0], s->n_out_columns, &data_set[0]);
+			continue;
+		}
+		
 		has_time[0] = FALSE;
 		if (got_time) {	/* Check to make sure we do in fact have time */
 			for (i = n_bad = 0; i < n_rec[0]; i++) n_bad += GMT_is_dnan (data[0][s->t_col[GMT_IN]][i]);
@@ -482,6 +490,11 @@ int main (int argc, char **argv)
 
 				x2sys_err_fail ((s->read_file) (trk_name[B], &data[1], s, &data_set[1], &GMT_io, &n_rec[1]), trk_name[B]);
 
+				if (n_rec[1] == 0) {	/* No data in track B */
+					if (gmtdefs.verbose) fprintf (stderr, "%s: Track %s has no data points - skipped\n", GMT_program, trk_name[B]);
+					x2sys_free_data (data[1], s->n_out_columns, &data_set[1]);
+					continue;
+				}
 				has_time[1] = FALSE;
 				if (got_time) {	/* Check to make sure we do in fact have time */
 					for (i = n_bad = 0; i < n_rec[1]; i++) n_bad += GMT_is_dnan (data[1][s->t_col[GMT_IN]][i]);
@@ -548,11 +561,11 @@ int main (int argc, char **argv)
 						}
 
 						deld = dist[k][right[k]] - dist[k][left[k]];
-						delt = time[k][right[k]] - time[k][left[k]];
+						delt = time[k][right[k]] - time[k][left[k]];	/* Time increment in user's units */
 
 						/* Check if speed is outside accepted domain */
 
-						speed[k] = (delt == 0.0) ? GMT_d_NaN : vel_scale * (deld / delt);
+						speed[k] = (delt == 0.0) ? GMT_d_NaN : vel_scale * (deld / (delt * t_scale));
 						if (speed_check && !GMT_is_dnan (speed[k]) && (speed[k] < lower_speed || speed[k] > upper_speed)) continue;
 
 						/* Linearly estimate the crossover times and distances */
@@ -589,8 +602,9 @@ int main (int argc, char **argv)
 							}
 
 							if (!n_left) continue;
-							if (got_time && ((time_x[k] - time[k][t_left]) > Bix.time_gap)) continue;
-							if (!got_time && ((dist_x[k] - dist[k][t_left]) > Bix.dist_gap)) continue;
+							/* See if we pass any gap criteria */
+							if (got_time && ((time_x[k] - time[k][t_left]) > Bix.time_gap)) continue;	/* Exceeded time gap */
+							if ((dist_x[k] - dist[k][t_left]) > Bix.dist_gap) continue;			/* Exceeded distance gap */
 
 							/* Ok, that worked.  Now for the right side: */
 
@@ -606,7 +620,7 @@ int main (int argc, char **argv)
 
 							if (!n_right) continue;
 							if (got_time && ((time[k][t_right] - time_x[k]) > Bix.time_gap)) continue;
-							if (!got_time && ((dist[k][t_right] - dist_x[k]) > Bix.dist_gap)) continue;
+							if ((dist[k][t_right] - dist_x[k]) > Bix.dist_gap) continue;
 
 							/* Ok, got enough data to interpolate at xover */
 
@@ -677,25 +691,26 @@ int main (int argc, char **argv)
 					if (first_header) {	/* Write the header record */
 						t_or_i = (got_time) ? 't' : 'i';
 						sprintf (buffer, "# Tag: %s\n", TAG);			GMT_fputs (buffer, GMT_stdout);
-						sprintf (buffer, "# Command: %s ", GMT_program);	GMT_fputs (buffer, GMT_stdout);
+						sprintf (buffer, "# Command: %s", GMT_program);	GMT_fputs (buffer, GMT_stdout);
 						if (cmdline_files) GMT_fputs (" [tracks]", GMT_stdout);
 						for (k = 1; k < argc; k++) 
 							if (argv[k][0] == '-' || argv[k][0] == '=') {
-								GMT_fputs (argv[k], GMT_stdout);	GMT_fputs (" ", GMT_stdout);
+								GMT_fputs (" ", GMT_stdout);	GMT_fputs (argv[k], GMT_stdout);
 							}
 						GMT_fputs ("\n", GMT_stdout);
-						sprintf (buffer, "# %s\t%s", s->info[s->out_order[s->x_col[GMT_IN]]].name, s->info[s->out_order[s->y_col[GMT_IN]]].name);
+						sprintf (buffer, "# %s%s%s", s->info[s->out_order[s->x_col[GMT_IN]]].name, gmtdefs.field_delimiter, s->info[s->out_order[s->y_col[GMT_IN]]].name);
 						GMT_fputs (buffer, GMT_stdout);
-						sprintf (buffer, "\t%c_1\t%c_2\tdist_1\tdist_2\thead_1\thead_2\tvel_1\tvel_2", t_or_i, t_or_i);
+						sprintf (buffer, "%s%c_1%s%c_2%sdist_1%sdist_2%shead_1%shead_2%svel_1%svel_2", gmtdefs.field_delimiter, t_or_i, gmtdefs.field_delimiter, t_or_i, \
+							gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.field_delimiter);
 						GMT_fputs (buffer, GMT_stdout);
 						for (j = 0; j < n_data_col; j++) {
 							col = col_number[j];
 							if (two_values) {
-								sprintf (buffer, "\t%s_1\t%s_2", s->info[s->out_order[col]].name, s->info[s->out_order[col]].name);
+								sprintf (buffer, "%s%s_1%s%s_2", gmtdefs.field_delimiter, s->info[s->out_order[col]].name, gmtdefs.field_delimiter, s->info[s->out_order[col]].name);
 								GMT_fputs (buffer, GMT_stdout);
 							}
 							else {
-								sprintf (buffer, "\t%s_X\t%s_M", s->info[s->out_order[col]].name, s->info[s->out_order[col]].name);
+								sprintf (buffer, "%s%s_X%s%s_M", gmtdefs.field_delimiter, s->info[s->out_order[col]].name, gmtdefs.field_delimiter, s->info[s->out_order[col]].name);
 								GMT_fputs (buffer, GMT_stdout);
 							}
 						}

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtdefaults.c,v 1.45 2011/03/03 21:02:51 guru Exp $
+ *	$Id: gmtdefaults.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -83,10 +83,10 @@ int main (int argc, char **argv)
 		fprintf (stderr, "gmtdefaults %s - List GMT default parameters to stdout\n\n", GMT_VERSION);
 		fprintf (stderr, "usage: gmtdefaults [-D[s|u] | -L]\n\n");
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-		fprintf (stderr, "\t-D prints the default settings for the GMT system\n");
-		fprintf (stderr, "\t   Append s to see the SI version of defaults\n");
-		fprintf (stderr, "\t   Append u to see the US version of defaults\n");
-		fprintf (stderr, "\t-L prints the users current GMT default settings\n");
+		fprintf (stderr, "\t-D prints the default settings for the GMT system.\n");
+		fprintf (stderr, "\t   Append s to see the SI version of defaults.\n");
+		fprintf (stderr, "\t   Append u to see the US version of defaults.\n");
+		fprintf (stderr, "\t-L prints the users current GMT default settings.\n");
 		exit (EXIT_FAILURE);
 	}
 

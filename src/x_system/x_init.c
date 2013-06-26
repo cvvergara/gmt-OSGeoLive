@@ -1,5 +1,5 @@
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *	$Id: x_init.c,v 1.8 2011/07/11 19:22:07 guru Exp $
+ *	$Id: x_init.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * XINIT will create the xx_base.b and xx_legs.b files and write out
  * the first header record (in xx_base.b) that tells which record number

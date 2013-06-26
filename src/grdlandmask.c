@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdlandmask.c,v 1.63 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdlandmask.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -171,19 +171,19 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		GMT_GSHHS_syntax ('A', "Place limits on coastline features from the GSHHS data base.");
 		fprintf (stderr, "\t-D Choose one of the following resolutions:\n");
-		fprintf (stderr, "\t   f - full resolution (may be very slow for large regions)\n");
-		fprintf (stderr, "\t   h - high resolution (may be slow for large regions)\n");
-		fprintf (stderr, "\t   i - intermediate resolution\n");
-		fprintf (stderr, "\t   l - low resolution [Default]\n");
-		fprintf (stderr, "\t   c - crude resolution, for tasks that need crude continent outlines only\n");
+		fprintf (stderr, "\t   f - full resolution (may be very slow for large regions).\n");
+		fprintf (stderr, "\t   h - high resolution (may be slow for large regions).\n");
+		fprintf (stderr, "\t   i - intermediate resolution.\n");
+		fprintf (stderr, "\t   l - low resolution [Default].\n");
+		fprintf (stderr, "\t   c - crude resolution, for tasks that need crude continent outlines only.\n");
 		fprintf (stderr, "\t   Append + to use a lower resolution should the chosen one not be available [abort].\n");
-		fprintf (stderr, "\t-F Force pixel registration for output grid [Default is gridline orientation]\n");
+		fprintf (stderr, "\t-F Force pixel registration for output grid [Default is gridline orientation].\n");
 		fprintf (stderr, "\t-N gives values to use if a node is outside or inside a feature.\n");
 		fprintf (stderr, "\t   Append o to let feature boundary be considered outside [Default is inside].\n");
 		fprintf (stderr, "\t   Specify this information using 1 of 2 formats:\n");
 		fprintf (stderr, "\t   -N<wet>/<dry>.\n");
 		fprintf (stderr, "\t   -N<ocean>/<land>/<lake>/<island>/<pond>.\n");
-		fprintf (stderr, "\t   NaN is a valid entry.  Default values are 0/1/0/1/0 (i.e., 0/1)\n");
+		fprintf (stderr, "\t   NaN is a valid entry.  Default values are 0/1/0/1/0 (i.e., 0/1).\n");
 		GMT_explain_option ('V');
 		exit (EXIT_FAILURE);
 	}
@@ -272,7 +272,7 @@ int main (int argc, char **argv)
 	GMT_parse_J_option ("x1d");	/* Fake linear projection */
 	GMT_err_fail (GMT_map_setup (header.x_min, header.x_max, header.y_min, header.y_max), "");
 	GMT_parallel_straight = GMT_meridian_straight = 2;	/* No resampling along bin boundaries */
-	wrap = GMT_360_RANGE (header.x_max, header.x_min);
+	wrap = GMT_world_map = GMT_grd_is_global (&header);
 	
 	/* Fill out gridnode coordinates and apply the implicit linear projection */
 

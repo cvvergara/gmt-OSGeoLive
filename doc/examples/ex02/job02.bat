@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 02
 REM
-REM		$Id: job02.bat,v 1.13 2011/03/01 01:34:48 remko Exp $
+REM		$Id: job02.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM
 REM Purpose:	Make two color images based gridded data
 REM GMT progs:	gmtset, grd2cpt, grdgradient, grdimage, makecpt, psscale, pstext

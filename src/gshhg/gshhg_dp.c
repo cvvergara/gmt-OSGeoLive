@@ -1,9 +1,9 @@
-/*	$Id: gshhs_dp.c,v 1.29 2011/07/11 19:22:02 guru Exp $
+/*	$Id: gshhg_dp.c 9924 2012-12-18 22:08:18Z pwessel $
  *
- *	Copyright (c) 1996-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1996-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
- * gshhs_dp applies the Douglas-Peucker algorithm to simplify a line
+ * gshhg_dp applies the Douglas-Peucker algorithm to simplify a line
  * segment given a tolerance.  The algorithm is based on the paper
  * Douglas, D. H., and T. K. Peucker, Algorithms for the reduction
  *   of the number of points required to represent a digitized line
@@ -17,18 +17,19 @@
  *	    1.2 Explicit binary read for DOS.  POSIX compliance
  *	    1.3, 08-NOV-1999: Released under GNU GPL
  *	    1.4 05-SEPT-2000: Made a GMT supplement; FLIP no longer needed
- *	    1.5 11-SEPT-2004: Updated to work with GSHHS v1.3 data format
- *	    1.6 02-MAY-2006: Updated to work with GSHHS v1.4 data format
- *	    1.8 02-MAR-2007: Updated to work with GSHHS v1.5 data format
+ *	    1.5 11-SEPT-2004: Updated to work with GSHHG v1.3 data format
+ *	    1.6 02-MAY-2006: Updated to work with GSHHG v1.4 data format
+ *	    1.8 02-MAR-2007: Updated to work with GSHHG v1.5 data format
  *	    1.9 27-AUG-2007: Handle line data as well as polygon data
- *	    1.10 15-FEB-2008: Updated to deal with latest GSHHS database (1.6)
+ *	    1.10 15-FEB-2008: Updated to deal with latest GSHHG database (1.6)
  *	    1.11 15-JUN-2009: Now contains information on container polygon,
  *			      the polygons ancestor in the full resolution, and
  *			      a flag to tell if a lake is a riverlake.
- *			      Updated to deal with latest GSHHS database (2.0)
+ *			      Updated to deal with latest GSHHG database (2.0)
  *	    1.12 24-MAY-2010: Deal with 2.1 format.
  *	    1.13 1-JUL-2011: Now contains improved area information (2.2.0).
- *
+ *	    1.14 15-APR-2012:  	Data version is now 2.2.1. [no change to format]
+ *	    1.15 1-JAN-2013:   	Data version is now 2.2.2. [no change to format]
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -42,7 +43,7 @@
  *	Contact info: www.soest.hawaii.edu/pwessel
  */
 
-#include "gshhs.h"
+#include "gshhg.h"
 
 #define sqr(x) ((x)*(x))
 #define D2R (M_PI/180.0)
@@ -60,14 +61,14 @@ int main (int argc, char **argv)
 	int *x = NULL, *y = NULL;
 	size_t n_read;
 	double	redux, redux2, tolerance = 0.0;
-	struct	GSHHS h;
+	struct	GSHHG h;
 	struct	POINT p;
         
 	int Douglas_Peucker_i (int x_source[], int y_source[], int n_source, double band, int index[]);
 	
 	if (argc < 2 || !(argc == 4 || argc == 5)) {
-		fprintf (stderr, "gshhs_dp %s - Line reduction of GSHHS %s using the Douglas-Peucker algorithm\n\n", GSHHS_PROG_VERSION, GSHHS_DATA_VERSION);
-		fprintf (stderr, "usage:  gshhs_dp input.b tolerance output.b [-v]\n");
+		fprintf (stderr, "gshhg_dp %s - Line reduction of GSHHG %s using the Douglas-Peucker algorithm\n\n", GSHHG_PROG_VERSION, GSHHG_DATA_VERSION);
+		fprintf (stderr, "usage:  gshhg_dp input.b tolerance output.b [-v]\n");
 		fprintf (stderr, "\ttolerance is maximum mismatch in km\n");
 		fprintf (stderr, "\t-v will run in verbose mode and report shrinkage\n");
 		exit (EXIT_FAILURE);
@@ -75,7 +76,7 @@ int main (int argc, char **argv)
 
 	verbose = (argc == 5);
 	tolerance = atof (argv[2]);
-	if (verbose) fprintf (stderr,"gshhs_dp: Tolerance used is %g km\n", tolerance);
+	if (verbose) fprintf (stderr,"gshhg_dp: Tolerance used is %g km\n", tolerance);
 	fp_in  = fopen(argv[1], "rb");
 	fp_out = fopen(argv[3], "wb");
 	
@@ -83,13 +84,13 @@ int main (int argc, char **argv)
 	
 	n_id = n_out = n_tot_in = n_tot_out = 0;
 	
-	x = (int *) get_memory (VNULL, 1, sizeof (int), "gshhs_dp");
-	y = (int *) get_memory (VNULL, 1, sizeof (int), "gshhs_dp");
-	index = (int *) get_memory (VNULL, 1, sizeof (int), "gshhs_dp");
+	x = (int *) get_memory (VNULL, 1, sizeof (int), "gshhg_dp");
+	y = (int *) get_memory (VNULL, 1, sizeof (int), "gshhg_dp");
+	index = (int *) get_memory (VNULL, 1, sizeof (int), "gshhg_dp");
 	
-	n_read = fread ((void *)&h, sizeof (struct GSHHS), (size_t)1, fp_in);
+	n_read = fread ((void *)&h, sizeof (struct GSHHG), (size_t)1, fp_in);
 	version = (h.flag >> 8) & 255;
-	flip = (version != GSHHS_DATA_RELEASE);	/* Take as sign that byte-swabbing is needed */
+	flip = (version != GSHHG_DATA_RELEASE);	/* Take as sign that byte-swabbing is needed */
 	
 	while (n_read == 1) {
 	
@@ -108,13 +109,13 @@ int main (int argc, char **argv)
 		version = (h.flag >> 8) & 255;
 		if (verbose) fprintf (stderr, "Poly %6d", h.id);	
 		
-		x = (int *) get_memory ((void *)x, h.n, sizeof (int), "gshhs_dp");
-		y = (int *) get_memory ((void *)y, h.n, sizeof (int), "gshhs_dp");
-		index = (int *) get_memory ((void *)index, h.n, sizeof (int), "gshhs_dp");
+		x = (int *) get_memory ((void *)x, h.n, sizeof (int), "gshhg_dp");
+		y = (int *) get_memory ((void *)y, h.n, sizeof (int), "gshhg_dp");
+		index = (int *) get_memory ((void *)index, h.n, sizeof (int), "gshhg_dp");
 		
 		for (k = 0; k < h.n; k++) {
 			if (fread ((void *)&p, sizeof(struct POINT), (size_t)1, fp_in) != 1) {
-				fprintf (stderr,"gshhs_dp:  ERROR reading data point.\n");
+				fprintf (stderr,"gshhg_dp:  ERROR reading data point.\n");
 				exit (EXIT_FAILURE);
 			}
 			if (flip) {
@@ -136,15 +137,15 @@ int main (int argc, char **argv)
 			redux = 100.0 * (double) n / (double) h.n;
 			h.id = n_out;
 			h.n = n;
-			if (fwrite ((void *)&h, sizeof (struct GSHHS), (size_t)1, fp_out) != 1) {
-				fprintf(stderr,"gshhs_dp:  ERROR  writing file header.\n");
+			if (fwrite ((void *)&h, sizeof (struct GSHHG), (size_t)1, fp_out) != 1) {
+				fprintf(stderr,"gshhg_dp:  ERROR  writing file header.\n");
 				exit (EXIT_FAILURE);
 			}
 			for (k = 0; k < n; k++) {
 				p.x = x[index[k]];
 				p.y = y[index[k]];
 				if (fwrite((void *)&p, sizeof(struct POINT), (size_t)1, fp_out) != 1) {
-					fprintf(stderr,"gshhs_dp:  ERROR  writing data point.\n");
+					fprintf(stderr,"gshhg_dp:  ERROR  writing data point.\n");
 					exit (EXIT_FAILURE);
 				}
 			}
@@ -157,7 +158,7 @@ int main (int argc, char **argv)
 		
 		n_id++;
 
-		n_read = fread ((void *)&h, sizeof (struct GSHHS), (size_t)1, fp_in);
+		n_read = fread ((void *)&h, sizeof (struct GSHHG), (size_t)1, fp_in);
 	}
 		
 	free ((void *)x);	
@@ -169,7 +170,7 @@ int main (int argc, char **argv)
 
 	redux = 100.0 * (1.0 - (double) n_tot_out / (double) n_tot_in);
 	redux2 = 100.0 * (1.0 - (double) n_out / (double) n_id);
-	printf ("gshhs_dp at %g km:\n# of points reduced by %.1f%% (out %d, in %d)\n# of polygons reduced by %.1f%% out (%d, in %d)\n", tolerance, redux, n_tot_out, n_tot_in, redux2, n_out, n_id);
+	printf ("gshhg_dp at %g km:\n# of points reduced by %.1f%% (out %d, in %d)\n# of polygons reduced by %.1f%% out (%d, in %d)\n", tolerance, redux, n_tot_out, n_tot_in, redux2, n_out, n_id);
 
 	exit (EXIT_SUCCESS);
 }
@@ -315,13 +316,13 @@ void *get_memory (void *prev_addr, int n, size_t size, char *progname)
 
 	if (prev_addr) {
 		if ((tmp = realloc ((void *) prev_addr, (size_t) (n * size))) == VNULL) {
-			fprintf (stderr, "gshhs Fatal Error: %s could not reallocate more memory, n = %d\n", progname, n);
+			fprintf (stderr, "gshhg_dp Fatal Error: %s could not reallocate more memory, n = %d\n", progname, n);
 			exit (EXIT_FAILURE);
 		}
 	}
 	else {
 		if ((tmp = calloc ((size_t) n, (size_t) size)) == VNULL) {
-			fprintf (stderr, "gshhs Fatal Error: %s could not allocate memory, n = %d\n", progname, n);
+			fprintf (stderr, "gshhg_dp Fatal Error: %s could not allocate memory, n = %d\n", progname, n);
 			exit (EXIT_FAILURE);
 		}
 	}

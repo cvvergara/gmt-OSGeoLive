@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:02:00 2011 -->
+<!-- CreationDate: Wed Jan  2 08:40:34 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -42,11 +42,11 @@ databases</p>
 <h2>SYNOPSIS</h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">BD(x2sys_get)
-<b>&minus;T</b>IT(TAG) [ <b>&minus;C</b> ] [ <b>&minus;D</b>
-] [ <b>&minus;E</b> ] [ <b>&minus;F</b>IT(flags) ] [
-<b>&minus;L</b>[IT(list)] ] [ <b>&minus;N</b>IT(flags) ] [
-<b>&minus;Qe</b>|BD(i) ] [
+<p style="margin-left:11%; margin-top: 1em"><b>x2sys_get
+&minus;T</b><i>TAG</i> [ <b>&minus;C</b> ] [ <b>&minus;D</b>
+] [ <b>&minus;E</b> ] [ <b>&minus;F</b><i>flags</i> ] [
+<b>&minus;L</b>[<i>list</i>] ] [ <b>&minus;N</b><i>flags</i>
+] [ <b>&minus;Qe</b>|<b>i</b> ] [
 <b>&minus;R</b><i>west</i>/<i>east</i>/<i>south</i>/<i>north</i>[<b>r</b>]
 ] [ <b>&minus;V</b> ] ]</p>
 
@@ -54,7 +54,8 @@ databases</p>
 <h2>DESCRIPTION</h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">BD(x2sys_get)
+
+<p style="margin-left:11%; margin-top: 1em"><b>x2sys_get</b>
 will return the names of the track data files in the x2sys
 data base for this TAG that match the given requirements.
 You may choose a specific region and optionally ask only for
@@ -250,16 +251,16 @@ tracks associated with the tag MGD77, restricted to occupy a
 certain region in the south Pacific, and have at least free
 air anomalies and bathymetry, try</p>
 
-<p style="margin-left:11%; margin-top: 1em">BD(x2sys_get)
-<b>&minus;V &minus;T</b>MGD77 <b>&minus;R</b>180/240/-60/-30
+<p style="margin-left:11%; margin-top: 1em"><b>x2sys_get
+&minus;V &minus;T</b>MGD77 <b>&minus;R</b>180/240/-60/-30
 <b>&minus;F</b>faa,depth</p>
 
 <p style="margin-left:11%; margin-top: 1em">To find all the
 tracks associated with the tag MGD77 that have depth but not
 twt, try</p>
 
-<p style="margin-left:11%; margin-top: 1em">BD(x2sys_get)
-<b>&minus;V &minus;T</b>MGD77 <b>&minus;F</b>depth
+<p style="margin-left:11%; margin-top: 1em"><b>x2sys_get
+&minus;V &minus;T</b>MGD77 <b>&minus;F</b>depth
 <b>&minus;N</b>twt</p>
 
 <p style="margin-left:11%; margin-top: 1em">To find all the
@@ -267,8 +268,8 @@ pairs associated with the tag MGD77 that might intersect
 each other, but only those pairs which involves tracks in
 your list new.lis, try</p>
 
-<p style="margin-left:11%; margin-top: 1em">BD(x2sys_get)
-<b>&minus;V &minus;T</b>MGD77 <b>&minus;L</b>new.lis &gt;
+<p style="margin-left:11%; margin-top: 1em"><b>x2sys_get
+&minus;V &minus;T</b>MGD77 <b>&minus;L</b>new.lis &gt;
 xpairs.lis</p>
 
 <a name="NOTE"></a>

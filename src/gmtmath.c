@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtmath.c,v 1.72 2011/07/08 21:27:06 guru Exp $
+ *	$Id: gmtmath.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -191,9 +191,9 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\tA, B, etc are table files, constants, or symbols (see below)\n");
-		fprintf (stderr, "\tTo read stdin give filename as STDIN (which can appear more than once)\n");
-		fprintf (stderr, "\tThe stack can hold up to %d entries (given enough memory)\n", GMTMATH_STACK_SIZE);
+		fprintf (stderr, "\tA, B, etc are table files, constants, or symbols (see below).\n");
+		fprintf (stderr, "\tTo read stdin give filename as STDIN (which can appear more than once).\n");
+		fprintf (stderr, "\tThe stack can hold up to %d entries (given enough memory).\n", GMTMATH_STACK_SIZE);
 		fprintf (stderr, "\tTrigonometric operators expect radians.\n");
 		fprintf (stderr, "\tThe operators and number of input and output arguments:\n\n");
 		fprintf (stderr, "\tName    #args   Returns\n");
@@ -210,19 +210,19 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\n\tOPTIONS:\n\n");
 		fprintf (stderr, "\t-A Requires -N and will initialize table with file containing t and f(t) only.\n");
 		fprintf (stderr, "\t   t goes into column <t_col> while f(t) goes into column <n_col> - 1.\n");
-		fprintf (stderr, "\t-C change which columns to operate on [Default is all except time]\n");
+		fprintf (stderr, "\t-C change which columns to operate on [Default is all except time].\n");
 		fprintf (stderr, "\t   -C reverts to the default, -Cr toggles current settings, and -Ca selects all columns.\n");
-		fprintf(stderr,"\t-F Give comma-separated list of desired columns or ranges to output (0 is first column) [Default is all]\n");
+		fprintf(stderr,"\t-F Give comma-separated list of desired columns or ranges to output (0 is first column) [Default is all].\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I Reverses the output sequence into descending order [ascending]\n");
-		fprintf (stderr, "\t-N sets the number of columns and the id of the time column (0 is first) [2/0]\n");
-		fprintf (stderr, "\t-Q quick scalar calculator. Shorthand for -Ca -N1/0 -T0/0/1\n");
-		fprintf (stderr, "\t-S Only write first row upon completion of calculations [write all rows]\n");
-		fprintf (stderr, "\t   Optionally, append l for last row or f for first row [Default]\n");
-		fprintf (stderr, "\t-T Set domain from t_min to t_max in steps of t_inc\n");
+		fprintf (stderr, "\t-I Reverses the output sequence into descending order [ascending].\n");
+		fprintf (stderr, "\t-N sets the number of columns and the id of the time column (0 is first) [2/0].\n");
+		fprintf (stderr, "\t-Q quick scalar calculator. Shorthand for -Ca -N1/0 -T0/0/1.\n");
+		fprintf (stderr, "\t-S Only write first row upon completion of calculations [write all rows].\n");
+		fprintf (stderr, "\t   Optionally, append l for last row or f for first row [Default].\n");
+		fprintf (stderr, "\t-T Set domain from t_min to t_max in steps of t_inc.\n");
 		fprintf (stderr, "\t   Append + to t_inc to indicate the number of points instead.\n");
 		fprintf (stderr, "\t   If a filename is given instead we read t coordinates from first column.\n");
-		fprintf (stderr, "\t   If no domain is given we assume no time, i.e. only data columns are present.\n");
+		fprintf (stderr, "\t   If no domain is given we assume no time, i.e., only data columns are present.\n");
 		fprintf (stderr, "\t   This choice also implies -Ca.\n");
 		GMT_explain_option ('V');
 		GMT_explain_option ('i');
@@ -704,7 +704,7 @@ void GMT_read_table (struct GMTMATH_INFO *info, char *file, struct TABLE_HEADER 
 	GMT_LONG n_alloc_d = 0, n_alloc_h = 0;
 	GMT_LONG n = 0;
 	double *in, **table = NULL;
-	char buffer[BUFSIZ], *not_used = NULL;
+	char buffer[BUFSIZ];
 	FILE *fp;
 
 	n_expected_fields = (GMT_io.binary[GMT_IN]) ? GMT_io.ncol[GMT_IN] : GMT_MAX_COLUMNS;
@@ -721,7 +721,7 @@ void GMT_read_table (struct GMTMATH_INFO *info, char *file, struct TABLE_HEADER 
 	}
 
 	for (j = 0; GMT_io.io_header[GMT_IN] && j < GMT_io.n_header_recs; j++) {
-		not_used = GMT_fgets (buffer, BUFSIZ, fp);
+		GMT_fgets (buffer, BUFSIZ, fp);
 		if (info->very_first && j == 0) strcpy (info->head_record, buffer);
 		info->very_first = FALSE;
 	}
@@ -1990,7 +1990,8 @@ void table_LOWER (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constan
 		if (GMT_is_dnan (stack[last][col][i])) continue;
 		if (stack[last][col][i] < low) low = stack[last][col][i];
 	}
-	for (i = 0; i < n_row; i++) if (!GMT_is_dnan (stack[last][col][i])) stack[last][col][i] = low;
+	if (low == DBL_MAX) low = GMT_d_NaN;	/* All rows were NaN */
+	for (i = 0; i < n_row; i++) stack[last][col][i] = low;
 }
 
 void table_LRAND (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constant, double *factor, GMT_LONG last, GMT_LONG col, GMT_LONG n_row)
@@ -2084,7 +2085,7 @@ void table_MEAN (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constant
 		sum_a += stack[last][col][i];
 		n_a++;
 	}
-	sum_a = (n_a) ? sum_a / n_a : 0.0;
+	sum_a = (n_a) ? sum_a / n_a : GMT_d_NaN;
 	for (i = 0; i < n_row; i++) stack[last][col][i] = sum_a;
 }
 
@@ -2634,7 +2635,7 @@ void table_STD (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constant,
 		mean += delta / n;
 		sum2 += delta * (stack[last][col][i] - mean);
 	}
-	sum2 = (n > 1) ? sqrt (sum2 / (n - 1)) : 0.0;
+	sum2 = (n > 1) ? sqrt (sum2 / (n - 1)) : GMT_d_NaN;
 	for (i = 0; i < n_row; i++) stack[last][col][i] = sum2;
 }
 
@@ -2789,7 +2790,8 @@ void table_UPPER (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constan
 		if (GMT_is_dnan (stack[last][col][i])) continue;
 		if (stack[last][col][i] > high) high = stack[last][col][i];
 	}
-	for (i = 0; i < n_row; i++) if (!GMT_is_dnan (stack[last][col][i])) stack[last][col][i] = high;
+	if (high == -DBL_MAX) high = GMT_d_NaN;	/* All rows were NaN */
+	for (i = 0; i < n_row; i++) stack[last][col][i] = high;
 }
 
 void table_XOR (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constant, double *factor, GMT_LONG last, GMT_LONG col, GMT_LONG n_row)

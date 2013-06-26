@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2cpt.c,v 1.65 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grd2cpt.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -268,18 +268,18 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t-M Use GMT defaults to set back-, foreground, and NaN colors [Default uses color table].\n");
 		fprintf (stderr, "\t-N Do not write back-, foreground, and NaN colors [Default will].\n");
 		fprintf (stderr, "\t-L Limit the range of the data [Default uses actual min,max of data].\n");
-		fprintf (stderr, "\t-Q assign a logarithmic colortable [Default is linear]\n");
+		fprintf (stderr, "\t-Q assign a logarithmic colortable [Default is linear].\n");
 		fprintf (stderr, "\t   -Qi: z-values are actually log10(z). Assign colors and write z. [Default]\n");
 		fprintf (stderr, "\t   -Qo: z-values are z, but take log10(z), assign colors and write z.\n");
 		GMT_explain_option ('R');
 		fprintf (stderr, "\t-S Sample points should Step from z_start to z_stop by z_inc [Default guesses some values].\n");
 		fprintf (stderr, "\t-T Force color tables to be symmetric about 0. Append one modifier:\n");
-		fprintf (stderr, "\t   - for values symmetric about zero from -|zmin| to +|zmin|\n");
-		fprintf (stderr, "\t   + for values symmetric about zero from -|zmax| to +|zmax|\n");
-		fprintf (stderr, "\t   _ for values symmetric about zero -+min(|zmin|,|zmax|)\n");
-		fprintf (stderr, "\t   = for values symmetric about zero -+max(|zmin|,|zmax|)\n");
+		fprintf (stderr, "\t   - for values symmetric about zero from -|zmin| to +|zmin|.\n");
+		fprintf (stderr, "\t   + for values symmetric about zero from -|zmax| to +|zmax|.\n");
+		fprintf (stderr, "\t   _ for values symmetric about zero -+min(|zmin|,|zmax|).\n");
+		fprintf (stderr, "\t   = for values symmetric about zero -+max(|zmin|,|zmax|).\n");
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t-Z Create a continuous color palette [Default is discontinuous, i.e., constant color intervals]\n");
+		fprintf (stderr, "\t-Z Create a continuous color palette [Default is discontinuous, i.e., constant color intervals].\n");
 		exit (EXIT_FAILURE);
 	}
 

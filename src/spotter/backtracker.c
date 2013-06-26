@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: backtracker.c,v 1.60 2011/07/11 19:22:06 guru Exp $
+ *	$Id: backtracker.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *   Copyright (c) 1999-2011 by P. Wessel
+ *   Copyright (c) 1999-2013 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -169,7 +169,7 @@ int main (int argc, char **argv)
 					}
 					break;
 
-				case 'C':	/* Use finite rotation poles */
+				case 'C':	/* Use total reconstruction poles */
 					finite = TRUE;
 					break;
 
@@ -272,29 +272,29 @@ int main (int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
 		fprintf (stderr, "\tinfiles (in ASCII or binary) has 3 or more columns.  If no file(s) is given, standard input is read.\n");
-		fprintf (stderr, "\tFirst 3 columns must have lon, lat (or lat, lon, see -:) and age (Ma)\n");
-		fprintf (stderr, "\t-E specifies the rotations to be used (see man page for format)\n\n");
-		fprintf (stderr, "\t-e Alternatively, specify a single finite rotation (in degrees) to be applied to all input points\n");
+		fprintf (stderr, "\tFirst 3 columns must have lon, lat (or lat, lon, see -:) and age (Ma).\n");
+		fprintf (stderr, "\t-E specifies the rotations to be used (see man page for format).\n");
+		fprintf (stderr, "\t-e Alternatively, specify a single finite rotation (in degrees) to be applied to all input points.\n");
 		fprintf (stderr, "\tOPTIONS:\n\n");
-		fprintf (stderr, "\t-A Output tracks for ages (or stages, see -L) between young and old [Default is entire track]\n");
+		fprintf (stderr, "\t-A Output tracks for ages (or stages, see -L) between young and old [Default is entire track].\n");
 		fprintf (stderr, "\t   If no limit is given, then each seamount should have their limits in columns 4 and 5 instead.\n");
 		fprintf (stderr, "\t   Only applicable in conjunction with the -L option.\n");
-		fprintf (stderr, "\t-C The file given with -E contains finite rotation poles [Default is stage poles]\n");
-		fprintf (stderr, "\t-Db Backtrack mode: move forward in time (from older to younger positions) [Default]\n");
-		fprintf (stderr, "\t-Df Flowline mode: move backward in time (from younger to older positions)\n");
-		fprintf (stderr, "\t-F file with lon, lat, time records describing motion of hotspot responsible for)\n");
-		fprintf (stderr, "\t   the seamount/path we are concerned with [fixed hotspots].  If given, then the)\n");
-		fprintf (stderr, "\t   input lon, lat is replaced by the position of the drifting hotspot at the given age.)\n");
-		fprintf (stderr, "\t   If -F is used the <d_km> in -L is assumed to be point spacing in Ma.)\n");
+		fprintf (stderr, "\t-C The file given with -E contains total reconstruction poles [Default is stage poles].\n");
+		fprintf (stderr, "\t-Db Backtrack mode: move forward in time (from older to younger positions) [Default].\n");
+		fprintf (stderr, "\t-Df Flowline mode: move backward in time (from younger to older positions).\n");
+		fprintf (stderr, "\t-F File with lon, lat, time records describing motion of hotspot responsible for\n");
+		fprintf (stderr, "\t   the seamount/path we are concerned with [fixed hotspots].  If given, then the\n");
+		fprintf (stderr, "\t   input lon, lat is replaced by the position of the drifting hotspot at the given age.\n");
+		fprintf (stderr, "\t   If -F is used the <d_km> in -L is assumed to be point spacing in Ma.\n");
 		GMT_explain_option ('H');
 		fprintf (stderr, "\t-Lb Compute hotspot tracks sampled every <d_km> interval [Default projects single points].\n");
-		fprintf (stderr, "\t-Lf Compute flowline for seamounts of unknown but maximum age [Default projects single points]\n");
-		fprintf (stderr, "\t    If no <d_km> is given, the start/stop points for each stage are returned\n");
-		fprintf (stderr, "\t    If B and F is used instead, stage id is returned as z-value [Default is predicted ages]\n");
-		fprintf (stderr, "\t-N extends earliest stage pole back to <upper_age> [no extension]\n");
+		fprintf (stderr, "\t-Lf Compute flowline for seamounts of unknown but maximum age [Default projects single points].\n");
+		fprintf (stderr, "\t    If no <d_km> is given, the start/stop points for each stage are returned.\n");
+		fprintf (stderr, "\t    If B and F is used instead, stage id is returned as z-value [Default is predicted ages].\n");
+		fprintf (stderr, "\t-N extends earliest stage pole back to <upper_age> [no extension].\n");
 		fprintf (stderr, "\t-Q Assigned a fixed age to all input points.\n");
-		fprintf (stderr, "\t-S writes tracks to individual files <stem>.# instead of to stdout (requires -L)\n");
-		fprintf (stderr, "\t-T sets the current age in Ma [0]\n");
+		fprintf (stderr, "\t-S writes tracks to individual files <stem>.# instead of to stdout (requires -L).\n");
+		fprintf (stderr, "\t-T sets the current age in Ma [0].\n");
 		GMT_explain_option ('V');
 		fprintf (stderr, "\t-W Return projected point and confidence ellipse for the finite rotation.\n");
 		fprintf (stderr, "\t   The input time must exactly match the age of a finite rotation or else we skip the point.\n");
@@ -308,7 +308,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   Default is 3 input columns\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('.');
-		fprintf (stderr, "\t   Output produced by -Lf|t can be plotted with psxy using the -m option\n");
+		fprintf (stderr, "\t   Output produced by -Lf|t can be plotted with psxy using the -m option.\n");
 		GMT_explain_option ('m');
 		exit (EXIT_FAILURE);
 	}
@@ -494,35 +494,34 @@ int main (int argc, char **argv)
 					t_end = (track_limit) ? t_high : age;
 					GMT_intpol (dt, dlon, n_m, 1, &t, &lon, gmtdefs.interpolant);
 					GMT_intpol (dt, dlat, n_m, 1, &t, &lat, gmtdefs.interpolant);
-					lon *= D2R;
-					lat *= D2R;
+					lon *= D2R;	lat *= D2R;
 					n_chunk = (*spot_func) (&lon, &lat, &t, 1, p, n_stages, 0.0, t_zero, TRUE + stage_id, NULL, &c);
-					out[0] = lon * R2D;
-					out[1] = lat * R2D;
-					out[2] = t;
+					lat = GMT_lat_swap (lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+					out[GMT_X] = lon * R2D;
+					out[GMT_Y] = lat;
+					out[GMT_Z] = t;
 					GMT_output (fpo, n_out, out);
 					t += d_km;	/* dt, actually */
 					while (t < t_end) {
 						GMT_intpol (dt, dlon, n_m, 1, &t, &lon, gmtdefs.interpolant);
 						GMT_intpol (dt, dlat, n_m, 1, &t, &lat, gmtdefs.interpolant);
-						lon *= D2R;
-						lat *= D2R;
+						lon *= D2R;	lat *= D2R;
 						n_chunk = (*spot_func) (&lon, &lat, &t, 1, p, n_stages, 0.0, t_zero, TRUE + stage_id, NULL, &c);
-						lat = GMT_lat_swap (lat, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
-						out[0] = lon * R2D;
-						out[1] = lat * R2D;
-						out[2] = t;
+						lat = GMT_lat_swap (lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+						out[GMT_X] = lon * R2D;
+						out[GMT_Y] = lat;
+						out[GMT_Z] = t;
 						GMT_output (fpo, n_out, out);
 						t += d_km;	/* dt, actually */
 					}
 					GMT_intpol (dt, dlon, n_m, 1, &t_end, &lon, gmtdefs.interpolant);
 					GMT_intpol (dt, dlat, n_m, 1, &t_end, &lat, gmtdefs.interpolant);
-					lon *= D2R;
-					lat *= D2R;
+					lon *= D2R;	lat *= D2R;
 					n_chunk = (*spot_func) (&lon, &lat, &t_end, 1, p, n_stages, 0.0, t_zero, TRUE + stage_id, NULL, &c);
-					out[0] = lon * R2D;
-					out[1] = lat * R2D;
-					out[2] = t_end;
+					lat = GMT_lat_swap (lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+					out[GMT_X] = lon * R2D;
+					out[GMT_Y] = lat;
+					out[GMT_Z] = t_end;
 					GMT_output (fpo, n_out, out);
 				}
 				else {
@@ -531,11 +530,10 @@ int main (int argc, char **argv)
 					i = 0;
 					n_track = irint (c[i++]);
 					for (j = 0; j < n_track; j++, i += 3) {
-						out[2] = c[i+2];
-						if (track_limit && (out[2] < t_low || out[2] > t_high)) continue;
-						out[0] = c[i] * R2D;
-						out[1] = c[i+1] * R2D;
-						out[GMT_Y] = GMT_lat_swap (out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+						out[GMT_Z] = c[i+2];
+						if (track_limit && (out[GMT_Z] < t_low || out[GMT_Z] > t_high)) continue;
+						out[GMT_X] = c[i] * R2D;
+						out[GMT_Y] = GMT_lat_swap (c[i+1] * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 						GMT_output (fpo, n_out, out);
 					}
 				}
@@ -545,15 +543,14 @@ int main (int argc, char **argv)
 			}
 			else {	/* Just return the projected locations */
 				if (confidence) {	/* Asked for confidence ellipses on reconstructed points */
-					if (spotter_conf_ellipse (in[0], in[1], age, p, n_stages, conf_flag, forward, out)) {
+					if (spotter_conf_ellipse (in[GMT_X], in[GMT_Y], age, p, n_stages, conf_flag, forward, out)) {
 						fprintf (stderr, "%s: Confidence ellipses only for the age of rotations.  Point with age %g skipped\n", GMT_program, age);
 						continue;
 					}
 				}
 				else {
 					n_chunk = (*spot_func) (&lon, &lat, &age, 1, p, n_stages, 0.0, t_zero, TRUE + stage_id, NULL, &c);
-					out[0] = lon * R2D;
-					out[1] = lat * R2D;
+					out[GMT_X] = lon * R2D;	out[GMT_Y] = lat * R2D;
 					for (k = 2; k < n_expected_fields; k++) out[k] = in[k];
 				}
 				out[GMT_Y] = GMT_lat_swap (out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */

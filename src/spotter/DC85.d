@@ -1,4 +1,4 @@
-#	$Id: DC85.d,v 1.1.1.1 2000/12/28 01:23:45 gmt Exp $
+#	$Id: DC85.d 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Stage poles for the Pacific plate relative to
 # the hotspots.  From Duncan, R.A, & D. Clague, 1985,

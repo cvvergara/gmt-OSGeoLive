@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: blockmode.c,v 1.73 2011/07/08 21:27:05 guru Exp $
+ *    $Id: blockmode.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@ int main (int argc, char **argv)
 	GMT_LONG n_cells_filled, n_in_cell, nz;
 	GMT_LONG n_alloc = 0, nz_alloc = 0, n_pitched;
 
-	char	modifier, buffer[BUFSIZ], format[BUFSIZ], *not_used = NULL;
+	char	modifier, buffer[BUFSIZ], format[BUFSIZ];
 
 	struct GRD_HEADER h;
 	struct BLK_DATA *data = NULL;
@@ -144,12 +144,12 @@ int main (int argc, char **argv)
 		GMT_inc_syntax ('I', 0);
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-C Output center of block and mode z-value  [Default is mode location (but see -Q)]\n");
-		fprintf (stderr, "\t-E Extend output with LMS scale (s), low (l), and high (h) value per block, i,e,\n");
+		fprintf (stderr, "\t-C Output center of block and mode z-value [Default is mode location (but see -Q)].\n");
+		fprintf (stderr, "\t-E Extend output with LMS scale (s), low (l), and high (h) value per block, i.e.,\n");
 		fprintf (stderr, "\t   output (x,y,z,s,l,h[,w]) [Default outputs (x,y,z[,w]); see -W regarding w.\n");
-		fprintf (stderr, "\t-F Offsets registration so block edges are on gridlines (pixel reg.).  [Default: grid reg.]\n");
+		fprintf (stderr, "\t-F Offsets registration so block edges are on gridlines (pixel reg.) [Default: grid reg.].\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-Q Quicker; get mode z and mean x,y.  [Default gets mode x, mode y, mode z.]\n");
+		fprintf (stderr, "\t-Q Quicker; get mode z and mean x,y [Default gets mode x, mode y, mode z].\n");
 		GMT_explain_option ('V');
 		fprintf (stderr, "\t-W sets Weight options.\n");
 		fprintf (stderr, "\t   -Wi reads Weighted Input (4 cols: x,y,z,w) but writes only (x,y,z[,s,l,h]) Output.\n");
@@ -247,7 +247,7 @@ int main (int argc, char **argv)
 
 		if (GMT_io.io_header[GMT_IN]) {
 			for (i = 0; i < GMT_io.n_header_recs; i++) {
-				not_used = GMT_fgets (buffer, BUFSIZ, fp);
+				GMT_fgets (buffer, BUFSIZ, fp);
 				GMT_chop (buffer);
 				if (first && GMT_io.io_header[GMT_OUT]) {
 					(Ctrl->W.weighted[GMT_OUT] && !(Ctrl->W.weighted[GMT_IN])) ? sprintf (format, "%s weights\n", buffer) : sprintf (format, "%s\n", buffer);

@@ -1,5 +1,5 @@
 #!/bin/csh
-#		$Id: job14.csh,v 1.16 2011/05/17 01:05:32 guru Exp $
+#		$Id: job14.csh 9545 2011-07-27 19:31:54Z pwessel $
 #		GMT EXAMPLE 14
 #
 # Purpose:	Showing simple gridding, contouring, and resampling along tracks

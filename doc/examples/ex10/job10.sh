@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 10
-#		$Id: job10.sh,v 1.12 2011/02/28 00:58:03 remko Exp $
+#		$Id: job10.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Make 3-D bar graph on top of perspective map
 # GMT progs:	pscoast, pstext, psxyz

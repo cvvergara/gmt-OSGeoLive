@@ -1,6 +1,6 @@
 dnl -----------------------------------------------------------------
-dnl $Id: configure.ac,v 1.111 2011/07/11 19:30:16 guru Exp $
-dnl     Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+dnl $Id: configure.ac 9951 2013-01-02 16:38:17Z pwessel $
+dnl     Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
 dnl     See LICENSE.TXT file for copying and redistribution conditions.
 dnl
 dnl     This program is free software; you can redistribute it and/or modify
@@ -14,31 +14,42 @@ dnl     GNU General Public License for more details.
 dnl
 dnl     Contact info: gmt.soest.hawaii.edu
 dnl ----------------------------------------------------------------------------
-AC_REVISION($Revision: 1.111 $)
+AC_REVISION($Revision: 9951 $)
 dnl
 dnl Run GNU autoconf to produce a configure script from this input.
 dnl -----------------------------------------------------------------
 dnl
 dnl
 dnl -----------------------------------------------------------------
-dnl First specify the GMT and GSHHS version and release date
+dnl First specify the GMT and GSHHG version and release date
 dnl -----------------------------------------------------------------
 dnl Below, set the VERSION to be created.
 dnl Also, fix the MANDATE and DOCDATE values.
-dnl For final version set CVS_VERSION to 0
+dnl For final version set SVN_VERSION to 0
 dnl
-AC_INIT(GMT, 4.5.7, gmt-help@lists-hawaii.edu)
-MANDATE="15 Jul 2011"
-DOCDATE="Jul 2011"
-DOCYEAR="2011"
-GSHHS_VERSION=2.2.0
-CVS_VERSION=0
+AC_INIT(GMT, 4.5.9, gmt-help@lists-hawaii.edu)
+MANDATE="1 Jan 2013"
+DOCDATE="January 2013"
+DOCYEAR="2013"
+GSHHG_VERSION=2.2.2
+SVN_VERSION=0
+dnl see whether subversion is installed
+AC_PATH_PROG([SVNVERSIONCOMMAND], [svnversion], [])
+dnl use svnversion to record the current repository revision only if
+dnl subversion is installed and we are in a working copy
+if test "$SVN_VERSION" != "0" && test -x "$SVNVERSIONCOMMAND"; then
+  SVN_VERSION_STRING=`"$SVNVERSIONCOMMAND" -n '.'`
+  if test "$SVN_VERSION_STRING" == "exported" || \
+     test "$SVN_VERSION_STRING" == "Unversioned directory"; then
+    SVN_VERSION=0
+  fi
+fi
 dnl
 dnl -----------------------------------------------------------------
 dnl Specify the minimal supplement directories
 dnl -----------------------------------------------------------------
 dnl
-SUPPL="dbase gshhs imgsrc meca mgd77 mgg misc segyprogs sph spotter x2sys x_system"
+SUPPL="dbase gshhg imgsrc meca mgd77 mgg misc segyprogs sph spotter x2sys x_system"
 dnl
 dnl -----------------------------------------------------------------
 dnl The remainder should need no editing
@@ -80,8 +91,10 @@ AC_SUBST(DOCDATE)
 AC_SUBST(DOCYEAR)
 AC_SUBST(MANDATE)
 AC_SUBST(FTPSITE)
-AC_SUBST(GSHHS_VERSION)
-AC_SUBST(CVS_VERSION)
+AC_SUBST(GSHHG_DIR)
+AC_SUBST(GSHHG_VERSION)
+AC_SUBST(SVN_VERSION)
+AC_SUBST(SVN_VERSION_STRING)
 AC_SUBST(GMT_MAJOR_VERSION)
 AC_SUBST(GMT_MINOR_VERSION)
 AC_SUBST(GMT_RELEASE_VERSION)
@@ -111,7 +124,7 @@ AC_ARG_ENABLE(mex_xdir, [  --enable-mex-xdir=dir   Directory in which to install
 AC_ARG_ENABLE(debug,    [  --enable-debug          Compile for debugging instead of optimizing code])
 AC_ARG_ENABLE(devdebug, [  --enable-devdebug       Extra debugging for developers])
 AC_ARG_ENABLE(shared,   [  --enable-shared         Build shared (dynamic) GMT libraries instead of static])
-AC_ARG_ENABLE(triangle, [  --enable-triangle       Use J. Shewchuk's fast, non-GPL triangulation routine])
+AC_ARG_ENABLE(triangle, [  --enable-triangle       Use fast, non-GPL triangulation routine by J. Shewchuk])
 AC_ARG_ENABLE(US,       [  --enable-US             Choose US (inch) rather than SI (cm) units as default])
 AC_ARG_ENABLE(eps,      [  --enable-eps            Set Encapsulated PostScript as default output format [[Freeform PS]]])
 AC_ARG_ENABLE(universal,[  --enable-universal      Make universal binaries [[OS X only]]])
@@ -119,6 +132,7 @@ AC_ARG_ENABLE(64,       [  --enable-64             Force 64-bit compilation if s
 AC_ARG_ENABLE(flock,    [  --enable-flock          Enable file locking on .gmtcommands4 file (not good on networked drives)])
 AC_ARG_ENABLE(gdal,     [  --enable-gdal           Compile optional, experimental support for grid input via GDAL [[default=no]]], [], [enable_gdal=no])
 AC_ARG_WITH(gdal_config,[  --with-gdal-config=     Full path to gdal-config [[auto]]], [], [with_gdal_config=no])
+AC_ARG_WITH(gshhg_dir,  [  --with-gshhg-dir=       Full path to gshhg directory [[auto]]], [], [with-gshhg=no])
 AC_ARG_ENABLE(mex,      [  --disable-mex           Disable compilation of mex supplement which requires Octave/Matlab])
 AC_ARG_ENABLE(rpath,	[  --disable-rpath         Do not hardcode runtime library paths])
 AC_ARG_ENABLE(xgrid,    [  --disable-xgrid         Disable compilation of xgrid supplement which requires X11])
@@ -186,9 +200,6 @@ LIB_MAJOR_VERSION=`echo $PACKAGE_VERSION | cut -c-1`
 GMT_MAJOR_VERSION=`echo $PACKAGE_VERSION | cut -c1`
 GMT_MINOR_VERSION=`echo $PACKAGE_VERSION | cut -c3`
 GMT_RELEASE_VERSION=`echo $PACKAGE_VERSION | cut -c5`
-#if test -d "CVS" ; then
-#	PACKAGE_VERSION="$PACKAGE_VERSION (CVS \"__DATE__\" \"__TIME__\")"
-#fi
 dnl
 dnl -----------------------------------------------------------------
 dnl Check for libraries.  Most installs will need to have
@@ -582,6 +593,18 @@ else
 fi
 dnl
 dnl -----------------------------------------------------------------
+dnl Set path to GSHHG explicitly with --with-gshhg-dir=dir
+dnl -----------------------------------------------------------------
+dnl
+AC_MSG_CHECKING(for GSHHG directory)
+if test "X$with_gshhg_dir" != "X"; then
+	GSHHG_DIR=$with_gshhg_dir
+	AC_MSG_RESULT($GSHHG_DIR)
+else
+	AC_MSG_RESULT(not specified)
+fi
+dnl
+dnl -----------------------------------------------------------------
 dnl Allow user to set --enable-flock for turning on file locking
 dnl -----------------------------------------------------------------
 dnl
@@ -672,7 +695,9 @@ dnl Allow user to set --enable-triangle to use J. Shewchuk's triangulation
 dnl -----------------------------------------------------------------
 dnl
 AC_MSG_CHECKING(if the triangulation by Shewchuk should be used)
-if test "X$enable_triangle" = "Xyes" ; then
+if ! test -f src/triangle.c ; then
+	AC_MSG_RESULT(source code not available)
+elif test "X$enable_triangle" = "Xyes"; then
 	AC_MSG_RESULT(yes)
 	TRIANGLE_D=-DTRIANGLE_D
 	TRIANGLE_O=triangle.o
@@ -698,7 +723,7 @@ dnl Allow user to set --enable-US for US units
 dnl -----------------------------------------------------------------
 dnl
 AC_MSG_CHECKING(for default GMT units)
-if test "$enable_US" = "yes" ; then
+if test "X$enable_US" = "Xyes" ; then
 	UNITS=US
 	AC_MSG_RESULT(US (inch))
 else
@@ -741,7 +766,7 @@ LD=ld
 SL=so
 LIBEXT='$(SL)'
 SL_VERSION='$(SL)'
-if test "$enable_shared" = "yes" ; then
+if test "X$enable_shared" = "Xyes" ; then
 	AC_MSG_CHECKING(how to make a shared object)
 	if test "X$CYGWIN" = "Xyes" ; then
 		SL=dll.a
@@ -754,7 +779,7 @@ if test "$enable_shared" = "yes" ; then
 		else				# Solaris
 			LD_OPT="-G"
 		fi
-	elif test "$os" = "Linux" ; then	# Need optimization when doing shared
+	elif test "$os" = "Linux" || test "$os" = "GNU/kFreeBSD" ; then	# Need optimization when doing shared
 		LD='$(CC)'
 		SL_VERSION=$SL.$LIB_MAJOR_VERSION
 		LD_OPT='-shared -Wl,-soname=$*.'$SL_VERSION
@@ -771,7 +796,7 @@ if test "$enable_shared" = "yes" ; then
 		SL=dylib
 		SL_VERSION=$LIB_MAJOR_VERSION.$SL
 		LD='$(CC)'
-		LD_OPT='-flat_namespace -undefined suppress -install_name ${prefix}/lib/$*.'$SL_VERSION' -compatibility_version 4.0.0 -current_version '$LIB_VERSION' -dynamiclib '$OSX_L
+		LD_OPT='-install_name ${prefix}/lib/$*.'$SL_VERSION' -compatibility_version 4.0.0 -current_version '$LIB_VERSION' -dynamiclib '$OSX_L
 		if test $osr -eq 8 ; then	# Tiger needs special option for shared libs
 			CFLAGS="$CFLAGS -fno-common"
 		fi
@@ -784,7 +809,7 @@ if test "$enable_shared" = "yes" ; then
 		shared_unknown=yes
 	fi
 fi
-if test "$enable_shared" = "yes" ; then
+if test "X$enable_shared" = "Xyes" ; then
 	rpath="$rpath"':$(libdir)'
 	AC_MSG_RESULT($LD $LD_OPT)
 	AC_MSG_CHECKING(the file extension for shared libraries)
@@ -828,7 +853,7 @@ if test "$GCC" = "yes"; then		# GNU cc options
 	else				# MacOSX, Linux, ...
 		CFLAGS="$CFLAGS -Wall $GCC_64"
 	fi
-	CFLAGS="$CFLAGS -fPIC -fno-strict-aliasing"
+	CFLAGS="$CFLAGS -fPIC -fno-strict-aliasing -std=c99"
 elif test "$os" = "SunOS" ; then	# Sun Workshop CC options
 	CFLAGS="$CFLAGS -Xc"
 elif test "$os" = "HP-UX" ; then	# HP cc options

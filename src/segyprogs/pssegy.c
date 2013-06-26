@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegy.c,v 1.34 2011/07/11 19:22:06 guru Exp $
+ *	$Id: pssegy.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1999-2011 by T. Henstock
+ *    Copyright (c) 1999-2013 by T. Henstock
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* pssegy program to plot segy files in postscript with variable trace spacing option
@@ -52,7 +52,11 @@ int main (int argc, char **argv)
 	int plot_cdp = FALSE, plot_offset = FALSE, byte_x = 0, doclip = FALSE;
 	int normalize = FALSE, do_fill = FALSE, negative = FALSE, plot_wig = FALSE;
 	int no_zero = FALSE, trace_file = FALSE;
-	int swap_bytes = !WORDS_BIGENDIAN;
+#ifdef WORDS_BIGENDIAN
+	int swap_bytes = FALSE;
+#else
+	int swap_bytes = TRUE;
+#endif
 	int i, nm;
 	int ix, iy, n_traces=10000, n_samp=0, n_sampr=0, shade[3]={0,0,0}, trans[3]={-1,-1,-1}, n_tracelist=0;
 	int check, polarity=1;

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	$Id: spotter.sh,v 1.2 2010/06/21 23:55:21 guru Exp $
+#	$Id: spotter.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	Examples of how to use the SPOTTER package
 #

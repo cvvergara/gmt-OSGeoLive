@@ -1,4 +1,4 @@
-#	$Id: GMT_gray.cpt,v 1.1 2001/09/23 23:11:20 pwessel Exp $
+#	$Id: GMT_gray.cpt 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Plain linear gray colormap
 # COLOR_MODEL = RGB
