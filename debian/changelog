@@ -1,4 +1,4 @@
-gmt (4.5.7-3~exp1) experimental; urgency=low
+gmt (4.5.7-3) UNRELEASED; urgency=low
 
   * Added Octave support and an ad-hoc new package for that.
   * Added octave-gmt package for supporting grid files in GNU octave.
