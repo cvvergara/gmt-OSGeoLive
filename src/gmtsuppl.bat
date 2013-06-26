@@ -1,7 +1,7 @@
 ECHO OFF
 REM ----------------------------------------------------
 REM
-REM	$Id: gmtsuppl.bat,v 1.57 2011/03/05 19:48:58 guru Exp $
+REM	$Id: gmtsuppl.bat 9927 2012-12-20 00:21:53Z pwessel $
 REM
 REM
 REM	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
@@ -59,6 +59,7 @@ SET LIBDIR=..\..\lib
 REM ----------------------------------------------------
 REM STOP HERE - THE REST IS AUTOMATIC
 REM ----------------------------------------------------
+SET CDFLIB=netcdf.lib
 SET DLL_NETCDF="/DDLL_NETCDF"
 IF %DLLCDF%=="no" SET DLL_NETCDF=
 SET COPT=/I.. /DWIN32 /W3 /O2 /nologo %DLL_NETCDF% /DDLL_PSL /DDLL_GMT 
@@ -66,7 +67,7 @@ IF %CHOICE%=="static" SET COPT=/I.. /DWIN32 /W3 /O2 /nologo %DLL_NETCDF%
 SET COPT2=/I.. /DWIN32 /W3 /nologo %DLL_NETCDF% /DDLL_PSL /DDLL_GMT 
 IF %CHOICE%=="static" SET COPT2=/I.. /DWIN32 /W3 /nologo %DLL_NETCDF%
 SET LOPT=/nologo /dll /incremental:no
-set GMTLIB=%LIBDIR%\gmt.lib %LIBDIR%\psl.lib libnetcdf.lib setargv.obj
+set GMTLIB=%LIBDIR%\gmt.lib %LIBDIR%\psl.lib %CDFLIB% setargv.obj
 REM ----------------------------------------------------
 ECHO STEP 1: Make dbase
 REM ----------------------------------------------------
@@ -76,12 +77,12 @@ del *.obj
 move *.exe %BINDIR%
 cd ..
 REM ----------------------------------------------------
-ECHO STEP 2: Make gshhs
+ECHO STEP 2: Make gshhg
 REM ----------------------------------------------------
-cd gshhs
-%CC% %COPT% gshhs.c %GMTLIB%
-%CC% %COPT% gshhs_dp.c %GMTLIB%
-%CC% %COPT% gshhstograss.c %GMTLIB%
+cd gshhg
+%CC% %COPT% gshhg.c %GMTLIB%
+%CC% %COPT% gshhg_dp.c %GMTLIB%
+%CC% %COPT% gshhgtograss.c %GMTLIB%
 del *.obj
 move *.exe %BINDIR%
 cd ..
@@ -124,6 +125,7 @@ lib /out:mgd77.lib mgd77.obj
 %CC% %COPT% mgd77track.c mgd77.lib %GMTLIB%
 %CC% %COPT% mgd77magref.c mgd77.lib %GMTLIB%
 del *.obj
+COPY mgd77.lib %LIBDIR%%BITS%
 move mgd77.lib %LIBDIR%
 move *.exe %BINDIR%
 cd ..
@@ -147,7 +149,9 @@ IF %CHOICE%=="static"  lib /out:gmt_mgg.lib gmt_mgg.obj
 %CC% %COPT% mgd77togmt.c gmt_mgg.lib %GMTLIB%
 del *.obj
 IF %CHOICE%=="dynamic" move gmt_mgg%BITS%.dll %BINDIR%
+IF %CHOICE%=="dynamic" COPY gmt_mgg.exp %LIBDIR%%BITS%
 IF %CHOICE%=="dynamic" move gmt_mgg.exp %LIBDIR%
+COPY gmt_mgg.lib %LIBDIR%%BITS%
 move gmt_mgg.lib %LIBDIR%
 move *.exe %BINDIR%
 cd ..
@@ -176,6 +180,7 @@ LIB /OUT:segy_io.lib segy_io.obj
 %CC% %COPT% pssegyz.c segy_io.lib %GMTLIB%
 %CC% %COPT% segy2grd.c segy_io.lib %GMTLIB%
 del *.obj
+COPY segy_io.lib %LIBDIR%%BITS%
 move segy_io.lib %LIBDIR%
 move *.exe %BINDIR%
 cd ..
@@ -192,7 +197,9 @@ IF %CHOICE%=="static"  lib /out:gmt_sph.lib sph.obj
 %CC% %COPT% sphinterpolate.c gmt_sph.lib %GMTLIB%
 del *.obj
 IF %CHOICE%=="dynamic" move gmt_sph%BITS%.dll %BINDIR%
+IF %CHOICE%=="dynamic" COPY gmt_sph.exp %LIBDIR%%BITS%
 IF %CHOICE%=="dynamic" move gmt_sph.exp %LIBDIR%
+COPY gmt_sph.lib %LIBDIR%%BITS%
 move gmt_sph.lib %LIBDIR%
 move *.exe %BINDIR%
 cd ..
@@ -212,7 +219,9 @@ IF %CHOICE%=="static"  lib /out:gmt_spotter.lib libspotter.obj
 %CC% %COPT% rotconverter.c  gmt_spotter.lib %GMTLIB%
 del *.obj
 IF %CHOICE%=="dynamic" move gmt_spotter%BITS%.dll %BINDIR%
+IF %CHOICE%=="dynamic" COPY gmt_spotter.exp %LIBDIR%%BITS%
 IF %CHOICE%=="dynamic" move gmt_spotter.exp %LIBDIR%
+COPY gmt_spotter.lib %LIBDIR%%BITS%
 move gmt_spotter.lib %LIBDIR%
 move *.exe %BINDIR%
 cd ..
@@ -233,6 +242,7 @@ lib /out:x2sys.lib x2sys.obj
 %CC% %COPT% /I..\mgd77 /I..\mgg x2sys_solve.c  x2sys.lib %LIBDIR%\mgd77.lib %LIBDIR%\gmt_mgg.lib %GMTLIB%
 %CC% %COPT% x2sys_merge.c  x2sys.lib %GMTLIB%
 del *.obj
+COPY x2sys.lib %LIBDIR%%BITS%
 move x2sys.lib %LIBDIR%
 move *.exe %BINDIR%
 cd ..

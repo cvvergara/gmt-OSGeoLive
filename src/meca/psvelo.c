@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: psvelo.c,v 1.42 2011/04/28 16:23:53 remko Exp $
+ *    $Id: psvelo.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1996-2011 by G. Patau
+ *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
@@ -42,7 +42,6 @@ PostScript code is written to stdout.
 #define ANGLE 0.0
 #define FORM 0
 #define TIRET_WIDTH 3
-#define TEXT		14
 #define POINTSIZE 0.005
 
 int main (int argc, char **argv)
@@ -125,7 +124,7 @@ int main (int argc, char **argv)
 				/* Supplemental parameters */
 
                                 case 'A':       /* Change size of arrow head */
-                                        strcpy(txt_a, &argv[i][3]);
+                                        strcpy(txt_a, &argv[i][2]);
                                         strcpy(txt_b, strchr(txt_a+1, '/')+1);
                                         strcpy(txt_c, strchr(txt_b+1, '/')+1);
                                         n=0; while (txt_a[n] && txt_a[n] != '/') n++; txt_a[n]=0;
@@ -225,7 +224,7 @@ int main (int argc, char **argv)
 
 	if (argc == 1 || GMT_give_synopsis_and_exit || error) {	/* Display usage */
 		fprintf (stderr,"psvelo %s - Plot symbols on maps\n\n", GMT_VERSION);
-		fprintf (stderr,"usage: psvelo <infiles> %s %s [%s]\n", GMT_J_OPT, GMT_Rgeo_OPT, GMT_B_OPT);
+		fprintf (stderr,"usage: psvelo <infiles> %s %s [%s] [-A<awidth>/<alength>/<hwidth>]\n", GMT_J_OPT, GMT_Rgeo_OPT, GMT_B_OPT);
 		fprintf (stderr, "	[-G<fill>] [%s] [-K] [-L] [-N] [-O]\n", GMT_H_OPT);
 		fprintf (stderr, "	[-P] [-S<symbol><scale><fontsize>] [%s] [-V] [-W<pen>] [%s]\n", GMT_U_OPT, GMT_c_OPT);
 		fprintf (stderr, "	[%s] [%s] [%s]\n\n", GMT_X_OPT, GMT_Y_OPT, GMT_t_OPT);
@@ -278,9 +277,9 @@ int main (int argc, char **argv)
 
 	GMT_plotinit (argc, argv);
 
-        GMT_setpen (&pen);
+	GMT_setpen (&pen);
 	ps_setfont (gmtdefs.annot_font[0]);
-        if (shade_uncert) outline = TRUE;
+	if (shade_uncert) outline = TRUE;
 
 	if (skip_if_outside) GMT_map_clip_on (GMT_no_rgb, 3);
 
@@ -295,7 +294,7 @@ int main (int argc, char **argv)
 	for (fno = 1; !done && fno < n_args; fno++) {	/* Loop over all input files */
 		if (!nofile && argv[fno][0] == '-') continue;
 		if (nofile) {
-			fp = stdin;
+			fp = GMT_stdin;
 			done = TRUE;
 		}
 		else if ((fp = GMT_fopen (argv[fno], "r")) == NULL) {
@@ -315,7 +314,9 @@ int main (int argc, char **argv)
 
 		while (GMT_fgets (line, 512, fp)) {
                         n_rec++;
-                        if (read_ellipse || read_rotated_ellipse) {
+			memset ((void *)col, 0, 12 * GMT_TEXT_LEN * sizeof (char));
+			memset ((void *)station_name, 0, 64 * sizeof (char));
+                       if (read_ellipse || read_rotated_ellipse) {
 			  sscanf (line, "%s %s %s %s %s %s %s %[^\n]\n", 
 				  col[0], col[1], col[2], col[3], col[4], col[5], col[6], station_name);
 			  if (strlen(station_name) <= 0) sprintf(station_name,"\n");

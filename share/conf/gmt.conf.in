@@ -1,5 +1,5 @@
 @UNITS@		<- Set to SI or US
-#	$Id: gmt.conf.in,v 1.1 2008/05/01 17:26:29 remko Exp $
+#	$Id: gmt.conf.in 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	GMT configuration file
 #

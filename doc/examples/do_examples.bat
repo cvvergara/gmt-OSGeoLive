@@ -1,6 +1,6 @@
 echo OFF
 REM
-REM	$Id: do_examples.bat,v 1.9 2010/01/05 03:49:47 guru Exp $
+REM	$Id: do_examples.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM
 REM DOS batch script to run all GMT examples (DOS versions).
 

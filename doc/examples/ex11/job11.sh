@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 11
-#		$Id: job11.sh,v 1.15 2011/02/28 00:58:03 remko Exp $
+#		$Id: job11.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Create a 3-D RGB Cube
 # GMT progs:	gmtset, grdimage, grdmath, pstext, psxy

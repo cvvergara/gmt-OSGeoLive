@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77track.c,v 1.75 2011/07/11 19:22:04 guru Exp $
+ *	$Id: mgd77track.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 2004-2011 by P. Wessel
+ *    Copyright (c) 2004-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -321,7 +321,7 @@ int main (int argc, char **argv)
 		fprintf(stderr,"	-F Do NOT apply bitflags to MGD77+ cruises [Default applies error flags stored in the file]\n");
 		fprintf(stderr,"	-G Consider point separations exceeding d<gap> (km) or t<gap> (minutes) to indicate a gap (do not draw) [0]\n");
 		fprintf(stderr,"	-I Ignore certain data file formats from consideration. Append combination of act to ignore\n");
-		fprintf (stderr, "	   (a) MGD77 ASCII, (c) MGD77+ netCDF, or (t) plain table files. [Default ignores none]\n");
+		fprintf (stderr, "	   (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table files. [Default ignores none]\n");
 		GMT_explain_option ('K');
 		fprintf (stderr, "	-L puts time/distance log marks on the track. E.g. a500ka24ht6h means (a)nnotate\n");
 		fprintf (stderr, "	   every 500 km (k) and 24 h(ours), with (t)ickmarks every 500 km and 6 (h)ours\n");

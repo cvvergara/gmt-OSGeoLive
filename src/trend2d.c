@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: trend2d.c,v 1.53 2011/07/08 21:27:06 guru Exp $
+ *	$Id: trend2d.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 	GMT_LONG	error = FALSE, weighted_output = FALSE;
 
 	double	*gtg = NULL, *v = NULL, *gtd = NULL, *lambda = NULL, *workb = NULL, *workz = NULL, *c_model = NULL, *o_model = NULL, *w_model = NULL, *work = NULL;	/* Arrays  */
-	double	xmin, xmax, ymin, ymax, c_chisq, o_chisq, w_chisq, scale = 1.0, prob;
+	double	xmin, xmax, ymin, ymax, c_chisq, o_chisq = 0.0, w_chisq, scale = 1.0, prob;
 	double	get_chisq(struct TREND2D_DATA *data, GMT_LONG n_data, GMT_LONG n_model);
 
 	char format[BUFSIZ];
@@ -212,11 +212,13 @@ int main(int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
 		fprintf(stderr,"\t-F Choose at least 1, up to 6, any order, of xyzmrw for ascii output to stdout.\n");
-		fprintf(stderr,"\t-N fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust quadratic = -N3r.\n");
+		fprintf(stderr,"\t-N fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3r.\n");
+		fprintf(stderr,"\t   Model parameters order is given as follows:\n");
+		fprintf(stderr,"\t   z = m1 + m2*x + m3*y + m4*x*y + m5*x^2 + m6*y^2 + m7*x^3 + m8*x^2*y + m9*x*y^2 + m10*y^3.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf(stderr,"\t[<xyz[w]file>] name of ascii file, first 3 cols = x y z [4 cols = x y z w].  [Default reads stdin].\n");
+		fprintf(stderr,"\t[<xyz[w]file>] name of ascii file, first 3 cols = x y z [4 cols = x y z w]; [Default reads stdin].\n");
 		fprintf(stderr,"\t   x=x, y=y, z=z, m=model, r=residual=z-m, w=weight.  w determined iteratively if robust fit used.\n");
-		fprintf(stderr,"\t-C Truncate eigenvalue spectrum so matrix has <condition_#>.  [Default = 1.0e06].\n");
+		fprintf(stderr,"\t-C Truncate eigenvalue spectrum so matrix has <condition_#> [Default = 1.0e06].\n");
 		GMT_explain_option ('H');
 		fprintf(stderr,"\t-I Iteratively Increase # model parameters, to a max of <n_model> so long as the\n");
 		fprintf(stderr,"\t   reduction in variance is significant at the <confidence> level.\n");
@@ -438,7 +440,7 @@ void read_data (struct TREND2D_DATA **data, GMT_LONG *n_data, double *xmin, doub
 
 	GMT_LONG	n_read, i, n_alloc = GMT_CHUNK;
 	GMT_LONG n_expected_fields, n_fields;
-	char	buffer[BUFSIZ], *not_used = NULL;
+	char	buffer[BUFSIZ];
 	double	*in;
 
 	if (fp == NULL) {
@@ -449,7 +451,7 @@ void read_data (struct TREND2D_DATA **data, GMT_LONG *n_data, double *xmin, doub
 	}
 	(*data) = (struct TREND2D_DATA *) GMT_memory (VNULL, (size_t)n_alloc, sizeof(struct TREND2D_DATA), GMT_program);
 
-	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (buffer, BUFSIZ, fp);
+	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (buffer, BUFSIZ, fp);
 	i = n_read = 0;
 	n_expected_fields = (GMT_io.binary[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 3 + weighted_input;
 

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: libspotter.c,v 1.70 2011/07/11 19:22:06 guru Exp $
+ *	$Id: libspotter.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *   Copyright (c) 1999-2011 by P. Wessel
+ *   Copyright (c) 1999-2013 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ int spotter_init (char *file, struct EULER **p, int flowline, GMT_LONG finite_in
 	struct EULER *e = NULL;
 	char  buffer[BUFSIZ];
 	GMT_LONG n, nf, i = 0, k, n_alloc = GMT_SMALL_CHUNK;
-	double K[9];
+	double K[9], last_t = -DBL_MAX;
 	int spotter_comp_stage (const void *p_1, const void *p_2);
 	int spotter_comp_finite (const void *p_1, const void *p_2);
 
@@ -117,9 +117,13 @@ int spotter_init (char *file, struct EULER **p, int flowline, GMT_LONG finite_in
 			nf = sscanf (buffer, "%lf %lf %lf %lf %lf", &e[i].lon, &e[i].lat, &e[i].t_start, &e[i].t_stop, &e[i].omega);
 		}
 
-
+		if (finite_in && e[i].t_start < last_t) {
+			fprintf (stderr, "libspotter: ERROR: (%s) Total reconstruction rotation %ld has time reversal.\n", file, i);
+			GMT_exit (EXIT_FAILURE);
+		}
+		last_t = e[i].t_start;
 		if (e[i].t_stop >= e[i].t_start) {
-			fprintf (stderr, "libspotter: ERROR: (%s) Stage rotation %ld has start time younger than stop time\n", file, i);
+			fprintf (stderr, "libspotter: ERROR: (%s) Stage rotation %ld has start time younger than stop time.\n", file, i);
 			GMT_exit (EXIT_FAILURE);
 		}
 		e[i].duration = e[i].t_start - e[i].t_stop;

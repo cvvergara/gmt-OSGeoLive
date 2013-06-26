@@ -1,6 +1,6 @@
 #!/bin/bash
 #               GMT ANIMATION 04
-#               $Id: anim_04.sh,v 1.8 2011/06/07 20:07:54 guru Exp $
+#               $Id: anim_04.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:      Make DVD-res MP4 movie of NY to Miami flight
 # GMT progs:    gmtset, gmtmath, psbasemap, pstext, psxy, ps2raster

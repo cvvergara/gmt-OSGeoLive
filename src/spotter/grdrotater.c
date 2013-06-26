@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdrotater.c,v 1.45 2011/07/11 19:22:06 guru Exp $
+ *	$Id: grdrotater.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *   Copyright (c) 1999-2011 by P. Wessel
+ *   Copyright (c) 1999-2013 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -529,6 +529,7 @@ void get_grid_path (struct GRD_HEADER *h, struct GMT_TABLE **p)
 	pol->segment[0]->min[GMT_Y] = h->y_min;	pol->segment[0]->max[GMT_Y] = h->y_max;
 	pol->segment[0]->pole = 0;
 	pol->n_segments = 1;
+	pol->segment[0]->n_columns = 2;
 	
 	*p = pol;
 }

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: pscoupe.c,v 1.51 2011/04/28 16:23:53 remko Exp $
+ *    $Id: pscoupe.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1996-2011 by G. Patau
+ *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
@@ -116,7 +116,6 @@ int main (int argc, char **argv)
     tz_pen = pen;
     pfill = fill;
     tfill = efill;
-    event_title[0] = 0;
     memset ((void *)&meca, 0, sizeof (meca));
     memset ((void *)&moment, 0, sizeof (moment));
     
@@ -625,7 +624,7 @@ int main (int argc, char **argv)
     for (fno = 1; !done && fno < n_args; fno++) {    /* Loop over all input files */
         if (!nofile && argv[fno][0] == '-') continue;
         if (nofile) {
-            fp = stdin;
+            fp = GMT_stdin;
             done = TRUE;
         }
         else if ((fp = GMT_fopen (argv[fno], "r")) == NULL) {
@@ -641,10 +640,11 @@ int main (int argc, char **argv)
         if (GMT_io.io_header[GMT_IN]) 
             for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
         
-
         while (GMT_fgets (line, BUFSIZ, fp)) {
             n_rec++;
-            if (read_cmt) {
+ 	    memset ((void *)col, 0, 15 * GMT_TEXT_LEN * sizeof (char));
+	    memset ((void *)event_title, 0, BUFSIZ * sizeof (char));
+           if (read_cmt) {
                 sscanf (line, "%s %s %s %s %s %s %s %s %s %s %s %s %s %[^\n]\n",
                     col[0], col[1], col[2], col[3], col[4], col[5], col[6], 
                     col[7], col[8], col[9], col[10], col[11], col[12], event_title);

@@ -1,6 +1,301 @@
 -----------------------------------------------------------------------------------------
-	$Id: ChangeLog,v 1.944 2011/07/14 20:50:58 guru Exp $
+	$Id: ChangeLog 9946 2012-12-28 17:04:20Z pwessel $
 -----------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------
+2013-01-01	pwessel
+	* GMT 4.5.9 finalized and released, with GSHHG 2.2.2
+-----------------------------------------------------------------------------------------
+2012-12-28	pwessel
+	* grdproject.c:		The north coordinate would get clobbered when -C was used,
+				thus creating wrong setup.
+
+2012-12-20	jluis
+	* mgd77			Updated the CM4 coefficient files to those of GMT5
+
+2012-12-18	pwessel
+	* gmt_shore.c:		Will now look for either ".nc" or ".cdf" GSHHG files; needed
+				since GSHHG is now stand-alone.  Also look in given <dir>
+				directory if compiled in via configure --with-gshhg-dir=<dir>.
+
+2012-11-19	pwessel
+	* gmt_map.c:		Clipping function could shift the w/e boundaries by an
+				extra 360, thus finding nothing inside in some pscoast tiles.
+	* gmt_support.c:	Improved contour orientation function for grdcontour -F,
+				thanks to Thomas Hottendorff.
+				Resolved case of crossings at perfect saddles.
+
+2012-11-05	pwessel
+	* pslib.c:		Typo in array index in European letter shorthands for German
+				double-s; thanks to David Lachapelle.
+
+2012-10-19	pwessel
+	* spotter/libspotter.c:	Did not check for time reversals among total reconstruction rotations.
+
+2012-10-10	pwessel
+	* gmtdefaults.txt:	Typo in MJD date
+	* x2sys/x2sys_cross.c:	Did not convert time to seconds before calculating speed.
+				Disallowed distance gap check if time was present.
+
+2012-10-03	pwessel
+	* meca/psvelo.c:	Bug in parsing the -A arguments.
+
+2012-09-26	pwessel
+	* mgd77/mgd77magerf.c:	The -A+t<time> option did not parse ISO calendar items.
+
+2012-09-20	pwessel
+	* gmt_grdio.c:		For -R...r the adjusted w/e/s/n had excessive e/n values
+
+2012-09-03	remko
+	* gmt.h, configure.ac:	Remove #define _POSIX_SOURCE 1 and add -std=c99 to allow j0, j1, .. yn
+				functions.
+
+2012-06-15	pwessel
+	* grdfilter.c:		For -D4 set scale based on max |lat| in input grid.
+
+2012-06-13	pwessel
+	* project.c:		Backport changes implemented in GMT5 to make the -C -T -G combination
+				work properly.
+
+2012-06-11	pwessel
+	* spotter/originator.c:	Bad format statement would wreck the 5th output column when
+				run in default mode.
+
+2012-05-31	pwessel
+	* gmt_map.c:		With -R...r and -JE, pscoast could end up trying to paint a
+				block that is outside the rectangular region yet whose projection
+				completely contains the region.
+2012-05-11	pwessel
+	* gmtmath.c:		Operators UPPER and LOWER did not assign output to rows
+				that contain NaN.
+	* misc/dimfilter.c:	Initialized a max value to -DBL_MIN instead of -DBL_MAX.
+
+2012-04-29	pwessel
+	* src/gshhg:		Renamed supplement and tools to gshhg to match how
+				the data will be distributed from now on.
+	* doc/html:		The GSHHS (now GSHHG) supplement was missing from the
+				supplemental man page listing.
+
+2012-04-26	remko
+	* doc/GNUmakefile:	Brought back missing scripts in Appendix P.
+	* configure.ac:		Update to version 4.5.9.
+	* psxy.c:		Fixed issue #66.
+
+2012-04-22	jluis
+	* pslib.c:		Always print %%EOF as last line of the PS file. This line 
+				is needed by ps2raster to detect good closure condition 
+				(no -K in excess)
+
+2012-04-18	pwessel
+	* spotter/backtracker.c:	First and last point in a path was not converted back
+				from geocentric coordinates.
+
+2012-04-15	pwessel
+	* mgd77/mgd77.c:	Copied 4 rather than 2 characters into day field.
+
+2012-04-08	pwessel
+	* xgrid/*:		Now works again, thanks to Lloyd Parkes!
+
+2012-04-02	fwobbe
+	* configure.ac, gmt_version.h.in, gmt_version.c, GNUmakefile:   Set
+				svnversion in configure.ac. Fallback solution if tree
+				was exported from svn and does not contain metadata.
+				Needed for svn 1.7 trees.
+
+-----------------------------------------------------------------------------------------
+2012-04-01	pwessel
+	* GMT 4.5.8 finalized and released
+-----------------------------------------------------------------------------------------
+
+2012-03-27	pwessel
+	* meca/ps*.c:		Make sure text arrays are initialized to NULL before using.
+
+2012-03-26	pwessel
+	* psrose.c:		Option -T did not create a symmetric plot for -R0/360/...
+
+2012-03-22	pwessel
+	* gmt_plot.c:		Eliminated notch in corners of rectangular map frames (same as for linear frames)
+
+2012-03-17	pwessel
+	* minmax.c:		Avoid infinite loop if a record has different number of fields than expected.
+
+2012-03-13	remko
+	* configure.ac:		Added support of GNU/kFreeBSD OS.
+
+2012-03-09	pwessel
+	* mgd77/*.c:		Introduced support for NGDC's MGD77T (tab-delimited) format
+	* mgd77list.c:		Confused the meaning of -F shorthands mgd77 and all.  Now handle
+				all the stored and derived quantities needed to reproduce original data.
+
+2012-02-27	pwessel
+	* *.c. */*.c:		Some failed to use FIELD_DELIMITER and/or D_FORMAT for ascii output.
+
+2012-02-24	pwessel
+	* gmt_support.c:	GMT_inonout_sphpol_count did not properly handle line segments
+				that were exactly vertical in all cases, leading to errors as
+				to a point being inside or outside a spherical polygon.
+
+2012-02-14	remko
+	* GNUmakefile, configure.ac:	Split off triangle code again into gmt-${version}-non-gpl.tar.bz2
+
+2012-02-13	pwessel
+	* gmt_proj.c:		Determine if N or S polar for conic projections by looking at the
+				selected region, not the central point [D. Scheirer report 2/9/2012].
+
+2012-02-07	jluis
+	* ps2raster.c:		On Windows the ghostscript executable path is now fetch from
+				the registry. In case it fails, fall back to the old "get
+				it from the path" mechanism.
+	* gmt_math.h:		Revert the s_rint change. It was causing lots of troubles to
+	* pslib.c:		compile with VS. 
+
+2012-02-02	pwessel
+	* gmt_proj.c:		For -JE, both projection center and antipode gave x = y = 0.
+				Now, antipode results in NaN, NaN.
+
+2012-01-13	jluis
+	* s_rint.c:		(for) Windows rint function that does ieee compliant rounding like GCC
+	* gmt_math.h:
+	* pslib.c:
+
+2012-01-12	remko
+	* gmt_support.c:	Fixed error in reading colors of pattern in -G option
+
+2012-01-10	pwessel
+	* gmt_map.c:		-R0/360 and -JMlon/lat would not set global_map properly,
+				giving NaNs as scale.
+
+2012-01-08	pwessel
+	* grdcut.c:		The -Z would give incorrect -R for pixel grids.  Now also
+				print warning if output grid equals input grid (no change).
+
+2012-01-06	pwessel
+	* gmt_plot.c:		In GMT_xy_axis, string[GMT_CALSTRING_LENGTH] was used to hold
+				labels that could be longer, leading to memory corruption.
+	* gmt_support.c:	In GMT_hold_contour_sub, a variable called closed (which could
+				a flag 0-3) was used as a 0/1 variable.  Added is_closed = 0|1.
+
+2012-01-05	jluis
+	* gmt_customio.c:	Make nx and ny of 'unsigned short int' type in surfer6 header.
+				Note that original format specification by Golden Software
+				clearly say they are 'short int' but this change shouldn't
+				break anything and will allow dealing with larger grid sizes. 
+
+2011-12-03	pwessel
+	* mgd77/mgd77track.c:	Did not set GMT's time system to Unix before dealing
+				with dates.  Now done centrally by MGD77_Init.
+
+2011-12-02	pwessel
+	* project.c:		For -G<inc> -bo we failed to write any output.
+
+2011-11-30	pwessel
+	* gmt_support.c:	GMT_getfill got confused when a Windows path C:\etc was
+				given as an pattern file (mixed up with :F and :B mechanism).
+
+2011-11-21	pwessel
+	* grdview.c:		Also, when nodes are adjusted by small to avoid matching a
+				contour value exactly (during contouring), the same adjustment
+				must be made later when those nodes are used to determine how
+				to stitch together polygons for fill.
+
+2011-11-21	jluis
+	* pscoupe|polar|velo.c	Could not read from stdin because of the cross dll boundaries
+				on Win, must use GMT_stdin instead of stdin. 
+
+2011-11-19	jluis
+	* mgd77/mgd77.c:	Fix memory allocation bug in MGD77_Read_Header_Sequence() where 
+				it was reading MGD77_RECORD_LENGTH records into a shorter 
+				MGD77_HEADER_LENGTH longer variable.
+
+2011-11-18	pwessel
+	* grdview.c:		The contouring could suffer from the same round-off issues that
+				affected grdcontour (and fixed back in 2004).  Now same fix is
+				applied in grdview.  Also set -S to 0 as stated in man page;
+				this matches default in grdcontour as well.
+
+2011-11-17	pwessel
+	* grdlandmask.c:	Now recognizes a -R for global grid when nx*dx == 360.
+	* nearneighbor.c:	--"--
+	* grdcut.c:		--"--
+	* grdfilter.c:		--"--
+	* grdinfo.c:		--"--
+	* grdimage.c:		--"--
+	
+2011-11-14	pwessel
+	* gmt_plot.c:		Fixed the corner caps in linear base frames.
+	
+2011-11-13	pwessel
+	* gmt_grdio.c:		The opening of files for rec-by-rec grid read had a mix if-test
+				that could take us to the else clause inadvertently.
+
+2011-10-25	remko
+	* gmt_notposix.c:	Introduced as in GMT5. Moving stuff from gmt_stat.c.
+	* gmt_math.h:		Be more careful declaring function as 'extern' only when
+				there is no macro.
+
+2011-10-23	jluis
+	* gmt_notunix.h:	Use #undef HAVE_<func>, instead of #define HAVE_<func> 0
+				(prev change in gmt_notposix broke compiling on Windows)
+	* gmt_math.h:		Do not declare existing functions as 'extern' that cause a
+				flooding of 'inconsistent dll linkage' warnings on Windows. 
+
+2011-10-18	pwessel
+	* x2sys/x2sys_cross.c:	Memset call used wrong size if 64-bit, thus not resetting
+				some boolean values causing crossovers to be missed.
+
+2011-10-14	pwessel
+	* test/meca:		Added new meca_5.sh test from Vala Hjorleifsdottir
+
+2011-10-11	remko
+	* gmt_notposix.h:	Properly use #undef HAVE_<func>, instead of #define HAVE_<func> 0
+	* *.[ch]:		Changed accordingly (needs #if defined() now)
+
+2011-10-10	pwessel
+	* gmt_support.c:	GMT_crossover was susceptible to longitude wrapping.
+
+2011-10-01	remko
+	* xyz2grd.c:		Only request 2 columns when using -An.
+
+2011-09-28	jluis
+	* xyz2grd.c:		On Windows it never actually opened the input xyz file, 
+				so a crash resulted down the road.
+
+2011-09-20	pwessel
+	* meca:			psvelo{.c,txt} did not show -A in synopsis.
+
+2011-08-24	remko
+	* gmt_version.c:	Introduced new function GMT_version() to generate version number.
+	* *_tests.sh:		Now using graphicsmagick instead of imagemagick for compare.
+
+2011-08-23	pwessel
+	* *.c:			Removing variables set but not used throughout.
+
+2011-07-27	remko
+	* guru/svnclean.sh:	Renamed from cvsclean.sh and based on .svn directories
+	* GNUmakefile, Makefile:	Replaced cvs traces by svn
+	* pslib.c:		Use SVN revision number in ps_bulkcopy
+
+-----------------------------------------------------------------------------------------
+2011-07-27      pwessel
+	Now under subversion control under repository name gmt4.  To check out a copy:
+		svn checkout svn://gmtserver.soest.hawaii.edu/gmt4 or, for a "trunkless" copy:
+		svn checkout svn://gmtserver.soest.hawaii.edu/gmt4/trunk gmt4
+-----------------------------------------------------------------------------------------
+2011-07-21	pwessel
+	* project.c:		The 4/28/2011 fix traded one bug for another.  Now works
+				both with and without -G.  New test/fitcircle/circles.sh
+				exercise both options.
+
+2011-07-18	pwessel
+	* pstext.c:		Used fgets instead of GMT_fgets which could cause issues
+				under Windoze.
+	* gmtstitch.c:		Warn that segment with a single point will not connect both
+				ends properly - you will need to rerun the task on the new
+				sets of segments.  We now give a warning.
+
+2011-07-14	pwessel
+	* sph/sphtriangulate:	Passed lon,lat instead of lat,lon to GMT_geo_to_cart
+				which would affect the -A option only.
 -----------------------------------------------------------------------------------------
 2011-07-15	pwessel
 	* GMT 4.5.7 finalized and released
@@ -83,6 +378,9 @@
 2011-06-05	pwessel
 	* nearneighbor.c:	For global region in longitudes, cannot extend w/e limits
 				as we do for Cartesian and region-limited areas.
+
+2011-06-04	pwessel
+	* gmt_plot.c:		Eliminated notch in corners of linear map frames and color bars.
 
 2011-06-01	pwessel
 	* spotter/grdrotater.c:	Could end up with w=e=0 in some cases.
@@ -8585,7 +8883,7 @@
 	* pslib.c:	ps_vector wrote to stdout instead of ps_file
 
 1991-10-31
-	* grdcontour.c:	Fixed trouble with anotations when c_int was small (roundoff)
+	* grdcontour.c:	Fixed trouble with annotations when c_int was small (roundoff)
 
 1991-10-29
 	* gmt_*.c:	Fixed minor inconsistencies

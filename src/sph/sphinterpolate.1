@@ -1,4 +1,4 @@
-.TH SPHINTERPOLATE 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH SPHINTERPOLATE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 sphinterpolate \- Gridding in tension of spherical data
 .SH SYNOPSIS
@@ -50,16 +50,16 @@ satisfy arc constraints [Default is no tension].
 \fB\-Q\fP0
 Piecewise linear interpolation; no tension is applied.
 .TP
-\fB\-Q\fPQ1
+\fB\-Q\fP1
 Smooth interpolation with local gradient estimates.
 .TP
-\fB\-Q\fPQ2
+\fB\-Q\fP2
 Smooth interpolation with global gradient estimates.  You may optionally append /\fIN\fP/\fIM\fP/\fIU\fP, where
 \fIN\fP is the number of iterations used to converge at solutions for gradients when variable tensions are selected (e.g., \fB\-T\fP only) [3],
 \fIM\fP is the number of Gauss-Seidel iterations used when determining the global gradients [10], and
 \fIU\fP is the maximum change in a gradient at the last iteration [0.01].
 .TP
-\fB\-Q\fPQ3
+\fB\-Q\fP3
 Smoothing.  Optionally append \fI/E/U\fP [/0/0], where
 \fIE\fP is Expected squared error in a typical (scaled) data value, and
 \fIU\fP is Upper bound on  weighted sum of squares of deviations from data.

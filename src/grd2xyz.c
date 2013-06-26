@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2xyz.c,v 1.72 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grd2xyz.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -142,23 +142,23 @@ int main (int argc, char **argv)
 
 		fprintf (stderr, "\n\t<grdfiles> is one or more grid files to convert\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-E Write ESRI ArcInfo ASCII interchange format.  Only one grid file can be specified\n");
-		fprintf (stderr, "\t   Optionally append f for floating point output [Default is integer]\n");
-		fprintf (stderr, "\t   Optionally append nodata value to represent NaNs [-9999]\n");
-		fprintf (stderr, "\t-H Write 1 ASCII header record [Default is no header]\n");
-		fprintf (stderr, "\t-N Replace z-values that equal NaN with this value [Default writes NaN]\n");
+		fprintf (stderr, "\t-E Write ESRI ArcInfo ASCII interchange format.  Only one grid file can be specified.\n");
+		fprintf (stderr, "\t   Optionally append f for floating point output [Default is integer].\n");
+		fprintf (stderr, "\t   Optionally append nodata value to represent NaNs [-9999].\n");
+		fprintf (stderr, "\t-H Write 1 ASCII header record [Default is no header].\n");
+		fprintf (stderr, "\t-N Replace z-values that equal NaN with this value [Default writes NaN].\n");
 		GMT_explain_option ('R');
-		fprintf (stderr, "\t-S Suppress output for nodes whose z equals NaN [Default prints all nodes]\n");
-		fprintf (stderr, "\t   Append r to reverse the suppression (only output NaN nodes)\n");
+		fprintf (stderr, "\t-S Suppress output for nodes whose z equals NaN [Default prints all nodes].\n");
+		fprintf (stderr, "\t   Append r to reverse the suppression (only output NaN nodes).\n");
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t-W Write xyzw using supplied weight (or 1 if not given) [Default is xyz]\n");
-		fprintf (stderr, "\t-Z sets exact specification of resulting 1-column output z-table\n");
-		fprintf (stderr, "\t   If data is in row format, state if first row is at T(op) or B(ottom)\n");
-		fprintf (stderr, "\t     Then, append L or R to indicate starting point in row\n");
-		fprintf (stderr, "\t   If data is in column format, state if first columns is L(left) or R(ight)\n");
-		fprintf (stderr, "\t     Then, append T or B to indicate starting point in column\n");
-		fprintf (stderr, "\t   Append x if gridline-registered, periodic data in x without repeating column at xmax\n");
-		fprintf (stderr, "\t   Append y if gridline-registered, periodic data in y without repeating row at ymax\n");
+		fprintf (stderr, "\t-W Write xyzw using supplied weight (or 1 if not given) [Default is xyz].\n");
+		fprintf (stderr, "\t-Z sets exact specification of resulting 1-column output z-table.\n");
+		fprintf (stderr, "\t   If data is in row format, state if first row is at T(op) or B(ottom);\n");
+		fprintf (stderr, "\t     Then, append L or R to indicate starting point in row.\n");
+		fprintf (stderr, "\t   If data is in column format, state if first columns is L(left) or R(ight);\n");
+		fprintf (stderr, "\t     Then, append T or B to indicate starting point in column.\n");
+		fprintf (stderr, "\t   Append x if gridline-registered, periodic data in x without repeating column at xmax.\n");
+		fprintf (stderr, "\t   Append y if gridline-registered, periodic data in y without repeating row at ymax.\n");
 		fprintf (stderr, "\t   Specify one of the following data types (all binary except a):\n");
 		fprintf (stderr, "\t     a  Ascii\n");
 		fprintf (stderr, "\t     c  signed 1-byte character\n");
@@ -170,7 +170,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t     l  long (4- or 8-byte) integer\n");
 		fprintf (stderr, "\t     f  4-byte floating point single precision\n");
 		fprintf (stderr, "\t     d  8-byte floating point double precision\n");
-		fprintf (stderr, "\t   [Default format is scanline orientation in ascii representation: -ZTLa]\n");
+		fprintf (stderr, "\t   [Default format is scanline orientation in ascii representation: -ZTLa].\n");
 		GMT_explain_option (':');
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
@@ -305,11 +305,13 @@ int main (int argc, char **argv)
 				if (!grd.y_units[0]) strcpy (grd.y_units, "y");
 				if (!grd.z_units[0]) strcpy (grd.z_units, "z");
 				if (gmtdefs.xy_toggle[GMT_IN])
-					{sprintf (buffer, "%s\t%s\t%s", grd.y_units, grd.x_units, grd.z_units);	GMT_fputs(buffer, GMT_stdout);}
+					{sprintf (buffer, "%s%s%s%s%s", grd.y_units, gmtdefs.field_delimiter, grd.x_units, gmtdefs.field_delimiter, grd.z_units);	GMT_fputs(buffer, GMT_stdout);}
 				else
-					{sprintf (buffer, "%s\t%s\t%s", grd.x_units, grd.y_units, grd.z_units);	GMT_fputs(buffer, GMT_stdout);}
-				if (Ctrl->W.active)
-					GMT_fputs ("\tweight\n", GMT_stdout);
+					{sprintf (buffer, "%s%s%s%s%s", grd.x_units, gmtdefs.field_delimiter, grd.y_units, gmtdefs.field_delimiter, grd.z_units);	GMT_fputs(buffer, GMT_stdout);}
+				if (Ctrl->W.active) {
+					GMT_fputs (gmtdefs.field_delimiter, GMT_stdout);
+					GMT_fputs ("weight\n", GMT_stdout);
+				}
 				else
 					GMT_fputs ("\n", GMT_stdout);
 				first = FALSE;

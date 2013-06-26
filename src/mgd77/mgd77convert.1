@@ -1,8 +1,8 @@
-.TH MGD77CONVERT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH MGD77CONVERT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 mgd77convert \- Translate between different formats of MGD77 files
 .SH SYNOPSIS
-\fBmgd77convert\fP \fINGDC-ids\fP \fB\-Fa\fP|\fBc\fP|\fBt\fP \fB\-T\fP[\fB+\fP]\fBa\fP|\fBb\fP|\fBt\fP 
+\fBmgd77convert\fP \fINGDC-ids\fP \fB\-Fa\fP|\fBc\fP|\fBm\fP|\fBt\fP \fB\-T\fP[\fB+\fP]\fBa\fP|\fBb\fP|\fBm\fP|\fBt\fP 
 [ \fB\-L\fP[\fBw\fP][\fBe\fP][\fB+\fP] ] [ \fB\-V\fP ] [ \fB\-4\fP ]
 .SH DESCRIPTION
 \fBmgd77convert\fP reads versions of MGD77 files and writes the same
@@ -32,14 +32,14 @@ is not set it will default to \fB$GMT_SHAREDIR\fP/mgd77].
 \fB\-F\fP
 Specifies the format of the input (From) files.  Choose from \fBa\fP for standard
 MGD77 ASCII table (with extension .mgd77), \fBc\fP for the new MGD77+ netCDF format
-(with extension .nc), and \fBt\fP for a plain ASCII tab-separated table dump
+(with extension .nc), revised MGD77T (tab-delimited; with extension .m77t) and \fBt\fP for a plain ASCII tab-separated table dump
 (with extension .dat).  Use \fB\-FC\fP to recover the original MGD77 setting from
 the MGD77+ file [Default will apply any E77 corrections encoded in the file].
 .TP
 \fB\-T\fP
 Specifies the format of the output (To) files.  Choose from \fBa\fP for standard
 MGD77 ASCII table (with extension .mgd77), \fBc\fP for the new MGD77+ netCDF format
-(with extension .nc), and \fBt\fP for a plain ASCII tab-separated table dump
+(with extension .nc), revised MGD77T (tab-delimited; with extension .m77t) and \fBt\fP for a plain ASCII tab-separated table dump
 (with extension .dat).  We will refuse to create the file(s) if they already
 exist in the current directory.  Prepend \fB+\fP to override this policy.
 .SH OPTIONS
@@ -91,17 +91,20 @@ use
 \fBmgd77convert\fP 01020051 \fB\-FC\fP \fB\-Ta\fP \fB\-V\fP
 .br
 .SH FILE FORMATS
-\fBmgd77convert\fP handles three different formats. (1) The MGD77 ASCII tables are
-the established standard for distribution of underway geophysical data to and from the
+\fBmgd77convert\fP handles four different formats. (1) The MGD77 ASCII tables are
+the conventional standard for distribution of underway geophysical data to and from the
 NGDC data center.  Normally, only the ship-operations people and the cruise PI might
 be involved in \fImaking\fP an MGD77 ASCII file for transmission to NGDC; users
 are more interested in \fIreading\fP such files. (2) The MGD77+ netCDF format was
 developed to fascilitate the use of MGD77 data by scientists.  It contains all the information
 of the original MGD77 file and if you convert back and forth you end up with the original.
 However, file sizes are typically ~30% of the original ASCII format and is much faster to
-operate on. (3) The plain ASCII tab-separated dump is available for users who need to
+operate on. (3) NGDC has now started to use a new tab-delimited version of the MGD77 data,
+called MGD77T.  In addition to all the info in old MGD77 files it contains a few more quality
+flags for grav, mag, and bathymetry.  (4) The plain ASCII tab-separated dump is available for users who need to
 manually edit the content of a MGD77 file.  This is usually easier to do when the columns
-are tab-separated than when they are all crunched together in the MGD77 punch-card format.
+are tab-separated than when they are all crunched together in the MGD77 punch-card format.  It
+differs from format MGD77T in that missing items are written as NaNs.
 .SH OTHER TOOLS
 The MGD77+ netCDF files are CF-1.0 and COARDS compliant and can be examined with general-purpose
 tools such as ncBrowse and ncView.
@@ -112,8 +115,8 @@ tools such as ncBrowse and ncView.
 .IR mgd77track (1)
 .IR x2sys_init (1)
 .SH REFERENCES
-Wessel, P., and W. H. F. Smith, 2011, The Generic Mapping Tools (GMT) version
-4.5.7 Technical Reference & Cookbook, SOEST/NOAA.
+Wessel, P., and W. H. F. Smith, 2013, The Generic Mapping Tools (GMT) version
+4.5.9 Technical Reference & Cookbook, SOEST/NOAA.
 .br
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
 Tools Released, EOS Trans., AGU, 79 (47), p. 579.

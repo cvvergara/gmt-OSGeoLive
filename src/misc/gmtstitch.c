@@ -1,12 +1,12 @@
 /*
- *	$Id: gmtstitch.c,v 1.64 2011/07/11 19:22:06 guru Exp $
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	$Id: gmtstitch.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  */
 /* gmtstitch will combine pieces of coastlines or similar segments into a
  * continuous line, polygon, or group of lines/polygons so that the jump
  * between segment endpoints exceeds a specified threshold.
  *
- * Paul Wessel, March, 2006, derived from our earlier GSHHS processing tools July, 1994.
+ * Paul Wessel, March, 2006, derived from our earlier GSHHG processing tools July, 1994.
  */
 
 #include "gmt.h"
@@ -292,7 +292,7 @@ int main (int argc, char **argv)
 			np = D->table[k]->segment[j]->n_rows;
 			ns++;
 			distance = (GMT_distance_func) (D->table[k]->segment[j]->coord[GMT_X][0], D->table[k]->segment[j]->coord[GMT_Y][0], D->table[k]->segment[j]->coord[GMT_X][np-1], D->table[k]->segment[j]->coord[GMT_Y][np-1]);
-			if (distance <= closed_dist) {	/* Already closed, just write out and forget in the rest of the program */
+			if (np > 2 && distance <= closed_dist) {	/* Already closed, just write out and forget in the rest of the program */
 				if (individual_file) {
 					(save_type) ? sprintf (filename, format, 'C', out_seg) : sprintf (filename, format, out_seg);
 					if ((fp = GMT_fopen (filename, GMT_io.w_mode)) == NULL ) {
@@ -322,6 +322,7 @@ int main (int argc, char **argv)
 			}
 			else { /* Here we have a segment that is not closed.  Store refs to D->table and copy end points */
 				if (id == -1) id = 0;
+				if (np == 1 && gmtdefs.verbose) fprintf (stderr, "%s: Segment %ld only has a single point.  Stitching may require additional stitching.\n", GMT_program, id);
 				seg[id].id = id;
 				seg[id].orig_id = ns;
 				seg[id].group = k;

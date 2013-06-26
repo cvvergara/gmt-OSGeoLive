@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sphtriangulate.c,v 1.27 2011/07/11 19:22:06 guru Exp $
+ *	$Id: sphtriangulate.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 2008-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 2008-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -385,7 +385,7 @@ void stripack_delaunay_output (FILE *fp, GMT_LONG n, double *lon, double *lat, s
 		for (k = ij = 0; k < D->n; k++, ij += TRI_NROW) {	/* For each triangle */
 			/* Write multisegment header with triangle # and the three node numbers */
 			if (get_area) {
-				for (i = 0; i < 3; i++) geo_to_cart (lon[D->tri[ij+i]], lat[D->tri[ij+i]], V[i], TRUE);
+				for (i = 0; i < 3; i++) geo_to_cart (lat[D->tri[ij+i]], lon[D->tri[ij+i]], V[i], TRUE);
 				area_triangle = stripack_areas (V[0], V[1], V[2]);
 				area_sphere += area_triangle;
 			}
@@ -501,9 +501,9 @@ void stripack_voronoi_output (FILE *fp, GMT_LONG n, double *lon, double *lat, st
 				plon[vertex] = V->lon[vertex_last];
 				plat[vertex] = V->lat[vertex_last];
 				if (get_area) {	/* Convert three corners to Cartesian */
-					geo_to_cart (V->lon[node], V->lat[node], V1, TRUE);
-					geo_to_cart (V->lon[vertex_last], V->lat[vertex_last], V2, TRUE);
-					geo_to_cart (V->lon[vertex_new], V->lat[vertex_new], V3, TRUE);
+					geo_to_cart (V->lat[node], V->lon[node], V1, TRUE);
+					geo_to_cart (V->lat[vertex_last], V->lon[vertex_last], V2, TRUE);
+					geo_to_cart (V->lat[vertex_new], V->lon[vertex_new], V3, TRUE);
 					area_triangle = stripack_areas (V1, V2, V3);
 					area_polygon += area_triangle;
 				}

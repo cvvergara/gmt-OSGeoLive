@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdtrend.c,v 1.43 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdtrend.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -212,7 +212,9 @@ int main(int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
 		fprintf (stderr,"\t<input.grd> is name of grid file to fit trend to.\n");
-		fprintf (stderr,"\t-N # model parameters to fit; integer in [1,10].  Append r for robust fit.\n");
+		fprintf(stderr,"\t-N fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3r.\n");
+		fprintf(stderr,"\t   Model parameters order is given as follows:\n");
+		fprintf(stderr,"\t   z = m1 + m2*x + m3*y + m4*x*y + m5*x^2 + m6*y^2 + m7*x^3 + m8*x^2*y + m9*x*y^2 + m10*y^3.\n");
 		fprintf (stderr,"\n\tOPTIONS:\n");
 		fprintf (stderr,"\t-D Supply filename to write grid file of differences (input - trend).\n");
 		fprintf (stderr,"\t-T Supply filename to write grid file of trend.\n");

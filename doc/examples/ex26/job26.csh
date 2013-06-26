@@ -1,5 +1,5 @@
 #!/bin/csh
-#		$Id: job26.csh,v 1.6 2011/03/01 01:34:48 remko Exp $
+#		$Id: job26.csh 9545 2011-07-27 19:31:54Z pwessel $
 #		GMT EXAMPLE 26
 #
 # Purpose:	Demonstrate general vertical perspective projection

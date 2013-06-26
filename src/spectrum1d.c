@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: spectrum1d.c,v 1.53 2011/07/08 21:27:06 guru Exp $
+ *	$Id: spectrum1d.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -113,7 +113,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG	error = FALSE;
 	
-	char	buffer[BUFSIZ], *not_used = NULL;
+	char	buffer[BUFSIZ];
 
 	GMT_LONG	i, k, j, n_expected_fields, n_fields, n_read, n_outputs, window_test = 2;
 	GMT_LONG	n_alloc, n_data;
@@ -301,7 +301,7 @@ int main (int argc, char **argv)
 	if (C.y_given) y = (float *)GMT_memory (VNULL, (size_t)n_alloc, sizeof(float), GMT_program);
 	n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : C.y_given + 1;
 
-	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (buffer, BUFSIZ, fp);
+	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (buffer, BUFSIZ, fp);
 
 	while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 

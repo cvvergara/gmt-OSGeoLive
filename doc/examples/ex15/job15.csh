@@ -1,5 +1,5 @@
 #!/bin/csh
-#		$Id: job15.csh,v 1.10 2011/03/01 01:34:48 remko Exp $
+#		$Id: job15.csh 9545 2011-07-27 19:31:54Z pwessel $
 #		GMT EXAMPLE 15
 #
 # Purpose:	Gridding and clipping when data are missing

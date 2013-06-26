@@ -1,16 +1,16 @@
-.TH GSHHS2GRASS 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH GSHHG2GRASS 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
-gshhs2grass \- Extracting GSHHS and WDBII data in GRASS-compatible ASCII format
+gshhgtograss \- Extracting GSHHS and WDBII data in GRASS-compatible ASCII format
 .SH SYNOPSIS
-\fBgshhs2grass\fP \fB\-i\fP gshhs_[f|h|i|l|c].b [ \fB\-x\fP\fIminx\fP ] [\fB\-X\fP\fImaxx\fP ] 
+\fBgshhgtograss\fP \fB\-i\fP gshhs_[f|h|i|l|c].b [ \fB\-x\fP\fIminx\fP ] [\fB\-X\fP\fImaxx\fP ] 
 [ \fB\-y\fP\fIminy\fP ] [ \fB\-Y\fP\fImaxy\fP ]
 .SH DESCRIPTION
-\fBgshhs2grass\fP reads the binary coastline (GSHHS) and
+\fBgshhgtograss\fP reads the binary coastline (GSHHS) or binary river/border (WDBII) and
 and translates it into an ASCII format suitable for import into GRASS.  It automatically
 handles byte-swabbing between different architectures.
 .TP
 \fIgshhs_[f|h|i|l|c].b\fP
-One of the GSHHS binary data file as distributed with the GSHHS data supplement.  Any of the
+One of the GSHHG binary data file as distributed with the GSHHG data supplement.  Any of the
 5 standard resolutions (full, high, intermediate, low, crude) can be used.
 The resulting files are called dig_[ascii|att|cats].gshhs_[f|h|i|l|c].
 .SH OPTIONS
@@ -30,7 +30,7 @@ Specify a maximum (north) latitude.
 .sp
 To convert the full GSHHS data set , try
 .sp
-\fBgshhs2grass\fP \fIgshhs_f.b\fP
+\fBgshhgtograss\fP \fIgshhs_f.b\fP
 .SH BUGS
 Not updated to handle the WDBII line data (borders or rivers).
 .SH AUTHOR
@@ -38,5 +38,5 @@ Original version by Simon Cox (simon@ned.dem.csiro.au) with
 some maintenance by Paul Wessel (pwessel@hawaii.edu).
 .SH "SEE ALSO"
 .IR GMT (1),
-.IR gshhs (1)
-.IR gshhs_dp (1)
+.IR gshhg (1)
+.IR gshhg_dp (1)

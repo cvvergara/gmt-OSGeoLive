@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: makecpt.c,v 1.60 2011/07/08 21:27:06 guru Exp $
+ *	$Id: makecpt.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-C Specify a colortable [Default is rainbow]:\n");
-		fprintf (stderr, "\t   [Default min/max values for -T are given in brackets]\n");
+		fprintf (stderr, "\t   [Default min/max values for -T are given in brackets].\n");
 		fprintf (stderr, "\t   ---------------------------------\n");
 		while (fgets (buffer, BUFSIZ, fpc)) if (!(buffer[0] == '#' || buffer[0] == 0)) fprintf (stderr, "\t   %s", buffer);
 		fclose (fpc);
@@ -154,14 +154,14 @@ int main(int argc, char **argv)
 		fprintf (stderr, "\t-I Reverses the sense of the color table as well as back- and foreground color.\n");
 		fprintf (stderr, "\t-M Use GMT defaults to set back-, foreground, and NaN colors [Default uses color table].\n");
 		fprintf (stderr, "\t-N Do not write back-, foreground, and NaN colors [Default will].\n");
-		fprintf (stderr, "\t-Q Assign a logarithmic colortable [Default is linear]\n");
-		fprintf (stderr, "\t   -Qi: z-values are actually log10(z). Assign colors and write z. [Default]\n");
+		fprintf (stderr, "\t-Q Assign a logarithmic colortable [Default is linear].\n");
+		fprintf (stderr, "\t   -Qi: z-values are actually log10(z). Assign colors and write z [Default].\n");
 		fprintf (stderr, "\t   -Qo: z-values are z, but take log10(z), assign colors and write z.\n");
-		fprintf (stderr, "\t        If -T<z0/z1/dz> is given, dz is 1, 2, or 3 (as in logarithmic annotations)\n");
-		fprintf (stderr, "\t-T Give start, stop, and increment for colorscale in z-units, or filename with custom z-values\n");
-		fprintf (stderr, "\t   If not given, the range in the master cptfile is used\n");
+		fprintf (stderr, "\t        If -T<z0/z1/dz> is given, dz is 1, 2, or 3 (as in logarithmic annotations).\n");
+		fprintf (stderr, "\t-T Give start, stop, and increment for colorscale in z-units, or filename with custom z-values.\n");
+		fprintf (stderr, "\t   If not given, the range in the master cptfile is used.\n");
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t-Z Create a continuous color palette [Default is discontinuous, i.e., constant color intervals]\n");
+		fprintf (stderr, "\t-Z Create a continuous color palette [Default is discontinuous, i.e., constant color intervals].\n");
 		exit (EXIT_FAILURE);
 	}
 

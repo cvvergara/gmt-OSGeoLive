@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: nearneighbor.c,v 1.81 2011/07/08 21:27:06 guru Exp $
+ *	$Id: nearneighbor.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -96,7 +96,7 @@ int main (int argc, char **argv)
 
 	float *grd = NULL;
 
-	char line[BUFSIZ], *not_used = NULL;
+	char line[BUFSIZ];
 
 	FILE *fp = NULL;
 
@@ -214,14 +214,14 @@ int main (int argc, char **argv)
 		GMT_explain_option ('H');
 		fprintf(stderr, "\t-L sets boundary conditions.  <flags> can be either\n");
 		fprintf(stderr, "\t   g for geographic boundary conditions, or one or both of\n");
-		fprintf(stderr, "\t   x for periodic boundary conditions on x\n");
-		fprintf(stderr, "\t   y for periodic boundary conditions on y\n");
+		fprintf(stderr, "\t   x for periodic boundary conditions on x,\n");
+		fprintf(stderr, "\t   y for periodic boundary conditions on y.\n");
 		GMT_explain_option ('V');
 		fprintf(stderr, "\t-W input file has observation weights in 4th column.\n");
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf(stderr, "\t   Default is 3 (or 4 if -W is set) columns\n");
+		fprintf(stderr, "\t   Default is 3 (or 4 if -W is set) columns.\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('.');
 
@@ -344,13 +344,15 @@ int main (int argc, char **argv)
 
 	factor = Ctrl->N.sectors / (2.0 * M_PI);
 
-	x_left = header.x_min;	x_right = header.x_max;
-	if (GMT_io.in_col_type[0] != GMT_IS_LON || !GMT_360_RANGE (x_left, x_right)) {
-		x_left  -= actual_max_di * header.x_inc;
+	/* To allow data points falling outside -R but within the search radius we extend the data domain in all directions */
+
+	x_left = header.x_min;	x_right = header.x_max;	/* This is what -R says */
+	if (GMT_io.in_col_type[0] != GMT_IS_LON || !GMT_grd_is_global (&header)) {
+		x_left  -= actual_max_di * header.x_inc;	/* OK to extend x-domain since not a periodic geographic grid */
 		x_right += actual_max_di * header.x_inc;
 	}
 	y_top = header.y_max + dj * header.y_inc;	y_bottom = header.y_min - dj * header.y_inc;
-	if (GMT_io.in_col_type[1] == GMT_IS_LAT) {
+	if (GMT_io.in_col_type[1] == GMT_IS_LAT) {	/* For geographic grids we must ensure the extended y-domain is physically possible */
 		if (y_bottom < -90.0) y_bottom = -90.0;
 		if (y_top > 90.0) y_top = 90.0;
 	}
@@ -382,7 +384,7 @@ int main (int argc, char **argv)
 
 		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 

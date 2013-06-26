@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 13
-#		$Id: job13.sh,v 1.9 2011/02/28 00:58:03 remko Exp $
+#		$Id: job13.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Illustrate vectors and contouring
 # GMT progs:	grdmath, grdcontour, grdvector, pstext

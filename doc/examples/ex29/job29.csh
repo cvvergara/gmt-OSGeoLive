@@ -1,6 +1,6 @@
 #!/bin/csh
 #		GMT EXAMPLE 29
-#		$Id: job29.csh,v 1.6 2011/03/01 01:34:48 remko Exp $
+#		$Id: job29.csh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Illustrates spherical surface gridding with Green's function of splines
 # GMT progs:	makecpt, grdcontour, grdgradient, grdimage, grdmath greenspline, psscale, pstext

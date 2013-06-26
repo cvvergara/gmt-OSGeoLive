@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psbasemap.c,v 1.57 2011/07/08 21:27:06 guru Exp $
+ *	$Id: psbasemap.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -155,14 +155,14 @@ int main (int argc, char **argv)
 		GMT_explain_option ('E');
 		GMT_fill_syntax ('G', "Select fill inside of basemap.");
 		GMT_explain_option ('K');
-		GMT_mapscale_syntax ('L', "Draws a simple map scale centered on <lon0>/<lat0>");
+		GMT_mapscale_syntax ('L', "Draws a simple map scale centered on <lon0>/<lat0>.");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
-		GMT_maprose_syntax ('T', "Draws a north-pointing map rose centered on <lon0>/<lat0>");
+		GMT_maprose_syntax ('T', "Draws a north-pointing map rose centered on <lon0>/<lat0>.");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [default is at bottom of z-axis]\n");
+		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [Default is at bottom of z-axis].\n");
 		GMT_explain_option ('c');
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);

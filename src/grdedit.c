@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdedit.c,v 1.66 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdedit.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -143,14 +143,14 @@ int main (int argc, char **argv)
 
 		fprintf (stderr, "\tgrdfile is file to be modified\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A will adjust dx/dy to be compatible with the files domain or -R\n");
-		fprintf (stderr, "\t-D to enter information.  Specify '=' to get default value\n");
-		fprintf (stderr, "\t-E to tranpose the entire grid (this will exchange x and y)\n");
+		fprintf (stderr, "\t-A will adjust dx/dy to be compatible with the files domain or -R.\n");
+		fprintf (stderr, "\t-D to enter information.  Specify '=' to get default value.\n");
+		fprintf (stderr, "\t-E to tranpose the entire grid (this will exchange x and y).\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-N <file> has new xyz values to replace existing grid nodes\n");
+		fprintf (stderr, "\t-N <file> has new xyz values to replace existing grid nodes.\n");
 		GMT_explain_option ('R');
 		fprintf (stderr, "\t-S For global grids of 360 degree longitude range.\n");
-		fprintf (stderr, "\t   Will rotate entire grid to coincide with new borders in -R\n");
+		fprintf (stderr, "\t   Will rotate entire grid to coincide with new borders in -R.\n");
 		fprintf (stderr, "\t-T Toggle header from grid-line to pixel-registered grid or vice versa.\n");
 		fprintf (stderr, "\t   This shrinks -R by 0.5*{dx,dy} going from pixel to grid-line registration\n");
 		fprintf (stderr, "\t   and expands -R by 0.5*{dx,dy} going from grid-line to pixel registration.\n");
@@ -254,7 +254,6 @@ int main (int argc, char **argv)
 		GMT_free ((void *)a);
 	}
 	else if (Ctrl->N.active) {
-		char *not_used = NULL;
 		if (gmtdefs.verbose) fprintf (stderr, "%s: Replacing nodes using xyz values from file %s\n", GMT_program, Ctrl->N.file);
 		if (GMT_io.binary[GMT_IN] && gmtdefs.verbose) {
 			char *type[2] = {"double", "single"};
@@ -267,7 +266,7 @@ int main (int argc, char **argv)
 			fprintf (stderr, "%s: Could not open file %s\n", GMT_program, Ctrl->N.file);
 			exit (EXIT_FAILURE);
 		}
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (buffer, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (buffer, BUFSIZ, fp);
 
 		n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 3;
 

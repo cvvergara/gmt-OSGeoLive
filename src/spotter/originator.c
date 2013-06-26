@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: originator.c,v 1.63 2011/07/11 19:22:06 guru Exp $
+ *	$Id: originator.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *   Copyright (c) 2000-2011 by P. Wessel
+ *   Copyright (c) 2000-2013 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -116,6 +116,7 @@ int main (int argc, char **argv)
 	double dlon, fix_r, fix_t, yg, yc;
 
 	char *hsfile = CNULL, *efile = CNULL, age[GMT_TEXT_LEN], buffer[BUFSIZ], *not_used = NULL;
+	char fmt1[BUFSIZ], fmt2[BUFSIZ];
 
 	FILE *fp = NULL;
 
@@ -306,6 +307,12 @@ int main (int argc, char **argv)
 		n_files = 1;
 	n_args = (argc > 1) ? argc : 2;
 
+	sprintf (fmt1, "%s%s%s%s%s%s%s%s%%s%s", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.field_delimiter);
+	if (use_ID)
+		sprintf (fmt2, "%s%%d%s%%ld%s%s%s%s", gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
+	else
+		sprintf (fmt2, "%s%%s%s%%ld%s%s%s%s", gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
+	
 	done = FALSE;
 	n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : n_input;
 	n = 0;
@@ -489,16 +496,16 @@ int main (int argc, char **argv)
 						strcpy (age, "NaN");
 					else
 						sprintf (age, "%g", t_smt);
-					sprintf (buffer, "%g\t%g\t%g\t%g\t%s", in[x], in[y], z_smt, r_smt, age);
+					sprintf (buffer, fmt1, in[x], in[y], z_smt, r_smt, age);
 					GMT_fputs (buffer, GMT_stdout);
 					if (use_ID)
 						for (j = 0; j < n_max_spots; j++) {
-							sprintf (buffer, "\t%d\t%ld\t%g\t%g", hot[j].h->id, hot[j].stage, hot[j].np_time, hot[j].np_dist);
+							sprintf (buffer, fmt2, hot[j].h->id, hot[j].stage, hot[j].np_time, hot[j].np_dist);
 							GMT_fputs (buffer, GMT_stdout);
 						}
 					else
 						for (j = 0; j < n_max_spots; j++) {
-							sprintf (buffer, "\t%s\t%ld\t%g\t%g", hot[j].h->abbrev, hot[j].stage, hot[j].np_time, hot[j].np_dist);
+							sprintf (buffer, fmt2, hot[j].h->abbrev, hot[j].stage, hot[j].np_time, hot[j].np_dist);
 							GMT_fputs (buffer, GMT_stdout);
 						}
 					GMT_fputs ("\n", GMT_stdout);

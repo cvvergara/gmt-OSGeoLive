@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
-*	$Id: mapproject.c,v 1.132 2011/07/08 21:27:06 guru Exp $
+*	$Id: mapproject.c 9923 2012-12-18 20:45:53Z pwessel $
 *
-*	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+*	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
 *	See LICENSE.TXT file for copying and redistribution conditions.
 *
 *	This program is free software; you can redistribute it and/or modify
@@ -116,7 +116,7 @@ int main (int argc, char **argv)
 
 	char line[BUFSIZ], format[BUFSIZ], unit_name[GMT_TEXT_LEN], scale_unit_name[GMT_TEXT_LEN];
 	char txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT], p[BUFSIZ], c;
-	char from[GMT_LONG_TEXT], to[GMT_LONG_TEXT], *not_used = NULL;
+	char from[GMT_LONG_TEXT], to[GMT_LONG_TEXT];
 
 	FILE *fp = NULL;
 
@@ -309,42 +309,42 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\tinfiles (in ASCII or binary) has 2 or more columns.  If no file(s) is given, standard input is read.\n");
 		GMT_explain_option ('J');
 		GMT_explain_option ('R');
-		fprintf (stderr, "\t   If UTM and -C are used then -R is optional (automatically set to match UTM zone)\n");
+		fprintf (stderr, "\t   If UTM and -C are used then -R is optional (automatically set to match UTM zone).\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-A Calculate azimuths from previous point in the input data with -Af. If a specified\n");
 		fprintf (stderr, "\t   point is provided, all azimuths are computed with respect to that point.\n");
 		fprintf (stderr, "\t   Use -Ab to calculate backazimuths from data to previous or the specified point.\n");
 		fprintf (stderr, "\t   Upper case B or F gives azimuths of geodesics using current ellipsoid.\n");
-		fprintf (stderr, "\t-C returns x/y relative to projection center [Default is relative to lower left corner]\n");
-		fprintf (stderr, "\t   Optionally append dx/dy to add (or subtract if -I) (i.e., false easting & northing) [0/0]\n");
+		fprintf (stderr, "\t-C returns x/y relative to projection center [Default is relative to lower left corner].\n");
+		fprintf (stderr, "\t   Optionally append dx/dy to add (or subtract if -I) (i.e., false easting & northing) [0/0].\n");
 		fprintf (stderr, "\t   Units are plot units unless -F[unit] is set in which case the unit is always meters.\n");
-		fprintf (stderr, "\t-D Temporarily reset MEASURE_UNIT to be c (cm), i (inch), m (meter), or p (point)\n");
+		fprintf (stderr, "\t-D Temporarily reset MEASURE_UNIT to be c (cm), i (inch), m (meter), or p (point).\n");
 		fprintf (stderr, "\t   Cannot be used if -F is set.\n");
 		fprintf (stderr, "\t-E Convert (lon, lat, h) to Earth Centered Earth Fixed (ECEF) coordinates [-I for inverse].\n");
 		fprintf (stderr, "\t   Specify <datum> using datum ID (see -Qd or man page) or as <ellipsoid>:<dx,dy,dz>\n");
 		fprintf (stderr, "\t   where <ellipsoid> may be ellipsoid ID (see -Qe or man page) or <semimajor>[,<inv_flattening>].\n");
 		fprintf (stderr, "\t   If <datum> = - or not given we assume WGS-84.\n");
-		fprintf (stderr, "\t-F force projected values to be in actual meters [Default uses the given plot scale]\n");
-		fprintf (stderr, "\t   Specify unit by appending k (km), m (miles), n (nautical miles), i (inch), c (cm), or p (points)\n");
+		fprintf (stderr, "\t-F force projected values to be in actual meters [Default uses the given plot scale].\n");
+		fprintf (stderr, "\t   Specify unit by appending k (km), m (miles), n (nautical miles), i (inch), c (cm), or p (points).\n");
 		fprintf (stderr, "\t-G Calculate distances to specified point OR cumulative distances along track (if point not given).\n");
 		fprintf (stderr, "\t   Use -G+[<unit>] to get provide <lon0> <lat0> from two extra input columns.\n");
-		fprintf (stderr, "\t   Use -G-[<unit>] to get distance increments rather than cumulate distances along track\n");
+		fprintf (stderr, "\t   Use -G-[<unit>] to get distance increments rather than cumulate distances along track.\n");
 		fprintf (stderr, "\t   Specify unit as m(e)ter, (k)m, (m)ile, (n)autical mile, (d)egree, or (c)artesian in user units.\n");
 		fprintf (stderr, "\t   Unit C means Cartesian distances after first projecting the input coordinates (-R, -J).\n");
 		fprintf (stderr, "\t   Units E, K, M, N, D mean geodesic distance using current ellipsoid [lower case is spherical].\n");
 		fprintf (stderr, "\t   Default is meters on spherical earth.\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I means Inverse, i.e., get lon/lat from x/y input. [Default is lon/lat -> x/y]\n");
+		fprintf (stderr, "\t-I means Inverse, i.e., get lon/lat from x/y input [Default is lon/lat -> x/y].\n");
 		fprintf (stderr, "\t-L Calculate minimum distances to specified line(s) in the file <line.xy>.\n");
 		fprintf (stderr, "\t   Specify unit as m(e)ter, (k)m, (m)ile, (n)autical mile, (d)egree, or (c)artesian in user units.\n");
 		fprintf (stderr, "\t   Unit C means Cartesian distances after first projecting the input coordinates (-R, -J).\n");
 		fprintf (stderr, "\t   Calculations uses spherical approximations.  Default unit is meters.\n");
-		fprintf (stderr, "\t   Three columns are added on output: min dist and lon, lat of the closest point on the line\n");
+		fprintf (stderr, "\t   Three columns are added on output: min dist and lon, lat of the closest point on the line.\n");
 		fprintf (stderr, "\t   Append + to get line segment id and fractional point number instead of lon/lat.\n");
 		fprintf (stderr, "\t-Q list projection parameters and exit.  For subsets [Default is all] use\n");
-		fprintf (stderr, "\t   -Qe shows ellipsoid parameters\n");
-		fprintf (stderr, "\t   -Qd shows datum parameters\n");
-		fprintf (stderr, "\t-S means Suppress points outside region\n");
+		fprintf (stderr, "\t   -Qe shows ellipsoid parameters,\n");
+		fprintf (stderr, "\t   -Qd shows datum parameters.\n");
+		fprintf (stderr, "\t-S means Suppress points outside region.\n");
 		fprintf (stderr, "\t-T means coordinate transformation from datum <from> to datum <to>.\n");
 		fprintf (stderr, "\t   Prepend h if input data are lon, lat, height [Default sets height = 0].\n");
 		fprintf (stderr, "\t   Specify datums using datum ID (see -Qd or man page) or as <ellipsoid>:<dx,dy,dz>\n");
@@ -356,7 +356,7 @@ int main (int argc, char **argv)
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
+		fprintf (stderr, "\t   Default is 2 input columns.\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('f');
@@ -669,7 +669,7 @@ int main (int argc, char **argv)
 
 		if (GMT_io.io_header[GMT_IN]) {
 			for (i = 0; i < GMT_io.n_header_recs; i++) {
-				not_used = GMT_fgets (line, BUFSIZ, fp);
+				GMT_fgets (line, BUFSIZ, fp);
 				if (first && !GMT_io.binary[GMT_OUT] && GMT_io.io_header[GMT_OUT]) GMT_fputs (line, GMT_stdout);
 			}
 			first = FALSE;

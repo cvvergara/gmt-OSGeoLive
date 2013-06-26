@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 10
 REM
-REM		$Id: job10.bat,v 1.10 2011/03/01 01:34:48 remko Exp $
+REM		$Id: job10.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM
 REM Purpose:	Make 3-D bar graph on top of perspective map
 REM GMT progs:	pscoast, pstext, psxyz

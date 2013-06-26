@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 18
 REM
-REM		$Id: job18.bat,v 1.17 2011/03/01 01:34:48 remko Exp $
+REM		$Id: job18.bat 9606 2011-10-19 17:52:57Z pwessel $
 REM
 REM Purpose:	Illustrates volumes of grids inside contours and spatial
 REM		selection of data
@@ -14,7 +14,7 @@ if exist job18.bat set master=n
 if %master%==y cd ex18
 
 REM Use spherical projection since SS data define on sphere
-gmtset ELLIPSOID Sphere D_FORMAT %%lg
+gmtset ELLIPSOID Sphere D_FORMAT %%g
 
 REM Define location of Pratt seamount
 echo -142.65 56.25 > pratt.d

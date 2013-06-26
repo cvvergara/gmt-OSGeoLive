@@ -1,4 +1,4 @@
-#	$Id: GMT_jet.cpt,v 1.2 2011/03/06 22:16:46 guru Exp $
+#	$Id: GMT_jet.cpt 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Simulates the JET colormap in Matlab
 # COLOR_MODEL = RGB

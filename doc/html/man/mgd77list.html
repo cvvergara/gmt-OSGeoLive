@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:51 2011 -->
+<!-- CreationDate: Wed Jan  2 08:40:17 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -28,6 +28,7 @@
 <a href="#IGRF">IGRF</a><br>
 <a href="#IGF">IGF</a><br>
 <a href="#CORRECTIONS">CORRECTIONS</a><br>
+<a href="#QUALITY CODES">QUALITY CODES</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
 <a href="#REFERENCES">REFERENCES</a><br>
 
@@ -162,6 +163,18 @@ type, usually 3 or 5 (for Y2K-compliant cruises).</p></td>
 
 <p style="margin-top: 1em" valign="top">The survey ID
 string (leg name).</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>tz</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">The time zone
+adjustment (in hours from -13 to +12)</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="9%">
@@ -432,6 +445,48 @@ Number string.</p></td>
 <p style="margin-top: 1em" valign="top">Navigation Quality
 Code (5 = suspected, by source institution, 6 = suspected,
 by NGDC, 9 = no problems identified).</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>bqc</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">Bathymetry Quality
+Code (1 = good, 2 = fair, 3 = poor, 4 = bad, 5 = bad,
+suspected by source institution, 6 = bad, suspected by NGDC,
+9 = not set).</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>mqc</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">Magnetics Quality
+Code (1 = good, 2 = fair, 3 = poor, 4 = bad, 5 = bad,
+suspected by source institution, 6 = bad, suspected by NGDC,
+9 = not set).</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>gqc</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">Gravity Quality
+Code (1 = good, 2 = fair, 3 = poor, 4 = bad, 5 = bad,
+suspected by source institution, 6 = bad, suspected by NGDC,
+9 = not set).</p></td>
 </table>
 
 <p style="margin-left:22%; margin-top: 1em">In addition,
@@ -511,6 +566,42 @@ record.</p> </td>
 
 <p style="margin-top: 1em" valign="top">The decimal seconds
 of each record.</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>date</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">The date in
+yyyymmdd string format.</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>hhmm</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">The clock in
+hhmm.xxxx format (0-2359.xxxx).</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>dmin</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">The decimal minutes
+of each record (0-59.xxxx).</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="9%">
@@ -613,36 +704,49 @@ short-hand flags are also recognized:</p>
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="7%">
-
-
-<p style="margin-top: 1em" valign="top"><b>all</b></p></td>
-<td width="4%"></td>
-<td width="78%">
-
-
-<p style="margin-top: 1em" valign="top">This returns all
-data columns in the file.</p></td>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="7%">
+<td width="9%">
 
 
 <p style="margin-top: 1em" valign="top"><b>mgd77</b></p></td>
-<td width="4%"></td>
+<td width="2%"></td>
 <td width="78%">
 
 
 <p style="margin-top: 1em" valign="top">This results in all
-27 MGD77 fields being written out in the offical MGD77
+27 MGD77 fields being written out in the official MGD77
 order.</p> </td>
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="7%">
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>mgd77t</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">This results in all
+26 MGD77T fields being written out in the official MGD77T
+order.</p> </td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em" valign="top"><b>all</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em" valign="top">as mgd77 or mgd77t
+but time is written as a single date-time string.</p></td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
 
 
 <p style="margin-top: 1em" valign="top"><b>geo</b></p></td>
-<td width="4%"></td>
+<td width="2%"></td>
 <td width="78%">
 
 
@@ -1010,10 +1114,11 @@ record with names for each data field.</p></td>
 
 
 <p style="margin-top: 1em" valign="top">Ignore certain data
-file formats from consideration. Append <b>a|c|t</b> to
-ignore MGD77 ASCII, MGD77+ netCDF, or plain tab-separated
-ASCII table files, respectively. The option may be repeated
-to ignore more than one format. [Default ignores none].</p></td>
+file formats from consideration. Append <b>a|c|m|t</b> to
+ignore MGD77 ASCII, MGD77+ netCDF, MGD77T ASCII or plain
+tab-separated ASCII table files, respectively. The option
+may be repeated to ignore more than one format. [Default
+ignores none].</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="4%">
@@ -1031,20 +1136,6 @@ Append the correction table to use [Default uses the
 correction table mgd77_corrections.txt in the
 <b>$MGD77_HOME</b> directory]. For the format of this file,
 see CORRECTIONS below.</p></td>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="4%">
-
-
-
-<p style="margin-top: 1em" valign="top"><b>&minus;n</b></p> </td>
-<td width="7%"></td>
-<td width="78%">
-
-
-<p style="margin-top: 1em" valign="top">Issue a
-multi-segment header record with cruise ID for each
-cruise.</p> </td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="4%">
@@ -1233,6 +1324,12 @@ columns it will be stored as Unix-time (seconds since 1970).
 To read this information in GMT to obtain absolute calendar
 time will require you to use --TIME_SYSTEM=unix.</p></td>
 </table>
+
+
+<p style="margin-left:11%;"><b>&minus;m</b>[<i>flag</i>]</p>
+
+<p style="margin-left:22%;">Issue a multi-segment header
+record with cruise ID for each cruise.</p>
 
 <a name="EXAMPLES"></a>
 <h2>EXAMPLES</h2>
@@ -1477,6 +1574,16 @@ needs to have 10 mGal added (hence given as -10):</p>
 </td>
 </table>
 
+<a name="QUALITY CODES"></a>
+<h2>QUALITY CODES</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The MGD77T
+format added three quality codes for bathymetry
+(<b>bqc</b>), magnetics (<b>mqc</b>), and gravity
+(<b>gqc</b>). They are not present in the original MGD77
+format, and if requested will return 9 or NULL.</p>
+
 <a name="SEE ALSO"></a>
 <h2>SEE ALSO</h2>
 
@@ -1491,8 +1598,8 @@ needs to have 10 mGal added (hence given as -10):</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Wessel, P., and
-W. H. F. Smith, 2011, The Generic Mapping Tools (GMT)
-version 4.5.7 Technical Reference &amp; Cookbook,
+W. H. F. Smith, 2013, The Generic Mapping Tools (GMT)
+version 4.5.9 Technical Reference &amp; Cookbook,
 SOEST/NOAA. <br>
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version
 of Generic Mapping Tools Released, EOS Trans., AGU, 79 (47),

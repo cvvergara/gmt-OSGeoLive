@@ -1,5 +1,5 @@
-/*	$Id: distaz.c,v 1.8 2011/01/02 20:09:36 guru Exp $
- *    Copyright (c) 1996-2011 by G. Patau
+/*	$Id: distaz.c 9923 2012-12-18 20:45:53Z pwessel $
+ *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  */

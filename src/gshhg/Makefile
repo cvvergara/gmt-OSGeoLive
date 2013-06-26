@@ -1,12 +1,15 @@
-# $Id: Makefile,v 1.17 2010/07/18 03:16:01 guru Exp $ # # makefile for gshhs directory # Does not depend on GMT src or libraries #
-#------------------------------------------------------------------------------- # !! STOP EDITING HERE, THE REST IS FIXED !!
+# $Id: Makefile 9817 2012-04-29 22:15:19Z pwessel $ # # makefile for gshhg directory
+# Does not depend on GMT src or libraries
+#
+#-------------------------------------------------------------------------------
+# !! STOP EDITING HERE, THE REST IS FIXED !!
 #-------------------------------------------------------------------------------
 
 GMTSRCDIR = ../
 include $(GMTSRCDIR)config.mk
 include $(GMTSRCDIR)common.mk
 
-PROGS_O		= gshhs.o gshhs_dp.o gshhstograss.o
+PROGS_O		= gshhg.o gshhg_dp.o gshhgtograss.o
 MAN1		= $(PROGS_O:.o=.1)
 
 #-------------------------------------------------------------------------------
@@ -36,15 +39,15 @@ clean:
 #	object file dependencies
 #-------------------------------------------------------------------------------
 
-$(PROGS_O):	gshhs.h
+$(PROGS_O):	gshhg.h
 
 #-------------------------------------------------------------------------------
 #	program rules
 #-------------------------------------------------------------------------------
 
-gshhs$(EXE):		gshhs.o
-gshhs_dp$(EXE):		gshhs_dp.o
-gshhstograss$(EXE):	gshhstograss.o
+gshhg$(EXE):		gshhg.o
+gshhg_dp$(EXE):		gshhg_dp.o
+gshhgtograss$(EXE):	gshhgtograss.o
 
 $(PROGS):
 		$(CC) $(LDFLAGS) $(@:.exe=).o $(NETCDF_LIB) $(GDAL_LIB) $(LIBS) -o $@

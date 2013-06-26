@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:40 2011 -->
+<!-- CreationDate: Wed Jan  2 08:39:59 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -537,7 +537,7 @@ or
 projection center. <i>horizon</i> specifies the max distance
 from projection center (in degrees, &lt; 180, default 90).
 Give <i>scale</i> as <b>1:</b><i>xxxx</i> (true at pole) or
-<i>lat0</i>/<b>1:</b><i>xxxx</i> (true at standard parallel
+<i>lat</i>/<b>1:</b><i>xxxx</i> (true at standard parallel
 <i>lat0</i>) or <i>radius/lat</i> (<i>radius</i> in UNIT
 from origin to the oblique latitude <i>lat</i>). Note if
 <b>1:</b><i>xxxx</i> is used then to specify <i>horizon</i>
@@ -1184,7 +1184,7 @@ obtained by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
 &minus;R</b>20/50/20/35 <b>&minus;JC</b>35/28/10<b>c
-&minus;P</b> OPR(B)5<b>g</b>5<b>:.</b>Cassini<b>:</b> &gt;
+&minus;P &minus;B</b>5<b>g</b>5<b>:.</b>Cassini<b>:</b> &gt;
 cassini.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Mercator
@@ -1402,7 +1402,7 @@ rectangle. We choose a pole at 130/-30 and use 100/-45 and
 160/-5 as our corners. The command becomes</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>100/-45/160/-5<b>r &minus;JS130/-30/12c
+&minus;R</b>100/-45/160/-5<b>fP &minus;JS130/-30/12c
 &minus;B30g30/15g15:.&quot;General Stereographic View&quot;:
 &gt; stereo2.ps</b></p>
 

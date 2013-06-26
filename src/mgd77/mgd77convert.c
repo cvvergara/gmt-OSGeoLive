@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77convert.c,v 1.51 2011/07/11 19:22:03 guru Exp $
+ *	$Id: mgd77convert.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 2005-2011 by P. Wessel
+ *    Copyright (c) 2005-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -29,8 +29,8 @@ int main (int argc, char **argv)
 		
 	GMT_LONG error = FALSE, force = FALSE, high_resolution = FALSE, original = FALSE;
 	
-	char file[BUFSIZ], **list = NULL, *fcode = "act";
-	char *format_name[MGD77_N_FORMATS] = {"MGD77 ASCII", "MGD77+ netCDF", "ASCII table"};
+	char file[BUFSIZ], **list = NULL, *fcode = "actm";
+	char *format_name[MGD77_N_FORMATS] = {"MGD77 ASCII", "MGD77+ netCDF", "ASCII table", "MGD77T ASCII"};
 
 	struct MGD77_CONTROL M;
 	struct MGD77_DATASET *D = NULL;
@@ -62,7 +62,7 @@ int main (int argc, char **argv)
 				}
 				break;
 			case 'T':
-				in_out = 1;	/* The "to" field is 1; the fall-trhough via a missing "break" is intentional */
+				in_out = 1;	/* The "to" field is 1; the fall-through via a missing "break" is intentional */
 				if (argv[argno][code_pos] == '+') force = TRUE, code_pos++;	/* Force overwriting existing files */
 			case 'F':
 				switch (argv[argno][code_pos]) {									
@@ -73,6 +73,9 @@ int main (int argc, char **argv)
 						original = TRUE;	/* Overlook revisions */
 					case 'c':
 						format[in_out] = MGD77_FORMAT_CDF;
+						break;
+					case 'm':
+						format[in_out] = MGD77_FORMAT_M7T;
 						break;
 					case 't':		/* Plain ascii dat table */
 						format[in_out] = MGD77_FORMAT_TBL;
@@ -100,15 +103,15 @@ int main (int argc, char **argv)
 	
 	if (GMT_give_synopsis_and_exit || argc == 1) {	/* Display usage */
 		fprintf(stderr,"mgd77convert %s - Convert MGD77 data to other file formats\n\n", MGD77_VERSION);
-		fprintf (stderr, "usage: mgd77convert <cruise(s)> -Fa|c|t -T[+]a|c|t [-L[e][w][+]] [-V] [-4]\n\n");
+		fprintf (stderr, "usage: mgd77convert <cruise(s)> -Fa|c|m|t -T[+]a|c|m|t [-L[e][w][+]] [-V] [-4]\n\n");
          
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
               
 		MGD77_Cruise_Explain ();
 		fprintf (stderr, "	[Files are read from data repositories and written to current directory]\n");
-		fprintf (stderr, "	-F Convert from a file that is either (a) MGD77 ASCII, (c) MGD77+ netCDF, or (t) plain table\n");
+		fprintf (stderr, "	-F Convert from a file that is either (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table\n");
 		fprintf (stderr, "	   Use -FC to recover the original MGD77 setting from the MGD77+ file [Default applies E77 corrections]\n");
-		fprintf (stderr, "	-T Convert to a file that is either (a) MGD77 ASCII, (c) MGD77+ netCDF, or (t) plain table\n");
+		fprintf (stderr, "	-T Convert to a file that is either (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table\n");
 		fprintf (stderr, "	   By default we will refuse to overwrite existing files.  Prepend + to override this policy.\n");
 		fprintf (stderr, "	OPTIONS:\n\n");
 		fprintf (stderr, "	-L Log level and destination setting for verification reporting.  Append a combination\n");

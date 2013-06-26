@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:36 2011 -->
+<!-- CreationDate: Wed Jan  2 08:39:52 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -574,12 +574,14 @@ bytes of each element (1, 2, 4). Bit grids are stored using
 the size equation is modified by using ceil (<i>nx</i> / 32)
 * 4 instead of <i>nx</i>. Note that these files are
 platform-dependent. Files written on Little Endian machines
-(e.g. PCs) can not be read on Big Endian machines (e.g. most
-workstations). Also note that it is not possible for
+(e.g., PCs) can not be read on Big Endian machines (e.g.,
+most workstations). Also note that it is not possible for
 <b><A HREF="GMT.html">GMT</A></b> to determine uniquely if a 4-byte grid is float
 or int; in such cases it is best to use the <i>=ID</i>
-mechanism to specify the file format. For header and grid
-details, see Appendix B.</p>
+mechanism to specify the file format. In all cases a native
+grid is considered to be signed (i.e., there are no
+provision for unsigned short ints or unsigned bytes). For
+header and grid details, see Appendix B.</p>
 
 <a name="GRID VALUES PRECISION"></a>
 <h2>GRID VALUES PRECISION</h2>

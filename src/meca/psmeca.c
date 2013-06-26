@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: psmeca.c,v 1.61 2011/04/28 16:23:53 remko Exp $
+ *    $Id: psmeca.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 1996-2011 by G. Patau
+ *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
@@ -462,7 +462,7 @@ int main (int argc, char **argv)
         fprintf (stderr, "          offset focal mechanisms to the latitude and longitude specified in the last two columns of the input file before label.\n");
         fprintf (stderr, "          Default pen attributes is default pen.\n");
         fprintf (stderr, "          A line is plotted between both positions.\n");
-        fprintf (stderr, "          A small circle is plotted at the initial location. Add P<pointsize value> to change the size of the circle.\n");
+        fprintf (stderr, "          A small circle (dot) is plotted at the initial location. Add P<pointsize value> to change the size of the circle.\n");
         fprintf (stderr, "        -Ddepmin/depmax Plot events between depmin and depmax deep.\n");
         fprintf (stderr, "        -E Set color used for extensive parts. [default is white]\n");
         fprintf (stderr, "        -G Set color used for compressive parts. [default is black]\n");
@@ -583,6 +583,8 @@ int main (int argc, char **argv)
 
         while (GMT_fgets (line, BUFSIZ, fp)) {
             n_rec++;
+	    memset ((void *)col, 0, 15 * GMT_TEXT_LEN * sizeof (char));
+	    memset ((void *)string, 0, BUFSIZ * sizeof (char));
             if (read_cmt) {
                 sscanf (line, "%s %s %s %s %s %s %s %s %s %s %s %s %[^\n]\n",
                     col[0], col[1], col[2], col[3], col[4], col[5], col[6], 
@@ -629,7 +631,7 @@ int main (int argc, char **argv)
 
             if (new) {
                 depth = atof (col[2]);
-		if (depth < depmin || depth > depmax) continue;
+				if (depth < depmin || depth > depmax) continue;
                 if (get_rgb) GMT_get_rgb_from_z (depth, fill.rgb);
                 sscanf (string, "%s %[^\n]\n", col[last+1], event_title);
             }

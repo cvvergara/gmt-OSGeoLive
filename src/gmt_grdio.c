@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_grdio.c,v 1.145 2011/07/08 21:27:05 guru Exp $
+ *	$Id: gmt_grdio.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -598,8 +598,10 @@ GMT_LONG GMT_open_grd (char *file, struct GMT_GRDFILE *G, char mode)
 		G->start[1] = 0;
 	}
 	else {				/* Regular binary file with/w.o standard GMT header */
-		if (r_w == 0 && (G->fp = GMT_fopen (G->header.name, bin_mode[0])) == NULL)
-			return (GMT_GRDIO_OPEN_FAILED);
+		if (r_w == 0) {
+			if ((G->fp = GMT_fopen (G->header.name, bin_mode[0])) == NULL)
+				return (GMT_GRDIO_OPEN_FAILED);
+		}
 		else if ((G->fp = GMT_fopen (G->header.name, bin_mode[r_w])) == NULL)
 			return (GMT_GRDIO_CREATE_FAILED);
 		if (header && GMT_fseek (G->fp, (long)GRD_HEADER_SIZE, SEEK_SET)) return (GMT_GRDIO_SEEK_FAILED);
@@ -877,9 +879,9 @@ GMT_LONG GMT_grd_setregion (struct GRD_HEADER *h, double *xmin, double *xmax, do
 			shift_x = 0.0;
 
 		*xmin = h->x_min + irint ((*xmin - h->x_min + shift_x) / h->x_inc) * h->x_inc;
-		*xmax = h->x_max + irint ((*xmax - h->x_min + shift_x) / h->x_inc) * h->x_inc;
+		*xmax = h->x_max + irint ((*xmax - h->x_max + shift_x) / h->x_inc) * h->x_inc;
 		*ymin = h->y_min + irint ((*ymin - h->y_min) / h->y_inc) * h->y_inc;
-		*ymax = h->y_max + irint ((*ymax - h->y_min) / h->y_inc) * h->y_inc;
+		*ymax = h->y_max + irint ((*ymax - h->y_max) / h->y_inc) * h->y_inc;
 
 		/* Make sure we do not exceed grid domain (which can happen if project_info.w|e exceeds the grid limits) */
 		if (*xmin < h->x_min && !grid_global) *xmin = h->x_min;
@@ -950,10 +952,8 @@ GMT_LONG GMT_adjust_loose_wesn (double *w, double *e, double *s, double *n, stru
 	 */
 	
 	GMT_LONG global, error = FALSE;
-	double half_or_zero, val, dx, small;
+	double val, dx, small;
 	
-	half_or_zero = (header->node_offset) ? 0.5 : 0.0;
-
 	switch (GMT_minmaxinc_verify (*w, *e, header->x_inc, GMT_SMALL)) {	/* Check if range is compatible with x_inc */
 		case 3:
 			return (GMT_GRDIO_BAD_XINC);
@@ -1258,7 +1258,7 @@ GMT_LONG GMT_read_img (char *imgfile, struct GRD_HEADER *grd, float **grid, doub
 	for (j = 0; j < grd->ny; j++) {	/* Read all the rows, offset by 2 boundary rows and cols */
 		ij = (j + GMT_pad[3]) * mx + GMT_pad[0];
 		if (GMT_fread ((void *)i2, sizeof (short int), (size_t)n_cols, fp) != (size_t)n_cols)  return (GMT_GRDIO_READ_FAILED);	/* Get one row */
-#if defined(_WIN32) || WORDS_BIGENDIAN == 0
+#if defined(_WIN32) || !defined(WORDS_BIGENDIAN)
 		for (i = 0; i < n_cols; i++) i2[i] = GMT_swab2 (i2[i]);
 #endif
 		for (i = 0, k = first_i; i < grd->nx; i++) {	/* Process this row's values */

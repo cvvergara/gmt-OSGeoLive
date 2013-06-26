@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: filter1d.c,v 1.70 2011/07/08 21:27:05 guru Exp $
+ *    $Id: filter1d.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -147,7 +147,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG error = FALSE;
 	
-	char	c, txt_a[GMT_TEXT_LEN], txt_b[GMT_TEXT_LEN], *not_used = NULL;
+	char	c, txt_a[GMT_TEXT_LEN], txt_b[GMT_TEXT_LEN];
 	char	buffer[BUFSIZ];		/* Used to scan input lines  */
 	
 	GMT_LONG	i, n_fields, n_expected_fields, n_read;
@@ -461,7 +461,7 @@ int main (int argc, char **argv)
 
 	if (GMT_io.io_header[GMT_IN]) {
 		for (i = 0; i < GMT_io.n_header_recs; i++) {
-			not_used = GMT_fgets (buffer, BUFSIZ, fp_in);
+			GMT_fgets (buffer, BUFSIZ, fp_in);
 			if (GMT_io.io_header[GMT_OUT]) GMT_fputs (buffer, GMT_stdout);
 		}
 	}

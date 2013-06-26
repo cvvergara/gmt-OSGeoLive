@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 05
-#		$Id: job05.sh,v 1.8 2011/02/28 00:58:03 remko Exp $
+#		$Id: job05.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Generate grid and show monochrome 3-D perspective
 # GMT progs:	grdgradient, grdmath, grdview, pstext

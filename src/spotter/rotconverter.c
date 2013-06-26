@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: rotconverter.c,v 1.36 2011/07/11 19:22:06 guru Exp $
+ *	$Id: rotconverter.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *   Copyright (c) 1999-2011 by P. Wessel
+ *   Copyright (c) 1999-2013 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ int main (int argc, char **argv)
 	struct EULER *p = NULL;		/* Pointer to array of stage poles */
 	struct EULER *a = NULL, *b = NULL;		/* Pointer to arrays of stage poles */
 
-	GMT_LONG i, j, n_p, n_a = 1, n_b;	/* Misc. counters */
+	GMT_LONG i, j, k, n_p, n_a = 1, n_b;	/* Misc. counters */
 	GMT_LONG last_sign, n_slash;
 	GMT_LONG rate_or_rad = 0;		/* Default unit is degrees/My */
 
@@ -95,6 +95,7 @@ int main (int argc, char **argv)
 	char *start_text[2] = {"tstart(My)", "astart(deg)"};	/* Misc. column titles for rates or angles */
 	char *end_text[2] = {"tend(My)", "aend(deg)"};
 	char *time_text[2] = {"ttime(My)", "tangle(deg)"};
+	char fmt[BUFSIZ];
 
 	argc = (int)GMT_begin (argc, argv);
 
@@ -218,6 +219,12 @@ int main (int argc, char **argv)
 	}
 	if (error) exit (EXIT_FAILURE);
 
+	if (finite_out && no_time)
+		sprintf (fmt, "%s%s%s%s%s", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
+	else if (finite_out)
+		sprintf (fmt, "%s%s%s%s%s%s%s", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
+	else
+		sprintf (fmt, "%s%s%s%s%s%s%s%s%s", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format);
 	last_sign = +1;
 	for (i = 1; i < argc; i++) {
 		if (!strncmp (argv[i], "-D", (size_t)2)) continue;
@@ -305,14 +312,14 @@ int main (int argc, char **argv)
 		}
 	}
 	if (finite_out && no_time && header)
-		printf ("#longitude\tlatitude\tangle(deg)\n");
+		printf ("#longitude%slatitude%sangle(deg)\n", gmtdefs.field_delimiter, gmtdefs.field_delimiter);
 	else if (finite_out && header)	/* Easy, simply output what we've got following a header*/
-		printf ("#longitude\tlatitude\t%s\tangle(deg)\n", time_text[rate_or_rad]);
+		printf ("#longitude%slatitude%s%s%sangle(deg)\n", gmtdefs.field_delimiter, gmtdefs.field_delimiter, time_text[rate_or_rad], gmtdefs.field_delimiter);
 	else if (finite_out)		/* Easy, simply output what we've got without a header */
 		i = 0;	/* Do nothing here really */
 	else {	/* Convert finite to stages before output */
 		spotter_finite_to_stages (a, n_a, TRUE, TRUE);				/* To ensure we have the right kind of poles for output */
-		if (header) printf ("#longitude\tlatitude\t%s\t%s\tangle(deg)\n", start_text[rate_or_rad], end_text[rate_or_rad]);
+		if (header) printf ("#longitude%slatitude%s%s%s%s%sangle(deg)\n", gmtdefs.field_delimiter, gmtdefs.field_delimiter, start_text[rate_or_rad], gmtdefs.field_delimiter, end_text[rate_or_rad], gmtdefs.field_delimiter);
 	}
 
 	for (i = 0; i < n_a; i++) {
@@ -325,15 +332,18 @@ int main (int argc, char **argv)
 		while (!geodetic && a[i].lon > 180.0) a[i].lon -= 360.0;		/* Force a geographic longitude range */
 		if (reduce_angle) a[i].omega *= reduce_fact;
 		if (finite_out && no_time)
-			printf ("%9.5f\t%9.5f\t%8.4f", a[i].lon, a[i].lat, a[i].omega * a[i].duration);
+			printf (fmt, a[i].lon, a[i].lat, a[i].omega * a[i].duration);
 		else if (finite_out)
-			printf ("%9.5f\t%9.5f\t%8.4f\t%8.4f", a[i].lon, a[i].lat, a[i].t_start, a[i].omega * a[i].duration);
+			printf (fmt, a[i].lon, a[i].lat, a[i].t_start, a[i].omega * a[i].duration);
 		else
-			printf ("%9.5f\t%9.5f\t%8.4f\t%8.4f\t%8.4f", a[i].lon, a[i].lat, a[i].t_start, a[i].t_stop, a[i].omega * a[i].duration);
+			printf (fmt, a[i].lon, a[i].lat, a[i].t_start, a[i].t_stop, a[i].omega * a[i].duration);
 		if (a[i].has_cov) {
 			double K[9];
 			spotter_covar_to_record (&a[i], K);
-			printf ("\t%g\t%g\t%g\t%g\t%g\t%g\t%g\t%g\t%g", K[0], K[1], K[2], K[3], K[4], K[5], K[6], K[7], K[8]);
+			for (k = 0; k < 9; k++) {
+				printf ("%s", gmtdefs.field_delimiter);
+				printf (gmtdefs.d_format, K[k]);
+			}
 		}
 		printf ("\n");
 	}

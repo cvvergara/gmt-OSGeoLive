@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77path.c,v 1.28 2011/07/11 19:22:04 guru Exp $
+ *	$Id: mgd77path.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 2004-2011 by P. Wessel
+ *    Copyright (c) 2004-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -69,7 +69,7 @@ int main (int argc, char **argv)
 		fprintf(stderr,"	-P List full cruise paths [Default].  Append - to only get cruise names\n");
 		fprintf(stderr,"	OPTIONS:\n\n");
 		fprintf(stderr,"	-I Ignore certain data file formats from consideration. Append combination of act to ignore\n");
-		fprintf(stderr,"	   (a) MGD77 ASCII, (c) MGD77+ netCDF, or (t) plain table files. [Default ignores none]\n");
+		fprintf(stderr,"	   (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table files. [Default ignores none]\n");
 		fprintf(stderr,"	-V verbose, report number of cruises returned\n");
 		exit (EXIT_FAILURE);
 	}

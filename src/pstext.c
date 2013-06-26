@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pstext.c,v 1.110 2011/07/08 21:27:06 guru Exp $
+ *	$Id: pstext.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 
 	char text[BUFSIZ], line[BUFSIZ], this_font[GMT_LONG_TEXT], just_key[5], txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT];
 	char txt_x[GMT_LONG_TEXT], txt_y[GMT_LONG_TEXT], txt_z[GMT_LONG_TEXT], p[BUFSIZ];
-	char **word = (char **)NULL, pjust, *not_used = NULL;
+	char **word = (char **)NULL, pjust;
 
 	FILE *fp = NULL;
 
@@ -306,20 +306,20 @@ int main(int argc, char **argv)
 		fprintf (stderr, "\t[-Z[<zlevel>|+]] [%s] [%s] [%s] [%s]\n\n", GMT_t_OPT, GMT_c_OPT, GMT_f_OPT, GMT_mo_OPT);
 		fprintf (stderr, "\tReads (x,y,size,angle,fontno,justify,text) from <txtfile> [or stdin]\n");
 		fprintf (stderr, "\tOR (with -m) one or more text paragraphs with formatting info in the segment header.\n");
-		fprintf (stderr, "\tjustify is of the form [T|M|B][L|C|R] (top/middle/bottom/left/center/right)\n");
+		fprintf (stderr, "\tjustify is of the form [T|M|B][L|C|R] (top/middle/bottom/left/center/right).\n");
 		fprintf (stderr, "\tBuilt-in escape sequences:\n");
-		fprintf (stderr, "\t   @~ toggles between current font and Symbol font\n");
-		fprintf (stderr, "\t   @%%<no>%% switches to font number <no>; @%%%% resets font\n");
-		fprintf (stderr, "\t   @:<size>: switches font size; @:: resets font size\n");
-		fprintf (stderr, "\t   @;<color>; switches font color; @;; resets font color\n");
-		fprintf (stderr, "\t   @+ toggles between normal and superscript mode\n");
-		fprintf (stderr, "\t   @- toggles between normal and subscript mode\n");
-		fprintf (stderr, "\t   @# toggles between normal and Small Caps mode\n");
-		fprintf (stderr, "\t   @_ toggles between normal and underlined text\n");
-		fprintf (stderr, "\t   @!<char1><char2> makes one composite character\n");
-		fprintf (stderr, "\t   @@ prints the @ sign itself\n");
-		fprintf (stderr, "\t   Use @a, @c, @e, @n, @o, @s, @u, @A, @C @E, @N, @O, @U for accented European characters\n");
-		fprintf (stderr, "\t(See manual page for more information)\n");
+		fprintf (stderr, "\t   @~ toggles between current font and Symbol font.\n");
+		fprintf (stderr, "\t   @%%<no>%% switches to font number <no>; @%%%% resets font.\n");
+		fprintf (stderr, "\t   @:<size>: switches font size; @:: resets font size.\n");
+		fprintf (stderr, "\t   @;<color>; switches font color; @;; resets font color.\n");
+		fprintf (stderr, "\t   @+ toggles between normal and superscript mode.\n");
+		fprintf (stderr, "\t   @- toggles between normal and subscript mode.\n");
+		fprintf (stderr, "\t   @# toggles between normal and Small Caps mode.\n");
+		fprintf (stderr, "\t   @_ toggles between normal and underlined text.\n");
+		fprintf (stderr, "\t   @!<char1><char2> makes one composite character.\n");
+		fprintf (stderr, "\t   @@ prints the @ sign itself.\n");
+		fprintf (stderr, "\t   Use @a, @c, @e, @n, @o, @s, @u, @A, @C @E, @N, @O, @U for accented European characters.\n");
+		fprintf (stderr, "\t(See manual page for more information).\n");
 
 		if (Ctrl->L.active) {	/* List fonts */
 			fprintf (stderr, "\n\tFont #	Font Name\n");
@@ -333,35 +333,35 @@ int main(int argc, char **argv)
 		GMT_explain_option ('j');
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A Angles given as azimuths; convert to directions using current projection\n");
+		fprintf (stderr, "\t-A Angles given as azimuths; convert to directions using current projection.\n");
 		GMT_explain_option ('b');
 		fprintf (stderr, "\t-C sets the clearance between characters and surrounding box.  Only used\n");
-		fprintf (stderr, "\t   if -W has been set.  Append units {c,i,m,p} or %% of fontsize [15%%]\n");
-		fprintf (stderr, "\t-D adds <add_x>,<add_y> to the text origin AFTER projecting with -J. [0/0]\n");
-		fprintf (stderr, "\t   Use -Dj to move text origin away from point (direction determined by text's justification)\n");
-		fprintf (stderr, "\t   Append v[<pen>] to draw line from text to original point.  If <add_y> is not given it equal <add_x>\n");
+		fprintf (stderr, "\t   if -W has been set.  Append units {c,i,m,p} or %% of fontsize [15%%].\n");
+		fprintf (stderr, "\t-D adds <add_x>,<add_y> to the text origin AFTER projecting with -J [0/0].\n");
+		fprintf (stderr, "\t   Use -Dj to move text origin away from point (direction determined by text's justification).\n");
+		fprintf (stderr, "\t   Append v[<pen>] to draw line from text to original point.  If <add_y> is not given it equal <add_x>.\n");
 		GMT_explain_option ('E');
-		fprintf (stderr, "\t-G set the color (red/green/blue (0-255)) for solid text [%d/%d/%d]\n", gmtdefs.basemap_frame_rgb[0], gmtdefs.basemap_frame_rgb[1], gmtdefs.basemap_frame_rgb[2]);
+		fprintf (stderr, "\t-G set the color (red/green/blue (0-255)) for solid text [%d/%d/%d].\n", gmtdefs.basemap_frame_rgb[0], gmtdefs.basemap_frame_rgb[1], gmtdefs.basemap_frame_rgb[2]);
 		GMT_explain_option ('H');
 		GMT_explain_option ('K');
 		fprintf (stderr, "\t-L lists the font-numbers and font-names available, then exits.\n");
-		fprintf (stderr, "\t-N Do Not clip text that exceeds the map boundaries [Default will clip]\n");
+		fprintf (stderr, "\t-N Do Not clip text that exceeds the map boundaries [Default will clip].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
-		fprintf (stderr, "\t-S draw outline of characters.  Append pen attributes\n");
+		fprintf (stderr, "\t-S draw outline of characters.  Append pen attributes.\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t-W paints and outlines a rectangle underneath the text.  [Default is no rectangle]\n");
-		fprintf (stderr, "\t   Append fill color [none].  To draw outline, append o, O, or c, and optionally a pen [No outline]\n");
+		fprintf (stderr, "\t-W paints and outlines a rectangle underneath the text [Default is no rectangle].\n");
+		fprintf (stderr, "\t   Append fill color [none].  To draw outline, append o, O, or c, and optionally a pen [No outline].\n");
 		fprintf (stderr, "\t   Separate the fill color and the outline information by a comma if both are present.\n");
-		fprintf (stderr, "\t   Lower case o will draw rectangular outline\n");
-		fprintf (stderr, "\t   Upper case O will draw rectangle with rounded corners (-m only)\n");
-		fprintf (stderr, "\t   Lower case c will draw concave rectangle (-m only)\n");
-		fprintf (stderr, "\t   Upper case C will draw convex rectangle (-m only)\n");
+		fprintf (stderr, "\t   Lower case o will draw rectangular outline.\n");
+		fprintf (stderr, "\t   Upper case O will draw rectangle with rounded corners (-m only).\n");
+		fprintf (stderr, "\t   Lower case c will draw concave rectangle (-m only).\n");
+		fprintf (stderr, "\t   Upper case C will draw convex rectangle (-m only).\n");
 		GMT_explain_option ('X');
 		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [0].  If -Z+ is given then we expect\n");
-		fprintf (stderr, "\t   records to have an optional z value in the 3rd column (i.e., x y z size ...)\n");
-		fprintf (stderr, "\t   Note that -Z+ also sets -N\n");
+		fprintf (stderr, "\t   records to have an optional z value in the 3rd column (i.e., x y z size ...).\n");
+		fprintf (stderr, "\t   Note that -Z+ also sets -N.\n");
 		GMT_explain_option ('c');
 		GMT_explain_option ('f');
 		GMT_explain_option ('m');
@@ -471,7 +471,7 @@ int main(int argc, char **argv)
 		}
 
 		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		while (GMT_fgets (line, BUFSIZ, fp)) {
 

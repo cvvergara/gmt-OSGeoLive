@@ -1,4 +1,4 @@
-#       $Id: Makefile,v 1.28 2009/10/31 16:00:23 remko Exp $
+#       $Id: Makefile 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	makefile for meca directory
 #	meca must be installed in the gmt/src directory or

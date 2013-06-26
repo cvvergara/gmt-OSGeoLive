@@ -1,4 +1,4 @@
-/* $Id: x_edit.c,v 1.11 2010/01/14 07:15:20 guru Exp $
+/* $Id: x_edit.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * X E D I T  will allow you to convert crossover tables ascii <--> binary
  *

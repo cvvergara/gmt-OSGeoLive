@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: greenspline.c,v 1.54 2011/07/08 21:27:06 guru Exp $
+ *	$Id: greenspline.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 2008-2011 by P. Wessel
+ *	Copyright (c) 2008-2013 by P. Wessel
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -68,6 +68,7 @@
 #define N_X 	100001
 
 typedef double REAL;	/* Change this to float and recompile if you only want single precision calculations */
+GMT_LONG TEST = FALSE;	/* Global variable for TESTING only, used to reproduce all the Green's functions and their derivatives (Fig. 1, in Wessel, 2009) */
 
 struct GREENSPLINE_CTRL {
 	struct A {	/* -A<gradientfile> */
@@ -124,7 +125,7 @@ struct ZGRID {
 	double z_min, z_max, z_inc;
 };
 
-#ifdef TEST
+#ifdef DEBUG
 void dump_green (PFD G, PFD D, double par[], double x0, double x1, GMT_LONG N, double *zz, double *gg);
 #endif
 
@@ -175,14 +176,12 @@ int main (int argc, char **argv)
 		"regularized Cartesian spline in tension [3-D]",
 		"minimum curvature spherical spline",
 		"continuous curvature spherical spline in tension"};
-	char *mem_unit[3] = {"kb", "Mb", "Gb"}, txt[6][GMT_TEXT_LEN], *not_used = NULL;
+	char *mem_unit[3] = {"kb", "Mb", "Gb"}, txt[6][GMT_TEXT_LEN];
 	float *w = NULL;
 	double *obs, **D = NULL, **X, *alpha, *in = NULL, r, par[11], norm[7], az, grad;
 	double *WB_z = NULL, *WB_g = NULL, mem, r_min = -1.0, r_max = 1.0, part, C, p_val;
 	REAL *A = NULL;
-#ifdef TEST
 	double x0 = 0.0, x1 = 5.0;
-#endif
 	struct GRD_HEADER h;
 	struct ZGRID Z;
 	struct GMT_TABLE *T = NULL, *S = NULL;
@@ -404,6 +403,9 @@ int main (int argc, char **argv)
 					Ctrl->T.active = TRUE;
 					Ctrl->T.file = strdup (&argv[i][2]);
 					break;
+				case '+':	/* Undocumented option for testing only */
+					TEST = TRUE;
+					break;
 				default:
 					error = TRUE;
 					GMT_default_error (argv[i][1]);
@@ -424,50 +426,50 @@ int main (int argc, char **argv)
 		
 		fprintf (stderr, "\tgreenspline will read from standard input or specified ASCII xyz-file(s) (see -bi if binary).\n\n");
 		fprintf (stderr, "\tChoose one of three ways to specify where to evaluate the spline:\n");
-		fprintf (stderr, "\t1. Specify a rectangular grid domain with options -R, -I and optionally -F\n");
+		fprintf (stderr, "\t1. Specify a rectangular grid domain with options -R, -I and optionally -F.\n");
 		fprintf (stderr, "\t2. Supply a mask file via -T whose values are NaN or 0.  The spline will then\n");
 		fprintf (stderr, "\t   only be evaluated at the nodes originally set to zero.\n");
-		fprintf (stderr, "\t3. Specify a set of output locations via the -N option\n\n");
-		fprintf (stderr, "\t-G Output data. Give name of output file\n");
+		fprintf (stderr, "\t3. Specify a set of output locations via the -N option.\n\n");
+		fprintf (stderr, "\t-G Output data. Give name of output file.\n");
 
 		fprintf (stderr, "\n\tOPTIONS:\n");
 
 		fprintf (stderr, "\t-A ASCII file with surface gradients V to use in the modeling.  Specify format:\n");
 		fprintf (stderr, "\t   (0) For 1-D: x, slope, (1) X, Vmagnitude, Vazimuth(s), (2) X, Vazimuth(s), Vmagnitude,\n");
-		fprintf (stderr, "\t   (3) X, Vmagnitude, Vangle(s), (4) X, Vcomponents, or (5) X, Vunit-vector, Vmagnitude\n");
+		fprintf (stderr, "\t   (3) X, Vmagnitude, Vangle(s), (4) X, Vcomponents, or (5) X, Vunit-vector, Vmagnitude.\n");
 		fprintf (stderr, "\t   Here, X = (x, y[, z]) is the position vector, V is the gradient vector.\n");
-		fprintf (stderr, "\t-C Solve by SVD and eliminate eigenvalues whose ratio to largest eigenvalue is less than <cut>\n");
-		fprintf (stderr, "\t   Optionally append /<filename> to save the eigenvalues to this file\n");
-		fprintf (stderr, "\t   A negative cutoff will stop execution after saving the eigenvalues.\n");
-		fprintf (stderr, "\t   [Default uses Gauss-Jordan elimination to solve the linear system]\n");
+		fprintf (stderr, "\t-C Solve by SVD and eliminate eigenvalues whose ratio to largest eigenvalue is less than <cut>.\n");
+		fprintf (stderr, "\t   Optionally append /<filename> to save the eigenvalues to this file.\n");
+		fprintf (stderr, "\t   A negative cutoff will stop execution after saving the eigenvalues\n");
+		fprintf (stderr, "\t   [Default uses Gauss-Jordan elimination to solve the linear system].\n");
 		fprintf (stderr,"\t-D Distance flag determines how we calculate distances between (x,y) points:\n");
-		fprintf (stderr,"\t   Options 0 apples to Cartesian 1-D spline interpolation\n");
+		fprintf (stderr,"\t   Option 0 applies to Cartesian 1-D spline interpolation:\n");
 		fprintf (stderr,"\t     -D0 x in user units, Cartesian distances.\n");
-		fprintf (stderr,"\t   Options 1-3 apply to Cartesian 2-D surface spline interpolation\n");
+		fprintf (stderr,"\t   Options 1-3 apply to Cartesian 2-D surface spline interpolation:\n");
 		fprintf (stderr,"\t     -D1 x,y in user units, Cartesian distances.\n");
 		fprintf (stderr,"\t     -D2 x,y in degrees, flat Earth distances.\n");
 		fprintf (stderr,"\t     -D3 x,y in degrees, spherical distances in km.\n");
-		fprintf (stderr,"\t   Option 4 applies to 2-D spherical surface spline interpolation\n");
+		fprintf (stderr,"\t   Option 4 applies to 2-D spherical surface spline interpolation:\n");
 		fprintf (stderr,"\t     -D4 x,y in degrees, use cosine of spherical distances in degrees.\n");
-		fprintf (stderr,"\t   Option 5 applies to Cartesian 3-D volume interpolation\n");
+		fprintf (stderr,"\t   Option 5 applies to Cartesian 3-D volume interpolation:\n");
 		fprintf (stderr,"\t     -D5 x,y,z in user units, Cartesian distances.\n");
-		fprintf (stderr,"\t   For option 3-4, use ELLIPSOID to select geodesic or great cicle arcs\n");
-		fprintf (stderr, "\t-F will force pixel registration [Default is grid registration] (requires -R, -I)\n");
+		fprintf (stderr,"\t   For option 3-4, use ELLIPSOID to select geodesic or great cicle arcs.\n");
+		fprintf (stderr, "\t-F will force pixel registration [Default is grid registration] (requires -R, -I).\n");
 		GMT_explain_option ('H');
 		fprintf (stderr, "\t-I Specifies a regular set of output locations.  Give equidistant increment for each dimension.\n");
 		fprintf (stderr, "\t   Requires -R for specifying the output domain.\n");
 		fprintf (stderr, "\t-L Leave trend alone.  Do not remove least squares plane from data before spline fit.\n");
-		fprintf (stderr, "\t   Only applies to -D0-2.  [Default removes linear trend, fits residuals, and restores trend]\n");
+		fprintf (stderr, "\t   Only applies to -D0-2 [Default removes linear trend, fits residuals, and restores trend].\n");
 		fprintf (stderr, "\t-N ASCII file with desired output locations.\n");
 		fprintf (stderr, "\t   The resulting ASCII coordinates and interpolation are written to file given in -G\n");
 		fprintf (stderr, "\t   or stdout if no file specified (see -bo for binary output).\n");
-		fprintf (stderr, "\t-Q Calculate the directional derivative in the <az> direction and return it instead of surface elevation\n");
+		fprintf (stderr, "\t-Q Calculate the directional derivative in the <az> direction and return it instead of surface elevation.\n");
 		GMT_explain_option ('R');
 		fprintf (stderr, "\t-R Specify a regular set of output locations.  Give min and max coordinates for each dimension.\n");
 		fprintf (stderr, "\t   Requires -I for specifying equidistant increments.  For 2D-gridding a gridfile may be given;\n");
 		fprintf (stderr, "\t   this then also sets -I (and perhaps -F); use those options to override the grid settings.\n");
 		fprintf (stderr, "\t-S specifies which spline to use (if needed, normalized <tension> must be between 0 and 1):\n");
-		fprintf (stderr, "\t   -Sc is minimum curvature spline (Sandwell, 1987) [Default]\n");
+		fprintf (stderr, "\t   -Sc is minimum curvature spline (Sandwell, 1987) [Default].\n");
 		fprintf (stderr, "\t   -St<tension>[/<scale>] is spline in tension (Wessel & Bercovici, 1998).\n");
 		fprintf (stderr, "\t      Optionally, specify a length-scale [Default is grid spacing].\n");
 		fprintf (stderr, "\t   -Sr<tension> is a regularized spline in tension (Mitasova & Mitas, 1993).\n");
@@ -475,13 +477,13 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   -Sp is a spherical surface spline (Parker, 1994); automatically sets -D4.\n");
 		fprintf (stderr, "\t   -Sq is a spherical surface spline in tension (Wessel & Becker, 2008); automatically sets -D4.\n");
 		fprintf (stderr, "\t      Use -SQ to speed up calculations by using precalculated lookup tables.\n");
-		fprintf (stderr, "\t      Append /n to set the (odd) number of points in the spline [%d]\n", N_X);
+		fprintf (stderr, "\t      Append /n to set the (odd) number of points in the spline [%d].\n", N_X);
 		fprintf (stderr, "\t-T Mask grid file whose values are NaN or 0; its header implicitly sets -R, -I (and -F).\n");
 		GMT_explain_option ('V');
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2-4 input columns depending on dimensionality (see -D)\n");
+		fprintf (stderr, "\t   Default is 2-4 input columns depending on dimensionality (see -D).\n");
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);
 	}
@@ -634,7 +636,7 @@ int main (int argc, char **argv)
 
 		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Reading file %s\n", GMT_program, argv[fno]);
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 
@@ -838,7 +840,7 @@ int main (int argc, char **argv)
 			/* par[0] = Ctrl->S.value[0]; */
 			if (Ctrl->S.value[1] == 0.0) Ctrl->S.value[1] = 1.0;
 			p_val = sqrt (Ctrl->S.value[0] / (1.0 - Ctrl->S.value[0])) / Ctrl->S.value[1];
-			fprintf (stderr, "p_val = %g\n", p_val);
+			if (gmtdefs.verbose) fprintf (stderr, "p_val = %g\n", p_val);
 			par[0] = p_val;
 			par[1] = 0.25 * par[0] * par[0];
 			G = spline2d_Mitasova_Mitas;
@@ -848,7 +850,7 @@ int main (int argc, char **argv)
 			/* par[0] = Ctrl->S.value[0]; */
 			if (Ctrl->S.value[1] == 0.0) Ctrl->S.value[1] = 1.0;
 			p_val = sqrt (Ctrl->S.value[0] / (1.0 - Ctrl->S.value[0])) / Ctrl->S.value[1];
-			fprintf (stderr, "p_val = %g\n", p_val);
+			if (gmtdefs.verbose) fprintf (stderr, "p_val = %g\n", p_val);
 			par[0] = p_val;
 			par[1] = 0.25 * par[0] * par[0];
 			G = spline3d_Mitasova_Mitas;
@@ -858,9 +860,7 @@ int main (int argc, char **argv)
 			par[0] = 6.0 / (M_PI*M_PI);
 			G = spline2d_Parker;
 			dGdr = gradspline2d_Parker;
-#ifdef TEST
-			x0 = -1.0;	x1 = 1.0;
-#endif
+			if (TEST) x0 = -1.0, x1 = 1.0;
 			break;
 		case WESSEL_BECKER_2008:
 			par[0] = -0.5;
@@ -908,16 +908,21 @@ int main (int argc, char **argv)
 				G = spline2d_Wessel_Becker;
 				dGdr = gradspline2d_Wessel_Becker;
 			}
-#ifdef TEST
-			x0 = -1.0;	x1 = 1.0;
-#endif
+			if (TEST) x0 = -1.0, x1 = 1.0;
 			break;
 	}
 
-#ifdef TEST
-	printf ("# %s\n", method[Ctrl->S.mode]);
-	dump_green (G, dGdr, par, x0, x1, 10001, WB_z, WB_g);
-	exit (0);
+#ifdef DEBUG
+	if (TEST) {	/* Just dump green's functions and exit */
+		fprintf (stderr, "Warning: greenspline running in TEST mode for %s\n", method[Ctrl->S.mode]);
+		printf ("# %s\n", method[Ctrl->S.mode]);
+		dump_green (G, dGdr, par, x0, x1, 10001, WB_z, WB_g);
+		GMT_free ((void *)Ctrl);
+		if (dimension == 2) GMT_free ((void *)w);
+		GMT_end (argc, argv);
+
+		exit (EXIT_SUCCESS);
+	}
 #endif
 
 	/* Remove mean (or LS plane) from data (we will add it back later) */
@@ -995,7 +1000,7 @@ int main (int argc, char **argv)
 				fprintf (stderr, "%s: Error creating file %s\n", GMT_program, Ctrl->C.file);
 				exit (EXIT_FAILURE);
 			}
-			sprintf (format, "%%d\t%s\n", gmtdefs.d_format);
+			sprintf (format, "%%d%s%s\n", gmtdefs.field_delimiter, gmtdefs.d_format);
 			/* Sort eigenvalues into ascending order */
 			if (sizeof (REAL) == sizeof (double))
 				qsort ((void *)eig, nm, sizeof (double), GMT_comp_double_asc);
@@ -1161,7 +1166,7 @@ int main (int argc, char **argv)
 	exit (EXIT_SUCCESS);
 }
 
-#ifdef TEST
+#ifdef DEBUG
 /* Dump a table of x, G, dGdx for test purposes */
 void dump_green (PFD G, PFD D, double par[], double x0, double x1, GMT_LONG N, double *zz, double *gg)
 {
@@ -1409,9 +1414,11 @@ double spline2d_Wessel_Becker (double x, double par[], double *G)
 	GMT_PvQv (-x, par, pq, &n);	/* Get P_nu(-x) */
 	Cdiv (pq, &par[4], z);		/* Get P_nu(-x) / sin (nu*M_PI) */
 	pq[0] = M_PI * z[0] - log (1.0 - x);
-#ifdef TEST
-	pq[1] = M_PI * z[1];
-	if (fabs (pq[1]) > 1.0e-6) fprintf (stderr, "Im{G(%g)} = %g\n", x, pq[1]);
+#ifdef DEBUG
+	if (TEST) {
+		pq[1] = M_PI * z[1];
+		if (gmtdefs.verbose && fabs (pq[1]) > 1.0e-6) fprintf (stderr, "Im{G(%g)} = %g\n", x, pq[1]);
+	}
 #endif
 	
 	return ((pq[0] - par[2]) * par[6]);	/* Normalizes to yield 0-1 */
@@ -1433,9 +1440,11 @@ double gradspline2d_Wessel_Becker (double x, double par[], double *G)
 	Cmul (pq, v1, z);				/* Mul by nu + 1 */
 	s = M_PI / sqrt (1.0 - x*x);			/* Mul by pi/sin(theta) */
 	z[0] *= s;
-#ifdef TEST
-	z[1] *= s;;
-	if (fabs (z[1]) > 1.0e-6) fprintf (stderr, "Im{G(%g)} = %g\n", x, z[1]);
+#ifdef DEBUG
+	if (TEST) {
+		z[1] *= s;
+		if (gmtdefs.verbose && fabs (z[1]) > 1.0e-6) fprintf (stderr, "Im{G(%g)} = %g\n", x, z[1]);
+	}
 #endif
 	z[0] += sqrt ((1.0 + x)/(1.0 - x));		/* Add in last term */
 	
@@ -1674,7 +1683,7 @@ void svdcmp (REAL *a, GMT_LONG m, GMT_LONG n, REAL *w, REAL *v)
 {
 	/* void svdcmp(REAL *a,int m,int n,REAL *w,REAL *v) */
 	
-	GMT_LONG flag,i,its,j,jj,k,l=0,nm;
+	GMT_LONG flag,i,its,j,jj,k,l=0,nm=0;
 	REAL c,f,h,s,x,y,z;
 	REAL anorm=0.0,tnorm, g=0.0,scale=0.0;
 	REAL *rv1;

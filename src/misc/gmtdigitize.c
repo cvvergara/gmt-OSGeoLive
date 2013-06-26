@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: gmtdigitize.c,v 1.33 2011/03/03 21:02:51 guru Exp $
+ *    $Id: gmtdigitize.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,12 @@
  * Version:	1.1
  *
  * Updated:	7/30/2007 PW: Also handle -Jx scaling where scaling is not 1:1
+ *		11/19/2012 PW: Based on Roi Granot's Fedora installation it was
+ *				found that for USB serial devices we must simply
+ *				read with fgets instead of the tcflush etc stuff.
+ *				The fix to maintain backwards compatibility was
+ *				to check if device name contains usb.  If so we
+ *				read via fgets etc, otherwise via read.
  *
  */
  
@@ -63,7 +69,7 @@ struct GMTDIGITIZE_CTRL {	/* Things needed while digitizing */
 int main (int argc, char **argv)
 {
 	GMT_LONG error = FALSE, suppress = FALSE, ok, output_key = FALSE, multi_files;
-	GMT_LONG audible = FALSE, output_val = FALSE, force_4 = FALSE;
+	GMT_LONG audible = FALSE, output_val = FALSE, force_4 = FALSE, USB = FALSE;
 	
 	char line[BUFSIZ], format[BUFSIZ], unit_name[80], this_file[BUFSIZ];
 	char *control[4] = {"first", "second", "third", "fourth"};
@@ -84,12 +90,12 @@ int main (int argc, char **argv)
 	double unit_to_inch, rotation, mean_map_x, mean_map_y, x_out_min, x_out_max, y_out_min;
 	double y_out_max, rms, u_scale, LON[4], LAT[4], X_MAP[4], Y_MAP[4], XP[4], YP[4];
 	
-	FILE *fp = NULL;
+	FILE *fp = NULL, *fpd = NULL;
 
 	struct GMTDIGITIZE_CTRL	C;
 	
-	GMT_LONG get_digitize_raw (GMT_LONG digunit, double *xdig, double *ydig, struct GMTDIGITIZE_CTRL *C);
-	GMT_LONG get_digitize_xy (GMT_LONG digunit, double *xmap, double *ymap, struct GMTDIGITIZE_CTRL *C);
+	GMT_LONG get_digitize_raw (GMT_LONG digunit, FILE *fpd, GMT_LONG USB, double *xdig, double *ydig, struct GMTDIGITIZE_CTRL *C);
+	GMT_LONG get_digitize_xy  (GMT_LONG digunit, FILE *fpd, GMT_LONG USB, double *xmap, double *ymap, struct GMTDIGITIZE_CTRL *C);
 	FILE *next_file (char *name, int n_segments, char *this_file);
 
 	argc = GMT_begin (argc, argv);
@@ -193,6 +199,7 @@ int main (int argc, char **argv)
 	/* OK, time to connect to digitizer */
 
 	if (!device) device = DIG_PORT;	/* Default setup */
+	if (strstr (device, "usb") || strstr (device, "USB")) USB = TRUE;	/* Using an USB port */
 	C.INV_LPI = 1.0 / LPI;		/* To save a divide later */
 	
 #ifdef DIGTEST
@@ -203,7 +210,10 @@ int main (int argc, char **argv)
 		exit (EXIT_FAILURE);
 	}
 #endif
-	tcflush (digunit, TCIFLUSH);	/* Clean the muzzle */
+	if (USB)
+		fpd = fdopen (digunit, "r");
+	else
+		tcflush (digunit, TCIFLUSH);	/* Clean the muzzle */
 	
 #ifdef SET_IO_MODE
 	GMT_setmode (1);
@@ -215,7 +225,7 @@ int main (int argc, char **argv)
 
 	GMT_err_fail (GMT_map_setup (west, east, south, north), "");
 
-	fprintf (stderr, "\n==>   %s version %s  Paul Wessel, SOEST, July 9, 2007   <==\n\n", GMT_program, GMT_VERSION);
+	fprintf (stderr, "\n==>   %s version %s  Paul Wessel, SOEST, Nov 19, 2012   <==\n\n", GMT_program, GMT_VERSION);
 	fprintf (stderr, "================  HOW TO DIGITIZE ================\n\n");
 	fprintf (stderr, "To exit, click the %c button.\n", END_BUTTON_CHAR);
 	if (GMT_io.multi_segments[GMT_OUT]) {
@@ -239,7 +249,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "| We need 4 known points on the map to solve for these parameters. |\n");
 		fprintf (stderr, "-------------------------------------------------------------------|\n\n");
 		ok = TRUE;
-		tcflush (digunit, TCIFLUSH);	/* Clean the muzzle */
+		if (!USB) tcflush (digunit, TCIFLUSH);	/* Clean the muzzle */
 		
 		if (project_info.region && !force_4) {	/* -R is w/e/s/n and we dont want to override */
 			fprintf (stderr, "%s will use the map corners as calibration points\n\n", GMT_program);
@@ -249,7 +259,7 @@ int main (int argc, char **argv)
 			LAT[2] = LAT[3] = project_info.n;
 			for (i = 0; i < 4; i++) {
 				fprintf (stderr, "==> Please digitize the %s corner (%g/%g): ", corner[i], LON[i], LAT[i]);
-				button = get_digitize_raw (digunit, &X_DIG[i], &Y_DIG[i], &C);
+				button = get_digitize_raw (digunit, fpd, USB, &X_DIG[i], &Y_DIG[i], &C);
 				fprintf (stderr, "[x:%g y:%g]\n", X_DIG[i], Y_DIG[i]);
 				GMT_geo_to_xy (LON[i], LAT[i], &X_MAP[i], &Y_MAP[i]);
 			}
@@ -258,7 +268,7 @@ int main (int argc, char **argv)
 			fprintf (stderr, "%s will request 4 arbitrary calibration points\n\n", GMT_program);
 			for (i = 0; i < 4; i++) {
 				fprintf (stderr, "==> Please digitize the %s point: ", control[i]);
-				button = get_digitize_raw (digunit, &X_DIG[i], &Y_DIG[i], &C);
+				button = get_digitize_raw (digunit, fpd, USB, &X_DIG[i], &Y_DIG[i], &C);
 				fprintf (stderr, "[x:%g y:%g]\n", X_DIG[i], Y_DIG[i]);
 			}
 			fprintf (stderr, "\n");
@@ -375,9 +385,9 @@ int main (int argc, char **argv)
 	
 	n_expected_fields = 2 + output_val + output_key;
 	if (output_val)
-		sprintf (format, "%s\t%s\t%s\t%%ld\n", gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
+		sprintf (format, "%s%s%s%s%s%s%%ld\n", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter);
 	else
-		sprintf (format, "%s\t%s\t%%ld\n", gmtdefs.d_format, gmtdefs.d_format);
+		sprintf (format, "%s%s%s%s%%ld\n", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter);
 	
 	x_in_min = y_in_min = x_out_min = y_out_min = DBL_MAX;
 	x_in_max = y_in_max = x_out_max = y_out_max = -DBL_MAX;
@@ -409,8 +419,8 @@ int main (int argc, char **argv)
 		MULTISEG_BUTTON1_CHAR, MULTISEG_BUTTON2_CHAR);
 	}
 	
-	tcflush (digunit, TCIFLUSH);	/* Clean the muzzle */
-	while ((button = get_digitize_xy (digunit, &xmap, &ymap, &C)) != END_BUTTON) {	/* Not yet done */
+	if (!USB) tcflush (digunit, TCIFLUSH);	/* Clean the muzzle */
+	while ((button = get_digitize_xy (digunit, fpd, USB, &xmap, &ymap, &C)) != END_BUTTON) {	/* Not yet done */
 
 		m_button = 0;
 		while (button == MULTISEG_BUTTON1 || button == MULTISEG_BUTTON2) {
@@ -447,10 +457,10 @@ int main (int argc, char **argv)
 			}
 			else if (m_button == 1)
 				fprintf (stderr, "%s: Segment header buttons only active if -M is set (ignored)\n", GMT_program);
-			else
+			else if (!USB)
 				tcflush (digunit, TCIFLUSH);	/* Clean the muzzle */
 				
-			button = get_digitize_xy (digunit, &xmap, &ymap, &C);
+			button = get_digitize_xy (digunit, fpd, USB, &xmap, &ymap, &C);
 		}
 
 		dist = hypot (xmap - last_xmap, ymap - last_ymap);
@@ -500,11 +510,16 @@ int main (int argc, char **argv)
 	exit (EXIT_SUCCESS);
 }
 
-GMT_LONG get_digitize_raw (GMT_LONG digunit, double *xdig, double *ydig, struct GMTDIGITIZE_CTRL *C) {
+GMT_LONG get_digitize_raw (GMT_LONG digunit, FILE *fpd, GMT_LONG USB, double *xdig, double *ydig, struct GMTDIGITIZE_CTRL *C) {
 	GMT_LONG i, n, ix, iy;
 	char buffer[256], button;
 	
-	n = read (digunit, buffer, (size_t)255);
+	if (USB) {
+		if (!GMT_fgets (buffer, 256, fpd)) return (END_BUTTON);
+		n = strlen (buffer);
+	}
+	else
+		n = read (digunit, buffer, (size_t)255);
 	if (n <= 0) return (END_BUTTON);
 	n--;
 	buffer[n] = 0;
@@ -520,11 +535,11 @@ GMT_LONG get_digitize_raw (GMT_LONG digunit, double *xdig, double *ydig, struct 
 	return ((GMT_LONG)(button - '0'));
 }
 
-GMT_LONG get_digitize_xy (GMT_LONG digunit, double *xmap, double *ymap, struct GMTDIGITIZE_CTRL *C) {
+GMT_LONG get_digitize_xy (GMT_LONG digunit, FILE *fpd, GMT_LONG USB, double *xmap, double *ymap, struct GMTDIGITIZE_CTRL *C) {
 	GMT_LONG button;
 	double x_raw, y_raw;
 	
-	button = get_digitize_raw (digunit, &x_raw, &y_raw, C);
+	button = get_digitize_raw (digunit, fpd, USB, &x_raw, &y_raw, C);
 	if (button == END_BUTTON) return (END_BUTTON);
 
 	/* Undo rotation and scaling to give map inches */

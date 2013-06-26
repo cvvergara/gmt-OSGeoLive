@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psimage.c,v 1.56 2011/07/08 21:27:06 guru Exp $
+ *	$Id: psimage.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -229,16 +229,16 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   then we use absolute value and interpolate image in PostScript.\n");
 		fprintf (stderr,"\n\tOPTIONS:\n");
 		fprintf (stderr,"\t-C sets the lower left position on the map for raster image [0/0].\n");
-		fprintf (stderr,"\t   Optionally, append justification (see pstext for codes)\n");
+		fprintf (stderr,"\t   Optionally, append justification (see pstext for codes).\n");
 		GMT_pen_syntax ('F', "draws a frame around the image with the given pen.");
 		fprintf (stderr,"\t-Gb and -Gf (1-bit images only) sets the background and foreground color,\n");
-		fprintf (stderr,"\t   respectively. Set <color> = - for transparency [Default is black and white]\n");
+		fprintf (stderr,"\t   respectively. Set <color> = - for transparency [Default is black and white].\n");
 		fprintf (stderr,"\t-Gt (not for 1-bit images) indicate which color to be made transparent\n");
 		fprintf (stderr,"\t   [Default no transparency].\n");
 		fprintf (stderr,"\t-I invert 1-bit images (does not affect 8 or 24-bit images).\n");
 		GMT_explain_option ('K');
 		fprintf (stderr,"\t-M Force color -> monochrome image using GMT_YIQ-transformation.\n");
-		fprintf (stderr,"\t-N Replicate image <nx> by <ny> times [Default is no replication]\n");
+		fprintf (stderr,"\t-N Replicate image <nx> by <ny> times [Default is no replication].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		GMT_explain_option ('U');

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdinfo.c,v 1.72 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdinfo.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -146,21 +146,21 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<grdfiles> may be one or more netCDF grid files\n");
+		fprintf (stderr, "\t<grdfiles> may be one or more netCDF grid files.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-C formats report in fields on a single line using the format\n");
 		fprintf (stderr, "\t   file w e s n z0 z1 dx dy nx ny [x0 y0 x1 y1] [med scale] [mean std rms] [n_nan]\n");
-		fprintf (stderr, "\t   (-M gives [x0 y0 x1 y1] and [n_nan]; -L1 gives [med scale]; -L2 gives [mean std rms])\n");
-		fprintf (stderr, "\t-F reports domain in world mapping format [Default is generic]\n");
+		fprintf (stderr, "\t   (-M gives [x0 y0 x1 y1] and [n_nan]; -L1 gives [med scale]; -L2 gives [mean std rms]).\n");
+		fprintf (stderr, "\t-F reports domain in world mapping format [Default is generic].\n");
 		fprintf (stderr, "\t-I returns textstring -Rw/e/s/n to nearest multiple of dx/dy.\n");
-		fprintf (stderr, "\t   If -C is set then rounding off will occur but no -R string is issued\n");
-		fprintf (stderr, "\t   If no argument is given then the -I<xinc>/<yinc> string is issued\n");
-		fprintf (stderr, "\t   If -I- is given then the grid's -R string is issued\n");
-		fprintf (stderr, "\t-L0 reports range of data by actually reading them (not from header)\n");
-		fprintf (stderr, "\t-L1 reports median and L1-scale of data set\n");
-		fprintf (stderr, "\t-L[2] reports mean, standard deviation, and rms of data set\n");
-		fprintf (stderr, "\t-M searches for the global min and max locations (x0,y0) and (x1,y1)\n");
-		fprintf (stderr, "\t-T given increment dz, return global -Tzmin/zmax/dz in multiples of dz\n");
+		fprintf (stderr, "\t   If -C is set then rounding off will occur but no -R string is issued.\n");
+		fprintf (stderr, "\t   If no argument is given then the -I<xinc>/<yinc> string is issued.\n");
+		fprintf (stderr, "\t   If -I- is given then the grid's -R string is issued.\n");
+		fprintf (stderr, "\t-L0 reports range of data by actually reading them (not from header).\n");
+		fprintf (stderr, "\t-L1 reports median and L1-scale of data set.\n");
+		fprintf (stderr, "\t-L[2] reports mean, standard deviation, and rms of data set.\n");
+		fprintf (stderr, "\t-M searches for the global min and max locations (x0,y0) and (x1,y1).\n");
+		fprintf (stderr, "\t-T given increment dz, return global -Tzmin/zmax/dz in multiples of dz.\n");
 		GMT_explain_option ('V');
 		GMT_explain_option ('f');
 		exit (EXIT_FAILURE);

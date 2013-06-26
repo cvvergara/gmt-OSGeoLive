@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:50 2011 -->
+<!-- CreationDate: Wed Jan  2 08:40:16 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -46,6 +46,7 @@ Plot velocity vectors, crosses, and wedges on maps</p>
 <p style="margin-left:11%; margin-top: 1em"><b>psvelo</b>
 <i>files</i> <b>&minus;J</b><i>parameters</i>
 <b>&minus;R</b><i>west</i>/<i>east</i>/<i>south</i>/<i>north</i>[<b>r</b>]
+[ <b>&minus;A</b><i>Arrow_width/Head_length/Head_width</i> ]
 [ <b>&minus;B</b>[<b>p</b>|<b>s</b>]<i>parameters</i> ] [
 <b>&minus;D</b><i>sigma_scale</i> ] [
 <b>&minus;F</b><i>color</i> ] [ <b>&minus;E</b><i>color</i>
@@ -596,20 +597,6 @@ man page for all the details.</p></td>
 
 
 
-<p style="margin-top: 1em" valign="top"><b>&minus;C</b></p> </td>
-<td width="2%"></td>
-<td width="78%">
-
-
-<p style="margin-top: 1em" valign="top">Offset focal
-mechanisms to the latitude and longitude specified in the
-last two columns of the input file.</p></td>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="9%">
-
-
-
 <p style="margin-top: 1em" valign="top"><b>&minus;D</b></p> </td>
 <td width="2%"></td>
 <td width="78%">
@@ -661,11 +648,10 @@ uncertainty regions will be transparent.]</p></td>
 <td width="78%">
 
 
-<p style="margin-top: 1em" valign="top">Select filling of
-ellipses, wedges, and focal mechanisms. By convention, the
-compressional quadrants of the focal mechanism beach balls
-are shaded. Set the shade (0&minus;255) or color (r/g/b)
-[Default is 0/0/0]. Optionally, specify
+<p style="margin-top: 1em" valign="top">Specify color (for
+symbols/polygons) or pattern (for polygons). Set the shade
+(0&minus;255) or color (r/g/b) [Default is 0/0/0].
+Optionally, specify
 <b>&minus;Gp</b><i>icon_size/pattern</i>, where
 <i>pattern</i> gives the number of the image pattern (1-90)
 OR the name of a icon-format file. <i>icon_size</i> sets the

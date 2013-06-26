@@ -1,4 +1,4 @@
-.TH SURFACE 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH SURFACE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 surface \- adjustable tension continuous curvature surface gridding algorithm
 .SH SYNOPSIS
@@ -105,7 +105,7 @@ grid lattice is prime and cannot have regional stages.  [Default = 0.0 and no se
 Tension factor[s].  These must be between 0 and 1.  Tension may be used in the interior solution
 (above equation, where it suppresses spurious oscillations) and in the boundary conditions (where
 it tends to flatten the solution approaching the edges).  Using zero for both values results in
-a minimum curvature surface with free edges, i.e. a natural bicubic spline.
+a minimum curvature surface with free edges, i.e., a natural bicubic spline.
 Use \fB\-T\fP\fItension_factor\fP\fBi\fP to set interior tension, and \fB\-T\fP\fItension_factor\fP\fBb\fP
 to set boundary tension.  If you do not append \fBi\fP or \fBb\fP, both will be set to the same value.
 [Default = 0 for both gives minimum curvature solution.]

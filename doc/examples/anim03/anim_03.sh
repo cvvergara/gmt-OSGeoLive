@@ -1,6 +1,6 @@
 #!/bin/bash
 #               GMT ANIMATION 03
-#               $Id: anim_03.sh,v 1.7 2011/06/13 01:24:25 guru Exp $
+#               $Id: anim_03.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:      Make web page with simple animated GIF of Iceland topo
 # GMT progs:    gmtset, gmtmath, psbasemap, pstext, psxy, ps2raster

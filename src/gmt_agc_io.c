@@ -1,4 +1,4 @@
-/*      $Id: gmt_agc_io.c,v 1.30 2011/07/08 21:27:05 guru Exp $
+/*      $Id: gmt_agc_io.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by

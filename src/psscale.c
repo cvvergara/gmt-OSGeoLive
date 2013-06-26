@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psscale.c,v 1.113 2011/07/08 21:27:06 guru Exp $
+ *	$Id: psscale.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -241,41 +241,41 @@ int main(int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
 		fprintf (stderr, "\t-D set mid-point position and length/width for scale.\n");
-		fprintf (stderr, "\t   Give negative length to reverse the scalebar\n");
-		fprintf (stderr, "\t   Append h for horizontal scale\n");
+		fprintf (stderr, "\t   Give negative length to reverse the scalebar.\n");
+		fprintf (stderr, "\t   Append h for horizontal scale.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A Place the desired annotations/labels on the other side of the colorscale instead\n");
-		fprintf (stderr, "\t   Append a or l to move only the annotations or labels to the other side\n");
-		fprintf (stderr, "\t   Append c to plot vertical labels as columns\n");
-		fprintf (stderr, "\t-B Set scale annotation interval and label. Use y-label to set unit label\n");
-		fprintf (stderr, "\t   If no annotation interval is set it is taken from the cpt file\n");
+		fprintf (stderr, "\t-A Place the desired annotations/labels on the other side of the colorscale instead.\n");
+		fprintf (stderr, "\t   Append a or l to move only the annotations or labels to the other side.\n");
+		fprintf (stderr, "\t   Append c to plot vertical labels as columns.\n");
+		fprintf (stderr, "\t-B Set scale annotation interval and label. Use y-label to set unit label.\n");
+		fprintf (stderr, "\t   If no annotation interval is set it is taken from the cpt file.\n");
 		fprintf (stderr, "\t-C Color palette file. If not set, stdin is read.\n");
 		fprintf (stderr, "\t   By default all color changes are annotated (but see -B).  To use a subset,\n");
 		fprintf (stderr, "\t   add an extra column to the cpt-file with a L, U, or B\n");
-		fprintf (stderr, "\t   to annotate Lower, Upper, or Both color segment boundaries\n");
-		fprintf (stderr, "\t   If a categorical CPT file is given the -Li is set automatically\n");
+		fprintf (stderr, "\t   to annotate Lower, Upper, or Both color segment boundaries.\n");
+		fprintf (stderr, "\t   If a categorical CPT file is given the -Li is set automatically.\n");
 		fprintf (stderr, "\t-E add sidebar triangles for back- and foreground colors.\n");
-		fprintf (stderr, "\t   Specify b(ackground) or f(oreground) to get one only [Default is both]\n");
-		fprintf (stderr, "\t   Optionally, append triangle height [Default is half the barwidth]\n");
-		fprintf (stderr, "\t-I add illumination for +-<max_intens> or <low_i> to <high_i> [-1.0/1.0]\n");
-		fprintf (stderr, "\t   Alternatively, specify <lower>/<upper> intensity values\n");
+		fprintf (stderr, "\t   Specify b(ackground) or f(oreground) to get one only [Default is both].\n");
+		fprintf (stderr, "\t   Optionally, append triangle height [Default is half the barwidth].\n");
+		fprintf (stderr, "\t-I add illumination for +-<max_intens> or <low_i> to <high_i> [-1.0/1.0].\n");
+		fprintf (stderr, "\t   Alternatively, specify <lower>/<upper> intensity values.\n");
 		GMT_explain_option ('K');
 		fprintf (stderr, "\t-L For equal-sized color rectangles. -B interval cannot be used.\n");
 		fprintf (stderr, "\t   Append i to annotate the interval range instead of lower/upper.\n");
 		fprintf (stderr, "\t   If <gap> is appended, we separate each rectangle by <gap> units and center each\n");
 		fprintf (stderr, "\t   lower (z0) annotation on the rectangle.  Ignored if not a discrete cpt table.\n");
 		fprintf (stderr, "\t   If -I is used then each rectangle will have the illuminated constant color.\n");
-		fprintf (stderr, "\t-M force monochrome colorbar using GMT_YIQ transformation\n");
-		fprintf (stderr, "\t-N effective dots-per-inch for color scale [300]\n");
+		fprintf (stderr, "\t-M force monochrome colorbar using GMT_YIQ transformation.\n");
+		fprintf (stderr, "\t-N effective dots-per-inch for color scale [300].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
-		fprintf (stderr, "\t-Q Plot colorbar using logarithmic scale and annotate powers of 10 [Default is linear]\n");
-		fprintf (stderr, "\t-S Skip drawing color boundary lines on color scale [Default draws lines]\n");
+		fprintf (stderr, "\t-Q Plot colorbar using logarithmic scale and annotate powers of 10 [Default is linear].\n");
+		fprintf (stderr, "\t-S Skip drawing color boundary lines on color scale [Default draws lines].\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z give colorbar-width (in %s) per color entry\n", GMT_unit_names[gmtdefs.measure_unit]);
-		fprintf (stderr, "\t   By default, width of entry is scaled to color range\n");
+		fprintf (stderr, "\t-Z give colorbar-width (in %s) per color entry.\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t   By default, width of entry is scaled to color range,\n");
 		fprintf (stderr, "\t   i.e., z = 0-100 gives twice the width as z = 100-150.\n");
 		GMT_explain_option ('c');
 		GMT_explain_option ('.');

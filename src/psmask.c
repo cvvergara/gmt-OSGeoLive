@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psmask.c,v 1.96 2011/07/08 21:27:06 guru Exp $
+ *	$Id: psmask.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -90,7 +90,7 @@ int main (int argc, char **argv)
 	GMT_LONG section, n_fields, distance_flag = 0, n_plus = 0, k;
 	GMT_LONG error = FALSE, first = TRUE, node_only;
 
-	char line[BUFSIZ], *grd = NULL, *not_used = NULL;
+	char line[BUFSIZ], *grd = NULL;
 
 	double *in = NULL, distance, x0, y0, x1, y1, shrink = 1.0;
 	double xinc2, yinc2, *x = NULL, *y = NULL;
@@ -230,34 +230,34 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<xyz-file> is the datafile.  If not given, read standard input\n");
+		fprintf (stderr, "\t<xyz-file> is the datafile.  If not given, read standard input.\n");
 		GMT_inc_syntax ('I', 0);
 		GMT_explain_option ('j');
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-C means stop existing clip-path.  No other options required\n");
-		fprintf (stderr, "\t-D dumps the clip-paths to files using the prefix <file>_ [mask_]\n");
+		fprintf (stderr, "\t-C means stop existing clip-path.  No other options required.\n");
+		fprintf (stderr, "\t-D dumps the clip-paths to files using the prefix <file>_ [mask_].\n");
 		fprintf (stderr, "\t   Ignored if -T is specified.  If prefix begins with - we will instead\n");
 		fprintf (stderr, "\t   use the rest of the name for a single multi-segment file.\n");
 		fprintf (stderr, "\t   Append +n<n_pts> to limit the number of points in files to a minimum of n_pts.\n");
 		GMT_explain_option ('E');
-		fprintf (stderr, "\t-F Force pixel registration [Default is gridline registration]\n");
+		fprintf (stderr, "\t-F Force pixel registration [Default is gridline registration].\n");
 		GMT_fill_syntax ('G', "Select fill color/pattern [Default is no fill].");
 		GMT_explain_option ('H');
 		GMT_explain_option ('K');
-		fprintf (stderr, "\t-N will invert the sense of the clipping [or tiling]\n");
+		fprintf (stderr, "\t-N will invert the sense of the clipping [or tiling].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-S sets search radius in -R, -I units; append m or c for minutes or seconds.\n");
 		fprintf (stderr, "\t   This means nodes inside circles of <radius> centered on\n");
-		fprintf (stderr, "\t   the input data points are considered to be reliable estimates of the surface\n");
-		fprintf (stderr, "\t   Default is -S0, i.e., only the nearest node is considered reliable\n");
+		fprintf (stderr, "\t   the input data points are considered to be reliable estimates of the surface.\n");
+		fprintf (stderr, "\t   Default is -S0, i.e., only the nearest node is considered reliable.\n");
 		fprintf (stderr, "\t   Append k for km (implies -R,-I in degrees), use flat Earth approximation.\n");
 		fprintf (stderr, "\t   Append K for km (implies -R,-I in degrees), use exact geodesic distances.\n");
 		fprintf (stderr, "\t   If the current ELLIPSOID is spherical then great circle distances are used.\n");
-		fprintf (stderr, "\t-T will paint tiles.  [Default will trace data outline]\n");
-		fprintf (stderr, "\t   If set you must also specify a color/fill with -G\n");
+		fprintf (stderr, "\t-T will paint tiles.  [Default will trace data outline].\n");
+		fprintf (stderr, "\t   If set you must also specify a color/fill with -G.\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_explain_option ('X');
@@ -265,7 +265,7 @@ int main (int argc, char **argv)
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
+		fprintf (stderr, "\t   Default is 2 input columns.\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('m');
@@ -403,7 +403,7 @@ int main (int argc, char **argv)
 #endif
 		}
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 2;
 		n_read = 0;

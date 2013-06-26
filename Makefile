@@ -1,6 +1,6 @@
-#	$Id: Makefile,v 1.90 2011/07/13 20:28:06 guru Exp $
+#	$Id: Makefile 9923 2012-12-18 20:45:53Z pwessel $
 #
-#	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+#	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
 #	See LICENSE.TXT file for copying and redistribution conditions.
 #
 #	This program is free software; you can redistribute it and/or modify
@@ -131,7 +131,7 @@ install-data:
 			for dir in coast conf cpt custom dbase mgd77 mgg pattern pslib time x2sys; do \
 				if [ -d $(rootdir)/share/$$dir ]; then \
 					mkdir -p $(datadir)/$$dir; \
-					\cp -p `ls -d $(rootdir)/share/$$dir/* | grep -v "\.in$$" | grep -v "CVS"` $(datadir)/$$dir ; \
+					\cp -p `ls -d $(rootdir)/share/$$dir/* | grep -v "\.in$$" | grep -v "^.svn$$"` $(datadir)/$$dir ; \
 				fi; \
 			done; \
 		else \
@@ -150,22 +150,10 @@ install-man uninstall-man:
 		$(MAKE) TARGET=$@ $(SUPPL)
 
 install-doc::
-		@if [ ! $(rootdir)/doc = $(docdir) ]; then \
-			mkdir -p $(docdir); \
-			cd $(rootdir)/doc; \
-			cp -pr html pdf examples tutorial $(docdir); \
-			cd $(docdir); \
-			rm -rf */CVS */orig */*/CVS */*/.gmt* */*/*.ps */*/.cvs*; \
-		else \
-			echo "Install doc directory the same as distribution doc directory - nothing copied"; \
-		fi
+		cd doc ; $(MAKE) install
 
 uninstall-doc:
-		@if [ ! $(rootdir)/doc = $(docdir) ]; then \
-			\rm -rf $(docdir); \
-		else \
-			echo "Install doc directory the same as distribution doc directory - nothing deleted"; \
-		fi
+		cd doc ; $(MAKE) uninstall
 
 # Run examples with the binaries from the src directory, not the installation directory.
 

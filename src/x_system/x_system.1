@@ -1,8 +1,8 @@
-.TH X_SYSTEM 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH X_SYSTEM 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 \fBx_system\fP \- A Cross-Over Error Analysis Tool
 .SH INTRODUCTION
-	The \fBx_system\fP was developed to aid in the task of gridding geophysical track data, e.g.
+	The \fBx_system\fP was developed to aid in the task of gridding geophysical track data, e.g.,
 gravity, magnetics, or bathymetry. It has long been recognized that although the data quality
 along track may be quite good, one usually finds discrepancies at the points where two tracks
 intersect. These cross-over errors (COE) can be large enough to cause artificial features in the
@@ -81,9 +81,9 @@ a temporary file, but it is wise to back it up to tape just in case.
 ASCII files. This is done by \fBx_update\fP which rearranges the data and updates the binary data
 base system. After this step the xjob.d files can be deleted (presuming they have been backed up
 to tape).  At this stage we have several options available. We can list some of the COEs by running
-\fBx_list\fP, which will extract COEs that match the options we pass, e.g. we might ask for all the
+\fBx_list\fP, which will extract COEs that match the options we pass, e.g., we might ask for all the
 internal COEs for cruise c2104, and only print out time and gravity COE. See the man pages for more
-details. \fBx_report\fP can be run, and will output statistics for separate cruises, i.e. mean and
+details. \fBx_report\fP can be run, and will output statistics for separate cruises, i.e., mean and
 standard deviation of the COEs for different data sets (gravity/magnetics/bathymetry). To solve
 for the best fitting corrections we would run \fBx_solve_dc_drift\fP. This program will
 solve for the d.c.-shift/drift-rates for all cruises, update that information in the data base system,

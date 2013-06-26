@@ -1,5 +1,5 @@
 #!/bin/sh
-#	$Id: img2google,v 1.22 2009/11/06 06:43:01 guru Exp $
+#	$Id: img2google 9545 2011-07-27 19:31:54Z pwessel $
 # Shell script that will generate a Google Earth png tile from
 # Sandwell/Smith's 1x1 min Mercator topo.11.1img grid and add
 # a basic KML wrapper for use in any Google Earth version.

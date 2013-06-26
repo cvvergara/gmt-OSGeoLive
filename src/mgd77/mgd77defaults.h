@@ -1,5 +1,5 @@
 /* MGD-77 Data Record Field Defaults:
- *    Copyright (c) 2005-2011 by P. Wessel and M. T. Chandler *
+ *    Copyright (c) 2005-2013 by P. Wessel and M. T. Chandler *
  *      See LICENSE.TXT file for copying and redistribution conditions.
 		   Name,                          Abbrev,     Start,  Length,  FortranCode,   Factor,   readMGD77,   order,   printMGD77,   printVALS,   Not_given    */
 		{ "Data Record Type",                      "drt",         1,	   1,        "int",        1,       "%1d",       1,        "%1d",        NULL,           "9" },
@@ -28,4 +28,8 @@
 		{ "Navigation Quality Code",               "nqc",       120,	   1,        "int",        1,       "%1d",      27,        "%1d",        NULL,           "9" },
 		{ "Survey ID",                              "id",         2,	   8,       "char",    FALSE,       "%8s",       2,        "%-8s",       NULL,    "99999999" },
 		{ "Seismic Line Number",                   "sln",       109,	   5,       "char",    FALSE,       "%5s",      25,        "%-5s",       NULL,       "99999" },
-		{ "Seismic Shot-Point Number",            "sspn",       114,	   6,       "char",    FALSE,       "%6s",      26,        "%-6s",       NULL,      "999999" }
+		{ "Seismic Shot-Point Number",            "sspn",       114,	   6,       "char",    FALSE,       "%6s",      26,        "%-6s",       NULL,      "999999" },
+		{ "GMT Time",                             "time",         0,	   0,       "real",        1,       "%1d",       0,        "%1d",        NULL,           "9" },
+		{ "Bathymetry Quality Code",               "bqc",         0,	   0,        "int",        1,       "%1d",       0,        "%1d",        NULL,           "9" },
+		{ "Magnetics Quality Code",                "mqc",         0,	   0,        "int",        1,       "%1d",       0,        "%1d",        NULL,           "9" },
+		{ "Gravity Quality Code",                  "gqc",         0,	   0,        "int",        1,       "%1d",       0,        "%1d",        NULL,           "9" }

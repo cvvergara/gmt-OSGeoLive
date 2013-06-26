@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdhisteq.c,v 1.40 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdhisteq.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -138,11 +138,11 @@ int main (int argc, char **argv)
 		fprintf (stderr, "usage: grdhisteq <infile> -G<outfile> [-C<n_cells> -D -N[<norm>] -Q -V]\n");
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 		fprintf (stderr, "\t-C<n_cells> sets how many cells (divisions) of data range to make.\n");
-		fprintf (stderr, "\t-D dump level information to stdout\n");
+		fprintf (stderr, "\t-D dump level information to stdout.\n");
 		fprintf (stderr, "\t-G<outfile> will create an equalized output grid file.\n");
 		fprintf (stderr, "\t-N use with -G to make an output grid file with standard normal scores.\n");
-		fprintf (stderr, "\t   Append <norm> to normalize the scores to <-1,+1>\n");
-		fprintf (stderr, "\t-Q to use quadratic intensity scaling.  [Default is linear]\n");
+		fprintf (stderr, "\t   Append <norm> to normalize the scores to <-1,+1>.\n");
+		fprintf (stderr, "\t-Q to use quadratic intensity scaling [Default is linear].\n");
 		GMT_explain_option ('V');
 		exit (EXIT_FAILURE);
 	}
@@ -189,7 +189,7 @@ void do_usual (char *infile, char *outfile, GMT_LONG n_cells, GMT_LONG quadratic
 	
 	float get_cell (float x, struct CELL *cell, GMT_LONG n_cells_m1, GMT_LONG last_cell);
 
-	sprintf (format, "%s\t%s\t%%ld\n", gmtdefs.d_format, gmtdefs.d_format);
+	sprintf (format, "%s%s%s%s%%ld\n", gmtdefs.d_format, gmtdefs.field_delimiter, gmtdefs.d_format, gmtdefs.field_delimiter);
 
 	GMT_err_fail (GMT_read_grd_info (infile, &header), infile);
 

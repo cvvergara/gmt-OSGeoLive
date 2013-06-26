@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 13
 REM
-REM		$Id: job13.bat,v 1.9 2011/03/01 01:34:48 remko Exp $
+REM		$Id: job13.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM
 REM Purpose:	Illustrate vectors and contouring
 REM GMT progs:	grdmath, grdcontour, grdvector, pstext

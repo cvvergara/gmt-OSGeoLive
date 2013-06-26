@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdspotter.c,v 1.34 2011/07/11 19:22:06 guru Exp $
+ *	$Id: grdspotter.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *   Copyright (c) 1999-2011 by P. Wessel
+ *   Copyright (c) 1999-2013 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -855,6 +855,9 @@ int main (int argc, char **argv)
 	GMT_free ((void *)p);
 	GMT_free ((void *)x_smt);
 	GMT_free ((void *)y_smt);
+	GMT_free ((void *)lat_area);
+	GMT_free ((void *)x_cva);
+	GMT_free ((void *)y_cva);
 	if (!no_ages) GMT_free ((void *)age);
 	if (keep_flowlines) GMT_free ((void *)flowline);
 	if (check_IDs) GMT_free ((void *)ID_info);

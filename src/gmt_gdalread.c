@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalread.c,v 1.16 2011/07/08 21:27:05 guru Exp $
+ *	$Id: gmt_gdalread.c 9598 2011-10-01 22:19:28Z jluis $
  *
  *      Coffeeright (c) 2002-2009 by J. Luis
  *
@@ -685,7 +685,7 @@ int populate_metadata (struct GD_CTRL *Ctrl, char *gdal_filename , int correct_b
 	/* Fill in the rest of the GMT header values (If ...) */
 	if (raster_count > 0) {
 		if (z_min == 1e50) {		/* We don't know yet the dataset Min/Max */
-			GDALComputeRasterMinMax( hBand, FALSE, adfMinMax );
+			GDALComputeRasterMinMax( hBand, TRUE, adfMinMax );
 			Ctrl->hdr[4] = adfMinMax[0]; 
 			Ctrl->hdr[5] = adfMinMax[1]; 
 		}

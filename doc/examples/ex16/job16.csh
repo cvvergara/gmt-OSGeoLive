@@ -1,5 +1,5 @@
 #!/bin/csh
-#		$Id: job16.csh,v 1.12 2011/03/01 01:34:48 remko Exp $
+#		$Id: job16.csh 9545 2011-07-27 19:31:54Z pwessel $
 #		GMT EXAMPLE 16
 #
 # Purpose:	Illustrates interpolation methods using same data as Example 12.

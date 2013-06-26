@@ -1,4 +1,4 @@
-.TH PSLIB 3 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH PSLIB 3 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 pslib 4.3 \- A \fIPostScript\fP based plotting library
 .SH DESCRIPTION
@@ -101,7 +101,7 @@ the upper right corner.  If \fIinvert\fP is 0 then the bits that are 1 are
 painted with the foreground color, while bits that are 0 are painted with the
 backgound color.  If \fIinvert\fP is 1, foreground and background are switched.
 To get a partly transparent image, set the first index of the foreground or
-background color to -1, i.e. f_rgb[0]=-1 or b_rgb[0]=1.
+background color to -1, i.e., f_rgb[0]=-1 or b_rgb[0]=1.
 See the Adobe Systems \fIPostScript\fP\fR Reference Manual for more details.
 .RE
 .IP
@@ -181,14 +181,14 @@ void \fBps_command\fR (\fItext\fP)
 .br
 .RS 10
 Writes a raw \fIPostScript\fP command to the \fIPostScript\fP output file,
-e.g. "1 setlinejoin".
+e.g., "1 setlinejoin".
 .RE
 .IP
 void \fBps_comment\fR (\fItext\fP)
 .br
 \fBchar\fR \fI*text\fP;
 .RS 10
-Writes a comment (\fItext\fP) to the \fIPostScript\fP\fR output file, e.g. "Start of graph 2".
+Writes a comment (\fItext\fP) to the \fIPostScript\fP\fR output file, e.g., "Start of graph 2".
 .RE
 .IP
 void \fBps_cross\fR (\fIxcenter, ycenter, diameter\fP)

@@ -1,4 +1,4 @@
-.TH MAPPROJECT 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH MAPPROJECT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 mapproject \- Forward and Inverse map transformation of 2-D coordinates 
 .SH SYNOPSIS
@@ -198,7 +198,7 @@ in UNIT from origin to the oblique latitude \fIlat\fP.
 \fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JS\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (General Stereographic \fB[C]\fP).
 \fIlon0/lat0\fP specifies the projection center.
 \fIhorizon\fP specifies the max distance from projection center (in degrees, < 180, default 90).
-Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat0\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat0\fP)
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat0\fP)
 or \fIradius/lat\fP (\fIradius\fP in UNIT from origin to the oblique latitude \fIlat\fP).
 Note if \fB1:\fP\fIxxxx\fP is used then to specify \fIhorizon\fP you must also specify the \fIlat0\fP as +-90 to avoid ambiguity.
 .PP
@@ -339,7 +339,7 @@ Use \fB\-Hi\fP if only input data should have header records [Default will write
 input data have them]. Blank lines and lines starting with # are always skipped.
 .TP
 \fB\-I\fP
-Do the Inverse transformation, i.e. get (longitude,latitude) from (x,y) data.
+Do the Inverse transformation, i.e., get (longitude,latitude) from (x,y) data.
 .TP
 \fB\-L\fP
 Determine the shortest distance from the input data points to the line(s) given in the ASCII multi-segment file \fIline.xy\fP.

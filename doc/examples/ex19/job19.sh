@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 19
-#		$Id: job19.sh,v 1.19 2011/02/28 00:58:03 remko Exp $
+#		$Id: job19.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Illustrates various color pattern effects for maps
 # GMT progs:	gmtset, grdimage, grdmath, makecpt, pscoast, pstext, psimage

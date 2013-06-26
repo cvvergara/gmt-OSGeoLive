@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 27
-#		$Id: job27.sh,v 1.7 2011/02/28 00:58:03 remko Exp $
+#		$Id: job27.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Illustrates how to plot Mercator img grids
 # GMT progs:	makecpt, grdgradient, grdimage, grdinfo, pscoast

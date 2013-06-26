@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sample1d.c,v 1.66 2011/07/08 21:27:06 guru Exp $
+ *	$Id: sample1d.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -78,7 +78,7 @@ int main (int argc, char **argv)
 	double d_scale;
 	PFD distance_func;
 #endif
-	char line[BUFSIZ], type[3], *not_used = NULL;
+	char line[BUFSIZ], type[3];
 
 	FILE *fp = NULL, *fpt = NULL;
 
@@ -197,32 +197,32 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<infile> is one or more multicolumn ASCII (or binary, see -b) tables. [Default is standard input]\n");
-		fprintf (stderr, "\tThe independent variable (see -T) must be monotonically in/de-creasing\n");
+		fprintf (stderr, "\t<infile> is one or more multicolumn ASCII (or binary, see -b) tables. [Default is standard input].\n");
+		fprintf (stderr, "\tThe independent variable (see -T) must be monotonically in/de-creasing.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-F sets the interpolation mode.  Choose from:\n");
-		fprintf (stderr, "\t   l Linear interpolation\n");
-		fprintf (stderr, "\t   a Akima spline interpolation\n");
-		fprintf (stderr, "\t   c Cubic spline interpolation\n");
-		fprintf (stderr, "\t   n No interpolation (nearest point)\n");
-		fprintf (stderr, "\t   [Default is -F%c]\n", type[Ctrl->F.mode]);
+		fprintf (stderr, "\t   l Linear interpolation.\n");
+		fprintf (stderr, "\t   a Akima spline interpolation.\n");
+		fprintf (stderr, "\t   c Cubic spline interpolation.\n");
+		fprintf (stderr, "\t   n No interpolation (nearest point).\n");
+		fprintf (stderr, "\t   [Default is -F%c].\n", type[Ctrl->F.mode]);
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I <x_inc> sets equidistant grid interval [x1 - x0]\n");
+		fprintf (stderr, "\t-I <x_inc> sets equidistant grid interval [x1 - x0].\n");
 #ifdef DEBUG
 		fprintf (stderr, "\t   Append e|k|m|n|d to indicate that the first two columns contain\n");
 		fprintf (stderr, "\t   longitude, latitude and you wish to resample this path using great\n");
 		fprintf (stderr, "\t   circle segment with a nominal spacing of <t_inc> in those units.\n");
 		fprintf (stderr, "\t   See -Am|p to only sample along meridians and parallels.\n");
 #endif
-		fprintf (stderr, "\t-N <knotfile> is an ASCII table with the desired time positions in column 0\n");
+		fprintf (stderr, "\t-N <knotfile> is an ASCII table with the desired time positions in column 0.\n");
 		fprintf (stderr, "\t   Overrides the -I and -S settings.  If none of -I, -S, and -N is set\n");
-		fprintf (stderr, "\t   then <tstart> = first input point, <t_inc> = (t[1] - t[0])\n");
-		fprintf (stderr, "\t-S <xstart> sets the first output point [first multiple of x_inc in range]\n");
-		fprintf (stderr, "\t-T gives column number of the independent variable (time) [Default is 0 (first)]\n");
+		fprintf (stderr, "\t   then <tstart> = first input point, <t_inc> = (t[1] - t[0]).\n");
+		fprintf (stderr, "\t-S <xstart> sets the first output point [first multiple of x_inc in range].\n");
+		fprintf (stderr, "\t-T gives column number of the independent variable (time) [Default is 0 (first)].\n");
 		GMT_explain_option ('V');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
+		fprintf (stderr, "\t   Default is 2 input columns.\n");
 		GMT_explain_option ('o');
 		GMT_explain_option ('n');
 		GMT_explain_option ('f');
@@ -283,7 +283,7 @@ int main (int argc, char **argv)
 		m_alloc = GMT_CHUNK;
 		t_supplied_out = (double *) GMT_memory (VNULL, (size_t)m_alloc, sizeof (double), GMT_program);
 		m = 0;
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fpt);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fpt);
 		n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : GMT_MAX_COLUMNS;
 		n_fields = GMT_input (fpt, &n_expected_fields, &in);
 		while (! (GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
@@ -332,7 +332,7 @@ int main (int argc, char **argv)
 
 		if (GMT_io.io_header[GMT_IN]) {
 			for (i = 0; i < GMT_io.n_header_recs; i++) {
-				not_used = GMT_fgets (line, BUFSIZ, fp);
+				GMT_fgets (line, BUFSIZ, fp);
 				if (GMT_io.io_header[GMT_OUT]) GMT_fputs (line, GMT_stdout);
 			}
 		}

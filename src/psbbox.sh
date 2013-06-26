@@ -1,5 +1,5 @@
 #!/bin/sh
-#	$Id: psbbox.sh,v 1.1 2009/05/21 14:55:17 remko Exp $
+#	$Id: psbbox.sh 9545 2011-07-27 19:31:54Z pwessel $
 # NAME
 #    psbbox.sh - Replace BoundingBox line in PostScript files by "real" BoundingBox
 #

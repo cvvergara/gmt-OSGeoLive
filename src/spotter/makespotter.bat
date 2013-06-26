@@ -1,7 +1,7 @@
 ECHO OFF
 REM ----------------------------------------------------
 REM
-REM	$Id: makespotter.bat,v 1.7 2011/03/03 21:02:51 guru Exp $
+REM	$Id: makespotter.bat 9545 2011-07-27 19:31:54Z pwessel $
 REM
 REM
 REM	Copyright (c) 1991-2009 by P. Wessel and W. H. F. Smith

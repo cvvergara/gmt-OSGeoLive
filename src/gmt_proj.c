@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_proj.c,v 1.55 2011/03/03 21:02:50 guru Exp $
+ *	$Id: gmt_proj.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -525,7 +525,7 @@ void GMT_vlamb (double rlong0, double rlat0, double pha, double phb)
 	double sin_pha, cos_pha, sin_phb, cos_phb, t_pha, m_pha, t_phb, m_phb, t_rlat0;
 
 	GMT_check_R_J (&rlong0);
-	project_info.north_pole = (rlat0 > 0.0);
+	project_info.north_pole = (project_info.n > 0.0 && (project_info.s >= 0.0 || (-project_info.s) < project_info.n));
 	project_info.pole = (project_info.north_pole) ? 90.0 : -90.0;
 	sincosd (pha, &sin_pha, &cos_pha);
 	sincosd (phb, &sin_phb, &cos_phb);
@@ -1900,8 +1900,10 @@ void GMT_azeqdist (double lon, double lat, double *x, double *y)
 
 	t = clat * clon;
 	cc = project_info.sinp * slat + project_info.cosp * t;
-	if (fabs (cc) >= 1.0)
-		*x = *y = 0.0;
+	if (cc >= 1.0)
+		*x = *y = 0.0;	/* Projection center */
+	else if (cc <= -1.0)	/* Antipode  */
+		*x = *y = GMT_d_NaN;
 	else {
 		c = d_acos (cc);
 		k = project_info.EQ_RAD * c / sin (c);
@@ -2412,7 +2414,7 @@ double GMT_right_eckert6 (double y)
 
 void GMT_vrobinson (double lon0)
 {
-	GMT_LONG err_flag;
+	GMT_LONG err_flag = 0;
 
 	/* Set up Robinson projection */
 
@@ -2451,13 +2453,16 @@ void GMT_vrobinson (double lon0)
 	project_info.n_iy_coeff = (double *) GMT_memory (VNULL, (size_t)(3 * GMT_N_ROBINSON), sizeof (double), GMT_program);
 	if (gmtdefs.interpolant == 2) {	/* Natural cubic spline */
 		err_flag = GMT_cspline (project_info.n_phi, project_info.n_X, (GMT_LONG)GMT_N_ROBINSON, project_info.n_x_coeff);
-		err_flag = GMT_cspline (project_info.n_phi, project_info.n_Y, (GMT_LONG)GMT_N_ROBINSON, project_info.n_y_coeff);
-		err_flag = GMT_cspline (project_info.n_Y, project_info.n_phi, (GMT_LONG)GMT_N_ROBINSON, project_info.n_iy_coeff);
+		err_flag += GMT_cspline (project_info.n_phi, project_info.n_Y, (GMT_LONG)GMT_N_ROBINSON, project_info.n_y_coeff);
+		err_flag += GMT_cspline (project_info.n_Y, project_info.n_phi, (GMT_LONG)GMT_N_ROBINSON, project_info.n_iy_coeff);
 	}
 	else {	/* Akimas spline */
 		err_flag = GMT_akima (project_info.n_phi, project_info.n_X, (GMT_LONG)GMT_N_ROBINSON, project_info.n_x_coeff);
-		err_flag = GMT_akima (project_info.n_phi, project_info.n_Y, (GMT_LONG)GMT_N_ROBINSON, project_info.n_y_coeff);
-		err_flag = GMT_akima (project_info.n_Y, project_info.n_phi, (GMT_LONG)GMT_N_ROBINSON, project_info.n_iy_coeff);
+		err_flag += GMT_akima (project_info.n_phi, project_info.n_Y, (GMT_LONG)GMT_N_ROBINSON, project_info.n_y_coeff);
+		err_flag += GMT_akima (project_info.n_Y, project_info.n_phi, (GMT_LONG)GMT_N_ROBINSON, project_info.n_iy_coeff);
+	}
+	if (err_flag) {	/* Must reset and warn */
+		fprintf (stderr, "GMT Warning : -JN initialization gave GMT_intpol warnings\n");
 	}
 }
 
@@ -2744,7 +2749,7 @@ void GMT_valbers (double lon0, double lat0, double ph1, double ph2)
 
 	GMT_check_R_J (&lon0);
 	project_info.central_meridian = lon0;
-	project_info.north_pole = (lat0 > 0.0);
+	project_info.north_pole = (project_info.n > 0.0 && (project_info.s >= 0.0 || (-project_info.s) < project_info.n));
 	project_info.pole = (project_info.north_pole) ? 90.0 : -90.0;
 
 	s0 = sind (lat0);
@@ -2774,7 +2779,7 @@ void GMT_valbers_sph (double lon0, double lat0, double ph1, double ph2)
 
 	GMT_check_R_J (&lon0);
 	project_info.central_meridian = lon0;
-	project_info.north_pole = (lat0 > 0.0);
+	project_info.north_pole = (project_info.n > 0.0 && (project_info.s >= 0.0 || (-project_info.s) < project_info.n));
 	project_info.pole = (project_info.north_pole) ? 90.0 : -90.0;
 
 	sincosd (ph1, &s1, &c1);
@@ -2887,7 +2892,7 @@ void GMT_veconic (double lon0, double lat0, double lat1, double lat2)
 	/* Set up Equidistant Conic projection */
 
 	GMT_check_R_J (&lon0);
-	project_info.north_pole = (lat0 > 0.0);
+	project_info.north_pole = (project_info.n > 0.0 && (project_info.s >= 0.0 || (-project_info.s) < project_info.n));
 	c1 = cosd (lat1);
 	project_info.d_n = (GMT_IS_ZERO (lat1 - lat2)) ? sind (lat1) : (c1 - cosd (lat2)) / (D2R * (lat2 - lat1));
 	project_info.d_i_n = R2D / project_info.d_n;	/* R2D put here instead of in lon for ieconic */

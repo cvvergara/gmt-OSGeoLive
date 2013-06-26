@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x_system.h,v 1.4 2006/12/04 17:59:18 pwessel Exp $
+ *	$Id: x_system.h 9545 2011-07-27 19:31:54Z pwessel $
  *
  * xsystem.h contains the declaration for the LEG and XOVER structures
  * used in the XSYSTEM programs

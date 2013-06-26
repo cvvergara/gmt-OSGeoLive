@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: surface.c,v 1.78 2011/07/08 21:27:06 guru Exp $
+ *	$Id: surface.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -398,15 +398,15 @@ int main (int argc, char **argv)
 
 		fprintf (stderr, "\tsurface will read from standard input or a single <xyz-file>.\n\n");
 		fprintf (stderr, "\tRequired arguments to surface:\n");
-		fprintf (stderr, "\t-G sets output grid file name\n");
+		fprintf (stderr, "\t-G sets output grid file name.\n");
 		GMT_inc_syntax ('I', 0);
 		fprintf (stderr, "\t\tNote that only gridline registration can be used.\n");
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-A<aspect_ratio>  = 1.0  by default which gives an isotropic solution.\n");
-		fprintf (stderr, "\t\ti.e. xinc and yinc assumed to give derivatives of equal weight; if not, specify\n");
+		fprintf (stderr, "\t\ti.e., xinc and yinc assumed to give derivatives of equal weight; if not, specify\n");
 		fprintf (stderr, "\t\t<aspect_ratio> such that yinc = xinc / <aspect_ratio>.\n");
-		fprintf (stderr, "\t\te.g. if gridding lon,lat use <aspect_ratio> = cosine(middle of lat range).\n");
+		fprintf (stderr, "\t\te.g., if gridding lon,lat use <aspect_ratio> = cosine(middle of lat range).\n");
 		fprintf (stderr, "\t-C<convergence_limit> iteration stops when max abs change is less than <c.l.>\n");
 		fprintf (stderr, "\t\tdefault will choose 0.001 of the range of your z data (1 ppt precision).\n");
 		fprintf (stderr, "\t\tEnter your own convergence limit in same units as z data.\n");
@@ -1043,7 +1043,7 @@ void read_data (FILE *fp_in, struct SURFACE_INFO *C)
 	GMT_LONG	i, j, k, kmax = 0, kmin = 0;
 	GMT_LONG n_read, n_fields, n_expected_fields;
 	double	*in, zmin = DBL_MAX, zmax = -DBL_MAX, wesn_lim[4];
-	char	buffer[BUFSIZ], *not_used = NULL;
+	char	buffer[BUFSIZ];
 
 	C->data = (struct SURFACE_DATA *) GMT_memory (VNULL, (size_t)C->n_alloc, sizeof(struct SURFACE_DATA), GMT_program);
 
@@ -1056,7 +1056,7 @@ void read_data (FILE *fp_in, struct SURFACE_INFO *C)
 	wesn_lim[2] = C->h.y_min - C->grid_yinc;	wesn_lim[3] = C->h.y_max + C->grid_yinc;
 	
 	n_expected_fields = (GMT_io.binary[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 3;
-	if (!GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (buffer, BUFSIZ, fp_in);
+	if (!GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (buffer, BUFSIZ, fp_in);
 
 	while ((n_fields = GMT_input (fp_in, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 
@@ -1149,6 +1149,42 @@ void write_output (struct SURFACE_INFO *C, char *grdfile)
 	if (C->set_low) GMT_free ((void *)C->lower);
 	if (C->set_high) GMT_free ((void *)C->upper);
 }
+
+#ifdef DUMPTESTING
+/* Just for testing intermediate grids.  Only works if there are no multi-grid steps and no -L option */
+void dump_output (struct SURFACE_INFO *C)
+{	/* Dumping results per iteration.  Assumes no multi-grid, no constrain surfaces */
+	GMT_LONG index, i, j, k, ij;
+	float *u, *v2;
+	char fname[BUFSIZ];
+
+	sprintf (fname, "surfacedump_%6.6ld.nc", C->total_iterations);
+	fprintf (stderr, "Dumping to %s\n", fname);
+	strcpy (C->h.title, GMT_program);
+
+	u = (float *) GMT_memory (VNULL, (size_t)C->mxmy, sizeof (float), GMT_program);
+	memcpy ((void *)u, (void *)C->u, C->mxmy * sizeof (float));
+	for (i = 0; i < C->nx; i++) {
+	 	for (j = 0; j < C->ny; j++) {
+	 		ij = C->ij_sw_corner + i * C->my + j;
+	 		u[ij] = (float)((u[ij] * C->z_scale) + (C->plane_c0 + C->plane_c1 * i + C->plane_c2 * j));
+		}
+	}
+	v2 = (float *) GMT_memory (VNULL, (size_t)C->nxny, sizeof (float), GMT_program);
+	index = C->ij_sw_corner;
+	for (i = 0; i < C->nx; i++, index += C->my) {
+		for (j = 0; j < C->ny; j++) {
+			k = j * C->nx + i;
+			v2[k] = (float)u[index + C->ny - j - 1];
+		}
+	}
+	
+	GMT_err_fail (GMT_write_grd (fname, &(C->h), v2, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), fname);
+	GMT_free ((void *)v2);
+	GMT_free ((void *)u);
+}
+
+#endif
 
 GMT_LONG iterate (struct SURFACE_INFO *C, GMT_LONG mode)
 {
@@ -1380,6 +1416,10 @@ GMT_LONG iterate (struct SURFACE_INFO *C, GMT_LONG mode)
 				if (change > max_change) max_change = change;
 			}
 		}
+#ifdef DUMPTESTING
+		dump_output (C);
+#endif
+		
 		iteration_count++;
 		C->total_iterations++;
 		max_change *= C->z_scale;	/* Put max_change into z units  */

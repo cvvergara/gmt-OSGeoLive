@@ -1,4 +1,4 @@
-/* $Id: segyreel.h,v 1.3 2007/01/31 17:00:03 pwessel Exp $
+/* $Id: segyreel.h 9545 2011-07-27 19:31:54Z pwessel $
  *
  * From PASSCAL code base which is in the public domain
  * SEGY REEL HEADER VARIABLES

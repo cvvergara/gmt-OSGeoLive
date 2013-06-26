@@ -1,5 +1,5 @@
 #!/bin/csh
-#		$Id: job20.csh,v 1.11 2011/03/01 01:34:48 remko Exp $
+#		$Id: job20.csh 9545 2011-07-27 19:31:54Z pwessel $
 #		GMT EXAMPLE 20
 #
 # Purpose:	Extend GMT to plot custom symbols

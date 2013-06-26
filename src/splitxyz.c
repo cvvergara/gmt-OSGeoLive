@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: splitxyz.c,v 1.62 2011/07/08 21:27:06 guru Exp $
+ *	$Id: splitxyz.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 	double	dy, dx, last_d, last_c, last_s, csum, ssum, this_c, this_s, dotprod;
 	double	mean_azim, fwork[SPLITXYZ_F_RES], *in = NULL, out[SPLITXYZ_N_OUTPUT_CHOICES];
 
- 	char    buffer[BUFSIZ], filename[BUFSIZ], *not_used = NULL;
+ 	char    buffer[BUFSIZ], filename[BUFSIZ];
 
 	struct  DATA *data = NULL;
 	struct SPLITXYZ_CTRL *Ctrl = NULL;
@@ -224,10 +224,10 @@ int main(int argc, char **argv)
 		fprintf(stderr,"\t-Q Indicate what output you want as one or more of xyzdh in any order;\n");
 		fprintf(stderr,"\t  where x,y,z refer to input data locations and optional z-value(s),\n");
 		fprintf(stderr,"\t  and d,h are the distance and heading along track.\n");
-		fprintf(stderr,"\t  [Default is all fields, i.e. -Qxyzdh (or -Qxydh if -Z is set)].\n");
+		fprintf(stderr,"\t  [Default is all fields, i.e., -Qxyzdh (or -Qxydh if -Z is set)].\n");
 		fprintf(stderr,"\t-S d,h is supplied.  Input is 5 col x,y,z,d,h with d non-decreasing.\n");
 		fprintf(stderr,"\t     [Default input is 3 col x,y,z only and computes d,h from the data].\n");
-		fprintf(stderr,"\t-Z No z-values.  Input is 2 col x,y only\n");
+		fprintf(stderr,"\t-Z No z-values.  Input is 2 col x,y only.\n");
 		GMT_explain_option ('V');
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
@@ -349,7 +349,7 @@ int main(int argc, char **argv)
 
         data = (struct DATA *) GMT_memory (VNULL, (size_t)n_alloc, sizeof(struct DATA), GMT_program);
 
-	if (!GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (buffer, BUFSIZ, fp);
+	if (!GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (buffer, BUFSIZ, fp);
 
 	while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 

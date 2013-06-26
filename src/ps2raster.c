@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: ps2raster.c,v 1.88 2011/07/08 21:27:06 guru Exp $
+ *	$Id: ps2raster.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 2006-2011 by J. Luis
+ *	Copyright (c) 2006-2013 by J. Luis
  *	See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -43,8 +43,10 @@
 #include "gmt.h"
 
 #ifdef WIN32	/* Special for Windows */
-#include <process.h>
-#define getpid _getpid
+#	include <windows.h>
+#	include <process.h>
+#	define getpid _getpid
+	GMT_LONG ghostbuster(struct PS2RASTER_CTRL *C);
 #endif
 
 #define N_GS_DEVICES		12	/* Number of supported GS output devices */
@@ -146,12 +148,15 @@ char * fgets2 (char *s, int n, FILE *stream)
 
 int main (int argc, char **argv) {
 	GMT_LONG error = FALSE, grayscale = FALSE, found_proj = FALSE;
+	GMT_LONG isGMT_PS = FALSE, excessK;
 
 	GMT_LONG i, j, k, len, r, n_files = 0, pos_file, pos_ext, pix_w = 0, pix_h = 0, mode;
 	GMT_LONG got_BB, got_HRBB, got_BBatend, file_has_HRBB, got_end, landscape, setup, i_unused = 0;
 	double xt, yt, w, h, x0 = 0.0, x1 = 612.0, y0 = 0.0, y1 = 828.0;
 	double	west = 0.0, east = 0.0, south = 0.0, north = 0.0;
+#ifdef USE_GDAL
 	double	west_prj, south_prj, east_prj, north_prj;
+#endif
 
 	size_t n_alloc = GMT_SMALL_CHUNK;
 
@@ -329,30 +334,31 @@ int main (int argc, char **argv) {
 		fprintf (stderr,"As an option, a tight BoundingBox may be computed.\n\n");
 		fprintf (stderr,"	<psfile(s)> postscript file(s) to be converted.\n");
 		fprintf (stderr,"\n\tOPTIONS:\n");
-		fprintf (stderr,"\t-A Adjust the BoundingBox to the minimum required by the image contents\n");
-		fprintf (stderr,"\t   Append u to strip out time-stamps (produced by GMT -U options)\n");
-		fprintf (stderr,"\t   Append - to make sure -A is NOT activated by -W\n");
+		fprintf (stderr,"\t-A Adjust the BoundingBox to the minimum required by the image contents.\n");
+		fprintf (stderr,"\t   Append u to strip out time-stamps (produced by GMT -U options).\n");
+		fprintf (stderr,"\t   Append - to make sure -A is NOT activated by -W.\n");
 		fprintf (stderr,"\t-C Specify a single, custom option that will be passed on to GhostScript\n");
 		fprintf (stderr,"\t   as is. Repeat to add several options [none].\n");
-		fprintf (stderr,"\t-D Sets an alternative output directory (which must exist) [Default is same directory as PS files]\n");
+		fprintf (stderr,"\t-D Sets an alternative output directory (which must exist) [Default is same directory as PS files].\n");
 		fprintf (stderr,"\t   Use -D. to place the output in the current directory.\n");
-		fprintf (stderr,"\t-E Set raster resolution in dpi [default = 720 for PDF, 300 for others]\n");
+		fprintf (stderr,"\t-E Set raster resolution in dpi [default = 720 for PDF, 300 for others].\n");
 		fprintf (stderr,"\t-F Force the output file name. By default output names are constructed\n");
 		fprintf (stderr,"\t   using the input names as base, which are appended with an appropriate\n");
 		fprintf (stderr,"\t   extension. Use this option to provide a different name, but WITHOUT\n");
 		fprintf (stderr,"\t   extension. Extension is still determined automatically.\n");
 		fprintf (stderr,"\t-G Full path to your ghostscript executable.\n");
 		fprintf (stderr,"\t   NOTE: Under Unix systems this is generally not necessary.\n");
-		fprintf (stderr,"\t   Under Windows, ghostscript is not added to the system's path.\n");
-		fprintf (stderr,"\t   So either you do it yourself, or give the full path here.\n");
-		fprintf (stderr,"\t   (e.g. -Gc:\\programs\\gs\\gs7.05\\bin\\gswin32c).\n");
-		fprintf (stderr,"\t-L The <listfile> is an ASCII file with names of ps files to be converted\n");
+		fprintf (stderr,"\t   Under Windows, ghostscript path is fished from the registry.\n");
+		fprintf (stderr,"\t   If this fails you can still add the GS path to system's path\n");
+		fprintf (stderr,"\t   or give the full path here.\n");
+		fprintf (stderr,"\t   (e.g., -Gc:\\programs\\gs\\gs9.02\\bin\\gswin32c).\n");
+		fprintf (stderr,"\t-L The <listfile> is an ASCII file with names of ps files to be converted.\n");
 		fprintf (stderr,"\t-N OBSOLETE. Use -S and/or -Te instead.\n");
 		fprintf (stderr,"\t-P Force Portrait mode. All Landscape mode plots will be rotated back\n");
 		fprintf (stderr,"\t   so that they show unrotated in Portrait mode.\n");
 		fprintf (stderr,"\t   This is practical when converting to image formats or preparing\n");
 		fprintf (stderr,"\t   EPS or PDF plots for inclusion in documents.\n");
-		fprintf (stderr,"\t-Q Anti-aliasing setting for (g)raphics or (t)ext; append size (1,2,4) of sub-sampling box\n");
+		fprintf (stderr,"\t-Q Anti-aliasing setting for (g)raphics or (t)ext; append size (1,2,4) of sub-sampling box.\n");
 		fprintf (stderr,"\t   Default is no anti-aliasing, which is the same as specifying size 1.\n");
 		fprintf (stderr,"\t-S Apart from executing it, also writes the ghostscript command to standard output.\n");
 		fprintf (stderr,"\t-T Set output format [default is jpeg]\n");
@@ -369,7 +375,7 @@ int main (int argc, char **argv) {
 		fprintf (stderr,"\t   For example, -Tef creates both an EPS and PDF file.\n");
 		fprintf (stderr,"\t-V Provides progress report [default is silent] and shows the gdal_translate\n");
 		fprintf (stderr,"\t   command, in case you want to use this program to create a geoTIFF file.\n");
-		fprintf (stderr,"\t-W Write a ESRI type world file suitable to make (e.g.) .tif files be\n");
+		fprintf (stderr,"\t-W Write a ESRI type world file suitable to make (e.g.,) .tif files be\n");
 		fprintf (stderr,"\t   recognized as geotiff by softwares that know how to do it. Be aware,\n");
 		fprintf (stderr,"\t   however, that different results are obtained depending on the image\n");
 		fprintf (stderr,"\t   contents and if the -B option has been used or not. The trouble with\n");
@@ -497,6 +503,7 @@ int main (int argc, char **argv) {
 	/* Loop over all input files */
 
 	for (k = 0; k < n_files; k++) {
+		excessK = FALSE;
 		memset ((void *)out_file, 0, BUFSIZ);
 		strcpy(ps_file,ps_names[k]);
 		if ((fp = fopen (ps_file, "r")) == NULL) {
@@ -638,6 +645,10 @@ int main (int argc, char **argv) {
 					}
 				}
 			}
+			else if ((strstr (line, "%%Creator:"))) {
+				if (!strncmp (&line[11], "GMT", 3))
+					isGMT_PS = TRUE;
+			}
 			else if ((p = strstr (line, "%%Orientation:"))) {
 				sscanf (&p[14], "%s", c1);
 				if (!strncmp (c1, "Landscape", (size_t)9)) landscape = TRUE;
@@ -677,8 +688,10 @@ int main (int argc, char **argv) {
 				if (!strncmp(&line[2], "PROJ", 4)) { /* Search for the PROJ tag in the ps file */
 					char *ptmp = NULL, xx1[20], xx2[20], yy1[20], yy2[20];
 					sscanf (&line[8], "%s %s %s %s %s %s %s %s %s",proj4_name,xx1,xx2,yy1,yy2,c1,c2,c3,c4);
+#ifdef USE_GDAL
 					west_prj = atof (c1);		east_prj = atof (c2);
 					south_prj = atof (c3);		north_prj = atof (c4);
+#endif
 					project_info.w = west = atof (xx1);		project_info.e = east = atof (xx2);
 					if (project_info.w > 180.0 && project_info.e > 180.0) {
 						project_info.w -= 360.0;
@@ -811,6 +824,15 @@ int main (int argc, char **argv) {
 			fprintf (fpo, "%s", line);
 		}
 
+		/* Recede a bit to test the contents of last line. -7 for when
+		 * PS has CRLF endings */
+		fseek (fp, -7, SEEK_END);
+		/* Read until last line is encountered */
+		while ( fgets2 (line, BUFSIZ, fp) );
+		if ( strncmp (line, "%%EOF", 5) )
+			/* Possibly a non-closed GMT PS file. To be confirmed later */
+			excessK = TRUE;
+
 		fclose (fpo);
 		fclose (fp);
 
@@ -835,8 +857,23 @@ int main (int argc, char **argv) {
 				at_sign, Ctrl->G.file, gs_params, gs_extra, device[Ctrl->T.device],
 				pix_w, pix_h, Ctrl->E.dpi, out_file, tmp_file);
 			i_unused = system (cmd);		/* Execute the GhostScript command */
-			if ((i_unused = access (out_file, R_OK)) != 0)
-				fprintf(stderr, "\nPS2RASTER WARNING: file\n\t%s\nwas not created. Maybe you forgot to close the PS file (a -K in excess?)\n", out_file);
+
+			/* Check output file */
+			if (access (out_file, R_OK)) {      /* output file not created */
+				if (isGMT_PS && excessK)        /* non-closed GMT input PS file */
+					fprintf (stderr, "%s: GMT PS format detected but file is not finalized. Maybe a -K in excess? No output created.\n", ps_file);
+				else
+					/* Either a bad closed GMT PS file or one of unknown origin */
+					fprintf (stderr, "Could not create %s. Maybe input file does not fulfill PS specifications.\n", out_file);
+			}
+			else {
+				/* output file exists */
+				if (isGMT_PS && excessK) /* non-closed GMT input PS file */
+					fprintf (stderr, "%s: GMT PS format detected but file is not finalized. Maybe a -K in excess? %s could be messed up.\n", ps_file, out_file);
+				/* else: Either a good closed GMT PS file or one of unknown origin */
+			}
+
+
 			if (Ctrl->S.active) fprintf (stdout, "%s\n", cmd);
 		}
 		if (Ctrl->V.active) fprintf (stderr, " Done.\n");
@@ -1093,7 +1130,9 @@ void *New_ps2raster_Ctrl () {	/* Allocate and initialize a new control structure
 
 	/* Initialize values whose defaults are not 0/FALSE/NULL */
 #ifdef WIN32
-	C->G.file = strdup ("gswin32c");
+	if ( ghostbuster(C) != EXIT_SUCCESS ) {	/* Try first to find the gspath from registry */
+		C->G.file = strdup ("gswin32c");	/* Fall back to this default and expect a miracle */
+	}
 #else
 	C->G.file = strdup ("gs");
 #endif
@@ -1115,3 +1154,116 @@ void Free_ps2raster_Ctrl (struct PS2RASTER_CTRL *C) {	/* Deallocate control stru
 	if (C->W.URL) free ((void *)C->W.URL);
 	GMT_free ((void *)C);
 }
+
+#ifdef WIN32
+GMT_LONG ghostbuster(struct PS2RASTER_CTRL *C) {
+	/* Search the Windows registry for the directory containing the gswinXXc.exe
+	   We do this by finding the GS_DLL that is a value of the HKLM\SOFTWARE\GPL Ghostscript\X.XX\ key
+	   Things are further complicated because Win64 has TWO registries: one 32 and the other 64 bits.
+	   Add to this that the installed GS version may be 32 or 64 bits, so we have to check for the
+	   four GS_32|64 + GMT_32|64 combinations.
+
+	   Adapted from snipets at http://www.daniweb.com/software-development/c/code/217174
+	   and http://juknull.wordpress.com/tag/regenumkeyex-example */
+
+	HKEY hkey;              /* Handle to registry key */
+	char data[BUFSIZ], ver[8], *ptr;
+	char key[32] = "SOFTWARE\\GPL Ghostscript\\";
+	unsigned long datalen = BUFSIZ;
+	unsigned long datatype;
+	long RegO, rc = 0;
+	int n = 0;
+	GMT_LONG bits64 = TRUE;
+	float maxVersion = 0;		/* In case more than one GS, hold the number of the highest version */
+
+#ifdef _WIN64
+	RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\GPL Ghostscript", 0, KEY_READ, &hkey);	/* Read 64 bits Reg */
+	if (RegO != ERROR_SUCCESS) {		/* Try the 32 bits registry */
+		RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\GPL Ghostscript", 0, KEY_READ|KEY_WOW64_32KEY, &hkey);
+		bits64 = FALSE;
+	}
+#else
+	RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\GPL Ghostscript", 0, KEY_READ, &hkey);	/* Read 32 bits Reg */
+	if (RegO != ERROR_SUCCESS)			/* Failed. Try the 64 bits registry */
+		RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\GPL Ghostscript", 0, KEY_READ|KEY_WOW64_64KEY, &hkey);
+	else {
+		bits64 = FALSE;
+	}
+#endif
+
+	if ( (RegO != ERROR_SUCCESS) && C->V.active) {
+		fprintf (stderr, "Error opening HKLM key\n");
+		return (EXIT_FAILURE);
+	}
+
+	while (rc != ERROR_NO_MORE_ITEMS) {
+		rc  = RegEnumKeyEx (hkey, n++, data, &datalen, 0, NULL, NULL, NULL);
+		datalen = BUFSIZ; /* reset to buffer length (including terminating \0) */
+		if (rc == ERROR_SUCCESS)
+			maxVersion = (float)MAX(maxVersion, atof(data));	/* If more than one GS, keep highest version number */
+	}
+
+	RegCloseKey(hkey);
+
+	if (maxVersion == 0 && C->V.active) {
+		fprintf (stderr, "Unknown version reported in registry\n");
+		return (EXIT_FAILURE);
+	}
+
+	sprintf(ver, "%.2f", maxVersion);
+	strcat(key, ver);
+
+	/* Open the HKLM key, key, from which we wish to get data.
+	   But now we already know the registry bitage */
+#ifdef _WIN64
+	if (bits64)
+		RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_QUERY_VALUE, &hkey);
+	else
+		RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_QUERY_VALUE|KEY_WOW64_32KEY, &hkey);
+#else
+	if (bits64)
+		RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_QUERY_VALUE|KEY_WOW64_64KEY, &hkey);
+	else
+		RegO = RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_QUERY_VALUE, &hkey);
+#endif
+	if ( (RegO != ERROR_SUCCESS) && C->V.active) {
+		fprintf (stderr, "Error opening HKLM key\n");
+		return (EXIT_FAILURE);
+	}
+
+	/* Read the value for "GS_DLL" via the handle 'hkey' */
+	RegO = RegQueryValueEx(hkey, "GS_DLL", NULL, &datatype, (LPBYTE)data, &datalen);
+
+	RegCloseKey(hkey);
+
+	if ( (RegO != ERROR_SUCCESS) && C->V.active) {
+		fprintf (stderr, "Error reading the GS_DLL value contents\n");
+		return (EXIT_FAILURE);
+	}
+
+	if ( ((ptr = strstr(data,"\\gsdll")) == NULL) && C->V.active) {
+		fprintf (stderr, "GS_DLL value is screwed.\n");
+		return (EXIT_FAILURE);
+	}
+
+	/* Truncate string and add affix gswinXXc.exe */
+	*ptr = '\0';
+	strcat(data, bits64 ? "\\gswin64c.exe" : "\\gswin32c.exe");
+
+ 	/* Now finally check that the gswinXXc.exe exists */
+	if (access (data, R_OK) && C->V.active) {
+		fprintf (stderr, "gswinXXc.exe does not exist.\n");
+		return (EXIT_FAILURE);
+	}
+
+	/* Wrap the path in double quotes to prevent troubles raised by dumb things like "Program Files" */
+	datalen = (unsigned long)strlen (data);
+	C->G.file = (char *)malloc (datalen + 3);	/* strlen + 2 * " + \0 */
+	strcpy (C->G.file, "\"");
+	strcat (C->G.file, data);
+	strcat (C->G.file, "\"");
+
+	return (EXIT_SUCCESS);
+}
+
+#endif		/* WIN32 */

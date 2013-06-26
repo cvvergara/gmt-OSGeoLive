@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sphdistance.c,v 1.25 2011/07/11 19:22:06 guru Exp $
+ *	$Id: sphdistance.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 2008-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 2008-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -76,7 +76,7 @@ void prepare_polygon (struct GMT_LINE_SEGMENT *P);
 int main (int argc, char **argv)
 {
 	GMT_LONG i, j, n = 0, n_dup = 0, n_set = 0;
-	GMT_LONG ij, ii, s_row, n_row, w_col, e_col, side;
+	GMT_LONG ij, ii, s_row, n_row, w_col, e_col, side, nx1;
 	GMT_LONG n_expected_fields, n_args, n_fields, fno, n_files = 0, proj_type = 0;
 
 	GMT_LONG error = FALSE, nofile = TRUE, done = FALSE, first = FALSE;
@@ -85,7 +85,7 @@ int main (int argc, char **argv)
 	double *xx = NULL, *yy = NULL, *zz = NULL, *lon = NULL, *lat = NULL;
 	double d_scale, *grid_lon = NULL, *grid_lat = NULL;
 	GMT_LONG node, vertex, node_stop, node_new, vertex_new, node_last, vertex_last;
-	size_t n_alloc = GMT_CHUNK, p_alloc = GMT_TINY_CHUNK, nm, nx1;
+	size_t n_alloc = GMT_CHUNK, p_alloc = GMT_TINY_CHUNK, nm;
 	float *distgrid = NULL;
 
 	PFD distance_func;

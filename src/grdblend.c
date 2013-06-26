@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: grdblend.c,v 1.87 2011/07/08 21:27:06 guru Exp $
+ *    $Id: grdblend.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -178,10 +178,10 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<blendfile> is an ASCII file (or stdin) with blending parameters for each input grid\n");
-		fprintf (stderr, "\t   Each record has three items:  filename -Rw/e/s/n weight\n");
+		fprintf (stderr, "\t<blendfile> is an ASCII file (or stdin) with blending parameters for each input grid.\n");
+		fprintf (stderr, "\t   Each record has three items:  filename -Rw/e/s/n weight.\n");
 		fprintf (stderr, "\t   Relative weights are <weight> inside the given -R and cosine taper to 0 at actual grid -R.\n");
-		fprintf (stderr, "\t   Give filename - weight if inner region should equal the actual region\n");
+		fprintf (stderr, "\t   Give filename - weight if inner region should equal the actual region.\n");
 		fprintf (stderr, "\t   Give a negative weight to invert the sense of the taper (i.e., |<weight>| outside given R.\n");
 		fprintf (stderr, "\t   Each grid must be in netCDF or native binary format.\n");
 		fprintf (stderr, "\t-G <grdfile> is the name of the output 2-D binary data set.\n");
@@ -189,12 +189,12 @@ int main (int argc, char **argv)
 		GMT_inc_syntax ('I', 0);
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-N Set value for nodes without constraints [Default is NaN]\n");
-		fprintf (stderr, "\t-Q grdraster-compatible output without leading grd header [Default writes GMT grid file]\n");
+		fprintf (stderr, "\t-N Set value for nodes without constraints [Default is NaN].\n");
+		fprintf (stderr, "\t-Q grdraster-compatible output without leading grd header [Default writes GMT grid file].\n");
 		fprintf (stderr, "\t   Output grid must be in native binary format (i.e., not netCDF).\n");
-		fprintf (stderr, "\t-Z Multiply z-values by this scale before writing to file [1]\n");
+		fprintf (stderr, "\t-Z Multiply z-values by this scale before writing to file [1].\n");
 		GMT_explain_option ('V');
-		fprintf (stderr, "\t-W Write out weights only (only applies to a single input file) [make blend grid]\n");
+		fprintf (stderr, "\t-W Write out weights only (only applies to a single input file) [make blend grid].\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);

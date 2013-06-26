@@ -1,4 +1,4 @@
-/* $Id: gmt_qsort.c,v 1.2 2010/10/13 23:24:30 guru Exp $
+/* $Id: gmt_qsort.c 9545 2011-07-27 19:31:54Z pwessel $
  *
  * TAKEN FROM FreeBSD with the following modifications:
  *   (1) 3rd arg to swapfunc changed from int to size_t

@@ -1,6 +1,6 @@
 #!/bin/bash
 #               GMT ANIMATION 02
-#               $Id: anim_02.sh,v 1.5 2011/06/07 20:07:54 guru Exp $
+#               $Id: anim_02.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:      Make web page with simple animated GIF of a DEM grid
 # GMT progs:    gmtset, gmtmath, grdgradient, makecpt, grdimage psxy, ps2raster

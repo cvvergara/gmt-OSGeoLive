@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:54 2011 -->
+<!-- CreationDate: Wed Jan  2 08:40:23 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -48,9 +48,9 @@ file</p>
 <b>&minus;F</b><i>legid</i> <b>&minus;Y</b><i>start_year</i>
 [ <b>&minus;A</b><i>information</i> ] [
 <b>&minus;I</b><i>time_increment</i> ]
-[<b>&minus;T</b>[<i>&lt;offset&gt;</i>]]
-[<b>&minus;W</b>[<i>&lt;cable_length&gt;</i>]] [
-<b>&minus;V</b> ]</p>
+[<b>&minus;T</b>[<i>offset</i>]]
+[<b>&minus;W</b>[<i>cable_length</i>]] [ <b>&minus;V</b>
+]</p>
 
 <a name="DESCRIPTION"></a>
 <h2>DESCRIPTION</h2>
@@ -167,7 +167,7 @@ fake times.</p></td>
 <p style="margin-top: 1em" valign="top">Extracts Total
 field instead of anomaly. Since F does not hold in a 2 byte
 signed variable we subtract a constant [default = 40000] but
-you can provide another value in <i>&lt;offset&gt;</i>.</p></td>
+you can provide another value in <i>offset</i>.</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
@@ -181,14 +181,15 @@ you can provide another value in <i>&lt;offset&gt;</i>.</p></td>
 
 <p style="margin-top: 1em" valign="top">Take into account
 that the magnetometer is not at ship&rsquo;s position.
-<i>&lt;cable&gt;</i> is magnetometer tow distance [default =
-200 meters]. If <b>&minus;W</b> only is given (e.g. no
-&lt;cable&gt;) and like with the <b>&minus;Y</b> option, we
-try to get the tow distance from the header file. Failing,
-defaults to 200 meters. Note that this option will throw
-away the first points whose accumulated. distance since the
-start of magnetic acquisition is less than cable. length,
-and likewise for the end of the mag profile.</p></td>
+<i>cable_length</i> is magnetometer tow distance [default =
+200 meters]. If <b>&minus;W</b> only is given (e.g., no
+<i>cable_length</i>) and like with the <b>&minus;Y</b>
+option, we try to get the tow distance from the header file.
+Failing, defaults to 200 meters. Note that this option will
+throw away the first points whose accumulated. distance
+since the start of magnetic acquisition is less than
+<i>cable_length</i>, and likewise for the end of the mag
+profile.</p> </td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
@@ -236,8 +237,8 @@ gmt files from all the mgd77 files listed in
 
 
 <p style="margin-left:11%; margin-top: 1em">Wessel, P., and
-W. H. F. Smith, 2011, The Generic Mapping Tools (GMT)
-version 4.5.7 Technical Reference &amp; Cookbook,
+W. H. F. Smith, 2013, The Generic Mapping Tools (GMT)
+version 4.5.9 Technical Reference &amp; Cookbook,
 SOEST/NOAA. <br>
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version
 of Generic Mapping Tools Released, EOS Trans., AGU, 79 (47),

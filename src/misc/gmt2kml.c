@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt2kml.c,v 1.37 2011/07/11 19:22:06 guru Exp $
+ *	$Id: gmt2kml.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 2009-2011 by P. Wessel
+ *	Copyright (c) 2009-2013 by P. Wessel
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -62,7 +62,7 @@ int main (int argc, char **argv)
 	char doc_title[BUFSIZ], folder_name[BUFSIZ], icon[BUFSIZ], description[BUFSIZ];
 	char *feature[5] = {"Point", "Point", "Point", "LineString", "Polygon"}, *name[5] = {"Point", "Event", "Timespan", "Line", "Polygon"};
 	char *indent[5] = {"\t\t\t", "\t\t\t", "\t\t\t", "\t\t\t", "\t\t\t\t\t"}, *fmt = NULL, buffer[BUFSIZ], label[BUFSIZ];
-	char *Document[2] = {"Document", "Folder"}, p[BUFSIZ], C[4][GMT_TEXT_LEN], *c = NULL;
+	char *Document[2] = {"Document", "Folder"}, p[BUFSIZ], C[5][GMT_TEXT_LEN], *c = NULL;
 
 	int rgb[3];
 
@@ -343,7 +343,7 @@ int main (int argc, char **argv)
 	if (argc == 1 || GMT_give_synopsis_and_exit) {
 		fprintf (stderr, "gmt2kml %s - Convert GMT data tables to KML files for Google Earth\n\n", GMT_VERSION);
 		fprintf (stderr, "usage: gmt2kml <infile> [-Aa|g|s[<altitude>|x<scale>]] [-D<descriptfile>] [-E] [-Fe|s<cpt>|t|l|p]\n");
-		fprintf (stderr, "\t[-Gf|n-|[+]<fill>] [%s] [-I<icon>] [-K] [-L<col:name>,col:name>,...] [-N+|<template>|<name>]\n", GMT_H_OPT);
+		fprintf (stderr, "\t[-Gf|n[-|<fill>] [%s] [-I<icon>] [-K] [-L<col:name>,col:name>,...] [-N+|<template>|<name>]\n", GMT_H_OPT);
 		fprintf (stderr, "\t[-O] [-Q[e|s|t|l|p|n]<transp>] [-Ra|<w/e/s/n>] [-Sc|n<scale>] [-T<title>/[/<foldername>] [-V] [-W-|<pen>] [-Z<opts>]\n");
 		fprintf (stderr, "\t[%s] [-%s] [%s] [%s]\n\n", GMT_t_OPT, GMT_bi_OPT, GMT_f_OPT, GMT_m_OPT);
 
@@ -365,7 +365,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   Value or altitude is given in the third column (see -A and -C)\n");
 		fprintf (stderr, "\t   Event requires a timestamp in the next column.\n");
 		fprintf (stderr, "\t   Timespan requires begin and end timestamps in the next two columns (use NaN for unlimited).\n");
-		GMT_rgb_syntax ('G', "Specify color for symbol/polygon fill (f) [lightorange] or text label (n) [white].");
+		GMT_rgb_syntax ('G', "Specify color for symbol/polygon fill (-Gf) [lightorange] or text label (-Gn) [white].");
 		fprintf (stderr, "\t   Use -Gf- to turn off polygon fill.\n");
 		fprintf (stderr, "\t   Use -Gn- to turn off labels.\n");
 		GMT_explain_option ('H');

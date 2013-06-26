@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77magref.c,v 1.32 2011/07/11 19:22:03 guru Exp $
+ *	$Id: mgd77magref.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *    Copyright (c) 2009-2011 by J. Luis and P. Wessel
+ *    Copyright (c) 2009-2013 by J. Luis and P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -25,7 +25,7 @@ int main (int argc, char **argv) {
 	size_t n_alloc = 0, need = 0;
 	double	the_altitude, the_time, *time_array = NULL, *alt_array = NULL, *time_years = NULL, IGRF[7], out[GMT_MAX_COLUMNS];
 	double	*igrf_xyz = NULL;	/* Temporary storage for the joint_IGRF_CM4 case */
-	char p[GMT_LONG_TEXT], txt[GMT_LONG_TEXT];
+	char p[GMT_LONG_TEXT], txt[GMT_LONG_TEXT], tfixed[GMT_LONG_TEXT];
 	FILE *fp = NULL;
 	struct MGD77_CONTROL M;
 	struct	MGD77_CM4 *Ctrl = NULL;
@@ -36,10 +36,7 @@ int main (int argc, char **argv) {
 
 	argc = (int) GMT_begin (argc, argv);		/* Initialize GMT Machinery */
 	
-	GMT_get_time_system ("unix", &(gmtdefs.time_system));						/* MGD77+ uses GMT's Unix time epoch */
-	GMT_init_time_system_structure (&(gmtdefs.time_system));
 	MGD77_Init (&M);			/* Initialize MGD77 Machinery */
-
 	MGD77_CM4_init (&M, Ctrl);		/* Presets path using strdup */
 
 	Ctrl->D.dst = (double *) calloc((size_t)(1), sizeof(double));	/* We need at least a size of one in case a value is given in input */
@@ -74,6 +71,7 @@ int main (int argc, char **argv) {
 							case 't':
 								fixed_time = TRUE;
 								the_time = atof (&p[1]);
+								strcpy (tfixed, &p[1]);
 								GMT_io.out_col_type[3] = GMT_IS_FLOAT;
 								break;
 							case 'y':
@@ -83,6 +81,12 @@ int main (int argc, char **argv) {
 							default:
 								break;
 						}
+					}
+					if (fixed_time) {
+						if (time_in_years)
+							the_time = atof (tfixed);
+						else
+							GMT_scanf_arg (tfixed, GMT_IS_ABSTIME, &the_time);
 					}
 					break;
 				case 'C':	/* Alternate CM4 coefficient file */
@@ -426,6 +430,10 @@ int main (int argc, char **argv) {
 		Ctrl->DATA.n_altitudes = 1;
 	}
 	if (fixed_time) {	/* A single time should apply to all records; set array to point to this single time */
+		if (!time_in_years) {
+			if (M.adjust_time) the_time = MGD77_time2utime (&M, the_time);	/* Convert to Unix time if need be */
+			the_time = MGD77_time_to_fyear (&M, the_time);			/* Get decimal year */
+		}
 		time_array = &the_time;
 		Ctrl->DATA.n_times = 1;
 	}

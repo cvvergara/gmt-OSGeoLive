@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: pspolar.c,v 1.40 2011/04/28 16:23:53 remko Exp $ 
+ *    $Id: pspolar.c 9923 2012-12-18 20:45:53Z pwessel $ 
  *
- *    Copyright (c) 1996-2011 by G. Patau
+ *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
@@ -391,7 +391,7 @@ int main (int argc, char **argv)
     for (fno = 1; !done && fno < n_args; fno++) {    /* Loop over all input files */
         if (!nofile && argv[fno][0] == '-') continue;
         if (nofile) {
-            fp = stdin;
+            fp = GMT_stdin;
             done = TRUE;
         }
         else if ((fp = GMT_fopen (argv[fno], "r")) == NULL) {
@@ -438,7 +438,8 @@ int main (int argc, char **argv)
                     }
                     break;
                 case 1 :
-                    if(!plot_polS) {
+ 	    	    memset ((void *)col, 0, 4 * GMT_TEXT_LEN * sizeof (char));
+                   if(!plot_polS) {
                         sscanf (line, "%s %s %s %s %lf %lf %c", col[0], col[1], col[2], stacode, &azimut, &ih, col[3]);
                         pol = col[3][2];
                     }

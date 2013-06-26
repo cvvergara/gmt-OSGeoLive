@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvector.c,v 1.65 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdvector.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -233,33 +233,33 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\tcompx & compy are grid files with the 2 vector components.\n");
 		GMT_explain_option ('j');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A means grids have polar (r, theta) components [Default is Cartesian]\n");
+		fprintf (stderr, "\t-A means grids have polar (r, theta) components [Default is Cartesian].\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-C Use cpt-file to assign colors based on vector length\n");
-		fprintf (stderr, "\t-E cEnter vectors on grid nodes [Default draws from grid node]\n");
+		fprintf (stderr, "\t-C Use cpt-file to assign colors based on vector length.\n");
+		fprintf (stderr, "\t-E cEnter vectors on grid nodes [Default draws from grid node].\n");
 		GMT_fill_syntax ('G', "Select vector fill [Default is outlines only].");
-		fprintf (stderr, "\t-I plots only those nodes that are <dx/dy> apart [Default is all nodes]\n");
+		fprintf (stderr, "\t-I plots only those nodes that are <dx/dy> apart [Default is all nodes].\n");
 		GMT_explain_option ('K');
-		fprintf (stderr, "\t-N Do Not clip vectors that exceed the map boundaries [Default will clip]\n");
+		fprintf (stderr, "\t-N Do Not clip vectors that exceed the map boundaries [Default will clip].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-Q Select vector plot [Default is stick-plot].\n");
 		fprintf (stderr, "\t   Optionally, specify vector parameters\n");
-		fprintf (stderr, "\t   <params> are arrowwidth/headlength/headwidth [Default is 0.03i/0.12i/0.09i]\n");
+		fprintf (stderr, "\t   <params> are arrowwidth/headlength/headwidth [Default is 0.03i/0.12i/0.09i].\n");
 		fprintf (stderr, "\t   Append n<size>[unit] which will cause vectors shorter than <size> to be\n");
-		fprintf (stderr, "\t     scaled down\n");
+		fprintf (stderr, "\t     scaled down.\n");
 		GMT_explain_option ('R');
-		fprintf (stderr, "\t-S sets scale for vector length in data units per %s [1]\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t-S sets scale for vector length in data units per %s [1].\n", GMT_unit_names[gmtdefs.measure_unit]);
 		fprintf (stderr, "\t   Append c, i, m, or p to indicate cm, inch, m, or points as the distance unit.\n");
 		fprintf (stderr, "\t   Alternatively, prepend l to indicate a fixed length for all vectors.\n");
-		fprintf (stderr, "\t-T means azimuth should be converted to angles based on map projection\n");
+		fprintf (stderr, "\t-T means azimuth should be converted to angles based on map projection.\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_pen_syntax ('W', "sets pen attributes.");
 		fprintf (stderr, "\t   Default pen attributes [width = %gp, color = (%d/%d/%d), solid line].\n", 
 			Ctrl->W.pen.width, Ctrl->W.pen.rgb[0], Ctrl->W.pen.rgb[1], Ctrl->W.pen.rgb[2]);
 		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z means the angles provided are azimuths rather than direction\n");
+		fprintf (stderr, "\t-Z means the angles provided are azimuths rather than direction.\n");
 		GMT_explain_option ('c');
 		GMT_explain_option ('f');
 		GMT_explain_option ('.');

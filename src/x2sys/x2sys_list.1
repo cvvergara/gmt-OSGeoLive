@@ -1,10 +1,10 @@
-.TH X2SYS_LIST 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH X2SYS_LIST 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 x2sys_list \- Output a subset of crossovers from data base
 .SH SYNOPSIS
 \fBx2sys_list\fP \fB\-C\fP\fIcolumn\fP \fB\-T\fP\fITAG\fP [ \fIcoedbase.txt\fP ] [ \fB\-A\fP\fIasymm_max\fP ] 
-[ \fB\-F\fP\fIacdhiInNtTvxyz\fP ] [ \fB\-I\fP[\fIlist\fP] ] [ \fB\-L\fP[\fIcorrtable\fP] ] [ \fB\-N\fP\fInx_min\fP ] 
-[ \fB\-Qe\fP|\fBi\fP ] [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-S\fP\fItrack\fP ] [ \fB\-V\fP ] [ \fB\-W\fP[\fIlist\fP] ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-m\fP[\fIflag\fP] ]
+[ \fB\-F\fP\fIacdhiInNtTvwxyz\fP ] [ \fB\-I\fP[\fIlist\fP] ] [ \fB\-L\fP[\fIcorrtable\fP] ] [ \fB\-N\fP\fInx_min\fP ] 
+[ \fB\-Qe\fP|\fBi\fP ] [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-S\fP[\fB+\fP]\fItrack\fP ] [ \fB\-V\fP ] [ \fB\-W\fP[\fIlist\fP] ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-m\fP[\fIflag\fP] ]
 .SH DESCRIPTION
 \fBx2sys_list\fP will read the crossover ASCII data base \fIcoedbase.txt\fP (or \fIstdin\fP)
 and extract a subset of the crossovers based on the other arguments.  The output may be
@@ -25,7 +25,7 @@ If not given we read standard input instead.
 .TP
 \fB\-A\fP
 Specifies maximum asymmetry in the distribution of crossovers relative to the mid point in time (or distance, if
-not time is available).  Asymmetry is computed as (n_right - n_left)/(n_right + n_left), referring the the number
+time is not available).  Asymmetry is computed as (n_right - n_left)/(n_right + n_left), referring the the number
 of crossovers that falls in the left or right half of the range.  Symmetric distributions will have values close
 to zero.  If specified, we exclude tracks whose asymmetry exceeds the specify cutoff in absolute value [1, i.e., include all].
 .TP
@@ -82,7 +82,7 @@ the COEs to those that fall inside the specified domain.
 Name of a single track. If given we restrict output to those crossovers involving this track [Default
 output is crossovers involving any track pair].
 Prepend a '+' to make it print info relative to both tracks [Default is selected track]. This applies only
-to comon information such as distance, time, heading.
+to common information such as distance, time, heading (see \fB\-F\fP for details).
 .TP
 \fB\-V\fP
 Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].

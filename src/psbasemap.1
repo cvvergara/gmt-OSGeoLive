@@ -1,4 +1,4 @@
-.TH PSBASEMAP 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH PSBASEMAP 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 psbasemap \- To plot \fIPostScript\fP basemaps
 .SH SYNOPSIS
@@ -252,7 +252,7 @@ in UNIT from origin to the oblique latitude \fIlat\fP.
 \fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JS\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (General Stereographic \fB[C]\fP).
 \fIlon0/lat0\fP specifies the projection center.
 \fIhorizon\fP specifies the max distance from projection center (in degrees, < 180, default 90).
-Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat0\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat0\fP)
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat0\fP)
 or \fIradius/lat\fP (\fIradius\fP in UNIT from origin to the oblique latitude \fIlat\fP).
 Note if \fB1:\fP\fIxxxx\fP is used then to specify \fIhorizon\fP you must also specify the \fIlat0\fP as +-90 to avoid ambiguity.
 .PP
@@ -484,7 +484,7 @@ to 3 inch and with gridlines and ticks every 30 degrees and 100 units, use
 A 10-cm-wide basemap using the Cassini projection may be obtained by
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP20/50/20/35 \fB\-JC\fP35/28/10\fBc\fP \fB\-P\fP OPR(B)5\fBg\fP5\fB:.\fPCassini\fB:\fP > cassini.ps
+\fBpsbasemap\fP \fB\-R\fP20/50/20/35 \fB\-JC\fP35/28/10\fBc\fP \fB\-P\fP \fB\-B\fP5\fBg\fP5\fB:.\fPCassini\fB:\fP > cassini.ps
 .SS Mercator [conformal]
 A Mercator map with scale 0.025 inch/degree along equator, and showing the length of 5000 km along the equator
 (centered on 1/1 inch), may be plotted as
@@ -595,7 +595,7 @@ indicate the lower left and upper right corners (in lon/lat) that will define ou
 choose a pole at 130/-30 and use 100/-45 and 160/-5 as our corners.  The command becomes
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP100/-45/160/-5\fBr \fB\-JS\fP130/-30/12\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"General Stereographic View"\fB:\fP > stereo2.ps
+\fBpsbasemap\fP \fB\-R\fP100/-45/160/-5\fBfP \fB\-JS\fP130/-30/12\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"General Stereographic View"\fB:\fP > stereo2.ps
 .SH MISCELLANEOUS MAP PROJECTIONS
 .SS Hammer [equal-area]
 The Hammer projection is mostly used for global maps and thus the spherical form is used.

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtset.c,v 1.34 2011/03/03 21:02:51 guru Exp $
+ *	$Id: gmtset.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t-G sets name of specific .gmtdefaults4 file to modify\n");
 		fprintf (stderr, "\t   [Default looks for file in current directory.  If not found,\n");
 		fprintf (stderr, "\t   it looks in the home directory, if not found it uses GMT defaults.\n");
-		fprintf (stderr, "\t   The modified defaults are written to the current directory]\n");
+		fprintf (stderr, "\t   The modified defaults are written to the current directory].\n");
 
 		exit (EXIT_FAILURE);
 	}

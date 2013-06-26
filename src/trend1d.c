@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: trend1d.c,v 1.52 2011/07/08 21:27:06 guru Exp $
+ *	$Id: trend1d.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -263,8 +263,8 @@ int main (int argc, char **argv)
 		fprintf(stderr,"\t-N fit a Polynomial [Default] or Fourier (-Nf) model with <n_model> terms.\n");
 		fprintf(stderr,"\t   Append r for robust model.  E.g., robust quadratic = -N3r.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf(stderr,"\t[<xy[w]file>] name of ascii file, first 2 cols = x y [3 cols = x y w].  [Default reads stdin].\n");
-		fprintf(stderr,"\t-C Truncate eigenvalue spectrum so matrix has <condition_#>.  [Default = 1.0e06].\n");
+		fprintf(stderr,"\t[<xy[w]file>] name of ascii file, first 2 cols = x y [3 cols = x y w]; [Default reads stdin].\n");
+		fprintf(stderr,"\t-C Truncate eigenvalue spectrum so matrix has <condition_#> [Default = 1.0e06].\n");
 		GMT_explain_option ('H');
 		fprintf(stderr,"\t-I Iteratively Increase # model parameters, to a max of <n_model> so long as the\n");
 		fprintf(stderr,"\t   reduction in variance is significant at the <confidence> level.\n");
@@ -483,7 +483,7 @@ void read_data (struct TREND1D_DATA **data, GMT_LONG *n_data, double *xmin, doub
 	GMT_LONG	n_alloc = GMT_CHUNK, n_expected_fields, n_fields;
 	GMT_LONG i, n_read;
 	double	*in;
-	char	buffer[BUFSIZ], *not_used = NULL;
+	char	buffer[BUFSIZ];
 
 	if (fp == NULL) {
 		fp = GMT_stdin;
@@ -493,7 +493,7 @@ void read_data (struct TREND1D_DATA **data, GMT_LONG *n_data, double *xmin, doub
 	}
 	(*data) = (struct TREND1D_DATA *) GMT_memory (VNULL, (size_t)n_alloc, sizeof(struct TREND1D_DATA), GMT_program);
 
-	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (buffer, BUFSIZ, fp);
+	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (buffer, BUFSIZ, fp);
 	i = n_read = 0;
 	n_expected_fields = (GMT_io.binary[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 2 + weighted_input;
 

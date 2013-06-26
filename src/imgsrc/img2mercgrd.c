@@ -1,6 +1,6 @@
-/* $Id: img2mercgrd.c,v 1.40 2011/07/11 19:22:02 guru Exp $
+/* $Id: img2mercgrd.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- * Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ * Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
  * img2mercgrd.c
@@ -437,7 +437,7 @@ int main (int argc, char **argv)
 				exit (EXIT_FAILURE);
 			}
 
-#if defined(_WIN32) || WORDS_BIGENDIAN == 0
+#if defined(_WIN32) || !defined(WORDS_BIGENDIAN)
 			for (iout = 0; iout < navg * imgcoord.nxcol; iout++) row[iout] = GMT_swab2 (row[iout]);
 #endif
 

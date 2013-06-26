@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_list.c,v 1.38 2011/07/11 19:22:07 guru Exp $
+ *	$Id: x2sys_list.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *      Copyright (c) 1999-2011 by P. Wessel
+ *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -354,7 +354,7 @@ int main (int argc, char **argv)
 		sprintf (buffer, "\n#");
 		GMT_fputs (buffer, GMT_stdout);
 		for (i = j = 0; i < n_items; i++, j++) {	/* Overwrite the above settings */
-			if (i > 0) GMT_fputs ("\t", GMT_stdout);
+			if (i > 0) GMT_fputs (gmtdefs.field_delimiter, GMT_stdout);
 			switch (fflags[i]) {	/* acdhintTvxyz */
 				case 'a':	/* Angle between tracks */
 					GMT_fputs ("angle", GMT_stdout);
@@ -364,11 +364,11 @@ int main (int argc, char **argv)
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 'd':	/* Distance along track */
-					(both) ? sprintf (buffer, "dist_1\tdist_2") : sprintf (buffer, "dist");
+					(both) ? sprintf (buffer, "dist_1%sdist_2", gmtdefs.field_delimiter) : sprintf (buffer, "dist");
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 'h':	/* Heading along track */
-					(both) ? sprintf (buffer, "head_1\thead_2") : sprintf (buffer, "head");
+					(both) ? sprintf (buffer, "head_1%shead_2", gmtdefs.field_delimiter) : sprintf (buffer, "head");
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 'I':	/* Time interval (unsigned) */
@@ -378,23 +378,23 @@ int main (int argc, char **argv)
 					GMT_fputs ("s_tint", GMT_stdout);
 					break;
 				case 'n':	/* Names of the track(s) [need this case to fall through] */
-					(both) ? sprintf (buffer, "track_1\ttrack_2") : sprintf (buffer, "track");
+					(both) ? sprintf (buffer, "track_1%strack_2", gmtdefs.field_delimiter) : sprintf (buffer, "track");
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 'N':	/* ID numbers of tracks */
-					(both) ? sprintf (buffer, "ID_1\tID_2") : sprintf (buffer, "ID");
+					(both) ? sprintf (buffer, "ID_1%sID_2", gmtdefs.field_delimiter) : sprintf (buffer, "ID");
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 't':	/* Time along track */
-					(both) ? sprintf (buffer, "t_1\tt_2") : sprintf (buffer, "t");
+					(both) ? sprintf (buffer, "t_1%st_2", gmtdefs.field_delimiter) : sprintf (buffer, "t");
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 'T':	/* Time along track since beginning of the first year of the track */
-					(both) ? sprintf (buffer, "T_1\tT_2\n") : sprintf (buffer, "T");
+					(both) ? sprintf (buffer, "T_1%sT_2\n", gmtdefs.field_delimiter) : sprintf (buffer, "T");
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 'v':	/* Speed along track */
-					(both) ? sprintf (buffer, "vel_1\tvel_2") : sprintf (buffer, "vel");
+					(both) ? sprintf (buffer, "vel_1%svel_2", gmtdefs.field_delimiter) : sprintf (buffer, "vel");
 					GMT_fputs (buffer, GMT_stdout);
 					break;
 				case 'w':	/* Composite weight of crossover */
@@ -408,7 +408,7 @@ int main (int argc, char **argv)
 					break;
 				case 'z':	/* Observed value along track */
 					if (both) {
-						sprintf (buffer, "%s_1\t%s_2", column, column);
+						sprintf (buffer, "%s_1%s%s_2", column, gmtdefs.field_delimiter, column);
 						GMT_fputs (buffer, GMT_stdout);
 					}
 					else

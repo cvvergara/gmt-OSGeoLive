@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdmask.c,v 1.93 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdmask.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -72,7 +72,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG	error = FALSE, done, nofile = TRUE, periodic = FALSE, resample = FALSE;
 
-	char line[BUFSIZ], ptr[BUFSIZ], *not_used = NULL;
+	char line[BUFSIZ], ptr[BUFSIZ];
 
 	GMT_LONG	i, j, side, fno, n_files = 0, n_args;
 	GMT_LONG	di, dj, i0, j0, n_fields, n_expected_fields, pos;
@@ -186,9 +186,9 @@ int main (int argc, char **argv)
 		GMT_inc_syntax ('I', 0);
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A Suppress connecting points using great circle arcs, i.e. connect by straight lines\n");
+		fprintf (stderr, "\t-A Suppress connecting points using great circle arcs, i.e., connect by straight lines\n");
 		fprintf (stderr, "\t   unless m or p is appended to first follow meridian then parallel, or vice versa.\n");
-		fprintf (stderr, "\t-F Force pixel registration for output grid [Default is gridline orientation]\n");
+		fprintf (stderr, "\t-F Force pixel registration for output grid [Default is gridline orientation].\n");
 		GMT_explain_option ('H');
 		fprintf (stderr, "\t-N sets values to use if point is outside, on the path, or inside.\n");
 		fprintf (stderr, "\t   NaN is a valid entry.  Default values are 0/0/1.\n");
@@ -342,7 +342,7 @@ int main (int argc, char **argv)
 
 		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
 
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
 
 		n_read = 0;
 		n_fields = GMT_input (fp,  &n_expected_fields, &in);

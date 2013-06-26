@@ -1,11 +1,11 @@
-.TH X2SYS_GET 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH X2SYS_GET 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
 x2sys_get \- Get track listing from the x2sys track index databases
 .SH SYNOPSIS
-BD(x2sys_get) \fB\-T\fPIT(TAG) [ \fB\-C\fP ] [ \fB\-D\fP ] [ \fB\-E\fP ] [ \fB\-F\fPIT(flags) ] 
-[ \fB\-L\fP[IT(list)] ] [ \fB\-N\fPIT(flags) ] [ \fB\-Qe\fP|BD(i) ]  [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-V\fP ] ] 
+\fBx2sys_get\fP \fB\-T\fP\fITAG\fP [ \fB\-C\fP ] [ \fB\-D\fP ] [ \fB\-E\fP ] [ \fB\-F\fP\fIflags\fP ] 
+[ \fB\-L\fP[\fIlist\fP] ] [ \fB\-N\fP\fIflags\fP ] [ \fB\-Qe\fP|\fBi\fP ]  [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-V\fP ] ] 
 .SH DESCRIPTION
-BD(x2sys_get) will return the names of the track data files in the x2sys data
+\fBx2sys_get\fP will return the names of the track data files in the x2sys data
 base for this TAG that match the given
 requirements.  You may choose a specific region and optionally ask
 only for tracks that meet certain data criteria.  Finally, you may
@@ -69,21 +69,21 @@ a certain region in the south Pacific, and have at least free air anomalies
 and bathymetry, try
 .br
 .sp
-BD(x2sys_get) \fB\-V\fP \fB\-T\fPMGD77 \fB\-R\fP180/240/-60/-30 \fB\-F\fPfaa,depth 
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPMGD77 \fB\-R\fP180/240/-60/-30 \fB\-F\fPfaa,depth 
 .br
 .sp
 To find all the tracks associated with the tag MGD77 that have depth but not
 twt, try
 .br
 .sp
-BD(x2sys_get) \fB\-V\fP \fB\-T\fPMGD77 \fB\-F\fPdepth \fB\-N\fPtwt
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPMGD77 \fB\-F\fPdepth \fB\-N\fPtwt
 .br
 .sp
 To find all the pairs associated with the tag MGD77 that might intersect each
 other, but only those pairs which involves tracks in your list new.lis, try
 .br
 .sp
-BD(x2sys_get) \fB\-V\fP \fB\-T\fPMGD77 \fB\-L\fPnew.lis > xpairs.lis
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPMGD77 \fB\-L\fPnew.lis > xpairs.lis
 .SH NOTE
 The tracks that are returned all have the requested data (\fB\-F\fP) within the
 specified region (\fB\-R\fP).  Furthermore, the columns of Y and N for other data types

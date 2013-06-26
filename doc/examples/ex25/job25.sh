@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 25
-#		$Id: job25.sh,v 1.9 2011/02/28 00:58:03 remko Exp $
+#		$Id: job25.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Display distribution of antipode types
 # GMT progs:	gmtset, grdlandmask, grdmath, grd2xyz, gmtmath, grdimage, pscoast, pslegend

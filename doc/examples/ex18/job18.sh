@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 18
-#		$Id: job18.sh,v 1.17 2011/02/28 00:58:03 remko Exp $
+#		$Id: job18.sh 9606 2011-10-19 17:52:57Z pwessel $
 #
 # Purpose:	Illustrates volumes of grids inside contours and spatial
 #		selection of data
@@ -12,7 +12,7 @@
 ps=../example_18.ps
 
 # Use spherical projection since SS data define on sphere
-gmtset ELLIPSOID Sphere D_FORMAT %lg
+gmtset ELLIPSOID Sphere D_FORMAT %g
 
 # Define location of Pratt seamount
 echo "-142.65 56.25" > pratt.d

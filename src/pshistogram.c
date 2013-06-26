@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pshistogram.c,v 1.80 2011/07/08 21:27:06 guru Exp $
+ *	$Id: pshistogram.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -104,7 +104,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG error = FALSE, automatic = FALSE;
 
-	char buffer[BUFSIZ], format[BUFSIZ], *not_used = NULL;
+	char buffer[BUFSIZ], format[BUFSIZ];
 	
 	GMT_LONG i, n_alloc = GMT_CHUNK, n;
 	GMT_LONG n_expected_fields, n_fields, n_read;
@@ -239,43 +239,43 @@ int main (int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 		fprintf (stderr, "\t-Jx|X for linear projection.  Scale in %s/units (or width in %s)\n", GMT_unit_names[gmtdefs.measure_unit], GMT_unit_names[gmtdefs.measure_unit]);
 		fprintf (stderr, "\t    Use / to specify separate x/y scaling.\n");
-		fprintf (stderr, "\t    If -JX is used then give axes lengths in %s rather than scales\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t    If -JX is used then give axes lengths in %s rather than scales.\n", GMT_unit_names[gmtdefs.measure_unit]);
 
-		fprintf (stderr, "\t-W sets the bin width\n");
+		fprintf (stderr, "\t-W sets the bin width.\n");
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-A will plot horizontal bars [Default is vertical]\n");
-		fprintf (stderr, "\t-C Use cpt-file to assign fill to bars based on the mid x-value\n");
-		fprintf (stderr, "\t-E set azimuth and elevation of viewpoint for 3-D perspective [180/90]\n");
-		fprintf (stderr, "\t-F will center the bins\n");
+		fprintf (stderr, "\t-A will plot horizontal bars [Default is vertical].\n");
+		fprintf (stderr, "\t-C Use cpt-file to assign fill to bars based on the mid x-value.\n");
+		fprintf (stderr, "\t-E set azimuth and elevation of viewpoint for 3-D perspective [180/90].\n");
+		fprintf (stderr, "\t-F will center the bins.\n");
 		GMT_fill_syntax ('G', "Select color/pattern for columns.");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I will inquire about min/max x and y.  No plotting is done\n");
-		fprintf (stderr, "\t   Append o to output the resulting x, y data\n");
-		fprintf (stderr, "\t   Append O to output all resulting x, y data even with y=0\n");
+		fprintf (stderr, "\t-I will inquire about min/max x and y.  No plotting is done.\n");
+		fprintf (stderr, "\t   Append o to output the resulting x, y data.\n");
+		fprintf (stderr, "\t   Append O to output all resulting x, y data even with y=0.\n");
 		GMT_explain_option ('K');
-		GMT_pen_syntax ('L', "specify pen to draw histogram");
+		GMT_pen_syntax ('L', "specify pen to draw histogram.");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
-		fprintf (stderr, "\t-Q plot a cumulative histogram\n");
+		fprintf (stderr, "\t-Q plot a cumulative histogram.\n");
 		GMT_explain_option ('r');
-		fprintf (stderr, "\t   If neither -R nor -I are set, w/e/s/n will be based on input data\n");
+		fprintf (stderr, "\t   If neither -R nor -I are set, w/e/s/n will be based on input data.\n");
 		fprintf (stderr, "\t-S Draws a stairs-step diagram [Default is bar histogram].\n");
-		fprintf (stderr, "\t-T Append column to use (0 is first) [0]\n");
+		fprintf (stderr, "\t-T Append column to use (0 is first) [0].\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_explain_option ('X');
 		fprintf (stderr, "\t-Z to choose type of vertical axis.  Select from\n");
-		fprintf (stderr, "\t   0 - Counts [Default]\n");
-		fprintf (stderr, "\t   1 - Frequency percent\n");
-		fprintf (stderr, "\t   2 - Log (1+counts)\n");
-		fprintf (stderr, "\t   3 - Log (1+frequency percent)\n");
-		fprintf (stderr, "\t   4 - Log10 (1+counts)\n");
-		fprintf (stderr, "\t   5 - Log10 (1+frequency percent)\n");
+		fprintf (stderr, "\t   0 - Counts [Default].\n");
+		fprintf (stderr, "\t   1 - Frequency percent.\n");
+		fprintf (stderr, "\t   2 - Log (1+counts).\n");
+		fprintf (stderr, "\t   3 - Log (1+frequency percent).\n");
+		fprintf (stderr, "\t   4 - Log10 (1+counts).\n");
+		fprintf (stderr, "\t   5 - Log10 (1+frequency percent).\n");
 		GMT_explain_option ('c');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
+		fprintf (stderr, "\t   Default is 2 input columns.\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('.');
 
@@ -340,7 +340,7 @@ int main (int argc, char **argv)
 	z_project.view_elevation = Ctrl->E.elevation;
 	F.cumulative = Ctrl->Q.active;
 	F.center_box = Ctrl->F.active;
-	if (Ctrl->I.active) gmtdefs.verbose = TRUE;
+	if (Ctrl->I.active && Ctrl->I.mode == 0) gmtdefs.verbose = TRUE;
 	if (!Ctrl->I.active && !project_info.region_supplied) automatic = TRUE;
 
 	if (Ctrl->C.active)  GMT_read_cpt (Ctrl->C.file);
@@ -358,7 +358,7 @@ int main (int argc, char **argv)
 	x_min = DBL_MAX;	x_max = -DBL_MAX;
 	n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : GMT_MAX_COLUMNS;
 
-	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (buffer, BUFSIZ, fp_in);
+	if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (buffer, BUFSIZ, fp_in);
 
 	while ((n_fields = GMT_input (fp_in, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {
 

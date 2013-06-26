@@ -1,11 +1,11 @@
-.TH GSHHS 1 "15 Jul 2011" "GMT 4.5.7" "Generic Mapping Tools"
+.TH GSHHG 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
 .SH NAME
-gshhs \- Extract ASCII listings from binary GSHHS or WDBII data files
+gshhg \- Extract ASCII listings from binary GSHHG data files
 .SH SYNOPSIS
-\fBgshhs\fP \fIbinaryfile.b\fP [ \fB\-A\fP\fIarea\fP ] [ \fB\-G\fP ] [ \fB\-I\fP\fIid\fP ] [ \fB\-L\fP ] [ \fB\-M\fP ] 
+\fBgshhg\fP \fIbinaryfile.b\fP [ \fB\-A\fP\fIarea\fP ] [ \fB\-G\fP ] [ \fB\-I\fP\fIid\fP ] [ \fB\-L\fP ] [ \fB\-M\fP ] 
 [ \fB\-N\fP\fIlevel\fP ] [ \fB\-Qe\fP|\fBi\fP ] > \fIasciifile.txt\fP
 .SH DESCRIPTION
-\fBgshhs\fP reads the binary coastline (GSHHS) or political boundary or river (WDBII) files and
+\fBgshhg\fP reads the binary coastline (GSHHS) or political boundary or river (WDBII) files and
 extracts an ASCII listing.  It automatically handles byte-swabbing between different
 architectures.  Optionally, only segment header info can be displayed.  The output header information has
 the format \fIID npoints  hierarchical-level source area f_area west east south north container ancestor\fP,
@@ -53,22 +53,22 @@ Use \fB\-Qe\fP to exclude them and \fB\-Qi\fP to exclude everything else instead
 To convert the entire intermediate GSHHS binary data to ASCII files for Octave/Mathlab, run
 .br
 .sp
-gshhs gshhs_i.b -G > gshhs_i.txt
+gshhg gshhs_i.b -G > gshhs_i.txt
 .br
 .sp
 To only get a listing of the headers for the river data set at full resolution, try
 .br
 .sp
-gshhs wdb_rivers_f.b -L > riverlisting.txt
+gshhg wdb_rivers_f.b -L > riverlisting.txt
 .br
 .sp
 To only extract lakes, excluding river-lakes, from the high resolution file, try
 .br
 .sp
-gshhs gshhs_h.b -Ee -N2 > all_lakes.txt
+gshhg gshhs_h.b -Ee -N2 > all_lakes.txt
 .SH TECHNICAL INFORMATION
-Users who wish to access the GSHHS or WDBII data directly from their custom programs should
-consult the gshhs.c and gshhs.h source code and familiarize themselves with the data format and
+Users who wish to access the GSHHG (GSHHS and WDBII) data directly from their custom programs should
+consult the gshhg.c and gshhg.h source code and familiarize themselves with the data format and
 how various information flags are packed into a single 4-byte integer.  While we do not maintain
 any Octave/Matlab code to read these files we are aware that both Mathworks and IDL have made
 such tools available to their users.  However, they tend not to update their code and our file
@@ -92,7 +92,7 @@ For more information on GSHHS processing, see Wessel and Smith (1996).
 \fBWDBII\fP.  These files contain sets of line segments not necessarily in any particular order.  Thus,
 it is not possible to extract information pertaining to just one river or one country.  Furthermore,
 the 4 lower resolutions derive directly from the full resolution by application of the Douglas-Peucker
-algorithm (see gshhs_dp), hence self-intersections are increasingly likely as the resolution is
+algorithm (see gshhg_dp), hence self-intersections are increasingly likely as the resolution is
 degraded.  Note that the river-lakes included in GSHHS are also duplicated in the WDBII river files
 so that each data set can be a stand-alone representation.  Users who wish to access both data sets
 can recognize the river-lakes features by examining the header structure (see the source code for
@@ -117,5 +117,5 @@ Wessel, P., and W. H. F. Smith, 1996, A global, self-consistent, hierarchical, h
 shoreline database, \fIJ. Geophys. Res., 101(B4)\fP, 8741-8743.
 .SH "SEE ALSO"
 .IR GMT (1),
-.IR gshhs_dp (1)
-.IR gshhstograss (1)
+.IR gshhg_dp (1)
+.IR gshhgtograss (1)

@@ -1,6 +1,6 @@
-#	$Id: Makefile,v 1.60 2011/03/24 17:55:32 remko Exp $
+#	$Id: Makefile 9945 2012-12-28 16:39:06Z pwessel $
 #
-#	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+#	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
 #	See LICENSE.TXT file for copying and redistribution conditions.
 #
 #	This program is free software; you can redistribute it and/or modify
@@ -38,11 +38,11 @@
 include config.mk	# GMT-specific settings determined by user & configure
 include common.mk	# Dependencies
 
-DEFINES		= -DGMT_SHARE_PATH=\"$(GMT_SHARE_PATH)\" $(TRIANGLE_D)
+DEFINES		= -DGMT_SHARE_PATH=\"$(GMT_SHARE_PATH)\" -DGMT_GSHHG_PATH=\"$(GSHHG_DIR)\" $(TRIANGLE_D)
 INCLUDES	= $(NETCDF_INC) $(GDAL_INC)
 
 LIB_O		= gmt_bcr.o gmt_calclock.o gmt_cdf.o gmt_customio.o gmt_grdio.o gmt_init.o gmt_io.o \
-		gmt_map.o gmt_nc.o gmt_proj.o gmt_shore.o gmt_stat.o gmt_support.o gmt_vector.o
+		gmt_map.o gmt_nc.o gmt_notposix.o gmt_proj.o gmt_shore.o gmt_stat.o gmt_support.o gmt_vector.o gmt_version.o
 
 LIBPS_O		= gmt_plot.o
 
@@ -74,7 +74,7 @@ MAN5		= gmtcolors.5
 all:		init $(ALLPROGS)
 
 init:		gmtmacros gmt_version.h gmt_notposix.h GMT
-		
+
 gmtmacros:
 		@if [ ! -s config.mk ]; then \
 			echo "src/config.mk is empty - you must rerun configure in the main GMT directory"; \

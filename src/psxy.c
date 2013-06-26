@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psxy.c,v 1.203 2011/07/08 21:27:06 guru Exp $
+ *	$Id: psxy.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -86,7 +86,7 @@ int main (int argc, char **argv)
 	GMT_LONG default_outline = FALSE, done, get_rgb = FALSE, resample, bar_clip, save_u = FALSE;
 	GMT_LONG old_GMT_world_map, error_x = FALSE, error_y = FALSE, def_err_xy = FALSE, clip_set = FALSE, fill_active;
 
-	char line[BUFSIZ], txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT], *not_used = NULL;
+	char line[BUFSIZ], txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT];
 
 	GMT_LONG i, n, n_alloc = 0, n_total_read = 0, plot_n, pos2x, pos2y;
 	GMT_LONG j, j0, n_files = 0, fno, xy_errors[2], two, three, four, error_type[2] = {0,0};
@@ -283,31 +283,31 @@ int main (int argc, char **argv)
 
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 
-		fprintf (stderr, "\t<infiles> is one or more files.  If no, read standard input\n");
+		fprintf (stderr, "\t<infiles> is one or more files.  If no, read standard input.\n");
 		GMT_explain_option ('j');
 		GMT_explain_option ('R');
 		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A Suppress drawing line segments as great circle arcs, i.e. draw straight lines unless\n");
+		fprintf (stderr, "\t-A Suppress drawing line segments as great circle arcs, i.e., draw straight lines unless\n");
 		fprintf (stderr, "\t   m or p is appended to first follow meridian then parallel, or vice versa.\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-C Use cpt-file to assign symbol colors based on z-value in 3rd column (requires -S)\n");
-		fprintf (stderr, "\t   Without -S, psxy excepts -m lines/polygons and looks for -Z<val> options in each multiheader\n");
-		fprintf (stderr, "\t   Then, color is applied to polygon fill (-L) or polygon pen\n");
+		fprintf (stderr, "\t-C Use cpt-file to assign symbol colors based on z-value in 3rd column (requires -S).\n");
+		fprintf (stderr, "\t   Without -S, psxy excepts -m lines/polygons and looks for -Z<val> options in each multiheader.\n");
+		fprintf (stderr, "\t   Then, color is applied to polygon fill (-L) or polygon pen.\n");
 		fprintf (stderr, "\t-D Offset symbol or line positions by <dx>/<dy> [no offset].\n");
 		fprintf (stderr, "\t-E means draw error bars for x, y, or both.  Add cap-width [%g]. Append pen attributes;\n", Ctrl->E.size);
 		fprintf (stderr, "\t   leading + applies cpt color (-C) to both symbol fill and error pen, - applies it to pen only.\n");
 		fprintf (stderr, "\t   If X or Y is used instead a box-and-whisker diagram is drawn instead, using data from 4\n");
-		fprintf (stderr, "\t   extra columns to get the 0 %%, 25 %%, 75 %%, and 100%% quantiles (point value is assumed to be 50%%)\n");
+		fprintf (stderr, "\t   extra columns to get the 0 %%, 25 %%, 75 %%, and 100%% quantiles (point value is assumed to be 50%%).\n");
 		fprintf (stderr, "\t   If n is appended after X (or Y) we expect a 5th extra column with the sample size which is needed to draw\n");
 		fprintf (stderr, "\t   a notched box-and whisker diagram (notch width represents uncertainty in median).\n");
 		fprintf (stderr, "\t   Finally, use -W, -G to control the appearance of the 25-75%% box.\n");
 		GMT_fill_syntax ('G', "Specify color or pattern [Default is no fill].");
-		fprintf (stderr, "\t   -G option can be present in all subheaders (requires -m and no -S)\n");
+		fprintf (stderr, "\t   -G option can be present in all subheaders (requires -m and no -S).\n");
 		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I sets a constant intensity used to modulate the fill color (requires -C or -G)\n");
+		fprintf (stderr, "\t-I sets a constant intensity used to modulate the fill color (requires -C or -G).\n");
 		GMT_explain_option ('K');
 		fprintf (stderr, "\t-L Force closed polygons.\n");
-		fprintf (stderr, "\t-N Do Not skip/clip symbols that fall outside map border [Default will ignore those outside]\n");
+		fprintf (stderr, "\t-N Do Not skip/clip symbols that fall outside map border [Default will ignore those outside].\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-S to select symbol type and symbol size (in %s).  Choose between\n", GMT_unit_names[gmtdefs.measure_unit]);
@@ -317,10 +317,10 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   If no size is specified, psxy expects the 3rd column to have sizes.\n");
 		fprintf (stderr, "\t   If no symbol is specified, psxy expects the last column to have symbol code.\n");
 		fprintf (stderr, "\t   [Note: if -C is selected then 3rd means 4th column, etc.]\n");
-		fprintf (stderr, "\t   Symbols A, C, D, G, H, I, N, S, T are adjusted to have same area as a circle of given size\n");
+		fprintf (stderr, "\t   Symbols A, C, D, G, H, I, N, S, T are adjusted to have same area as a circle of given size.\n");
 		fprintf (stderr, "\t   Bars: Append b<base> to give the y-value of the base [Default = 0]\n");
-		fprintf (stderr, "\t      Append u if width is in x-input units [Default is %s]\n", GMT_unit_names[gmtdefs.measure_unit]);
-		fprintf (stderr, "\t      Use upper case -SB for horizontal bars (base then refers to x and width may be in y-units [Default is vertical]\n");
+		fprintf (stderr, "\t      Append u if width is in x-input units [Default is %s].\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t      Use upper case -SB for horizontal bars (base then refers to x and width may be in y-units [Default is vertical].\n");
 		fprintf (stderr, "\t   Ellipses: the direction, major, and minor axis must be in input columns 3, 4 and 5.\n");
 		fprintf (stderr, "\t     If -SE rather than -Se is selected, psxy will expect azimuth, and axes in km\n");
 		fprintf (stderr, "\t     and convert azimuths based on the chosen map projection.  If projection is linear then\n");
@@ -330,8 +330,8 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t     and convert azimuths based on the chosen map projection.  If projection is linear then\n");
 		fprintf (stderr, "\t     we scale the rectangle dimension by the map scale.\n");
 		fprintf (stderr, "\t   Fronts: Give tickgap/ticklen[dir][type][:offset], where\n");
-		fprintf (stderr, "\t     dir    = Plot symbol to the l(eft) or r(ight) of front [Default is centered]\n");
-		fprintf (stderr, "\t     type   =  b(ox), c(ircle), f(ault), s(lip), t(riangle) [Default is f]\n");
+		fprintf (stderr, "\t     dir    = Plot symbol to the l(eft) or r(ight) of front [Default is centered].\n");
+		fprintf (stderr, "\t     type   =  b(ox), c(ircle), f(ault), s(lip), t(riangle) [Default is f].\n");
 		fprintf (stderr, "\t       box      : square when centered, half-square otherwise.\n"); 
 		fprintf (stderr, "\t       circle   : full when centered, half-circle otherwise.\n"); 
 		fprintf (stderr, "\t       fault    : centered cross-tick or tick only in the <dir> direction.\n"); 
@@ -341,22 +341,22 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   Kustom: append <symbolname> immediately after 'k'; this will look for <symbolname>.def in\n");
 		fprintf (stderr, "\t     the current directory, in $GMT_USERDIR, or in $GMT_SHAREDIR (in that order).\n");
 		GMT_list_custom_symbols ();
-		fprintf (stderr, "\t   Letter: append /<string> after symbol size, and optionally %%<font>\n");
+		fprintf (stderr, "\t   Letter: append /<string> after symbol size, and optionally %%<font>.\n");
 		fprintf (stderr, "\t   Mathangle: the start and stop directions of the math angle must be in input columns 3, 4.\n");
 		fprintf (stderr, "\t     Use -Smf for arrow at first angle, -Sml for last angle, -Smb for both [none].\n");
-		fprintf (stderr, "\t   Quoted line: Give [d|f|n|l|x]<info>[:<labelinfo>]\n");
+		fprintf (stderr, "\t   Quoted line: Give [d|f|n|l|x]<info>[:<labelinfo>].\n");
 		fprintf (stderr, "\t     <code><info> controls placement of labels along lines.  Choose among five algorithms:\n");
 		GMT_cont_syntax (7, 1);
 		fprintf (stderr, "\t     <labelinfo> controls the specifics of the labels.  Append what you need:\n");
 		GMT_label_syntax (7, 1);
 		fprintf (stderr, "\t   Rectangles: the x- and y-dimension must be in input columns 3 and 4.\n");
 		fprintf (stderr, "\t   Vectors: the direction and length must be in input columns 3 and 4.\n");
-		fprintf (stderr, "\t     Furthermore, <size> means arrowwidth/headlength/headwith [Default is %g/%g/%g]\n", S.v_width, S.h_length, S.h_width);
+		fprintf (stderr, "\t     Furthermore, <size> means arrowwidth/headlength/headwidth [Default is %g/%g/%g].\n", S.v_width, S.h_length, S.h_width);
 		fprintf (stderr, "\t     If -SV rather than -Sv is selected, psxy will expect azimuth and length\n");
-		fprintf (stderr, "\t     and convert azimuths based on the chosen map projection\n");
+		fprintf (stderr, "\t     and convert azimuths based on the chosen map projection.\n");
 		fprintf (stderr, "\t     Insert h(head), b(balance point), or t(ail) after -Sv|V to justify vector w.r.t. input (x,y).\n");
 		fprintf (stderr, "\t     Insert s(egment) if (x,y) is tail and columns 3 and 4 holds head (x,y).\n");
-		fprintf (stderr, "\t     Upper case H, B, T, S will give double-headed vector [Default is t]\n");
+		fprintf (stderr, "\t     Upper case H, B, T, S will give double-headed vector [Default is t].\n");
 		fprintf (stderr, "\t   Wedges: the start and stop directions of pie wedge must be in input columns 3, 4.\n");
 		fprintf (stderr, "\t     If -SW rather than -Sw is selected, psxy will expect two azimuths instead.\n");
 		fprintf (stderr, "\t-T Ignores all input files.\n");
@@ -369,7 +369,7 @@ int main (int argc, char **argv)
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
 		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is the required number of columns\n");
+		fprintf (stderr, "\t   Default is the required number of columns.\n");
 		GMT_explain_option ('f');
 		GMT_explain_option ('g');
 		GMT_explain_option ('m');
@@ -532,7 +532,7 @@ int main (int argc, char **argv)
 
 	resample = ((!Ctrl->A.active || Ctrl->A.mode) && GMT_IS_MAPPING);
 	/* Maximum step size (in degrees) used for interpolation of line segments along great circles (if requested) */
-	step = Ctrl->A.step / project_info.x_scale / project_info.DIST_M_PR_DEG;
+	step = Ctrl->A.step / project_info.x_scale / project_info.M_PR_DEG;
 
 	GMT_plotinit (argc, argv);
 
@@ -601,7 +601,7 @@ int main (int argc, char **argv)
 		}
 		if (GMT_io.io_header[GMT_IN]) {
 			for (i = 0; i < GMT_io.n_header_recs; i++) {
-				not_used = GMT_fgets (line, BUFSIZ, fp);
+				GMT_fgets (line, BUFSIZ, fp);
 				if (i == 0 && S.G.label_type == 2) GMT_extract_label (&line[1], S.G.label);	/* Set initial header as potential label */
 			}
 		}

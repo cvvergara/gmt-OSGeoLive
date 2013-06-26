@@ -1,4 +1,4 @@
-#		$Id: Makefile,v 1.11 2009/10/23 18:32:37 remko Exp $
+#		$Id: Makefile 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	Makefile for xgrid directory
 #	X Windows application xgridedit

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.h,v 1.31 2011/04/29 21:37:25 remko Exp $
+ *	$Id: gmt_plot.h 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -170,4 +170,5 @@ EXTERN_MSC void GMT_rotrect (double x, double y, double z, double size[], struct
 EXTERN_MSC void GMT_vector (double x0, double y0, double x1, double y1, double z0, double tailwidth, double headlength, double headwidth, double shape, struct GMT_FILL *fill, GMT_LONG outline);
 EXTERN_MSC void GMT_matharc (double x, double y, double z, double size[], double shape, struct GMT_PEN *pen, GMT_LONG status);
 EXTERN_MSC char *GMT_export2proj4(char *pStrOut);
+EXTERN_MSC struct EPS *GMT_epsinfo (char *program);
 #endif /* _GMT_PLOT_H */

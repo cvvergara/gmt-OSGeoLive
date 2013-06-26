@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu Jul 14 07:01:48 2011 -->
+<!-- CreationDate: Wed Jan  2 08:40:12 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -12,12 +12,12 @@
        pre   { margin-top: 0; margin-bottom: 0; }
        table { margin-top: 0; margin-bottom: 0; }
 </style>
-<title>GSHHS</title>
+<title>GSHHG</title>
 
 </head>
 <body bgcolor="#ffffff">
 
-<h1 align=center>GSHHS</h1>
+<h1 align=center>GSHHG</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -34,15 +34,14 @@
 <h2>NAME</h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">gshhs &minus;
-Extract ASCII listings from binary GSHHS or WDBII data
-files</p>
+<p style="margin-left:11%; margin-top: 1em">gshhg &minus;
+Extract ASCII listings from binary GSHHG data files</p>
 
 <a name="SYNOPSIS"></a>
 <h2>SYNOPSIS</h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>gshhs</b>
+<p style="margin-left:11%; margin-top: 1em"><b>gshhg</b>
 <i>binaryfile.b</i> [ <b>&minus;A</b><i>area</i> ] [
 <b>&minus;G</b> ] [ <b>&minus;I</b><i>id</i> ] [
 <b>&minus;L</b> ] [ <b>&minus;M</b> ] [
@@ -53,7 +52,7 @@ files</p>
 <h2>DESCRIPTION</h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>gshhs</b>
+<p style="margin-left:11%; margin-top: 1em"><b>gshhg</b>
 reads the binary coastline (GSHHS) or political boundary or
 river (WDBII) files and extracts an ASCII listing. It
 automatically handles byte-swabbing between different
@@ -198,21 +197,21 @@ and <b>&minus;Qi</b> to exclude everything else instead
 entire intermediate GSHHS binary data to ASCII files for
 Octave/Mathlab, run</p>
 
-<p style="margin-left:11%; margin-top: 1em">gshhs gshhs_i.b
+<p style="margin-left:11%; margin-top: 1em">gshhg gshhs_i.b
 -G &gt; gshhs_i.txt</p>
 
 <p style="margin-left:11%; margin-top: 1em">To only get a
 listing of the headers for the river data set at full
 resolution, try</p>
 
-<p style="margin-left:11%; margin-top: 1em">gshhs
+<p style="margin-left:11%; margin-top: 1em">gshhg
 wdb_rivers_f.b -L &gt; riverlisting.txt</p>
 
 <p style="margin-left:11%; margin-top: 1em">To only extract
 lakes, excluding river-lakes, from the high resolution file,
 try</p>
 
-<p style="margin-left:11%; margin-top: 1em">gshhs gshhs_h.b
+<p style="margin-left:11%; margin-top: 1em">gshhg gshhs_h.b
 -Ee -N2 &gt; all_lakes.txt</p>
 
 <a name="TECHNICAL INFORMATION"></a>
@@ -220,17 +219,17 @@ try</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Users who wish
-to access the GSHHS or WDBII data directly from their custom
-programs should consult the gshhs.c and gshhs.h source code
-and familiarize themselves with the data format and how
-various information flags are packed into a single 4-byte
-integer. While we do not maintain any Octave/Matlab code to
-read these files we are aware that both Mathworks and IDL
-have made such tools available to their users. However, they
-tend not to update their code and our file structure has
-evolved considerably over time, breaking their code. Here,
-some general technical comments on the binary data files are
-given. <b><br>
+to access the GSHHG (GSHHS and WDBII) data directly from
+their custom programs should consult the gshhg.c and gshhg.h
+source code and familiarize themselves with the data format
+and how various information flags are packed into a single
+4-byte integer. While we do not maintain any Octave/Matlab
+code to read these files we are aware that both Mathworks
+and IDL have made such tools available to their users.
+However, they tend not to update their code and our file
+structure has evolved considerably over time, breaking their
+code. Here, some general technical comments on the binary
+data files are given. <b><br>
 GSHHS</b>: These files contain completely closed polygons of
 continents and islands (level 1), lakes (level 2),
 islands-in-lakes (level 3) and ponds-in-islands-in-lakes
@@ -259,7 +258,7 @@ necessarily in any particular order. Thus, it is not
 possible to extract information pertaining to just one river
 or one country. Furthermore, the 4 lower resolutions derive
 directly from the full resolution by application of the
-Douglas-Peucker algorithm (see gshhs_dp), hence
+Douglas-Peucker algorithm (see gshhg_dp), hence
 self-intersections are increasingly likely as the resolution
 is degraded. Note that the river-lakes included in GSHHS are
 also duplicated in the WDBII river files so that each data
@@ -302,7 +301,7 @@ database, <i>J. Geophys. Res., 101(B4)</i>, 8741-8743.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><i><A HREF="GMT.html">GMT</A></i>(1),
-<i><A HREF="gshhs_dp.html">gshhs_dp</A></i>(1) <i><A HREF="gshhstograss.html">gshhstograss</A></i>(1)</p>
+<i><A HREF="gshhg_dp.html">gshhg_dp</A></i>(1) <i><A HREF="gshhgtograss.html">gshhgtograss</A></i>(1)</p>
 <hr>
 </body>
 </html>

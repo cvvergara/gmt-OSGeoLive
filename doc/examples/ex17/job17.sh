@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 17
-#		$Id: job17.sh,v 1.12 2011/02/28 00:58:03 remko Exp $
+#		$Id: job17.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Illustrates clipping of images using coastlines
 # GMT progs:	grd2cpt, grdgradient, grdimage, pscoast, pstext

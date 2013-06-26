@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 24
-#		$Id: job24.sh,v 1.10 2011/02/28 00:58:03 remko Exp $
+#		$Id: job24.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Purpose:	Extract subsets of data based on geospatial criteria
 # GMT progs:	gmtselect, pscoast, psxy, minmax

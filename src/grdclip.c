@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdclip.c,v 1.37 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdclip.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -133,7 +133,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\n\tOPTIONS:\n");
 		fprintf (stderr, "\t-Sa will set all data > high to the <above> value.\n");
 		fprintf (stderr, "\t-Sb will set all data < low to the <below> value.\n");
-		fprintf (stderr, "\t    above/below can be any number including NaN\n");
+		fprintf (stderr, "\t    <above> and <below> can be any number, including NaN.\n");
 		GMT_explain_option ('V');
 		GMT_explain_option ('.');
 		exit (EXIT_FAILURE);

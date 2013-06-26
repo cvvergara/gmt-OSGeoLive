@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_solve.c,v 1.48 2011/07/11 19:22:07 guru Exp $
+ *	$Id: x2sys_solve.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *      Copyright (c) 1999-2011 by P. Wessel
+ *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -579,7 +579,7 @@ int main (int argc, char **argv)
 		Na = "Na.dat";		B = "b.dat";
 		fp = fopen(Na, "w");
 		for (i = 0; i < m; i++) {
-			for (j = 0; j < m; j++) fprintf (fp, "%f\t", N[i*m+j]);
+			for (j = 0; j < m; j++) fprintf (fp, "%f%s", N[i*m+j], gmtdefs.field_delimiter);
 			fprintf (fp, "\n");
 		}
 		fclose(fp);

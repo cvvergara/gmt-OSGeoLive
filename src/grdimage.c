@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdimage.c,v 1.119 2011/07/08 21:27:06 guru Exp $
+ *	$Id: grdimage.c 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -275,29 +275,29 @@ int main (int argc, char **argv)
 		GMT_explain_option ('j');
 		fprintf (stderr,"\n\tOPTIONS:\n");
 		GMT_explain_option ('b');
-		fprintf (stderr, "\t-C color palette file to convert z to rgb\n");
+		fprintf (stderr, "\t-C color palette file to convert z to rgb.\n");
 #ifdef USE_GDAL
 		fprintf (stderr, "\t-D is used to read an image via GDAL.  Append r to equate image region to -R region.\n");
 #endif
 		fprintf (stderr, "\t-E sets dpi for the projected grid which must be constructed\n");
-		fprintf (stderr, "\t   if -Jx or -Jm is not selected [Default gives same size as input grid]\n");
+		fprintf (stderr, "\t   if -Jx or -Jm is not selected [Default gives same size as input grid].\n");
 		fprintf (stderr, "\t   Give i to do the interpolation in PostScript at device resolution.\n");
 		GMT_rgb_syntax ('G', "sets transparency color for images that otherwise would result in 1-bit images\n\t  ");
-		fprintf (stderr, "\t-I use illumination.  Append name of intensity grid file\n");
+		fprintf (stderr, "\t-I use illumination.  Append name of intensity grid file.\n");
 		GMT_explain_option ('K');
-		fprintf (stderr, "\t-M force monochrome image\n");
-		fprintf (stderr, "\t-N Do not clip image at the map boundary\n");
+		fprintf (stderr, "\t-M force monochrome image.\n");
+		fprintf (stderr, "\t-N Do not clip image at the map boundary.\n");
 		GMT_explain_option ('O');
 		GMT_explain_option ('P');
 		fprintf (stderr, "\t-Q use PS Level 3 colormasking to make nodes with z = NaN transparent.\n");
 		GMT_explain_option ('R');
 		fprintf (stderr, "\t-S Determines the interpolation mode (b = B-spline, c = bicubic, l = bilinear,\n");
-		fprintf (stderr, "\t   n = nearest-neighbor) [Default: bicubic]\n");
-		fprintf (stderr, "\t   Optionally, prepend - to switch off antialiasing [Default: on]\n");
+		fprintf (stderr, "\t   n = nearest-neighbor) [Default: bicubic].\n");
+		fprintf (stderr, "\t   Optionally, prepend - to switch off antialiasing [Default: on].\n");
 		fprintf (stderr, "\t   Append /<threshold> to change the minimum weight in vicinity of NaNs. A threshold of\n");
 		fprintf (stderr, "\t   1.0 requires all nodes involved in interpolation to be non-NaN; 0.5 will interpolate\n");
-		fprintf (stderr, "\t   about half way from a non-NaN to a NaN node [Default: 0.5]\n");
-		fprintf (stderr, "\t-T OBSOLETE: See man pages\n");
+		fprintf (stderr, "\t   about half way from a non-NaN to a NaN node [Default: 0.5].\n");
+		fprintf (stderr, "\t-T OBSOLETE: See man pages.\n");
 		GMT_explain_option ('U');
 		GMT_explain_option ('V');
 		GMT_explain_option ('X');
@@ -840,7 +840,7 @@ void GMT_set_proj_limits (struct GRD_HEADER *r, struct GRD_HEADER *g)
 
 	if (GMT_IS_MAPPING) {
 		all_lats = GMT_180_RANGE (g->y_max, g->y_min);
-		all_lons = GMT_360_RANGE (g->x_max, g->x_min);
+		all_lons = GMT_grd_is_global (g);
 		if (all_lons && all_lats) {	/* Whole globe, get rectangular box */
 			r->x_min = project_info.xmin;	r->x_max = project_info.xmax;
 			r->y_min = project_info.ymin;	r->y_max = project_info.ymax;

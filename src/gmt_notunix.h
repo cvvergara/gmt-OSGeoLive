@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_notunix.h,v 1.40 2011/06/21 23:26:25 jluis Exp $
+ *	$Id: gmt_notunix.h 9923 2012-12-18 20:45:53Z pwessel $
  *
- *	Copyright (c) 1991-2011 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -71,35 +71,35 @@
 
 /* These functions are available under Windows with MSVC compilers */
 
-#define HAVE_COPYSIGN 1
-#define HAVE_LOG2 0
-#define HAVE_LOG1P 0
-#define HAVE_HYPOT 1
-#define HAVE_ACOSH 0
-#define HAVE_ASINH 0
-#define HAVE_ATANH 0
-#define HAVE_RINT 0
-#define HAVE_IRINT 0
-#define HAVE_ISNANF 0
-#define HAVE_ISNAND 0
-#define HAVE_ISNAN 1
-#define HAVE_J0 1
-#define HAVE_J1 1
-#define HAVE_JN 1
-#define HAVE_Y0 1
-#define HAVE_Y1 1
-#define HAVE_YN 1
-#define HAVE_ERF 0
-#define HAVE_ERFC 0
-#define HAVE_STRDUP 1
-#define HAVE_STRTOD 1
+#define HAVE_COPYSIGN	1
+#undef  HAVE_LOG2
+#undef  HAVE_LOG1P
+#define HAVE_HYPOT		1
+#undef  HAVE_ACOSH
+#undef  HAVE_ASINH
+#undef  HAVE_ATANH
+#undef  HAVE_RINT
+#undef  HAVE_IRINT
+#undef  HAVE_ISNANF
+#undef  HAVE_ISNAND
+#define HAVE_ISNAN		1
+#define HAVE_J0			1
+#define HAVE_J1			1
+#define HAVE_JN			1
+#define HAVE_Y0			1
+#define HAVE_Y1			1
+#define HAVE_YN			1
+#undef  HAVE_ERF
+#undef  HAVE_ERFC
+#define HAVE_STRDUP		1
+#define HAVE_STRTOD		1
 #ifdef __INTEL_COMPILER 
-#define HAVE_SINCOS 1
+#define HAVE_SINCOS		1
 #else
-#define HAVE_SINCOS 0
+#undef  HAVE_SINCOS
 #endif
-#define HAVE_ALPHASINCOS 0
-#define WORDS_BIGENDIAN 0
+#undef  HAVE_ALPHASINCOS
+#undef  WORDS_BIGENDIAN
 
 /* Several math functions exist but the names have a leading underscore */
 
@@ -224,30 +224,30 @@ EXTERN_MSC void DOS_path_fix (char *dir);
 
 /* This applies specifically to O/S2 with EMX and Sun Free math library */
 
-#define HAVE_COPYSIGN 1
-#define HAVE_LOG1P 1
-#define HAVE_HYPOT 1
-#define HAVE_ACOSH 1
-#define HAVE_ASINH 1
-#define HAVE_ATANH 1
-#define HAVE_RINT 1
-#define HAVE_IRINT 0
-#define HAVE_ISNANF 1
-#define HAVE_ISNAND 1
-#define HAVE_ISNAN 1
-#define HAVE_J0 1
-#define HAVE_J1 1
-#define HAVE_JN 1
-#define HAVE_Y0 1
-#define HAVE_Y1 1
-#define HAVE_YN 1
-#define HAVE_ERF 1
-#define HAVE_ERFC 1
-#define HAVE_STRDUP 1
-#define HAVE_STRTOD 1
-#define HAVE_SINCOS 0
-#define HAVE_ALPHASINCOS 0
-#define WORDS_BIGENDIAN 0
+#define HAVE_COPYSIGN	1
+#define HAVE_LOG1P		1
+#define HAVE_HYPOT		1
+#define HAVE_ACOSH		1
+#define HAVE_ASINH		1
+#define HAVE_ATANH		1
+#define HAVE_RINT		1
+#undef  HAVE_IRINT
+#define HAVE_ISNANF		1
+#define HAVE_ISNAND		1
+#define HAVE_ISNAN		1
+#define HAVE_J0			1
+#define HAVE_J1			1
+#define HAVE_JN			1
+#define HAVE_Y0			1
+#define HAVE_Y1			1
+#define HAVE_YN			1
+#define HAVE_ERF		1
+#define HAVE_ERFC		1
+#define HAVE_STRDUP		1
+#define HAVE_STRTOD		1
+#undef  HAVE_SINCOS
+#undef  HAVE_ALPHASINCOS
+#undef  WORDS_BIGENDIAN
 
 #include <io.h>
 

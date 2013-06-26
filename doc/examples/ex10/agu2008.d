@@ -1,4 +1,4 @@
-#	$Id: agu2008.d,v 1.2 2009/01/22 23:55:39 guru Exp $
+#	$Id: agu2008.d 9545 2011-07-27 19:31:54Z pwessel $
 #	AGU Membership as of Dec 2008. Pr Jon Sears (jsears@agu.org)
 -100    42      38096	NA	North America
 -60     -20     647	SA	South America
