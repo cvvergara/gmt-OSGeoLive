@@ -1,4 +1,4 @@
-/*	$Id: utilmeca.c 9923 2012-12-18 20:45:53Z pwessel $
+/*	$Id: utilmeca.c 9989 2013-03-04 19:14:06Z pwessel $
  *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
@@ -8,6 +8,10 @@
 #include "pslib.h"	/* to have pslib environment */
 #include "meca.h"
 #include "nrutil.h"
+
+double null_axis_dip(double str1,double dip1,double str2,double dip2);
+double null_axis_strike(double str1,double dip1,double str2,double dip2);
+double proj_radius(double str1,double dip1,double str);
 
 /************************************************************************/
 void get_trans (double slon,double slat,double *t11,double *t12,double *t21,double *t22)
@@ -65,11 +69,6 @@ double  ps_mechanism(double x0, double y0, st_me meca, double size, int rgb[3], 
 /* Genevieve Patau */
 
 {
-
-	double null_axis_dip();
-	double null_axis_strike();
-	double proj_radius();
-
 	double x[1000], y[1000];
 	double pos_NP1_NP2 = sind(meca.NP1.str - meca.NP2.str);
 	double fault = (GMT_IS_ZERO (meca.NP1.rake) ? meca.NP2.rake / fabs(meca.NP2.rake) : meca.NP1.rake / fabs(meca.NP1.rake));
@@ -293,8 +292,6 @@ double ps_meca(double x0,double y0,st_me meca,double size)
 	GMT_LONG i;
 	GMT_LONG npoints;
 
-	double proj_radius();
-
 	double x[1000], y[1000];
 	double radius_size;
 	double str, radius, increment;
@@ -353,8 +350,6 @@ double ps_plan(double x0,double y0,st_me meca,double size,GMT_LONG num_of_plane)
 
 	GMT_LONG i;
 	GMT_LONG npoints, lineout=1;
-
-	double proj_radius();
 
 	double x[1000], y[1000];
 	double radius_size;
@@ -528,9 +523,6 @@ double computed_rake1(struct nodal_plane NP1)
 /* Genevieve Patau */
 
 {
-	double computed_strike1();
-	double computed_dip1();
-
 	double rake2, sinrake2;
 	double str2 = computed_strike1(NP1);
 	double dip2 = computed_dip1(NP1);

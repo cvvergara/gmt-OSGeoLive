@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:06 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:36 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -911,9 +911,9 @@ lines intersect the quoted lines. The format of each
 <i>start</i> and <i>stop</i> are either a specified point
 <i>lon/lat</i> or a 2-character <b>XY</b> key that uses the
 justification format employed in <b><A HREF="pstext.html">pstext</A></b> to indicate a
-point on the map, given as [LCR][BMT]. <b>L</b> will
-interpret the point pairs as defining great circles [Default
-is straight line].</p>
+point on the map, given as [LCR][BMT]. <b><br>
+L</b> will interpret the point pairs as defining great
+circles [Default is straight line].</p>
 
 <p style="margin-left:22%;"><b>n</b><i>n_label</i></p>
 
@@ -1703,9 +1703,9 @@ area 150E to 154E, 18N to 23N, with tickmarks every 1 degree
 and gridlines every 15 minutes, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psxy</b>
-DSDP.xy <b>&minus;R</b>150/154/18/23 <b>&minus;Jm</b>5<b>c
-&minus;Sc</b>0.25<b>c &minus;G</b>red
-<b>&minus;B</b>1<b>g</b>15<b>m</b> | lpr</p>
+DSDP.xy <b>&minus;R</b> 150/154/18/23 <b>&minus;Jm</b> 5<b>c
+&minus;Sc</b>0.25<b>c &minus;G</b> red <b>&minus;B</b>
+1<b>g</b>15<b>m</b> | lpr</p>
 
 <p style="margin-left:11%; margin-top: 1em">To plot the xyz
 values in the file quakes.xyzm as circles with size given by
@@ -1714,9 +1714,9 @@ in the third using the color palette cpt on a linear map,
 use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psxy</b>
-quakes.xyzm <b>&minus;R</b>0/1000/0/1000
-<b>&minus;JX</b>6<b>i &minus;Sc &minus;C</b>cpt
-<b>&minus;B</b>200 &gt; map.ps</p>
+quakes.xyzm <b>&minus;R</b> 0/1000/0/1000 <b>&minus;JX</b>
+6<b>i &minus;Sc &minus;C</b> cpt <b>&minus;B</b> 200 &gt;
+map.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To plot the
 file trench.xy on a Mercator map, with white triangles with
@@ -1724,9 +1724,9 @@ sides 0.25 inch on the left side of the line, spaced every
 0.8 inch, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psxy</b>
-trench.xy <b>&minus;R</b>150/200/20/50
-<b>&minus;Jm</b>0.15<b>i &minus;Sf</b>0.8<b>i</b>/0.1<b>ilt
-&minus;G</b>white <b>&minus;W &minus;B</b>10 | lpr br</p>
+trench.xy <b>&minus;R</b> 150/200/20/50 <b>&minus;Jm</b>
+0.15<b>i &minus;Sf</b>0.8<b>i</b>/0.1<b>ilt &minus;G</b>
+white <b>&minus;W &minus;B</b> 10 | lpr br</p>
 
 <p style="margin-left:11%; margin-top: 1em">To plot the
 data in the file misc.d as symbols determined by the code in
@@ -1735,8 +1735,8 @@ the last column, and with size given by the magnitude in the
 color palette cpt on a linear map, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psxy</b>
-misc.d <b>&minus;R</b>0/100/-50/100 <b>&minus;JX</b>6<b>i
-&minus;S &minus;C</b>cpt <b>&minus;B</b>20 &gt; t.ps</p>
+misc.d <b>&minus;R</b> 0/100/-50/100 <b>&minus;JX</b> 6<b>i
+&minus;S &minus;C</b> cpt <b>&minus;B</b> 20 &gt; t.ps</p>
 
 <a name="CUSTOM SYMBOLS"></a>
 <h2>CUSTOM SYMBOLS</h2>
@@ -2372,8 +2372,8 @@ your symbol, the <i>x, y</i> and other dimensions are
 relative to a symbol of size 1, and all the dimensions will
 be scaled by the actual symbol size chosen at run-time. To
 design a symbol, make a grid paper with <b>psbasemap
-&minus;R</b>-0.5/0.5/-0.5/0.5 <b>&minus;JX</b>4<b>i
-&minus;Ba</b>0.1g0.05 <b>&minus;P</b> &gt; grid.ps and draw
+&minus;R</b>-0.5/0.5/-0.5/0.5 <b>&minus;JX</b> 4<b>i
+&minus;Ba</b> 0.1g0.05 <b>&minus;P</b> &gt; grid.ps and draw
 your symbol, centering it on (0,0). For examples of symbols,
 see the set supplied with <b><A HREF="GMT.html">GMT</A></b> in
 <b>$GMT_SHAREDIR</b>/custom.</p>

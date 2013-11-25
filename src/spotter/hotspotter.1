@@ -1,4 +1,4 @@
-.TH HOTSPOTTER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH HOTSPOTTER 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 hotspotter \- Create CVA image from seamount flowlines 
 .SH SYNOPSIS
@@ -114,7 +114,7 @@ To create a CVA image from the Pacific (x,y,z,r,t) data in the file seamounts.d,
 using the DC85.d Euler poles, run
 .br
 .sp
-\fBhotspotter\fP seamounts.d \fB\-E\fPDC85.d \fB\-G\fPCVA.grd \fB\-R\fP130/260/-66/60 \fB\-I\fP10\fBm\fP \fB\-N\fP145 \fB\-T\fP \fB\-V\fP
+\fBhotspotter\fP seamounts.d \fB\-E\fP DC85.d \fB\-G\fP CVA.grd \fB\-R\fP 130/260/-66/60 \fB\-I\fP 10\fBm\fP \fB\-N\fP 145 \fB\-T\fP \fB\-V\fP
 .br
 .sp
 This file can then be plotted with \fBgrdimage\fP.

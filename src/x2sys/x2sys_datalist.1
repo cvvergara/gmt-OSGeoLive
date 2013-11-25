@@ -1,4 +1,4 @@
-.TH X2SYS_DATALIST 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH X2SYS_DATALIST 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 x2sys_datalist \- A generic data-extractor for ASCII or binary files
 .SH SYNOPSIS
@@ -77,7 +77,7 @@ imply anything about the input file; that information is conveyed via the system
 To extract all data from the old-style MGG supplement file c2104.gmt, recognized by the tag GMT:
 .br
 .sp
-\fBx2sys_datalist\fP c2104.gmt \fB\-T\fPGMT > myfile
+\fBx2sys_datalist\fP c2104.gmt \fB\-T\fP GMT > myfile
 .br
 .sp
 To make lon,lat, and depth input for \fBblockmean\fP and \fBsurface\fP using all the files
@@ -85,7 +85,7 @@ listed in the file tracks.lis and define by the tag TRK, but only the data that 
 area, and make output binary, run
 .br
 .sp
-\fBx2sys_datalist\fP =tracks.lis \fB\-T\fPTRK \fB\-F\fPlon,lat,depth \fB\-R\fP-40/-30/25/35 \fB\-bo\fP > alltopo_bin.xyz
+\fBx2sys_datalist\fP =tracks.lis \fB\-T\fP TRK \fB\-F\fP lon,lat,depth \fB\-R\fP-40/-30/25/35 \fB\-bo\fP > alltopo_bin.xyz
 .SH CORRECTIONS
 The correction table is an ASCII file with coefficients and parameters needed to carry out corrections.
 This table is usually produced by \fBx2sys_solve\fP.

@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:34 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:53 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -697,9 +697,9 @@ geodesics and with speeds given in knots, we may run</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>x2sys_init</b>
-LINE <b>&minus;V &minus;G &minus;D</b>line <b>&minus;Rg
-&minus;Ce &minus;Ndk &minus;NsN &minus;I</b>1/1
-<b>&minus;E</b>trk</p>
+LINE <b>&minus;V &minus;G &minus;D</b> line <b>&minus;Rg
+&minus;Ce &minus;Ndk &minus;NsN &minus;I</b> 1/1
+<b>&minus;E</b> trk</p>
 
 <p style="margin-left:11%; margin-top: 1em">where we have
 selected LINE to be our x2sys tag. When x2sys tools try to
@@ -732,7 +732,7 @@ listed in the file tracks.lis we may run this command:</p>
 
 
 <p style="margin-left:22%; margin-top: 1em"><b>x2sys_binlist
-&minus;V &minus;T</b>LINE :tracks.lis &gt; tracks.tbf</p>
+&minus;V &minus;T</b> LINE :tracks.lis &gt; tracks.tbf</p>
 
 <p style="margin-left:11%;"><b>Update index data
 base:</b></p>
@@ -742,7 +742,7 @@ are fed to <b><A HREF="x2sys_put.html">x2sys_put</A></b> which will insert the
 information into the TAG databases:</p>
 
 <p style="margin-left:22%; margin-top: 1em"><b>x2sys_put
-&minus;V &minus;T</b>LINE tracks.tbf</p>
+&minus;V &minus;T</b> LINE tracks.tbf</p>
 
 <p style="margin-left:11%;"><b>Search for data:</b></p>
 
@@ -754,8 +754,8 @@ find all the tracks which has both obs1 and obs3 inside the
 specified region, run</p>
 
 <p style="margin-left:22%; margin-top: 1em"><b>x2sys_get
-&minus;V &minus;T</b>LINE <b>&minus;R</b>20/40/-40/-20
-<b>&minus;F</b>obs1,obs3 &gt; tracks.tbf</p>
+&minus;V &minus;T</b> LINE <b>&minus;R</b> 20/40/-40/-20
+<b>&minus;F</b> obs1,obs3 &gt; tracks.tbf</p>
 
 <p style="margin-left:11%;"><b>MGD77[+] or GMT:</b></p>
 
@@ -771,9 +771,9 @@ MGD77 data from NGDC, try</p>
 
 
 <p style="margin-left:22%; margin-top: 1em"><b>x2sys_init</b>
-MGD77 <b>&minus;V &minus;D</b>mgd77 <b>&minus;E</b>mgd77
-<b>&minus;Rd &minus;Gd &minus;Nsn &minus;I</b>1/1
-<b>&minus;Wt</b>900 <b>&minus;Wd</b>5</p>
+MGD77 <b>&minus;V &minus;D</b> mgd77 <b>&minus;E</b> mgd77
+<b>&minus;Rd &minus;Gd &minus;Nsn &minus;I</b> 1/1
+<b>&minus;Wt</b> 900 <b>&minus;Wd</b> 5</p>
 
 <p style="margin-left:22%; margin-top: 1em">where we have
 chosen a 15 minute (900 sec) or 5 km threshold to indicate a

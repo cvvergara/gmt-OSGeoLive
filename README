@@ -1,6 +1,6 @@
 #	Information for installing GMT 4.x
 #
-#		$Id: README 9923 2012-12-18 20:45:53Z pwessel $
+#	$Id: README 10135 2013-11-05 17:31:30Z pwessel $
 #
 #	Copyright (c) 1991-2013, P. Wessel & W. H. F. Smith
 #
@@ -56,51 +56,24 @@ and installation details.
 
 Note there are three GMT tar archives available:
 
-1. gmt-4.5.9.tar.bz2		: The GMT distribution (GNU License)
-2. gmt-4.5.9-non-gpl.tar.bz2	: Optional, non-GNU License code (Triangle)
-3. gshhg-gmt-nc3-2.2.2.tar.bz2	: All five resolutions of GSHHG geography data
+1. gmt-4.5.11-src.tar.bz2           The GMT distribution (GNU License)
+2. gmt-4.5.11-non-gpl-src.tar.bz2   Optional, non-GNU License code (Triangle)
+3. gshhg-gmt-nc4-2.2.4.tar.gz       All five resolutions of GSHHG geography data
 
-The archives are available in bzip2 (*.bz2) format.
-If you do not have bzip2 installed you can obtain source or executables
-from http://www.bzip.org.
 For Windows users there are separate Windows installers available; this
 discussion only considers UNIX/Linux/OS X installations.
 
 1. Install netCDF library
 -------------------------
 
-GMT uses several functions in the netCDF library.  Copy the file
-netcdf.tar.Z from
-
-	ftp.unidata.ucar.edu
-
-using anonymous ftp.  Then uncompress/tar and follow their
-instructions for installation.  Make sure you have netcdf version
-3 or higher.  See the file VERSION in the netcdf/src directory.
-Note that on some systems, particularly Linux or others using the
-gcc compiler, you may run into two problems that normally are
-taken care of by our install script:
-  a) Due to a bug(?) in lex, the ncgen/ncgen.c file tries to
-     include values.h which does not exist.  The workaround is
-     to type "touch ncgen/values.h" from the src directory
-     before running make.
-  b) Unless you have an actual Fortran compiler installed you will
-     need to define the environmental variable DEFINES and set it
-     to "-Df2cFortran".  Under a Bourne shell this becomes
-     EXPORT DEFINES="-Df2cFortran" while under csh it becomes
-     setenv DEFINES "-Df2cFortran".
-
-After install, place the line
-
-	setenv NETCDFHOME /path_to_netcdf_directory
-
-in your .login file.  This path is usually something like
-/usr/local/netcdf-3.6.3 depending on where you put it.
-The GMT makefiles will use $NETCDFHOME to find the library.
-
-PS! On some newer platforms, in particular MacOS X, you may have
-to get a very recent version of netCDF. Version 3.6.3 available on the
-Unidata web site or through Fink (unstable) works well.
+GMT uses several functions in the netCDF-4 library
+(http://www.unidata.ucar.edu/).  Prepackaged versions of netCDF-4
+are available for virtually all UNIX distributions.  The package
+is usually named libnetcdf-dev (e.g., Ubuntu/Debian) or netcdf-dev.
+EPEL (http://fedoraproject.org/wiki/EPEL) provides recent packages
+for Red Hat, CentOS, and other Enterprise Linux.  MacPorts
+(http://www.macports.org/) and Fink (http://www.finkproject.org/)
+have recent packages for OSX.
 
 1b. OPTIONAL GDAL support
 -----------------------
@@ -125,17 +98,17 @@ moved the "share" directory elsewhere.
 You may ftp GMT from pub/gmt on any of the following sites.  Try
 the site that is closest to you to minimize transmission times:
 
-	Site				FTP address
+        Site                            FTP address
 --------------------------------------------------------------
-SOEST, U. of Hawaii			gmt.soest.hawaii.edu
-Lab for Satellite Altimetry, NOAA	ibis.grdl.noaa.gov
-IRIS, Washington, US			ftp.iris.washington.edu
-IAG-USP, U. of Sao Paulo, BRAZIL	ftp.iag.usp.br
-Dep. Geology, U. in Oslo, NORWAY	ftp.geologi.uio.no
-ISV, Hokkaido U, Sapporo, JAPAN		ftp.eos.hokudai.ac.jp
-U of Sydney, Sydney, AUSTRALIA		mirror.geosci.usyd.edu.au
-GDS, Vienna U. of Technology, AUSTRIA	gd.tuwien.ac.at
-TENET, Tertiary Education & Research Networks, SOUTH AFRICA	gmt.mirror.ac.za
+SOEST, U. of Hawaii                     gmt.soest.hawaii.edu
+Lab for Satellite Altimetry, NOAA       ibis.grdl.noaa.gov
+IRIS, Washington, US                    ftp.iris.washington.edu
+IAG-USP, U. of Sao Paulo, BRAZIL        ftp.iag.usp.br
+Dep. Geology, U. in Oslo, NORWAY        ftp.geologi.uio.no
+ISV, Hokkaido U, Sapporo, JAPAN         ftp.eos.hokudai.ac.jp
+GDS, Vienna U. of Technology, AUSTRIA   gd.tuwien.ac.at
+TENET, Tertiary Education & Research Networks, SOUTH AFRICA
+                                        gmt.mirror.ac.za
 
 Extract the files and put them in separate directory (need not be
 where you eventually want to install GMT).
@@ -183,28 +156,29 @@ If you want to override the default directories for the GMT
 main directory (current dir) and executable directory (cwd/bin)
 you should pass these directories on the configure command line.
 
-	--prefix=your-main-GMT-dir	Set main GMT directory [cwd]
-	--bindir=your-bindir		Set bin directory [PREFIX/bin]
-	--libdir=your-libdir		Set lib directory [PREFIX/lib]
-	--includedir=your-includedir	Set include directory [PREFIX/include]
-	--mandir=your-mandir		Set man directory [PREFIX/man]
-	--datadir=your-datadir		Set GMT share directory for coastlines [PREFIX/share]
-	--docdir=your-docdir		Set directory for documentation [PREFIX/share]
+  --prefix=your-main-GMT-dir      Set main GMT directory [cwd]
+  --bindir=your-bindir            Set bin directory [PREFIX/bin]
+  --libdir=your-libdir            Set lib directory [PREFIX/lib]
+  --includedir=your-includedir    Set include directory [PREFIX/include]
+  --mandir=your-mandir            Set man directory [PREFIX/man]
+  --datadir=your-datadir          Set GMT share directory for coastlines [PREFIX/share]
+  --docdir=your-docdir            Set directory for documentation [PREFIX/share]
 
 There are a few GMT-specific options in configure.  They are
 
-	--enable-netcdf=dir     Specify netCDF directory [/usr/local/netcdf]
-	--enable-matlab=dir     Specify Matlab directory [/usr/local/matlab]
-	--enable-octave		Select Octave interface (disables Matlab interface)
-	--enable-mex-mdir	Override where to place *.m functions for Matlab or Octave
-	--enable-mex-xdir	Override where to place *.mex functions for Matlab or Octave
-	--enable-shared		To make shared (dynamic) libraries
-	--enable-triangle	To use J. Shewchuk's fast triangulation
-	--enable-US		To use US (inch) instead of SI (cm) units
-	--enable-eps		Make Encapsulated PostScript by default [Freeform PS]
-	--enable-flock		Use file locking on .gmtcommands4 files
-	--disable-mex           Disable compilation of mex supplement which requires Matlab or Octave
-	--disable-xgrid         Disable compilation of xgrid supplement which requires X11
+  --with-nc-config=       Full path to nc-config [auto]
+  --enable-netcdf=dir     Directory with netCDF [auto]
+  --enable-matlab=dir     Specify Matlab directory [/usr/local/matlab]
+  --enable-octave         Select Octave interface (disables Matlab interface)
+  --enable-mex-mdir       Override where to place *.m functions for Matlab or Octave
+  --enable-mex-xdir       Override where to place *.mex functions for Matlab or Octave
+  --enable-shared         To make shared (dynamic) libraries
+  --enable-triangle       To use J. Shewchuk's fast triangulation
+  --enable-US             To use US (inch) instead of SI (cm) units
+  --enable-eps            Make Encapsulated PostScript by default [Freeform PS]
+  --enable-flock          Use file locking on .gmtcommands4 files
+  --disable-mex           Disable compilation of mex supplement which requires Matlab or Octave
+  --disable-xgrid         Disable compilation of xgrid supplement which requires X11
 
 By default, GMT will be made with static libraries.  If you system
 supports shared (dynamic) libraries you can select the option
@@ -220,7 +194,7 @@ use his routine you should append --enable-triangle.
 At run-time, GMT will initialize all default variables by reading
 either the share/gmtdefaults_SI or the share/gmtdefaults_US file.
 Both are installed, and the one that is read is given by the file
-share/gmt.conf.  This file will have either SI or US as the first
+share/gmt_setup.conf.  This file will have either SI or US as the first
 two columns on a line.  SI is default, use --enable-US to switch.
 The default values differ slightly between SI and US, mostly because
 it is inconvenient to convert, say, 1" to 2.54 cm; we use 2.5 cm
@@ -299,7 +273,7 @@ to store the run-time path to the shared netCDF library in the executables.
 From the main GMT directory (all make calls herein refers to the main
 GMT directory), type
 
-	make	(or make all)
+	make (or make all)
 
 which will compile/link all the programs.  After a successful
 compilation you may install the executables in the designated
@@ -371,23 +345,23 @@ GMT or simply perform data manipulation.  In addition, misc.
 code developed by us depend on GMT libraries.
 Currently, the supplemental archive include the directories:
 
-	dbase	  - Data extractor for global gridded data sets such
-		    as those on CD-ROM from NGDC.
-	gshhg	  - Data extractor for GSHHG polygons and lines.
-	imgsrc	  - Data extractor for Smith/Sandwell altimetry grids.
-	meca 	  - Plotting of focal mechanisms, velocity arrows,
-		    and error ellipses on maps.
-	mex	  - Matlab or Octave mex files for grid file I/O.
-	mgg	  - Programs for MGD-77 data in .gmt format.
-	mgd77	  - Programs for handling of native MGD77 files.
-	misc	  - psmegaplot, makepattern, gmtdigitize,
-		    gmtstitch, gmtdp, and nc2xy
-	segyprogs - Plotting SEGY seismic data sets.
-	sph	  - Spherical interpolation and triangulation.
-	spotter	  - Plate tectonic & kinematics applications.
-	x2sys	  - Track intersection (crossover) tools.
-	x_system  - Track intersection (crossover) tools (old version).
-	xgrid	  - X11 editor for grid files.
+  dbase     - Data extractor for global gridded data sets such
+              as those on CD-ROM from NGDC.
+  gshhg     - Data extractor for GSHHG polygons and lines.
+  imgsrc    - Data extractor for Smith/Sandwell altimetry grids.
+  meca      - Plotting of focal mechanisms, velocity arrows,
+              and error ellipses on maps.
+  mex       - Matlab or Octave mex files for grid file I/O.
+  mgg       - Programs for MGD-77 data in .gmt format.
+  mgd77     - Programs for handling of native MGD77 files.
+  misc      - psmegaplot, makepattern, gmtdigitize,
+              gmtstitch, gmtdp, and nc2xy
+  segyprogs - Plotting SEGY seismic data sets.
+  sph       - Spherical interpolation and triangulation.
+  spotter   - Plate tectonic & kinematics applications.
+  x2sys     - Track intersection (crossover) tools.
+  x_system  - Track intersection (crossover) tools (old version).
+  xgrid     - X11 editor for grid files.
 
 These are installed automatically, except for mex and xgrid which
 requires more configuration as they depend on non-GMT libraries.

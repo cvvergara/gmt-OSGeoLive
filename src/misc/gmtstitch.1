@@ -1,4 +1,4 @@
-.TH GMTSTITCH 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GMTSTITCH 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 gmtstitch \- Join line segments whose end points match within tolerance
 .SH SYNOPSIS
@@ -117,14 +117,14 @@ into as few complete lines as possible,
 assuming the end points slop could be up to 0.1 mm, run
 .br
 .sp
-\fBgmtstitch\fP segment_*.d \fB\-Tf\fP0.1 \fB\-m\fP > new_segments.d
+\fBgmtstitch\fP segment_*.d \fB\-Tf\fP 0.1 \fB\-m\fP > new_segments.d
 .br
 .sp
 To combine the digitized segments in the multisegment file my_lines.d (whose coordinates are in lon,lat)
 into as few complete lines as possible, assuming the end points slop could be up to 150 m, and write
 the complete segments to separate files called Map_segment_0001.dat,  Map_segment_0002.dat, etc., run
 .sp
-\fBgmtstitch\fP my_lines.d \fB\-Tf\fP0.15k \fB\-m\fP \fB\-D\fPMap_segment_%4.4d.dat
+\fBgmtstitch\fP my_lines.d \fB\-Tf\fP 0.15k \fB\-m\fP \fB\-D\fP Map_segment_%4.4d.dat
 .SH BUGS
 The line connection does not work if a line only has a single point.  However, gmtstitch will correctly add
 the point to the nearest segment.  Running gmtstitch again on the new set of lines will eventually connect

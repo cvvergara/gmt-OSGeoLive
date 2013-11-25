@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_synopsis.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_synopsis.h 10095 2013-10-10 02:05:06Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -51,7 +51,7 @@
 
 #define GMT_b_OPT	"-b[i|o][s|S|d|D[<ncol>]|c[<var1>/...]]"
 #define GMT_bi_OPT	"-bi[s|S|d|D[<ncol>]|c[<var1>/...]]"
-#define GMT_bo_OPT	"-bo[s|S|d|D[<ncol>]|c[<var1>/...]]"
+#define GMT_bo_OPT	"-bo[s|S|d|D[<ncol>]]"
 #define GMT_f_OPT	"-f[i|o]<colinfo>"
 #define GMT_fi_OPT	"-f<colinfo>"
 #define GMT_fo_OPT	"-f<colinfo>"

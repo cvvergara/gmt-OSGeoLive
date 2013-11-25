@@ -1,4 +1,4 @@
-.TH GRDGRADIENT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDGRADIENT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdgradient \- Compute directional derivative or gradient from 2-D grid file representing z(x,y)
 .SH SYNOPSIS
@@ -134,7 +134,7 @@ Requires \fB\-D\fP but makes \fB\-G\fP optional.
 Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
 .SH HINTS
 If you don't know what OPT(N) options to use to make an intensity file for\"'
-\fBgrdimage\fP or \fBgrdview\fP, a good first try is \fB\-Ne\fP0.6.
+\fBgrdimage\fP or \fBgrdview\fP, a good first try is \fB\-Ne\fP 0.6.
 .br
 .sp
 If you want to make several illuminated maps of subregions of a large  
@@ -173,7 +173,7 @@ normalized gradients
 imitating light sources in the north and west directions:
 .br
 .sp
-\fBgrdgradient\fP geoid.grd \fB\-A\fP0/270 \fB\-G\fPgradients.grd \fB 
+\fBgrdgradient\fP geoid.grd \fB\-A\fP 0/270 \fB\-G\fP gradients.grd \fB 
 \-Ne\fP0.6 \fP\-V\fP
 .br
 .sp
@@ -181,7 +181,7 @@ To find the azimuth orientations of seafloor fabric in the file
 topo.grd:
 .br
 .sp
-\fBgrdgradient\fP topo.grd \fB\-Dno\fP \fB\-G\fPazimuths.grd \fB\-V\fP
+\fBgrdgradient\fP topo.grd \fB\-Dno\fP \fB\-G\fP azimuths.grd \fB\-V\fP
 .br
 .sp
 .SH REFERENCES

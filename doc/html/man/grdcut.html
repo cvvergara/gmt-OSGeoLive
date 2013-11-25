@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:46 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:23 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -230,7 +230,7 @@ grid type is netCDF, the coordinates will be labeled
 &quot;time&quot; based on the attributes of the input data
 or grid (if any) or on the <b>&minus;f</b> or
 <b>&minus;R</b> options. For example, both <b>&minus;f0x
-&minus;f1t</b> and <b>&minus;R</b>90w/90e/0t/3t will result
+&minus;f1t</b> and <b>&minus;R</b> 90w/90e/0t/3t will result
 in a longitude/time grid. When the x, y, or z coordinate is
 time, it will be stored in the grid as relative time since
 epoch as specified by <b><A HREF="gmtdefaults.html#TIME_UNIT">TIME_UNIT</A></b> and <b><A HREF="gmtdefaults.html#TIME_EPOCH">TIME_EPOCH</A></b>
@@ -249,13 +249,13 @@ gridding near the edges, so you want to keep only the area
 between 150E - 160E and 10N - 30N, then:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdcut</b>
-grav_148_162_8_32.nc <b>&minus;G</b>grav_150_160_10_30.nc
-<b>&minus;R</b>150/160/10/30 <b>&minus;V</b> To return the
+grav_148_162_8_32.nc <b>&minus;G</b> grav_150_160_10_30.nc
+<b>&minus;R</b> 150/160/10/30 <b>&minus;V</b> To return the
 subregion of a grid such that any boundary strips where all
 values are entirely above 0, try</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdcut</b>
-bathy.nc <b>&minus;G</b>trimmed_bathy.nc <b>&minus;Z</b>-/0
+bathy.nc <b>&minus;G</b> trimmed_bathy.nc <b>&minus;Z</b>-/0
 <b>&minus;V</b></p>
 
 <a name="SEE ALSO"></a>

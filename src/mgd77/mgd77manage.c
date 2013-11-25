@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77manage.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: mgd77manage.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *    Copyright (c) 2005-2013 by P. Wessel
  * mgd77manage is used to (1) remove data columns from mgd77+ files
@@ -74,7 +74,7 @@ int main (int argc, char **argv)
 	
 	float *f = NULL;
 
-	double threshold = 1.0, i_dx = 0, i_dy = 0, x, y, match_value, single_val, dist_scale = 1.0;
+	double threshold = 1.0, x, y, match_value, single_val, dist_scale = 1.0;
 	double parameters[N_PAR], *xtmp, *coldnt = NULL, *colvalue = VNULL, *in = NULL, limits[2];
 
 	struct MGD77_CONTROL In;
@@ -577,11 +577,6 @@ int main (int argc, char **argv)
 		if (two_cols) coldnt = (double *) GMT_memory ((void *)coldnt, (size_t)n, sizeof (double), GMT_program);
 	}
 	
-	if (got_grid) {	/* Set inverse spacing */
-		i_dx = 1.0 / grd.x_inc;
-		i_dy = 1.0 / grd.y_inc;
-	}
-
 	MGD77_Ignore_Format (MGD77_FORMAT_ANY);	/* Reset to all formats OK, then ... */
 	MGD77_Ignore_Format (MGD77_FORMAT_M77);	/* disallow ASCII MGD77 files */
 	MGD77_Ignore_Format (MGD77_FORMAT_TBL);	/* and ASCII tables */

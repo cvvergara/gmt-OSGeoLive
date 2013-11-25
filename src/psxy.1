@@ -1,4 +1,4 @@
-.TH PSXY 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSXY 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 psxy \- Plot lines, polygons, and symbols on maps
 .SH SYNOPSIS
@@ -335,7 +335,7 @@ more comma-separated straight line segments.  Labels will be placed where these 
 quoted lines.  The format of each \fIline\fP specification is \fIstart/stop\fP, where \fIstart\fP and \fIstop\fP
 are either a specified point \fIlon/lat\fP or a 2-character \fBXY\fP key that uses the justification
 format employed in \fBpstext\fP to indicate a point on the map, given as [LCR][BMT].
-\fBL\fP will interpret the point pairs as defining great circles [Default is straight line].
+     \fBL\fP will interpret the point pairs as defining great circles [Default is straight line].
 .TP
 \fBn\fP\fIn_label\fP
 Specifies the number of equidistant labels for quoted lines line [1].
@@ -621,28 +621,28 @@ Mercator map at 5 cm/degree of the area 150E to 154E, 18N to 23N, with tickmarks
 and gridlines every 15 minutes, use
 .br
 .sp
-\fBpsxy\fP DSDP.xy \fB\-R\fP150/154/18/23 \fB\-Jm\fP5\fBc \-Sc\fP0.25\fBc\fP \fB\-G\fPred \fB\-B\fP1\fBg\fP15\fBm\fP | lpr
+\fBpsxy\fP DSDP.xy \fB\-R\fP 150/154/18/23 \fB\-Jm\fP 5\fBc \-Sc\fP0.25\fBc\fP \fB\-G\fP red \fB\-B\fP 1\fBg\fP15\fBm\fP | lpr
 .br
 .sp
 To plot the xyz values in the file quakes.xyzm as circles with size given by the magnitude in the
 4th column and color based on the depth in the third using the color palette cpt on a linear map, use
 .br
 .sp
-\fBpsxy\fP quakes.xyzm \fB\-R\fP0/1000/0/1000 \fB\-JX\fP6\fBi\fP \fB\-Sc\fP \fB\-C\fPcpt \fB\-B\fP200 > map.ps
+\fBpsxy\fP quakes.xyzm \fB\-R\fP 0/1000/0/1000 \fB\-JX\fP 6\fBi\fP \fB\-Sc\fP \fB\-C\fP cpt \fB\-B\fP 200 > map.ps
 .br
 .sp
 To plot the file trench.xy on a Mercator map, with white triangles with sides 0.25 inch on the left
 side of the line, spaced every 0.8 inch, use
 .br
 .sp
-\fBpsxy\fP trench.xy \fB\-R\fP150/200/20/50 \fB\-Jm\fP0.15\fBi \-Sf\fP0.8\fBi\fP/0.1\fBilt\fP \fB\-G\fPwhite \fB\-W\fP \fB\-B\fP10 | lpr
+\fBpsxy\fP trench.xy \fB\-R\fP 150/200/20/50 \fB\-Jm\fP 0.15\fBi \-Sf\fP0.8\fBi\fP/0.1\fBilt\fP \fB\-G\fP white \fB\-W\fP \fB\-B\fP 10 | lpr
 br
 .sp
 To plot the data in the file misc.d as symbols determined by the code in the last column, and with size given
 by the magnitude in the 4th column, and color based on the third column via the color palette cpt on a linear map, use
 .br
 .sp
-\fBpsxy\fP misc.d \fB\-R\fP0/100/-50/100 \fB\-JX\fP6\fBi\fP \fB\-S\fP \fB\-C\fPcpt \fB\-B\fP20 > t.ps
+\fBpsxy\fP misc.d \fB\-R\fP 0/100/-50/100 \fB\-JX\fP 6\fBi\fP \fB\-S\fP \fB\-C\fP cpt \fB\-B\fP 20 > t.ps
 .SH CUSTOM SYMBOLS
 \fBpsxy\fP and \fBpsxyz\fP allows users to define and plot their own custom symbols.
 This is done by encoding the symbol using a simple plotting code described below.  Put
@@ -711,7 +711,7 @@ y-dash:	\fIx	y	size\fP	\fBy\fP
 .sp
 When designing your symbol, the \fIx, y\fP and other dimensions are relative to a symbol of size 1, and all the
 dimensions will be scaled by the actual symbol size chosen at run-time.  To design a symbol, make a grid paper
-with \fBpsbasemap \-R\fP-0.5/0.5/-0.5/0.5 \fB\-JX\fP4\fBi\fP \fB\-Ba\fP0.1\gBg\gP0.05 \fB\-P\fP > grid.ps and
+with \fBpsbasemap \-R\fP-0.5/0.5/-0.5/0.5 \fB\-JX\fP 4\fBi\fP \fB\-Ba\fP 0.1\gBg\gP0.05 \fB\-P\fP > grid.ps and
 draw your symbol, centering it on (0,0).  For examples of symbols, see the set supplied with \fBGMT\fP in
 \fB$GMT_SHAREDIR\fP/custom.
 .SH BUGS

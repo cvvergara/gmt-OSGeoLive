@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdfft.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdfft.c 9988 2013-02-13 06:56:51Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -1029,7 +1029,7 @@ void do_spectrum (double *par, GMT_LONG give_wavelength)
 	 *	approximation of the integral.
 	 */
 
-	GMT_LONG	k, nk, nused, ifreq;
+	GMT_LONG	k, nk, ifreq, *nused = NULL;
 	double	delta_k, r_delta_k, freq, *power, eps_pow;
 	PFD	get_k;
 	char	format[GMT_TEXT_LEN], buffer[GMT_LONG_TEXT];
@@ -1063,33 +1063,36 @@ void do_spectrum (double *par, GMT_LONG give_wavelength)
 
 	/* Get an array for summing stuff:  */
 	power = (double *) GMT_memory (VNULL, (size_t)nk, sizeof(double), GMT_program);
-	for (k = 0; k < nk; k++) power[k] = 0.0;
+	nused = (GMT_LONG *) GMT_memory (VNULL, (size_t)nk, sizeof(GMT_LONG), GMT_program);
 
 	/* Loop over it all, summing and storing, checking range for r:  */
 
 	r_delta_k = 1.0 / delta_k;
 	
-	for (nused = 0, k = 2; k < ndatac; k+= 2) {
+	for (k = 2; k < ndatac; k+= 2) {
 		freq = (*get_k)(k);
 		ifreq = irint(fabs(freq)*r_delta_k) - 1;
 		if (ifreq < 0) ifreq = 0;	/* Might happen when doing r spectrum  */
 		if (ifreq >= nk) continue;	/* Might happen when doing r spectrum  */
 		power[ifreq] += (datac[k]*datac[k] + datac[k+1]*datac[k+1]);
-		nused++;
+		nused[ifreq]++;
 	}
 
 	/* Now get here when array is summed.  */
-	eps_pow = 1.0/sqrt((double)nused/(double)nk);
 	delta_k /= (2.0*M_PI);	/* Write out frequency, not wavenumber  */
 	sprintf (format, "%s\t%s\t%s\n", gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
 	powfactor = 4.0 / pow ((double)ndatac, 2.0);
 	for (k = 0; k < nk; k++) {
+		//eps_pow = 1.0/sqrt((double)nused[k]/(double)nk);
+		eps_pow = 1.0/sqrt((double)nused[k]);
 		freq = (k + 1) * delta_k;
 		if (give_wavelength) freq = 1.0/freq;
 		power[k] *= powfactor;
 		sprintf (buffer, format, freq, power[k], eps_pow * power[k]);
 		GMT_fputs (buffer, GMT_stdout);
 	}
+	GMT_free ((void *)power);
+	GMT_free ((void *)nused);
 }
 
 void fourt_stats (GMT_LONG nx, GMT_LONG ny, GMT_LONG *f, double *r, GMT_LONG *s, double *t)

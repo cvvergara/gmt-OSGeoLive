@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: gmtdigitize.c 9923 2012-12-18 20:45:53Z pwessel $
+ *    $Id: gmtdigitize.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -37,6 +37,11 @@
  *
  */
  
+#define _XOPEN_SOURCE
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include "gmt.h"
 
 #ifndef WIN32

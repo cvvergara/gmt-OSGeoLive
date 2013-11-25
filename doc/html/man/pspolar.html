@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:15 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:42 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -243,30 +243,17 @@ grid file and the <b>&minus;R</b> settings (and grid
 spacing, if applicable) are copied from the grid.</p></td>
 </table>
 
-
-<p style="margin-left:11%;"><b>&minus;D</b>longitude/latitude</p>
+<p style="margin-left:11%;"><b>&minus;D</b>
+longitude/latitude</p>
 
 <p style="margin-left:22%;">Maps the bubble at given
 longitude and latitude point.</p>
 
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="9%">
+<p style="margin-left:11%;"><b>&minus;M</b> size</p>
 
-
-
-<p style="margin-top: 1em" valign="top"><b>&minus;M</b>size</p> </td>
-<td width="2%"></td>
-<td width="78%">
-
-
-<p style="margin-top: 1em" valign="top">Sets the size of
-the beach ball to plot polarities in. <i>Size</i> is in inch
-(unless <b>c</b>, <b>i</b>, <b>m</b>, or <b>p</b> is
-appended).</p> </td>
-</table>
+<p style="margin-left:22%;">Sets the size of the beach ball
+to plot polarities in. <i>Size</i> is in inch (unless
+<b>c</b>, <b>i</b>, <b>m</b>, or <b>p</b> is appended).</p>
 
 
 <p style="margin-left:11%;"><b>&minus;S</b>&lt;symbol_type&gt;&lt;size&gt;</p>
@@ -290,12 +277,12 @@ between the option flag and the associated arguments.</p>
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="9%">
+<td width="3%">
 
 
 
 <p style="margin-top: 1em" valign="top"><b>&minus;B</b></p> </td>
-<td width="2%"></td>
+<td width="8%"></td>
 <td width="78%">
 
 
@@ -304,36 +291,28 @@ annotation and tickmark intervals; see the <b><A HREF="psbasemap.html">psbasemap
 man page for all the details.</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="9%">
+<td width="3%">
 
 
 
 <p style="margin-top: 1em" valign="top"><b>&minus;C</b></p> </td>
-<td width="2%"></td>
+<td width="8%"></td>
 <td width="78%">
 
 
 <p style="margin-top: 1em" valign="top">Offsets focal
 mechanisms to the latitude and longitude specified in the
 last two columns of the input file.</p></td>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="9%">
+</table>
 
+<p style="margin-left:11%;"><b>&minus;E</b> fill</p>
 
-
-<p style="margin-top: 1em" valign="top"><b>&minus;E</b>fill</p> </td>
-<td width="2%"></td>
-<td width="78%">
-
-
-<p style="margin-top: 1em" valign="top">Selects filling of
-symbols for stations in extensive quadrants. Set the shade
-(0&minus;255) or color (r/g/b) [Default is 250/250/250]. If
+<p style="margin-left:22%;">Selects filling of symbols for
+stations in extensive quadrants. Set the shade (0&minus;255)
+or color (r/g/b) [Default is 250/250/250]. If
 <b>&minus;E</b><i>fill</i> is the same as
 <b>&minus;F</b><i>fill</i>, use <b>&minus;e</b> to
-outline.</p> </td>
-</table>
+outline.</p>
 
 <p style="margin-left:11%;"><b>&minus;e</b>[pen]</p>
 
@@ -497,12 +476,12 @@ is 0.0/0/5/12].</p>
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="7%">
+<td width="9%">
 
 
-
-<p style="margin-top: 1em" valign="top"><b>&minus;t</b>pen</p> </td>
-<td width="4%"></td>
+<p style="margin-top: 1em" valign="top"><b>&minus;t</b>
+pen</p> </td>
+<td width="2%"></td>
 <td width="78%">
 
 
@@ -511,12 +490,12 @@ write station code. Default uses the default pen (see
 <b>&minus;W</b>).</p> </td>
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="7%">
+<td width="9%">
 
 
 
 <p style="margin-top: 1em" valign="top"><b>&minus;U</b></p> </td>
-<td width="4%"></td>
+<td width="2%"></td>
 <td width="78%">
 
 
@@ -535,12 +514,12 @@ will be in the locale set by the environment variable
 <b>TZ</b> (generally local time).</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="7%">
+<td width="9%">
 
 
 
 <p style="margin-top: 1em" valign="top"><b>&minus;V</b></p> </td>
-<td width="4%"></td>
+<td width="2%"></td>
 <td width="78%">
 
 
@@ -549,12 +528,12 @@ mode, which will send progress reports to stderr [Default
 runs &quot;silently&quot;].</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="7%">
+<td width="9%">
 
 
 
 <p style="margin-top: 1em" valign="top"><b>&minus;W</b></p> </td>
-<td width="4%"></td>
+<td width="2%"></td>
 <td width="78%">
 
 
@@ -625,9 +604,9 @@ number of plot copies. [Default is 1].</p></td>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>pspolar
-&minus;R</b>239/240/34/35.2 <b>&minus;JM</b>8 <b>&minus;N
-&minus;Sc</b>0.4 <b>&minus;H</b>1 <b>&minus;D</b>239.5/34.5
-<b>&minus;M</b>5 &lt;&lt;END&gt;! test.ps <br>
+&minus;R</b> 239/240/34/35.2 <b>&minus;JM</b> 8 <b>&minus;N
+&minus;Sc</b> 0.4 <b>&minus;H</b> 1 <b>&minus;D</b>
+239.5/34.5 <b>&minus;M</b> 5 &lt;&lt;END&gt;! test.ps <br>
 stat azim ih pol <br>
 0481 11 147 c <br>
 6185 247 120 d <br>
@@ -636,9 +615,9 @@ stat azim ih pol <br>
 0487 212 109 . <br>
 END <br>
 or <b><br>
-pspolar &minus;R</b>239/240/34/35.2 <b>&minus;JM</b>8
-<b>&minus;N &minus;Sc</b>0.4 <b>&minus;H</b>1
-<b>&minus;D</b>239.5/34.5 <b>&minus;M</b>5 <b>&minus;h</b>
+pspolar &minus;R</b> 239/240/34/35.2 <b>&minus;JM</b> 8
+<b>&minus;N &minus;Sc</b> 0.4 <b>&minus;H</b> 1
+<b>&minus;D</b> 239.5/34.5 <b>&minus;M</b> 5 <b>&minus;h</b>
 &lt;&lt;END&gt;! test.ps <br>
 Date Or. time stat azim ih <br>
 910223 1 22 0481 11 147 ipu0 <br>

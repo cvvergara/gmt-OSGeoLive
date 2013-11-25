@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:54 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:28 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -730,10 +730,10 @@ with vertical scale 20 mgal/cm, and looking at the surface
 from SW at 30 degree elevation, run</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdview</b>
-hawaii_grav.grd <b>&minus;Jl</b>18/24/1.5<b>c
-&minus;C</b>hawaii.cpt <b>&minus;Jz</b>0.05<b>c &minus;Qm
-&minus;N</b>-100 <b>&minus;E</b>225/30 <b>&minus;Wc</b> &gt;
-hawaii_grav_image.ps</p>
+hawaii_grav.grd <b>&minus;Jl</b> 18/24/1.5<b>c &minus;C</b>
+hawaii.cpt <b>&minus;Jz</b> 0.05<b>c &minus;Qm
+&minus;N</b>-100 <b>&minus;E</b> 225/30 <b>&minus;Wc</b>
+&gt; hawaii_grav_image.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To create a
 illuminated color perspective plot of the gridded data set
@@ -743,17 +743,17 @@ with intensities provided by the file intens.grd, and
 looking from the SE, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdview</b>
-image.grd <b>&minus;Jx</b>10.0<b>c &minus;C</b>color.rgb
-<b>&minus;Qs &minus;E</b>135/30 <b>&minus;I</b>intens.grd
+image.grd <b>&minus;Jx</b> 10.0<b>c &minus;C</b> color.rgb
+<b>&minus;Qs &minus;E</b> 135/30 <b>&minus;I</b> intens.grd
 &gt; image3D.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To make the
 same plot using the rastering option with dpi = 50, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdview</b>
-image.grd <b>&minus;Jx</b>10.0<b>c &minus;C</b>color.rgb
-<b>&minus;Qi</b>50 <b>&minus;E</b>135/30
-<b>&minus;I</b>intens.grd &gt; image3D.ps</p>
+image.grd <b>&minus;Jx</b> 10.0<b>c &minus;C</b> color.rgb
+<b>&minus;Qi</b> 50 <b>&minus;E</b> 135/30 <b>&minus;I</b>
+intens.grd &gt; image3D.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To create a
 color <i>PostScript</i> perspective plot of the gridded data
@@ -764,10 +764,10 @@ tickmarks every 1 degree, with intensities provided by the
 file topo_intens.grd, and looking from the SE, run</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdview</b>
-topography.grd <b>&minus;JM</b>6<b>i
-&minus;G</b>magnetics.grd <b>&minus;C</b>mag_intens.cpt
-<b>&minus;Qs &minus;E</b>140/30
-<b>&minus;I</b>topo_intens.grd &gt; draped3D.ps</p>
+topography.grd <b>&minus;JM</b> 6<b>i &minus;G</b>
+magnetics.grd <b>&minus;C</b> mag_intens.cpt <b>&minus;Qs
+&minus;E</b> 140/30 <b>&minus;I</b> topo_intens.grd &gt;
+draped3D.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">Given topo.grd
 and the Landsat image veggies.ras, first run <b><A HREF="gmt2rgb.html">gmt2rgb</A></b>
@@ -776,10 +776,10 @@ image over the topography and shade the result for good
 measure. The commands are</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b><A HREF="gmt2rgb.html">gmt2rgb</A></b>
-veggies.ras <b>&minus;G</b>layer_%c.grd <b><br>
-grdview</b> topo.grd <b>&minus;JM</b>6<b>i &minus;Qi
-&minus;E</b>140/30 <b>&minus;I</b>topo_intens.grd
-<b>&minus;G</b>layer_r.grd,layer_g.grd,layer_b.grd &gt;
+veggies.ras <b>&minus;G</b> layer_%c.grd <b><br>
+grdview</b> topo.grd <b>&minus;JM</b> 6<b>i &minus;Qi
+&minus;E</b> 140/30 <b>&minus;I</b> topo_intens.grd
+<b>&minus;G</b> layer_r.grd,layer_g.grd,layer_b.grd &gt;
 image.ps</p>
 
 <a name="REMARKS"></a>

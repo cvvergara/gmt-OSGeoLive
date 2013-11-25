@@ -1,4 +1,4 @@
-.TH GMTCONVERT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GMTCONVERT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 gmtconvert \- Converts, Pastes, and/or Extracts columns from ASCII and binary 1-D tables
 .SH SYNOPSIS
@@ -125,7 +125,7 @@ the \fBD_FORMAT\fP setting.
 To convert the binary file test.b (single precision) with 4 columns to ASCII:
 .br
 .sp
-\fBgmtconvert\fP test.b \fB\-bis\fP4 > test.dat
+\fBgmtconvert\fP test.b \fB\-bis\fP 4 > test.dat
 .br
 .sp
 To convert the multiple segment ASCII table test.d to a double precision binary file:
@@ -137,20 +137,20 @@ To convert the multiple segment ASCII table test.d to a double precision binary 
 You have an ASCII table with 6 columns and you want to plot column 5 versus column 0.  Try
 .br
 .sp
-\fBgmtconvert\fP table.d \fB\-F\fP5,0 | psxy ...
+\fBgmtconvert\fP table.d \fB\-F\fP 5,0 | psxy ...
 .br
 .sp
 If the file instead is the binary file results.b which has 9 single-precision values per record,
 we extract the last column and columns 4-6 and write ASCII with the command
 .br
 .sp
-\fBgmtconvert\fP results.b \fB\-F\fP8,4-6 -bi9s | psxy ...
+\fBgmtconvert\fP results.b \fB\-F\fP 8,4-6 -bi9s | psxy ...
 .br
 .sp
 You want to plot the 2nd column of a 2-column file left.d versus the first column of a file right.d:
 .br
 .sp
-\fBgmtconvert\fP left.d right.d \fB\-A\fP \fB\-F\fP1,2 | psxy ...
+\fBgmtconvert\fP left.d right.d \fB\-A\fP \fB\-F\fP 1,2 | psxy ...
 .br
 .sp
 To extract all segments in the file big_file.d whose headers contain the string "RIDGE AXIS", try

@@ -1,4 +1,4 @@
-.TH XYZ2GRD 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH XYZ2GRD 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 xyz2grd \- Converting an ASCII or binary table to grid file format
 .SH SYNOPSIS
@@ -120,6 +120,8 @@ one of several data types (all binary except \fBa\fP):
 .br
 	\fBh\fP  short 2-byte integer
 .br
+	\fBH\fP  unsigned short 2-byte integer
+.br
 	\fBi\fP  4-byte integer
 .br
 	\fBl\fP  long (4- or 8-byte) integer [architecture-dependent!]
@@ -179,7 +181,7 @@ by putting a backslash in front of it, or by placing the filename and suffix bet
 .SH GEOGRAPHICAL AND TIME COORDINATES
 When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
 attributes of the input data or grid (if any) or on the
-\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP 90w/90e/0t/3t will result in a longitude/time
 grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
 specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
 In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
@@ -187,21 +189,21 @@ In addition, the \fBunit\fP attribute of the time variable will indicate both th
 To create a grid file from the ASCII data in hawaii_grv.xyz, use
 .br
 .sp
-\fBxyz2grd\fP hawaii_grv.xyz \fB\-D\fPdegree/degree/mGal/1/0/"Hawaiian Gravity"/"GRS-80 Ellipsoid used"
-\fB\-G\fPhawaii_grv_new.grd \fB\-R\fP198/208/18/25 \fB\-I\fP5\fBm\fP \fB\-V\fP
+\fBxyz2grd\fP hawaii_grv.xyz \fB\-D\fP degree/degree/mGal/1/0/"Hawaiian Gravity"/"GRS-80 Ellipsoid used"
+\fB\-G\fP hawaii_grv_new.grd \fB\-R\fP 198/208/18/25 \fB\-I\fP 5\fBm\fP \fB\-V\fP
 .br
 .sp
 To create a grid file from the raw binary (3-column, single-precision) scanline-oriented data raw.b, use
 .br
 .sp
-\fBxyz2grd\fP raw.b \fB\-D\fPm/m/m/1/0/=/= \fB\-G\fPraw.grd \fB\-R\fP0/100/0/100 \fB\-I\fP1 \fB\-V\fP \fB\-Z\fP \fB\-b\fP3
+\fBxyz2grd\fP raw.b \fB\-D\fP m/m/m/1/0/=/= \fB\-G\fP raw.grd \fB\-R\fP 0/100/0/100 \fB\-I\fP 1 \fB\-V\fP \fB\-Z\fP \fB\-b\fP 3
 .br
 .sp
 To make a grid file from the raw binary USGS DEM (short integer) scanline-oriented data topo30. on the NGDC
 global relief Data CD-ROM, with values of -9999 indicate missing data, one must on some machine reverse the byte-order.  On such machines (like Sun), use
 .br
 .sp
-\fBxyz2grd\fP topo30. \fB\-D\fPm/m/m/1/0/=/= \fB\-G\fPustopo.grd \fB\-R\fP234/294/24/50 \fB\-I\fP30c \fB\-N\fP-9999 \fB\-B\fP \fB\-ZTLhw\fP
+\fBxyz2grd\fP topo30. \fB\-D\fP m/m/m/1/0/=/= \fB\-G\fP ustopo.grd \fB\-R\fP 234/294/24/50 \fB\-I\fP 30c \fB\-N\fP-9999 \fB\-B\fP \fB\-ZTLhw\fP
 .br
 .sp
 Say you have received a binary file with 4-byte floating points that were
@@ -209,7 +211,7 @@ written on a machine of different byte-order than yours.  You can swap the
 byte-order with
 .br
 .sp
-\fBxyz2grd\fP floats.bin \fB\-S\fPnew_floats.bin \fB\-V\fP \fB\-Zf\fP
+\fBxyz2grd\fP floats.bin \fB\-S\fP new_floats.bin \fB\-V\fP \fB\-Zf\fP
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR grd2xyz (1),

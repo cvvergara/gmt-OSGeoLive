@@ -1,4 +1,4 @@
-.TH PSXYZ 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSXYZ 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 psxyz \- Plot lines, polygons, and symbols in 3-D
 .SH SYNOPSIS
@@ -331,7 +331,7 @@ more comma-separated straight line segments.  Labels will be placed where these 
 quoted lines.  The format of each \fIline\fP specification is \fIstart/stop\fP, where \fIstart\fP and \fIstop\fP
 are either a specified point \fIlon/lat\fP or a 2-character \fBXY\fP key that uses the justification
 format employed in \fBpstext\fP to indicate a point on the map, given as [LCR][BMT].
-\fBL\fP will interpret the point pairs as defining great circles [Default is straight line].
+     \fBL\fP will interpret the point pairs as defining great circles [Default is straight line].
 .TP
 \fBn\fP\fIn_label\fP
 Specifies the number of equidistant labels for quoted lines line [1].
@@ -624,8 +624,8 @@ To plot blue columns (width = 1.25 cm) at the positions listed in the file heigh
 viewing it from the southeast at 30 degree elevation, use:
 .br
 .sp
-\fBpsxyz\fP heights.xyz \fB\-R\fP0/10/0/10/0/100 \fB\-Jx\fP1.25\fBc\fP \fB\-Jz\fP0.125\fBc\fP \fB\-So\fP1.25\fBc\fP
-\fB\-G\fPblue \fB\-B\fP2:XLABEL:/2:YLABEL:/10:ZLABEL::."3-D PLOT":15 \fB\-E\fP135/30 \fB\-Uc\fP \fB\-W\fP \fB\-P\fP > heights.ps
+\fBpsxyz\fP heights.xyz \fB\-R\fP 0/10/0/10/0/100 \fB\-Jx\fP 1.25\fBc\fP \fB\-Jz\fP 0.125\fBc\fP \fB\-So\fP 1.25\fBc\fP
+\fB\-G\fP blue \fB\-B\fP 2:XLABEL:/2:YLABEL:/10:ZLABEL::."3-D PLOT":15 \fB\-E\fP 135/30 \fB\-Uc\fP \fB\-W\fP \fB\-P\fP > heights.ps
 .SH BUGS
 No hidden line removal is employed for polygons and lines.  Symbols, however, are first sorted
 according to their distance from the viewpoint so that nearby symbols will overprint more distant

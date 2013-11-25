@@ -1,4 +1,4 @@
-.TH IMG2GRD 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH IMG2GRD 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 img2grd \- Extract region of img in Mercator or geographic form 
 .SH SYNOPSIS
@@ -53,7 +53,7 @@ range, and furthermore the grid increment in latitude does not match the longitu
 However, the extra resampling introduces small interpolation errors and should only
 be used if the output grid must match the requested region and have x_inc = y_inc.  In
 this case the region set by \fB\-R\fP must be given in multiples of the increment (.e.g,
-\fB\-R\fP0/45/45/72).
+\fB\-R\fP 0/45/45/72).
 .TP
 \fB\-L\fP
 With no other arguments, list all *.img files found in the directory pointed to by
@@ -73,10 +73,10 @@ will be average data value or NaN according to whether average constraint is > 0
 .TP
 \fB\-S\fP
 Multiply the img file values by \fIscale\fP before storing in grid file.  [Default is 1.0].  
-For recent img files: img topo files are stored in (corrected) meters [\fB\-S\fP1];
-free-air gravity files in mGal*10 [\fB\-S\fP0.1 to get mGal];
-vertical  deflection files in microradians*10 [\fB\-S\fP0.1 to get microradians],
-vertical gravity gradient files in Eotvos*50 [\fB\-S\fP0.02 to get Eotvos, or \fB\-S\fP0.002 to get mGal/km]).
+For recent img files: img topo files are stored in (corrected) meters [\fB\-S\fP 1];
+free-air gravity files in mGal*10 [\fB\-S\fP 0.1 to get mGal];
+vertical  deflection files in microradians*10 [\fB\-S\fP 0.1 to get microradians],
+vertical gravity gradient files in Eotvos*50 [\fB\-S\fP 0.02 to get Eotvos, or \fB\-S\fP 0.002 to get mGal/km]).
 .TP
 \fB\-V\fP
 Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
@@ -95,7 +95,7 @@ To extract data in the region \fB\-R\fP-40/40/-70/-30 from \fIworld_grav.img.7.2
 the Mercator gridding:
 .br
 .sp
-\fBimg2grd\fP world_grav.img.7.2 \fB\-G\fPmerc_grav.grd \fB\-R\fP-40/40/-70/-30 \fB\-M\fP \fB\-T\fP1 \fB\-V\fP
+\fBimg2grd\fP world_grav.img.7.2 \fB\-G\fP merc_grav.grd \fB\-R\fP-40/40/-70/-30 \fB\-M\fP \fB\-T\fP 1 \fB\-V\fP
 .br
 .sp
 Without the \fB\-M\fP option the same command will yield a geographic grid.

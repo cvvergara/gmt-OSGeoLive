@@ -1,4 +1,4 @@
-.TH PSMASK 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSMASK 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 psmask \- To clip or mask areas of no data on a map
 .SH SYNOPSIS
@@ -287,13 +287,13 @@ To make an overlay \fIPostScript\fP file that will mask out the regions of a con
 where there is no control data using clip polygons, use:
 .br
 .sp
-\fBpsmask\fP africa_grav.xyg \fB\-R\fP20/40/20/40 \fB\-I\fP5\fBm\fP \fB\-JM\fP10\fBi\fP \fB\-O\fP \fB\-K\fP > mask.ps
+\fBpsmask\fP africa_grav.xyg \fB\-R\fP 20/40/20/40 \fB\-I\fP 5\fBm\fP \fB\-JM\fP 10\fBi\fP \fB\-O\fP \fB\-K\fP > mask.ps
 .br
 .sp
 The same example but this time we use white tiling:
 .br
 .sp
-\fBpsmask\fP africa_grav.xyg \fB\-R\fP20/40/20/40 \fB\-I\fP5\fBm\fP \fB\-JM\fP10\fBi\fP \fB\-T\fP \fB\-O\fP \fB\-K\fP \fB\-G\fPwhite > mask.ps
+\fBpsmask\fP africa_grav.xyg \fB\-R\fP 20/40/20/40 \fB\-I\fP 5\fBm\fP \fB\-JM\fP 10\fBi\fP \fB\-T\fP \fB\-O\fP \fB\-K\fP \fB\-G\fP white > mask.ps
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR gmtcolors (5),

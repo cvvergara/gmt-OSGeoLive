@@ -1,4 +1,4 @@
-.TH PSWIGGLE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSWIGGLE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 pswiggle \- Plot anomaly along track on a map
 .SH SYNOPSIS
@@ -285,12 +285,12 @@ by a gray shade (in the range 0\-255); by a decimal color code (r/g/b, each in r
 See the \fBgmtcolors\fP manpage for more information and a full list of color names.
 .SH EXAMPLES
 To plot the magnetic anomaly stored in the file track.xym along track @ 1000 nTesla/cm (after removing a mean value of 32000 nTesla),
-using a 15-cm-wide Polar Stereographic map ticked
+using a 15 -cm-wide Polar Stereographic map ticked
 every 5 degrees in Portrait mode, with positive anomalies in red on a blue track of width 0.25 points, use
 .br
 .sp
-\fBpswiggle\fP track.xym \fB\-R\fP-20/10/-80/-60 \fB\-JS\fP0/90/15\fBc\fP \fB\-Z\fP1000 \fB\-B\fP5 \fB\-C\fP32000 \fB\-P\fP \fB\-G\fPred \fB\-T\fP0.25\fBp\fP,blue
-\fB\-S\fP1000 \fB\-V\fP > track_xym.ps
+\fBpswiggle\fP track.xym \fB\-R\fP-20/10/-80/-60 \fB\-JS\fP 0/90/15\fBc\fP \fB\-Z\fP 1000 \fB\-B\fP 5 \fB\-C\fP 32000 \fB\-P\fP \fB\-G\fP red \fB\-T\fP 0.25\fBp\fP,blue
+\fB\-S\fP 1000 \fB\-V\fP > track_xym.ps
 .SH BUGS
 Sometimes the (x,y) coordinates are not printed with enough significant
 digits, so the local perpendicular to the track swings around a lot.  To
@@ -304,7 +304,7 @@ awk '{ if (NR > 1) print atan2(y-$1, x-$2); y=$1; x=$2; }' yourdata.xyz | more
 Then if these numbers jump around a lot, you may do this:
 .br
 .sp
-awk '{ print NR, $0 }' yourdata.xyz | \fBfilter1d\fP \fB\-Fb\fP5 \fB\-N\fP4/0 \fB\-\-D_FORMAT\fP=\fIvalue\fP > smoothed.xyz
+awk '{ print NR, $0 }' yourdata.xyz | \fBfilter1d\fP \fB\-Fb\fP 5 \fB\-N\fP 4/0 \fB\-\-D_FORMAT\fP=\fIvalue\fP > smoothed.xyz
 .br
 .sp
 and plot this data set instead.

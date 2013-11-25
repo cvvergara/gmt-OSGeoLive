@@ -1,4 +1,4 @@
-.TH SPECTRUM1D 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH SPECTRUM1D 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 spectrum1d \- compute auto\- [and cross\- ] spectra from one [or two] timeseries.
 .SH SYNOPSIS
@@ -118,13 +118,13 @@ the \fBD_FORMAT\fP setting.
 Suppose data.g is gravity data in mGal, sampled every 1.5 km.  To write its power spectrum, in mGal**2-km, 
 to the file data.xpower, use  
 .sp
-\fBspectrum1d\fP data.g \fB\-S\fP256 \fB\-D\fP1.5 \fB\-N\fPdata
+\fBspectrum1d\fP data.g \fB\-S\fP 256 \fB\-D\fP 1.5 \fB\-N\fP data
 .sp
 Suppose in addition to data.g you have data.t, which is topography in meters sampled at the same points as 
 data.g.  To estimate various features of the transfer function, considering data.t as input and data.g as 
 output, use
 .sp
-paste data.t data.g | \fBspectrum1d\fP \fB\-S\fP256 \fB\-D\fP1.5 \fB\-N\fPdata \fB\-C\fP
+paste data.t data.g | \fBspectrum1d\fP \fB\-S\fP 256 \fB\-D\fP 1.5 \fB\-N\fP data \fB\-C\fP
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR grdfft (1)

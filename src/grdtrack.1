@@ -1,4 +1,4 @@
-.TH GRDTRACK 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDTRACK 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdtrack \- Sampling of a 2-D grid file along 1-D trackline (a sequence of x,y points)
 .SH SYNOPSIS
@@ -145,14 +145,14 @@ To sample the file hawaii_topo.grd along the SEASAT track track_4.xyg (An ASCII
 table containing longitude, latitude, and SEASAT-derived gravity, preceded by one header record):
 .br
 .sp
-\fBgrdtrack\fP track_4.xyg \fB\-G\fPhawaii_topo.grd \fB\-H\fP > track_4.xygt
+\fBgrdtrack\fP track_4.xyg \fB\-G\fP hawaii_topo.grd \fB\-H\fP > track_4.xygt
 .br
 .sp
 To sample the Sandwell/Smith IMG format file topo.8.2.img (2 minute predicted bathymetry on a Mercator
 grid) along the lon,lat coordinates given in the file cruise_track.xy, try
 .br
 .sp
-\fBgrdtrack\fP cruise_track.xy \fB\-G\fPtopo.8.2.img,1,1 > obs_and_predicted.d
+\fBgrdtrack\fP cruise_track.xy \fB\-G\fP topo.8.2.img,1,1 > obs_and_predicted.d
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR surface (1),

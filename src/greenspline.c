@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: greenspline.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: greenspline.c 10094 2013-10-06 03:44:34Z pwessel $
  *
  *	Copyright (c) 2008-2013 by P. Wessel
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -164,7 +164,7 @@ int main (int argc, char **argv)
 	GMT_LONG i, j, k, p, ii, n, m, nm, fno, n_files = 0, n_fields, n_read, n_args, dimension = 0;
 	GMT_LONG error = 0, n_expected_fields, normalize = 1, unit = 0, n_items;
 	GMT_LONG old_n_alloc, n_alloc, ij, ji, nxy, n_ok = 0;
-	GMT_LONG do_grid, done, nofile = TRUE;
+	GMT_LONG do_grid, done, nofile = TRUE, check_longitude;
 	char line[BUFSIZ];
 	char *method[N_METHODS] = {"minimum curvature Cartesian spline [1-D]",
 		"minimum curvature Cartesian spline [2-D]",
@@ -241,6 +241,7 @@ int main (int argc, char **argv)
 				case 'H':
 				case 'V':
 				case ':':
+				case 'f':
 				case 'b':
 				case '\0':
 					error += GMT_parse_common_options (argv[i], NULL, NULL, NULL, NULL);
@@ -251,10 +252,14 @@ int main (int argc, char **argv)
 				
 					if (argv[i][2] == 'g' && argv[i][3] == '\0') {	/* Got -Rg */
 						h.x_min = 0.0;	h.x_max = 360.0;	h.y_min = -90.0;	h.y_max = 90.0;
+						GMT_io.in_col_type[GMT_X] = GMT_IS_LON;
+						GMT_io.in_col_type[GMT_Y] = GMT_IS_LAT;
 						break;
 					}
 					if (argv[i][2] == 'd' && argv[i][3] == '\0') {	/* Got -Rd */
 						h.x_min = -180.0;	h.x_max = 180.0;	h.y_min = -90.0;	h.y_max = 90.0;
+						GMT_io.in_col_type[GMT_X] = GMT_IS_LON;
+						GMT_io.in_col_type[GMT_Y] = GMT_IS_LAT;
 						break;
 					}
 					if (!GMT_access (&argv[i][2], R_OK)) {	/* Gave a readable file, presumably a grid */		
@@ -420,7 +425,7 @@ int main (int argc, char **argv)
 		fprintf (stderr, "greenspline %s - Interpolation using a Green's function for splines in 1-3 dimensions\n\n", GMT_VERSION);
 		fprintf (stderr, "usage: greenspline [xyzfile] [-A[<format>,]<gradientfile>] [-R<xmin>/<xmax[/<ymin>/<ymax>[/<zmin>/<zmax>]]] [-I<dx>[/<dy>[/<dz>]] -Goutfile\n");
 		fprintf (stderr, "\t[-C<cut>[/<file>]] [-D<mode>] [-F] [%s] [%s] [-L] [-N<nodes>]\n", GMT_H_OPT, GMT_I_OPT);
-		fprintf (stderr, "\t[-Q<az>] [-Sc|t|r|p|q[<pars>]] [-T<maskfile>] [-V] [%s] [%s]\n\n", GMT_t_OPT, GMT_bi_OPT);
+		fprintf (stderr, "\t[-Q<az>] [-Sc|t|r|p|q[<pars>]] [-T<maskfile>] [-V] [%s] [%s] [%s]\n\n", GMT_t_OPT, GMT_f_OPT, GMT_bi_OPT);
 		
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 		
@@ -478,7 +483,8 @@ int main (int argc, char **argv)
 		fprintf (stderr, "\t   -Sq is a spherical surface spline in tension (Wessel & Becker, 2008); automatically sets -D4.\n");
 		fprintf (stderr, "\t      Use -SQ to speed up calculations by using precalculated lookup tables.\n");
 		fprintf (stderr, "\t      Append /n to set the (odd) number of points in the spline [%d].\n", N_X);
-		fprintf (stderr, "\t-T Mask grid file whose values are NaN or 0; its header implicitly sets -R, -I (and -F).\n");
+		fprintf (stderr, "\t-T Mask 2-D grid file whose values are NaN or 0; its header implicitly sets -R, -I (and -F).\n");
+		fprintf (stderr, "\t   Only compatible with 2-D interpolation.\n");
 		GMT_explain_option ('V');
 		GMT_explain_option (':');
 		GMT_explain_option ('i');
@@ -531,6 +537,10 @@ int main (int argc, char **argv)
 		fprintf (stderr, "%s: GMT SYNTAX ERROR -T option.  Must specify mask grid file name\n", GMT_program);
 		error = TRUE;
 	}
+	if (Ctrl->T.active && dimension != 2) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -T option.  Can only be used with 2-D interpolation\n", GMT_program);
+		error = TRUE;
+	}
 	if (Ctrl->N.active && !Ctrl->N.file) {
 		fprintf (stderr, "%s: GMT SYNTAX ERROR -N option.  Must specify node file name\n", GMT_program);
 		error = TRUE;
@@ -555,35 +565,34 @@ int main (int argc, char **argv)
 	if (Ctrl->S.mode == MITASOVA_MITAS_1993_2D ) Ctrl->S.mode += (dimension - 2);	
 	if (Ctrl->S.mode == PARKER_1994 || Ctrl->S.mode == WESSEL_BECKER_2008) Ctrl->D.mode = 4;	/* Automatically set */
 
-	GMT_io.in_col_type[GMT_X] = GMT_IS_LON;
-	GMT_io.in_col_type[GMT_Y] = GMT_IS_LAT;
-
 	Ctrl->D.mode--;	/* Since I added 0 to be 1-D later so no it is -1 */
 	switch (Ctrl->D.mode) {	/* Set pointers to distance functions */
 		case -1:	/* Cartesian 1-D x data */
 			GMT_distance_func = NULL;
 			GMT_azimuth_func = NULL;
-			GMT_io.in_col_type[GMT_X] = GMT_IS_FLOAT;
-			GMT_io.in_col_type[GMT_Y] = GMT_IS_FLOAT;
 			normalize = 2;
 			break;
 		case 0:	/* Cartesian 2-D x,y data */
 			GMT_distance_func = GMT_cartesian_dist;
 			GMT_azimuth_func = GMT_az_backaz_cartesian;
-			GMT_io.in_col_type[GMT_X] = GMT_IS_FLOAT;
-			GMT_io.in_col_type[GMT_Y] = GMT_IS_FLOAT;
 			normalize = 2;
 			break;
 		case 1:	/* 2-D lon, lat data, but scale to Cartesian flat earth */
+			GMT_io.in_col_type[GMT_X] = GMT_IS_LON;
+			GMT_io.in_col_type[GMT_Y] = GMT_IS_LAT;
 			GMT_distance_func = GMT_flatearth_dist_km;
 			GMT_azimuth_func = GMT_az_backaz_flatearth;
 			normalize = 2;
 			break;
 		case 2:	/* 2-D lon, lat data, use spherical distances (geodesic if ELLIPSOID is nor sphere) */
+			GMT_io.in_col_type[GMT_X] = GMT_IS_LON;
+			GMT_io.in_col_type[GMT_Y] = GMT_IS_LAT;
 			GMT_distance_func = (PFD)((GMT_IS_SPHERICAL) ? GMT_geodesic_dist_km : GMT_great_circle_dist_km);
 			GMT_azimuth_func = (GMT_IS_SPHERICAL) ? GMT_az_backaz_sphere : GMT_az_backaz_geodesic;
 			break;
 		case 3:	/* 2-D lon, lat data, and Green's function needs cosine of spherical or geodesic distance */
+			GMT_io.in_col_type[GMT_X] = GMT_IS_LON;
+			GMT_io.in_col_type[GMT_Y] = GMT_IS_LAT;
 			GMT_distance_func = (PFD)((GMT_IS_SPHERICAL) ? GMT_geodesic_dist_cos : GMT_great_circle_dist_cos);
 			GMT_azimuth_func = (GMT_IS_SPHERICAL) ? GMT_az_backaz_sphere : GMT_az_backaz_geodesic;
 			break;
@@ -612,6 +621,7 @@ int main (int argc, char **argv)
 	done = FALSE;
 	n_args = (argc > 1) ? argc : 2;
 	n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : dimension + 1;
+	check_longitude = (dimension == 2 && (Ctrl->D.mode == 1 || Ctrl->D.mode == 2));
 
 	n_alloc = GMT_CHUNK;
 	X = (double **) GMT_memory (VNULL, (size_t)n_alloc, sizeof (double *), GMT_program);
@@ -646,7 +656,11 @@ int main (int argc, char **argv)
 				fprintf (stderr, "%s: Mismatch between actual (%ld) and expected (%ld) fields near line %ld (skipped)\n", GMT_program, n_fields, n_expected_fields, n_read);
 				continue;
 			}
-
+			if (check_longitude) {
+				/* Ensure geographic longitudes fit the range */
+				if (in[0] < h.x_min && (in[0] + 360.0) < h.x_max) in[0] += 360.0;
+				else if (in[0] > h.x_max && (in[0] - 360.0) > h.x_min) in[0] -= 360.0;
+			}
 			for (k = 0; k < dimension; k++) X[n][k] = in[k];
 			obs[n] = in[dimension];
 			n++;
@@ -776,6 +790,7 @@ int main (int argc, char **argv)
 		}
 		GMT_grd_init (&h, argc, argv, TRUE);
 		for (ij = 0; ij < nxy; ij++) if (GMT_is_fnan (w[ij])) n_ok--;
+		Z.nz = 1;
 	}
 	else if (Ctrl->N.active) {	/* Read output locations from file */
 		GMT_import_table ((void *)Ctrl->N.file, GMT_IS_FILE, &T, 0.0, FALSE, FALSE, FALSE);

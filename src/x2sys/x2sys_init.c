@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_init.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: x2sys_init.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -32,7 +32,7 @@ extern void x2sys_set_home (void);
 
 int main (int argc, char **argv)
 {
-	char *sfile = CNULL, *TAG = CNULL, *suffix = NULL;
+	char *sfile = CNULL, *TAG = CNULL;
 	time_t right_now;
 #ifndef WIN32
 	struct passwd *pw = NULL;
@@ -40,11 +40,11 @@ int main (int argc, char **argv)
 	char tag_file[BUFSIZ], track_file[BUFSIZ], bin_file[BUFSIZ], def_file[BUFSIZ];
 	char path_file[BUFSIZ], path[BUFSIZ], line[BUFSIZ];
 
-	GMT_LONG error = FALSE, geographic = FALSE, force = FALSE;
+	GMT_LONG error = FALSE, force = FALSE;
 
 	FILE *fp = NULL, *fp_def = NULL;
 
-	int n_tags = 0, i, n_found = 0, geodetic = 0, r_entry, i_entry, d_entry, d_start;
+	int n_tags = 0, i, n_found = 0, r_entry, i_entry, d_entry, d_start;
 	int e_entry,  g_entry, m_entry, wd_entry, wt_entry, n_entry[2], c_entry, n_n = 0;
 
 	double x_min = 0.0, x_max = 0.0, y_min = 0.0, y_max = 0.0, bin_x = 0.0, bin_y = 0.0;
@@ -83,13 +83,9 @@ int main (int argc, char **argv)
 					d_entry = i;
 					break;
 				case 'E':
-					suffix = &argv[i][2];
 					e_entry = i;
 					break;
 				case 'G':	/* Geographical coordinates, set discontinuity */
-					geographic = TRUE;
-					geodetic = 0;
-					if (argv[i][2] == 'd') geodetic = 2;
 					g_entry = i;
 					break;
 				case 'F':

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtmath.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmtmath.c 10073 2013-07-09 00:07:18Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -60,6 +60,7 @@
  *		08-OCT-2008 RS: Added INRANGE (which was added to grdmath on 28-MAR-2004, but not to gmtmath)
  */
 
+#define _XOPEN_SOURCE
 #include "gmt.h"
 
 #define GMTMATH_ARG_IS_OPERATOR	 0
@@ -708,7 +709,7 @@ void GMT_read_table (struct GMTMATH_INFO *info, char *file, struct TABLE_HEADER 
 	FILE *fp;
 
 	n_expected_fields = (GMT_io.binary[GMT_IN]) ? GMT_io.ncol[GMT_IN] : GMT_MAX_COLUMNS;
-
+	if (!init && info->header.n_col) n_expected_fields = info->header.n_col;	/* Know what to expect */
 	if (!strcmp (file, "STDIN")) {
 		fp = GMT_stdin;
 #ifdef SET_IO_MODE
@@ -2065,7 +2066,7 @@ void table_MAX (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constant,
 	for (i = 0; i < n_row; i++) {
 		a = (constant[prev]) ? factor[prev] : stack[prev][col][i];
 		b = (constant[last]) ? factor[last] : stack[last][col][i];
-		stack[prev][col][i] = MAX (a, b);
+		stack[prev][col][i] = (GMT_is_dnan (a) || GMT_is_dnan (b)) ? GMT_d_NaN : MAX (a, b);
 	}
 }
 
@@ -2120,7 +2121,7 @@ void table_MIN (struct GMTMATH_INFO *info, double **stack[], GMT_LONG *constant,
 	for (i = 0; i < n_row; i++) {
 		a = (constant[prev]) ? factor[prev] : stack[prev][col][i];
 		b = (constant[last]) ? factor[last] : stack[last][col][i];
-		stack[prev][col][i] = MIN (a, b);
+		stack[prev][col][i] = (GMT_is_dnan (a) || GMT_is_dnan (b)) ? GMT_f_NaN : MIN (a, b);
 	}
 }
 
@@ -2979,11 +2980,11 @@ void solve_LSQFIT (struct GMTMATH_INFO *info, double **stack[], GMT_LONG last, G
 		}
 		/* Solution x = v * lambda^-1 * v' * B */
 
-		/* First do d = V' * B, so x = v * lambda^-1 * d */
-		for (j = 0; j < n; j++) for (k = 0, d[j] = 0.0; k < n; k++) d[j] += v[k*n+j] * B[k];
-		/* Then do d = lambda^-1 * d by setting small lambda's to zero */
+		/* First do d = v' * B, so x = v * lambda^-1 * d */
+		for (j = 0; j < n; j++) for (k = 0, d[j] = 0.0; k < n; k++) d[j] += v[j*n+k] * B[k];
+		/* Then do d = d / lambda by first setting small lambda's to zero */
 		for (j = k = 0; j < n; j++) {
-			if (lambda[j] < 1.0e7) {
+			if (lambda[j] < 1.0e-7) {
 				d[j] = 0.0;
 				k++;
 			}
@@ -2993,11 +2994,12 @@ void solve_LSQFIT (struct GMTMATH_INFO *info, double **stack[], GMT_LONG last, G
 		if (k) fprintf (stderr,"%s: %ld eigenvalues < 1.0e-7 set to zero to yield a stable solution\n", GMT_program, k);
 
 		/* Finally do x = v * d */
-		for (j = 0; j < n; j++) for (k = 0; k < n; k++) x[j] += v[j*n+k] * d[k];
+		for (j = 0; j < n; j++) for (k = 0; k < n; k++) x[j] += v[k*n+j] * d[k];
 
 		GMT_free ((void *)b);
 		GMT_free ((void *)z);
 		GMT_free ((void *)v);
+		GMT_free ((void *)lambda);
 	}
 	else {	/* Decomposition worked, now solve system */
 		GMT_chol_solv (N, x, B, n, n);

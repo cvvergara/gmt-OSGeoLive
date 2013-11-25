@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: project.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: project.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -102,7 +102,7 @@ int main (int argc, char **argv)
 	GMT_LONG	n_files = 0, fno, n_args, n_fields, n_expected_fields;
 	GMT_LONG	n_z = 0, n_items, output_choice[PROJECT_N_FARGS];
 
-	double	xx, yy, cos_theta, sin_theta, sin_lat_to_pole = 1.0;
+	double	xx, yy, cos_theta, sin_theta;
 	double	theta = 0.0, d_along, *in = NULL, *out = (double *)NULL;
 
 	double	a[3], b[3], x[3], xt[3], pole[3], center[3], e[9];
@@ -119,7 +119,7 @@ int main (int argc, char **argv)
 	struct PROJECT_CTRL *Ctrl = NULL;
 
 	int	compare_distances (const void *point_1, const void *point_2);
-	double	oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given, GMT_LONG generate);
+	void	oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given, GMT_LONG generate);
 	void	oblique_transform (double xlat, double xlon, double *x_t_lat, double *x_t_lon, double *p, double *c);
 	void	make_euler_matrix (double *p, double *e, double theta);
 	void	matrix_3v (double *a, double *x, double *b);
@@ -457,7 +457,7 @@ int main (int argc, char **argv)
 	}
 	else {
 		if (Ctrl->T.active) {
-			sin_lat_to_pole = oblique_setup(Ctrl->T.y, Ctrl->T.x, pole, &Ctrl->C.y, &Ctrl->C.x, center, Ctrl->C.active, Ctrl->G.active);
+			oblique_setup(Ctrl->T.y, Ctrl->T.x, pole, &Ctrl->C.y, &Ctrl->C.x, center, Ctrl->C.active, Ctrl->G.active);
 		}
 		else {
 			sphere_project_setup(Ctrl->C.y, Ctrl->C.x, a, Ctrl->E.y, Ctrl->E.x, b, Ctrl->A.azimuth, pole, center, Ctrl->E.active);
@@ -800,7 +800,7 @@ int compare_distances (const void *point_1, const void *point_2)
 		return (0);
 }
 
-double oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given, GMT_LONG generate)
+void oblique_setup (double plat, double plon, double *p, double *clat, double *clon, double *c, GMT_LONG c_given, GMT_LONG generate)
 {
 	/* routine sets up a unit 3-vector p, the pole of an 
 	   oblique projection, given plat, plon, the position 
@@ -817,7 +817,8 @@ double oblique_setup (double plat, double plon, double *p, double *clat, double 
 
 	double	s[3];  /* s points to the south pole  */
 	double	x[3];  /* tmp vector  */
-	double cp, sin_lat_to_pole;
+	double cp;
+	// double sin_lat_to_pole;
 
 	s[0] = s[1] = 0.0;
 	s[2] = -1.0;
@@ -834,8 +835,8 @@ double oblique_setup (double plat, double plon, double *p, double *clat, double 
 	cp = GMT_dot3v (p, c);
 	if (!generate) memcpy ((void *)c, (void *)x, 3*sizeof(double));
 	if (!c_given) GMT_cart_to_geo(clat, clon, c, TRUE);	/* return the possibly adjusted center  */
-	sin_lat_to_pole = d_sqrt (1.0 - cp * cp);
-	return (sin_lat_to_pole);
+	//sin_lat_to_pole = d_sqrt (1.0 - cp * cp);
+	//return (sin_lat_to_pole);
 }
 
 #if 0

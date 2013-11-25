@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:57 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:30 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -146,15 +146,15 @@ the values.</p></td>
 <p style="margin-top: 1em" valign="top">The circular area
 centered on each node is divided into <i>sectors</i>
 sectors. Average values will only be computed if there is at
-least one value inside at least <i>min_sectors</i> of the
-sectors for a given node. Nodes that fail this test are
-assigned the value NaN (but see <b>&minus;E</b>). If
-<i>min_sectors</i> is omitted, each sector needs to have at
-least one value inside it. [Default is quadrant search with
-at least 50% coverage, i.e., <i>sectors</i> = 4 and
-<i>min_sectors</i> = 2]. Note that only the nearest value
-per sector enters into the averaging, not all values inside
-the circle.</p></td>
+least one value inside each of at least <i>min_sectors</i>
+of these sectors for a given node. Nodes that fail this test
+are assigned the value NaN (but see <b>&minus;E</b>). If
+<i>min_sectors</i> is omitted it is set to be at least 50%
+of <i>sectors</i> (i.e., rounded up to next integer).
+[Default is a quadrant search with 100% coverage, i.e.,
+<i>sectors</i> = <i>min_sectors</i> = 4]. Note that only the
+nearest value per sector enters into the averaging; the more
+distant points are ignored.</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
@@ -399,14 +399,14 @@ processing.</p>
 <p style="margin-left:11%; margin-top: 1em">To create a
 gridded data set from the file seaMARCII_bathy.lon_lat_z
 using a 0.5 min grid, a 5 km search radius, using an octant
-search, and set empty nodes to -9999:</p>
+search with 100% sector coverage, and set empty nodes to
+-9999:</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>nearneighbor</b>
-seaMARCII_bathy.lon_lat_z <b>&minus;R</b>242/244/-22/-20
-<b>&minus;I</b>0.5<b>m &minus;E</b>-9999
-<b>&minus;G</b>bathymetry.grd <b>&minus;S</b>5<b>k
-&minus;N</b>8</p>
+seaMARCII_bathy.lon_lat_z <b>&minus;R</b> 242/244/-22/-20
+<b>&minus;I</b> 0.5<b>m &minus;E</b>-9999 <b>&minus;G</b>
+bathymetry.grd <b>&minus;S</b> 5<b>k &minus;N</b> 8/8</p>
 
 <p style="margin-left:11%; margin-top: 1em">To make a
 global grid file from the data in geoid.xyz using a 1 degree
@@ -416,9 +416,9 @@ two quadrants contain at least one value:</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>nearneighbor</b>
-geoid.xyz <b>&minus;R</b>0/360/-90/90 <b>&minus;I</b>1
-<b>&minus;L</b>g <b>&minus;G</b>geoid.grd
-<b>&minus;S</b>200K <b>&minus;N</b>4/2</p>
+geoid.xyz <b>&minus;R</b> 0/360/-90/90 <b>&minus;I</b> 1
+<b>&minus;L</b> g <b>&minus;G</b> geoid.grd <b>&minus;S</b>
+200K <b>&minus;N</b> 4</p>
 
 <a name="SEE ALSO"></a>
 <h2>SEE ALSO</h2>

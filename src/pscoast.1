@@ -1,4 +1,4 @@
-.TH PSCOAST 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSCOAST 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 pscoast \- To plot land-masses, water-masses, coastlines, borders, and rivers
 .SH SYNOPSIS
@@ -345,23 +345,23 @@ To plot a green Africa with white outline on blue background, with permanent maj
 on a Mercator map at scale 0.1 inch/degree, use
 .br
 .sp
-\fBpscoast\fP \fB\-R\fP-30/30/-40/40 \fB\-Jm\fP0.1\fBi\fP \fB\-B\fP5 \fB\-I\fP1/1p,blue \fB\-I\fP2/0.25p,blue 
-\fB\-N\fP1/0.25p,- \fB\-W\fP0.25p,white \fB\-G\fPgreen \fB\-S\fPblue \fB\-P\fP > africa.ps
+\fBpscoast\fP \fB\-R\fP-30/30/-40/40 \fB\-Jm\fP 0.1\fBi\fP \fB\-B\fP 5 \fB\-I\fP 1/1p,blue \fB\-I\fP 2/0.25p,blue 
+\fB\-N\fP 1/0.25p,- \fB\-W\fP 0.25p,white \fB\-G\fP green \fB\-S\fP blue \fB\-P\fP > africa.ps
 .br
 .sp
 To plot Iceland using the lava pattern (# 28) at 100 dots per inch, on a Mercator map at scale 1 cm/degree, run
 .br
 .sp
-\fBpscoast\fP \fB\-R\fP-30/-10/60/65 \fB\-Jm\fP1\fBc\fP \fB\-B\fP5 \fB\-Gp\fP100/28 > iceland.ps
+\fBpscoast\fP \fB\-R\fP-30/-10/60/65 \fB\-Jm\fP 1\fBc\fP \fB\-B\fP 5 \fB\-Gp\fP 100/28 > iceland.ps
 .br
 .sp
 To initiate a clip path for Africa so that the subsequent colorimage of gridded topography is only
 seen over land, using a Mercator map at scale 0.1 inch/degree, use
 .br
 .sp
-\fBpscoast\fP \fB\-R\fP-30/30/-40/40 \fB\-Jm\fP0.1\fBi\fP \fB\-B\fP5 \fB\-Gc\fP \fB\-P\fP \fB\-K\fP > africa.ps
+\fBpscoast\fP \fB\-R\fP-30/30/-40/40 \fB\-Jm\fP 0.1\fBi\fP \fB\-B\fP 5 \fB\-Gc\fP \fB\-P\fP \fB\-K\fP > africa.ps
 .br
-\fBgrdimage\fP \fB\-Jm\fP0.1\fBi\fP etopo5.grd \fB\-C\fPcolors.cpt \fB\-O\fP \fB\-K\fP >> africa.ps
+\fBgrdimage\fP \fB\-Jm\fP 0.1\fBi\fP etopo5.grd \fB\-C\fP colors.cpt \fB\-O\fP \fB\-K\fP >> africa.ps
 .br
 \fBpscoast\fP \fB\-Q\fP \fB\-O\fP >> africa.ps
 .sp

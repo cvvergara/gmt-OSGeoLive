@@ -1,4 +1,4 @@
-.TH X2SYS_INIT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH X2SYS_INIT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 x2sys_init \- Initialize x2sys data base for track data files
 .SH SYNOPSIS
@@ -201,7 +201,7 @@ data distribution at a 1 x 1 degree resolution, with distances in km calculated
 along geodesics and with speeds given in knots, we may run
 .br
 .sp
-\fBx2sys_init\fP LINE \fB\-V\fP \fB\-G\fP \fB\-D\fPline \fB\-Rg\fP \fB\-Ce\fP \fB\-Ndk\fP \fB\-NsN\fP \fB\-I\fP1/1 \fB\-E\fPtrk
+\fBx2sys_init\fP LINE \fB\-V\fP \fB\-G\fP \fB\-D\fP line \fB\-Rg\fP \fB\-Ce\fP \fB\-Ndk\fP \fB\-NsN\fP \fB\-I\fP 1/1 \fB\-E\fP trk
 .br
 .sp
 where we have selected LINE to be our x2sys tag.  When x2sys tools try to read your
@@ -228,14 +228,14 @@ observations everywhere).  For instance, if your tracks are listed in
 the file tracks.lis we may run this command:
 .br
 .sp
-\fBx2sys_binlist\fP \fB\-V\fP \fB\-T\fPLINE :tracks.lis > tracks.tbf
+\fBx2sys_binlist\fP \fB\-V\fP \fB\-T\fP LINE :tracks.lis > tracks.tbf
 .TP
 .B Update index data base:
 Next, the track bin-index files are fed to \fBx2sys_put\fP
 which will insert the information into the TAG databases:
 .br
 .sp
-\fBx2sys_put\fP \fB\-V\fP \fB\-T\fPLINE tracks.tbf
+\fBx2sys_put\fP \fB\-V\fP \fB\-T\fP LINE tracks.tbf
 .TP
 .B Search for data:
 You may now use \fBx2sys_get\fP to find all the tracks within a certain
@@ -244,7 +244,7 @@ a particular combination of observables.  E.g., to find all the tracks
 which has both obs1 and obs3 inside the specified region, run
 .br
 .sp
-\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPLINE \fB\-R\fP20/40/-40/-20 \fB\-F\fPobs1,obs3 > tracks.tbf
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fP LINE \fB\-R\fP 20/40/-40/-20 \fB\-F\fP obs1,obs3 > tracks.tbf
 .TP
 .B MGD77[+] or GMT:
 Definition files already exist for MGD77 files (both standard ASCII and
@@ -255,7 +255,7 @@ definition files for plain x,y[,z] and lon,lat[,z] tracks.
 To initiate new track databases to be used with MGD77 data from NGDC, try
 .br
 .sp
-\fBx2sys_init\fP MGD77 \fB\-V\fP \fB\-D\fPmgd77 \fB\-E\fPmgd77 \fB\-Rd\fP \fB\-Gd\fP \fB\-Nsn\fP \fB\-I\fP1/1 \fB\-Wt\fP900  \fB\-Wd\fP5
+\fBx2sys_init\fP MGD77 \fB\-V\fP \fB\-D\fP mgd77 \fB\-E\fP mgd77 \fB\-Rd\fP \fB\-Gd\fP \fB\-Nsn\fP \fB\-I\fP 1/1 \fB\-Wt\fP 900  \fB\-Wd\fP 5
 .br
 .sp
 where we have chosen a 15 minute (900 sec) or 5 km threshold to indicate a data gap

@@ -1,4 +1,4 @@
-.TH BLOCKMEAN 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH BLOCKMEAN 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 blockmean \- filter to block average (\fIx,y,z\fP) data by L2 norm
 .SH SYNOPSIS
@@ -68,8 +68,8 @@ See \fB\-W\fP for \fIw\fP output.
 Force pixel node registration [Default is gridline registration].
 (Node registrations are defined in \fBGMT\fP Cookbook Appendix B on grid file formats.)
 Each block is the
-locus of points nearest the grid value  location.  For example, with \fB\-R\fP10/15/10/15
-and and \fB\-I\fP1:  with the \fB\-F\fP option 10 <= (\fIx,y\fP) < 11 is one of 25 blocks;
+locus of points nearest the grid value  location.  For example, with \fB\-R\fP 10/15/10/15
+and and \fB\-I\fP 1:  with the \fB\-F\fP option 10 <= (\fIx,y\fP) < 11 is one of 25 blocks;
 without it 9.5 <= (\fIx,y\fP) < 10.5 is one of 36 blocks.
 .TP
 \fB\-H\fP
@@ -136,7 +136,7 @@ the \fBD_FORMAT\fP setting.
 .sp
 To find 5 by 5 minute block mean values from the ASCII data in hawaii.xyg, run
 .sp
-\fBblockmean\fP hawaii.xyg \fB\-R\fP198/208/18/25 \fB\-I\fP5\fBm\fP > hawaii_5x5.xyg
+\fBblockmean\fP hawaii.xyg \fB\-R\fP 198/208/18/25 \fB\-I\fP 5\fBm\fP > hawaii_5x5.xyg
 .SH "SEE ALSO"
 .IR blockmedian (1),
 .IR blockmode (1),

@@ -1,4 +1,4 @@
-.TH PSVELO 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSVELO 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 psvelo \- Plot velocity vectors, crosses, and wedges on maps
 .SH SYNOPSIS
@@ -126,7 +126,7 @@ map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and
 of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
 .br
 .sp
-\fB\-S\fPSelects the meaning of the columns in the data file and the
+\fB\-S\fP Selects the meaning of the columns in the data file and the
 figure to be plotted.
 .br
 .sp
@@ -346,9 +346,9 @@ in red.  Note that the 39% confidence scaling will give an ellipse which
 fits inside a rectangle of dimension Esig by Nsig.
 .br
 .sp
-\fBpsvelo\fP << END \fB\-H\fP2 \fB\-R\fP-10/10/-10/10 \fB\-W\fP0.25p,red
-\fB\-G\fPgreen \fB\-L\fP \fB\-Se\fP0.2/0.39/18 \fB\-B\fP1g1 \fB\-Jx\fP0.4/0.4
-\fB\-A\fP0.1/0.3/0.3 \fB\-P\fP \fB\-V\fP  >! test.ps
+\fBpsvelo\fP << END \fB\-H\fP 2 \fB\-R\fP-10/10/-10/10 \fB\-W\fP 0.25p,red
+\fB\-G\fP green \fB\-L\fP \fB\-Se\fP 0.2/0.39/18 \fB\-B\fP 1g1 \fB\-Jx\fP 0.4/0.4
+\fB\-A\fP 0.1/0.3/0.3 \fB\-P\fP \fB\-V\fP  >! test.ps
 .br
   Long.   Lat.   Evel   Nvel   Esig   Nsig  CorEN SITE
 .br
@@ -374,8 +374,8 @@ dark gray, with light gray wedges to represent the 2-sigma
 uncertainties.
 .br
 .sp
-\fBpsvelo\fP <<END \fB\-Sw\fP0.4/1.e7 \fB\-W\fP0.75p \fB\-G\fPdarkgray \fB\-E\fPlightgray \fB\-H\fP1 \fB\-D\fP2
-\fB\-Jm\fP2.2 \fB\-R\fP240./243./32.5/34.75 \fB\-B\fPf10ma60m/WeSn \fB\-P\fP >! test.ps
+\fBpsvelo\fP <<END \fB\-Sw\fP 0.4/1.e7 \fB\-W\fP 0.75p \fB\-G\fP darkgray \fB\-E\fP lightgray \fB\-H\fP 1 \fB\-D\fP 2
+\fB\-Jm\fP 2.2 \fB\-R\fP 240./243./32.5/34.75 \fB\-B\fP f10ma60m/WeSn \fB\-P\fP >! test.ps
 .br
  lon     lat    spin(rad/yr) spin_sigma (rad/yr)
 .br

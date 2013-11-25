@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:56 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:29 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -193,7 +193,9 @@ or
 <p style="margin-left:22%;"><b>&minus;Jo</b><i>parameters</i>
 (Oblique Mercator <b>[C]</b>).</p>
 
-<p style="margin-left:32%;">Specify one of: <b><br>
+<p style="margin-left:32%;">Typically used with
+<b>&minus;R</b>&lt;...&gt;<b>r</b>, otherwise region is in
+oblique coordinates. Specify one of: <b><br>
 &minus;Jo</b>[<b>a</b>]<i>lon0/lat0/azimuth/scale</i> or
 <b><br>
 &minus;JO</b>[<b>a</b>]<i>lon0/lat0/azimuth/width</i></p>
@@ -330,7 +332,7 @@ central meridian (<b>1:</b><i>xxxx</i> or UNIT/degree).</p>
 PROJECTIONS:</b></p>
 
 <p style="margin-left:22%; margin-top: 1em">Except for
-polar aspects, <b>&minus;R</b>w/e/s/n will be reset to
+polar aspects, <b>&minus;R</b> w/e/s/n will be reset to
 <b>&minus;Rg</b>. Use <b>&minus;R</b>&lt;...&gt;<b>r</b> for
 smaller regions. <b><br>
 &minus;Ja</b><i>lon0/lat0</i>[<i>/horizon</i>]<i>/scale</i>
@@ -424,10 +426,10 @@ projection center. <i>horizon</i> specifies the max distance
 from projection center (in degrees, &lt; 180, default 90).
 Give <i>scale</i> as <b>1:</b><i>xxxx</i> (true at pole) or
 <i>lat</i>/<b>1:</b><i>xxxx</i> (true at standard parallel
-<i>lat0</i>) or <i>radius/lat</i> (<i>radius</i> in UNIT
-from origin to the oblique latitude <i>lat</i>). Note if
+<i>lat</i>) or <i>radius/lat</i> (<i>radius</i> in UNIT from
+origin to the oblique latitude <i>lat</i>). Note if
 <b>1:</b><i>xxxx</i> is used then to specify <i>horizon</i>
-you must also specify the <i>lat0</i> as +-90 to avoid
+you must also specify the <i>lat</i> as +-90 to avoid
 ambiguity.</p>
 
 
@@ -612,8 +614,8 @@ lengths (see <b><A HREF="gmtdefaults.html">gmtdefaults</A></b>) can be invoked u
 <b>&minus;JXh</b> (for landscape); <b>&minus;JXv</b> (for
 portrait) will swap the x- and y-axis lengths. The default
 unit for this installation is either cm or inch, as defined
-in the file share/gmt.conf. However, you may change this by
-editing your .gmtdefaults4 file(s).</p>
+in the file share/gmt_setup.conf. However, you may change
+this by editing your .gmtdefaults4 file(s).</p>
 
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1081,8 +1083,8 @@ run</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>mapproject</b>
-lonlatfile <b>&minus;R</b>20/50/12/25
-<b>&minus;Jm</b>0.5<b>c</b> &gt; xyfile</p>
+lonlatfile <b>&minus;R</b> 20/50/12/25 <b>&minus;Jm</b>
+0.5<b>c</b> &gt; xyfile</p>
 
 <p style="margin-left:11%; margin-top: 1em">To transform
 several 2-column, binary, double precision files with
@@ -1095,7 +1097,7 @@ the map area, run</p>
 <p style="margin-left:11%; margin-top: 1em"><b>mapproject</b>
 tracks.* <b>&minus;R</b>-80/-70/20/40
 <b>&minus;Jt</b>-75/1:500000 <b>&minus;: &minus;S &minus;Di
-&minus;bo &minus;bi</b>2 &gt; tmfile.b</p>
+&minus;bo &minus;bi</b> 2 &gt; tmfile.b</p>
 
 <p style="margin-left:11%; margin-top: 1em">To convert the
 geodetic coordinates (lon, lat, height) in the file old.dat
@@ -1104,7 +1106,7 @@ Clarke-1866 ellipsoid) to WGS 84, run</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>mapproject</b>
-old.dat <b>&minus;Th</b>131 &gt; new.dat</p>
+old.dat <b>&minus;Th</b> 131 &gt; new.dat</p>
 
 <p style="margin-left:11%; margin-top: 1em">To compute the
 closest distance (in km) between each point in the input
@@ -1113,7 +1115,7 @@ multi-segment ASCII file coastline.xy, run</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>mapproject</b>
-quakes.dat <b>&minus;L</b>coastline.xy/k &gt;
+quakes.dat <b>&minus;L</b> coastline.xy/k &gt;
 quake_dist.dat</p>
 
 <a name="RESTRICTIONS"></a>
@@ -1132,12 +1134,12 @@ setting up for digitizing in order to have the inverse
 transformation work correctly, or alternatively, use
 <b>awk</b> to scale and shift the (x,y) values before
 transforming. <br>
-For some projection, a spherical solution may be used
+For some projections, a spherical solution may be used
 despite the user having selected an ellipsoid. This occurs
 when the users <b>&minus;R</b> setting implies a region that
 exceeds the domain in which the ellipsoidal series
 expansions are valid. These are the conditions: (1) Lambert
-Conformal Conic (<b>&minus;JL</b>)and Albers Equal-Area
+Conformal Conic (<b>&minus;JL</b>) and Albers Equal-Area
 (<b>&minus;JB</b>) will use the spherical solution when the
 map scale exceeds 1.0E7. (2) Transverse Mercator
 (<b>&minus;JT</b>) and UTM (<b>&minus;JU</b>) will will use

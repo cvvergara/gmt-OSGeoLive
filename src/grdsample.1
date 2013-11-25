@@ -1,4 +1,4 @@
-.TH GRDSAMPLE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDSAMPLE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdsample \- Resample a grid file onto a new grid
 .SH SYNOPSIS
@@ -132,14 +132,14 @@ important.  Use bilinear to minimize the propagation of NaNs.
 To resample the 5 x 5 minute grid in hawaii_5by5_topo.grd onto a 1 minute grid:
 .br
 .sp
-\fBgrdsample\fP hawaii_5by5_topo.grd \fB\-I\fP1\fBm \-G\fPhawaii_1by1_topo.grd
+\fBgrdsample\fP hawaii_5by5_topo.grd \fB\-I\fP 1\fBm \-G\fPhawaii_1by1_topo.grd
 .br
 .sp
 To translate the gridline-registered file surface.grd to pixel registration while
 keeping the same region and grid interval:
 .br
 .sp
-\fBgrdsample\fP surface.grd \fB\-T\fP \fB\-G\fPpixel.grd
+\fBgrdsample\fP surface.grd \fB\-T\fP \fB\-G\fP pixel.grd
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR grdedit (1),

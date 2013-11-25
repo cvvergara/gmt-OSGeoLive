@@ -1,4 +1,4 @@
-.TH GRDIMAGE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDIMAGE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdimage \- Create grayshaded or colored image from a 2-D netCDF grid file
 .SH SYNOPSIS
@@ -282,7 +282,7 @@ To gray-shade the file hawaii_grav.grd with shades given in shades.cpt on a Lamb
 at 1.5 cm/degree along the standard parallels 18 and 24, and using 1 degree tickmarks:
 .br
 .sp
-\fBgrdimage\fP hawaii_grav.grd \fB\-Jl\fP18/24/1.5\fBc\fP \fB\-C\fPshades.cpt \fB\-B\fP1 > hawaii_grav_image.ps
+\fBgrdimage\fP hawaii_grav.grd \fB\-Jl\fP 18/24/1.5\fBc\fP \fB\-C\fP shades.cpt \fB\-B\fP 1 > hawaii_grav_image.ps
 .br
 .sp
 To create an illuminated color \fIPostScript\fP plot of the gridded data set image.grd, using the
@@ -290,14 +290,14 @@ intensities provided by the file intens.grd, and color
 levels in the file colors.cpt, with linear scaling at 10 inch/x-unit, tickmarks every 5 units:
 .br
 .sp
-\fBgrdimage\fP image.grd \fB\-Jx\fP10\fBi\fP \fB\-C\fPcolors.cpt \fB\-I\fPintens.grd \fB\-B\fP5 > image.ps
+\fBgrdimage\fP image.grd \fB\-Jx\fP 10\fBi\fP \fB\-C\fP colors.cpt \fB\-I\fP intens.grd \fB\-B\fP 5 > image.ps
 .br
 .sp
 To create an false color \fIPostScript\fP plot from the three grid files red.grd, green.grd, and blue.grd,
 with linear scaling at 10 inch/x-unit, tickmarks every 5 units:
 .br
 .sp
-\fBgrdimage\fP red.grd green.grd blue.grd \fB\-Jx\fP10\fBi\fP \fB\-B\fP5 > rgbimage.ps
+\fBgrdimage\fP red.grd green.grd blue.grd \fB\-Jx\fP 10\fBi\fP \fB\-B\fP 5 > rgbimage.ps
 .br
 .sp
 When GDAL support is built in: To create a sinusoidal projection of a remotely located Jessica Rabbit

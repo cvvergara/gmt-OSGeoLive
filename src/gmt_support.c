@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_support.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_support.c 10052 2013-06-15 03:10:27Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -4979,6 +4979,7 @@ GMT_LONG GMT_delaunay (double *x_in, double *y_in, GMT_LONG n, int **link)
 	GMT_LONG i, j;
 	struct triangulateio In, Out, vorOut;
 
+	if (gmtdefs.verbose) fprintf (stderr, "%s: Delaunay triangulation calculated by Jonathan Shewchuk's Triangle [http://www.cs.cmu.edu/~quake/triangle.html]\n", GMT_program);
 	/* Set everything to 0 and NULL */
 
 	memset ((void *)&In,	 0, sizeof (struct triangulateio));
@@ -5030,6 +5031,7 @@ GMT_LONG GMT_voronoi (double *x_in, double *y_in, GMT_LONG n, double *we, double
 	struct triangulateio In, Out, vorOut;
 	double *x_edge = NULL, *y_edge = NULL, dy;
 
+	if (gmtdefs.verbose) fprintf (stderr, "%s: Voronoi partitioning calculated by Jonathan Shewchuk's Triangle [http://www.cs.cmu.edu/~quake/triangle.html]\n", GMT_program);
 	/* Set everything to 0 and NULL */
 
 	memset ((void *)&In,	 0, sizeof (struct triangulateio));
@@ -5113,6 +5115,8 @@ GMT_LONG GMT_delaunay (double *x_in, double *y_in, GMT_LONG n, int **link)
 	GMT_LONG *istack = NULL, *x_tmp = NULL, *y_tmp = NULL;
 	double det[2][3], *x_circum = NULL, *y_circum = NULL, *r2_circum = NULL, *x = NULL, *y = NULL;
 	double xmin, xmax, ymin, ymax, datax, dx, dy, dsq, dd;
+	
+	if (gmtdefs.verbose) fprintf (stderr, "%s: Delaunay triangulation based on by Dave Watson's ACORD [Computers & Geosciences, 8, 97-101, 1982]\n", GMT_program);
 
 	size = 10 * n + 1;
 	n += 3;
@@ -8143,14 +8147,15 @@ GMT_LONG GMT_gnomonic_adjust (GMT_LONG side, double angle, double x, double y)
 	/* Called when GNOMONIC and global region.  angle has been fixed to the +- 90 range */
 	/* This is a kludge until we rewrite the entire justification stuff */
 	GMT_LONG inside;
-	double xp, yp;
+	double xp, yp, r;
 
 	/* Create a point a small step away from (x,y) along the angle baseline
 	 * If it is inside the circle the we want right-justify, else left-justify. */
 	sincosd (angle, &yp, &xp);
 	xp = xp * gmtdefs.line_step + x;
 	yp = yp * gmtdefs.line_step + y;
-	inside = (hypot (xp - project_info.r, yp - project_info.r) < project_info.r);
+	r = hypot (xp - project_info.r, yp - project_info.r);
+	inside = (r < project_info.r);
 	return ((inside) ? 7 : 5);
 }
 

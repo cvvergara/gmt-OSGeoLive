@@ -1,4 +1,4 @@
-.TH SEGY2GRD 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH SEGY2GRD 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 segy2grd \- Converting SEGY file to grid file format
 .SH SYNOPSIS
@@ -69,8 +69,8 @@ Selects verbose mode, which will send progress reports to stderr [Default runs "
 To create a grid file from an even spaced SEGY file test.segy, try
 .br
 .sp
-segy2grd test.segy \fB\-I\fP0.1/0.1
-\fB\-G\fPtest.grd \fB\-R\fP198/208/18/25 \fB\-V\fP
+segy2grd test.segy \fB\-I\fP 0.1/0.1
+\fB\-G\fP test.grd \fB\-R\fP 198/208/18/25 \fB\-V\fP
 .br
 .sp
 Note that this will read in 18-25s (or km) on each trace, but the first trace will be assumed to be at
@@ -81,7 +81,7 @@ To create a grid file from the SEGY file test.segy, locating traces according to
 there are 10 CDPs per km and the sample interval is 0.1, try
 .br
 .sp
-segy2grd test.segy  \fB\-G\fPtest.grd \fB\-R\fP0/100/0/10 \fB\-I\fP0.5/0.2 \fB\-V\fP \fB\-X\fP0.1  \fB\-Y\fP0.1
+segy2grd test.segy  \fB\-G\fP test.grd \fB\-R\fP 0/100/0/10 \fB\-I\fP 0.5/0.2 \fB\-V\fP \fB\-X\fP 0.1  \fB\-Y\fP 0.1
 .br
 .sp
 Because the grid interval is larger than the SEGY file sampling, the individual samples will be averaged

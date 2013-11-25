@@ -1,4 +1,4 @@
-.TH X2SYS_SOLVE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH X2SYS_SOLVE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 x2sys_solve \- Determine systematic corrections from crossovers
 .SH SYNOPSIS
@@ -71,34 +71,34 @@ specify the variables to be read.
 To fit a simple bias offset to faa for all tracks under the MGD77 tag, try
 .br
 .sp
-\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPfaa \fB\-F\fPnc  > faa_coe.txt
+\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP faa \fB\-F\fP nc  > faa_coe.txt
 .br
-\fBx2sys_solve\fP faa_coe.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPfaa \fB\-E\fPc > coe_table.txt
+\fBx2sys_solve\fP faa_coe.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP faa \fB\-E\fP c > coe_table.txt
 .br
 .sp
 To fit a faa linear drift with time instead, try
 .br
 .sp
-\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPfaa \fB\-F\fPnTc  > faa_coe.txt
+\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP faa \fB\-F\fP nTc  > faa_coe.txt
 .br
-\fBx2sys_solve\fP faa_coe.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPfaa \fB\-E\fPt > coe_table.txt
+\fBx2sys_solve\fP faa_coe.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP faa \fB\-E\fP t > coe_table.txt
 .br
 .sp
 To estimate heading corrections based on magnetic crossovers associated with the tag MGD77
 from the file COE_data.txt, try
 .br
 .sp
-\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPmag \fB\-F\fPnhc > mag_coe.txt
+\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP mag \fB\-F\fP nhc > mag_coe.txt
 .br
-\fBx2sys_solve\fP mag_coe.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPmag \fB\-E\fPh > coe_table.txt
+\fBx2sys_solve\fP mag_coe.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP mag \fB\-E\fP h > coe_table.txt
 .br
 .sp
 To estimate unit scale corrections based on bathymetry crossovers, try
 .br
 .sp
-\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPdepth \fB\-F\fPnz > depth_coe.txt
+\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP depth \fB\-F\fP nz > depth_coe.txt
 .br
-\fBx2sys_solve\fP depth_coe.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPdepth \fB\-E\fPs > coe_table.txt
+\fBx2sys_solve\fP depth_coe.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP depth \fB\-E\fP s > coe_table.txt
 .SH "SEE ALSO"
 .IR x2sys_binlist (1),
 .IR x2sys_cross (1),

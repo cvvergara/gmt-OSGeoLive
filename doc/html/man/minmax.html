@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:57 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:30 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -309,8 +309,8 @@ extreme values in the file track.xy to the nearest 5 units
 and use this region to draw a line using psxy, run</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b><A HREF="psxy.html">psxy</A></b>
-&lsquo;<b>minmax &minus;I</b>5 track.xy&lsquo; track.xy
-<b>&minus;Jx</b>1 <b>&minus;B</b>5 <b>&minus;P</b> &gt;
+&lsquo;<b>minmax &minus;I</b> 5 track.xy&lsquo; track.xy
+<b>&minus;Jx</b> 1 <b>&minus;B</b> 5 <b>&minus;P</b> &gt;
 track.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To find the min
@@ -318,7 +318,7 @@ and max values for each of the first 4 columns, but rounded
 to integers, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>minmax</b>
-junkfile <b>&minus;C &minus;I</b>1/1/1/1</p>
+junkfile <b>&minus;C &minus;I</b> 1/1/1/1</p>
 
 <a name="BUGS"></a>
 <h2>BUGS</h2>
@@ -326,7 +326,7 @@ junkfile <b>&minus;C &minus;I</b>1/1/1/1</p>
 
 <p style="margin-left:11%; margin-top: 1em">The
 <b>&minus;I</b> option does not yet work properly with time
-series data (e.g., <b>&minus;f</b>0T). Thus, such variable
+series data (e.g., <b>&minus;f</b> 0T). Thus, such variable
 intervals as months and years are not calculated. Instead,
 specify your interval in the same units as the current
 setting of <b><A HREF="gmtdefaults.html#TIME_UNIT">TIME_UNIT</A></b>.</p>

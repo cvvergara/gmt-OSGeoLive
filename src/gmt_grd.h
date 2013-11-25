@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_grd.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_grd.h 9969 2013-01-07 23:32:10Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -30,8 +30,6 @@
  
 #ifndef _GMT_GRD_H
 #define _GMT_GRD_H
-
-#include "netcdf.h"
 
 /* Nodes that are unconstrained are assumed to be set to NaN */
 

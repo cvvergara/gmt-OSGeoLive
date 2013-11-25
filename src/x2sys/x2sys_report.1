@@ -1,4 +1,4 @@
-.TH X2SYS_REPORT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH X2SYS_REPORT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 x2sys_report \- Report statistics from crossover data base
 .SH SYNOPSIS
@@ -66,13 +66,13 @@ To report statistics of all the external magnetic crossovers associated with the
 restricted to occupy a certain region in the south Pacific, try
 .br
 .sp
-\fBx2sys_report\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-R\fP180/240/-60/-30 \fB\-C\fPmag > mag_report.txt
+\fBx2sys_report\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-R\fP 180/240/-60/-30 \fB\-C\fP mag > mag_report.txt
 .br
 .sp
 To report on the faa crossovers globally that involves track 12345678, try
 .br
 .sp
-\fBx2sys_report\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPfaa \fB\-S\fP12345678  > faa_report.txt
+\fBx2sys_report\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP faa \fB\-S\fP 12345678  > faa_report.txt
 .SH REFERENCES
 Mittal, P. K. (1984), Algorithm for error adjustment of potential field data along a survey network, \fIGeophysics, 49\fP(4), 467-469.
 .SH "SEE ALSO"

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvector.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdvector.c 9991 2013-03-22 03:53:34Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -387,16 +387,27 @@ int main (int argc, char **argv)
 
         if (!Ctrl->N.active) GMT_map_clip_on (GMT_no_rgb, 3);
 
-	if (Ctrl->I.xinc != 0.0 && Ctrl->I.yinc != 0.0) {
+	if (Ctrl->I.xinc != 0.0 && Ctrl->I.yinc != 0.0) {	/* Gave a coarser grid spacing, we hope */
 		struct GRD_HEADER tmp_h;
+		double val;
 		tmp_h = h[0];
 		tmp_h.x_inc = Ctrl->I.xinc;
 		tmp_h.y_inc = Ctrl->I.yinc;
 		GMT_RI_prepare (&tmp_h);	/* Convert to make sure we have correct increments */
 		Ctrl->I.xinc = tmp_h.x_inc;
 		Ctrl->I.yinc = tmp_h.y_inc;
-		dj = irint (Ctrl->I.yinc / h[0].y_inc);
-		di = irint (Ctrl->I.xinc / h[0].x_inc);
+		val = Ctrl->I.yinc / h[0].y_inc;
+		dj = irint (val);
+		if (dj == 0 || fabs (val - dj) > GMT_CONV_LIMIT) {
+			fprintf (stderr, "%s: Error: New y grid increment (%g) is not a multiple of actual grid increment (%g).\n", GMT_program, Ctrl->I.xinc, h[0].x_inc);
+			exit (EXIT_FAILURE);
+		}
+		val = Ctrl->I.xinc / h[0].x_inc;
+		di = irint (val);
+		if (di == 0 || fabs (val - di) > GMT_CONV_LIMIT) {
+			fprintf (stderr, "%s: Error: New x grid increment (%g) is not a multiple of actual grid increment (%g).\n", GMT_program, Ctrl->I.xinc, h[0].x_inc);
+			exit (EXIT_FAILURE);
+		}
 		tmp = ceil (h[0].y_max / Ctrl->I.yinc) * Ctrl->I.yinc;
 		if (tmp > h[0].y_max) tmp -= Ctrl->I.yinc;
 		j0 = irint ((h[0].y_max - tmp) / h[0].y_inc);
@@ -429,6 +440,10 @@ int main (int argc, char **argv)
 			if (Ctrl->C.active) GMT_get_rgb_from_z (value, Ctrl->G.fill.rgb);
 
 			x = GMT_i_to_x (i, h[0].x_min, h[0].x_max, h[0].x_inc, h[0].xy_off, h[0].nx);
+			if (!Ctrl->N.active) {
+				GMT_map_outside (x, y);
+				if (GMT_abs (GMT_x_status_new) > 1 || GMT_abs (GMT_y_status_new) > 1) continue;
+			}
 			GMT_geo_to_xy (x, y, &plot_x, &plot_y);
 
 			if (Ctrl->T.active) {

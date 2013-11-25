@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdfilter.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdfilter.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -115,7 +115,7 @@ int main (int argc, char **argv)
 
 	GMT_LONG error, new_range, fast_way, slow = FALSE, same_grid = FALSE;
 	GMT_LONG wrap_case_x = FALSE;
-	GMT_LONG full_360, full_180;
+	GMT_LONG full_360;
 
 	float	*input = NULL, *output = NULL, *A = NULL;
 
@@ -342,7 +342,6 @@ int main (int argc, char **argv)
 	GMT_err_fail (GMT_read_grd (fin, &h, input, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), fin);
 	
 	full_360 = (Ctrl->D.mode && GMT_grd_is_global (&h));		/* Periodic geographic grid */
-	full_180 = (Ctrl->D.mode && GMT_180_RANGE (h.y_min, h.y_max));	/* Full latitude range for geographic grid */
 
 	last_median = 0.5 * (h.z_min + h.z_max);
 

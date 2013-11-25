@@ -1,4 +1,4 @@
-.TH IMG2GOOGLE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH IMG2GOOGLE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 img2google \- Create Google Earth KML overlay tiles from bathymetry Mercator img grid 
 .SH SYNOPSIS
@@ -67,11 +67,11 @@ Selects verbose mode, which will send progress reports to stderr [Default runs "
 Uses zip (which must be installed) to create a *.kmz file for easy distribution; append \fB+\fP
 to delete the KML and PNG file after zipping [No zipping].
 .SH EXAMPLES
-To create a 10x10 degree Google Earth KML tile for the region \fB\-R\fP170/180/20/30 using the default
+To create a 10x10 degree Google Earth KML tile for the region \fB\-R\fP 170/180/20/30 using the default
 \fItopo.11.1.img\fP and output naming convention, try
 .br
 .sp
-\fBimg2google\fP \fB\-R\fP170/180/20/30
+\fBimg2google\fP \fB\-R\fP 170/180/20/30
 .br
 .sp
 To make the same tile with the previous
@@ -79,8 +79,8 @@ To make the same tile with the previous
 specify the KML metadata directly (including setting the image altitude to 10 km), and make a single *.kmz file, try
 .br
 .sp
-\fBimg2google\fP \fItopo.10.1.img\fP \fB\-R\fP170/180/20/30 \fB\-A\fP\fBA\fP10000 \fB\-C\fP \fB\-G\fP\fIoldimage\fP
-\fB\-N\fP"My KML title" \fB\-T\fP"My KML title" \fB\-U\fPhttp://my.server.com/images \fB\-V\fP \fB\-Z\fP
+\fBimg2google\fP \fItopo.10.1.img\fP \fB\-R\fP 170/180/20/30 \fB\-A\fP\fBA\fP10000 \fB\-C\fP \fB\-G\fP\fIoldimage\fP
+\fB\-N\fP"My KML title" \fB\-T\fP"My KML title" \fB\-U\fP http://my.server.com/images \fB\-V\fP \fB\-Z\fP
 .br
 .sp
 .SH DATA SETS

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: psvelo.c 9923 2012-12-18 20:45:53Z pwessel $
+ *    $Id: psvelo.c 10042 2013-05-31 16:34:22Z pwessel $
  *
  *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
@@ -377,8 +377,10 @@ int main (int argc, char **argv)
                                     if (rescale_sigma) spinsig = spinsig * sigma_scale;
                         }
 
-			GMT_map_outside (xy[0], xy[1]);
-			if (GMT_abs (GMT_x_status_new) > 1 || GMT_abs (GMT_y_status_new) > 1) continue;
+			if (skip_if_outside) {
+				GMT_map_outside (xy[0], xy[1]);
+				if (GMT_abs (GMT_x_status_new) > 1 || GMT_abs (GMT_y_status_new) > 1) continue;
+			}
 
 			GMT_geo_to_xy (xy[0], xy[1], &plot_x, &plot_y);
 

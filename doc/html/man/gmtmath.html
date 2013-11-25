@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:42 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:20 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -3398,8 +3398,8 @@ of columns and the column number that contains the
 
 
 <p style="margin-top: 1em" valign="top">Quick mode for
-scalar calculation. Shorthand for <b>&minus;Ca
-&minus;N</b>1/0 <b>&minus;T</b>0/0/1.</p></td>
+scalar calculation. Shorthand for <b>&minus;Ca &minus;N</b>
+1/0 <b>&minus;T</b> 0/0/1.</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="4%">
@@ -3603,7 +3603,7 @@ average of columns 1 and 4-6 in the three data sets sizes.1,
 sizes.2, and sizes.3, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>gmtmath
-&minus;C</b>1,4-6 sizes.1 sizes.2 <b>ADD</b> sizes.3 <b>ADD
+&minus;C</b> 1,4-6 sizes.1 sizes.2 <b>ADD</b> sizes.3 <b>ADD
 3 DIV =</b> ave.d</p>
 
 <p style="margin-left:11%; margin-top: 1em">To take the
@@ -3618,7 +3618,7 @@ assign it to a variable, try</p>
 dilog(x) function for coordinates given in the file t.d:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>gmtmath
-&minus;T</b>t.d <b>T DILOG =</b> dilog.d</p>
+&minus;T</b> t.d <b>T DILOG =</b> dilog.d</p>
 
 <p style="margin-left:11%; margin-top: 1em">To use gmtmath
 as a RPN Hewlett-Packard calculator on scalars (i.e., no
@@ -3642,11 +3642,11 @@ have a 2-column file ty.d with <i>t</i> and <i>b(t)</i> and
 you would like to fit a the model y(t) = a + b*t +
 c*H(t-t0), where H is the Heaviside step function for a
 given t0 = 1.55. Then, you need a 4-column augmented table
-loaded with t in column 0 and your observed y(t) in column
+loaded with t in column 1 and your observed y(t) in column
 3. The calculation becomes</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>gmtmath
-&minus;N</b>4/1 <b>&minus;A</b>ty.d <b>-C</b>0 1 <b>ADD
+&minus;N</b> 4/1 <b>&minus;A</b> ty.d <b>-C</b>0 1 <b>ADD
 &minus;C</b>2 1.55 <b>STEPT ADD &minus;Ca LSQFIT =</b>
 solution.d</p>
 

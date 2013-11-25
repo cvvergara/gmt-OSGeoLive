@@ -1,4 +1,4 @@
-.TH PSROSE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSROSE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 psrose \- Plot (length, azimuth) as windrose diagram or polar histogram (sector or rose diagram).
 .SH SYNOPSIS
@@ -112,7 +112,7 @@ Alternatively, give \fBc\fP to align the center coordinate (x or y) of the plot 
 based on current page size.
 .TP
 \fB\-Z\fP
-Multiply the data radii by \fIscale\fP.  E.g., use \fB\-Z\fP0.001 to convert your data from m to km [Default is no scaling].
+Multiply the data radii by \fIscale\fP.  E.g., use \fB\-Z\fP 0.001 to convert your data from m to km [Default is no scaling].
 .TP
 \fB\-:\fP
 Input file has (azimuth,radius) pairs rather than the expected (radius,azimuth).
@@ -166,8 +166,8 @@ sector interval, radial direction annotated every 50 km, using a light blue shad
 by a solid red pen (width = 0.75 points), draw the mean azimuth, and shown in Portrait orientation, use:
 .br
 .sp
-\fBpsrose\fP fault_segments.az_r \fB\-R\fP0/150/-90/90 \fB\-B\fP50g25:"Fault length":/g30:."Rose diagram":
-\fB\-S\fP3\fBi\fP \fB\-A\fP10\fBr\fP \fB\-G\fPlightblue \fB\-W\fP0.75\fBp\fP,red \fB\-Z\fP0.001 \fB\-C\fP \fB\-P\fP \fB\-T\fP \fB\-:\fP | lpr
+\fBpsrose\fP fault_segments.az_r \fB\-R\fP 0/150/-90/90 \fB\-B\fP 50g25:"Fault length":/g30:."Rose diagram":
+\fB\-S\fP 3\fBi\fP \fB\-A\fP 10\fBr\fP \fB\-G\fP lightblue \fB\-W\fP 0.75\fBp\fP,red \fB\-Z\fP 0.001 \fB\-C\fP \fB\-P\fP \fB\-T\fP \fB\-:\fP | lpr
 .br
 .sp
 To plot a full circle wind rose diagram of the data in the file lines.r_az, on a circle of radius = 5 cm, 
@@ -175,7 +175,7 @@ grid going out to radius = 500 units in steps of 100 with a 45 degree sector int
 and shown in landscape [Default] orientation with UNIX timestamp and command line plotted, use:
 .br
 .sp
-\fBpsrose\fP lines.az_r \fB\-R\fP0/500/0/360 \fB\-S\fP5\fBc\fP \fB\-Bg\fP100/\fBg\fP45:."Windrose diagram": \fB\-W\fP0.5\fBp\fP \fB\-Uc\fP | lpr
+\fBpsrose\fP lines.az_r \fB\-R\fP 0/500/0/360 \fB\-S\fP 5\fBc\fP \fB\-Bg\fP 100/\fBg\fP45:."Windrose diagram": \fB\-W\fP 0.5\fBp\fP \fB\-Uc\fP | lpr
 .SH BUGS
 No default radial scale and grid settings for polar histograms.  User must run \fBpsrose \-I\fP to find max length in
 binned data set.

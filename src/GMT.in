@@ -1,6 +1,6 @@
-#!/bin/sh -f
+#!/bin/bash -f
 #--------------------------------------------------------------------
-#	$Id: GMT.in 9923 2012-12-18 20:45:53Z pwessel $
+#	$Id: GMT.in 10128 2013-11-05 00:29:31Z pwessel $
 #
 #	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
 #	See LICENSE.TXT file for copying and redistribution conditions.
@@ -133,13 +133,13 @@ Look up the individual man pages for more details and full syntax.
 Those man pages are installed in @mandir@/man?.
 Information is also available on the GMT World Wide Web home page
 (http://gmt.soest.hawaii.edu) and, if installed, locally from
-@wwwdir@/gmt/gmt_services.html.
+@docdir@/html/gmt_services.html.
 
 Default locations of GMT components:
 	executables	@bindir@
 	library		@libdir@
 	shared data	@datadir@
-	manual pages	@mandir@/man/man?
+	manual pages	@mandir@/man?
 	documentation	@docdir@
 
 The user has control over the following environment variables:

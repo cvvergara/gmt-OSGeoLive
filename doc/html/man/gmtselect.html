@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:43 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:21 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -503,7 +503,7 @@ of the form hh:mm:ss[.xxx]. The use of delimiters and their
 type and positions must be exactly as indicated (however,
 input, output and plot formats are customizable; see
 <b><A HREF="gmtdefaults.html">gmtdefaults</A></b>). If no map projection is supplied we
-implicitly set <b>&minus;Jx</b>1. Note: only supply
+implicitly set <b>&minus;Jx</b> 1. Note: only supply
 <b>&minus;J</b> when your <b>&minus;R</b> is indicating a
 rectangular region in the projected coordinates (i.e., an
 oblique projection).</p></td>
@@ -536,7 +536,8 @@ runs &quot;silently&quot;].</p></td>
 whose 3rd column (z) lies within the given range. Input file
 must have at least three columns. To indicate no limit on
 min or max, specify a hyphen (-). If your 3rd column is
-absolute time then remember to supply <b>&minus;f</b>2T.</p></td>
+absolute time then remember to supply <b>&minus;f</b>
+2T.</p> </td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="4%">
@@ -704,8 +705,8 @@ lines.d, run</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>gmtselect</b>
-lonlatfile <b>&minus;fg &minus;C</b>300/pts.d
-<b>&minus;L</b>100/lines.d <b>&minus;Il</b> &gt; subset</p>
+lonlatfile <b>&minus;fg &minus;C</b> 300/pts.d
+<b>&minus;L</b> 100/lines.d <b>&minus;Il</b> &gt; subset</p>
 
 <p style="margin-left:11%; margin-top: 1em">Here, you must
 specify <b>&minus;fg</b> so the program knows you are
@@ -720,7 +721,7 @@ coastlines), use</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>gmtselect</b>
-data.d <b>&minus;R</b>120/121/22/24 <b>&minus;Dh
+data.d <b>&minus;R</b> 120/121/22/24 <b>&minus;Dh
 &minus;Nk</b>/<b>s</b> &gt; subset</p>
 
 <p style="margin-left:11%; margin-top: 1em">To return all
@@ -729,7 +730,7 @@ lonlatpath.d, try</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>gmtselect</b>
-quakes.d <b>&minus;F</b>lonlatpath.d <b>&minus;fg</b> &gt;
+quakes.d <b>&minus;F</b> lonlatpath.d <b>&minus;fg</b> &gt;
 subset1</p>
 
 <p style="margin-left:11%; margin-top: 1em">To return all
@@ -738,9 +739,8 @@ origin.d for a certain projection, try</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>gmtselect</b>
-stations.d <b>&minus;F</b>origin.d
-<b>&minus;R</b>20/50/-10/20 <b>&minus;JM</b>20c &gt;
-subset2</p>
+stations.d <b>&minus;F</b> origin.d <b>&minus;R</b>
+20/50/-10/20 <b>&minus;JM</b> 20c &gt; subset2</p>
 
 <a name="GSHHS INFORMATION"></a>
 <h2>GSHHS INFORMATION</h2>

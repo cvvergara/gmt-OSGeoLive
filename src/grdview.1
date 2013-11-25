@@ -1,4 +1,4 @@
-.TH GRDVIEW 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDVIEW 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdview \- Create 3-D perspective grayshaded/colored image or mesh from a 2-D grid file
 .SH SYNOPSIS
@@ -286,7 +286,7 @@ at 1.5 cm/degree along the standard parallels 18 and 24, with vertical scale 20 
 looking at the surface from SW at 30 degree elevation, run 
 .br
 .sp
-\fBgrdview\fP hawaii_grav.grd \fB\-Jl\fP18/24/1.5\fBc\fP \fB\-C\fPhawaii.cpt \fB\-Jz\fP0.05\fBc\fP \fB\-Qm\fP \fB\-N\fP-100 \fB\-E\fP225/30 \fB\-Wc\fP > hawaii_grav_image.ps
+\fBgrdview\fP hawaii_grav.grd \fB\-Jl\fP 18/24/1.5\fBc\fP \fB\-C\fP hawaii.cpt \fB\-Jz\fP 0.05\fBc\fP \fB\-Qm\fP \fB\-N\fP-100 \fB\-E\fP 225/30 \fB\-Wc\fP > hawaii_grav_image.ps
 .br
 .sp
 To create a illuminated color perspective plot of the gridded data set image.grd, using the color
@@ -294,13 +294,13 @@ palette file color.rgb, with linear scaling at 10 cm/x-unit
 and tickmarks every 5 units, with intensities provided by the file intens.grd, and looking from the SE, use
 .br
 .sp
-\fBgrdview\fP image.grd \fB\-Jx\fP10.0\fBc\fP \fB\-C\fPcolor.rgb \fB\-Qs\fP \fB\-E\fP135/30 \fB\-I\fPintens.grd  > image3D.ps
+\fBgrdview\fP image.grd \fB\-Jx\fP 10.0\fBc\fP \fB\-C\fP color.rgb \fB\-Qs\fP \fB\-E\fP 135/30 \fB\-I\fP intens.grd  > image3D.ps
 .br
 .sp
 To make the same plot using the rastering option with dpi = 50, use
 .br
 .sp
-\fBgrdview\fP image.grd \fB\-Jx\fP10.0\fBc\fP \fB\-C\fPcolor.rgb \fB\-Qi\fP50 \fB\-E\fP135/30 \fB\-I\fPintens.grd  > image3D.ps
+\fBgrdview\fP image.grd \fB\-Jx\fP 10.0\fBc\fP \fB\-C\fP color.rgb \fB\-Qi\fP 50 \fB\-E\fP 135/30 \fB\-I\fP intens.grd  > image3D.ps
 .br
 .sp
 To create a color \fIPostScript\fP perspective plot of the gridded data set magnetics.grd, using the color
@@ -308,16 +308,16 @@ palette file mag_intens.cpt, draped over the relief given by the file topography
 and tickmarks every 1 degree, with intensities provided by the file topo_intens.grd, and looking from the SE, run
 .br
 .sp
-\fBgrdview\fP topography.grd \fB\-JM\fP6\fBi\fP \fB\-G\fPmagnetics.grd \fB\-C\fPmag_intens.cpt \fB\-Qs\fP \fB\-E\fP140/30 \fB\-I\fPtopo_intens.grd  > draped3D.ps
+\fBgrdview\fP topography.grd \fB\-JM\fP 6\fBi\fP \fB\-G\fP magnetics.grd \fB\-C\fP mag_intens.cpt \fB\-Qs\fP \fB\-E\fP 140/30 \fB\-I\fP topo_intens.grd  > draped3D.ps
 .br
 .sp
 Given topo.grd and the Landsat image veggies.ras, first run \fBgmt2rgb\fP to get the red, green, and blue grids, and then drape
 this image over the topography and shade the result for good measure.  The commands are
 .br
 .sp
-\fBgmt2rgb\fP veggies.ras \fB\-G\fPlayer_%c.grd
+\fBgmt2rgb\fP veggies.ras \fB\-G\fP layer_%c.grd
 .br
-\fBgrdview\fP topo.grd \fB\-JM\fP6\fBi\fP \fB\-Qi\fP \fB\-E\fP140/30 \fB\-I\fPtopo_intens.grd \fB\-G\fPlayer_r.grd,layer_g.grd,layer_b.grd > image.ps
+\fBgrdview\fP topo.grd \fB\-JM\fP 6\fBi\fP \fB\-Qi\fP \fB\-E\fP 140/30 \fB\-I\fP topo_intens.grd \fB\-G\fP layer_r.grd,layer_g.grd,layer_b.grd > image.ps
 .SH REMARKS
 For the \fB\-Qs\fP option:  \fIPostScript\fP provides no way of smoothly varying colors within a polygon, so colors can only
 vary from polygon to polygon.  To obtain smooth images this way you may resample the grid file(s) using \fBgrdsample\fP or

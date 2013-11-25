@@ -3,7 +3,7 @@
 # $Id: dim.template.sh 9554 2011-07-28 02:32:32Z remko $
 #
 # Seung-Sep Kim, GG/SOEST/UHM
-# $Revision: 9554 $    $Date: 2011-07-27 16:32:32 -1000 (Wed, 27 Jul 2011) $
+# $Revision: 9554 $    $Date: 2011-07-27 19:32:32 -0700 (Wed, 27 Jul 2011) $
 
 # This is a template file showing the steps for DiM-based
 # regional-residual separation

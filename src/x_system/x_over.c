@@ -1,4 +1,4 @@
-/*	$Id: x_over.c 9545 2011-07-27 19:31:54Z pwessel $
+/*	$Id: x_over.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  * X_OVER will compute cross-overs between 2 legs (or internal cross-overs
  * if both legs are the same) and write out time,lat,lon,cross-over values,
@@ -586,7 +586,7 @@ GMT_LONG find_cross (double *xc, double *yc, double *tc, double *dc, float *hc, 
     delx[leg] = (double)lon[pt[leg]+1] - (double)lon[pt[leg]];
     dely[leg] = (double)lat[pt[leg]+1] - (double)lat[pt[leg]];
     delt[leg] = (double)ttime[pt[leg]+1] - (double)ttime[pt[leg]];
-    grad[leg] = (delx[leg] == 0.0) ? grad[leg] = MAX_DOUBLE : dely[leg]/delx[leg];
+    grad[leg] = (delx[leg] == 0.0) ? MAX_DOUBLE : dely[leg]/delx[leg];
   }
   /* grad = MAX_DOUBLE means that line due N-S */
   if (delt[0] > maxgap || delt[1] > maxgap) return (FALSE);	/* Data gap */

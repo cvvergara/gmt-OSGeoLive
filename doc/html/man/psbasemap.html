@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:59 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:31 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -307,7 +307,9 @@ or
 <p style="margin-left:22%;"><b>&minus;Jo</b><i>parameters</i>
 (Oblique Mercator <b>[C]</b>).</p>
 
-<p style="margin-left:32%;">Specify one of: <b><br>
+<p style="margin-left:32%;">Typically used with
+<b>&minus;R</b>&lt;...&gt;<b>r</b>, otherwise region is in
+oblique coordinates. Specify one of: <b><br>
 &minus;Jo</b>[<b>a</b>]<i>lon0/lat0/azimuth/scale</i> or
 <b><br>
 &minus;JO</b>[<b>a</b>]<i>lon0/lat0/azimuth/width</i></p>
@@ -444,7 +446,7 @@ central meridian (<b>1:</b><i>xxxx</i> or UNIT/degree).</p>
 PROJECTIONS:</b></p>
 
 <p style="margin-left:22%; margin-top: 1em">Except for
-polar aspects, <b>&minus;R</b>w/e/s/n will be reset to
+polar aspects, <b>&minus;R</b> w/e/s/n will be reset to
 <b>&minus;Rg</b>. Use <b>&minus;R</b>&lt;...&gt;<b>r</b> for
 smaller regions. <b><br>
 &minus;Ja</b><i>lon0/lat0</i>[<i>/horizon</i>]<i>/scale</i>
@@ -538,10 +540,10 @@ projection center. <i>horizon</i> specifies the max distance
 from projection center (in degrees, &lt; 180, default 90).
 Give <i>scale</i> as <b>1:</b><i>xxxx</i> (true at pole) or
 <i>lat</i>/<b>1:</b><i>xxxx</i> (true at standard parallel
-<i>lat0</i>) or <i>radius/lat</i> (<i>radius</i> in UNIT
-from origin to the oblique latitude <i>lat</i>). Note if
+<i>lat</i>) or <i>radius/lat</i> (<i>radius</i> in UNIT from
+origin to the oblique latitude <i>lat</i>). Note if
 <b>1:</b><i>xxxx</i> is used then to specify <i>horizon</i>
-you must also specify the <i>lat0</i> as +-90 to avoid
+you must also specify the <i>lat</i> as +-90 to avoid
 ambiguity.</p>
 
 
@@ -726,8 +728,8 @@ lengths (see <b><A HREF="gmtdefaults.html">gmtdefaults</A></b>) can be invoked u
 <b>&minus;JXh</b> (for landscape); <b>&minus;JXv</b> (for
 portrait) will swap the x- and y-axis lengths. The default
 unit for this installation is either cm or inch, as defined
-in the file share/gmt.conf. However, you may change this by
-editing your .gmtdefaults4 file(s).</p>
+in the file share/gmt_setup.conf. However, you may change
+this by editing your .gmtdefaults4 file(s).</p>
 
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1134,9 +1136,9 @@ xlabel = &quot;Distance&quot; and ylabel = &quot;No of
 samples&quot;, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>0/9/0/5 <b>&minus;Jx</b>1
-<b>&minus;Bf</b>1<b>a</b>2<b>:</b>Distance<b>:</b>/<b>:</b>&quot;No
-of samples&quot;<b>:WeSn</b> &gt; linear.ps</p>
+&minus;R</b> 0/9/0/5 <b>&minus;Jx</b> 1 <b>&minus;Bf</b>
+1<b>a</b>2<b>:</b>Distance<b>:</b>/<b>:</b>&quot;No of
+samples&quot;<b>:WeSn</b> &gt; linear.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Log-log
 plot</b> <br>
@@ -1146,9 +1148,9 @@ y-axis is 15 cm and annotated every power of 10 but has
 tickmarks every 0.1, run</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>1/10000/1e20/1e25
-<b>&minus;JX</b>25<b>cl</b>/15<b>cl
-&minus;B</b>2<b>:</b>Wavelength<b>:</b>/<b>a</b>1<b>pf</b>3<b>:</b>Power<b>:WS</b>
+&minus;R</b> 1/10000/1e20/1e25 <b>&minus;JX</b>
+25<b>cl</b>/15<b>cl &minus;B</b>
+2<b>:</b>Wavelength<b>:</b>/<b>a</b>1<b>pf</b>3<b>:</b>Power<b>:WS</b>
 &gt; loglog.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Power
@@ -1159,8 +1161,8 @@ and annotated every 500m, and ages annotated at 1 my, 4 my,
 9 my etc, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>0/100/0/5000 <b>&minus;Jx</b>1<b>p</b>0.5/-0.001
-<b>&minus;B</b>1<b>p:</b>&quot;Crustal
+&minus;R</b> 0/100/0/5000 <b>&minus;Jx</b>
+1<b>p</b>0.5/-0.001 <b>&minus;B</b> 1<b>p:</b>&quot;Crustal
 age&quot;<b>:</b>/500<b>:</b>Depth<b>:</b> &gt; power.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Polar
@@ -1170,8 +1172,8 @@ radius from 0 to 1000 should correspond to 3 inch and with
 gridlines and ticks every 30 degrees and 100 units, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>0/360/0/1000 <b>&minus;JP</b>6<b>i
-&minus;B</b>30<b>p</b>/100 &gt; polar.ps</p>
+&minus;R</b> 0/360/0/1000 <b>&minus;JP</b> 6<b>i
+&minus;B</b> 30<b>p</b>/100 &gt; polar.ps</p>
 
 <a name="CYLINDRICAL MAP PROJECTIONS"></a>
 <h2>CYLINDRICAL MAP PROJECTIONS</h2>
@@ -1179,13 +1181,13 @@ gridlines and ticks every 30 degrees and 100 units, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Cassini</b>
 <br>
-A 10-cm-wide basemap using the Cassini projection may be
+A 10 -cm-wide basemap using the Cassini projection may be
 obtained by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>20/50/20/35 <b>&minus;JC</b>35/28/10<b>c
-&minus;P &minus;B</b>5<b>g</b>5<b>:.</b>Cassini<b>:</b> &gt;
-cassini.ps</p>
+&minus;R</b> 20/50/20/35 <b>&minus;JC</b> 35/28/10<b>c
+&minus;P &minus;B</b> 5<b>g</b>5<b>:.</b>Cassini<b>:</b>
+&gt; cassini.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Mercator
 [conformal]</b> <br>
@@ -1194,9 +1196,9 @@ and showing the length of 5000 km along the equator
 (centered on 1/1 inch), may be plotted as</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>90/180/-50/50 <b>&minus;Jm</b>0.025<b>i
-&minus;B</b>30<b>g</b>30<b>:.</b>Mercator<b>:
-&minus;Lx</b>1<b>i</b>/1<b>i</b>/0/5000 &gt; mercator.ps</p>
+&minus;R</b> 90/180/-50/50 <b>&minus;Jm</b> 0.025<b>i
+&minus;B</b> 30<b>g</b>30<b>:.</b>Mercator<b>: &minus;Lx</b>
+1<b>i</b>/1<b>i</b>/0/5000 &gt; mercator.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Miller</b>
 <br>
@@ -1204,9 +1206,8 @@ A global Miller cylindrical map with scale 1:200,000,000 may
 be plotted as</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;Jj</b>180/1:200000000
-<b>&minus;B</b>30<b>g</b>30<b>:.</b>Miller<b>:</b> &gt;
-miller.ps</p>
+&minus;Rg &minus;Jj</b> 180/1:200000000 <b>&minus;B</b>
+30<b>g</b>30<b>:.</b>Miller<b>:</b> &gt; miller.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Oblique
 Mercator [conformal]</b> <br>
@@ -1214,10 +1215,10 @@ To create a page-size global oblique Mercator basemap for a
 pole at (90,30) with gridlines every 30 degrees, run</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>0/360/-70/70
-<b>&minus;Joc</b>0/0/90/30/0.064<b>c</b>d
-<b>&minus;B</b>30<b>g</b>30<b>:.</b>&quot;Oblique
-Mercator&quot;<b>:</b> &gt; oblmerc.ps</p>
+&minus;R</b> 0/360/-70/70 <b>&minus;Joc</b>
+0/0/90/30/0.064<b>c</b>d <b>&minus;B</b>
+30<b>g</b>30<b>:.</b>&quot;Oblique Mercator&quot;<b>:</b>
+&gt; oblmerc.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Transverse
 Mercator [conformal]</b> <br>
@@ -1225,10 +1226,9 @@ A regular Transverse Mercator basemap for some region may
 look like</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>69:30/71:45/-17/-15:15
-<b>&minus;Jt</b>70/1:1000000
-<b>&minus;B</b>15<b>m:.</b>&quot;Survey area&quot;<b>:
-&minus;P</b> &gt; transmerc.ps</p>
+&minus;R</b> 69:30/71:45/-17/-15:15 <b>&minus;Jt</b>
+70/1:1000000 <b>&minus;B</b> 15<b>m:.</b>&quot;Survey
+area&quot;<b>: &minus;P</b> &gt; transmerc.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Equidistant
 Cylindrical Projection</b> <br>
@@ -1237,8 +1237,8 @@ This projection only needs the central meridian and scale. A
 made by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>-50/310/-90/90 <b>&minus;JQ</b>130/25<b>c
-&minus;B</b>30<b>g</b>30<b>:.</b>&quot;Equidistant
+&minus;R</b>-50/310/-90/90 <b>&minus;JQ</b> 130/25<b>c
+&minus;B</b> 30<b>g</b>30<b>:.</b>&quot;Equidistant
 Cylindrical&quot;<b>:</b> &gt; cyl_eqdist.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Universal
@@ -1248,8 +1248,8 @@ which defines the central meridian. A UTM basemap for
 Indo-China can be plotted as</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>95/5/108/20<b>r &minus;Ju</b>46/1:10000000
-<b>&minus;B</b>3<b>g</b>3<b>:.</b>UTM<b>:</b> &gt;
+&minus;R</b> 95/5/108/20<b>r &minus;Ju</b>46/1:10000000
+<b>&minus;B</b> 3<b>g</b>3<b>:.</b>UTM<b>:</b> &gt;
 utm.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Cylindrical
@@ -1261,8 +1261,8 @@ inch wide global basemap centered on the Pacific is made
 by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;JY</b>180/45/9<b>i
-&minus;B</b>30<b>g</b>30<b>:.</b>Gall-Peters<b>:</b> &gt;
+&minus;Rg &minus;JY</b> 180/45/9<b>i &minus;B</b>
+30<b>g</b>30<b>:.</b>Gall-Peters<b>:</b> &gt;
 gall-peters.ps</p>
 
 <a name="CONIC MAP PROJECTIONS"></a>
@@ -1274,17 +1274,18 @@ gall-peters.ps</p>
 A basemap for middle Europe may be created by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>0/90/25/55 <b>&minus;Jb</b>45/20/32/45/0.25<b>c
-&minus;B</b>10<b>g</b>10<b>:.</b>&quot;Albers
-Equal-area&quot;<b>:</b> &gt; albers.ps</p>
+&minus;R</b> 0/90/25/55 <b>&minus;Jb</b>
+45/20/32/45/0.25<b>c &minus;B</b>
+10<b>g</b>10<b>:.</b>&quot;Albers Equal-area&quot;<b>:</b>
+&gt; albers.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Lambert
 [conformal]</b> <br>
 Another basemap for middle Europe may be created by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>0/90/25/55 <b>&minus;Jl</b>45/20/32/45/0.1<b>i
-&minus;B</b>10<b>g</b>10<b>:.</b>&quot;Lambert Conformal
+&minus;R</b> 0/90/25/55 <b>&minus;Jl</b> 45/20/32/45/0.1<b>i
+&minus;B</b> 10<b>g</b>10<b>:.</b>&quot;Lambert Conformal
 Conic&quot;<b>:</b> &gt; lambertc.ps</p>
 
 
@@ -1294,8 +1295,8 @@ Yet another basemap of width 6 inch for middle Europe may be
 created by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>0/90/25/55 <b>&minus;JD</b>45/20/32/45/6<b>i
-&minus;B</b>10<b>g</b>10<b>:.</b>&quot;Equidistant
+&minus;R</b> 0/90/25/55 <b>&minus;JD</b> 45/20/32/45/6<b>i
+&minus;B</b> 10<b>g</b>10<b>:.</b>&quot;Equidistant
 conic&quot;<b>:</b> &gt; econic.ps</p>
 
 
@@ -1305,7 +1306,8 @@ A basemap for north America may be created by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
 &minus;R</b>-180/-20/0/90 <b>&minus;JPoly</b>/4<b>i
-&minus;B</b>30<b>g</b>10/10<b>g</b>10<b>:.</b>&quot;Polyconic&quot;<b>:</b>
+&minus;B</b>
+30<b>g</b>10/10<b>g</b>10<b>:.</b>&quot;Polyconic&quot;<b>:</b>
 &gt; polyconic.ps</p>
 
 <a name="AZIMUTHAL MAP PROJECTIONS"></a>
@@ -1314,12 +1316,12 @@ A basemap for north America may be created by</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Lambert
 [equal-area]</b> <br>
-A 15-cm-wide global view of the world from the vantage point
--80/-30 will give the following basemap:</p>
+A 15 -cm-wide global view of the world from the vantage
+point -80/-30 will give the following basemap:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;JA</b>-80/-30/15<b>c
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Lambert
+&minus;Rg &minus;JA</b>-80/-30/15<b>c &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Lambert
 Azimuthal&quot;<b>:</b> &gt; lamberta.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">Follow the
@@ -1331,13 +1333,13 @@ map but substitute <b>&minus;Ja</b> for
 
 <p style="margin-left:11%; margin-top: 1em"><b>Equidistant</b>
 <br>
-A 15-cm-wide global map in which distances from the center
+A 15 -cm-wide global map in which distances from the center
 (here 125/10) to any point is true can be obtained by:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;JE</b>125/10/15<b>c
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>Equidistant<b>:</b>
-&gt; equi.ps</p>
+&minus;Rg &minus;JE</b> 125/10/15<b>c &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>Equidistant<b>:</b> &gt;
+equi.ps</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>Gnomonic</b>
@@ -1347,21 +1349,21 @@ horizon of 60 degrees from the center can be made using the
 Gnomonic projection:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;JF</b>-100/40/60/6<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>Gnomonic<b>:</b>
-&gt; gnomonic.ps</p>
+&minus;Rg &minus;JF</b>-100/40/60/6<b>i &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>Gnomonic<b>:</b> &gt;
+gnomonic.ps</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>Orthographic</b>
 <br>
 A global perspective (from infinite distance) view of the
 world from the vantage point 125/10 will give the following
-6-inch-wide basemap:</p>
+6 -inch-wide basemap:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;JG</b>125/10/6<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>Orthographic<b>:</b>
-&gt; ortho.ps</p>
+&minus;Rg &minus;JG</b> 125/10/6<b>i &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>Orthographic<b>:</b> &gt;
+ortho.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>General
 Perspective</b> <br>
@@ -1370,12 +1372,12 @@ generalized form, specifying altitude above the surface,
 width and height of the view point, and twist and tilt. A
 view from 160 km above -74/41.5 with a tilt of 55 and
 azimuth of 210 degrees, and limiting the viewpoint to 30
-degrees width and height will product a 6-inch-wide
+degrees width and height will product a 6 -inch-wide
 basemap:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
 &minus;Rg &minus;JG</b>-74/41.5/160/210/55/30/30/6<b>i
-&minus;B</b>5<b>g</b>1/5<b>g</b>1<b>:.</b>&quot;General
+&minus;B</b> 5<b>g</b>1/5<b>g</b>1<b>:.</b>&quot;General
 Perspective&quot;<b>:</b> &gt; genper.ps</p>
 
 
@@ -1387,13 +1389,13 @@ To make a polar stereographic projection basemap with radius
 annotation/tick interval and 1 degree gridlines, run</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>-45/45/-90/-60
-<b>&minus;Js</b>0/-90/12<b>c</b>/-60
-<b>&minus;B</b>5<b>g</b>5<b>:.</b>&quot;Salinity
-measurements&quot;<b>:</b> &gt; stereo1.ps</p>
+&minus;R</b>-45/45/-90/-60 <b>&minus;Js</b>
+0/-90/12<b>c</b>/-60 <b>&minus;B</b>
+5<b>g</b>5<b>:.</b>&quot;Salinity measurements&quot;<b>:</b>
+&gt; stereo1.ps</p>
 
-<p style="margin-left:11%; margin-top: 1em">To make a
-12-cm-wide stereographic basemap for Australia from an
+<p style="margin-left:11%; margin-top: 1em">To make a 12
+-cm-wide stereographic basemap for Australia from an
 arbitrary view point (not the poles), and use a rectangular
 boundary, we must give the pole for the new projection and
 use the <b>&minus;R</b> option to indicate the lower left
@@ -1402,9 +1404,9 @@ rectangle. We choose a pole at 130/-30 and use 100/-45 and
 160/-5 as our corners. The command becomes</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>100/-45/160/-5<b>fP &minus;JS130/-30/12c
-&minus;B30g30/15g15:.&quot;General Stereographic View&quot;:
-&gt; stereo2.ps</b></p>
+&minus;R</b> 100/-45/160/-5<b>fP &minus;JS 130/-30/12c
+&minus;B 30g30/15g15:.&quot;General Stereographic
+View&quot;: &gt; stereo2.ps</b></p>
 
 <a name="MISCELLANEOUS MAP PROJECTIONS"></a>
 <h2>MISCELLANEOUS MAP PROJECTIONS</h2>
@@ -1417,9 +1419,9 @@ thus the spherical form is used. To get a world map centered
 on Greenwich at a scale of 1:200000000, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rd &minus;Jh</b>0/1:200000000
-<b>&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>Hammer<b>:</b>
-&gt; hammer.ps</p>
+&minus;Rd &minus;Jh</b> 0/1:200000000 <b>&minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>Hammer<b>:</b> &gt;
+hammer.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Sinusoidal
 [equal-area]</b> <br>
@@ -1427,9 +1429,9 @@ To make a sinusoidal world map centered on Greenwich, with a
 scale along the equator of 0.02 inch/degree, use</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rd &minus;Ji</b>0/0.02<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>Sinusoidal<b>:</b>
-&gt; sinus1.ps</p>
+&minus;Rd &minus;Ji</b> 0/0.02<b>i &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>Sinusoidal<b>:</b> &gt;
+sinus1.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To make an
 interrupted sinusoidal world map with breaks at 160W, 20W,
@@ -1438,16 +1440,15 @@ run the following sequence of commands:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
 &minus;R</b>-160/-20/-90/90 <b>&minus;Ji</b>-90/0.02<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>Wesn &minus;K</b>
+&minus;B</b> 30<b>g</b>30/15<b>g</b>15<b>Wesn &minus;K</b>
 &gt; sinus_i.ps <b><br>
-psbasemap &minus;R</b>-20/60/-90/90
-<b>&minus;Ji</b>20/0.02<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>wesn &minus;O
-&minus;K &minus;X</b>2.8<b>i</b> &gt;&gt; sinus_i.ps <b><br>
-psbasemap &minus;R</b>60/200/-90/90
-<b>&minus;Ji</b>130/0.02<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>wEsn &minus;O
-&minus;X</b>1.6<b>i</b> &gt;&gt; sinus_i.ps</p>
+psbasemap &minus;R</b>-20/60/-90/90 <b>&minus;Ji</b>
+20/0.02<b>i &minus;B</b> 30<b>g</b>30/15<b>g</b>15<b>wesn
+&minus;O &minus;K &minus;X</b> 2.8<b>i</b> &gt;&gt;
+sinus_i.ps <b><br>
+psbasemap &minus;R</b> 60/200/-90/90 <b>&minus;Ji</b>
+130/0.02<b>i &minus;B</b> 30<b>g</b>30/15<b>g</b>15<b>wEsn
+&minus;O &minus;X</b> 1.6<b>i</b> &gt;&gt; sinus_i.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Eckert IV
 [equal-area]</b> <br>
@@ -1455,8 +1456,8 @@ Pseudo-cylindrical projection typically used for global maps
 only. Set the central longitude and scale, e.g.,</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;Jkf</b>180/0.064<b>c
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Eckert
+&minus;Rg &minus;Jkf</b> 180/0.064<b>c &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Eckert
 IV&quot;<b>:</b> &gt; eckert4.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Eckert VI
@@ -1466,8 +1467,8 @@ global maps only. Set the central longitude and scale,
 e.g.,</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;Jks</b>180/0.064<b>c
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Eckert
+&minus;Rg &minus;Jks</b> 180/0.064<b>c &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Eckert
 VI&quot;<b>:</b> &gt; eckert6.ps</p>
 
 
@@ -1477,9 +1478,9 @@ Projection designed to make global maps &quot;look
 right&quot;. Set the central longitude and width, e.g.,</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rd &minus;JN</b>0/8<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>Robinson<b>:</b>
-&gt; robinson.ps</p>
+&minus;Rd &minus;JN</b> 0/8<b>i &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>Robinson<b>:</b> &gt;
+robinson.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Winkel
 Tripel</b> <br>
@@ -1487,30 +1488,30 @@ Yet another projection typically used for global maps only.
 You can set the central longitude, e.g.,</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;R</b>90/450/-90/90 <b>&minus;JR</b>270/25<b>c
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Winkel
+&minus;R</b> 90/450/-90/90 <b>&minus;JR</b> 270/25<b>c
+&minus;B</b> 30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Winkel
 Tripel&quot;<b>:</b> &gt; winkel.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Mollweide
 [equal-area]</b> <br>
 The Mollweide projection is also mostly used for global maps
-and thus the spherical form is used. To get a 25-cm-wide
+and thus the spherical form is used. To get a 25 -cm-wide
 world map centered on the Dateline:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;JW</b>180/25<b>c
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>Mollweide<b>:</b>
-&gt; mollweide.ps</p>
+&minus;Rg &minus;JW</b> 180/25<b>c &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>Mollweide<b>:</b> &gt;
+mollweide.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Van der
 Grinten</b> <br>
 The Van der Grinten projection is also mostly used for
-global maps and thus the spherical form is used. To get a
-7-inch-wide world map centered on the Dateline:</p>
+global maps and thus the spherical form is used. To get a 7
+-inch-wide world map centered on the Dateline:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psbasemap
-&minus;Rg &minus;JV</b>180/7<b>i
-&minus;B</b>30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Van der
+&minus;Rg &minus;JV</b> 180/7<b>i &minus;B</b>
+30<b>g</b>30/15<b>g</b>15<b>:.</b>&quot;Van der
 Grinten&quot;<b>:</b> &gt; grinten.ps</p>
 
 <a name="RESTRICTIONS"></a>

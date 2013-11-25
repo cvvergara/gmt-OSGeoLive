@@ -1,4 +1,4 @@
-.TH GMTDIGITIZE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GMTDIGITIZE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 gmtdigitize \- Digitizing and Inverse map transformation of map x/y coordinates 
 .SH SYNOPSIS
@@ -188,7 +188,7 @@ To digitize lines from a mercator map made for a given region, and
 save each line segment in individual files called segment_000.xy, segment_001.xy etc, try
 .br
 .sp
-gmtdigitize \fB\-R\fP20/50/12/25 \fB\-Jm\fP1:1 \fB\-m\fP \fB\-N\fPsegment_%3.3d.xy
+gmtdigitize \fB\-R\fP 20/50/12/25 \fB\-Jm\fP 1:1 \fB\-m\fP \fB\-N\fP segment_%3.3d.xy
 .br
 .sp
 To digitize seismically defined interfaces from a multichannel seismic section, with horizontal
@@ -196,7 +196,7 @@ distances from 130 to 970, and vertical times from 0 to 10 seconds, write out th
 save all line segment to a single multisegment file, and beep at each click, try
 .br
 .sp
-gmtdigitize \fB\-R\fP130/970/0/10 \fB\-Jx\fP1/-1 \fB\-m\fP \fB\-A\fP \fB\-Z\fP > interfaces.d
+gmtdigitize \fB\-R\fP 130/970/0/10 \fB\-Jx\fP 1/-1 \fB\-m\fP \fB\-A\fP \fB\-Z\fP > interfaces.d
 .br
 .SH SYSTEM SETUP
 This applies to the Calcomp DrawingBoard III hooked up to a RedHat Linux workstation.

@@ -1,4 +1,4 @@
-.TH MAPPROJECT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH MAPPROJECT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 mapproject \- Forward and Inverse map transformation of 2-D coordinates 
 .SH SYNOPSIS
@@ -74,7 +74,7 @@ Give the central meridian \fIlon0\fP (optional) and \fIscale\fP (\fB1:\fP\fIxxxx
 Give central meridian \fIlon0\fP (optional), standard parallel \fIlat0\fP (optional), and \fIscale\fP along parallel (\fB1:\fP\fIxxxx\fP or UNIT/degree).
 .TP
 \fB\-Jo\fP\fIparameters\fP (Oblique Mercator \fB[C]\fP).
-Specify one of:
+Typically used with \fB\-R\fP<...>\fBr\fP, otherwise region is in oblique coordinates. Specify one of:
 .RS
 .TP
 \fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP or \fB\-JO\fP[\fBa\fP]\fIlon0/lat0/azimuth/width\fP
@@ -155,7 +155,7 @@ and \fIscale\fP along central meridian (\fB1:\fP\fIxxxx\fP or UNIT/degree).
 .PP
 \fBAZIMUTHAL PROJECTIONS:\fP
 .sp
-Except for polar aspects, \fB\-R\fPw/e/s/n will be reset to \fB\-Rg\fP.  Use \fB\-R\fP<...>\fBr\fP for smaller regions.
+Except for polar aspects, \fB\-R\fP w/e/s/n will be reset to \fB\-Rg\fP.  Use \fB\-R\fP<...>\fBr\fP for smaller regions.
 .TP
 \fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JA\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (Lambert \fB[E]\fP).
 \fIlon0/lat0\fP specifies the projection center.
@@ -198,9 +198,9 @@ in UNIT from origin to the oblique latitude \fIlat\fP.
 \fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JS\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (General Stereographic \fB[C]\fP).
 \fIlon0/lat0\fP specifies the projection center.
 \fIhorizon\fP specifies the max distance from projection center (in degrees, < 180, default 90).
-Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat0\fP)
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat\fP)
 or \fIradius/lat\fP (\fIradius\fP in UNIT from origin to the oblique latitude \fIlat\fP).
-Note if \fB1:\fP\fIxxxx\fP is used then to specify \fIhorizon\fP you must also specify the \fIlat0\fP as +-90 to avoid ambiguity.
+Note if \fB1:\fP\fIxxxx\fP is used then to specify \fIhorizon\fP you must also specify the \fIlat\fP as +-90 to avoid ambiguity.
 .PP
 \fBMISCELLANEOUS PROJECTIONS:\fP
 .TP
@@ -266,7 +266,7 @@ Input coordinates are absolute time.
 Default axis lengths (see \fBgmtdefaults\fP) can be invoked
 using \fB\-JXh\fP (for landscape); \fB\-JXv\fP (for portrait) will swap the x- and y-axis lengths.
 The default unit for this installation is either cm or inch, as defined in the file
-share/gmt.conf. However, you may change this by editing your \.gmtdefaults4 file(s).
+share/gmt_setup.conf. However, you may change this by editing your \.gmtdefaults4 file(s).
 .RE
 .RE
 .TP
@@ -434,7 +434,7 @@ To transform a file with (longitude,latitude) into (x,y) positions in cm on
 a Mercator grid for a given scale of 0.5 cm per degree, run
 .br
 .sp
-\fBmapproject\fP lonlatfile \fB\-R\fP20/50/12/25 \fB\-Jm\fP0.5\fBc\fP > xyfile
+\fBmapproject\fP lonlatfile \fB\-R\fP 20/50/12/25 \fB\-Jm\fP 0.5\fBc\fP > xyfile
 .br
 .sp
 To transform several 2-column, binary, double precision files with (latitude,longitude) into (x,y) positions in inch on
@@ -442,21 +442,21 @@ a Transverse Mercator grid (central longitude 75W) for scale = 1:500000 and supp
 that would fall outside the map area, run
 .br
 .sp
-\fBmapproject\fP tracks.* \fB\-R\fP-80/-70/20/40 \fB\-Jt\fP-75/1:500000 \fB\-:\fP \fB\-S\fP \fB\-Di\fP \fB\-bo\fP \fB\-bi\fP2 > tmfile.b
+\fBmapproject\fP tracks.* \fB\-R\fP-80/-70/20/40 \fB\-Jt\fP-75/1:500000 \fB\-:\fP \fB\-S\fP \fB\-Di\fP \fB\-bo\fP \fB\-bi\fP 2 > tmfile.b
 .br
 .sp
 To convert the geodetic coordinates (lon, lat, height) in the file old.dat from the NAD27 CONUS datum
 (Datum ID 131 which uses the Clarke-1866 ellipsoid) to WGS 84, run
 .br
 .sp
-\fBmapproject\fP old.dat \fB\-Th\fP131 > new.dat
+\fBmapproject\fP old.dat \fB\-Th\fP 131 > new.dat
 .br
 .sp
 To compute the closest distance (in km) between each point in the input file quakes.dat and the
 line segments given in the multi-segment ASCII file coastline.xy, run
 .br
 .sp
-\fBmapproject\fP quakes.dat \fB\-L\fPcoastline.xy/k > quake_dist.dat
+\fBmapproject\fP quakes.dat \fB\-L\fP coastline.xy/k > quake_dist.dat
 .SH RESTRICTIONS
 The rectangular input region set with \fB\-R\fP will in general be mapped into a
 non-rectangular grid.  Unless \fB\-C\fP is set, the leftmost point on this grid has xvalue = 0.0, and the
@@ -466,10 +466,10 @@ what  (x,y) values they are mapped onto.  Use these values when setting up for
 digitizing in order to have the inverse transformation work correctly, or alternatively,
 use \fBawk\fP to scale and shift the (x,y) values before transforming.
 .br
-For some projection, a spherical solution may be used despite the user having
+For some projections, a spherical solution may be used despite the user having
 selected an ellipsoid.  This occurs when the users \fB\-R\fP setting implies a
 region that exceeds the domain in which the ellipsoidal series expansions are
-valid.  These are the conditions: (1) Lambert Conformal Conic (\fB\-JL\fP)and Albers
+valid.  These are the conditions: (1) Lambert Conformal Conic (\fB\-JL\fP) and Albers
 Equal-Area (\fB\-JB\fP) will use the spherical solution when the map scale exceeds
 1.0E7.  (2) Transverse Mercator (\fB\-JT\fP) and UTM (\fB\-JU\fP) will will use the
 spherical solution when either the west or east boundary given in \fB\-R\fP is

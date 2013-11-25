@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:24 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:47 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -597,32 +597,31 @@ file with point locations (lon, lat) into a KML file with
 red circle symbols, try</p>
 
 <p style="margin-left:11%; margin-top: 1em">gmt2kml
-mypoints.txt <b>&minus;Gf</b>red <b>&minus;Fs</b> &gt;
+mypoints.txt <b>&minus;Gf</b> red <b>&minus;Fs</b> &gt;
 mypoints.kml</p>
 
 <p style="margin-left:11%; margin-top: 1em">To convert a
 multisegment file with lines (lon, lat) separated by
-multisegment headers that contain a
-<b>&minus;L</b>labelstring with the feature name, selecting
-a thick white pen, and title the document, try</p>
+multisegment headers that contain a <b>&minus;L</b>
+labelstring with the feature name, selecting a thick white
+pen, and title the document, try</p>
 
 <p style="margin-left:11%; margin-top: 1em">gmt2kml
-mylines.txt <b>&minus;W</b>thick,white <b>&minus;Fl
+mylines.txt <b>&minus;W</b> thick,white <b>&minus;Fl
 &minus;T</b>&quot;Lines from here to there&quot; &gt;
 mylines.kml</p>
 
 <p style="margin-left:11%; margin-top: 1em">To convert a
 multisegment file with polygons (lon, lat) separated by
-multisegment headers that contain a
-<b>&minus;L</b>labelstring with the feature name, selecting
-a thick black pen and semi-transparent yellow fill, giving a
-title to the document, and prescribing a particular region
-limit, try</p>
+multisegment headers that contain a <b>&minus;L</b>
+labelstring with the feature name, selecting a thick black
+pen and semi-transparent yellow fill, giving a title to the
+document, and prescribing a particular region limit, try</p>
 
 <p style="margin-left:11%; margin-top: 1em">gmt2kml
-mypolygons.txt <b>&minus;Gf</b>yellow <b>&minus;Qp</b>0.5
+mypolygons.txt <b>&minus;Gf</b> yellow <b>&minus;Qp</b> 0.5
 <b>&minus;Fp &minus;T</b>&quot;My polygons&quot;
-<b>&minus;R</b>30/90/-20/40 &gt; mypolygons.kml</p>
+<b>&minus;R</b> 30/90/-20/40 &gt; mypolygons.kml</p>
 
 <p style="margin-left:11%; margin-top: 1em">To convert a
 file with point locations (lon, lat, time) into a KML file
@@ -631,7 +630,7 @@ specified time and stay active going forward, try</p>
 
 <p style="margin-left:11%; margin-top: 1em">awk
 &rsquo;{print $1, $2, $3, &quot;NaN&quot;}&rsquo;
-mypoints.txt | gmt2kml <b>&minus;Gf</b>green
+mypoints.txt | gmt2kml <b>&minus;Gf</b> green
 <b>&minus;Ft</b> &gt; mytimepoints.kml</p>
 
 <a name="LIMITATIONS"></a>

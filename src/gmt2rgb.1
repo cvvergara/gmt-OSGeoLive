@@ -1,4 +1,4 @@
-.TH GMT2RGB 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GMT2RGB 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 gmt2rgb \- Converting a grid file, a raw, or a Sun raster file to r/g/b grids
 .SH SYNOPSIS
@@ -77,13 +77,13 @@ because the guessing algorithm makes uses of FFTs.
 To use the color palette topo.cpt to create r, g, b component grids from hawaii_grv.grd file, use
 .br
 .sp
-\fBgmt2rgb\fP hawaii_grv.grd \fB\-C\fPtopo.cpt \fB\-G\fPhawaii_grv_%c.grd
+\fBgmt2rgb\fP hawaii_grv.grd \fB\-C\fP topo.cpt \fB\-G\fP hawaii_grv_%c.grd
 .br
 .sp
 To output the red component from the Sun raster radiation.ras file, use
 .br
 .sp
-\fBgmt2rgb\fP radiation.ras \fB\-L\fPr \fB\-G\fPcomp_%c.grd
+\fBgmt2rgb\fP radiation.ras \fB\-L\fP r \fB\-G\fP comp_%c.grd
 .SH "SEE ALSO"
 .IR gmtdefaults (1),
 .IR GMT (1),

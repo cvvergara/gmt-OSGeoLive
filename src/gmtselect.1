@@ -1,4 +1,4 @@
-.TH GMTSELECT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GMTSELECT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 gmtselect \- Select data subsets based on multiple spatial criteria 
 .SH SYNOPSIS
@@ -207,7 +207,7 @@ must be present; the \fBT\fP is always required.  The \fIdate\fP string must be 
 (Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
 the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
 (however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
-If no map projection is supplied we implicitly set \fB\-Jx\fP1. Note: only supply \fB\-J\fP when your \fB\-R\fP
+If no map projection is supplied we implicitly set \fB\-Jx\fP 1. Note: only supply \fB\-J\fP when your \fB\-R\fP
 is indicating a rectangular region in the projected coordinates (i.e., an oblique projection).
 .TP
 \fB\-V\fP
@@ -216,7 +216,7 @@ Selects verbose mode, which will send progress reports to stderr [Default runs "
 \fB\-Z\fP
 Pass all records whose 3rd column (z) lies within the given range.  Input file must have at least
 three columns.  To indicate no limit on min or max, specify a hyphen (-).  If your 3rd column
-is absolute time then remember to supply \fB\-f\fP2T.
+is absolute time then remember to supply \fB\-f\fP 2T.
 .TP
 \fB\-:\fP
 Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
@@ -290,7 +290,7 @@ To extract the subset of data set that is within 300 km of any of the points in 
 100 km away from the lines in lines.d, run
 .br
 .sp
-\fBgmtselect\fP lonlatfile \fB\-fg\fP \fB\-C\fP300/pts.d \fB\-L\fP100/lines.d \fB\-Il\fP > subset
+\fBgmtselect\fP lonlatfile \fB\-fg\fP \fB\-C\fP 300/pts.d \fB\-L\fP 100/lines.d \fB\-Il\fP > subset
 .br
 .sp
 Here, you must specify \fB\-fg\fP so the program knows you are processing geographical data (otherwise
@@ -301,19 +301,19 @@ To keep all points in data.d within the specified region, except the points on l
 coastlines), use
 .br
 .sp
-\fBgmtselect\fP data.d \fB\-R\fP120/121/22/24 \fB\-Dh\fP \fB\-Nk\fP/\fBs\fP > subset
+\fBgmtselect\fP data.d \fB\-R\fP 120/121/22/24 \fB\-Dh\fP \fB\-Nk\fP/\fBs\fP > subset
 .br
 .sp
 To return all points in quakes.d that are inside the spherical polygon lonlatpath.d, try
 .br
 .sp
-\fBgmtselect\fP quakes.d \fB\-F\fPlonlatpath.d \fB\-fg\fP > subset1
+\fBgmtselect\fP quakes.d \fB\-F\fP lonlatpath.d \fB\-fg\fP > subset1
 .br
 .sp
 To return all points in stations.d that are within 5 cm of the point in origin.d for a certain projection, try
 .br
 .sp
-\fBgmtselect\fP stations.d \fB\-F\fPorigin.d \fB\-R\fP20/50/-10/20 \fB\-JM\fP20c > subset2
+\fBgmtselect\fP stations.d \fB\-F\fP origin.d \fB\-R\fP 20/50/-10/20 \fB\-JM\fP 20c > subset2
 .SH GSHHS INFORMATION
 The coastline database is GSHHS which is compiled from two sources:
 World Vector Shorelines (WVS) and CIA World Data Bank II (WDBII).

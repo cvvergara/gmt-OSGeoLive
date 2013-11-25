@@ -1,4 +1,4 @@
-.TH IMG2MERCGRD 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH IMG2MERCGRD 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 img2mercgrd \- Extract region of img, preserving Mercator, save as grd 
 .SH SYNOPSIS
@@ -11,7 +11,7 @@ projection of the img file is preserved, so that the region \fB\-R\fP set by the
 modified slightly; the modified region corresponds to the edges of pixels [or groups of 
 \fInavg\fP pixels].  The grid file header is set so that the x and y axis 
 lengths represent distance from the west and south edges of the image, measured in user 
-default units, with \fB\-Jm\fP1 and the adjusted \fB\-R\fP.  By setting the default 
+default units, with \fB\-Jm\fP 1 and the adjusted \fB\-R\fP.  By setting the default 
 \fBELLIPSOID\fP = Sphere, the user can make overlays with the adjusted \fB\-R\fP so that they match.  
 See \fBEXAMPLES\fP below.  The adjusted \fB\-R\fP is also written in the grdheader remark, so it 
 can be found later.  The \fB\-T\fP\fItype\fP selects all data or only data at constrained 
@@ -65,7 +65,7 @@ will be average data value or NaN according to whether average constraint is > 0
 \fB\-S\fP
 Multiply the img file values by \fIscale\fP before storing in grid file.  [Default is 1.0].  
 (img topo files are stored in (corrected) meters; gravity files in mGal*10; vertical 
-deflection files in microradians*10, vertical gravity gradient files in Eotvos*10. Use \fB\-S\fP0.1 for those files.)
+deflection files in microradians*10, vertical gravity gradient files in Eotvos*10. Use \fB\-S\fP 0.1 for those files.)
 .TP
 \fB\-V\fP
 Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
@@ -83,21 +83,21 @@ since 1995 have had \fImaxlon\fP = 360.0, while some earlier files had \fImaxlon
 To extract data in the region \fB\-R\fP-40/40/-70/-30 from \fIworld_grav.img.7.2\fP, run
 .br
 .sp
-\fBimg2mercgrd\fP world_grav.img.7.2 \fB\-G\fPmerc_grav.grd \fB\-R\fP-40/40/-70/-30 \fB\-T\fP1 \fB\-V\fP
+\fBimg2mercgrd\fP world_grav.img.7.2 \fB\-G\fP merc_grav.grd \fB\-R\fP-40/40/-70/-30 \fB\-T\fP 1 \fB\-V\fP
 .br
 .sp
 Note that the \fB\-V\fP option tells us that the range was adjusted to 
 \fB\-R\fP-40/40/-70.0004681551/-29.9945810754.   We can also use \fBgrdinfo\fP to find that the 
-grid file header shows its region to be \fB\-R\fP0/80/0/67.9666667   This is the range of x,y we 
+grid file header shows its region to be \fB\-R\fP 0/80/0/67.9666667   This is the range of x,y we 
 will get from a Spherical Mercator projection using \fB\-R\fP-40/40/-70.0004681551/-29.9945810754 
-and \fB\-Jm\fP1.  Thus, to take ship.lonlatgrav and use it to sample the merc_grav.grd, we 
+and \fB\-Jm\fP 1.  Thus, to take ship.lonlatgrav and use it to sample the merc_grav.grd, we 
 can do this:
 .br
 .sp
 \fBgmtset\fP \fBELLIPSOID\fP Sphere
 .br
-\fBmapproject\fP \fB\-R\fP-40/40/-70.0004681551/-29.9945810754 \fB\-Jm\fP1 ship.lonlatgrav | \fBgrdtrack\fP 
-\fB\-G\fPmerc_grav.grd | \fBmapproject\fP \fB\-R\fP-40/40/-70.0004681551/-29.9945810754 \fB\-Jm\fP1 
+\fBmapproject\fP \fB\-R\fP-40/40/-70.0004681551/-29.9945810754 \fB\-Jm\fP 1 ship.lonlatgrav | \fBgrdtrack\fP 
+\fB\-G\fP merc_grav.grd | \fBmapproject\fP \fB\-R\fP-40/40/-70.0004681551/-29.9945810754 \fB\-Jm\fP 1 
 \fB\-I\fP > ship.lonlatgravsat
 .br
 .sp
@@ -110,23 +110,23 @@ tries to convert the grid file to lon,lat and then sample it, there are two inte
 To make a lon,lat grid from the above grid we can use
 .br
 .sp
-\fBgrdproject\fP merc_grav.grd \fB\-R\fP-40/40/-70.0004681551/-29.9945810754 \fB\-Jm\fP1 \fB\-I\fP 
-\fB\-F\fP \fB\-D\fP2m \fB\-G\fPgrav.grd
+\fBgrdproject\fP merc_grav.grd \fB\-R\fP-40/40/-70.0004681551/-29.9945810754 \fB\-Jm\fP 1 \fB\-I\fP 
+\fB\-F\fP \fB\-D\fP 2m \fB\-G\fP grav.grd
 .br
 .sp
 In some cases this will not be easy as the \fB\-R\fP in the two coordinate systems may not align well.  
 When this happens, we can also use (in fact, it may be always better to use)
 .br
 .sp
-\fBgrd2xyz\fP merc_grav.grd | \fBmapproject\fP \fB\-R\fP-40/40/-70.0004681551/-29.994581075 \fB\-Jm\fP1 
-\fB\-I\fP | \fBsurface\fP \fB\-R\fP-40/40/-70/70 \fB\-I\fP2m \fB\-G\fPgrav.grd
+\fBgrd2xyz\fP merc_grav.grd | \fBmapproject\fP \fB\-R\fP-40/40/-70.0004681551/-29.994581075 \fB\-Jm\fP 1 
+\fB\-I\fP | \fBsurface\fP \fB\-R\fP-40/40/-70/70 \fB\-I\fP 2m \fB\-G\fP grav.grd
 .br
 .sp
 To make a Mercator map of the above region, suppose our \.gmtdefaults4 \fBMEASURE_UNIT\fP is inch.  Then 
-since the above merc_grav.grd file is projected with \fB\-Jm\fP1 it is 80 inches wide.  We can 
-make a map 8 inches wide by using \fB\-Jx\fP0.1 on any map programs applied to this grid (e.g., 
+since the above merc_grav.grd file is projected with \fB\-Jm\fP 1 it is 80 inches wide.  We can 
+make a map 8 inches wide by using \fB\-Jx\fP 0.1 on any map programs applied to this grid (e.g., 
 \fBgrdcontour\fP, \fBgrdimage\fP, \fBgrdview\fP), and then for overlays which work in lon,lat (e.g., \fBpsxy\fP, \fBpscoast\fP) 
-we can use the above adjusted \fB\-R\fP and \fB\-Jm\fP0.1 to get the two systems to match up.
+we can use the above adjusted \fB\-R\fP and \fB\-Jm\fP 0.1 to get the two systems to match up.
 .br
 .sp
 However, we can be smarter than this.  Realizing that the input img file had pixels 2.0 minutes 
@@ -138,7 +138,7 @@ we will probably choose to average the data much more (e.g., 6 by 6) to get smoo
 Since 2039 isn't divisible by 3 we will get a different adjusted OPT(R) this time:\"'
 .br
 .sp
-\fBimg2mercgrd\fP world_grav.img.7.2 \fB\-G\fPmerc_grav_2.grd \fB\-R\fP-40/40/-70/-30 \fB\-T\fP1 \fB\-N\fP3
+\fBimg2mercgrd\fP world_grav.img.7.2 \fB\-G\fP merc_grav_2.grd \fB\-R\fP-40/40/-70/-30 \fB\-T\fP 1 \fB\-N\fP 3
 \fB\-V\fP
 .br
 .sp
@@ -147,19 +147,19 @@ is 800 by 601 pixels, a better size for us.  Now we can create an artificial ill
 this using \fBgrdgradient\fP:
 .br
 .sp
-\fBgrdgradient\fP merc_grav_2.grd \fB\-G\fPillum.grd \fB\-A\fP0/270 \fB\-N\fPe0.6
+\fBgrdgradient\fP merc_grav_2.grd \fB\-G\fP illum.grd \fB\-A\fP 0/270 \fB\-N\fP e0.6
 .br
 .sp
 and if we also have a cpt file called "grav.cpt" we can create a color shaded relief map like this:  
 .br
 .sp
-\fBgrdimage\fP merc_grav_2.grd \fB\-I\fPillum.grd \fB\-C\fPgrav.cpt \fB\-Jx\fP0.1 \fB\-K\fP > map.ps
+\fBgrdimage\fP merc_grav_2.grd \fB\-I\fP illum.grd \fB\-C\fP grav.cpt \fB\-Jx\fP 0.1 \fB\-K\fP > map.ps
 .br
-\fBpsbasemap\fP \fB\-R\fP-40/40/-70.023256525/-29.9368261101 \fB\-Jm\fP0.1 \fB\-B\fPa10 \fB\-O\fP >> map.ps
+\fBpsbasemap\fP \fB\-R\fP-40/40/-70.023256525/-29.9368261101 \fB\-Jm\fP 0.1 \fB\-B\fP a10 \fB\-O\fP >> map.ps
 .br
 .sp
 Suppose you want to obtain only the constrained data values from an img file, in lat/lon coordinates.  
-Then run \fBimg2mercgrd\fP with the \fB\-T\fP2 option, use \fBgrd2xyz\fP to dump the values, pipe through grep -v 
+Then run \fBimg2mercgrd\fP with the \fB\-T\fP 2 option, use \fBgrd2xyz\fP to dump the values, pipe through grep -v 
 NaN to eliminate NaNs, and pipe through \fBmapproject\fP with the inverse projection as above.
 .SH "SEE ALSO"
 .IR GMT (1),

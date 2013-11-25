@@ -1,4 +1,4 @@
-	$Id: README.WIN32 9922 2012-12-18 20:34:29Z pwessel $
+	$Id: README.WIN32 10101 2013-10-24 22:43:11Z pwessel $
 
 README file for installing GMT from scratch (i.e., compiling the
 source) under Windows.  If you only want to install executables,
@@ -42,8 +42,8 @@ the archive.  After installing, make a bookmark for the file
 
 	GMT/share/doc/gmt/html/gmt_sevices.html.
 
-To install the required GSHHG 2.2.2 coastlines, political borders, and
-rivers you must obtain gshhg-gmt-nc3-2.2.2.tar.bz2 as well. Extract from
+To install the required GSHHG 2.2.4 coastlines, political borders, and
+rivers you must obtain gshhg-gmt-nc3-2.2.4.tar.bz2 as well. Extract from
 the directory that contains GMT.
 
 To view your GMT PostScript or EPS plots, we recommend you install gsview

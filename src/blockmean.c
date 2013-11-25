@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: blockmean.c 9923 2012-12-18 20:45:53Z pwessel $
+ *    $Id: blockmean.c 10014 2013-04-14 00:57:05Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -65,11 +65,11 @@ struct BLK_SLH {
 
 int main (int argc, char **argv)
 {
-	GMT_LONG	error = FALSE, nofile = TRUE, done = FALSE, first = TRUE, use_xy;
+	GMT_LONG	error = FALSE, nofile = TRUE, done = FALSE, first = TRUE, use_xy, duplicate_col;
 
 	FILE *fp = NULL;
 
-	double	weight, weighted_z, *in = NULL, wesn[4], out[7], iw;
+	double	weight, weighted_z, *in = NULL, half_dx, wesn[4], out[7], iw;
 
 	GMT_LONG	i, j, n_expected_fields, n_fields, n_req, n_out, w_col;
 	GMT_LONG	n_files = 0, fno, n_args, ij, n_blocks;
@@ -232,6 +232,8 @@ int main (int argc, char **argv)
 	
 	GMT_RI_prepare (&h);	/* Ensure -R -I consistency and set nx, ny */
 
+	duplicate_col = (GMT_360_RANGE (h.x_min, h.x_max) && h.node_offset == 0);	/* E.g., lon = 0 column should match lon = 360 column */
+	half_dx = 0.5 * h.x_inc;
 	n_blocks = GMT_get_nm (h.nx, h.ny);
 	
 	if ((zw = (struct BLK_PAIR *) GMT_memory (VNULL, n_blocks, sizeof (struct BLK_PAIR), GMT_program)) == NULL) {
@@ -328,6 +330,9 @@ int main (int argc, char **argv)
 
 			if (GMT_y_is_outside (in[GMT_Y],  wesn[2], wesn[3])) continue;	/* Outside y-range */
 			if (GMT_x_is_outside (&in[GMT_X], wesn[0], wesn[1])) continue;	/* Outside x-range */
+			if (duplicate_col && (wesn[1]-in[GMT_X] < half_dx)) {	/* Only compute mean values for the west column and not the repeating east column with lon += 360 */
+				in[GMT_X] -= 360.0;	/* Make this point be considered for the western block mean value */
+			}
 
 			/* Get i and j indices of this block */
 			

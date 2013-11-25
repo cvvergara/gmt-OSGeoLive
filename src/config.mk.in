@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-#	$Id: config.mk.in 9925 2012-12-18 23:39:43Z pwessel $
+#	$Id: config.mk.in 10139 2013-11-05 18:20:26Z pwessel $
 #
 #	Standard Makefile Macro Setup for GMT 4
 #
@@ -102,9 +102,9 @@ COMPRESS	= @COMPRESS@
 #-------------------------------------------------------------------------------
 #	Required directives for netCDF includes and library
 #-------------------------------------------------------------------------------
-#
 NETCDF_INC	= @NETCDF_INC@
 NETCDF_LIB	= @NETCDF_LIB@
+
 #
 #-------------------------------------------------------------------------------
 #	Optional directives for GDAL includes and library

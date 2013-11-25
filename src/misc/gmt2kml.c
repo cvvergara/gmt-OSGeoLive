@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt2kml.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt2kml.c 10004 2013-04-04 21:14:48Z pwessel $
  *
  *	Copyright (c) 2009-2013 by P. Wessel
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -784,7 +784,7 @@ void print_altmode (int extrude, int fmode, int altmode)
 {
 	char *RefLevel[5] = {"clampToGround", "relativeToGround", "absolute", "relativeToSeaFloor", "clampToSeaFloor"};
 	if (extrude) printf ("\t\t\t<extrude>1</extrude>\n");
-	if (fmode) printf ("\t\t\t<tesselate>1</tesselate>\n");
+	if (fmode) printf ("\t\t\t<tessellate>1</tessellate>\n");
 	if (altmode == KML_GROUND_REL || altmode == KML_ABSOLUTE) printf ("\t\t\t<altitudeMode>%s</altitudeMode>\n", RefLevel[altmode]);
 	if (altmode == KML_SEAFLOOR_REL || altmode == KML_SEAFLOOR) printf ("\t\t\t<gx:altitudeMode>%s</gx:altitudeMode>\n", RefLevel[altmode]);
 }

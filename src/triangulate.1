@@ -1,4 +1,4 @@
-.TH TRIANGULATE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH TRIANGULATE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 triangulate \- Perform optimal Delaunay triangulation and gridding of Cartesian data [method]
 .SH SYNOPSIS
@@ -231,21 +231,21 @@ To triangulate the points in the file samples.xyz, store the triangle informatio
 make a grid for the given area and spacing, use
 .br
 .sp
-\fBtriangulate\fP samples.xyz \fB\-bo\fP \fB\-R\fP0/30/0/30 \fB\-I\fP2 \fB\-G\fPsurf.grd > samples.ijk
+\fBtriangulate\fP samples.xyz \fB\-bo\fP \fB\-R\fP 0/30/0/30 \fB\-I\fP 2 \fB\-G\fP surf.grd > samples.ijk
 .br
 .sp
 To draw the optimal Delaunay triangulation network based on the same file using a
-15-cm-wide Mercator map, use
+15 -cm-wide Mercator map, use
 .br
 .sp
-\fBtriangulate\fP samples.xyz \fB\-m\fP \fB\-R\fP-100/-90/30/34 \fB\-JM\fP15\fBc\fP | \fBpsxy\fP \fB\-m\fP OPR(R)-100/-90/30/34 \fB\-JM\fP15\fBc\fP
-\fB\-W\fP0.5\fBp\fP \fB\-B\fP1 > network.ps
+\fBtriangulate\fP samples.xyz \fB\-m\fP \fB\-R\fP-100/-90/30/34 \fB\-JM\fP 15\fBc\fP | \fBpsxy\fP \fB\-m\fP \fB\-R\fP-100/-90/30/34 \fB\-JM\fP 15\fBc\fP
+\fB\-W\fP 0.5\fBp\fP \fB\-B\fP 1 > network.ps
 .br
 .sp
 To instead plot the Voronoi cell outlines, try
 .br
-\fBtriangulate\fP samples.xyz \fB\-m\fP \fB\-Q\fP \fB\-R\fP-100/-90/30/34 \fB\-JM\fP15\fBc\fP | \fBpsxy\fP \fB\-m\fP OPR(R)-100/-90/30/34 \fB\-JM\fP15\fBc\fP
-\fB\-W\fP0.5\fBp\fP \fB\-B\fP1 > cells.ps
+\fBtriangulate\fP samples.xyz \fB\-m\fP \fB\-Q\fP \fB\-R\fP-100/-90/30/34 \fB\-JM\fP 15\fBc\fP | \fBpsxy\fP \fB\-m\fP \fB\-R\fP-100/-90/30/34 \fB\-JM\fP 15\fBc\fP
+\fB\-W\fP 0.5\fBp\fP \fB\-B\fP 1 > cells.ps
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR pscontour (1)

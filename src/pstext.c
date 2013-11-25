@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pstext.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: pstext.c 10071 2013-07-06 02:31:21Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -633,6 +633,11 @@ int main(int argc, char **argv)
 					ps_encode_font (T.paragraph_font);
 					use_font[T.paragraph_font] = TRUE;
 				}
+				if (T.boxflag & 32) {	/* Draw line from original point to shifted location */
+					GMT_setpen (&T.vecpen);
+					if (project_info.three_D) GMT_2D_to_3D (xx, yy, project_info.z_level, (GMT_LONG)2);
+					ps_segment (xx[0], yy[0], xx[1], yy[1]);
+				}
 				if (T.boxflag & 31) {
 					GMT_setpen (&T.boxpen);
 					if (T.space_flag) {	/* Meant % of fontsize */
@@ -653,11 +658,6 @@ int main(int argc, char **argv)
 				if (Ctrl->G.active) {
 					ps_setpaint (T.txtfill.rgb);
 					GMT_text3D (plot_x, plot_y, z_level, T.font_size, T.paragraph_font, text, T.paragraph_angle, T.block_justify, FALSE);
-				}
-				if (T.boxflag & 32) {	/* Draw line from original point to shifted location */
-					GMT_setpen (&T.vecpen);
-					if (project_info.three_D) GMT_2D_to_3D (xx, yy, project_info.z_level, (GMT_LONG)2);
-					ps_segment (xx[0], yy[0], xx[1], yy[1]);
 				}
 			}
 		} /* Go read next line */

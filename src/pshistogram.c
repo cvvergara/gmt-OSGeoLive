@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pshistogram.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: pshistogram.c 10096 2013-10-13 02:16:09Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -231,7 +231,7 @@ int main (int argc, char **argv)
 
 	if (argc == 1 || GMT_give_synopsis_and_exit) {
 		fprintf (stderr,"pshistogram %s - Calculate and plot histograms\n\n", GMT_VERSION);
-		fprintf (stderr, "usage: pshistogram [file] %s -W<width> [%s] [-C<cpt>] [-Eaz/el] [-F] [-G<fill>]\n", GMT_Jx_OPT, GMT_B_OPT);
+		fprintf (stderr, "usage: pshistogram [file] %s -W<width> [%s] [-A] [-C<cpt>] [-Eaz/el] [-F] [-G<fill>]\n", GMT_Jx_OPT, GMT_B_OPT);
 		fprintf (stderr, "\t[%s] [-I[o|O]] [-K] [-L<pen>] [-O] [-P] [-Q] [%s]\n", GMT_Ho_OPT, GMT_Rx_OPT);
 		fprintf (stderr, "\t[-S] [-T<col>] [%s] [-V] [%s] [%s]\n", GMT_U_OPT, GMT_X_OPT, GMT_Y_OPT);
 		fprintf (stderr, "\t[-Z[type]] [%s] [%s] [%s]\n\n", GMT_c_OPT, GMT_bi_OPT, GMT_f_OPT);

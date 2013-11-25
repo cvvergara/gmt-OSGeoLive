@@ -20,6 +20,8 @@
  *	Do NOT edit manually!
  */
 
+#include <math.h>
+
 void grdmath_init (PFV ops[], GMT_LONG n_args[], GMT_LONG n_out[])
 {
 

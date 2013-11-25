@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_map.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_map.c 10081 2013-09-02 17:03:05Z jluis $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -118,6 +118,7 @@ void GMT_ilinearxy (double *x, double *y, double x_i, double y_i);	/*	Convert in
 
 GMT_LONG GMT_wesn_outside (double lon, double lat);		/*	Returns TRUE if a lon/lat point is outside map (rectangular wesn boundaries only)	*/
 GMT_LONG GMT_polar_outside (double lon, double lat);		/*	Returns TRUE if a x'/y' point is outside the polar boundaries	*/
+GMT_LONG GMT_cart_outside (double x, double y);
 GMT_LONG GMT_rect_outside (double lon, double lat);		/*	Returns TRUE if a x'/y' point is outside the x'/y' boundaries	*/
 GMT_LONG GMT_rect_outside2 (double lon, double lat);		/*	Returns TRUE if a x'/y' point is outside the x'/y' boundaries (azimuthal maps only)	*/
 GMT_LONG GMT_eqdist_outside (double lon, double lat);		/*	Returns TRUE if a x'/y' point is on the map perimeter	*/
@@ -587,9 +588,8 @@ GMT_LONG GMT_map_setup (double west, double east, double south, double north)
 		GMT_wesn_search (project_info.xmin, project_info.xmax, project_info.ymin, project_info.ymax, &project_info.w, &project_info.e, &project_info.s, &project_info.n);
 		GMT_dlon = (project_info.e - project_info.w) / GMT_n_lon_nodes;
 		GMT_dlat = (project_info.n - project_info.s) / GMT_n_lat_nodes;
+		if (GMT_IS_AZIMUTHAL && !project_info.region) GMT_horizon_search (west, east, south, north, project_info.xmin, project_info.xmax, project_info.ymin, project_info.ymax);
 	}
-
-	if (GMT_IS_AZIMUTHAL && !project_info.region) GMT_horizon_search (west, east, south, north, project_info.xmin, project_info.xmax, project_info.ymin, project_info.ymax);
 
 	if (project_info.central_meridian < project_info.w && (project_info.central_meridian + 360.0) <= project_info.e) project_info.central_meridian += 360.0;
 	if (project_info.central_meridian > project_info.e && (project_info.central_meridian - 360.0) >= project_info.w) project_info.central_meridian -= 360.0;
@@ -1041,10 +1041,21 @@ GMT_LONG GMT_map_init_linear (void) {
 	project_info.KM_PR_DEG = 0.001;
 
 	GMT_map_setxy (xmin, xmax, ymin, ymax);
-	GMT_outside = (PFL) GMT_rect_outside;
-	GMT_crossing = (PFL) GMT_rect_crossing;
-	GMT_overlap = (PFL) GMT_rect_overlap;
-	GMT_map_clip = (PFL) GMT_rect_clip;
+	if (project_info.degree[0]) {	/* Using linear with geographic longitudes */
+		GMT_outside = (PFL) GMT_wesn_outside;
+		GMT_crossing = (PFL) GMT_wesn_crossing;
+		GMT_overlap = (PFL) GMT_wesn_overlap;
+		GMT_map_clip = (PFL) GMT_wesn_clip;
+	}
+	else {
+		GMT_outside = (PFL) GMT_rect_outside;
+		GMT_crossing = (PFL) GMT_rect_crossing;
+		GMT_overlap = (PFL) GMT_rect_overlap;
+		GMT_map_clip = (PFL) GMT_rect_clip;
+	}
+	GMT_n_lon_nodes = 3;	/* > 2 to avoid map-jumps */
+	GMT_n_lat_nodes = 2;
+	GMT_meridian_straight = GMT_parallel_straight = TRUE;
 	frame_info.check_side = TRUE;
 	frame_info.horizontal = TRUE;
 	GMT_meridian_straight = GMT_parallel_straight = TRUE;
@@ -1615,6 +1626,7 @@ void GMT_pole_rotate_inverse (double *lon, double *lat, double tlon, double tlat
 	*lon = project_info.o_pole_lon + d_atan2d (cos_tlat * sin_tlon, project_info.o_sin_pole_lat * cc + project_info.o_cos_pole_lat * sin_tlat);
 }
 
+#if 0
 void GMT_get_rotate_pole (double lon1, double lat1, double lon2, double lat2)
 {	/* New version using vectors */
 	GMT_LONG k;
@@ -1631,6 +1643,34 @@ void GMT_get_rotate_pole (double lon1, double lat1, double lon2, double lat2)
 	GMT_pole_rotate_forward (lon1, lat1, &beta, &dummy);
 	project_info.o_beta = -beta;
 }
+#endif
+
+void GMT_get_rotate_pole (double lon1, double lat1, double lon2, double lat2)
+{
+	double plon, plat, beta, dummy, x, y;
+	double sin_lon1, cos_lon1, sin_lon2, cos_lon2, sin_lat1, cos_lat1, sin_lat2, cos_lat2;
+
+	sincosd (lon1, &sin_lon1, &cos_lon1);
+	sincosd (lon2, &sin_lon2, &cos_lon2);
+	sincosd (lat1, &sin_lat1, &cos_lat1);
+	sincosd (lat2, &sin_lat2, &cos_lat2);
+
+	y = cos_lat1 * sin_lat2 * cos_lon1 - sin_lat1 * cos_lat2 * cos_lon2;
+	x = sin_lat1 * cos_lat2 * sin_lon2 - cos_lat1 * sin_lat2 * sin_lon1;
+	plon = d_atan2d (y, x);
+	plat = atand (-cosd (plon - lon1) / tand (lat1));
+	if (plat < 0.0) {
+		plat = -plat;
+		plon += 180.0;
+		if (plon >= 360.0) plon -= 360.0;
+	}
+	project_info.o_pole_lon = plon;
+	project_info.o_pole_lat = plat;
+	sincosd (plat, &project_info.o_sin_pole_lat, &project_info.o_cos_pole_lat);
+	GMT_pole_rotate_forward (lon1, lat1, &beta, &dummy);
+	project_info.o_beta = -beta;
+}
+
 
 void GMT_get_origin (double lon1, double lat1, double lon_p, double lat_p, double *lon2, double *lat2)
 {
@@ -3860,6 +3900,33 @@ GMT_LONG GMT_rect_outside (double lon, double lat)
 	return (GMT_x_status_new != 0 || GMT_y_status_new != 0);
 }
 
+GMT_LONG GMT_cart_outside (double x, double y)
+{
+	if (GMT_on_border_is_outside && fabs (x - project_info.xmin) < GMT_SMALL)
+		GMT_x_status_new = -1;
+	else if (GMT_on_border_is_outside && fabs (x - project_info.xmax) < GMT_SMALL)
+		GMT_x_status_new = 1;
+	else if (x < project_info.xmin)
+		GMT_x_status_new = -2;
+	else if (x > project_info.xmax)
+		GMT_x_status_new = 2;
+	else
+		GMT_x_status_new = 0;
+
+	if (GMT_on_border_is_outside && fabs (y -project_info.ymin) < GMT_SMALL)
+		GMT_y_status_new = -1;
+	else if (GMT_on_border_is_outside && fabs (y - project_info.ymax) < GMT_SMALL)
+		GMT_y_status_new = 1;
+	else if (y < project_info.ymin)
+		GMT_y_status_new = -2;
+	else if (y > project_info.ymax)
+		GMT_y_status_new = 2;
+	else
+		GMT_y_status_new = 0;
+
+	return (GMT_x_status_new != 0 || GMT_y_status_new != 0);
+}
+
 GMT_LONG GMT_rect_outside2 (double lon, double lat)
 {	/* For Azimuthal proj with rect borders since GMT_rect_outside may fail for antipodal points */
 	if (GMT_radial_outside (lon, lat)) return (TRUE);	/* Point > 90 degrees away */
@@ -4862,13 +4929,12 @@ GMT_LONG GMT_rect_clip (double *lon, double *lat, GMT_LONG n, double **x, double
 GMT_LONG GMT_wesn_clip (double *lon, double *lat, GMT_LONG n_orig, double **x, double **y, GMT_LONG *total_nx)
 {
 	GMT_LONG i, n, m, new_n, *x_index = NULL, *x_type = NULL;
-	GMT_LONG n_alloc, n_x_alloc, range, way;
+	GMT_LONG n_alloc, n_x_alloc;
 	GMT_LONG side, j, np, in = 1, n_cross = 0, out = 0, cross = 0;
 	GMT_LONG polygon, jump = FALSE, curved, periodic = FALSE;
 	double *xtmp[2] = {NULL, NULL}, *ytmp[2] = {NULL, NULL}, xx[2], yy[2], border[4];
 	double x1, x2, y1, y2;
 	PFL clipper[4], inside[4], outside[4];
-	struct GMT_QUAD *Q = NULL;
 #ifdef DEBUG
 	FILE *fp = NULL;
 	GMT_LONG dump = 0;
@@ -4905,20 +4971,12 @@ GMT_LONG GMT_wesn_clip (double *lon, double *lat, GMT_LONG n_orig, double **x, d
 	inside[0] = inside[3] = inside_lower_boundary;		outside[0] = outside[3] = outside_lower_boundary;
 	border[0] = project_info.s; border[3] = project_info.w;	border[1] = project_info.e;	border[2] = project_info.n;
 	/* Make data longitudes have no jumps */
-	Q = GMT_quad_init (1);	/* Allocate and initialize one QUAD structure */
-	/* We must keep separate min/max for both Dateline and Greenwich conventions */
-	for (i = 0; i < n; i++) GMT_quad_add (Q, lon[i]);
-	GMT_quad_add (Q, border[1]);	GMT_quad_add (Q, border[3]);
-	/* Finalize longitude range settings */
-	way = GMT_quad_finalize (Q);
-	GMT_free ((void *)Q);
-	range = (way) ? 0 : 2;
-	for (i = 0; i < n; i++) GMT_lon_range_adjust (range, &lon[i]);
-	GMT_lon_range_adjust (range, &border[1]);	GMT_lon_range_adjust (range, &border[3]);
-	if (border[3] > border[1] && way == 0) border[3] -= 360.0;
-	else if (border[3] > border[1] && way == 1) border[1] += 360.0;
-	/* Final safety valve for e,w somehow gotten wound too far east; if so take out 360 */
-	if (border[1] > 360.0 && border[3] > 0.0) {border[1] -= 360.0; border[3] -= 360.0;}
+	for (i = 0; i < n; i++) {
+		if (lon[i] < border[3] && (lon[i] + 360.0) <= border[1])
+			lon[i] += 360.0;
+		else if (lon[i] > border[1] && (lon[i] - 360.0) >= border[3])
+			lon[i] -= 360.0;
+	}
 	
 	n_alloc = (GMT_LONG)irint (1.05*n+5);	/* Anticipate just a few crossings (5%)+5, allocate more later if needed */
 	/* Create a pair of arrays for holding input and output */
@@ -5492,6 +5550,12 @@ GMT_LONG GMT_compact_line (double *x, double *y, GMT_LONG n, GMT_LONG pen_flag, 
 GMT_LONG GMT_grdproject_init (struct GRD_HEADER *head, double x_inc, double y_inc, GMT_LONG nx, GMT_LONG ny, GMT_LONG dpi, GMT_LONG offset)
 {
 	if (x_inc > 0.0 && y_inc > 0.0) {
+		if (GMT_inc_code[0] || GMT_inc_code[1]) {	/* Must use GMT_RI_prepare to convert these to actual degree increments */
+			head->x_inc = x_inc; head->y_inc = y_inc;
+			GMT_RI_prepare (head);	/* Must first convert incs from dist units to degrees */
+			x_inc = head->x_inc; y_inc = head->y_inc;
+			GMT_inc_code[0] = GMT_inc_code[1] = 0;
+		}
 		head->nx = (int)GMT_get_n (head->x_min, head->x_max, x_inc, offset);
 		head->ny = (int)GMT_get_n (head->y_min, head->y_max, y_inc, offset);
 		head->x_inc = GMT_get_inc (head->x_min, head->x_max, head->nx, offset);
@@ -6980,6 +7044,9 @@ GMT_LONG GMT_map_loncross (double lon, double south, double north, struct GMT_XI
 	GMT_geo_to_xy (lon, lat_old, &last_x, &last_y);
 	for (j = 1; j <= GMT_n_lat_nodes; j++) {
 		lat = (j == GMT_n_lat_nodes) ? north: south + j * GMT_dlat;
+		if (j == 382) {
+			nx = 8;
+		}
 		GMT_map_outside (lon, lat);
 		GMT_geo_to_xy (lon, lat, &this_x, &this_y);
 		if ((nx = GMT_map_crossing (lon, lat_old, lon, lat, xlon, xlat, X[nc].xx, X[nc].yy, X[nc].sides))) {

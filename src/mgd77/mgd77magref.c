@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77magref.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: mgd77magref.c 10060 2013-06-24 00:04:12Z pwessel $
  *
  *    Copyright (c) 2009-2013 by J. Luis and P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -18,10 +18,10 @@
 
 int main (int argc, char **argv) {
 
-	GMT_LONG i, j, s, pos_slash = 0, nval = 0, nfval = 0, fno, n_files = 0, n_args, t_col = 3, n_out = 0;
+	GMT_LONG i, j, s, pos_slash = 0, nval = 0, nfval = 0, fno, n_files = 0, n_args, t_col = 3, n_out = 0, n_in;
 	GMT_LONG lval = 0, lfval = 0, n_field_components, this_i, pos, error = 0;
 	GMT_LONG nofile = TRUE, copy_input = FALSE, time_in_years = FALSE, fixed_alt = FALSE, fixed_time = FALSE;
-	GMT_LONG do_CM4 = TRUE, joint_IGRF_CM4 = FALSE, do_IGRF = FALSE, cm4_igrf_T = FALSE, done;
+	GMT_LONG do_CM4 = TRUE, joint_IGRF_CM4 = FALSE, do_IGRF = FALSE, do_CM4core = FALSE, cm4_igrf_T = FALSE, done;
 	size_t n_alloc = 0, need = 0;
 	double	the_altitude, the_time, *time_array = NULL, *alt_array = NULL, *time_years = NULL, IGRF[7], out[GMT_MAX_COLUMNS];
 	double	*igrf_xyz = NULL;	/* Temporary storage for the joint_IGRF_CM4 case */
@@ -164,7 +164,8 @@ int main (int argc, char **argv) {
 									joint_IGRF_CM4 = FALSE;
 									break;
 								case '1':		/* Main field 1 */
-									Ctrl->F.field_sources[nfval++] = 0; 
+									Ctrl->F.field_sources[nfval++] = 0;
+									do_CM4core = TRUE; 
 									break;
 								case '2':		/* Main field 2 */
 									Ctrl->F.field_sources[nfval++] = 1; 
@@ -191,7 +192,7 @@ int main (int argc, char **argv) {
 									break;
 							}
 						}
-						Ctrl->F.n_field_sources = (int)nfval; 
+						Ctrl->F.n_field_sources = (int)nfval;
 					}
 					break;
 				case 'G':
@@ -312,7 +313,7 @@ int main (int argc, char **argv) {
 		fprintf (stderr, "\t	 5 Primary ionospheric field.\n");
 		fprintf (stderr, "\t	 6 Induced ionospheric field.\n");
 		fprintf (stderr, "\t	 7 Toroidal field.\n");
-		fprintf (stderr, "\t	 9 means Core field from IGRF and other contributions from CM4. DO NOT USE BOTH 0 AND 9.\n");
+		fprintf (stderr, "\t	 9 means Core field from IGRF and other contributions from CM4. DO NOT USE BOTH 1 AND 9.\n");
 		fprintf (stderr, "\t   Append several numbers to add up the different contributions. For example,\n");
 		fprintf (stderr, "\t     -Ft/12 computes the total field due to CM4 Core and Lithospheric sources.\n");
 		fprintf (stderr, "\t     Two special cases are allowed which mix which Core field from IGRF and other sources from CM4.\n");
@@ -355,10 +356,16 @@ int main (int argc, char **argv) {
 		fprintf (stderr, "%s: GMT SYNTAX ERROR.  Binary input data (-bi) must have at least %ld columns\n", GMT_program, n_out);
 		error++;
 	}
+	n_in = n_out;
 
 	if (Ctrl->F.active && Ctrl->L.curr) {
 		fprintf (stderr, "%s: GMT SYNTAX ERROR. You cannot select both -F and -L options.\n", GMT_program);
 		error++;
+	}
+						
+	if ((do_CM4core && do_IGRF) || (do_CM4core && joint_IGRF_CM4)) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR: You cannot select both CM4 core (1) and IGRF as they are both core fields.\n", GMT_program);
+			error++;
 	}
 
 	if ( nfval && do_IGRF )
@@ -472,6 +479,13 @@ int main (int argc, char **argv) {
 				GMT_program, n_out, GMT_io.ncol[GMT_OUT]);
 			exit (EXIT_FAILURE);
 		}
+
+		if (T->n_columns < n_in) {
+			fprintf (stderr, "%s: File %ld has %ld columns, but from the used options we expect %ld\n",
+				GMT_program, fno, T->n_columns, n_in);
+			continue;
+		}
+
 		for (s = 0; s < T->n_segments; s++) {	/* Process each file segment separately */
 			if (GMT_io.multi_segments[GMT_OUT]) {
 				if (T->segment[s]->header)
@@ -508,8 +522,9 @@ int main (int argc, char **argv) {
 			}
 
 			if (!(do_IGRF || joint_IGRF_CM4 ) && !s && time_array[0] > 2002.7) {	/* Only atmospheric terms may be reliable */
-				fprintf (stderr, "%s: WARNING. Time is outside the CM4 strict validity domain [1960-2002.7].\n", GMT_program);
-				fprintf (stderr, "\tThough extended here to 2009 the secular variation estimation will be unreliable.\n");
+				fprintf (stderr, "%s: WARNING. Time is outside the CM4 strict validity domain [1960.0-2002.7].\n", GMT_program);
+				fprintf (stderr, "\tThe secular variation estimation will be unreliable. In this case\n"
+							"\tyou really should use the IGRF to estimate the core contribution.\n");
 			}
 
 			Ctrl->DATA.n_pts = (int)T->segment[s]->n_rows;
@@ -533,8 +548,15 @@ int main (int argc, char **argv) {
 				}
 			}
 
-			if (do_CM4) 				/* DO CM4 only. Eval CM4 at all points */
-				MGD77_cm4field (Ctrl, T->segment[s]->coord[GMT_X], T->segment[s]->coord[GMT_Y], alt_array, time_array);
+			if (do_CM4) {				/* DO CM4 only. Eval CM4 at all points */
+				if ((error = MGD77_cm4field (Ctrl, T->segment[s]->coord[GMT_X], T->segment[s]->coord[GMT_Y],
+					alt_array, time_array))) {
+					fprintf(stderr, "Error: this segment has a record generating error.\n"
+						"Unfortunately, this means all other eventually good records\n"
+						"are also ignored. Fix the bad record and rerun the command.\n");
+					continue;
+				}
+			}
 
 			if ((do_CM4 || do_IGRF) && !joint_IGRF_CM4) {	/* DID CM4 or (exclusive) IGRF only. */
 				for (i = 0; i < T->segment[s]->n_rows; i++) {	/* Output the requested columns */

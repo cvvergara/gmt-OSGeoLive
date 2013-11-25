@@ -1,4 +1,4 @@
-.TH GRDBLEND 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDBLEND 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdblend \- Blend several partially over-lapping grids into one large grid
 .SH SYNOPSIS
@@ -100,7 +100,7 @@ by putting a backslash in front of it, or by placing the filename and suffix bet
 .SH GEOGRAPHICAL AND TIME COORDINATES
 When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
 attributes of the input data or grid (if any) or on the
-\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP 90w/90e/0t/3t will result in a longitude/time
 grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
 specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
 In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
@@ -120,7 +120,7 @@ piece_4.nc	-R<subregion_4> 1
 Then run
 .br
 .sp
-\fBgrdblend\fP blend.job \fB\-G\fPblend.nc \fB\-R\fP<full_region> \fB\-I\fP<dx/dy> \fB-V\fP
+\fBgrdblend\fP blend.job \fB\-G\fP blend.nc \fB\-R\fP<full_region> \fB\-I\fP<dx/dy> \fB-V\fP
 .SH RESTRICTIONS
 Currently, all grids processed must have the exact same node registration and grid spacing
 as the final output grid.

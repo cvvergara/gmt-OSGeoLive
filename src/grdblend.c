@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: grdblend.c 9923 2012-12-18 20:45:53Z pwessel $
+ *    $Id: grdblend.c 10072 2013-07-06 22:18:47Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -249,6 +249,9 @@ int main (int argc, char **argv)
 		fprintf (stderr, "%s: GMT SYNTAX ERROR -W:  Only applies when there is a single input grid file\n", GMT_program);
 		exit (EXIT_FAILURE);
 	}
+	if (!Ctrl->W.active && n_blend == 1) {
+		fprintf (stderr, "%s: Warning: Only 1 grid found; no blending will take place\n", GMT_program);
+	}
 
 	/* Initialize header structure for output blend grid */
 
@@ -393,13 +396,30 @@ GMT_LONG init_blend_job (FILE *fp, struct GRD_HEADER *h, struct GRDBLEND_INFO **
 		}
 		GMT_err_fail (GMT_read_grd_info (B[n].file, &B[n].G.header), B[n].file);	/* Read header structure */
 		if (found_unsupported_format (&B[n].G.header, "Error for input grid", B[n].file)) exit (EXIT_FAILURE);
+		if (GMT_io.in_col_type[0] == GMT_IS_LON) {
+			if (B[n].G.header.x_min > h->x_max && (B[n].G.header.x_max - 360.0) > h->x_min) {
+				B[n].G.header.x_min -= 360.0;	B[n].G.header.x_max -= 360.0;
+			}
+			else if (B[n].G.header.x_max < h->x_min && (B[n].G.header.x_min + 360.0) < h->x_max) {
+				B[n].G.header.x_min += 360.0;	B[n].G.header.x_max += 360.0;
+			}
+		}
 		if (!strcmp (r_in, "-")) {	/* Set inner = outer region */
 			B[n].w_in = B[n].G.header.x_min;	B[n].e_in = B[n].G.header.x_max;
 			B[n].s_in = B[n].G.header.y_min;	B[n].n_in = B[n].G.header.y_max;
 		}
-		else	/* Must decode the -R string */
+		else {	/* Must decode the -R string */
 			decode_R (&r_in[2], &B[n].w_in, &B[n].e_in, &B[n].s_in, &B[n].n_in);	/* Decode inner region */
-
+			if (GMT_io.in_col_type[0] == GMT_IS_LON) {
+				if (B[n].w_in > h->x_max && (B[n].e_in - 360.0) > h->x_min) {
+					B[n].w_in -= 360.0;	B[n].e_in -= 360.0;
+				}
+				else if (B[n].e_in < h->x_min && (B[n].w_in + 360.0) < h->x_max) {
+					B[n].w_in += 360.0;	B[n].e_in += 360.0;
+				}
+			}
+		}
+		
 		/* Skip the file if its outer region does not lie within the final grid region */
 		if (h->x_min > B[n].e_in || h->x_max < B[n].w_in || h->y_min > B[n].n_in || h->y_max < B[n].s_in) {
 			fprintf (stderr, "%s: Warning: File %s entirely outside final grid region (skipped)\n", GMT_program, B[n].file);

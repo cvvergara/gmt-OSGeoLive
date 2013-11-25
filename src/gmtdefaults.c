@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtdefaults.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmtdefaults.c 10093 2013-10-04 23:52:54Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -63,7 +63,7 @@ int main (int argc, char **argv)
 					case 'u':
 						get = 2;
 						break;
-					default:	/* Version chosen in gmt.conf */
+					default:	/* Version chosen in gmt_setup.conf */
 						get = 0;
 						break;
 				}

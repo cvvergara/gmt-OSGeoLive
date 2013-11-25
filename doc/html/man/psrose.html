@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:04 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:35 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -440,7 +440,7 @@ center of the page based on current page size.</p></td>
 
 
 <p style="margin-top: 1em" valign="top">Multiply the data
-radii by <i>scale</i>. E.g., use <b>&minus;Z</b>0.001 to
+radii by <i>scale</i>. E.g., use <b>&minus;Z</b> 0.001 to
 convert your data from m to km [Default is no scaling].</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
@@ -590,13 +590,12 @@ by a solid red pen (width = 0.75 points), draw the mean
 azimuth, and shown in Portrait orientation, use:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psrose</b>
-fault_segments.az_r <b>&minus;R</b>0/150/-90/90
-<b>&minus;B</b>50g25:&quot;Fault
-length&quot;:/g30:.&quot;Rose diagram&quot;:
-<b>&minus;S</b>3<b>i &minus;A</b>10<b>r
-&minus;G</b>lightblue <b>&minus;W</b>0.75<b>p</b>,red
-<b>&minus;Z</b>0.001 <b>&minus;C &minus;P &minus;T
-&minus;:</b> | lpr</p>
+fault_segments.az_r <b>&minus;R</b> 0/150/-90/90
+<b>&minus;B</b> 50g25:&quot;Fault
+length&quot;:/g30:.&quot;Rose diagram&quot;: <b>&minus;S</b>
+3<b>i &minus;A</b> 10<b>r &minus;G</b> lightblue
+<b>&minus;W</b> 0.75<b>p</b>,red <b>&minus;Z</b> 0.001
+<b>&minus;C &minus;P &minus;T &minus;:</b> | lpr</p>
 
 <p style="margin-left:11%; margin-top: 1em">To plot a full
 circle wind rose diagram of the data in the file lines.r_az,
@@ -607,9 +606,9 @@ landscape [Default] orientation with UNIX timestamp and
 command line plotted, use:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>psrose</b>
-lines.az_r <b>&minus;R</b>0/500/0/360 <b>&minus;S</b>5<b>c
-&minus;Bg</b>100/<b>g</b>45:.&quot;Windrose diagram&quot;:
-<b>&minus;W</b>0.5<b>p &minus;Uc</b> | lpr</p>
+lines.az_r <b>&minus;R</b> 0/500/0/360 <b>&minus;S</b> 5<b>c
+&minus;Bg</b> 100/<b>g</b>45:.&quot;Windrose diagram&quot;:
+<b>&minus;W</b> 0.5<b>p &minus;Uc</b> | lpr</p>
 
 <a name="BUGS"></a>
 <h2>BUGS</h2>

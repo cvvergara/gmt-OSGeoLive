@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_grdio.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_grdio.h 9983 2013-01-18 00:16:24Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -36,12 +36,16 @@
 #define GMT_IMG_MAXLAT_72	+72.0059773539
 #define GMT_IMG_MINLAT_80	-80.7380086280
 #define GMT_IMG_MAXLAT_80	+80.7380086280
+#define GMT_IMG_MINLAT_85	-85.0511287798
+#define GMT_IMG_MAXLAT_85	+85.0511287798
 #define GMT_IMG_NLON_1M		21600	/* At 1 min resolution */
 #define GMT_IMG_NLON_2M		10800	/* At 2 min resolution */
 #define GMT_IMG_NLAT_1M_72	12672	/* At 1 min resolution */
 #define GMT_IMG_NLAT_1M_80	17280	/* At 1 min resolution */
-#define GMT_IMG_NLAT_2M_72	6336	/* At 1 min resolution */
-#define GMT_IMG_NLAT_2M_80	8640	/* At 1 min resolution */
+#define GMT_IMG_NLAT_1M_85	21600	/* At 1 min resolution */
+#define GMT_IMG_NLAT_2M_72	6336	/* At 2 min resolution */
+#define GMT_IMG_NLAT_2M_80	8640	/* At 2 min resolution */
+#define GMT_IMG_NLAT_2M_85	10800	/* At 2 min resolution */
 #define GMT_IMG_ITEMSIZE	2	/* Size of 2 byte short ints */
 
 EXTERN_MSC GMT_LONG GMT_grdformats [GMT_N_GRD_FORMATS][2];

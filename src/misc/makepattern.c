@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: makepattern.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: makepattern.c 10121 2013-11-03 20:05:22Z remko $
  *
  *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -40,7 +40,7 @@ int main (int argc, char **argv)
 {
 	GMT_LONG pad = FALSE, icon = FALSE;
 
-	int i, j, k, kk, nx, ny, extra, mx, step, error = 0;
+	int i, j, k, kk, nx = 0, ny = 0, extra, mx, step, error = 0;
 
 	unsigned char map[6], *rgb = NULL;
 #ifdef _WIN32
@@ -152,8 +152,7 @@ int main (int argc, char **argv)
 		fprintf(stderr,"%s: Specify either a 1-bit rasterfile or an iconfile\n", GMT_program);
 		exit (EXIT_FAILURE);
 	}
-
-	if (fp) {	/* Got a 1-bit Sun rasterfile */
+	else {	/* Got a 1-bit Sun rasterfile */
 
 		if (ps_read_rasheader (fp, &h, 0, 7)) {
 			fprintf (stderr, "%s: Trouble reading Sun rasterfile header!\n", GMT_program);

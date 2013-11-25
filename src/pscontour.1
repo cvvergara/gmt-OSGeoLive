@@ -1,11 +1,11 @@
-.TH PSCONTOUR 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSCONTOUR 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 pscontour \- Contour xyz-data by direct triangulation [method]
 .SH SYNOPSIS
 \fBpscontour\fP \fIxyzfile\fP \fB\-C\fP\fIcptfile\fP \fB\-J\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] 
 [ \fB\-A\fP[\fB-\fP][\fIlabelinfo\fP] ] [ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] [ \fB\-D\fP[\fIdumpfile\fP] ] [ \fB\-E\fP\fIazim\fP/\fIelev\fP[\fB+w\fP\fIlon\fP/\fIlat\fP[/\fIz\fP]][\fB+v\fP\fIx0\fP/\fIy0\fP] ] 
 [ \fB\-G\fP[\fBd\fP|\fBf\fP|\fBn\fP|\fBl\fP|\fBL\fP|\fBx\fP|\fBX\fP]\fIparams\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-I\fP ] [ \fB\-K\fP ] 
-[ \fB\-L\fP\fIpen\fP ] [ \fB\-N\fP ] [ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-S\fP ] [ \fB\-T\fP\fIindexfile\fP ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ] 
+[ \fB\-L\fP\fIpen\fP ] [ \fB\-N\fP ] [ \fB\-O\fP ] [ \fB\-P\fP ] [ \fB\-S\fP[\fBp\fP|\fBt\fP] ] [ \fB\-T\fP\fIindexfile\fP ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ] 
 [ \fB\-V\fP ] [ \fB\-W\fP[\fB+\fP]\fIpen\fP ] [ \fB\-X\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIx-shift\fP[\fBu\fP]] ] 
 [ \fB\-Y\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIy-shift\fP[\fBu\fP]] ] [ \fB\-c\fP\fIcopies\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-b\fP[\fBi\fP|\fBo\fP][\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-m\fP[\fIflag\fP] ]
 .SH DESCRIPTION
@@ -320,7 +320,8 @@ Selects Overlay plot mode [Default initializes a new plot system].
 Selects Portrait plotting mode [Default is Landscape, see \fBgmtdefaults\fP to change this].
 .TP
 \fB\-S\fP
-Skip all input \fIxyz\fP points that fall outside the region [Default uses all the data in the triangulation].
+Or \fB\-Sp\fP: Skip all input \fIxyz\fP points that fall outside the region [Default uses all the data in the triangulation].
+Alternatively, use \fB\-St\fP to skip triangles whose three vertices are all outside the region.
 .TP
 \fB\-T\fP
 Give name of file with network information.  Each record must contain triplets of
@@ -405,7 +406,7 @@ given in the color palette file topo.cpt on a Lambert map
 at 0.5 inch/degree along the standard parallels 18 and 24, use 
 .br
 .sp
-\fBpscontour\fP topo.xyz \fB\-R\fP320/330/20/30 \fB\-Jl\fP18/24/0.5\fBi\fP \fB\-C\fPtopo.cpt \fB\-W\fP0.5\fBp\fP > topo.ps
+\fBpscontour\fP topo.xyz \fB\-R\fP 320/330/20/30 \fB\-Jl\fP 18/24/0.5\fBi\fP \fB\-C\fP topo.cpt \fB\-W\fP 0.5\fBp\fP > topo.ps
 .br
 .sp
 To create a color \fIPostScript\fP plot of the numerical temperature solution obtained on a triangular mesh
@@ -413,7 +414,7 @@ whose node coordinates and temperatures are stored in temp.xyz and mesh arrangem
 the colors in temp.cpt, run
 .br
 .sp
-\fBpscontour\fP temp.xyz \fB\-R\fP0/150/0/100 \fB\-Jx\fP0.1 \fB\-C\fPtemp.cpt \fB\-G\fP \fB\-W\fP0.25\fBp\fP > temp.ps
+\fBpscontour\fP temp.xyz \fB\-R\fP 0/150/0/100 \fB\-Jx\fP 0.1 \fB\-C\fP temp.cpt \fB\-G\fP \fB\-W\fP 0.25\fBp\fP > temp.ps
 .SH BUGS
 Sometimes there will appear to be thin lines of the wrong color in the image.
 This is a round-off problem which may be remedied by using a higher value of

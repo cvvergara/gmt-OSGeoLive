@@ -1,4 +1,4 @@
-.TH GREENSPLINE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GREENSPLINE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 greenspline \- Interpolate 1-D, 2-D, 3-D Cartesian or spherical surface data using Green's function splines.
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ greenspline \- Interpolate 1-D, 2-D, 3-D Cartesian or spherical surface data usi
 [ \fB\-D\fP\fImode\fP ] [ \fB\-F\fP ] [ \fB\-G\fP\fIgrdfile\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] 
 [ \fB\-I\fP\fIxinc\fP[\fIyinc\fP[\fIzinc\fP]] ] [ \fB\-L\fP ] [ \fB\-N\fP\fInodefile\fP ] [ \fB\-Q\fP\fIaz\fP|\fIx/y/z\fP ] 
 [ \fB\-R\fP\fIxmin\fP/\fIxmax\fP[/\fIymin\fP/\fIymax\fP[/\fIzmin\fP\fIzmax\fP]] ] 
-[ \fB\-S\fP\fBc|t|g|p|q\fP[\fIpars\fP] ] [ \fB\-T\fP\fImaskgrid\fP ] [ \fB\-V\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ]
+[ \fB\-S\fP\fBc|t|g|p|q\fP[\fIpars\fP] ] [ \fB\-T\fP\fImaskgrid\fP ] [ \fB\-V\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ]
 .SH DESCRIPTION
 \fBgreenspline\fP uses the Green's function G(\fBx\fP; \fBx'\fP) for the chosen spline and geometry to interpolate data
 at regular [or arbitrary] output locations.  Mathematically, the solution is composed as
@@ -59,16 +59,16 @@ will stop after saving the eigenvalues, i.e., no surface output is produced.
 \fB\-D\fP
 Sets the distance flag that determines how we calculate distances between data points.  
 Select \fImode\fP 0 for Cartesian 1-D spline interpolation:
-\fB\-D\fP0 means (\fIx\fP) in user units, Cartesian distances,
+\fB\-D\fP 0 means (\fIx\fP) in user units, Cartesian distances,
 Select \fImode\fP 1-3 for Cartesian 2-D surface spline interpolation:
-\fB\-D\fP1 means (\fIx,y\fP) in user units, Cartesian distances,
-\fB\-D\fP2 for (\fIx,y\fP) in degrees, flat Earth distances, and
-\fB\-D\fP3 for (\fIx,y\fP) in degrees, spherical distances in km.
+\fB\-D\fP 1 means (\fIx,y\fP) in user units, Cartesian distances,
+\fB\-D\fP 2 for (\fIx,y\fP) in degrees, flat Earth distances, and
+\fB\-D\fP 3 for (\fIx,y\fP) in degrees, spherical distances in km.
 Then, if \fBELLIPSOID\fP is spherical, we compute great circle arcs, otherwise geodesics.
 Option \fImode\fP = 4 applies to spherical surface spline interpolation only:
-\fB\-D\fP4 for (\fIx,y\fP) in degrees, use cosine of great circle (or geodesic) arcs.
+\fB\-D\fP 4 for (\fIx,y\fP) in degrees, use cosine of great circle (or geodesic) arcs.
 Select \fImode\fP 5 for Cartesian 3-D surface spline interpolation:
-\fB\-D\fP5 means (\fIx,y,z\fP) in user units, Cartesian distances.
+\fB\-D\fP 5 means (\fIx,y,z\fP) in user units, Cartesian distances.
 .TP
 \fB\-F\fP
 Force pixel registration.  [Default is gridline registration].
@@ -79,7 +79,7 @@ an equidistant output table.  This will be written to stdout unless \fB\-G\fP is
 grids the \fB\-G\fP option is required.  (2) If option \fB\-T\fP is selected then \fB\-G\fP is required and the
 output file is a 2-D binary grid file.  Applies to 2-D interpolation only.
 (3) If \fB\-N\fP is selected then the output is an ASCII (or binary; see \fB\-bo\fP) table;
-if \fB\-G\fP is not given then this table is written to standard output.  Ignored if \fB\-C\fP or \fB\-C\fP0
+if \fB\-G\fP is not given then this table is written to standard output.  Ignored if \fB\-C\fP or \fB\-C\fP 0
 is given.
 .TP
 \fB\-H\fP
@@ -130,7 +130,7 @@ Note that all tension values are expected to be normalized tension in the range 
 \fItension\fP[/\fIscale\fP] with \fItension\fP in the 0\-1 range and optionally supply a length scale [Default is the average grid spacing].
 The next is a 2-D or 3-D spline:
 (\fBr\fP) Regularized spline in tension [\fIMitasova and Mitas\fP, 1993]; again, append \fItension\fP and optional \fIscale\fP.
-The last two are spherical surface splines and both imply \fB\-D\fP4 \fB\-fg\fP:
+The last two are spherical surface splines and both imply \fB\-D\fP 4 and geographic data:
 (\fBp\fP) Minimum curvature spline [\fIParker\fP, 1994],
 (\fBq\fP) Continuous curvature spline in tension [\fIWessel and Becker\fP, 2008]; append \fItension\fP.
 The G(\fBx\fP; \fBx'\fP) for the last method is slower to compute; by specifying \fB\-SQ\fP you can speed up calculations
@@ -154,6 +154,15 @@ Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/
 specify the variables to be read.
 [Default is 2-4 input columns (\fBx\fP,\fIw\fP); the number depends on the chosen dimension].
 .TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.TP
 \fB\-bo\fP
 Selects binary output.
 Append \fBs\fP for single precision [Default is \fBd\fP (double)].
@@ -164,60 +173,60 @@ To resample the \fIx,y\fP Gaussian random data created by \fBgmtmath\fP and stor
 every 0.1 step from 0 to 10, and using a minimum cubic spline, try
 .br
 .sp
-\fBgmtmath\fP \fB\-T\fP0/10/1 0 1 \fBNRAND\fP = 1D.txt
+\fBgmtmath\fP \fB\-T\fP 0/10/1 0 1 \fBNRAND\fP = 1D.txt
 .br
-\fBpsxy \-R\fP0/10/-5/5 \fB\-JX\fP6i/3i \fB\-B\fP2f1/1 \fB\-Sc\fP0.1 \fB\-G\fPblack 1D.txt \fB\-K\fP > 1D.ps
+\fBpsxy \-R\fP0/10/-5/5 \fB\-JX\fP 6i/3i \fB\-B\fP 2f1/1 \fB\-Sc\fP 0.1 \fB\-G\fP black 1D.txt \fB\-K\fP > 1D.ps
 .br
-\fBgreenspline\fP 1D.txt \fB\-R\fP0/10 \fB\-I\fP0.1 \fB\-Sc\fP \fB\-V\fP | \fBpsxy\fP \fB\-R\fP \fB\-J\fP \fB\-O\fP \fB\-W\fPthin >> 1D.ps
+\fBgreenspline\fP 1D.txt \fB\-R\fP 0/10 \fB\-I\fP 0.1 \fB\-Sc\fP \fB\-V\fP | \fBpsxy\fP \fB\-R\fP \fB\-J\fP \fB\-O\fP \fB\-W\fP thin >> 1D.ps
 .br
 .sp
 To apply a spline in tension instead, using a tension of 0.7, try
 .br
 .sp
-\fBpsxy \-R\fP0/10/-5/5 \fB\-JX\fP6i/3i \fB\-B\fP2f1/1 \fB\-Sc\fP0.1 \fB\-G\fPblack 1D.txt \fB\-K\fP > 1Dt.ps
+\fBpsxy \-R\fP0/10/-5/5 \fB\-JX\fP 6i/3i \fB\-B\fP 2f1/1 \fB\-Sc\fP 0.1 \fB\-G\fP black 1D.txt \fB\-K\fP > 1Dt.ps
 .br
-\fBgreenspline\fP 1D.txt \fB\-R\fP0/10 \fB\-I\fP0.1 \fB\-St\fP0.7 \fB\-V\fP | \fBpsxy\fP \fB\-R\fP \fB\-J\fP \fB\-O\fP \fB\-W\fPthin >> 1Dt.ps
+\fBgreenspline\fP 1D.txt \fB\-R\fP 0/10 \fB\-I\fP 0.1 \fB\-St\fP 0.7 \fB\-V\fP | \fBpsxy\fP \fB\-R\fP \fB\-J\fP \fB\-O\fP \fB\-W\fP thin >> 1Dt.ps
 .SH 2-D EXAMPLES
 To make a uniform grid using the minimum curvature spline for the same Cartesian data set from Davis (1986) that is
 used in the GMT Cookbook example 16, try
 .sp
-\fBgreenspline\fP table_5.11 \fB\-R\fP0/6.5/-0.2/6.5 \fB\-I\fP0.1 \fB\-Sc\fP \fB\-V\fP \fB\-D\fP1 \fB\-G\fPS1987.grd
+\fBgreenspline\fP table_5.11 \fB\-R\fP 0/6.5/-0.2/6.5 \fB\-I\fP 0.1 \fB\-Sc\fP \fB\-V\fP \fB\-D\fP 1 \fB\-G\fP S1987.grd
 .br
-\fBpsxy \-R\fP0/6.5/-0.2/6.5 \fB\-JX\fP6i \fB\-B\fP2f1 \fB\-Sc\fP0.1 \fB\-G\fPblack table_5.11 \fB\-K\fP > 2D.ps
+\fBpsxy \-R\fP0/6.5/-0.2/6.5 \fB\-JX\fP 6i \fB\-B\fP 2f1 \fB\-Sc\fP 0.1 \fB\-G\fP black table_5.11 \fB\-K\fP > 2D.ps
 .br
-\fBgrdcontour \-JX\fP6i \fB\-B\fP2f1 \fB\-O\fP \fB\-C\fP25 \fB\-A\fP50 S1987.grd >> 2D.ps
+\fBgrdcontour \-JX\fP6i \fB\-B\fP 2f1 \fB\-O\fP \fB\-C\fP 25 \fB\-A\fP 50 S1987.grd >> 2D.ps
 .br
 .sp
 To use Cartesian splines in tension but only evaluate the solution where the input mask grid is not NaN, try
 .br
 .sp
-\fBgreenspline\fP table_5.11 \fB\-T\fPmask.grd \fB\-St\fP0.5 \fB\-V\fP \fB\-D\fP1 \fB\-G\fPWB1998.grd
+\fBgreenspline\fP table_5.11 \fB\-T\fP mask.grd \fB\-St\fP 0.5 \fB\-V\fP \fB\-D\fP 1 \fB\-G\fP WB1998.grd
 .br
 .sp
 To use Cartesian generalized splines in tension and return the magnitude of the surface slope in
 the NW direction, try
 .br
 .sp
-\fBgreenspline\fP table_5.11 \fB\-R\fP0/6.5/-0.2/6.5 \fB\-I\fP0.1 \fB\-Sr\fP0.95 \fB\-V\fP \fB\-D\fP1 \fB\-Q\fP-45 \fB\-G\fPslopes.grd
+\fBgreenspline\fP table_5.11 \fB\-R\fP 0/6.5/-0.2/6.5 \fB\-I\fP 0.1 \fB\-Sr\fP 0.95 \fB\-V\fP \fB\-D\fP 1 \fB\-Q\fP-45 \fB\-G\fP slopes.grd
 Finally, to use Cartesian minimum curvature splines in recovering a surface where the input data is a single surface
 value (pt.d) and the remaining constraints specify only the surface slope and direction (slopes.d), use
 .br
 .sp
-\fBgreenspline\fP pt.d \fB\-R\fP-3.2/3.2/-3.2/3.2 \fB\-I\fP0.1 \fB\-Sc\fP \fB\-V\fP \fB\-D\fP1 \fB\-A\fP1,slopes.d \fB\-G\fPslopes.grd
+\fBgreenspline\fP pt.d \fB\-R\fP-3.2/3.2/-3.2/3.2 \fB\-I\fP 0.1 \fB\-Sc\fP \fB\-V\fP \fB\-D\fP 1 \fB\-A\fP 1,slopes.d \fB\-G\fP slopes.grd
 .SH 3-D EXAMPLES
 To create a uniform 3-D Cartesian grid table based on the data in table_5.23 in Davis (1986) that contains \fIx,y,z\fP locations and
 a measure of uranium oxide concentrations (in percent), try
 .br
 .sp
-\fBgreenspline\fP table_5.23 \fB\-R\fP5/40/-5/10/5/16 \fB\-I\fP0.25 \fB\-Sr\fP0.85 \fB\-V\fP \fB\-D\fP5 \fB\-G\fP3D_UO2.txt
+\fBgreenspline\fP table_5.23 \fB\-R\fP 5/40/-5/10/5/16 \fB\-I\fP 0.25 \fB\-Sr\fP 0.85 \fB\-V\fP \fB\-D\fP 5 \fB\-G\fP 3D_UO2.txt
 .SH 2-D SPHERICAL SURFACE EXAMPLES
 To recreate Parker's [1994] example on a global 1x1 degree grid, assuming the data are in file mag_obs_1990.d, try
 .sp
-greenspline \fB\-V\fP \fB\-Rg\fP \fB\-fg\fP \fB\-Sp\fP \fB\-D\fP3 \fB\-I\fP1 \fB\-G\fPP1994.grd mag_obs_1990.d
+greenspline \fB\-V\fP \fB\-Rg\fP \fB\-Sp\fP \fB\-D\fP 3 \fB\-I\fP 1 \fB\-G\fP P1994.grd mag_obs_1990.d
 .sp
 To do the same problem but applying tension and use pre-calculated Green functions, use
 .sp
-greenspline \fB\-V\fP \fB\-Rg\fP \fB\-fg\fP \fB\-SQ\fP0.85 \fB\-D\fP3 \fB\-I\fP1 \fB\-G\fPWB2008.grd mag_obs_1990.d
+greenspline \fB\-V\fP \fB\-Rg\fP \fB\-SQ\fP 0.85 \fB\-D\fP 3 \fB\-I\fP 1 \fB\-G\fP WB2008.grd mag_obs_1990.d
 .SH CONSIDERATIONS
 (1) For the Cartesian cases we use the free-space Green functions, hence no boundary conditions are
 applied at the edges of the specified domain.  For most applications this is fine as the region typically

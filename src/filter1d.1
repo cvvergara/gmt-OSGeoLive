@@ -1,4 +1,4 @@
-.TH FILTER1D 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH FILTER1D 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 filter1d \- Time domain filtering of 1-D time series
 .SH SYNOPSIS
@@ -134,7 +134,7 @@ and distance (in m) with a 10 km Gaussian filter, removing outliers, and output 
 value every 2 km between 0 and 100 km:
 .br
 .sp
-\fBfilter1d\fP cruise.gmtd \fB\-T\fP0/1.0e5/2000 \fB\-FG\fP10000 \fB\-N\fP4/3 \fB\-V\fP > filtered_cruise.gmtd
+\fBfilter1d\fP cruise.gmtd \fB\-T\fP 0/1.0e5/2000 \fB\-FG\fP 10000 \fB\-N\fP 4/3 \fB\-V\fP > filtered_cruise.gmtd
 .br
 .sp
 Data along track often have uneven sampling and gaps which we do not want to interpolate using \fBsample1d\fP.
@@ -142,7 +142,7 @@ To find the median depth in a 50 km window every 25 km along the track of cruise
 checking for gaps of 10km and asymmetry of 0.3:
 .br
 .sp
-\fBfilter1d\fP v3312.dt \fB\-FM\fP50 \fB\-T\fP0/100000/25 \fB\-L\fP10 \fB\-S\fP0.3 > v3312_filt.dt
+\fBfilter1d\fP v3312.dt \fB\-FM\fP 50 \fB\-T\fP 0/100000/25 \fB\-L\fP 10 \fB\-S\fP 0.3 > v3312_filt.dt
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR sample1d (1)

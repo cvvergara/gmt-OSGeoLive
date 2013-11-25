@@ -1,4 +1,4 @@
-.TH MGD77MAGREF 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH MGD77MAGREF 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 mgd77magref \- Evaluate the IGRF or CM4 magnetic field models
 .SH SYNOPSIS
@@ -48,41 +48,41 @@ simply specify a single flux to apply for all records.
 \fB\-F\fP
 Selects output items; \fIflags\fP is a string made up of one or more of these characters:
 .br
-\fBr\fP means output all input columns before adding the items below (all in nTesla).
+\fBr\fP means output all input columns before adding the items below
 .br
-\fBt\fP means list total field.
+\fBt\fP means list total field (nT).
 .br
-\fBh\fP means list horizontal field.
+\fBh\fP means list horizontal field (nT).
 .br
-\fBx\fP means list X component.
+\fBx\fP means list X component (nT, positive north).
 .br
-\fBy\fP means list Y component.
+\fBy\fP means list Y component (nT, positive east).
 .br
-\fBz\fP means list Z component.
+\fBz\fP means list Z component (nT, positive down).
 .br
-\fBd\fP means list declination.
+\fBd\fP means list declination (deg, clockwise from north).
 .br
-\fBi\fP means list inclination.
+\fBi\fP means list inclination (deg, positive down).
 .br
 Append one or more number to indicate the requested field contribution(s):
 .br
 \fB0\fP means IGRF field (no combinations allowed)
 .br
-\fB1\fP means Core field
+\fB1\fP means CM4 Core field
 .br
-\fB2\fP means Lithospheric
+\fB2\fP means CM4 Lithospheric field
 .br
-\fB3\fP Primary Magnetospheric field
+\fB3\fP means CM4 Primary Magnetospheric field
 .br
-\fB4\fP Induced Magnetospheric field
+\fB4\fP means CM4 Induced Magnetospheric field
 .br
-\fB5\fP Primary ionospheric field
+\fB5\fP means CM4 Primary ionospheric field
 .br
-\fB6\fP Induced ionospheric field
+\fB6\fP means CM4 Induced ionospheric field
 .br
-\fB7\fP Toroidal field
+\fB7\fP means CM4 Toroidal field
 .br
-\fB9\fP means Core field from IGRF and other contributions from CM4. DO NOT USE BOTH 0 AND 9.
+\fB9\fP means Core field from IGRF and other contributions from CM4. DO NOT USE BOTH 1 AND 9.
 .br
 Appending several numbers (1-7) will add up the different contributions. For example
 \fB\-Ft\fP/\fB12\fP computes the total field due to Core and Lithospheric sources.
@@ -172,13 +172,13 @@ To get the CM4 Total field, Declination and Inclination due to all but lithosphe
 at a one point location and decimal time 2000.0, try
 .br
 .sp
-echo -28 38 0 2000.0 | \fBmgd77magref\fP \fB\-A\fP+y \fB\-F\fPtdi/13456
+echo -28 38 0 2000.0 | \fBmgd77magref\fP \fB\-A\fP+y \fB\-F\fP tdi/13456
 .br
 .sp
 To do the same as above but at noon (Universal Time) of first May 2001, try
 .br
 .sp
-echo -28 38 0 2001-05-01T12:00:00 | \fBmgd77magref\fP \fB\-F\fPtdi/13456
+echo -28 38 0 2001-05-01T12:00:00 | \fBmgd77magref\fP \fB\-F\fP tdi/13456
 .br
 .sp
 .SH "SEE ALSO"
@@ -189,7 +189,7 @@ echo -28 38 0 2001-05-01T12:00:00 | \fBmgd77magref\fP \fB\-F\fPtdi/13456
 .IR mgd77track (1)
 .SH REFERENCES
 Wessel, P., and W. H. F. Smith, 2013, The Generic Mapping Tools (GMT) version
-4.5.9 Technical Reference & Cookbook, SOEST/NOAA.
+4.5.11 Technical Reference & Cookbook, SOEST/NOAA.
 .br
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
 Tools Released, EOS Trans., AGU, 79 (47), p. 579.

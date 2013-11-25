@@ -157,7 +157,7 @@
 		fprintf (stderr, "	TDIST	2 1	Student's t-distribution A(t,n), with t = A, and n = B.\n");
 		fprintf (stderr, "	TN	2 1	Chebyshev polynomial Tn(-1<t<+1,n), with t = A, and n = B.\n");
 		fprintf (stderr, "	UPPER	1 1	The highest (maximum) value of A.\n");
-		fprintf (stderr, "	XOR	2 1	B if A == NaN, else A.\n");
+		fprintf (stderr, "	XOR	2 1	0 if A == NaN and B == NaN, NaN if B == NaN, else A.\n");
 		fprintf (stderr, "	Y0	1 1	Bessel function of A (2nd kind, order 0).\n");
 		fprintf (stderr, "	Y1	1 1	Bessel function of A (2nd kind, order 1).\n");
 		fprintf (stderr, "	YLM	2 2	Re and Im orthonormalized spherical harmonics degree A order B.\n");

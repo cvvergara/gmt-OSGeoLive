@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- *	$Id: mgd77.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: mgd77.c 10118 2013-11-01 22:13:06Z pwessel $
  *
  *    Copyright (c) 2005-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -613,7 +613,8 @@ int MGD77_Read_Header_Record_m77 (char *file, struct MGD77_CONTROL *F, struct MG
 	/* Read Sequences No 01-24: */
 
 	for (sequence = 0; sequence < MGD77_N_HEADER_RECORDS; sequence++) {
-		MGD77_header[sequence] = (char *)GMT_memory (VNULL, (size_t)(MGD77_HEADER_LENGTH + 2), sizeof (char), GMT_program);
+		/* +3 to account for an eventual '\r' and '\n\0' */ 
+		MGD77_header[sequence] = (char *)GMT_memory (VNULL, (size_t)(MGD77_HEADER_LENGTH + 3), sizeof (char), GMT_program);
 		if ((err = MGD77_Read_Header_Sequence (F->fp, MGD77_header[sequence], sequence+1))) return (err);
 	}
 	if (F->format != MGD77_FORMAT_M77) not_used = fgets (line, BUFSIZ, F->fp);	/* Skip the column header for tables */
@@ -2554,7 +2555,7 @@ int MGD77_Read_Header_Sequence (FILE *fp, char *record, int seq)
 			return (MGD77_NO_HEADER_REC);
 		}
 	}
-	if (fgets (record, MGD77_HEADER_LENGTH + 2, fp) == NULL) {
+	if (fgets (record, MGD77_HEADER_LENGTH + 3, fp) == NULL) {	/* +3 to account for an eventual '\r' and '\n\0' */ 
 		fprintf (stderr, "MGD77_Read_Header: Failure to read header sequence %2.2d\n", seq);
 		return (MGD77_ERROR_READ_HEADER_ASC);
 	}
@@ -3117,7 +3118,7 @@ int MGD77_Path_Expand (struct MGD77_CONTROL *F, char **argv, int argc, char ***l
 			if (argv[j][0] == '-') continue;	/* Skip command line options, except first time if all */
 			if (argv[j][0] == '=') continue;	/* Already dealt with list of files */
 			/* Strip off any extension in case a user gave 12345678.mgd77 */
-			for (i = (int)strlen (argv[j])-1; i >= 0 && argv[j][i] != '.'; i--);;	/* Wind back to last period (or get i == -1) */
+			for (i = (int)strlen (argv[j])-1; i >= 0 && argv[j][i] != '.'; i--);	/* Wind back to last period (or get i == -1) */
 			if (i == -1)
 				strcpy (this_arg, argv[j]);
 			else {

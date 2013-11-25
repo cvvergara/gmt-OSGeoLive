@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_report.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: x2sys_report.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -56,7 +56,6 @@ int main (int argc, char **argv)
 	GMT_LONG error = FALSE;
 	GMT_LONG internal = FALSE;	/* FALSE if only external xovers are needed */
 	GMT_LONG external = TRUE;	/* FALSE if only internal xovers are needed */
-	GMT_LONG single = FALSE;		/* TRUE if a single track is specified -S */
 	GMT_LONG apply_corrections = FALSE;	/* TRUE if -L is used */
 	GMT_LONG adjust = FALSE;		/* TRUE and with -L will create an adjustment spline knots file per track */
 	int i, k, n, coe_kind, nx_min = 0, n_use, n_tracks;
@@ -100,7 +99,6 @@ int main (int argc, char **argv)
 					break;
 				case 'S':
 					track = &argv[i][2];
-					single = TRUE;
 					break;
 				case 'T':
 					TAG = &argv[i][2];

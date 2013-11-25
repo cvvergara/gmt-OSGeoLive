@@ -1,4 +1,4 @@
-.TH GRDMASK 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDMASK 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdmask \- Create mask grid files from xy paths.
 .SH SYNOPSIS
@@ -124,7 +124,7 @@ by putting a backslash in front of it, or by placing the filename and suffix bet
 .SH GEOGRAPHICAL AND TIME COORDINATES
 When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
 attributes of the input data or grid (if any) or on the
-\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP 90w/90e/0t/3t will result in a longitude/time
 grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
 specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
 In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
@@ -132,12 +132,12 @@ In addition, the \fBunit\fP attribute of the time variable will indicate both th
 To set all nodes inside and on the polygons coastline_*.xy to 0, and outside points
 to 1, do
 .sp
-\fBgrdmask\fP coastline_*.xy \fB\-R\fP-60/-40/-40/-30 \fB\-I\fP5\fBm\fP \fB\-N\fP1/0/0 \fB\-G\fPland_mask.grd \fB\-V\fP
+\fBgrdmask\fP coastline_*.xy \fB\-R\fP-60/-40/-40/-30 \fB\-I\fP 5\fBm\fP \fB\-N\fP 1/0/0 \fB\-G\fP land_mask.grd \fB\-V\fP
 .br
 .sp
 To set nodes within 50 km of data points to 1 and other nodes to NaN, do
 .sp
-\fBgrdmask\fP data.xyz \fB\-R\fP-60/-40/-40/-30 \fB\-I\fP5\fBm\fP \fB\-N\fPNaN/1/1 \fB\-S\fP50\fBk\fP \fB\-G\fPdata_mask.grd \fB\-V\fP
+\fBgrdmask\fP data.xyz \fB\-R\fP-60/-40/-40/-30 \fB\-I\fP 5\fBm\fP \fB\-N\fP NaN/1/1 \fB\-S\fP 50\fBk\fP \fB\-G\fP data_mask.grd \fB\-V\fP
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR grdlandmask (1),

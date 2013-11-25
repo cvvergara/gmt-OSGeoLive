@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:12 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:40 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -344,8 +344,8 @@ run</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdraster</b>
-1 <b>&minus;R</b>-4/364/-62/62 <b>&minus;I</b>30<b>m
-&minus;G</b>data.grd</p>
+1 <b>&minus;R</b>-4/364/-62/62 <b>&minus;I</b> 30<b>m
+&minus;G</b> data.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">To obtain data
 for an oblique Mercator projection we need to extract more
@@ -358,8 +358,8 @@ and upper right corners and the desired projection, use</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdraster</b>
-ETOPO2 <b>&minus;R</b>160/20/220/30<b>r
-&minus;Joc</b>190/25.5/292/69/1 <b>&minus;G</b>data.grd</p>
+ETOPO2 <b>&minus;R</b> 160/20/220/30<b>r &minus;Joc</b>
+190/25.5/292/69/1 <b>&minus;G</b> data.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">To extract data
 from the 2 min Geoware relief blend and write it as binary
@@ -367,7 +367,7 @@ double precision xyz-triplets to standard output:</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdraster</b>
-&quot;2 min Geoware&quot; <b>&minus;R</b>20/25/-10/5
+&quot;2 min Geoware&quot; <b>&minus;R</b> 20/25/-10/5
 <b>&minus;bo</b> &gt;! triplets.b</p>
 
 <a name="SEE ALSO"></a>
@@ -384,7 +384,7 @@ double precision xyz-triplets to standard output:</p>
 
 <p style="margin-left:11%; margin-top: 1em">Wessel, P., and
 W. H. F. Smith, 2013, The Generic Mapping Tools (GMT)
-version 4.5.9 Technical Reference &amp; Cookbook,
+version 4.5.11 Technical Reference &amp; Cookbook,
 SOEST/NOAA. <br>
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version
 of Generic Mapping Tools Released, EOS Trans., AGU, 79 (47),
