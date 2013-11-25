@@ -1,4 +1,5 @@
 # no current patches
+gmt_io.c
 kfreebsd
 bashism
 eglibc-2.17.patch

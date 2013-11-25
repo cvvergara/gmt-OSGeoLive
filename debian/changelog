@@ -1,6 +1,7 @@
-gmt (4.5.11-1) UNRELEASED; urgency=low
+gmt (4.5.11-1) unstable; urgency=low
 
   * New upstream release for the 4.x series.
+  * Added patch gmt_io.c to avoid nested comments use while -pedantic mode is enabled.
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 25 Nov 2013 15:57:54 +0100
 
