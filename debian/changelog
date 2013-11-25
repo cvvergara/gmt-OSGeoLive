@@ -1,3 +1,9 @@
+gmt (4.5.11-1) UNRELEASED; urgency=low
+
+  * New upstream release for the 4.x series.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 25 Nov 2013 15:57:54 +0100
+
 gmt (4.5.9-1) unstable; urgency=low
 
   * Added Octave support and an ad-hoc new package for that.
