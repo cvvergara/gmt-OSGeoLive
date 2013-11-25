@@ -1,4 +1,4 @@
-.TH GRDFILTER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDFILTER 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdfilter \- Filter a 2-D grid file in the space (or time) domain
 .SH SYNOPSIS
@@ -9,7 +9,7 @@ grdfilter \- Filter a 2-D grid file in the space (or time) domain
 of the selected convolution or non-convolution isotropic filters and
 compute distances using Cartesian or Spherical geometries.
 The output \fI.grd\fP file can optionally be generated as a
-subOPT(R)egion of the input and/or with a new \fB\-I\fPncrement.  In this
+subOPT(R)egion of the input and/or with a new \fB\-I\fP ncrement.  In this
 way, one may have "extra space" in the input data so that the
 edges will not be used and the output can be within one-half-
 width of the input edges.  If the filter is low-pass, then the
@@ -121,7 +121,7 @@ particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
 .SH GEOGRAPHICAL AND TIME COORDINATES
 When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
 attributes of the input data or grid (if any) or on the
-\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP 90w/90e/0t/3t will result in a longitude/time
 grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
 specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
 In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
@@ -130,7 +130,7 @@ Suppose that north_pacific_dbdb5.grd is a file of 5 minute bathymetry from 140E 
 the medians of values within a 300km radius (600km full width) of the output points, which you choose to be from 150E to 250E
 and 10N to 40N, and you want the output values every 0.5 degree.  Using spherical distance calculations, you need:
 .sp
-\fBgrdfilter\fP north_pacific_dbdb5.grd \fB\-G\fPfiltered_pacific.grd \fB\-Fm\fP600 \fB\-D\fP4 \fB\-R\fP150/250/10/40 \fB\-I\fP0.5 \fB\-V\fP
+\fBgrdfilter\fP north_pacific_dbdb5.grd \fB\-G\fP filtered_pacific.grd \fB\-Fm\fP 600 \fB\-D\fP 4 \fB\-R\fP 150/250/10/40 \fB\-I\fP 0.5 \fB\-V\fP
 .SH LIMITATIONS
 When working with geographic (lat, lon) grids, all three convolution filters (boxcar, cosine arch, and gaussian) will properly normalize
 the filter weights for the variation in gridbox size with latitude, and correctly determine which nodes are needed for the convolution
@@ -138,7 +138,7 @@ when the filter "circle" crosses a periodic (0-360) boundary or contains a geogr
 do not use weights and thus should only be used on Cartesian grids (or at very low latitudes) only.  If you want to apply such spatial
 filters you should project your data to an equal-area projection and run grdfilter on the resulting Cartesian grid.
 .br
-To use the \fB\-D\fP5 option the input Mercator grid must be created by img2mercgrd using the \fB\-C\fP option so the origin of the
+To use the \fB\-D\fP 5 option the input Mercator grid must be created by img2mercgrd using the \fB\-C\fP option so the origin of the
 y-values is the Equator (i.e., x = y = 0 correspond to lon = lat = 0).
 .SH "SEE ALSO"
 .IR GMT (1),

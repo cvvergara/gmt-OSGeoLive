@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_plot.c 10041 2013-05-31 16:13:10Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -4615,6 +4615,7 @@ void GMT_plot_rectangle (double lon, double lat, double z, double width, double 
 
 	double sin_azimuth, cos_azimuth, sinp, cosp, x, y, x_prime, y_prime, rho, c, dim[3];
 	double sin_c, cos_c, center, lon_w, lat_w, lon_h, lat_h, xp, yp, xw, yw, xh, yh, tmp;
+	GMT_LONG jump;
 
 	GMT_azim_to_angle (lon, lat, 0.1, azimuth, &tmp);
 	azimuth = tmp;
@@ -4649,6 +4650,9 @@ void GMT_plot_rectangle (double lon, double lat, double z, double width, double 
 	while ((lon_w - center) < -180.0) lon_w += 360.0;
 	while ((lon_w - center) > +180.0) lon_w -= 360.0;
 	GMT_geo_to_xy (lon_w, lat_w, &xw, &yw);	/* Get projected x,y coordinates */
+	if ((jump = (*GMT_map_jump) (xp, yp, xw, yw)))	/* Adjust for map jumps */
+		xw += jump * 2.0 * GMT_half_map_width (yp);
+	
 	dim[1] = 2.0 * hypot (xp - xw, yp - yw);	/* Estimate of rectangle width in plot units (inch) */
 	/* Get 2nd point height away from center */
 	sincos (M_PI_2, &y, &x);
@@ -4671,6 +4675,8 @@ void GMT_plot_rectangle (double lon, double lat, double z, double width, double 
 	while ((lon_h - center) < -180.0) lon_h += 360.0;
 	while ((lon_h - center) > +180.0) lon_h -= 360.0;
 	GMT_geo_to_xy (lon_h, lat_h, &xh, &yh);
+	if ((jump = (*GMT_map_jump) (xp, yp, xh, yh)))	/* Adjust for map jumps */
+		xh += jump * 2.0 * GMT_half_map_width (yp);
 	dim[2] = 2.0 * hypot (xp - xh, yp - yh);	/* Estimate of rectangle width in plot units (inch) */
 	GMT_rotrect (xp, yp, z, dim, &fill, outline);
 }

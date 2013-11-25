@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_globals.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_globals.h 10067 2013-06-28 18:11:30Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -266,8 +266,8 @@ struct GMT_IO GMT_io = {
 	(double *)NULL,
 	(double *)NULL,
 	(double *)NULL,
-	{ {-1, -1, -1, -1}, {-1, -1, -1, -1}, FALSE, FALSE, "", FALSE, FALSE, FALSE, FALSE, { "", ""} },
-	{ {-1, -1, -1, -1}, {-1, -1, -1, -1}, FALSE, FALSE, "", FALSE, FALSE, FALSE, FALSE, { "", ""} },
+	{ 0, {-1, -1, -1, -1}, {-1, -1, -1, -1}, FALSE, FALSE, "", FALSE, FALSE, FALSE, FALSE, { "", ""} },
+	{ 0, {-1, -1, -1, -1}, {-1, -1, -1, -1}, FALSE, FALSE, "", FALSE, FALSE, FALSE, FALSE, { "", ""} },
 	{ {-1, -1, -1}, 0, 0.0, FALSE, FALSE, { "am", "pm" }, "", { "", ""} },
 	{ {-1, -1, -1}, 0, 0.0, FALSE, FALSE, { "am", "pm" }, "", { "", ""} },
 	{ {-1, -1, -1}, 0, FALSE, FALSE, FALSE, 0, 0.0, "", "", { "", ""} }
@@ -320,6 +320,7 @@ char *GMT_oldargv[GMT_N_UNIQUE];	/* Pointers to old common arguments */
 GMT_LONG GMT_give_synopsis_and_exit = FALSE;
 
 struct GMT_TIME_LANGUAGE GMT_time_language;	/* For time axis */
+GMT_LONG GMT_today_rata_die;			/* Default day when only T<clock> is given */
 
 /* For custom symbol plotting in psxy[z] */
 

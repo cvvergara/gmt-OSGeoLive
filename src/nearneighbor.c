@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: nearneighbor.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: nearneighbor.c 10075 2013-07-23 18:39:24Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -34,7 +34,6 @@
 #include "gmt.h"
 
 #define NN_DEF_SECTORS	4
-#define NN_MIN_SECTORS	2
 
 struct NEARNEIGHBOR_CTRL {	/* All control options for this program (except common args) */
 	/* active is TRUE if the option has been activated */
@@ -169,11 +168,11 @@ int main (int argc, char **argv)
 						fprintf (stderr, "%s: Option -L is obsolete (but is processed correctly).  Please use -f instead\n", GMT_program);
 					}
 					break;
-				case 'N':
+				case 'N':	/* -N[sectors[/minsectors]] */
 					Ctrl->N.active = TRUE;
 					n = sscanf (&argv[i][2], "%" GMT_LL "d/%" GMT_LL "d", &Ctrl->N.sectors, &Ctrl->N.min_sectors);
-					if (n < 1) Ctrl->N.sectors = NN_DEF_SECTORS;
-					if (n < 2) Ctrl->N.min_sectors = NN_MIN_SECTORS;
+					if (n < 1) Ctrl->N.sectors = NN_DEF_SECTORS;	/* Just gave -N with no args means -N4/4 */
+					if (n < 2) Ctrl->N.min_sectors = irint (Ctrl->N.sectors / 2.0);	/* Giving just -N<sectors> means -N<sectors>/(<sectors>/2) */
 					break;
 				case 'S':
 					Ctrl->S.active = TRUE;
@@ -201,8 +200,9 @@ int main (int argc, char **argv)
 		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
 		fprintf(stderr, "\t-G name of output grid.\n");
 		GMT_inc_syntax ('I', 0);
-		fprintf(stderr, "\t-N sets number of sectors and minimum number to be filled.\n");
-		fprintf(stderr, "\t   Default is quadrant search [%d], requiring at least %d to be filled.\n", NN_DEF_SECTORS, NN_MIN_SECTORS);
+		fprintf(stderr, "\t-N Set number of sectors and the minimum number of sectors with data required for averaging.\n");
+		fprintf(stderr, "\t   If <min_sectors> is omitted it defaults to ~50%% of <sectors>.\n");
+		fprintf(stderr, "\t   Default is -N%d/%d, i.e., a quadrant search, requiring all sectors to be filled.\n", NN_DEF_SECTORS, NN_DEF_SECTORS);
 		GMT_explain_option ('R');
 		fprintf(stderr, "\t-S sets search radius in -R, -I units; append m or c for minutes or seconds.\n");
 		fprintf(stderr, "\t   Append k for km (implies -R,-I in degrees), use flat Earth approximation.\n");
@@ -595,8 +595,8 @@ void *New_nearneighbor_Ctrl () {	/* Allocate and initialize a new control struct
 	C = (struct NEARNEIGHBOR_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct NEARNEIGHBOR_CTRL), "New_nearneighbor_Ctrl");
 
 	/* Initialize values whose defaults are not 0/FALSE/NULL */
-	C->N.sectors = 4;
-	C->N.min_sectors = 4;
+	C->N.sectors = NN_DEF_SECTORS;
+	C->N.min_sectors = NN_DEF_SECTORS;
 	return ((void *)C);
 }
 

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdimage.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdimage.c 10011 2013-04-11 01:05:19Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -102,7 +102,7 @@ int main (int argc, char **argv)
 	struct GD_CTRL *from_gdalread = NULL;
 #endif
 
-	void GMT_set_proj_limits (struct GRD_HEADER *r, struct GRD_HEADER *g);
+	void GMT_set_proj_limits (struct GRD_HEADER *r, struct GRD_HEADER *g, GMT_LONG projected);
 	void *New_grdimage_Ctrl (), Free_grdimage_Ctrl (struct GRDIMAGE_CTRL *C);
 
 	argc = (int)GMT_begin (argc, argv);
@@ -564,8 +564,6 @@ int main (int argc, char **argv)
 		}
 	}
 
-	for (i = 0; i < n_grids; i++) GMT_set_proj_limits (&r_head[i], &g_head[i]);
-
 	if (need_to_project) {	/* Need to resample the grd file */
 
 		if (gmtdefs.verbose) fprintf (stderr, "%s: project grid files\n", GMT_program);
@@ -575,6 +573,7 @@ int main (int argc, char **argv)
 			ny_proj = g_head[0].ny;
 		}
 		for (i = 0; i < n_grids; i++) {
+			GMT_set_proj_limits (&r_head[i], &g_head[i], need_to_project);
 			grid_type = (Ctrl->E.dpi > 0) ? 1 : g_head[i].node_offset;	/* Force pixel if dpi is set */
 			GMT_err_fail (GMT_grdproject_init (&r_head[i], 0.0, 0.0, nx_proj, ny_proj, Ctrl->E.dpi, grid_type), grdfile[i]);
 			nm2 = ((size_t)r_head[i].nx) * ((size_t)r_head[i].ny);
@@ -599,15 +598,22 @@ int main (int argc, char **argv)
 		resampled = TRUE;
 	}
 	else {	/* Simply copy g_head[0] info to r_head[0] */
+		struct GRD_HEADER tmp_header;
 		for (i = 0; i < n_grids; i++) {
 			map[i] = tmp1[i];
-			r_head[i].nx = g_head[i].nx;		r_head[i].ny = g_head[i].ny;
-			r_head[i].x_inc = g_head[i].x_inc;	r_head[i].y_inc = g_head[i].y_inc;
+			//r_head[i].nx = g_head[i].nx;		r_head[i].ny = g_head[i].ny;
+			//r_head[i].x_inc = g_head[i].x_inc;	r_head[i].y_inc = g_head[i].y_inc;
+			memcpy ((void *)&tmp_header, (void *)&g_head[i], sizeof (struct GRD_HEADER));
+			r_head[i] = g_head[i];
+			GMT_set_proj_limits (&r_head[i], &tmp_header, need_to_project);
 		}
 		if (Ctrl->I.active) {
-			j_head.nx = i_head.nx;		j_head.ny = i_head.ny;
-			j_head.x_inc = i_head.x_inc;	j_head.y_inc = i_head.y_inc;
+			//j_head.nx = i_head.nx;		j_head.ny = i_head.ny;
+			//j_head.x_inc = i_head.x_inc;	j_head.y_inc = i_head.y_inc;
 			intensity = tmp2;
+			memcpy ((void *)&tmp_header, (void *)&i_head, sizeof (struct GRD_HEADER));
+			j_head = i_head;
+			GMT_set_proj_limits (&j_head, &tmp_header, need_to_project);
 		}
 		grid_type = g_head[0].node_offset;
 	}
@@ -817,7 +823,7 @@ int main (int argc, char **argv)
 	return(0);
 }
 
-void GMT_set_proj_limits (struct GRD_HEADER *r, struct GRD_HEADER *g)
+void GMT_set_proj_limits (struct GRD_HEADER *r, struct GRD_HEADER *g, GMT_LONG projected)
 {
 	/* Sets the projected extent of the grid given the map projection
 	 * The extreme x/y coordinates are returned in r, and dx/dy, and
@@ -871,11 +877,13 @@ void GMT_set_proj_limits (struct GRD_HEADER *r, struct GRD_HEADER *g)
 		r->x_min = MIN (r->x_min, x);	r->x_max = MAX (r->x_max, x);
 		r->y_min = MIN (r->y_min, y);	r->y_max = MAX (r->y_max, y);
 	}
-	if (all_lons) {	/* Full 360, use min/max for x */
-		r->x_min = project_info.xmin;	r->x_max = project_info.xmax;
-	}
-	if (all_lats) {	/* Full -90/+90, use min/max for y */
-		r->y_min = project_info.ymin;	r->y_max = project_info.ymax;
+	if (projected) {
+		if (all_lons) {	/* Full 360, use min/max for x */
+			r->x_min = project_info.xmin;	r->x_max = project_info.xmax;
+		}
+		if (all_lats) {	/* Full -90/+90, use min/max for y */
+			r->y_min = project_info.ymin;	r->y_max = project_info.ymax;
+		}
 	}
 }
 

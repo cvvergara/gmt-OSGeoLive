@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_datalist.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: x2sys_datalist.c 10019 2013-04-18 19:40:30Z pwessel $
  *
  *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -37,7 +37,7 @@ GMT_LONG x2sys_load_adjustments (char *DIR, char *TAG, char *track, char *column
 
 int main (int argc, char **argv)
 {
-	char *sfile, *def = "x2sys", *fflags = CNULL, *TAG = CNULL, *correction_table = CNULL;
+	char *fflags = CNULL, *TAG = CNULL, *correction_table = CNULL;
 	char **trk_name = NULL, buffer[BUFSIZ];
 
 	GMT_LONG i, j, k, bad, trk_no, n_data_col_out = 0;
@@ -65,7 +65,6 @@ int main (int argc, char **argv)
 	argc = (int)GMT_begin (argc, argv);
 	for (i = strlen(argv[0]); i >= 0 && argv[0][i] != '/'; i--);
 	X2SYS_program = &argv[0][i+1];	/* Name without full path */
-	sfile = def;
 	west = east = south = north = 0.0;
 	t_given = FALSE;
 

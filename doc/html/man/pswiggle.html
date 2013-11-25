@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:06 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:36 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -748,17 +748,17 @@ information and a full list of color names.</p></td>
 <p style="margin-left:11%; margin-top: 1em">To plot the
 magnetic anomaly stored in the file track.xym along track @
 1000 nTesla/cm (after removing a mean value of 32000
-nTesla), using a 15-cm-wide Polar Stereographic map ticked
+nTesla), using a 15 -cm-wide Polar Stereographic map ticked
 every 5 degrees in Portrait mode, with positive anomalies in
 red on a blue track of width 0.25 points, use</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>pswiggle</b>
-track.xym <b>&minus;R</b>-20/10/-80/-60
-<b>&minus;JS</b>0/90/15<b>c &minus;Z</b>1000
-<b>&minus;B</b>5 <b>&minus;C</b>32000 <b>&minus;P
-&minus;G</b>red <b>&minus;T</b>0.25<b>p</b>,blue
-<b>&minus;S</b>1000 <b>&minus;V</b> &gt; track_xym.ps</p>
+track.xym <b>&minus;R</b>-20/10/-80/-60 <b>&minus;JS</b>
+0/90/15<b>c &minus;Z</b> 1000 <b>&minus;B</b> 5
+<b>&minus;C</b> 32000 <b>&minus;P &minus;G</b> red
+<b>&minus;T</b> 0.25<b>p</b>,blue <b>&minus;S</b> 1000
+<b>&minus;V</b> &gt; track_xym.ps</p>
 
 <a name="BUGS"></a>
 <h2>BUGS</h2>
@@ -781,7 +781,7 @@ around a lot, you may do this:</p>
 
 <p style="margin-left:11%; margin-top: 1em">awk &rsquo;{
 print NR, $0 }&rsquo; yourdata.xyz | <b>filter1d
-&minus;Fb</b>5 <b>&minus;N</b>4/0
+&minus;Fb</b> 5 <b>&minus;N</b> 4/0
 <b>&minus;&minus;D_FORMAT</b>=<i>value</i> &gt;
 smoothed.xyz</p>
 

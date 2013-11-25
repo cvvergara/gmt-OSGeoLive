@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_proj.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_proj.c 10059 2013-06-20 16:20:26Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -540,10 +540,10 @@ void GMT_vlamb (double rlong0, double rlat0, double pha, double phb)
 		pow ((1.0 - project_info.ECC * sind (rlat0)) /
 		(1.0 + project_info.ECC * sind (rlat0)), project_info.half_ECC);
 
-	if(pha != phb)
-		project_info.l_N = (d_log(m_pha) - d_log(m_phb))/(d_log(t_pha) - d_log(t_phb));
+	if (GMT_IS_ZERO (pha - phb))
+		project_info.l_N = sind(pha);
 	else
-		project_info.l_N = sin(pha);
+		project_info.l_N = (d_log(m_pha) - d_log(m_phb))/(d_log(t_pha) - d_log(t_phb));
 
 	project_info.l_i_N = 1.0 / project_info.l_N;
 	project_info.l_F = m_pha / (project_info.l_N * pow (t_pha, project_info.l_N));
@@ -1645,7 +1645,8 @@ void GMT_genper (double lon, double lat, double *xt, double *yt)
 	project_info.g_outside = FALSE;
 
 	angle = M_PI - dlon;
-	if (cosc < project_info.g_P_inverse) { /* over the horizon */
+	// if (cosc < project_info.g_P_inverse) { /* over the horizon, but this was susceptible to minor roundoff. */
+	if ((project_info.g_P_inverse - cosc) > GMT_CONV_LIMIT) { /* over the horizon */
 		project_info.g_outside = TRUE;
 
 		if (project_info.polar)
@@ -2184,10 +2185,16 @@ void GMT_iwinkel (double *lon, double *lat, double x, double y)
 	double phi0, lambda0, sp, cp, s2p, sl, cl, sl2, cl2, C, D, sq_C, C_32;
 	double f1, f2, df1dp, df1dl, df2dp, df2dl, denom, delta;
 
-	x *= project_info.i_EQ_RAD;
 	y *= project_info.i_EQ_RAD;
-	*lat = y / M_PI;	/* Initial guesses for lon and lat */
+	x *= project_info.i_EQ_RAD;
 	*lon = x / M_PI;
+	*lat = y / M_PI;	/* Initial guesses for lon and lat */
+	if (fabs (y) < GMT_CONV_LIMIT && fabs (x) < GMT_CONV_LIMIT) {	/* At ~origin, C is ~zero so no division */
+		*lon *= R2D;
+		*lon += project_info.central_meridian;
+		return;
+	}
+	/* Here we need an iterative approach */
 	do {
 		phi0 = *lat;
 		lambda0 = *lon;

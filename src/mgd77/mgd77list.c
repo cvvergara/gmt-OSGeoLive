@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77list.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: mgd77list.c 10110 2013-10-31 22:02:27Z pwessel $
  *
  *    Copyright (c) 2004-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -826,8 +826,8 @@ int main (int argc, char **argv)
 			if (i >= n_cols_to_process) continue;	/* Dont worry about helper columns that wont be printed */
 			c  = M.order[i].set;
 			id = M.order[i].item;
-			if (id == time_column)	{/* Special time formatting */
-				GMT_io.out_col_type[pos] = (c == 0) ? M.time_format : GMT_IS_FLOAT;
+			if (c == 0 && id == time_column)	{	/* Special time formatting; time can only be in original set 0 */
+				GMT_io.out_col_type[pos] = M.time_format;
 				t_pos = pos;	/* Output order of time */
 			}
 			else if (id == lon_column)	/* Special lon formatting */
@@ -923,12 +923,12 @@ int main (int argc, char **argv)
 			if (need_distances) {
 				lonlat_not_NaN = !( GMT_is_dnan (dvalue[x_col][rec]) || GMT_is_dnan (dvalue[y_col][rec]));
 				if (rec == 0) {	/* Azimuth at 1st point set to azimuth of 2nd point since there is no previous point */
-					if (auxlist[MGD77_AUX_AZ].requested) aux_dvalue[MGD77_AUX_AZ] = GMT_azimuth_func (dvalue[x_col][1], dvalue[y_col][1], dvalue[x_col][0], dvalue[y_col][0], FALSE);
+					if (auxlist[MGD77_AUX_AZ].requested) aux_dvalue[MGD77_AUX_AZ] = GMT_azimuth_func (dvalue[x_col][1], dvalue[y_col][1], dvalue[x_col][0], dvalue[y_col][0], TRUE);
 				}
 				else {		/* Need a previous point to calculate distance and heading */
 					if (lonlat_not_NaN && prevrec >= 0) {	/* We have to records with OK lon,lat and can compute a distance from the previous OK point */
 						ds = dist_scale * GMT_distance_func (dvalue[x_col][rec], dvalue[y_col][rec], dvalue[x_col][prevrec], dvalue[y_col][prevrec]);
-						if (auxlist[MGD77_AUX_AZ].requested) aux_dvalue[MGD77_AUX_AZ] = GMT_azimuth_func (dvalue[x_col][rec], dvalue[y_col][rec], dvalue[x_col][prevrec], dvalue[y_col][prevrec], FALSE);
+						if (auxlist[MGD77_AUX_AZ].requested) aux_dvalue[MGD77_AUX_AZ] = GMT_azimuth_func (dvalue[x_col][rec], dvalue[y_col][rec], dvalue[x_col][prevrec], dvalue[y_col][prevrec], TRUE);
 						cumulative_dist += ds;
 						aux_dvalue[MGD77_AUX_DS] = cumulative_dist;
 					}

@@ -1,4 +1,4 @@
-.TH GRDCLIP 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDCLIP 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdclip \- Clipping of range in grid files.
 .SH SYNOPSIS
@@ -44,7 +44,7 @@ particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
 .SH EXAMPLES
 To set all values > 70 to NaN and all values < 0 to 0 in file data.grd:
 .sp
-\fBgrdclip\fP data.grd \fB\-G\fPnew_data.grd \fB\-Sa\fP70/NaN \fB\-Sb\fP0/0 \fB\-V\fP
+\fBgrdclip\fP data.grd \fB\-G\fP new_data.grd \fB\-Sa\fP 70/NaN \fB\-Sb\fP 0/0 \fB\-V\fP
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR grdlandmask (1),

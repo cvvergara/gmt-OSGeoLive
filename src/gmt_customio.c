@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_customio.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_customio.c 9994 2013-03-24 16:16:47Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -522,7 +522,7 @@ GMT_LONG GMT_ras_write_grd (struct GRD_HEADER *header, float *grid, double w, do
 	h.maptype = 0;
 	h.maplength = 0;
 
-	n2 = (GMT_LONG) ceil (header->nx / 2.0) * 2;
+	n2 = (GMT_LONG) ceil (header->nx / 2.0) * 2;	/* Number of bytes to be written per row must be even */
 	tmp = (unsigned char *) GMT_memory (VNULL, n2, sizeof (unsigned char), "GMT_ras_write_grd");
 
 	check = !GMT_is_dnan (header->nan_value);
@@ -560,7 +560,7 @@ GMT_LONG GMT_ras_write_grd (struct GRD_HEADER *header, float *grid, double w, do
 			if (check && GMT_is_fnan (grid[kk])) grid[kk] = (float)header->nan_value;
 			tmp[i] = (unsigned char) grid[kk];
 		}
-		if (GMT_fwrite ((void *)tmp, sizeof (unsigned char), (size_t)width_out, fp) < (size_t)width_out) return (GMT_GRDIO_WRITE_FAILED);
+		if (GMT_fwrite ((void *)tmp, sizeof (unsigned char), (size_t)n2, fp) < (size_t)n2) return (GMT_GRDIO_WRITE_FAILED);
 	}
 	if (fp != GMT_stdout) GMT_fclose (fp);
 
@@ -714,9 +714,9 @@ GMT_LONG GMT_is_native_grid (struct GRD_HEADER *header)
 	
 	switch (size) {
 		case 0:	/* Possibly bit map; check some more */
-			mx = (GMT_LONG) ceil (t_head.nx / 32.0);
-			nm = mx * ((GMT_LONG)t_head.ny);
-			if ((buf.st_size - GRD_HEADER_SIZE) == nm)	/* yes it was a bit mask file */
+			mx = (GMT_LONG) ceil (t_head.nx / 32.0);	/* Number of 4-byte integers required to store one row of nx bits */
+			nm = 4 * mx * ((GMT_LONG)t_head.ny);		/* Total number of bytes to store all the rows */
+			if ((buf.st_size - GRD_HEADER_SIZE) == nm)	/* Yes, it was a bit mask file */
 				header->type = GMT_grd_format_decoder ("bm");
 			else	/* No, junk data */
 				return (GMT_GRDIO_BAD_VAL);

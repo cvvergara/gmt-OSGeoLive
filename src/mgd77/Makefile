@@ -1,4 +1,4 @@
-#	$Id: Makefile 9700 2012-03-09 04:04:18Z pwessel $
+#	$Id: Makefile 10060 2013-06-24 00:04:12Z pwessel $
 #
 #		Makefile for GMT mgd77 supplements
 #
@@ -27,7 +27,8 @@ LIB_H		= mgd77.h mgd77_functions.h mgd77defaults.h mgd77_recalc.h cm4_functions.
 LIB		= libmgd77.$(LIBEXT)
 
 PROGS_H		= mgd77_IGF_coeffs.h mgd77sniffer.h mgd77snifferdefaults.h mgd77magref.h mgd77_codes.h
-PROGS_O		= mgd77convert.o mgd77info.o mgd77list.o mgd77path.o mgd77manage.o mgd77sniffer.o mgd77magref.o
+PROGS_O		= mgd77convert.o mgd77header.o mgd77info.o mgd77list.o mgd77path.o \
+		  mgd77manage.o mgd77sniffer.o mgd77magref.o
 PROGSPS_O	= mgd77track.o
 MAN1		= $(PROGS_O:.o=.1) $(PROGSPS_O:.o=.1)
 
@@ -99,6 +100,7 @@ libmgd77.$(SL):	libmgd77.a
 #	program rules
 #-------------------------------------------------------------------------------
 mgd77convert$(EXE):	mgd77convert.o
+mgd77header$(EXE):	mgd77header.o
 mgd77info$(EXE):	mgd77info.o
 mgd77list$(EXE):	mgd77list.o
 mgd77path$(EXE):	mgd77path.o

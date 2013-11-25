@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 27
-#		$Id: job27.sh 9545 2011-07-27 19:31:54Z pwessel $
+#		$Id: job27.sh 10065 2013-06-26 21:42:06Z pwessel $
 #
 # Purpose:	Illustrates how to plot Mercator img grids
 # GMT progs:	makecpt, grdgradient, grdimage, grdinfo, pscoast
@@ -36,7 +36,7 @@ pscoast $R -Jm0.25i -Ba10f5WSne -O -K -Gblack --ELLIPSOID=Sphere \
 
 # Put a color legend on top of the land mask justified with 147E,31S
 
-echo 147E 31S | mapproject -R -J --ELLIPSOID=Sphere > tmp
+echo 147E 31S | mapproject -R -J -Di --ELLIPSOID=Sphere > tmp
 echo 147E 31S 1 2.5 | psxy -R -J -O -K -Sr -D0.25i/0.05i -Gwhite -W1p --ELLIPSOID=Sphere --MEASURE_UNIT=inch >> $ps
 pos=`$AWK '{printf "%si/%si\n", $1, $2}' tmp`
 psscale -D$pos/2i/0.15i -Cgrav.cpt -B50f10/:mGal: -I -O >> $ps

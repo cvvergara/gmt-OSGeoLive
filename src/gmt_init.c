@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_init.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_init.c 10093 2013-10-04 23:52:54Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -133,7 +133,7 @@ GMT_LONG GMT_get_time_language (char *name);
 GMT_LONG GMT_scanf_epoch (char *s, GMT_cal_rd *day, double *t0);
 void GMT_backwards_compatibility ();
 GMT_LONG GMT_strip_colonitem (const char *in, const char *pattern, char *item, char *out);
-void GMT_strip_wesnz (const char *in, GMT_LONG side[], GMT_LONG *draw_box, char *out);
+void GMT_strip_wesnz (const char *in, GMT_LONG part, GMT_LONG side[], GMT_LONG *draw_box, char *out);
 GMT_LONG GMT_split_info (const char *in, char *info[]);
 GMT_LONG GMT_decode_tinfo (char *in, struct GMT_PLOT_AXIS *A);
 GMT_LONG GMT_set_titem (struct GMT_PLOT_AXIS *A, double val, double phase, char flag, char unit);
@@ -644,7 +644,7 @@ void GMT_label_syntax (GMT_LONG indent, GMT_LONG kind)
 	fprintf (stderr, "%s +r<min_rad> places no labels where radius of curvature < <min_rad> [Default is 0].\n", pad);
 	fprintf (stderr, "%s +s followed by desired font size in points [Default is 9 point].\n", pad);
 	fprintf (stderr, "%s +u<unit> to append unit to labels; Start with - for no space between annotation and unit.\n", pad);
-	if (kind == 0) fprintf (stderr, "%s  If no unit appended, use z-unit from grdfile. [Default is no unit]\n", pad);
+	if (kind == 0) fprintf (stderr, "%s  If z is appended we use the z-unit from the grdfile. [Default is no unit]\n", pad);
 	fprintf (stderr, "%s +v for placing curved text along path [Default is straight]\n", pad);
 	fprintf (stderr, "%s +w to set how many (x,y) points to use for angle calculation [Default is 10]\n", pad);
 	fprintf (stderr, "%s +=<prefix> to give labels a prefix; Start with - for no space between annotation and prefix.\n", pad);
@@ -2711,10 +2711,14 @@ GMT_LONG GMT_savedefaults (char *file)
 	fprintf (fp, "BASEMAP_TYPE\t\t= ");
 	if (gmtdefs.basemap_type == GMT_IS_PLAIN)
 		fprintf (fp, "plain\n");
+	else if (gmtdefs.basemap_type == GMT_IS_GRAPH)
+		fprintf (fp, "graph\n");
 	else if (gmtdefs.basemap_type == GMT_IS_FANCY)
 		fprintf (fp, "fancy\n");
 	else if (gmtdefs.basemap_type == GMT_IS_ROUNDED)
 		fprintf (fp, "fancy+\n");
+	else
+		fprintf (fp, "inside\n");
 	fprintf (fp, "FRAME_PEN\t\t= %s\n", GMT_putpen (&gmtdefs.frame_pen));
 	fprintf (fp, "FRAME_WIDTH\t\t= %g%c\n", (GMT_force_resize ? save_frame_width : gmtdefs.frame_width) * s, u);
 	fprintf (fp, "GRID_CROSS_SIZE_PRIMARY\t= %g%c\n", gmtdefs.grid_cross_size[0] * s, u);
@@ -2922,7 +2926,7 @@ GMT_LONG GMT_getdefpath (GMT_LONG get, char **P)
 {
 	/* Return the full path to the chosen .gmtdefaults4 system file
 	 * depending on the value of get:
-	 * get = 0:	Use gmt.conf to set get to 1 or 2.
+	 * get = 0:	Use gmt_setup.conf to set get to 1 or 2.
 	 * get = 1:	Use the SI settings.
 	 * get = 2:	Use the US settings. */
 
@@ -2930,11 +2934,11 @@ GMT_LONG GMT_getdefpath (GMT_LONG get, char **P)
 	char line[BUFSIZ], *path, *suffix[2] = {"SI", "US"};
 	FILE *fp = NULL;
 
-	if (get == 0) {	/* Must use GMT system defaults via gmt.conf */
+	if (get == 0) {	/* Must use GMT system defaults via gmt_setup.conf */
 
-		GMT_getsharepath ("conf", "gmt", ".conf", line);
+		GMT_getsharepath ("conf", "gmt_setup", ".conf", line);
 		if ((fp = fopen (line, "r")) == NULL) {
-			fprintf (stderr, "GMT Fatal Error: Cannot open/find GMT configuration file %s\n", line);
+			fprintf (stderr, "GMT Fatal Error: Cannot open/find GMT 4 configuration file %s\n", line);
 			GMT_exit (EXIT_FAILURE);
 		}
 
@@ -2945,7 +2949,7 @@ GMT_LONG GMT_getdefpath (GMT_LONG get, char **P)
 		else if (!strncmp (line, "SI", (size_t)2))
 			id = 1;
 		else {
-			fprintf (stderr, "GMT Fatal Error: No SI/US keyword in GMT configuration file (%s)\n", line);
+			fprintf (stderr, "GMT Fatal Error: No SI/US keyword in GMT 4 configuration file (%s)\n", line);
 			GMT_exit (EXIT_FAILURE);
 		}
 	}
@@ -3266,7 +3270,7 @@ GMT_LONG GMT_get_time_system (char *name, struct GMT_TIME_SYSTEM *time_system)
 		time_system->unit = 'd';
 	}
 	else if (!strcmp (name, "jd")) {
-		strcpy (time_system->epoch, "-4713-11-25T12:00:00");
+		strcpy (time_system->epoch, "-4713-11-24T12:00:00");
 		time_system->unit = 'd';
 	}
 	else if (!strcmp (name, "mjd")) {
@@ -3424,6 +3428,15 @@ void GMT_begin_io ()
 	GMT_stdout = stdout;
 }
 
+void GMT_set_today ()
+{	/* Gets the rata day of today */
+	time_t right_now = time (NULL);			/* Unix time right now */
+	struct tm *moment = gmtime (&right_now);	/* Convert time to a TM structure */
+	/* Calculate rata die from yy, mm, and dd */
+	/* tm_mon is 0-11, so add 1 for 1-12 range, tm_year is years since 1900, so add 1900, but tm_mday is 1-31 so use as is */
+	GMT_today_rata_die = GMT_rd_from_gymd ((GMT_LONG)(1900 + moment->tm_year), (GMT_LONG)(moment->tm_mon + 1), (GMT_LONG)moment->tm_mday);
+}
+
 GMT_LONG GMT_begin (int argc, char **argv)
 {
 	/* GMT_begin will merge the command line arguments with the arguments
@@ -3561,6 +3574,8 @@ GMT_LONG GMT_begin (int argc, char **argv)
 
 	GMT_get_time_language (gmtdefs.time_language);
 
+	GMT_set_today ();	/* Determine today's rata die value */
+	
 	if (gmtdefs.gridfile_shorthand) GMT_setshorthand ();
 
 	/* Copy various colors to GMT_BFN_COLOR structure */
@@ -3935,7 +3950,7 @@ GMT_LONG GMT_history (int argc, char ** argv)
 
 	/* If current directory is writable, use it; else use the home directory */
 
-	getcwd (cwd, (size_t)BUFSIZ);
+	(void)getcwd (cwd, (size_t)BUFSIZ);
 	if (GMT_TMPDIR)			/* Isolation mode: Use GMT_TMPDIR/.gmtcommands4 */
 		sprintf (hfile, "%s/.gmtcommands4", GMT_TMPDIR);
 	else if (!access (cwd, W_OK))	/* Current directory is writable */
@@ -4226,7 +4241,7 @@ GMT_LONG GMT_strip_colonitem (const char *in, const char *pattern, char *item, c
 	return (GMT_NOERROR);
 }
 
-void GMT_strip_wesnz (const char *in, GMT_LONG t_side[], GMT_LONG *draw_box, char *out) {
+void GMT_strip_wesnz (const char *in, GMT_LONG part, GMT_LONG t_side[], GMT_LONG *draw_box, char *out) {
 	/* Removes the WESNZwesnz+ flags and sets the side/drawbox parameters
 	 * and return the resulting stripped string
 	 */
@@ -4234,6 +4249,12 @@ void GMT_strip_wesnz (const char *in, GMT_LONG t_side[], GMT_LONG *draw_box, cha
 	GMT_LONG set_sides = FALSE, mute = FALSE;
 	GMT_LONG i, k, set, side[5] = {0, 0, 0, 0, 0};
 
+	frame_info.set_frame[part]++;	/* Primary or secondary */
+	if (frame_info.set_frame[0] > 1 || frame_info.set_frame[1] > 1 ) {
+		fprintf (stderr, "%s: ERROR -B: <WESN-framesettings> given more than once!\n", GMT_program);
+		GMT_exit (EXIT_FAILURE);
+	}
+	
 	for (i = k = 0; in[i]; i++) {
 		if (in[i] == ':') mute = !mute;	/* Toggle so that mute is TRUE when we are within a :<stuff>: string */
 		if (mute) {	/* Do not look for WEST inside a label */
@@ -4605,11 +4626,11 @@ GMT_LONG GMT_parse_B_option (char *in) {
 	char out1[BUFSIZ], out2[BUFSIZ], out3[BUFSIZ], *info[3];
 	char one[BUFSIZ], two[BUFSIZ], three[BUFSIZ];
 	struct GMT_PLOT_AXIS *A = NULL;
-	GMT_LONG i, j, k;
+	GMT_LONG i, j, k, part = 0;
 
 	if (in[0] == 's') {
 		GMT_primary = FALSE;
-		k = 1;
+		k = part = 1;
 	}
 	else if (in[0] == 'p') {
 		GMT_primary = TRUE;
@@ -4619,6 +4640,7 @@ GMT_LONG GMT_parse_B_option (char *in) {
 		GMT_primary = TRUE;
 		k = 0;
 	}
+	
 	/* frame_info.side[] may be set already when parsing .gmtdefaults4 flags */
 
 	info[0] = one;	info[1] = two;	info[2] = three;
@@ -4635,12 +4657,13 @@ GMT_LONG GMT_parse_B_option (char *in) {
 		frame_info.header[0] = '\0';
 		frame_info.plot = TRUE;
 		frame_info.draw_box = FALSE;
+		frame_info.set_frame[0] = frame_info.set_frame[1] = 0;
 	}
 
 	GMT_strip_colonitem (&in[k], ":.", frame_info.header, out1);			/* Extract header string, if any */
 	GMT_enforce_rgb_triplets (frame_info.header, GMT_LONG_TEXT);	/* If @; is used, make sure the color information passed on to ps_text is in r/b/g format */
 
-	GMT_strip_wesnz (out1, frame_info.side, &frame_info.draw_box, out2);		/* Decode WESNZwesnz+ flags, if any */
+	GMT_strip_wesnz (out1, part, frame_info.side, &frame_info.draw_box, out2);		/* Decode WESNZwesnz+ flags, if any */
 
 	GMT_split_info (out2, info);					/* Chop/copy the three axis strings */
 
@@ -5098,7 +5121,6 @@ GMT_LONG GMT_parse_J_option (char *args)
 			error += GMT_verify_expectations (GMT_IS_LAT, GMT_scanf (txt_c, GMT_IS_LAT, &project_info.pars[2]), txt_c);
 			error += GMT_verify_expectations (GMT_IS_LAT, GMT_scanf (txt_d, GMT_IS_LAT, &project_info.pars[3]), txt_d);
 			error += GMT_scale_or_width (txt_e, &project_info.pars[4]);
-			error += (project_info.pars[2] == project_info.pars[3]);
 			error += !(n_slashes == 4 && n == 5);
 			break;
 
@@ -5485,7 +5507,7 @@ GMT_LONG GMT_parse_symbol_option (char *text, struct GMT_SYMBOL *p, GMT_LONG mod
 		}
 	}
 	else if (text[0] == 'k') {	/* Custom symbol spec */
-		for (j = strlen (text); j > 0 && text[j] != '/'; j--);;
+		for (j = strlen (text); j > 0 && text[j] != '/'; j--);
 		if (j == 0) {	/* No slash, i.e., no symbol size given */
 			if (p->size_x == 0.0) p->size_x = p->given_size_x;
 			n = sscanf (text, "%c%s", &symbol_type, text_cp);

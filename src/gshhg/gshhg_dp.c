@@ -1,4 +1,4 @@
-/*	$Id: gshhg_dp.c 9924 2012-12-18 22:08:18Z pwessel $
+/*	$Id: gshhg_dp.c 10057 2013-06-17 04:38:51Z pwessel $
  *
  *	Copyright (c) 1996-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -30,6 +30,7 @@
  *	    1.13 1-JUL-2011: Now contains improved area information (2.2.0).
  *	    1.14 15-APR-2012:  	Data version is now 2.2.1. [no change to format]
  *	    1.15 1-JAN-2013:   	Data version is now 2.2.2. [no change to format]
+ *	    1.16 1-JUL-2013:   	Data version is now 2.2.3. [no change to format]
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by

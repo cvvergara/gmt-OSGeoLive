@@ -1,4 +1,4 @@
-.TH GRDRASTER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDRASTER 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdraster \- extract subregion from a binary raster and write a grid file
 .SH SYNOPSIS
@@ -175,7 +175,7 @@ To extract data from raster 1, taking one point every 30 minutes, in an
 area extended beyond 360 degrees to allow later filtering, run
 .br
 .sp
-\fBgrdraster\fP 1 \fB\-R\fP-4/364/-62/62 \fB\-I\fP30\fBm\fP \fB\-G\fPdata.grd
+\fBgrdraster\fP 1 \fB\-R\fP-4/364/-62/62 \fB\-I\fP 30\fBm\fP \fB\-G\fP data.grd
 .br
 .sp
 To obtain data for an oblique Mercator projection we need to extract more data
@@ -185,14 +185,14 @@ get all the data from the ETOPO2 data needed to make a contour map for the regio
 lower left and upper right corners and the desired projection, use
 .br
 .sp
-\fBgrdraster\fP ETOPO2 \fB\-R\fP160/20/220/30\fBr\fP \fB\-Joc\fP190/25.5/292/69/1 \fB\-G\fPdata.grd
+\fBgrdraster\fP ETOPO2 \fB\-R\fP 160/20/220/30\fBr\fP \fB\-Joc\fP 190/25.5/292/69/1 \fB\-G\fP data.grd
 .br
 .sp
 To extract data from the 2 min Geoware relief blend and write it as binary double precision xyz-triplets to
 standard output:
 .br
 .sp
-\fBgrdraster\fP "2 min Geoware" \fB\-R\fP20/25/-10/5  \fB\-bo\fP >! triplets.b
+\fBgrdraster\fP "2 min Geoware" \fB\-R\fP 20/25/-10/5  \fB\-bo\fP >! triplets.b
 .br
 .sp
 .SH "SEE ALSO"
@@ -202,7 +202,7 @@ standard output:
 .IR grdfilter (1)
 .SH REFERENCES
 Wessel, P., and W. H. F. Smith, 2013, The Generic Mapping Tools (GMT) version
-4.5.9 Technical Reference & Cookbook, SOEST/NOAA.
+4.5.11 Technical Reference & Cookbook, SOEST/NOAA.
 .br
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
 Tools Released, EOS Trans., AGU, 79 (47), p. 579.

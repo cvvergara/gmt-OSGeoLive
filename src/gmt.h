@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt.h 10067 2013-06-28 18:11:30Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -541,6 +541,7 @@ EXTERN_MSC double GMT_u2u[4][4];		/* measure unit translation matrix 4 x 4*/
 EXTERN_MSC struct GMT_FONT *GMT_font;
 EXTERN_MSC struct GMT_HASH GMT_month_hashnode[12];
 EXTERN_MSC struct GMT_TIME_LANGUAGE GMT_time_language;
+EXTERN_MSC GMT_LONG GMT_today_rata_die;
 
 EXTERN_MSC float GMT_f_NaN;		/* Holds IEEE not-a-number float */
 EXTERN_MSC double GMT_d_NaN;		/* Holds IEEE not-a-number double */

@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:53 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:27 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -245,8 +245,8 @@ hawaii_residual.grd:</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdtrend</b>
-hawaii_topo.grd <b>&minus;N</b>3
-<b>&minus;D</b>hawaii_residual.grd</p>
+hawaii_topo.grd <b>&minus;N</b> 3 <b>&minus;D</b>
+hawaii_residual.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">To do a robust
 fit of a bicubic surface to hawaii_topo.grd, writing the
@@ -255,9 +255,9 @@ hawaii_weight.grd, and reporting the progress:</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdtrend</b>
-hawaii_topo.grd <b>&minus;N</b>10<b>r
-&minus;T</b>hawaii_trend.grd
-<b>&minus;W</b>hawaii_weight.grd <b>&minus;V</b></p>
+hawaii_topo.grd <b>&minus;N</b> 10<b>r &minus;T</b>
+hawaii_trend.grd <b>&minus;W</b> hawaii_weight.grd
+<b>&minus;V</b></p>
 
 <a name="SEE ALSO"></a>
 <h2>SEE ALSO</h2>

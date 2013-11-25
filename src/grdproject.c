@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdproject.c 9946 2012-12-28 17:04:20Z pwessel $
+ *	$Id: grdproject.c 10002 2013-04-04 19:57:48Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -287,8 +287,8 @@ int main (int argc, char **argv)
 		double ww, ee, ss, nn;
 		char opt_R[BUFSIZ];
 		struct GRD_HEADER head;
-		if (project_info.utm_hemisphere == 0) {
-			fprintf (stderr, "%s: GMT SYNTAX ERROR -J option: When -R is not provided you have to specify the hemisphere\n", GMT_program);
+		if (project_info.projection == GMT_UTM && project_info.utm_hemisphere == 0) {
+			fprintf (stderr, "%s: GMT SYNTAX ERROR -JU|u option: When -R is not provided you have to specify the hemisphere\n", GMT_program);
 			exit (EXIT_FAILURE);
 		}
 		GMT_err_fail (GMT_read_grd_info (infile, &head), infile);
@@ -404,6 +404,14 @@ int main (int argc, char **argv)
 
 		/* if (!project_info.region) d_swap (s, e); */  /* Got w/s/e/n, make into w/e/s/n */
 
+		if (GMT_IS_AZIMUTHAL && project_info.polar) {	/* Watch out for polar cap grids */
+			if (project_info.pole == -90.0) {	/* Covers S pole; implies 360 longitude range */
+				w = -180.0;	e = +180.0;	n = MAX(s, n);	s = -90.0;
+			}
+			else if (project_info.pole == +90.0) {	/* Covers N pole; implies 360 longitude range */
+				w = -180.0;	e = +180.0;	s = MIN(s, n);	n = +90.0;
+			}
+		}
 		g_head.x_min = w;	g_head.x_max = e;	g_head.y_min = s;	g_head.y_max = n;
 
 		GMT_err_fail (GMT_read_grd_info (infile, &r_head), infile);

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdmask.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdmask.c 9977 2013-01-12 20:08:07Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -70,7 +70,7 @@ struct GRDMASK_CTRL {
 
 int main (int argc, char **argv)
 {
-	GMT_LONG	error = FALSE, done, nofile = TRUE, periodic = FALSE, resample = FALSE;
+	GMT_LONG	error = FALSE, done, nofile = TRUE, periodic = FALSE, resample = FALSE, do_test = TRUE;
 
 	char line[BUFSIZ], ptr[BUFSIZ];
 
@@ -491,8 +491,20 @@ int main (int argc, char **argv)
 					/* First check if point is outside, then there is no need to assign value */
 					
 					if (periodic) {	/* Containing annulus test */
-						if (P.pole != +1 && yy > ymax) continue;	/* No N polar cap and beyond north */
-						if (P.pole != -1 && yy < ymin) continue;	/* No S polar cap and beyond south */
+						do_test = TRUE;
+						switch (P.pole) {
+							case 0:	/* Not a polar cap */
+								if (yy < ymin || yy > ymax) continue;	/* Outside */
+								break;
+							case -1:	/* S polar cap */
+								if (yy > ymax) continue;
+								if (yy < ymin) side = GRDMASK_INSIDE, do_test = FALSE;
+								break;
+							case +1:	/* N polar cap */
+								if (yy < ymin) continue;
+								if (yy > ymax) side = GRDMASK_INSIDE, do_test = FALSE;
+								break;
+						}
 					}
 					else if (yy < ymin || yy > ymax)	/* Cartesian case */
 						continue;
@@ -500,8 +512,9 @@ int main (int argc, char **argv)
 					for (i = 0; i < header.nx; i++) {
 						xx = GMT_i_to_x (i, header.x_min, header.x_max, header.x_inc, header.xy_off, header.nx);
 						if (periodic) {
-							if (P.pole)	/* 360-degree polar cap, must check fully */
-								side = GMT_inonout_sphpol (xx, yy, &P);
+							if (P.pole) {	/* 360-degree polar cap, must check fully */
+								if (do_test) side = GMT_inonout_sphpol (xx, yy, &P);
+							}
 							else {	/* See if we are outside range of longitudes for polygon */
 								while (xx > xmin) xx -= 360.0;	/* Wind clear of west */
 								while (xx < xmin) xx += 360.0;	/* Wind east until inside or beyond east */

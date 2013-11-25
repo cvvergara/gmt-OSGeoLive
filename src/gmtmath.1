@@ -1,4 +1,4 @@
-.TH GMTMATH 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GMTMATH 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 gmtmath \- Reverse Polish Notation calculator for data tables
 .SH SYNOPSIS
@@ -349,7 +349,7 @@ Select the number of columns and the column number that contains the
 "time" variable.  Columns are numbered starting at 0 [2/0].
 .TP
 \fB\-Q\fP
-Quick mode for scalar calculation.  Shorthand for \fB\-Ca\fP \fB\-N\fP1/0 \fB\-T\fP0/0/1.
+Quick mode for scalar calculation.  Shorthand for \fB\-Ca\fP \fB\-N\fP 1/0 \fB\-T\fP 0/0/1.
 .TP
 \fB\-S\fP
 Only report the first or last row of the results [Default is all rows].  This is useful if
@@ -455,7 +455,7 @@ depth(in m) = 2500 + 350 * sqrt (age) to print the depth anomalies:
 To take the average of columns 1 and 4-6 in the three data sets sizes.1, sizes.2, and sizes.3, use
 .br
 .sp
-\fBgmtmath\fP \fB\-C\fP1,4-6 sizes.1 sizes.2 \fBADD\fP sizes.3 \fBADD 3 DIV \=\fP ave.d
+\fBgmtmath\fP \fB\-C\fP 1,4-6 sizes.1 sizes.2 \fBADD\fP sizes.3 \fBADD 3 DIV \=\fP ave.d
 .br
 .sp
 To take the 1-column data set ages.d and calculate the modal value and assign it to a variable, try
@@ -467,7 +467,7 @@ set mode_age = `\fBgmtmath\fP \fB\-S\fP \fB\-T\fP ages.d \fBMODE \=\fP`
 To evaluate the dilog(x) function for coordinates given in the file t.d:
 .br
 .sp
-\fBgmtmath\fP \fB\-T\fPt.d \fBT DILOG \=\fP dilog.d
+\fBgmtmath\fP \fB\-T\fP t.d \fBT DILOG \=\fP dilog.d
 .br
 .sp
 To use gmtmath as a RPN Hewlett-Packard calculator on scalars (i.e., no input
@@ -484,11 +484,11 @@ augmented matrix [ A | b ] and you want the least squares solution x to the matr
 The operator \fBLSQFIT\fP does this; it is your job to populate the matrix correctly first.  The \fB\-A\fP
 option will facilitate this.  Suppose you have a 2-column file ty.d with \fIt\fP and \fIb(t)\fP and you would
 like to fit a the model y(t) = a + b*t + c*H(t-t0), where H is the Heaviside step function for a given t0 = 1.55.
-Then, you need a 4-column augmented table loaded with t in column 0 and your observed y(t) in column 3.
+Then, you need a 4-column augmented table loaded with t in column 1 and your observed y(t) in column 3.
 The calculation becomes
 .br
 .sp
-\fBgmtmath\fP \fB\-N\fP4/1 \fB\-A\fPty.d \fB-C\fP0 1 \fBADD \-C\fP2 1.55 \fBSTEPT ADD \-Ca LSQFIT \=\fP solution.d
+\fBgmtmath\fP \fB\-N\fP 4/1 \fB\-A\fP ty.d \fB-C\fP0 1 \fBADD \-C\fP2 1.55 \fBSTEPT ADD \-Ca LSQFIT \=\fP solution.d
 .br
 .sp
 Note we use the \fB\-C\fP option to select which columns we are working on, then make active all the

@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:50 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:25 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -381,7 +381,7 @@ grid type is netCDF, the coordinates will be labeled
 &quot;time&quot; based on the attributes of the input data
 or grid (if any) or on the <b>&minus;f</b> or
 <b>&minus;R</b> options. For example, both <b>&minus;f0x
-&minus;f1t</b> and <b>&minus;R</b>90w/90e/0t/3t will result
+&minus;f1t</b> and <b>&minus;R</b> 90w/90e/0t/3t will result
 in a longitude/time grid. When the x, y, or z coordinate is
 time, it will be stored in the grid as relative time since
 epoch as specified by <b><A HREF="gmtdefaults.html#TIME_UNIT">TIME_UNIT</A></b> and <b><A HREF="gmtdefaults.html#TIME_EPOCH">TIME_EPOCH</A></b>
@@ -399,17 +399,17 @@ outside points to 1, do</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdmask</b>
 coastline_*.xy <b>&minus;R</b>-60/-40/-40/-30
-<b>&minus;I</b>5<b>m &minus;N</b>1/0/0
-<b>&minus;G</b>land_mask.grd <b>&minus;V</b></p>
+<b>&minus;I</b> 5<b>m &minus;N</b> 1/0/0 <b>&minus;G</b>
+land_mask.grd <b>&minus;V</b></p>
 
 <p style="margin-left:11%; margin-top: 1em">To set nodes
 within 50 km of data points to 1 and other nodes to NaN,
 do</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdmask</b>
-data.xyz <b>&minus;R</b>-60/-40/-40/-30 <b>&minus;I</b>5<b>m
-&minus;N</b>NaN/1/1 <b>&minus;S</b>50<b>k
-&minus;G</b>data_mask.grd <b>&minus;V</b></p>
+data.xyz <b>&minus;R</b>-60/-40/-40/-30 <b>&minus;I</b>
+5<b>m &minus;N</b> NaN/1/1 <b>&minus;S</b> 50<b>k
+&minus;G</b> data_mask.grd <b>&minus;V</b></p>
 
 <a name="SEE ALSO"></a>
 <h2>SEE ALSO</h2>

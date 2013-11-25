@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdview.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdview.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -124,7 +124,7 @@ struct GRDVIEW_POINT {
 int main (int argc, char **argv)
 {
 	GMT_LONG get_contours, bad, set_z = FALSE, error = FALSE, pen_not_set;
-	GMT_LONG first, begin, saddle, no_nans, drape_resample = FALSE;
+	GMT_LONG begin, saddle, no_nans, drape_resample = FALSE;
 
 	char *topofile = NULL;
 	char *c_method[2] = {"colorimage", "colortiles",};
@@ -629,7 +629,6 @@ int main (int argc, char **argv)
 		z_orig = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
 		memcpy ((void *)z_orig, (void *)zgrd, (size_t)(nm * sizeof (float)));
 		if (gmtdefs.verbose) fprintf (stderr, "%s: Trace and bin contours...\n", GMT_program);
-		first = TRUE;
 		for (c = 0; c < GMT_n_colors+1; c++) {	/* For each color change */
 
 			/* Reset markers and set up new zero-contour*/
@@ -639,7 +638,6 @@ int main (int argc, char **argv)
 			if (cval < header.z_min || cval > header.z_max) continue;
 
 			if (gmtdefs.verbose) fprintf (stderr, "%s: Now tracing contour interval %8g\r", GMT_program, cval);
-			first = FALSE;
 			for (i = 0; i < nm; i++) {	/* Must use z_orig since incremental subtraction builds up round-off */
 				if (!GMT_is_fnan (z_orig[i])) zgrd[i] = z_orig[i] - (float)cval;
 				if (zgrd[i] == 0.0) zgrd[i] += (float)small;

@@ -1,4 +1,4 @@
-.TH GRDVOLUME 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDVOLUME 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdvolume \- Calculating volume under a surface within a contour
 .SH SYNOPSIS
@@ -91,20 +91,20 @@ To determine the volume in km^3 under the surface hawaii_topo.grd (height in km)
 To find the volume between the surface peaks.grd and the contour z = 250, use
 .br
 .sp
-\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-C\fP250
+\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-C\fP 250
 .br
 .sp
 To search for the contour, between 100 and 300 in steps of 10, that maximizes the ratio of volume
 to surface area for the file peaks.grd, use
 .br
 .sp
-\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-C\fP100/300/10 > results.d
+\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-C\fP 100/300/10 > results.d
 .br
 .sp
 To see the areas and volumes for all the contours in the previous example, use
 .br
 .sp
-\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-Vl\fP \fB\-C\fP100/300/10 > results.d
+\fBgrdvolume\fP peaks.grd \fB\-Sk\fP \fB\-Vl\fP \fB\-C\fP 100/300/10 > results.d
 .SH "NOTES"
 \fBgrdvolume\fP distinguishes between gridline and gridcell oriented grids. In both cases the area and
 volume are computed up to the grid boundaries. That means that in the first case the gridcells on

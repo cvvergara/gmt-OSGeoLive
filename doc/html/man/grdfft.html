@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:47 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:23 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -187,25 +187,24 @@ filter. Cosine-taper: Specify four wavelengths
 wavelengths greater than <i>lc</i> or less than <i>hc</i>
 will be cut, wavelengths greater than <i>lp</i> and less
 than <i>hp</i> will be passed, and wavelengths in between
-will be cosine-tapered. E.g.,
-<b>&minus;F</b>1000000/250000/50000/10000 <b>&minus;M</b>
-will bandpass, cutting wavelengths &gt; 1000 km and &lt; 10
-km, passing wavelengths between 250 km and 50 km. To make a
-highpass or lowpass filter, give hyphens (-) for
-<i>hp</i>/<i>hc</i> or <i>lc</i>/<i>lp</i>. E.g.,
-<b>&minus;Fx</b>-/-/50/10 will lowpass <i>x</i>, passing
-wavelengths &gt; 50 and rejecting wavelengths &lt; 10.
-<b>&minus;Fy</b>1000/250/-/- will highpass <i>y</i>, passing
-wavelengths &lt; 250 and rejecting wavelengths &gt; 1000.
-Gaussian band-pass: Append <i>lo</i>/<i>hi</i>, the two
-wavelengths in correct units (see <b>&minus;M</b>) to design
-a bandpass filter. At the given wavelengths the Gaussian
-filter weights will be 0.5. To make a highpass or lowpass
-filter, give a hyphen (-) for the <i>hi</i> or <i>lo</i>
-wavelength, respectively. E.g., <b>&minus;F</b>-/30 will
-lowpass the data using a Gaussian filter with half-weight at
-30, while <b>&minus;F</b>400/- will highpass the data.
-Butterworth band-pass: Append
+will be cosine-tapered. E.g., <b>&minus;F</b>
+1000000/250000/50000/10000 <b>&minus;M</b> will bandpass,
+cutting wavelengths &gt; 1000 km and &lt; 10 km, passing
+wavelengths between 250 km and 50 km. To make a highpass or
+lowpass filter, give hyphens (-) for <i>hp</i>/<i>hc</i> or
+<i>lc</i>/<i>lp</i>. E.g., <b>&minus;Fx</b>-/-/50/10 will
+lowpass <i>x</i>, passing wavelengths &gt; 50 and rejecting
+wavelengths &lt; 10. <b>&minus;Fy</b> 1000/250/-/- will
+highpass <i>y</i>, passing wavelengths &lt; 250 and
+rejecting wavelengths &gt; 1000. Gaussian band-pass: Append
+<i>lo</i>/<i>hi</i>, the two wavelengths in correct units
+(see <b>&minus;M</b>) to design a bandpass filter. At the
+given wavelengths the Gaussian filter weights will be 0.5.
+To make a highpass or lowpass filter, give a hyphen (-) for
+the <i>hi</i> or <i>lo</i> wavelength, respectively. E.g.,
+<b>&minus;F</b>-/30 will lowpass the data using a Gaussian
+filter with half-weight at 30, while <b>&minus;F</b> 400/-
+will highpass the data. Butterworth band-pass: Append
 <i>lo</i>/<i>hi</i>/<i>order</i>, the two wavelengths in
 correct units (see <b>&minus;M</b>) and the filter order (an
 integer) to design a bandpass filter. At the given
@@ -214,7 +213,7 @@ make a highpass or lowpass filter, give a hyphen (-) for the
 <i>hi</i> or <i>lo</i> wavelength, respectively. E.g.,
 <b>&minus;F</b>-/30/2 will lowpass the data using a
 2nd-order Butterworth filter, with half-weight at 30, while
-<b>&minus;F</b>400/-/2 will highpass the data.</p></td>
+<b>&minus;F</b> 400/-/2 will highpass the data.</p></td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
@@ -381,15 +380,15 @@ continue the sea-level magnetic anomalies in the file
 mag_0.grd to a level 800 m above sealevel:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdfft</b>
-mag_0.grd <b>&minus;C</b>800 <b>&minus;V
-&minus;G</b>mag_800.grd</p>
+mag_0.grd <b>&minus;C</b> 800 <b>&minus;V &minus;G</b>
+mag_800.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">To transform
 geoid heights in m (geoid.grd) on a geographical grid to
 free-air gravity anomalies in mGal:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdfft</b>
-geoid.grd <b>&minus;Dg &minus;V &minus;G</b>grav.grd</p>
+geoid.grd <b>&minus;Dg &minus;V &minus;G</b> grav.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">To transform
 gravity anomalies in mGal (faa.grd) to deflections of the
@@ -399,8 +398,8 @@ directional derivative, and finally scale radians to
 micro-radians:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdfft</b>
-faa.grd <b>&minus;Ig</b>38 <b>&minus;S</b>1e6 <b>&minus;V
-&minus;G</b>defl_38.grd</p>
+faa.grd <b>&minus;Ig</b> 38 <b>&minus;S</b> 1e6 <b>&minus;V
+&minus;G</b> defl_38.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">Second vertical
 derivatives of gravity anomalies are related to the
@@ -408,8 +407,8 @@ curvature of the field. We can compute these as mGal/m^2 by
 differentiating twice:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdfft</b>
-gravity.grd <b>&minus;D &minus;D &minus;V
-&minus;G</b>grav_2nd_derivative.grd</p>
+gravity.grd <b>&minus;D &minus;D &minus;V &minus;G</b>
+grav_2nd_derivative.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">The first order
 gravity anomaly (in mGal) due to the compensating surface
@@ -418,9 +417,9 @@ thick elastic plate, assumed to be 4 km beneath the
 observation level can be computed as</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdfft</b>
-topo.grd <b>&minus;T</b>20000/2800/3330/1030/2300
-<b>&minus;S</b>0.022 <b>&minus;C</b>4000
-<b>&minus;G</b>comp_faa.grd</p>
+topo.grd <b>&minus;T</b> 20000/2800/3330/1030/2300
+<b>&minus;S</b> 0.022 <b>&minus;C</b> 4000 <b>&minus;G</b>
+comp_faa.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">where 0.022 is
 the scale needed for the first term in Parker&rsquo;s

@@ -1,3 +1,4 @@
+#!/bin/sh
 # Bash script inclusion to test all GMT examples.
 # It sets the environment such that the examples are created as in the manual.
 

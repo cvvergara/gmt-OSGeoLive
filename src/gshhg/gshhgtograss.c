@@ -1,4 +1,4 @@
-/*	$Id: gshhgtograss.c 9924 2012-12-18 22:08:18Z pwessel $
+/*	$Id: gshhgtograss.c 10057 2013-06-17 04:38:51Z pwessel $
 *
 * PROGRAM:   gshhgtograss.c
 * AUTHOR:    Simon Cox (simon@ned.dem.csiro.au),
@@ -36,6 +36,7 @@
 *				 and revised greenwhich flags (now 2-bit; see gshhg.h).
 *		1.14 15-APR-2012:  	Data version is now 2.2.1. [no change to format]
 *		1.15 1-JAN-2013:   	Data version is now 2.2.2. [no change to format]
+*		1.16 1-JUL-2013:   	Data version is now 2.2.3. [no change to format]
 *
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by
@@ -73,13 +74,13 @@ void usage_msg (char *progname);
 int main (int argc, char **argv)
 {
 	int i = 1, m;
-	double w, e, s, n, area, lon, lat, scale = 10.0;
+	double w, e, s, n, lon, lat, scale = 10.0;
 	double minx = -360., maxx = 360., miny = -90., maxy = 90.;
-	char source, *progname, *dataname = NULL, ascii_name[40], att1_name[40], att2_name[40];
+	char *progname, *dataname = NULL, ascii_name[40], att1_name[40], att2_name[40];
 	static char *slevel[] = { "unknown" , "land" , "lake" , "island in lake" , "pond in island in lake"};
 	int shore_levels = 5;
 	FILE	*fp = NULL, *ascii_fp = NULL, *att1_fp = NULL, *att2_fp = NULL;
-	int k, max = 270000000, flip, level, version, greenwich, src, river, shorelines;
+	int k, max = 270000000, flip, level, version, greenwich, src, shorelines;
 	size_t n_read;
 	struct POINT p;
 	struct GSHHG h;
@@ -238,17 +239,14 @@ int main (int argc, char **argv)
 		version = (h.flag >> 8) & 255;
 		greenwich = (h.flag >> 16) & 3;
 		src = (h.flag >> 24) & 1;
-		river = (h.flag >> 25) & 1;
 		w = h.west * GSHHG_SCL;
 		e = h.east * GSHHG_SCL;
 		s = h.south * GSHHG_SCL;
 		n = h.north * GSHHG_SCL;
-		source = (src == 1) ? 'W' : 'C';
 		if (version >= 9) {				/* Variable magnitude for area scale */
 			m = h.flag >> 26;
 			scale = pow (10.0, (double)m);		/* Area scale */
 		}
-		area = h.area / scale;				/* Now im km^2 */
 
 		if( ( w <= maxx && e >= minx ) && ( s <= maxy && n >= miny ) ){
 			fprintf(ascii_fp,"L %d 2\n",h.n);

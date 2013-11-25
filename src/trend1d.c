@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: trend1d.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: trend1d.c 10008 2013-04-08 20:08:47Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -455,12 +455,12 @@ int main (int argc, char **argv)
 	if (gmtdefs.verbose) {
 		sprintf (format, "%%s: Final model stats:  N model parameters %%ld.  Rank %%ld.  Chi-Squared:  %s\n", gmtdefs.d_format);
 		fprintf(stderr, format, GMT_program, n_model, rank, c_chisq);
-		fprintf(stderr,"%s: Model Coefficients  (Chebyshev):", GMT_program);
+		fprintf(stderr,"%s: Model Coefficients  (Chebyshev): ", GMT_program);
 		sprintf (format, "\t%s", gmtdefs.d_format);
 		for (i = 0; i < n_model; i++) fprintf (stderr, format, c_model[i]);
 		fprintf(stderr,"\n");
 		GMT_cheb_to_pol (c_model, n_model, xmin, xmax);
-		fprintf(stderr,"%s: Model Coefficients (Polynomial):", GMT_program);
+		fprintf(stderr,"%s: Model Coefficients (Polynomial): ", GMT_program);
 		for (i = 0; i < n_model; i++) fprintf (stderr, format, c_model[i]);
 		fprintf(stderr,"\n");
 	}

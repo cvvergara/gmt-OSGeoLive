@@ -1,4 +1,4 @@
-.TH DIMFILTER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH DIMFILTER 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 dimfilter \- Directional filtering of 2-D gridded files in the space (or time) domain
 .SH SYNOPSIS
@@ -10,7 +10,7 @@ dimfilter \- Directional filtering of 2-D gridded files in the space (or time) d
 circle into \fIn_sectors\fP, applying one of the selected primary convolution or non-convolution filters
 to each sector, and choosing the final outcome according to the selected secondary filter.  It computes
 distances using Cartesian or Spherical geometries. The output \fI.grd\fP file can optionally be generated
-as a sub\fB\-R\fPegion of the input and/or with a new \fB\-I\fPncrement.  In this way, one may have "extra
+as a sub\fB\-R\fPegion of the input and/or with a new \fB\-I\fP ncrement.  In this way, one may have "extra
 space" in the input data so that the edges will not be used and the output can be within one-half-width
 of the input edges.  If the filter is low-pass, then the output may be less frequently sampled than the
 input. \fB-Q\fP is for the error analysis mode and only requires the total number of columns in the input
@@ -114,7 +114,7 @@ particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
 .SH GEOGRAPHICAL AND TIME COORDINATES
 When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
 attributes of the input data or grid (if any) or on the
-\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP 90w/90e/0t/3t will result in a longitude/time
 grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
 specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
 In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
@@ -125,15 +125,15 @@ which you choose to be from 150E to 250E and 10N to 40N, and you want the output
 To prevent the medians from being biased by the sloping plane, you want to divide the filter circle into
 6 sectors and to choose the lowest value among 6 medians. Using spherical distance calculations, you need:
 .sp
-\fBdimfilter\fP north_pacific_dbdb5.grd \fB\-G\fPfiltered_pacific.grd \fB\-Fm\fP600 \fB\-D\fP4 \fB\-N\fPl6 \fB\-R\fP150/250/10/40 \fB\-I\fP0.5 \fB\-V\fP
+\fBdimfilter\fP north_pacific_dbdb5.grd \fB\-G\fP filtered_pacific.grd \fB\-Fm\fP600 \fB\-D\fP 4 \fB\-N\fP l6 \fB\-R\fP150/250/10/40 \fB\-I\fP 0.5 \fB\-V\fP
 .sp
 Suppose that cape_verde.grd is a file of 0.5 minute bathymetry from 32W to 15W and 8N to 25N, and you
 want to remove small-length-scale features in order to define a swell in an area extending from 27.5W
 to 20.5W and 12.5N to 19.5N, and you want the output value every 2 minute. Using cartesian distance calculations, you need:
 .sp
-\fBdimfilter\fP cape_verde.grd \fB\-G\fPt.grd \fB\-Fm\fP220 \fB\-Nl\fP8 \fB\-D\fP2 \fB\-R\fP-27.5/-20.5/12.5/19.5 \fB\-I\fP2m \fB\-V\fP
+\fBdimfilter\fP cape_verde.grd \fB\-G\fP t.grd \fB\-Fm\fP220 \fB\-Nl\fP8 \fB\-D\fP 2 \fB\-R\fP-27.5/-20.5/12.5/19.5 \fB\-I\fP 2m \fB\-V\fP
 .br
-\fBgrdfilter\fP t.grd \fB\-G\fPcape_swell.grd \fB\-Fg\fP50 \fB\-D\fP2 \fB\-V\fP
+\fBgrdfilter\fP t.grd \fB\-G\fP cape_swell.grd \fB\-Fg\fP50 \fB\-D\fP 2 \fB\-V\fP
 .sp
 Suppose that you found a range of filter widths for a given area, and you filtered the given bathymetric
 data using the range of filter widths (e.g., \fIf100.grd f110.grd f120.grd f130.grd\fP), and you want to

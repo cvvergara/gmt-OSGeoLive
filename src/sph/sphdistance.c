@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: sphdistance.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: sphdistance.c 10115 2013-11-01 20:41:11Z pwessel $
  *
  *	Copyright (c) 2008-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -75,7 +75,7 @@ void prepare_polygon (struct GMT_LINE_SEGMENT *P);
 
 int main (int argc, char **argv)
 {
-	GMT_LONG i, j, n = 0, n_dup = 0, n_set = 0;
+	GMT_LONG i, j, n = 0, n_dup = 0, duplicate_col;
 	GMT_LONG ij, ii, s_row, n_row, w_col, e_col, side, nx1;
 	GMT_LONG n_expected_fields, n_args, n_fields, fno, n_files = 0, proj_type = 0;
 
@@ -85,7 +85,7 @@ int main (int argc, char **argv)
 	double *xx = NULL, *yy = NULL, *zz = NULL, *lon = NULL, *lat = NULL;
 	double d_scale, *grid_lon = NULL, *grid_lat = NULL;
 	GMT_LONG node, vertex, node_stop, node_new, vertex_new, node_last, vertex_last;
-	size_t n_alloc = GMT_CHUNK, p_alloc = GMT_TINY_CHUNK, nm;
+	size_t n_alloc = GMT_CHUNK, p_alloc = GMT_TINY_CHUNK, nm, n_set = 0;
 	float *distgrid = NULL;
 
 	PFD distance_func;
@@ -301,9 +301,9 @@ int main (int argc, char **argv)
 			if (nofile) {	/* Just read standard input */
 				fp = GMT_stdin;
 				done = TRUE;
-	#ifdef SET_IO_MODE
+#ifdef SET_IO_MODE
 				GMT_setmode (GMT_IN);
-	#endif
+#endif
 			}
 			else if ((fp = GMT_fopen (argv[fno], GMT_io.r_mode)) == NULL) {
 				fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
@@ -392,6 +392,7 @@ int main (int argc, char **argv)
 
 	h.xy_off = 0.5 * h.node_offset;
 	nx1 = (h.node_offset) ? h.nx : h.nx - 1;
+	duplicate_col = (GMT_360_RANGE (h.x_min, h.x_max) && h.node_offset == 0);	/* E.g., lon = 0 column should match lon = 360 column */
 	nm = GMT_get_nm (h.nx, h.ny);
 	distgrid = (float *) GMT_memory (VNULL, (size_t)nm, sizeof(float), GMT_program);
 	grid_lon = (double *) GMT_memory (VNULL, h.nx, sizeof (double), GMT_program);
@@ -474,6 +475,10 @@ int main (int argc, char **argv)
 				ij = GMT_IJ(j,i,h.nx);
 				distgrid[ij] = (Ctrl->E.active) ? (float)node : (float)(d_scale * (*distance_func) (grid_lon[i], grid_lat[j], lon[node], lat[node]));
 				n_set++;
+				if (duplicate_col) {	/* Duplicate the repeating column on the other side of this one */
+					if (i == 0) distgrid[ij+nx1] = distgrid[ij], n_set++;
+					else if (i == nx1) distgrid[ij-nx1] = distgrid[ij], n_set++;
+				}
 			}
 		}
 	}
@@ -504,6 +509,7 @@ int main (int argc, char **argv)
 		GMT_free ((void *) lat);
 	}
 	
+	if (n_set > nm) n_set = nm;
 	GMT_err_fail (GMT_write_grd (Ctrl->G.file, &h, distgrid, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->G.file);
 	GMT_free ((void *)distgrid);
 	if (gmtdefs.verbose) fprintf (stderr, "%s: Gridding completed, %ld nodes visited (at least once)\n", GMT_program, n_set);

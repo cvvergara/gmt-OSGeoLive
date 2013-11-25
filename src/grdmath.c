@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdmath.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdmath.c 10100 2013-10-24 08:23:56Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -48,6 +48,7 @@
  *
  */
 
+#define _XOPEN_SOURCE
 #include "gmt.h"
 
 #define GRDMATH_ARG_IS_OPERATOR		 0
@@ -255,12 +256,8 @@ int main (int argc, char **argv)
 
 	GMT_check_lattice (&Ctrl->I.xinc, &Ctrl->I.yinc, &Ctrl->F.active, &Ctrl->I.active);
 
-	if (info.nm && set_r && Ctrl->I.active) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Cannot use -R, -I when grid files are specified\n", GMT_program);
-		exit (EXIT_FAILURE);
-	}
-	if (info.nm && Ctrl->F.active) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Cannot use -F when grid files are specified\n", GMT_program);
+	if (info.nm && (set_r || Ctrl->I.active || Ctrl->F.active)) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Cannot use -R, -I, [-F] when grid files are specified\n", GMT_program);
 		exit (EXIT_FAILURE);
 	}
 	if ((set_r + Ctrl->I.active)%2) {
@@ -551,7 +548,7 @@ void grd_ACOT (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, do
 	GMT_LONG i;
 	double a = 0.0;
 
-	if (gmtdefs.verbose && constant[last] && fabs (factor[last]) > 1.0) fprintf (stderr, "%s: Warning, |operand| > 1 for ACOS!\n", GMT_program);
+	if (gmtdefs.verbose && constant[last] && fabs (factor[last]) > 1.0) fprintf (stderr, "%s: Warning, |operand| > 1 for ACOT!\n", GMT_program);
 	if (constant[last]) a = atan (1.0 / factor[last]);
 	for (i = 0; i < info->nm; i++) stack[last][i] = (float)((constant[last]) ? a : atan ((double)(1.0 / stack[last][i])));
 }
@@ -562,7 +559,7 @@ void grd_ACSC (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, do
 	GMT_LONG i;
 	double a = 0.0;
 
-	if (gmtdefs.verbose && constant[last] && fabs (factor[last]) > 1.0) fprintf (stderr, "%s: Warning, |operand| > 1 for ACOS!\n", GMT_program);
+	if (gmtdefs.verbose && constant[last] && fabs (factor[last]) > 1.0) fprintf (stderr, "%s: Warning, |operand| > 1 for ACSC!\n", GMT_program);
 	if (constant[last]) a = d_asin (1.0 / factor[last]);
 	for (i = 0; i < info->nm; i++) stack[last][i] = (float)((constant[last]) ? a : d_asin ((double)(1.0 / stack[last][i])));
 }
@@ -603,7 +600,7 @@ void grd_ASEC (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, do
 	GMT_LONG i;
 	double a = 0.0;
 
-	if (gmtdefs.verbose && constant[last] && fabs (factor[last]) > 1.0) fprintf (stderr, "%s: Warning, |operand| > 1 for ACOS!\n", GMT_program);
+	if (gmtdefs.verbose && constant[last] && fabs (factor[last]) > 1.0) fprintf (stderr, "%s: Warning, |operand| > 1 for ASEC!\n", GMT_program);
 	if (constant[last]) a = d_acos (1.0 / factor[last]);
 	for (i = 0; i < info->nm; i++) stack[last][i] = (float)((constant[last]) ? a : d_acos ((double)(1.0 / stack[last][i])));
 }
@@ -901,10 +898,10 @@ void grd_CURV (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, do
 
 	z = (float *) (float *) GMT_memory (VNULL, info->nm, sizeof (float), GMT_program);
 	cx = (float *) (float *) GMT_memory (VNULL, (size_t)info->header.ny, sizeof (float), GMT_program);
-	for (j = 0; j < info->header.ny; j++) cx[j] = (float)+0.5 / (info->dx[j] * info->dx[j]);
+	for (j = 0; j < info->header.ny; j++) cx[j] = (float)1.0 / (info->dx[j] * info->dx[j]);
 
 	nx = (size_t)info->header.nx;
-	cy = -0.5 / (info->dy * info->dy);	/* Because the loop over j below goes from ymax to ymin we compensate with a minus sign here */
+	cy = 1.0 / (info->dy * info->dy);
 
 	/* First left/right (here d2/dx2 == 0 by way of BC) */
 
@@ -925,7 +922,7 @@ void grd_CURV (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, do
 	for (j = 1, k = nx; j < info->header.ny-1; j++) {
 		k++;
 		for (i = 1; i < info->header.nx-1; i++, k++) {
-			z[k] = (float)(cx[j] * (stack[last][k+1] - 2.0 * stack[last][k] + stack[last][k-1]) + cy * (stack[last][k+nx] - 2 * stack[last][k] + stack[last][k-nx]));
+			z[k] = (float)(cx[j] * (stack[last][k+1] - 2.0 * stack[last][k] + stack[last][k-1]) + cy * (stack[last][k+nx] - 2.0 * stack[last][k] + stack[last][k-nx]));
 		}
 		k++;
 	}
@@ -2184,7 +2181,7 @@ void grd_MAX (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, dou
 	for (i = 0; i < info->nm; i++) {
 		a = (constant[prev]) ? factor[prev] : stack[prev][i];
 		b = (constant[last]) ? factor[last] : stack[last][i];
-		stack[prev][i] = (float)MAX (a, b);
+		stack[prev][i] = (GMT_is_dnan (a) || GMT_is_dnan (b)) ? GMT_f_NaN : (float)MAX (a, b);
 	}
 }
 
@@ -2239,7 +2236,7 @@ void grd_MIN (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, dou
 	for (i = 0; i < info->nm; i++) {
 		a = (constant[prev]) ? factor[prev] : stack[prev][i];
 		b = (constant[last]) ? factor[last] : stack[last][i];
-		stack[prev][i] = (float)MIN (a, b);
+		stack[prev][i] = (GMT_is_dnan (a) || GMT_is_dnan (b)) ? GMT_f_NaN : (float)MIN (a, b);
 	}
 }
 
@@ -3044,7 +3041,7 @@ void grd_UPPER (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, d
 }
 
 void grd_XOR (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, double *factor, GMT_LONG last)
-/*OPERATOR: XOR 2 1 B if A == NaN, else A.  */
+/*OPERATOR: XOR 2 1 0 if A == NaN and B == NaN, NaN if B == NaN, else A.  */
 {
 	GMT_LONG i, prev;
 	double a = 0.0, b = 0.0;
@@ -3055,7 +3052,7 @@ void grd_XOR (struct GRDMATH_INFO *info, float *stack[], GMT_LONG *constant, dou
 	for (i = 0; i < info->nm; i++) {
 		if (!constant[prev]) a = stack[prev][i];
 		if (!constant[last]) b = stack[last][i];
-		stack[prev][i] = (float)((GMT_is_dnan (a)) ? b : a);
+		stack[prev][i] = (float)(GMT_is_fnan (a) && GMT_is_fnan (b)) ? 0.0 : (GMT_is_fnan (b) ? GMT_f_NaN : a);
 	}
 }
 

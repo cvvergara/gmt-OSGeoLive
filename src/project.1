@@ -1,4 +1,4 @@
-.TH PROJECT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PROJECT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 project \- project data along a line or great circle, generate a profile track, or translate coordinates.
 .SH SYNOPSIS
@@ -165,14 +165,14 @@ the \fBD_FORMAT\fP setting.
 .SH EXAMPLES
 To generate points every 10km along a great circle from 10N,50W to 30N,10W:
 .sp
-\fBproject\fP \fB\-C\fP-50/10 \fB\-E\fP-10/30 \fB\-G\fP10 \fB\-Q\fP > great_circle_points.xyp
+\fBproject\fP \fB\-C\fP-50/10 \fB\-E\fP-10/30 \fB\-G\fP 10 \fB\-Q\fP > great_circle_points.xyp
 .sp
 (Note that great_circle_points.xyp could now be used as input for \fBgrdtrack\fP, etc. ).
 .sp
 To project the shiptrack gravity, magnetics, and bathymetry in c2610.xygmb along a great circle through an origin at 30S, 30W, the great circle having 
 an azimuth of N20W at the origin, keeping only the data from NE of the profile and within +/- 500 km of the origin, run:
 .sp 
-\fBproject\fP c2610.xygmb \fB\-C\fP-30/-30 \fB\-A\fP-20 \fB\-W\fP-10000/0 \fB\-L\fP-500/500 \fB\-F\fPpz \fB\-Q\fP > c2610_projected.pgmb
+\fBproject\fP c2610.xygmb \fB\-C\fP-30/-30 \fB\-A\fP-20 \fB\-W\fP-10000/0 \fB\-L\fP-500/500 \fB\-F\fP pz \fB\-Q\fP > c2610_projected.pgmb
 .sp
 (Note in this example that \fB\-W\fP-10000/0 is used to admit any value with a large negative \fIq\fP coordinate.  This 
 will take those points which are on our right as we walk along the great circle path, or to the NE in this example.)
@@ -180,18 +180,18 @@ will take those points which are on our right as we walk along the great circle 
 To make a Cartesian coordinate transformation of mydata.xy so that the new origin is at 5,3 and the new \fIx\fP axis (\fIp\fP) 
 makes an angle of 20 degrees with the old \fIx\fP axis, use:
 .sp
-\fBproject\fP mydata.xy \fB\-C\fP5/3 \fB\-A\fP70 \fB\-F\fPpq > mydata.pq
+\fBproject\fP mydata.xy \fB\-C\fP 5/3 \fB\-A\fP 70 \fB\-F\fP pq > mydata.pq
 .sp
 To take data in the file pacific.lonlat and transform it into oblique coordinates using a pole from the hotspot reference 
 frame and placing the oblique zero meridian (\fIp\fP = 0 line) through Tahiti, run:
 .sp
-\fBproject\fP pacific.lonlat \fB\-T\fP-75/68 \fB\-C\fP-149:26/-17:37 \fB\-F\fPpq > pacific.pq
+\fBproject\fP pacific.lonlat \fB\-T\fP-75/68 \fB\-C\fP-149:26/-17:37 \fB\-F\fP pq > pacific.pq
 .sp
 Suppose that pacific_topo.grd is a grid file of bathymetry, and you want to make a file of flowlines in the hotspot reference 
 frame.  If you run:
 .sp
-\fBgrd2xyz\fP pacific_topo.grd | \fBproject\fP \fB\-T\fP-75/68 \fB\-C\fP0/-90 \fB\-F\fPxyq | \fBxyz2grd\fP 
-\fB\-R\fP\fIetc\fP \fB\-I\fP\fIetc\fP \fB\-C\fPflow.grd
+\fBgrd2xyz\fP pacific_topo.grd | \fBproject\fP \fB\-T\fP-75/68 \fB\-C\fP 0/-90 \fB\-F\fP xyq | \fBxyz2grd\fP 
+\fB\-R\fP\fIetc\fP \fB\-I\fP\fIetc\fP \fB\-C\fP flow.grd
 .sp
 then flow.grd is a file in the same area as pacific_topo.grd, but flow contains the latitudes about the pole of the projection.  
 You now can use grdcontour on flow.grd to draw lines of constant oblique latitude, which are flow lines in the hotspot frame.

@@ -1,4 +1,4 @@
-.TH BACKTRACKER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH BACKTRACKER 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 backtracker \- Reconstruct points, flowlines and hotspot tracks 
 .SH SYNOPSIS
@@ -142,14 +142,14 @@ To backtrack the (x,y,t) points in the file seamounts.d to their origin
 (presumably the hotspot), using the DC85.d Euler poles, run
 .br
 .sp
-\fBbacktracker\fP seamounts.d \fB\-Db\fP \fB\-E\fPDC85.d > newpos.d
+\fBbacktracker\fP seamounts.d \fB\-Db\fP \fB\-E\fP DC85.d > newpos.d
 .br
 .sp
 To project flowlines forward from the (x,y,t) points stored in several 3-column,
 binary, double precision files, run
 .br
 .sp
-\fBbacktracker\fP points.* \fB\-Df\fP \fB\-E\fPDC85.d \fB\-Lf\fP25 \fB\-bo\fP \fB\-bi\fP\fI3\fP > lines.b
+\fBbacktracker\fP points.* \fB\-Df\fP \fB\-E\fP DC85.d \fB\-Lf\fP 25 \fB\-bo\fP \fB\-bi\fP\fI3\fP > lines.b
 .br
 .sp
 This file can then be plotted with \fBpsxy \-M\fP.
@@ -159,7 +159,7 @@ To compute the predicted Hawaiian hotspot track from 0 to 80 Ma every 1 Ma, give
 hotspot motion file (HIdrift.txt) and a set of total reconstruction rotations for the plate (PAC_APM.d), try
 .br
 .sp
-echo 204 19 80 | \fBbacktracker\fP \fB\-Df\fP \fB\-C\fP \fB\-E\fPPAC_APM.d \fB\-Lb\fP1 > path.d
+echo 204 19 80 | \fBbacktracker\fP \fB\-Df\fP \fB\-C\fP \fB\-E\fP PAC_APM.d \fB\-Lb\fP 1 > path.d
 .SH COORDINATES
 Data coordinates are assumed to be geodetic and will automatically be converted to geocentric
 before spherical rotations are performed.  We convert back to geodetic coordinates for output.

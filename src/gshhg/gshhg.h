@@ -1,4 +1,4 @@
-/*	$Id: gshhg.h 9924 2012-12-18 22:08:18Z pwessel $
+/*	$Id: gshhg.h 10057 2013-06-17 04:38:51Z pwessel $
  *
  * Include file defining structures used in gshhg.c
  *
@@ -38,6 +38,7 @@
  *			  flag WDBII riverlakes with the river flag as used for GSHHG.
  *	15-APR-2012.  PW: Data version is now 2.2.1. [no change to format]
  *	1-JAN-2013.   PW: Data version is now 2.2.2. [no change to format]
+ *	1-JUL-2013.   PW: Data version is now 2.2.3. [no change to format]
  */
 
 #ifndef _GSHHG
@@ -61,9 +62,9 @@
 #define SEEK_CUR 1
 #endif
 
-#define GSHHG_DATA_RELEASE	9	/* For v2.2.0 data set */
-#define GSHHG_DATA_VERSION	"2.2.0"	/* For v2.2.0 data set */
-#define GSHHG_PROG_VERSION	"1.13"
+#define GSHHG_DATA_RELEASE	12	/* For v2.2.3 data set */
+#define GSHHG_DATA_VERSION	"2.2.3"	/* For v2.2.3 data set */
+#define GSHHG_PROG_VERSION	"1.16"
 
 #define GSHHG_SCL	1.0e-6	/* Convert micro-degrees to degrees */
 

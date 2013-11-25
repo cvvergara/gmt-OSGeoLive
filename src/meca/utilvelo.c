@@ -1,4 +1,4 @@
-/*	$Id: utilvelo.c 9923 2012-12-18 20:45:53Z pwessel $
+/*	$Id: utilvelo.c 10033 2013-05-21 20:29:57Z pwessel $
  *    Copyright (c) 1996-2013 by G. Patau
  *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
@@ -27,16 +27,26 @@ void get_trans (double slon,double slat,double *t11,double *t12,double *t21,doub
      /* OUTPUT (returned) */                                                        
      /*   t11,t12,t21,t22 transformation matrix */
 
+     /* COMMENT BY PW: Fails as provided if slat > 89.0 and for projection that
+      * gives the same x-coordinates for two different longitudes, as might happen
+      * at the N or S pole.  Some minor protections were added below to handle this.
+      */
      {                          
                                                                                     
 
      /* LOCAL VARIABLES */                                                          
      double su,sv,udlat,vdlat,udlon,vdlon,dudlat,dvdlat,dudlon,dvdlon;
      double dl;
+     int flip = 0;
 
      /* how much does x,y change for a 1 degree change in lon,lon ? */
      GMT_geo_to_xy (slon,     slat,     &su,    &sv );
-     GMT_geo_to_xy (slon,     slat+1.0, &udlat, &vdlat);
+     if ((slat+1.0) >= 90.0) {	/* PW: Must do something different at/near NP */
+        GMT_geo_to_xy (slon,     slat-1.0, &udlat, &vdlat);
+	flip = 1;
+     }
+     else
+       GMT_geo_to_xy (slon,     slat+1.0, &udlat, &vdlat);
      GMT_geo_to_xy (slon+1.0, slat    , &udlon, &vdlon);
 
      /* Compute dudlat, dudlon, dvdlat, dvdlon */
@@ -44,18 +54,22 @@ void get_trans (double slon,double slat,double *t11,double *t12,double *t21,doub
      dvdlat = vdlat - sv;
      dudlon = udlon - su;
      dvdlon = vdlon - sv;
+     if (flip) {	/* Fix what we did above */
+	dudlat = -dudlat;
+	dvdlat = -dvdlat;
+     }
 
      /* Make unit vectors for the long (e/x) and lat (n/y) */
      /* to construct local transformation matrix */
 
      dl = sqrt( dudlon*dudlon + dvdlon*dvdlon );
-     *t11 = dudlon/dl ;
-     *t21 = dvdlon/dl ;
+     *t11 = (dl == 0.0) ? 0.0 : dudlon/dl ;
+     *t21 = (dl == 0.0) ? 0.0 : dvdlon/dl ;
 
      dl = sqrt( dudlat*dudlat + dvdlat*dvdlat );
-     *t12 = dudlat/dl ;
-     *t22 = dvdlat/dl ;
-	   }
+     *t12 = (dl == 0.0) ? 0.0 : dudlat/dl ;
+     *t22 = (dl == 0.0) ? 0.0 : dvdlat/dl ;
+}
 
 /************************************************************************/
 void transform_local (double x0,double y0,double dxp,double dyp,double scale,double t11,double t12,double t21,double t22,double *x1,double *y1)

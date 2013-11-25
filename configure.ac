@@ -1,5 +1,5 @@
 dnl -----------------------------------------------------------------
-dnl $Id: configure.ac 9951 2013-01-02 16:38:17Z pwessel $
+dnl $Id: configure.ac 10142 2013-11-05 19:44:23Z pwessel $
 dnl     Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
 dnl     See LICENSE.TXT file for copying and redistribution conditions.
 dnl
@@ -14,7 +14,7 @@ dnl     GNU General Public License for more details.
 dnl
 dnl     Contact info: gmt.soest.hawaii.edu
 dnl ----------------------------------------------------------------------------
-AC_REVISION($Revision: 9951 $)
+AC_REVISION($Revision: 10142 $)
 dnl
 dnl Run GNU autoconf to produce a configure script from this input.
 dnl -----------------------------------------------------------------
@@ -27,11 +27,11 @@ dnl Below, set the VERSION to be created.
 dnl Also, fix the MANDATE and DOCDATE values.
 dnl For final version set SVN_VERSION to 0
 dnl
-AC_INIT(GMT, 4.5.9, gmt-help@lists-hawaii.edu)
-MANDATE="1 Jan 2013"
-DOCDATE="January 2013"
+AC_INIT(GMT, 4.5.11, gmt-help@lists-hawaii.edu)
+MANDATE="5 Nov 2013"
+DOCDATE="November 2013"
 DOCYEAR="2013"
-GSHHG_VERSION=2.2.2
+GSHHG_VERSION=2.2.4
 SVN_VERSION=0
 dnl see whether subversion is installed
 AC_PATH_PROG([SVNVERSIONCOMMAND], [svnversion], [])
@@ -127,12 +127,11 @@ AC_ARG_ENABLE(shared,   [  --enable-shared         Build shared (dynamic) GMT li
 AC_ARG_ENABLE(triangle, [  --enable-triangle       Use fast, non-GPL triangulation routine by J. Shewchuk])
 AC_ARG_ENABLE(US,       [  --enable-US             Choose US (inch) rather than SI (cm) units as default])
 AC_ARG_ENABLE(eps,      [  --enable-eps            Set Encapsulated PostScript as default output format [[Freeform PS]]])
-AC_ARG_ENABLE(universal,[  --enable-universal      Make universal binaries [[OS X only]]])
 AC_ARG_ENABLE(64,       [  --enable-64             Force 64-bit compilation if supported, use --disable-64 to force 32-bit compilation])
 AC_ARG_ENABLE(flock,    [  --enable-flock          Enable file locking on .gmtcommands4 file (not good on networked drives)])
 AC_ARG_ENABLE(gdal,     [  --enable-gdal           Compile optional, experimental support for grid input via GDAL [[default=no]]], [], [enable_gdal=no])
 AC_ARG_WITH(gdal_config,[  --with-gdal-config=     Full path to gdal-config [[auto]]], [], [with_gdal_config=no])
-AC_ARG_WITH(gshhg_dir,  [  --with-gshhg-dir=       Full path to gshhg directory [[auto]]], [], [with-gshhg=no])
+AC_ARG_WITH(gshhg_dir,  [  --with-gshhg-dir=       Full path to gshhg directory [[auto]]], [], [with_gshhg_dir=no])
 AC_ARG_ENABLE(mex,      [  --disable-mex           Disable compilation of mex supplement which requires Octave/Matlab])
 AC_ARG_ENABLE(rpath,	[  --disable-rpath         Do not hardcode runtime library paths])
 AC_ARG_ENABLE(xgrid,    [  --disable-xgrid         Disable compilation of xgrid supplement which requires X11])
@@ -338,30 +337,6 @@ if test "$qsort_check" = "1" ; then
 fi
 dnl
 dnl -----------------------------------------------------------------
-dnl Allow user to set --enable-universal for OS X universal binaries
-dnl -----------------------------------------------------------------
-dnl
-AC_MSG_CHECKING(for universal binaries)
-if test "X$os" = "XDarwin" && test "X$enable_universal" = "Xyes" ; then
-	if test "$enable_64" = "yes" ; then
-		ppc=ppc64
-		i386=x86_64
-	else
-		ppc=ppc
-		i386=i386
-	fi
-	OSX_L="-arch $i386 -arch $ppc"
-	GCC_64="$GCC_64 $OSX_L"
-	if test "$chip" = "powerpc" ; then
-		OSX_L="-isysroot /Developer/SDKs/MacOSX10.4u.sdk $OSX_L"
-	fi
-	LDFLAGS="$OSX_L"
-else
-	enable_universal="no"
-fi
-AC_MSG_RESULT($enable_universal)
-dnl
-dnl -----------------------------------------------------------------
 dnl Allow user to set --enable-update to set GMT ftp site for patches
 dnl -----------------------------------------------------------------
 dnl
@@ -515,15 +490,16 @@ fi
 dnl
 dnl -----------------------------------------------------------------
 dnl Allow user to set --enable-netcdf to set netCDF dir
-dnl Use nc-config if possible
+dnl Always try looking for nc-config unless explicitly given "no"
 dnl -----------------------------------------------------------------
 dnl
 if test "X$with_nc_config" != "Xno" ; then
-	AC_PATH_PROG([NC_CONF], [nc-config], [$with_nc_config])
+ 	AC_PATH_PROG([NC_CONF], [nc-config], [$with_nc_config])
 fi
+
 if test -x "$NC_CONF" && test "X$NETCDF_INC" = "X" && test "X$NETCDF_LIB" = "X" ; then
 	AC_MSG_CHECKING(for netCDF includes)
-	NETCDF_INC=`$NC_CONF --cflags`
+	NETCDF_INC=-I`$NC_CONF --includedir | sed -e 's/^-I//'`
 	AC_MSG_RESULT($NETCDF_INC)
 	AC_MSG_CHECKING(for netCDF libs)
 	NETCDF_LIB=`$NC_CONF --libs`
@@ -601,7 +577,8 @@ if test "X$with_gshhg_dir" != "X"; then
 	GSHHG_DIR=$with_gshhg_dir
 	AC_MSG_RESULT($GSHHG_DIR)
 else
-	AC_MSG_RESULT(not specified)
+	GSHHG_DIR=$rootdir
+	AC_MSG_RESULT([Not specified, default to $GSHHG_DIR])
 fi
 dnl
 dnl -----------------------------------------------------------------
@@ -899,7 +876,7 @@ morefiles=
 if test -f doc/GMT_version.tex.in ; then
 	morefiles=doc/GMT_version.tex
 fi
-AC_OUTPUT(src/config.mk src/GMT src/gmt_version.h src/isogmt share/conf/gmt.conf share/conf/gmtdefaults_SI share/conf/gmtdefaults_US $morefiles)
+AC_OUTPUT(src/config.mk src/GMT src/gmtget src/gmtlogo src/gmt_version.h src/gmt_shell_functions.sh src/isogmt share/conf/gmt_setup.conf share/conf/gmtdefaults_SI share/conf/gmtdefaults_US $morefiles)
 dnl
 dnl -----------------------------------------------------------------
 dnl Remove and, if trouble, write the .gmtconfigure file

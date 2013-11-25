@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psrose.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: psrose.c 10098 2013-10-19 18:35:43Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -110,7 +110,7 @@ int main (int argc, char **argv)
 	double max = 0.0, radius, az, x_origin, y_origin, tmp, one_or_two = 1.0, s, c, half_bin_width;
 	double angle1, angle2, angle, x, y, mean_theta, mean_radius, xr = 0.0, yr = 0.0;
 	double x1, x2, y1, y2, total = 0.0, total_arc, off, max_radius, az_offset, *in = NULL;
-	double west = 0.0, east = 0.0, south = 0.0, north = 0.0, asize, lsize, this_az;
+	double west = 0.0, east = 0.0, south = 0.0, north = 0.0, asize, lsize, this_az, mean_vector, mean_resultant;
 	double *xx = NULL, *yy = NULL, *sum = NULL, *azimuth = NULL, *length = NULL, *mode_direction = NULL, *mode_length = NULL, dim[3];
 
 	FILE *fp = NULL, *fpm = NULL;
@@ -466,7 +466,8 @@ int main (int argc, char **argv)
 
 	mean_theta = d_atan2d (yr, xr) / one_or_two;
 	if (mean_theta < 0.0) mean_theta += 360.0;
-	mean_radius = hypot (xr, yr) / total;
+	mean_vector = hypot (xr, yr) / n;
+	mean_resultant = mean_radius = hypot (xr, yr) / total;
 	if (!Ctrl->S.normalize) mean_radius *= max_radius;
 
 	if (Ctrl->A.inc > 0.0) {	/* Find max of the bins */
@@ -484,9 +485,11 @@ int main (int argc, char **argv)
 	}
 
 	if (Ctrl->I.active || gmtdefs.verbose) {
+		char *kind[2] = {"r", "bin sum"};
 		if (file) strcpy (text, file); else strcpy (text, "<stdin>");
-		sprintf (format, "%%s: Info for %%s: n = %%ld rmax = %s mean r/az = (%s/%s) totlength = %s\n", gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
-		fprintf (stderr, format, GMT_program, text, n, max, mean_radius, mean_theta, total);
+		sprintf (format, "%%s: Info for %%s: n = %%ld mean az = %s mean r = %s mean resultant length = %s max %s = %s scaled mean r = %s linear length sum = %s\n",
+			gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format, kind[Ctrl->A.active], gmtdefs.d_format, gmtdefs.d_format, gmtdefs.d_format);
+		fprintf (stderr, format, GMT_program, text, n, mean_theta, mean_vector, mean_resultant, max, mean_radius, total);
 		if (Ctrl->I.active) {
 			GMT_free ((void *)sum);
 			GMT_free ((void *)xx);

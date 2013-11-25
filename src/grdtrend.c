@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdtrend.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdtrend.c 10089 2013-09-18 20:58:22Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -605,7 +605,9 @@ void load_gtg_and_gtd (float *data, GMT_LONG nx, GMT_LONG ny, double *xval, doub
 
 /* If weighted  */	if (weighted) {
 				/* Loop over all gtg and gtd elements:  */
-				for (k = 0; k < n_model; k++) {
+				gtd[0] += (data[ij] * weight[ij]);
+				gtg[0] += (weight[ij]);
+				for (k = 1; k < n_model; k++) {
 					gtd[k] += (data[ij] * weight[ij] * pstuff[k]);
 					gtg[k] += (weight[ij] * pstuff[k]);
 					for (l = k; l < n_model; l++) gtg[k + l*n_model] += (pstuff[k]*pstuff[l]*weight[ij]);
@@ -613,7 +615,8 @@ void load_gtg_and_gtd (float *data, GMT_LONG nx, GMT_LONG ny, double *xval, doub
 			}
 /* If !weighted  */	else {
 				/* Loop over all gtg and gtd elements:  */
-				for (k = 0; k < n_model; k++) {
+				gtd[0] += data[ij];
+				for (k = 1; k < n_model; k++) {
 					gtd[k] += (data[ij] * pstuff[k]);
 					gtg[k] += pstuff[k];
 					for (l = k; l < n_model; l++) gtg[k + l*n_model] += (pstuff[k]*pstuff[l]);

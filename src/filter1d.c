@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: filter1d.c 9923 2012-12-18 20:45:53Z pwessel $
+ *    $Id: filter1d.c 10018 2013-04-18 02:09:06Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -605,7 +605,7 @@ GMT_LONG set_up_filter (struct FILTER1D_INFO *F)
 		get_weight[FILTER1D_COS_ARCH] = (PFD)cosine_weight;
 		get_weight[FILTER1D_GAUSSIAN] = (PFD)gaussian_weight;
 		F->half_width = 0.5 * F->filter_width;
-		F->half_n_f_wts = (GMT_LONG)floor (F->half_width / F->dt);
+		F->half_n_f_wts = irint (F->half_width / F->dt);
 		F->n_f_wts = 2 * F->half_n_f_wts + 1;
 
 		F->f_wt = (double *) GMT_memory (VNULL, (size_t)F->n_f_wts, sizeof(double), GMT_program);
@@ -643,9 +643,10 @@ GMT_LONG set_up_filter (struct FILTER1D_INFO *F)
 			F->t_stop = t_1;
 		}
 		else {
-			for (i = 0; (F->data[F->t_col][i] - t_0) < F->half_width; i++);
+			double small = (F->data[F->t_col][1] - F->data[F->t_col][0]) * GMT_CONV_LIMIT;
+			for (i = 0; (F->data[F->t_col][i] - t_0 + small) < F->half_width; i++);
 			F->t_start = F->data[F->t_col][i];
-			for (i = F->n_rows - 1; (t_1 - F->data[F->t_col][i]) < F->half_width; i--);
+			for (i = F->n_rows - 1; (t_1 - F->data[F->t_col][i] + small) < F->half_width; i--);
 			F->t_stop = F->data[F->t_col][i];
 		}
 	}

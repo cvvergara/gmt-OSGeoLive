@@ -1,4 +1,4 @@
-.TH SPHINTERPOLATE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH SPHINTERPOLATE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 sphinterpolate \- Gridding in tension of spherical data
 .SH SYNOPSIS
@@ -47,19 +47,19 @@ grid spacing has already been initialized; use \fB\-I\fP to override the values.
 Specify one of four ways to calculate tension factors to preserve local shape properties or
 satisfy arc constraints [Default is no tension].
 .TP
-\fB\-Q\fP0
+\fB\-Q\fP 0
 Piecewise linear interpolation; no tension is applied.
 .TP
-\fB\-Q\fP1
+\fB\-Q\fP 1
 Smooth interpolation with local gradient estimates.
 .TP
-\fB\-Q\fP2
+\fB\-Q\fP 2
 Smooth interpolation with global gradient estimates.  You may optionally append /\fIN\fP/\fIM\fP/\fIU\fP, where
 \fIN\fP is the number of iterations used to converge at solutions for gradients when variable tensions are selected (e.g., \fB\-T\fP only) [3],
 \fIM\fP is the number of Gauss-Seidel iterations used when determining the global gradients [10], and
 \fIU\fP is the maximum change in a gradient at the last iteration [0.01].
 .TP
-\fB\-Q\fP3
+\fB\-Q\fP 3
 Smoothing.  Optionally append \fI/E/U\fP [/0/0], where
 \fIE\fP is Expected squared error in a typical (scaled) data value, and
 \fIU\fP is Upper bound on  weighted sum of squares of deviations from data.
@@ -72,7 +72,7 @@ map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and
 of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
 .TP
 \fB\-T\fP
-Use variable tension (ignored with \fB\-Q\fP0 [constant]
+Use variable tension (ignored with \fB\-Q\fP 0 [constant]
 .TP
 \fB\-V\fP
 Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].

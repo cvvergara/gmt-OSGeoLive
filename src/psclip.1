@@ -1,4 +1,4 @@
-.TH PSCLIP 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSCLIP 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 psclip \- To set up polygonal clip paths
 .SH SYNOPSIS
@@ -239,7 +239,7 @@ To make an overlay \fIPostScript\fP file that will set up a complex clip area to
 subsequent plotting will be confined, run:
 .br
 .sp
-\fBpsclip\fP my_region.xy \fB\-R\fP0/40/0/40 \fB\-Jm\fP0.3\fBi\fP \fB\-O\fP \fB\-K\fP > clip_mask_on.ps
+\fBpsclip\fP my_region.xy \fB\-R\fP 0/40/0/40 \fB\-Jm\fP 0.3\fBi\fP \fB\-O\fP \fB\-K\fP > clip_mask_on.ps
 .br
 .sp
 To deactivate the clipping in an existing plotfile, run:

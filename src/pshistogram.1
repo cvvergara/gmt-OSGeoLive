@@ -1,4 +1,4 @@
-.TH PSHISTOGRAM 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSHISTOGRAM 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 pshistogram \- Bin data and plot histograms
 .SH SYNOPSIS
@@ -177,7 +177,7 @@ To draw a histogram of the data v3206.t containing seafloor depths, using a 250 
 bin width, center bars, and draw bar outline, use:
 .br
 .sp
-\fBpshistogram\fP v3206.t \fB\-JX\fPh \fB\-W\fP250 \fB\-F\fP \fB\-L\fPP0.5\fBp\fP \fB\-V\fP > plot.ps
+\fBpshistogram\fP v3206.t \fB\-JX\fP h \fB\-W\fP 250 \fB\-F\fP \fB\-L\fP P0.5\fBp\fP \fB\-V\fP > plot.ps
 .br
 .sp
 If you know the distribution of your data, you may explicitly specify range and scales.  E.g.,
@@ -186,13 +186,13 @@ bin width, plot from -10 to +10 meters @ 0.75 cm/m, annotate every 2 m and 100 c
 and use black bars, run:
 .br
 .sp
-\fBpshistogram\fP errors.xy \fB\-W\fP1 \fB\-R\fP-10/10/0/0 \fB\-Jx\fP0.75\fBc\fP/0.01\fBc\fP
-\fB\-B\fP2:Error:/100:Counts: \fB\-G\fPblack \fB\-T\fP1 \fB\-V\fP > plot.ps
+\fBpshistogram\fP errors.xy \fB\-W\fP 1 \fB\-R\fP-10/10/0/0 \fB\-Jx\fP 0.75\fBc\fP/0.01\fBc\fP
+\fB\-B\fP 2:Error:/100:Counts: \fB\-G\fP black \fB\-T\fP 1 \fB\-V\fP > plot.ps
 .br
 .sp
 Since no y-range was specified, pshistogram will calculate ymax in even increments of 100.
 .SH BUGS
-The \fB\-W\fP option does not yet work properly with time series data (e.g., \fB\-f\fP0T).  Thus, such
+The \fB\-W\fP option does not yet work properly with time series data (e.g., \fB\-f\fP 0T).  Thus, such
 variable intervals as months and years are not calculated.  Instead, specify your interval in the
 same units as the current setting of \fBTIME_UNIT\fP.
 .SH "SEE ALSO"

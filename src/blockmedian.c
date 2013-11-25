@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: blockmedian.c 9923 2012-12-18 20:45:53Z pwessel $
+ *    $Id: blockmedian.c 10014 2013-04-14 00:57:05Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -48,11 +48,11 @@
 int main (int argc, char **argv)
 {
 
-	GMT_LONG	error = FALSE, nofile = TRUE, done = FALSE, first = TRUE, box_and_whisker = FALSE;
+	GMT_LONG	error = FALSE, nofile = TRUE, done = FALSE, first = TRUE, box_and_whisker = FALSE, duplicate_col;
 
 	FILE *fp = NULL;
 
-	double	*in = NULL, out[7], wesn[4], quantile[3] = {0.25, 0.5, 0.75}, extra[3], weight, *z_tmp = NULL;
+	double	*in = NULL, out[7], wesn[4], quantile[3] = {0.25, 0.5, 0.75}, extra[3], weight, half_dx, *z_tmp = NULL;
 
 	GMT_LONG	i, ix, iy, fno, n_files = 0, n_args, n_req, w_col;
 	GMT_LONG	n_expected_fields, n_fields, n_out, n_quantiles = 1, go_quickly = 0;
@@ -227,6 +227,8 @@ int main (int argc, char **argv)
 	h.node_offset = (int)Ctrl->F.active;
 	GMT_RI_prepare (&h);	/* Ensure -R -I consistency and set nx, ny */
 
+	duplicate_col = (GMT_360_RANGE (h.x_min, h.x_max) && h.node_offset == 0);	/* E.g., lon = 0 column should match lon = 360 column */
+	half_dx = 0.5 * h.x_inc;
 	go_quickly = (Ctrl->Q.active) ? 1 : 0;	
 	if (Ctrl->C.active) go_quickly = 2;	/* Flag used in output calculation */
 	if (Ctrl->E.active && Ctrl->E.mode == 1) {
@@ -299,6 +301,9 @@ int main (int argc, char **argv)
 
 			if (GMT_y_is_outside (in[GMT_Y],  wesn[2], wesn[3])) continue;	/* Outside y-range */
 			if (GMT_x_is_outside (&in[GMT_X], wesn[0], wesn[1])) continue;	/* Outside x-range */
+			if (duplicate_col && (wesn[1]-in[GMT_X] < half_dx)) {	/* Only compute mean values for the west column and not the repeating east column with lon += 360 */
+				in[GMT_X] -= 360.0;	/* Make this point be considered for the western block mean value */
+			}
 
 			ix = GMT_x_to_i (in[GMT_X], h.x_min, h.x_inc, h.xy_off, h.nx);
 			if ( ix < 0 || ix >= h.nx ) continue;

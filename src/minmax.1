@@ -1,4 +1,4 @@
-.TH MINMAX 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH MINMAX 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 minmax \- Find extreme values in data tables
 .SH SYNOPSIS
@@ -106,15 +106,15 @@ To find the extreme values in the file track.xy to the nearest 5 units and use t
 region to draw a line using psxy, run
 .br
 .sp
-\fBpsxy\fP `\fBminmax\fP \fB\-I\fP5 track.xy` track.xy \fB\-Jx\fP1 \fB\-B\fP5 \fB\-P\fP > track.ps
+\fBpsxy\fP `\fBminmax\fP \fB\-I\fP 5 track.xy` track.xy \fB\-Jx\fP 1 \fB\-B\fP 5 \fB\-P\fP > track.ps
 .br
 .sp
 To find the min and max values for each of the first 4 columns, but rounded to integers, use
 .br
 .sp
-\fBminmax\fP junkfile \fB\-C\fP \fB\-I\fP1/1/1/1
+\fBminmax\fP junkfile \fB\-C\fP \fB\-I\fP 1/1/1/1
 .SH BUGS
-The \fB\-I\fP option does not yet work properly with time series data (e.g., \fB\-f\fP0T).  Thus, such
+The \fB\-I\fP option does not yet work properly with time series data (e.g., \fB\-f\fP 0T).  Thus, such
 variable intervals as months and years are not calculated.  Instead, specify your interval in the
 same units as the current setting of \fBTIME_UNIT\fP.
 .SH "SEE ALSO"

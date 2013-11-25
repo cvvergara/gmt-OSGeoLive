@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_map.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_map.h 10081 2013-09-02 17:03:05Z jluis $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -78,5 +78,6 @@ EXTERN_MSC GMT_LONG GMT_map_loncross (double lon, double south, double north, st
 EXTERN_MSC GMT_LONG GMT_map_latcross (double lat, double west, double east, struct GMT_XINGS **xings);
 EXTERN_MSC GMT_LONG GMT_set_greenwich (GMT_LONG mode);
 EXTERN_MSC GMT_LONG GMT_UTMzone_to_wesn (GMT_LONG zone_x, GMT_LONG zone_y, GMT_LONG hemi, double *w, double *e, double *s, double *n);
+EXTERN_MSC GMT_LONG GMT_cart_outside (double x, double y);
 
 #endif /* _GMT_MAP_H */

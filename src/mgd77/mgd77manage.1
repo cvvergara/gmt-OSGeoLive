@@ -1,4 +1,4 @@
-.TH MGD77MANAGE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH MGD77MANAGE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 mgd77manage \- Manage extra columns in MGD77+ files
 .SH SYNOPSIS
@@ -181,26 +181,26 @@ To append Geosat/ERS-1 gravity version 11.2 as an extra data column in the cruis
 01010047.nc and 01010008.nc, storing the values as mGal*10 in a 2-byte short integer, try
 .br
 .sp
-\fBmgd77manage\fP 01010047 01010008 \fB\-Ai\fP10/1/grav.11.2.img \fB\-I\fPsatgrav/"Geosat/ERS-1 gravity"/"mGal"/s/10/0/"Sandwell/Smith version 11.2" \fB\-V\fP
+\fBmgd77manage\fP 01010047 01010008 \fB\-Ai\fP 10/1/grav.11.2.img \fB\-I\fP satgrav/"Geosat/ERS-1 gravity"/"mGal"/s/10/0/"Sandwell/Smith version 11.2" \fB\-V\fP
 .br
 .sp
 To append a filtered version of magnetics as an extra data column of type float for the cruise 01010047.nc, and
 interpolate the filtered data at the times given in the MGD77+ file, try
 .br
 .sp
-\fBmgd77manage\fP 01010047 \fB\-AT\fPmymag.tm \fB\-I\fPfiltmag/"Intermediate-wavelength magnetic residuals"/"nTesla"/f/1/0/"Useful for looking for isochrons" \fB\-V\fP
+\fBmgd77manage\fP 01010047 \fB\-AT\fP mymag.tm \fB\-I\fP filtmag/"Intermediate-wavelength magnetic residuals"/"nTesla"/f/1/0/"Useful for looking for isochrons" \fB\-V\fP
 .br
 .sp
 To delete the existing extra columns satfaa, coastdist, and satvgg from all MGD77+ files, try
 .br
 .sp
-\fBmgd77manage\fP `cat allmgd77.lis` \fB\-D\fPsatfaa,coastdist,satvgg \fB\-V\fP
+\fBmgd77manage\fP `cat allmgd77.lis` \fB\-D\fP satfaa,coastdist,satvgg \fB\-V\fP
 .br
 .sp
 To create a 4-byte float column with the correct IGRF reference field in all MGD77+ files, try
 .br
 .sp
-\fBmgd77manage\fP `cat allmgd77.lis` \fB\-Acm\fP \fB\-I\fPigrf/"IGRF reference field"/"nTesla"/f/1/0/"IGRF version 10 for 1990-2010" \fB\-V\fP
+\fBmgd77manage\fP `cat allmgd77.lis` \fB\-Acm\fP \fB\-I\fP igrf/"IGRF reference field"/"nTesla"/f/1/0/"IGRF version 10 for 1990-2010" \fB\-V\fP
 .br
 .sp
 .SH DISCUSSION
@@ -319,7 +319,7 @@ GMT style by Paul Wessel.
 .IR x2sys_init (1)
 .SH REFERENCES
 Wessel, P., and W. H. F. Smith, 2013, The Generic Mapping Tools (GMT) version
-4.5.9 Technical Reference & Cookbook, SOEST/NOAA.
+4.5.11 Technical Reference & Cookbook, SOEST/NOAA.
 .br
 Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
 Tools Released, EOS Trans., AGU, 79 (47), p. 579.

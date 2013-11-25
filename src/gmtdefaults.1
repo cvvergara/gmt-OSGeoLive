@@ -1,4 +1,4 @@
-.TH GMTDEFAULTS 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GMTDEFAULTS 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 gmtdefaults \- To list current \fBGMT\fP defaults
 .SH SYNOPSIS
@@ -14,11 +14,11 @@ by specifying one or more \fB\-\-PARAMETER\fP=\fIvalue\fP statements on the comm
 first two options are permanent changes until explicitly changed back, while the last option is ephemeral
 and only applies to the single \fBGMT\fP command that received the override.
 \fBGMT\fP can provide default values in US or SI units.  This choice is determined by the contents of the
-gmt.conf file in \fBGMT\fP's share directory.\"'
+gmt_setup.conf file in \fBGMT\fP's share directory.\"'
 .TP
 \fB\-D\fP
 Print the system \fBGMT\fP defaults to standard output.  Append \fBu\fP for US
-defaults or \fBs\fP for SI defaults. [\fB\-D\fP alone gives current choice in gmt.conf].
+defaults or \fBs\fP for SI defaults. [\fB\-D\fP alone gives current choice in gmt_setup.conf].
 .TP
 \fB\-L\fP
 Print the user's currently active defaults to standard output.\"'

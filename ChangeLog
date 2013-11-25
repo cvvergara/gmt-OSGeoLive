@@ -1,9 +1,198 @@
 -----------------------------------------------------------------------------------------
-	$Id: ChangeLog 9946 2012-12-28 17:04:20Z pwessel $
+	$Id: ChangeLog 10135 2013-11-05 17:31:30Z pwessel $
 -----------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------
-2013-01-01	pwessel
+2013-11-05	pwessel
+	* configure.ac:		Moved to 4.5.12 and back to svn release only.
+-----------------------------------------------------------------------------------------
+2013-11-05	pwessel
+	* GMT 4.5.11 finalized and released, with GSHHG 2.2.4, and with GMT 5
+	4.5.10 had a newly introduced bug in some shell scripts so we had to fix
+	those and increment the minor release counter.
+-----------------------------------------------------------------------------------------
+2013-11-05	pwessel
+	* configure.ac:		Moved to 4.5.11 and back to svn release only.
+	* install_gmt5.sh:	New name for old install_gmt.sh
+
+-----------------------------------------------------------------------------------------
+2013-11-05	pwessel
+	* GMT 4.5.10 finalized and released, with GSHHG 2.2.4, and with GMT 5
+-----------------------------------------------------------------------------------------
+
+2013-11-03	pwessel
+	* gmtlogo, gmtget, gmt_shell_scripts.sh:
+				These all needed to be prepared by configure via *.in files
+				to set the correct GMT4 bindir, otherwise the GMT script would
+				pick other versions.
+
+2013-10-31	pwessel
+	* mgd77/mgd77list.c:	Picked id = time_column when set was 1 (custom), causing the
+				first custom data column to be formatted as time.
+
+2013-10-23	pwessel
+	* grdmath.c:		Fix bug in CURV operator.
+
+2013-10-05	pwessel
+	* greenspline.c:	Needed -f in order to select -f0T input, plus it made assumptions
+				about lon,lat despite not being selected.
+				
+2013-10-04	pwessel
+	* gmt_setup.conf:	New name for old gmt.conf, to minimize confusion with GMT 5.
+
+2013-09-28	remko
+	* gmt_init.c:		Shifted JD origin by one day (24 Nov, instead of 25 Nov).
+
+2013-09-18	pwessel
+	* grdtrend.c:		We messed up pstuff[0] usage in the 2009-10-14 fix in 4.5.2.
+				This affected robust fits and grids with NaNs.
+	
+2013-09-14	pwessel
+	* psmask.c:		Multiple, ancient bugs fixed: properly mark used edges, fix
+				memory allocations, not report clipping if -D is used, starting
+				point for a contour was not offset by 1/2 pixel.
+
+2013-09-02	pwessel
+	* psmask.c:		Was off by one in grd index, thus exceeding array length at end.
+
+2013-08-24	pwessel
+	* gmt_io.c:		The GMT_import_table function checked for greenwich before assigning
+				the input data (issue #357).
+
+2013-08-23	pwessel
+	* gmtset.c:		Did not write values to .gmtdefaults4 if BASEMAP_TYPE was graph or inside.
+
+2013-07-23	pwessel
+	* nearneighbor.c:	Clarify how -N works, what the defaults are, and let the
+				minimum number of sectors default to 50% of sectors instead
+				of a hard-wired 2.  Addresses issue # 343.
+
+2013-07-08	pwessel
+	* gmtmath.c:		Wrong index order in rarely used SVD part of LSQFIT.
+
+2013-07-05	pwessel
+	* pstext.c:		The line in -D...v was plotted on top rather than beneath box.
+
+2013-06-27	pwessel
+	* gmt_io.c:		Fix a side-effect of the 2013-04-18 correction.
+
+2013-05-31	pwessel
+	* gmt_plot.c:		Did not check for map-jumping in GMT_plot_rectangle (psxy -SJ).
+	* meca/psvelo.c:	Did not honor the -N setting.
+
+2013-05-21	pwessel
+	* pscontour.c:		Added -St to skip triangles whose 3 vertices are outside domain;
+				in contrast, -S or -Sp skips all points outside domain before
+				triangularization.
+	* meca/psvelo.c:	Called get_trans at NP but could not handle the truth.
+
+2013-05-17	pwessel
+	* gmt_map.c:		GMT_grdproject_init did not handle increments that had been
+				specified as units, e.g., -D30e.
+
+2013-05-09	pwessel
+	* share/x2sys:		Added dat.def for mgd77 ASCII DAT format.
+
+2013-04-19
+	* grdmath.c:		The XOR operator was incorrect, it is now clarified to be
+				0 if A == NaN and B == NaN, NaN if B == NaN, else A.
+	* grdlandmask.c:	Did not set output as geographic after using -Jx1d.
+	
+2013-04-18	pwessel
+	* gmt_io.c:		Could not properly decode yyodd (no delimiter) time coordinates
+				like 12Oct24.
+
+2013-04-17	pwessel
+	* filter1d.c:		Susceptible to round-off when determining t of first and last output
+				point when -T was not given.  Fixes issue # 241.
+
+2013-04-14	pwessel
+	* sph/sphdistance.c:	Make sure we visit replicated columns for gridline registered grids.
+	* blockm*.c:		Did not use data near west column nodes that were off by 360 for
+				gridline registered grids.
+
+2013-04-12	pwessel
+	* gmt_map.c:		The oblique Mercator would get the pole on the wrong hemisphere
+				Fixes issue #230
+
+2013-04-10	pwessel
+	* grdimage.c:		Fix bug represented by the globalgrid.sh test script for mix
+				of -Rs and pixel/gridline choices.
+
+2013-04-07	pwessel
+	* gmt_grdio.c:		Would restrict grid region in grdimage despite doing a global map
+				with azimuthal projections.
+
+2013-04-03	pwessel
+	* gmt_map.c:		When -Jx is used with longitudes we must use the wesn-clipping
+				and outside functions, not the Cartesian ones.
+				Fixed clipping problem in wesn_clip for regions > 180 but < 360.
+
+2013-03-25	pwessel
+	* greenspline.c:	The normalization for 2-D with geographic data suffered from
+				not checking that longitudes may be off by +/- 360.
+	* grdblend.c:		Despite geographic grids there were no check to roll a grids
+				-R by +/- 360 to match specified output region.
+
+2013-03-23	pwessel
+	* gmt_customio.c:	The magic recognition of native bit grids failed due to bad math.
+				Wrote wrong number of bytes per record for odd-width Sun rasterfiles
+
+2013-03-22	pwessel
+	* greenspline.c:	When -T was used the number of z-layers (1) was not initialized.
+	
+2013-03-21	pwessel
+	* grdvector.c:		Did not reject vectors on far side of orthographic maps.
+
+2013-02-12	pwessel
+	* grdfft.c:		Fix normalization for std.dev of power estimate in -E.
+
+2013-01-30	pwessel
+	* xyz2grd.c:		For -E, must read data as double so can properly compare
+				with the nodata_value read as double.
+
+2013-01-19	pwessel
+	* mgd77/mgd77list.c:	The azimuth written was back-azimuth, not forward.
+
+2013-01-17	pwessel
+	* gmt_grdio.[ch]:	Add latest dimensions for Sandwell/Smith ~85S/~85N img files
+
+2013-01-15	pwessel
+	* gmtmath.c:		The MIN and MAX operators ignored NaNs, but result should
+				be NaN if one of the operands equal NaN.
+	* grdmath.c:		---"---
+	
+2013-01-10	pwessel
+	* gmt_proj.c:		Inverse -JR blew up at origin; now added check.
+
+2013-01-09	pwessel
+	* gmt_io.c:		Formats for degree annotations using colons should never
+				end in a trailing colon.
+
+2013-01-07	pwessel
+	* grdvector.c:		Enforce that -Idx/dy must be multiples of grid dx/dy and
+				abort if they are not.  Before we would crash, hang, etc.
+	* gmt_proj.c:		Needed to allow for minor round-off when determining if
+				a point is beyond the horizon for -JG genper.
+	* gmt_grd.h:		Moved the #include <netcdf.h> from here to gmt_nc.c.
+
+2013-01-04	pwessel
+	* install_gmt.sh:	Allow configure to deal with netcdf detection, removed
+				obsolete universal binary option for OS/X.
+	* gmt_install_form.html:	Eliminated universal checkbox, improved notes.
+	* install_gmt_form.pl:	No longer parse and write universal binary options.
+	* GNUmakefile:		No longer use $GMT_UNIVERSAL setting from gmtguru.macros.
+	* configure.ac:		Deal with netcdf support via nc-config unless explicitly
+				set to no or cannot be found, and supply default dir
+				for GSHHG_path if not specified via --with-gshhg-dir
+
+2013-01-03	pwessel
+	* configure.ac:		Moved to 4.5.10 and svn release only.
+	* grdsample.c:		When given a -Rg grid and giving -Rg on command line, the
+				output region became -360/0 instead of 0/360.
+
+-----------------------------------------------------------------------------------------
+2013-01-02	pwessel
 	* GMT 4.5.9 finalized and released, with GSHHG 2.2.2
 -----------------------------------------------------------------------------------------
 2012-12-28	pwessel

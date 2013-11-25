@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_io.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_io.h 10019 2013-04-18 19:40:30Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -149,6 +149,7 @@ struct GMT_CLOCK_IO {
 };
 
 struct GMT_DATE_IO {
+	GMT_LONG T_pos;			/* String position of the expected 'T' marker (INPUT only) */
 	GMT_LONG item_order[4];		/* The sequence year, month, day, day-of-year in input calendar string */
 	GMT_LONG item_pos[4];		/* Which position year, month, day, day-of-year has in calendar string */
 	GMT_LONG Y2K_year;		/* TRUE if we have 2-digit years */

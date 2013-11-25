@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_project.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_project.h 10054 2013-06-15 19:20:58Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -345,6 +345,7 @@ struct GMT_PLOT_FRAME {		/* Various parameters for plotting of time axis boundar
 	GMT_LONG check_side;		/* TRUE if lon and lat annotations should be on x and y axis only */
 	GMT_LONG horizontal;		/* TRUE is S/N annotations should be parallel to axes */
 	GMT_LONG side[5];		/* Which sides to plot. 2 is annot/draw, 1 is draw, 0 is not */
+	GMT_LONG set_frame[2];		/* TRUE if we have processed a -B<frame> specification (p and s) */
 };
 
 

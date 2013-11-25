@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdsample.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdsample.c 9960 2013-01-04 17:43:58Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -257,7 +257,7 @@ int main (int argc, char **argv)
 		if (GMT_io.in_col_type[0] == GMT_IS_LON) {
 			grd_b.x_min -= 720.0;
 			grd_b.x_max -= 720.0;
-			while (grd_b.x_max < grd_a.x_min) grd_b.x_min += 360.0, grd_b.x_max += 360.0;
+			while (grd_b.x_max <= grd_a.x_min) grd_b.x_min += 360.0, grd_b.x_max += 360.0;
 		}
 		if (!edgeinfo.nxp && ((grd_b.x_min + GMT_CONV_LIMIT) < grd_a.x_min || (grd_b.x_max - GMT_CONV_LIMIT) > grd_a.x_max)) {
 			fprintf (stderr, "%s:  Selected region exceeds the X-boundaries of the grid file!\n", GMT_program);

@@ -1,4 +1,4 @@
-.TH PSTEXT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSTEXT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 pstext \- To plot text strings on maps
 .SH SYNOPSIS
@@ -298,13 +298,13 @@ To plot the outlines of the text strings stored in the file text.d on a Mercator
 the given specifications, use
 .br
 .sp
-\fBpstext\fP text.d \fB\-R\fP-30/30/-10/20 \fB\-Jm\fP0.1\fBi\fP \fB\-P\fP \fB\-B\fP5 \fB\-S\fP0.5\fBp\fP > plot.ps
+\fBpstext\fP text.d \fB\-R\fP-30/30/-10/20 \fB\-Jm\fP 0.1\fBi\fP \fB\-P\fP \fB\-B\fP 5 \fB\-S\fP 0.5\fBp\fP > plot.ps
 .br
 .sp
 To add a typeset figure caption for a 3-inch wide illustration, use
 .br
 .sp
-\fBpstext\fP \fB\-R\fP0/3/0/5 \fB\-JX\fP3\fBi\fP \fB\-O\fP \fB\-H\fP \fB\-m\fP \fB\-N\fP << EOF >> figure.ps
+\fBpstext\fP \fB\-R\fP 0/3/0/5 \fB\-JX\fP 3\fBi\fP \fB\-O\fP \fB\-H\fP \fB\-m\fP \fB\-N\fP << EOF >> figure.ps
 .br
 This is an optional header record
 .br

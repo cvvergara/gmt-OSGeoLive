@@ -1,4 +1,4 @@
-.TH TREND2D 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH TREND2D 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 trend2d \- Fit a [weighted] [robust] polynomial model for z = f(x,y) to xyz[w] data.
 .SH SYNOPSIS
@@ -129,15 +129,15 @@ the \fBD_FORMAT\fP setting.
 .SH EXAMPLES
 To remove a planar trend from data.xyz by ordinary least squares, use:  
 .sp
-\fBtrend2d\fP data.xyz \fB\-F\fPxyr \fB\-N\fP2 > detrended_data.xyz 
+\fBtrend2d\fP data.xyz \fB\-F\fP xyr \fB\-N\fP 2 > detrended_data.xyz 
 .sp
 To make the above planar trend robust with respect to outliers, use:
 .sp
-\fBtrend2d\fP data.xzy \fB\-F\fPxyr \fB\-N\fP2\fBr\fP > detrended_data.xyz 
+\fBtrend2d\fP data.xzy \fB\-F\fP xyr \fB\-N\fP 2\fBr\fP > detrended_data.xyz 
 .sp
 To find out how many terms (up to 10) in a robust interpolant are significant in fitting data.xyz, use:
 .sp
-\fBtrend2d\fP data.xyz \fB\-N\fP10\fBr\fP \fB\-I\fP \fB\-V\fP
+\fBtrend2d\fP data.xyz \fB\-N\fP 10\fBr\fP \fB\-I\fP \fB\-V\fP
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR grdmath (1),

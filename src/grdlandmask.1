@@ -1,4 +1,4 @@
-.TH GRDLANDMASK 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDLANDMASK 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdlandmask \- Create "wet-dry" mask grid file from shoreline data base.
 .SH SYNOPSIS
@@ -91,13 +91,13 @@ by putting a backslash in front of it, or by placing the filename and suffix bet
 To set all nodes on land to NaN, and nodes over water to 1, using the high resolution data set, do
 .br
 .sp
-\fBgrdlandmask\fP \fB\-R\fP-60/-40/-40/-30 \fB\-Dh\fP \fB\-i\fP5\fBm\fP \fB\-N\fP1/NaN \fB\-G\fPland_mask.grd \fB\-V\fP
+\fBgrdlandmask\fP \fB\-R\fP-60/-40/-40/-30 \fB\-Dh\fP \fB\-i\fP 5\fBm\fP \fB\-N\fP 1/NaN \fB\-G\fP land_mask.grd \fB\-V\fP
 .br
 .sp
 To make a 1x1 degree global grid with the hierarchical levels of the nodes based on the low resolution data:
 .br
 .sp
-\fBgrdlandmask\fP \fB\-R\fP0/360/-90/90 \fB\-Dl\fP \fB\-I\fP1 \fB\-N\fP0/1/2/3/4 \fB\-G\fPlevels.grd \fB\-V\fP
+\fBgrdlandmask\fP \fB\-R\fP 0/360/-90/90 \fB\-Dl\fP \fB\-I\fP 1 \fB\-N\fP 0/1/2/3/4 \fB\-G\fP levels.grd \fB\-V\fP
 .SH GSHHS INFORMATION
 The coastline database is GSHHS which is compiled from two sources:
 World Vector Shorelines (WVS) and CIA World Data Bank II (WDBII).

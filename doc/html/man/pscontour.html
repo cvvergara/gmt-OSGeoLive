@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:40:01 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:33 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -57,7 +57,8 @@
 ] [ <b>&minus;H</b>[<b>i</b>][<i>nrec</i>] ] [
 <b>&minus;I</b> ] [ <b>&minus;K</b> ] [
 <b>&minus;L</b><i>pen</i> ] [ <b>&minus;N</b> ] [
-<b>&minus;O</b> ] [ <b>&minus;P</b> ] [ <b>&minus;S</b> ] [
+<b>&minus;O</b> ] [ <b>&minus;P</b> ] [
+<b>&minus;S</b>[<b>p</b>|<b>t</b>] ] [
 <b>&minus;T</b><i>indexfile</i> ] [
 <b>&minus;U</b>[<i>just</i>/<i>dx</i>/<i>dy</i>/][<b>c</b>|<i>label</i>]
 ] [ <b>&minus;V</b> ] [ <b>&minus;W</b>[<b>+</b>]<i>pen</i>
@@ -833,9 +834,12 @@ to change this].</p></td>
 <td width="78%">
 
 
-<p style="margin-top: 1em" valign="top">Skip all input
-<i>xyz</i> points that fall outside the region [Default uses
-all the data in the triangulation].</p></td>
+<p style="margin-top: 1em" valign="top">Or
+<b>&minus;Sp</b>: Skip all input <i>xyz</i> points that fall
+outside the region [Default uses all the data in the
+triangulation]. Alternatively, use <b>&minus;St</b> to skip
+triangles whose three vertices are all outside the
+region.</p> </td>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="7%">
@@ -1076,9 +1080,9 @@ Lambert map at 0.5 inch/degree along the standard parallels
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>pscontour</b>
-topo.xyz <b>&minus;R</b>320/330/20/30
-<b>&minus;Jl</b>18/24/0.5<b>i &minus;C</b>topo.cpt
-<b>&minus;W</b>0.5<b>p</b> &gt; topo.ps</p>
+topo.xyz <b>&minus;R</b> 320/330/20/30 <b>&minus;Jl</b>
+18/24/0.5<b>i &minus;C</b> topo.cpt <b>&minus;W</b>
+0.5<b>p</b> &gt; topo.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To create a
 color <i>PostScript</i> plot of the numerical temperature
@@ -1089,9 +1093,9 @@ in temp.cpt, run</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>pscontour</b>
-temp.xyz <b>&minus;R</b>0/150/0/100 <b>&minus;Jx</b>0.1
-<b>&minus;C</b>temp.cpt <b>&minus;G &minus;W</b>0.25<b>p</b>
-&gt; temp.ps</p>
+temp.xyz <b>&minus;R</b> 0/150/0/100 <b>&minus;Jx</b> 0.1
+<b>&minus;C</b> temp.cpt <b>&minus;G &minus;W</b>
+0.25<b>p</b> &gt; temp.ps</p>
 
 <a name="BUGS"></a>
 <h2>BUGS</h2>

@@ -1,4 +1,4 @@
-.TH X2SYS_LIST 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH X2SYS_LIST 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 x2sys_list \- Output a subset of crossovers from data base
 .SH SYNOPSIS
@@ -106,14 +106,14 @@ To find all the magnetic crossovers associated with the tag MGD77 from the file 
 a certain region in the south Pacific, and return location, time, and crossover value, try
 .br
 .sp
-\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-R\fP180/240/-60/-30 \fB\-C\fPmag \fB\-F\fPxytz > mag_coe.txt
+\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-R\fP 180/240/-60/-30 \fB\-C\fP mag \fB\-F\fP xytz > mag_coe.txt
 .br
 .sp
 To find all the faa crossovers globally that involves track 12345678 and output time since start of the year,
 using a binary double precision format, try
 .br
 .sp
-\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fPMGD77 \fB\-C\fPfaa \fB\-S\fP12345678 \fB\-F\fPTz \fB\-bod\fP > faa_coe.b
+\fBx2sys_list\fP COE_data.txt \fB\-V\fP \fB\-T\fP MGD77 \fB\-C\fP faa \fB\-S\fP 12345678 \fB\-F\fP Tz \fB\-bod\fP > faa_coe.b
 .SH "SEE ALSO"
 .IR x2sys_binlist (1),
 .IR x2sys_cross (1),

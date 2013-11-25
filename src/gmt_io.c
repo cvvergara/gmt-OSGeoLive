@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_io.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_io.c 10118 2013-11-01 22:13:06Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -79,6 +79,7 @@
  * Now 64-bit enabled.
  */
 
+#define _XOPEN_SOURCE
 #define GMT_WITH_NO_PS
 #include "gmt.h"
 
@@ -1630,7 +1631,7 @@ GMT_LONG GMT_get_ymdj_order (char *text, struct GMT_DATE_IO *S, GMT_LONG mode)
 	 * and 1 for plot format.
 	 */
 
-	GMT_LONG i, j, order, n_y, n_m, n_d, n_j, n_w, n_delim, last, error = 0;
+	GMT_LONG i, j, order, n_y, n_m, n_d, n_j, n_w, n_delim, last, error = 0, T_pos = 0;
 
 	for (i = 0; i < 4; i++) S->item_order[i] = S->item_pos[i] = -1;	/* Meaning not encountered yet */
 
@@ -1649,14 +1650,14 @@ GMT_LONG GMT_get_ymdj_order (char *text, struct GMT_DATE_IO *S, GMT_LONG mode)
 					S->item_pos[0] = order++;
 				else if (text[i-1] != 'y')	/* Done it before, previous char must be y */
 					error++;
-				n_y++;
+				n_y++;	T_pos++;
 				break;
 			case 'm':	/* Month */
 				if (S->item_pos[1] < 0)		/* First time we encounter a m */
 					S->item_pos[1] = order++;
 				else if (text[i-1] != 'm')	/* Done it before, previous char must be m */
 					error++;
-				n_m++;
+				n_m++;	T_pos++;
 				break;
 			case 'o':	/* Month name (plot output only) */
 				if (S->item_pos[1] < 0)		/* First time we encounter an o */
@@ -1664,7 +1665,7 @@ GMT_LONG GMT_get_ymdj_order (char *text, struct GMT_DATE_IO *S, GMT_LONG mode)
 				else				/* Done it before is error here */
 					error++;
 				S->mw_text = TRUE;
-				n_m = 2;
+				n_m = 2;	T_pos += 3;
 				break;
 
 			case 'W':	/* ISO Week flag */
@@ -1677,7 +1678,7 @@ GMT_LONG GMT_get_ymdj_order (char *text, struct GMT_DATE_IO *S, GMT_LONG mode)
 				}
 				else if (text[i-1] != 'w')	/* Done it before, previous char must be w */
 					error++;
-				n_w++;
+				n_w++;	T_pos += 2;
 				break;
 			case 'u':	/* Iso Week name ("Week 04") (plot output only) */
 				S->iso_calendar = TRUE;
@@ -1694,7 +1695,7 @@ GMT_LONG GMT_get_ymdj_order (char *text, struct GMT_DATE_IO *S, GMT_LONG mode)
 					S->item_pos[2] = order++;
 				else if (text[i-1] != 'd')	/* Done it before, previous char must be d */
 					error++;
-				n_d++;
+				n_d++;	T_pos++;
 				break;
 			case 'j':	/* Day of year  */
 				S->day_of_year = TRUE;
@@ -1702,13 +1703,14 @@ GMT_LONG GMT_get_ymdj_order (char *text, struct GMT_DATE_IO *S, GMT_LONG mode)
 					S->item_pos[3] = order++;
 				else if (text[i-1] != 'j')	/* Done it before, previous char must be j */
 					error++;
-				n_j++;
+				n_j++;	T_pos++;
 				break;
 			default:	/* Delimiter of some kind */
 				if (n_delim == 2)
 					error++;
 				else
 					S->delimiter[n_delim++][0] = text[i];
+					T_pos++;
 				break;
 		}
 	}
@@ -1739,7 +1741,7 @@ GMT_LONG GMT_get_ymdj_order (char *text, struct GMT_DATE_IO *S, GMT_LONG mode)
 		fprintf (stderr, "%s: ERROR: Unacceptable date template %s\n", GMT_program, text);
 		GMT_exit (EXIT_FAILURE);
 	}
-	return (GMT_NOERROR);
+	return (T_pos);
 }
 
 GMT_LONG GMT_get_hms_order (char *text, struct GMT_CLOCK_IO *S)
@@ -2055,7 +2057,7 @@ void GMT_date_C_format (char *form, struct GMT_DATE_IO *S, GMT_LONG mode)
 
 	/* Get the order of year, month, day or day-of-year in input/output formats for dates */
 
-	GMT_get_ymdj_order (form, S, mode);
+	S->T_pos = GMT_get_ymdj_order (form, S, mode);
 
 	/* Craft the actual C-format to use for i/o date strings */
 
@@ -2092,8 +2094,16 @@ void GMT_date_C_format (char *form, struct GMT_DATE_IO *S, GMT_LONG mode)
 	else if (S->item_order[0] >= 0) {			/* Gregorian Calendar string: At least one item is needed */
 		k = (S->item_order[0] == 0 && !S->Y2K_year) ? ywidth : 2;
 		if (S->item_order[0] == 3) k = 3;	/* Day of year */
-		if (S->mw_text && S->item_order[0] == 1)	/* Prepare for "Monthname" format */
-			(mode == 0) ? sprintf (S->format, "%%[^%s]", S->delimiter[0]) : sprintf (S->format, "%%s");
+		if (S->mw_text && S->item_order[0] == 1) {	/* Prepare for "Monthname" format */
+			if (mode == 0) {
+				if (no_delim)
+					sprintf (S->format, "%%3s");
+				else
+					sprintf (S->format, "%%[^%s]", S->delimiter[0]);
+			}
+			else
+				sprintf (S->format, "%%s");
+		}
 		else if (S->compact)			/* Numerical formatting of month or year w/o leading zeros */
 			sprintf (S->format, "%%" GMT_LL "d");
 		else					/* Numerical formatting of month or year */
@@ -2102,8 +2112,15 @@ void GMT_date_C_format (char *form, struct GMT_DATE_IO *S, GMT_LONG mode)
 			if (S->delimiter[0][0]) strcat (S->format, S->delimiter[0]);
 			k = (S->item_order[1] == 0 && !S->Y2K_year) ? ywidth : 2;
 			if (S->item_order[1] == 3) k = 3;	/* Day of year */
-			if (S->mw_text && S->item_order[1] == 1)	/* Prepare for "Monthname" format */
-				(mode == 0) ? sprintf (fmt, "%%[^%s]", S->delimiter[1]) : sprintf (fmt, "%%s");
+			if (S->mw_text && S->item_order[1] == 1) {	/* Prepare for "Monthname" format */
+				if (mode == 0) {
+					if (no_delim)
+						sprintf (fmt, "%%3s");
+					else
+						sprintf (fmt, "%%[^%s]", S->delimiter[1]);
+				}
+				else sprintf (fmt, "%%s");
+			}
 			else if (S->compact && !S->Y2K_year)		/* Numerical formatting of month or 4-digit year w/o leading zeros */
 				sprintf (fmt, "%%" GMT_LL "d");
 			else
@@ -2169,7 +2186,7 @@ GMT_LONG GMT_geo_C_format (char *form, struct GMT_GEO_IO *S)
 
 void GMT_plot_C_format (char *form, struct GMT_GEO_IO *S)
 {
-	GMT_LONG i, j;
+	GMT_LONG i, j, len;
 
 	/* Determine the plot geographic location formats. */
 
@@ -2271,10 +2288,14 @@ void GMT_plot_C_format (char *form, struct GMT_GEO_IO *S)
 			strcat (GMT_plot_format[2][0], fmt);
 			strcat (GMT_plot_format[2][1], fmt);
 		}
-
 		/* Finally add %c for the W,E,S,N char (or NULL) */
 
-		for (i = 0; i < 3; i++) for (j = 0; j < 2; j++) strcat (GMT_plot_format[i][j], "%c");
+		for (i = 0; i < 3; i++) for (j = 0; j < 2; j++) {
+			len = strlen (GMT_plot_format[i][j]) - 1;
+			if (len < 0) len = 0;
+			if (GMT_plot_format[i][j][len] == ':') GMT_plot_format[i][j][len] = '\0';	/* Chop off final colon */
+			strcat (GMT_plot_format[i][j], "%c");
+		}
 	}
 }
 
@@ -2752,22 +2773,34 @@ GMT_LONG	GMT_scanf (char *s, GMT_LONG expectation, double *val)
 		callen = strlen (s);
 		if (callen < 2) return (GMT_IS_NAN);	/* Maybe should be more than 2  */
 
-		if ( (p = strchr ( s, (int)('T') ) ) == NULL) {
-			/* There is no T.  Put all of s in calstring.  */
+		//if ((p = strchr ( s, (int)('T'))) == NULL) {	/* This was too naive, being tricked by data like 12-OCT-20 (no trailing T, so OCT was it) */
+		if (s[0] == 'T') {	/* Got T<clock> presumably */
+			clocklen = callen - 1;
+			strncpy (clockstring, &s[1], (size_t)callen);
+			callen = 0;
+		}
+		else if (callen <= GMT_io.date_input.T_pos) {	/* There is no trailing T.  Put all of s in calstring.  */
 			clocklen = 0;
 			strcpy (calstring, s);
 		}
-		else {
+		else if (callen == (GMT_io.date_input.T_pos+1)) {	/* Just a trailing T but no clock */
+			clocklen = 0;
+			strncpy (calstring, s, GMT_io.date_input.T_pos);
+			calstring[GMT_io.date_input.T_pos] = 0;
+		}
+		else {	/* Have something following the T */
+			p = &s[GMT_io.date_input.T_pos+1];
+			if (p[0] == 'T') ++p;	/* Probably negative year pushed everything off by one */
 			clocklen = strlen(p);
-			callen -= clocklen;
+			callen -= (clocklen + 1);	/* The one is for the 'T' */
 			strncpy (calstring, s, (size_t)callen);
 			calstring[callen] = 0;
-			strcpy (clockstring, &p[1]);
-			clocklen--;
+			strcpy (clockstring, p);
+			if (clocklen) clocklen--;
 		}
-		x = 0.0;
+		x = 0.0;	/* Default to 00:00:00 if no clock is given */
 		if (clocklen && GMT_scanf_clock (clockstring, &x)) return (GMT_IS_NAN);
-		rd = 1;
+		rd = GMT_today_rata_die;	/* Default to today if no date is given */
 		if (callen && GMT_scanf_calendar (calstring, &rd)) return (GMT_IS_NAN);
 		*val = GMT_rdc2dt (rd, x);
 		if (gmtdefs.time_is_interval) {	/* Must truncate and center on time interval */
@@ -2868,8 +2901,8 @@ GMT_LONG	GMT_scanf_argtime (char *s, double *t)
 	while (s[k] && s[k] == ' ') k++;
 	if (s[k] == '-') negate_year = TRUE;
 	if (s[k] == 'T') {
-		/* There is no calendar.  Set day to 1 and use that:  */
-		*t = GMT_rdc2dt ( (GMT_cal_rd)1, x);
+		/* There is no calendar.  Set day to today and use that:  */
+		*t = GMT_rdc2dt (GMT_today_rata_die, x);
 		return (GMT_IS_ABSTIME);
 	}
 
@@ -2892,7 +2925,7 @@ GMT_LONG	GMT_scanf_argtime (char *s, double *t)
 		return (GMT_IS_ABSTIME);
 	}
 
-	for (i = negate_year; s[k+i] && s[k+i] != '-'; i++);;	/* Goes to first - between yyyy and jjj or yyyy and mm */
+	for (i = negate_year; s[k+i] && s[k+i] != '-'; i++);	/* Goes to first - between yyyy and jjj or yyyy and mm */
 	dash = ++i;				/* Position of first character after the first dash (could be end of string if no dash) */
 	while (s[k+i] && !(s[k+i] == '-' || s[k+i] == 'T')) i++;	/* Goto the ending T character or get stuck on a second - */
 	got_yd = ((i - dash) == 3 && s[k+i] == 'T');		/* Must have a field of 3-characters between - and T to constitute a valid day-of-year format */
@@ -3083,12 +3116,12 @@ GMT_LONG GMT_import_table (void *source, GMT_LONG source_type, struct GMT_TABLE 
 				fprintf (stderr, "%s: Failure to read file %s near line %ld\n", GMT_program, file, n_read);
 				GMT_exit (EXIT_FAILURE);
 			}
-			if (GMT_io.in_col_type[GMT_X] & GMT_IS_GEO) {
-				if (greenwich && T->segment[seg]->coord[GMT_X][row] > 180.0) T->segment[seg]->coord[GMT_X][row] -= 360.0;
-				if (!greenwich && T->segment[seg]->coord[GMT_X][row] < 0.0)  T->segment[seg]->coord[GMT_X][row] += 360.0;
-			}
 			for (k = 0; k < T->segment[seg]->n_columns; k++) {
 				T->segment[seg]->coord[k][row] = in[k];
+				if (GMT_io.in_col_type[k] & GMT_IS_LON) {	/* Must handle greenwich/dateline alignments */
+					if (greenwich && T->segment[seg]->coord[k][row] > 180.0) T->segment[seg]->coord[k][row] -= 360.0;
+					if (!greenwich && T->segment[seg]->coord[k][row] < 0.0)  T->segment[seg]->coord[k][row] += 360.0;
+				}
 				if (T->segment[seg]->coord[k][row] < T->segment[seg]->min[k]) T->segment[seg]->min[k] = T->segment[seg]->coord[k][row];
 				if (T->segment[seg]->coord[k][row] > T->segment[seg]->max[k]) T->segment[seg]->max[k] = T->segment[seg]->coord[k][row];
 			}

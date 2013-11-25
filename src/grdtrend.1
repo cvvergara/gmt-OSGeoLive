@@ -1,4 +1,4 @@
-.TH GRDTREND 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDTREND 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdtrend \- Fit and/or remove a polynomial trend in a grid file
 .SH SYNOPSIS
@@ -74,14 +74,14 @@ particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
 To remove a planar trend from hawaii_topo.grd and write result in hawaii_residual.grd:
 .br
 .sp
-\fBgrdtrend\fP hawaii_topo.grd \fB\-N\fP3 \fB\-D\fPhawaii_residual.grd
+\fBgrdtrend\fP hawaii_topo.grd \fB\-N\fP 3 \fB\-D\fP hawaii_residual.grd
 .br
 .sp
 To do a robust fit of a bicubic surface to hawaii_topo.grd, writing the result in 
 hawaii_trend.grd and the weights used in hawaii_weight.grd, and reporting the progress:
 .br
 .sp
-\fBgrdtrend\fP hawaii_topo.grd \fB\-N\fP10\fBr\fP \fB\-T\fPhawaii_trend.grd \fB\-W\fPhawaii_weight.grd \fB\-V\fP
+\fBgrdtrend\fP hawaii_topo.grd \fB\-N\fP 10\fBr\fP \fB\-T\fP hawaii_trend.grd \fB\-W\fP hawaii_weight.grd \fB\-V\fP
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR grdfft (1),

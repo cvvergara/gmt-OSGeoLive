@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_binlist.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: x2sys_binlist.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -46,7 +46,7 @@ int main (int argc, char **argv)
 	GMT_LONG last_bin_j;	/* Previous j node for bin */
 	GMT_LONG last_bin_ij;/* Previous bin */
 	unsigned int nav_flag;
-	size_t n_alloc = 0, nx_alloc = GMT_SMALL_CHUNK;
+	size_t nx_alloc = GMT_SMALL_CHUNK;
 
 	GMT_LONG error = FALSE, trackline = FALSE, gap, ea_mode = FALSE, cmdline_files;
 
@@ -164,7 +164,6 @@ int main (int argc, char **argv)
 	X = (struct BINCROSS *)GMT_memory (VNULL, nx_alloc, sizeof (struct BINCROSS), GMT_program);
 	
 	if (trackline) {
-		n_alloc = GMT_CHUNK;
 		dist_bin = (double *)GMT_memory (VNULL, (size_t)B.nm_bin, sizeof (double), GMT_program);
 	}
 

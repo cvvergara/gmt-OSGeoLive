@@ -1,4 +1,4 @@
-.TH GRDCUT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDCUT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdcut \- Extract a subregion out of a grid file
 .SH SYNOPSIS
@@ -71,7 +71,7 @@ particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
 .SH GEOGRAPHICAL AND TIME COORDINATES
 When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
 attributes of the input data or grid (if any) or on the
-\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP90w/90e/0t/3t will result in a longitude/time
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP 90w/90e/0t/3t will result in a longitude/time
 grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
 specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
 In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
@@ -79,11 +79,11 @@ In addition, the \fBunit\fP attribute of the time variable will indicate both th
 Suppose you have used \fBsurface\fP to grid ship gravity in the region between 148E - 162E and 8N - 32N, and you 
 do not trust the gridding near the edges, so you want to keep only the area between 150E - 160E and 10N - 30N, then: 
 .sp
-\fBgrdcut\fP grav_148_162_8_32.nc \fB\-G\fPgrav_150_160_10_30.nc \fB\-R\fP150/160/10/30 \fB\-V\fP
+\fBgrdcut\fP grav_148_162_8_32.nc \fB\-G\fP grav_150_160_10_30.nc \fB\-R\fP 150/160/10/30 \fB\-V\fP
 To return the subregion of a grid such that any boundary strips where all values are entirely
 above 0, try 
 .sp
-\fBgrdcut\fP bathy.nc \fB\-G\fPtrimmed_bathy.nc \fB\-Z\fP-/0 \fB\-V\fP
+\fBgrdcut\fP bathy.nc \fB\-G\fP trimmed_bathy.nc \fB\-Z\fP-/0 \fB\-V\fP
 .SH "SEE ALSO"
 .IR grdpaste (1),
 .IR grdinfo (1),

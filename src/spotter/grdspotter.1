@@ -1,11 +1,11 @@
-.TH GRDSPOTTER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDSPOTTER 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdspotter \- Create CVA image directly from gravity or bathymetry grids 
 .SH SYNOPSIS
 \fBgrdspotter\fP [\fIgrdfile\fP] \fB\-E\fP\fIrotations_file\fP 
 \fB\-G\fP\fICVAgrid\fP \fB\-I\fP\fIxinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP][/\fIyinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP]] 
 \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-A\fP\fIagegrid\fP ] [ \fB\-B\fP\fIn_try\fP ] [ \fB\-C\fP ] [ \fB\-D\fP\fIDIgrid\fP ] [ \fB\-F\fP ] 
-[ \fB\-L\fPIT(IDgrid) ] [ \fB\-M\fP ] [ \fB\-N\fP\fIupper_age\fP ] [ \fB\-P\fP\fIPAgrid\fP ] [ \fB\-Q\fP\fIIDinfo\fP ] [ \fB\-S\fP ] 
+[ \fB\-L\fP IT(IDgrid) ] [ \fB\-M\fP ] [ \fB\-N\fP\fIupper_age\fP ] [ \fB\-P\fP\fIPAgrid\fP ] [ \fB\-Q\fP\fIIDinfo\fP ] [ \fB\-S\fP ] 
 [ \fB\-T\fP ] [ \fB\-U\fP\fIfixed_val\fP ] [ \fB\-V\fP ] [ \fB\-Z\fP\fIz_min\fP[/\fIz_max\fP[/\fIz_inc\fP]] ]
 .SH DESCRIPTION
 \fBgrdspotter\fP reads a grid file with residual bathymetry or gravity
@@ -132,7 +132,7 @@ To create a CVA image from the Pacific topography grid Pac_res_topo.grd,
 using the DC85.d Euler poles, and only output a grid for the specified domain, run
 .br
 .sp
-\fBgrdspotter\fP Pac_res_topo.grd \fB\-E\fPDC85.d \fB\-G\fPCVA.grd \fB\-R\fP190/220/15/25 \fB\-I\fP2\fBm\fP \fB\-N\fP145 \fB\-T\fP \fB\-V\fP
+\fBgrdspotter\fP Pac_res_topo.grd \fB\-E\fP DC85.d \fB\-G\fP CVA.grd \fB\-R\fP 190/220/15/25 \fB\-I\fP 2\fBm\fP \fB\-N\fP 145 \fB\-T\fP \fB\-V\fP
 .br
 .sp
 This file can then be plotted with \fBgrdimage\fP.

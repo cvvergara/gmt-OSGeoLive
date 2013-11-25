@@ -1,4 +1,4 @@
-.TH FITCIRCLE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH FITCIRCLE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 fitcircle \- find mean position and pole of best-fit great [or small] circle to points on a sphere.
 .SH SYNOPSIS
@@ -88,9 +88,9 @@ Suppose you have lon,lat,grav data along a twisty ship track in the file ship.xy
 project this data onto a great circle and resample it in distance, in order to filter it or check its spectrum.  Do the following:
 .br
 .sp
-\fBfitcircle\fP ship.xyg \fB\-L\fP2 
+\fBfitcircle\fP ship.xyg \fB\-L\fP 2 
 .sp
-\fBproject\fP ship.xyg \fB\-C\fP\fIox\fP/\fIoy\fP \fB\-T\fP\fIpx\fP/\fIpy\fP \fB\-S\fP \fB\-F\fPpz | \fBsample1d\fP \fB\-S\fP\-100 \fB\-I\fP1 
+\fBproject\fP ship.xyg \fB\-C\fP\fIox\fP/\fIoy\fP \fB\-T\fP\fIpx\fP/\fIpy\fP \fB\-S\fP \fB\-F\fP pz | \fBsample1d\fP \fB\-S\fP\-100 \fB\-I\fP 1 
 > output.pg
 .sp
 Here, \fIox\fP/\fIoy\fP is the lon/lat of the mean from \fBfitcircle\fP, and \fIpx\fP/\fIpy\fP is the lon/lat 

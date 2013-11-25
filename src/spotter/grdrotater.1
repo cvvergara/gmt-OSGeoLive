@@ -1,4 +1,4 @@
-.TH GRDROTATER 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDROTATER 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdrotater \- Rotate a grid using a finite rotation
 .SH SYNOPSIS
@@ -97,20 +97,20 @@ To rotate the data defined by grid topo.grd and the polygon outline clip_path.d,
 with pole at (135.5, -33.0) and a rotation angle of 37.3 degrees and bicubic interpolation, try
 .br
 .sp
-\fBgrdrotater\fP topo.grd \fB\-T\fP135.5/-33/37.3 \fB\-V\fP \fB\-F\fPclip_path.d \fB\-G\fProt_topo.grd > rot_clip_path.d
+\fBgrdrotater\fP topo.grd \fB\-T\fP 135.5/-33/37.3 \fB\-V\fP \fB\-F\fP clip_path.d \fB\-G\fP rot_topo.grd > rot_clip_path.d
 .br
 .sp
 To rotate the entire grid faa.grd using a finite rotation pole at (67:45W, 22:35S) and a rotation angle of 19.6
 degrees using a bilinear interpolation, try
 .br
 .sp
-\fBgrdrotater\fP faa.grd \fB\-T\fP67:45W/22:35S/19.6 \fB\-V\fP \fB\-Q\fP \fB\-G\fProt_faa.grd > rot_faa_path.d
+\fBgrdrotater\fP faa.grd \fB\-T\fP 67:45W/22:35S/19.6 \fB\-V\fP \fB\-Q\fP \fB\-G\fP rot_faa.grd > rot_faa_path.d
 .br
 .sp
 To just see how the outline of the grid large.grd will plot after the same rotation, try
 .br
 .sp
-\fBgrdrotater\fP large.grd \fB\-T\fP67:45W/22:35S/19.6 \fB\-V\fP \fB\-S\fP | psxy \fB\-Rg\fP \fB\-JH\fP180/6i \fB\-B\fP30 \fB\-m\fP \fB\-W\fP0.5\fBp\fP | gv -
+\fBgrdrotater\fP large.grd \fB\-T\fP 67:45W/22:35S/19.6 \fB\-V\fP \fB\-S\fP | psxy \fB\-Rg\fP \fB\-JH\fP 180/6i \fB\-B\fP 30 \fB\-m\fP \fB\-W\fP 0.5\fBp\fP | gv -
 .br
 .sp
 Let say you have rotated gridA.grd and gridB.grd, restricting each rotation to nodes inside polygons polyA.d and polyB.d, respectively,

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_grdio.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_grdio.c 10007 2013-04-07 21:35:43Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -920,6 +920,10 @@ GMT_LONG GMT_grd_setregion (struct GRD_HEADER *h, double *xmin, double *xmax, do
 	/* Shift a geographic grid 360 degrees up or down to maximize the amount of longitude range */
 
 	if (GMT_io.in_col_type[0] == GMT_IS_LON) {
+		if (GMT_360_RANGE (project_info.w, project_info.e)) {
+			*xmin = h->x_min, *xmax = h->x_max;
+			return (1);
+		}
 		x_range = MIN (*xmin, h->x_max) - MAX (*xmax, h->x_min);
 		if (MIN (*xmin, h->x_max + 360.0) - MAX (*xmax, h->x_min + 360.0) > x_range)
 			shift_x = 360.0;
@@ -1187,13 +1191,17 @@ GMT_LONG GMT_read_img (char *imgfile, struct GRD_HEADER *grd, float **grid, doub
 	if (!GMT_getdatapath (imgfile, file)) return (GMT_GRDIO_FILE_NOT_FOUND);
 	if (GMT_STAT (file, &buf)) return (GMT_GRDIO_STAT_FAILED);	/* Inquiry about file failed somehow */
 
-	switch (buf.st_size) {	/* Known sizes are 1 or 2 min at lat_max = 72 or 80 */
+	switch (buf.st_size) {	/* Known sizes are 1 or 2 min at lat_max = ~72, ~80 or ~85 */
+		case GMT_IMG_NLON_1M*GMT_IMG_NLAT_1M_85*GMT_IMG_ITEMSIZE:
+			if (lat == 0.0) lat = GMT_IMG_MAXLAT_85;
 		case GMT_IMG_NLON_1M*GMT_IMG_NLAT_1M_80*GMT_IMG_ITEMSIZE:
 			if (lat == 0.0) lat = GMT_IMG_MAXLAT_80;
 		case GMT_IMG_NLON_1M*GMT_IMG_NLAT_1M_72*GMT_IMG_ITEMSIZE:
 			if (lat == 0.0) lat = GMT_IMG_MAXLAT_72;
 			min = 1;
 			break;
+		case GMT_IMG_NLON_2M*GMT_IMG_NLAT_2M_85*GMT_IMG_ITEMSIZE:
+			if (lat == 0.0) lat = GMT_IMG_MAXLAT_85;
 		case GMT_IMG_NLON_2M*GMT_IMG_NLAT_2M_80*GMT_IMG_ITEMSIZE:
 			if (lat == 0.0) lat = GMT_IMG_MAXLAT_80;
 		case GMT_IMG_NLON_2M*GMT_IMG_NLAT_2M_72*GMT_IMG_ITEMSIZE:

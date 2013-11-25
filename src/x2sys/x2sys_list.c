@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_list.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: x2sys_list.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -40,7 +40,7 @@ int main (int argc, char **argv)
 	struct X2SYS_INFO *s = NULL;
 	struct X2SYS_BIX B;
 	struct X2SYS_COE_PAIR *P = NULL;
-	GMT_LONG error = FALSE, mixed = FALSE, check_for_NaN = FALSE, both = FALSE, first, z_is_requested = FALSE;
+	GMT_LONG error = FALSE, mixed = FALSE, check_for_NaN = FALSE, both = FALSE, first;
 	GMT_LONG internal = TRUE;	/* FALSE if only external xovers are needed */
 	GMT_LONG external = TRUE;	/* FALSE if only internal xovers are needed */
 	GMT_LONG single = FALSE;		/* TRUE if a single track is specified -S */
@@ -261,7 +261,6 @@ int main (int argc, char **argv)
 				break;
 			case 'c':	/* Crossover value */
 				GMT_io.out_col_type[j] = GMT_IS_FLOAT;
-				z_is_requested = TRUE;
 				break;
 			case 'd':	/* Distance along track */
 				GMT_io.out_col_type[j] = GMT_IS_FLOAT;
@@ -304,7 +303,6 @@ int main (int argc, char **argv)
 			case 'z':	/* Observed value along track */
 				GMT_io.out_col_type[j] = GMT_IS_FLOAT;
 				if (both) GMT_io.out_col_type[++j] = GMT_IS_FLOAT;
-				z_is_requested = TRUE;
 				break;
 		}
 	}

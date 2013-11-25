@@ -1,4 +1,4 @@
-.TH SPLITXYZ 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH SPLITXYZ 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 splitxyz \- filter to divide (x,y,z[,distance,heading]) data into (x,y,z) track segments.
 .SH SYNOPSIS
@@ -129,9 +129,9 @@ You want to use a 100km low\-pass filter to smooth the tracks and a 500km high\-
 filter to detrend the magnetic anomalies.  Try this:
 .br
 .sp
-\fBgmtlist\fP cag71 \fB\-R\fP300/315/12/20 \fB\-F\fPxyzdh | 
-\fBsplitxyz\fP \fB\-A\fP90/15 \fB\-F\fP100/-500 \fB\-M\fP \fB\-D\fP100 \fB\-S\fP \fB\-V\fP | 
-\fBpswiggle\fP \fB\-R\fP300/315/12/20 \fB\-Jm\fP0.6 \fB\-Ba\fP5\fBf\fP1:.cag71: \fB\-T\fP1 \fB\-W\fP0.75p \fB\-G\fPgray \fB\-Z\fP200 > cag71_wiggles.ps
+\fBgmtlist\fP cag71 \fB\-R\fP 300/315/12/20 \fB\-F\fP xyzdh | 
+\fBsplitxyz\fP \fB\-A\fP 90/15 \fB\-F\fP 100/-500 \fB\-M\fP \fB\-D\fP 100 \fB\-S\fP \fB\-V\fP | 
+\fBpswiggle\fP \fB\-R\fP 300/315/12/20 \fB\-Jm\fP 0.6 \fB\-Ba\fP 5\fBf\fP1:.cag71: \fB\-T\fP 1 \fB\-W\fP 0.75p \fB\-G\fP gray \fB\-Z\fP 200 > cag71_wiggles.ps
 .br
 .sp
 MGD-77 users: For this application we recommend that you extract d, h from \fBmgd77list\fP rather than
@@ -141,7 +141,7 @@ have \fBsplitxyz\fP compute them separately.
 Suppose you have been given a binary, double-precision file containing lat, lon, gravity values from a survey, 
 and you want to split it into profiles named \fIsurvey\fP.profile\fI#\fP (when gap exceeds 100 km).  Try this:
 .sp
-\fBsplitxyz\fP survey.bin \fB\-N\fPsurvey \fB\-V\fP \fB\-G\fP100 \fB\-D\fP100 \fB\-:\fP \fB\-M\fP \fB\-bi\fP\fP3
+\fBsplitxyz\fP survey.bin \fB\-N\fP survey \fB\-V\fP \fB\-G\fP 100 \fB\-D\fP 100 \fB\-:\fP \fB\-M\fP \fB\-bi\fP\fP3
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR mgd77list (1),

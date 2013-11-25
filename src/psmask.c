@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psmask.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: psmask.c 10085 2013-09-14 06:10:21Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -106,7 +106,7 @@ int main (int argc, char **argv)
 #endif
 	void draw_clip_contours (double *xx, double *yy, GMT_LONG nn, int rgb[], GMT_LONG id, GMT_LONG flag);
 	void dump_clip_contours (struct PSMASK_INFO *info, double *xx, double *yy, GMT_LONG nn, GMT_LONG id, char *file);
-	void shrink_clip_contours (double *x, double *y, GMT_LONG n, double w, double e);
+	void shrink_clip_contours (double *x, double *y, GMT_LONG np, double w, double e, double s, double n);
 	GMT_LONG clip_contours (struct PSMASK_INFO *info, char *grd, struct GRD_HEADER *h, double xinc2, double yinc2, GMT_LONG *edge, GMT_LONG first, double **x, double **y, GMT_LONG *max);
 	void *New_psmask_Ctrl (), Free_psmask_Ctrl (struct PSMASK_CTRL *C);
 	
@@ -488,11 +488,12 @@ int main (int argc, char **argv)
 			GMT_map_basemap ();
 
 			if (gmtdefs.verbose) fprintf (stderr, "%s: Tracing the clip path\n", GMT_program);
+			if (Ctrl->D.active && Ctrl->D.file[0] == '-') GMT_io.multi_segments[GMT_OUT] = 1;	/* Write multi-segment files */
 
 			section = 0;
 			first = TRUE;
 			while ((n = clip_contours (&info, grd, &h, xinc2, yinc2, edge, first, &x, &y, &n_alloc)) > 0) {
-				shrink_clip_contours (x, y, n, h.x_min, h.x_max);
+				shrink_clip_contours (x, y, n, h.x_min, h.x_max, h.y_min, h.y_max);
 				if (Ctrl->D.active && n > Ctrl->D.min_pts) dump_clip_contours (&info, x, y, n, section, Ctrl->D.file);
 				draw_clip_contours (x, y, n, Ctrl->G.fill.rgb, section, first);
 				first = FALSE;
@@ -516,7 +517,7 @@ int main (int argc, char **argv)
 				grd_y = GMT_j_to_y (j, h.y_min, h.y_max, h.y_inc, h.xy_off, h.ny);
 				y_bot = grd_y - yinc2;
 				y_top = grd_y + yinc2;
-				ij = GMT_IJ (j, 1, h.nx);
+				ij = GMT_IJ (j, 0, h.nx);
 				for (i = 0; i < h.nx; i++, ij++) {
 					if (((GMT_LONG)grd[ij]) == 0) continue;
 
@@ -680,7 +681,7 @@ GMT_LONG clip_contours (struct PSMASK_INFO *info, char *grd, struct GRD_HEADER *
 				edge_bit = (GMT_LONG)(ij % 32);
 				if (!(edge[edge_word] & info->bit[edge_bit]) && ((grd[ij]+grd[ij-h->nx]) == 1)) { /* Start tracing contour */
 					*x[0] = GMT_i_to_x (i, h->x_min, h->x_max, h->x_inc, h->xy_off, h->nx);
-					*y[0] = GMT_j_to_y (j, h->y_min, h->y_max, h->y_inc, h->xy_off, h->ny);
+					*y[0] = GMT_j_to_y (j, h->y_min, h->y_max, h->y_inc, h->xy_off, h->ny) + 0.5 * h->y_inc;
 					edge[edge_word] |= info->bit[edge_bit];
 					n = trace_clip_contours (info, grd, edge, h, xinc2, yinc2, x, y, i, j, 3, max);
 					go_on = FALSE;
@@ -700,10 +701,11 @@ GMT_LONG clip_contours (struct PSMASK_INFO *info, char *grd, struct GRD_HEADER *
 		for (j = j0; go_on && j < h->ny; j++) {
 			ij = GMT_IJ (j, i0, h->nx);
 			for (i = i0; go_on && i < h->nx-1; i++, ij++) {
-				edge_word = (GMT_LONG)(ij / 32 + info->offset);
+				// edge_word = (GMT_LONG)(ij / 32 + info->offset);
+				edge_word = (GMT_LONG)(ij / 32);
 				edge_bit = (GMT_LONG)(ij % 32);
 				if (!(edge[edge_word] & info->bit[edge_bit]) && ((grd[ij]+grd[ij+1]) == 1)) { /* Start tracing contour */
-					*x[0] = GMT_i_to_x (i, h->x_min, h->x_max, h->x_inc, h->xy_off, h->nx);
+					*x[0] = GMT_i_to_x (i, h->x_min, h->x_max, h->x_inc, h->xy_off, h->nx) + 0.5 * h->x_inc;
 					*y[0] = GMT_j_to_y (j, h->y_min, h->y_max, h->y_inc, h->xy_off, h->ny);
 					edge[edge_word] |= info->bit[edge_bit];
 					n = trace_clip_contours (info, grd, edge, h, xinc2, yinc2, x, y, i, j, 2, max);
@@ -780,8 +782,8 @@ GMT_LONG trace_clip_contours (struct PSMASK_INFO *info, char *grd, GMT_LONG *edg
 		}
 
 		if (n > m) {	/* Must try to allocate more memory */
-			*max = (*max == 0) ? GMT_CHUNK : ((*max) << 1);
-			m = (m == 0) ? GMT_CHUNK : (m << 1);
+			*max <<= 1;	/* Double the memory */
+			m = *max - 2;	/* But still check for 2 less in case we add 2 points */
 			*xx = (double *) GMT_memory ((void *)*xx, (size_t)(*max), sizeof (double), "trace_clip_contours");
 			*yy = (double *) GMT_memory ((void *)*yy, (size_t)(*max), sizeof (double), "trace_clip_contours");
 		}
@@ -843,20 +845,20 @@ GMT_LONG trace_clip_contours (struct PSMASK_INFO *info, char *grd, GMT_LONG *edg
 	return (n);
 }
 
-void shrink_clip_contours (double *x, double *y, GMT_LONG n, double w, double e)
+void shrink_clip_contours (double *x, double *y, GMT_LONG np, double w, double e, double s, double n)
 {
 	/* Moves outside points to boundary */
 	GMT_LONG i;
 
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < np; i++) {
 		if (x[i] < w)
 			x[i] = w;
 		if (x[i] > e)
 			x[i] = e;
-		if (y[i] < project_info.s)
-			y[i] = project_info.s;
-		if (y[i] > project_info.n)
-			y[i] = project_info.n;
+		if (y[i] < s)
+			y[i] = s;
+		if (y[i] > n)
+			y[i] = n;
 	}
 }
 

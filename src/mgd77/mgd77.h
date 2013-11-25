@@ -1,5 +1,5 @@
 /*-------------------------------------------------------------------------
- *	$Id: mgd77.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: mgd77.h 10060 2013-06-24 00:04:12Z pwessel $
  * 
  *    Copyright (c) 2005-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -514,6 +514,10 @@ extern void MGD77_Verify_Header (struct MGD77_CONTROL *F, struct MGD77_HEADER *H
 extern void MGD77_Verify_Prep (struct MGD77_CONTROL *F, struct MGD77_DATASET *D);
 extern void MGD77_Verify_Prep_m77 (struct MGD77_CONTROL *F, struct MGD77_META *C, struct MGD77_DATA_RECORD *D, GMT_LONG nrec);
 extern int MGD77_Remove_E77 (struct MGD77_CONTROL *F);
+extern int MGD77_Get_Header_Item (struct MGD77_CONTROL *F, char *item);
+extern void MGD77_Select_All_Columns (struct MGD77_CONTROL *F, struct MGD77_HEADER *H);
+extern int MGD77_Order_Columns (struct MGD77_CONTROL *F, struct MGD77_HEADER *H);
+extern void MGD77_set_plain_mgd77 (struct MGD77_HEADER *H, GMT_LONG mgd77t_format);
 
 /* Secondary user functions */
 

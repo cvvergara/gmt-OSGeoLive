@@ -1,4 +1,4 @@
-.TH SURFACE 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH SURFACE 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 surface \- adjustable tension continuous curvature surface gridding algorithm
 .SH SYNOPSIS
@@ -159,7 +159,7 @@ To grid 5 by 5 minute gravity block means from the ASCII data in hawaii_5x5.xyg,
 a \fIconvergence_limit\fP = 0.1 milligal, writing the result to a file called hawaii_grd.grd, 
 and monitoring each iteration, try:
 .sp
-\fBsurface\fP hawaii_5x5.xyg \fB\-R\fP198/208/18/25 \fB\-I\fP5\fBm\fP \fB\-G\fPhawaii_grd.grd \fB\-T\fP0.25 \fB\-C\fP0.1 \fB\-Vl\fP
+\fBsurface\fP hawaii_5x5.xyg \fB\-R\fP 198/208/18/25 \fB\-I\fP 5\fBm\fP \fB\-G\fP hawaii_grd.grd \fB\-T\fP 0.25 \fB\-C\fP 0.1 \fB\-Vl\fP
 .SH BUGS
 \fBsurface\fP will complain when more than one data point is found for
 any node and suggest that you run \fBblockmean\fP, \fBblockmedian\fP, or \fBblockmode\fP first.  If you

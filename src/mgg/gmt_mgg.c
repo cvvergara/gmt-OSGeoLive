@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_mgg.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: gmt_mgg.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *    Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *    See README file for copying and redistribution conditions.
@@ -162,7 +162,7 @@ int gmtmgg_time (int *time, int year, int month, int day, int hour, int minute, 
  * the gmtfile directories.
  */
 
-void gmtmggpath_init () {
+void gmtmggpath_init (void) {
 	char file[BUFSIZ], line[BUFSIZ];
 	FILE *fp = NULL;
 
@@ -190,7 +190,7 @@ void gmtmggpath_init () {
 	fclose (fp);
 }
 
-void gmtmgg_end ()
+void gmtmgg_end (void)
 {
 	int i;
 	for (i = 0; i < n_gmtmgg_paths; i++) if (gmtmgg_path[i]) GMT_free ((void *)gmtmgg_path[i]);

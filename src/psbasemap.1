@@ -1,4 +1,4 @@
-.TH PSBASEMAP 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH PSBASEMAP 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 psbasemap \- To plot \fIPostScript\fP basemaps
 .SH SYNOPSIS
@@ -128,7 +128,7 @@ Give the central meridian \fIlon0\fP (optional) and \fIscale\fP (\fB1:\fP\fIxxxx
 Give central meridian \fIlon0\fP (optional), standard parallel \fIlat0\fP (optional), and \fIscale\fP along parallel (\fB1:\fP\fIxxxx\fP or UNIT/degree).
 .TP
 \fB\-Jo\fP\fIparameters\fP (Oblique Mercator \fB[C]\fP).
-Specify one of:
+Typically used with \fB\-R\fP<...>\fBr\fP, otherwise region is in oblique coordinates. Specify one of:
 .RS
 .TP
 \fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP or \fB\-JO\fP[\fBa\fP]\fIlon0/lat0/azimuth/width\fP
@@ -209,7 +209,7 @@ and \fIscale\fP along central meridian (\fB1:\fP\fIxxxx\fP or UNIT/degree).
 .PP
 \fBAZIMUTHAL PROJECTIONS:\fP
 .sp
-Except for polar aspects, \fB\-R\fPw/e/s/n will be reset to \fB\-Rg\fP.  Use \fB\-R\fP<...>\fBr\fP for smaller regions.
+Except for polar aspects, \fB\-R\fP w/e/s/n will be reset to \fB\-Rg\fP.  Use \fB\-R\fP<...>\fBr\fP for smaller regions.
 .TP
 \fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JA\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (Lambert \fB[E]\fP).
 \fIlon0/lat0\fP specifies the projection center.
@@ -252,9 +252,9 @@ in UNIT from origin to the oblique latitude \fIlat\fP.
 \fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP or \fB\-JS\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/width\fP (General Stereographic \fB[C]\fP).
 \fIlon0/lat0\fP specifies the projection center.
 \fIhorizon\fP specifies the max distance from projection center (in degrees, < 180, default 90).
-Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat0\fP)
+Give \fIscale\fP as \fB1:\fP\fIxxxx\fP (true at pole) or \fIlat\fP/\fB1:\fP\fIxxxx\fP (true at standard parallel \fIlat\fP)
 or \fIradius/lat\fP (\fIradius\fP in UNIT from origin to the oblique latitude \fIlat\fP).
-Note if \fB1:\fP\fIxxxx\fP is used then to specify \fIhorizon\fP you must also specify the \fIlat0\fP as +-90 to avoid ambiguity.
+Note if \fB1:\fP\fIxxxx\fP is used then to specify \fIhorizon\fP you must also specify the \fIlat\fP as +-90 to avoid ambiguity.
 .PP
 \fBMISCELLANEOUS PROJECTIONS:\fP
 .TP
@@ -320,7 +320,7 @@ Input coordinates are absolute time.
 Default axis lengths (see \fBgmtdefaults\fP) can be invoked
 using \fB\-JXh\fP (for landscape); \fB\-JXv\fP (for portrait) will swap the x- and y-axis lengths.
 The default unit for this installation is either cm or inch, as defined in the file
-share/gmt.conf. However, you may change this by editing your \.gmtdefaults4 file(s).
+share/gmt_setup.conf. However, you may change this by editing your \.gmtdefaults4 file(s).
 .RE
 .RE
 .TP
@@ -460,197 +460,197 @@ To make a linear x/y frame with all axes, but with only left and bottom axes ann
 ticking every 1 unit and annotating every 2, and using xlabel = "Distance" and ylabel = "No of samples", use
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP0/9/0/5 \fB\-Jx\fP1 \fB\-Bf\fP1\fBa\fP2\fB:\fPDistance\fB:\fP/\fB:\fP"No of samples"\fB:\fP\fBWeSn\fP > linear.ps
+\fBpsbasemap\fP \fB\-R\fP 0/9/0/5 \fB\-Jx\fP 1 \fB\-Bf\fP 1\fBa\fP2\fB:\fPDistance\fB:\fP/\fB:\fP"No of samples"\fB:\fP\fBWeSn\fP > linear.ps
 .SS Log-log plot
 To make a log-log frame with only the left and bottom axes, where the x-axis is 25 cm and annotated
 every 1-2-5 and the y-axis is 15 cm and annotated every power of 10 but has tickmarks every 0.1, run
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP1/10000/1e20/1e25 \fB\-JX\fP25\fBcl\fP/15\fBcl\fP \fB\-B\fP2\fB:\fPWavelength\fB:\fP/\fBa\fP1\fBpf\fP3\fB:\fPPower\fB:\fP\fBWS\fP > loglog.ps
+\fBpsbasemap\fP \fB\-R\fP 1/10000/1e20/1e25 \fB\-JX\fP 25\fBcl\fP/15\fBcl\fP \fB\-B\fP 2\fB:\fPWavelength\fB:\fP/\fBa\fP1\fBpf\fP3\fB:\fPPower\fB:\fP\fBWS\fP > loglog.ps
 .SS Power axes
 To design an axis system to be used for a depth\-sqrt(age) plot with depth positive down, ticked and
 annotated every 500m, and ages annotated at 1 my, 4 my, 9 my etc, use
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP0/100/0/5000 \fB\-Jx\fP1\fBp\fP0.5/-0.001 \fB\-B\fP1\fBp\fP\fB:\fP"Crustal age"\fB:\fP/500\fB:\fPDepth\fB:\fP > power.ps
+\fBpsbasemap\fP \fB\-R\fP 0/100/0/5000 \fB\-Jx\fP 1\fBp\fP0.5/-0.001 \fB\-B\fP 1\fBp\fP\fB:\fP"Crustal age"\fB:\fP/500\fB:\fPDepth\fB:\fP > power.ps
 .SS Polar (theta,r) plot
 For a base map for use with polar coordinates, where the radius from 0 to 1000 should correspond
 to 3 inch and with gridlines and ticks every 30 degrees and 100 units, use
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP0/360/0/1000 \fB\-JP\fP6\fBi\fP \fB\-B\fP30\fBp\fP/100 > polar.ps
+\fBpsbasemap\fP \fB\-R\fP 0/360/0/1000 \fB\-JP\fP 6\fBi\fP \fB\-B\fP 30\fBp\fP/100 > polar.ps
 .SH CYLINDRICAL MAP PROJECTIONS
 .SS Cassini
-A 10-cm-wide basemap using the Cassini projection may be obtained by
+A 10 -cm-wide basemap using the Cassini projection may be obtained by
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP20/50/20/35 \fB\-JC\fP35/28/10\fBc\fP \fB\-P\fP \fB\-B\fP5\fBg\fP5\fB:.\fPCassini\fB:\fP > cassini.ps
+\fBpsbasemap\fP \fB\-R\fP 20/50/20/35 \fB\-JC\fP 35/28/10\fBc\fP \fB\-P\fP \fB\-B\fP 5\fBg\fP5\fB:.\fPCassini\fB:\fP > cassini.ps
 .SS Mercator [conformal]
 A Mercator map with scale 0.025 inch/degree along equator, and showing the length of 5000 km along the equator
 (centered on 1/1 inch), may be plotted as
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP90/180/-50/50 \fB\-Jm\fP0.025\fBi\fP \fB\-B\fP30\fBg\fP30\fB:.\fPMercator\fB:\fP \fB\-Lx\fP1\fBi\fP/1\fBi\fP/0/5000 > mercator.ps
+\fBpsbasemap\fP \fB\-R\fP 90/180/-50/50 \fB\-Jm\fP 0.025\fBi\fP \fB\-B\fP 30\fBg\fP30\fB:.\fPMercator\fB:\fP \fB\-Lx\fP 1\fBi\fP/1\fBi\fP/0/5000 > mercator.ps
 .SS Miller
 A global Miller cylindrical map with scale 1:200,000,000 may be plotted as
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-Jj\fP180/1:200000000 \fB\-B\fP30\fBg\fP30\fB:.\fPMiller\fB:\fP > miller.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-Jj\fP 180/1:200000000 \fB\-B\fP 30\fBg\fP30\fB:.\fPMiller\fB:\fP > miller.ps
 .SS Oblique Mercator [conformal]
 To create a page-size global oblique Mercator basemap for a pole at (90,30) with gridlines every 30 degrees, run
 .br
 .sp
-\fBpsbasemap\fP  \fB\-R\fP0/360/-70/70 \fB\-Joc\fP0/0/90/30/0.064\fBc\fPd \fB\-B\fP30\fBg\fP30\fB:.\fP"Oblique Mercator"\fB:\fP > oblmerc.ps
+\fBpsbasemap\fP  \fB\-R\fP 0/360/-70/70 \fB\-Joc\fP 0/0/90/30/0.064\fBc\fPd \fB\-B\fP 30\fBg\fP30\fB:.\fP"Oblique Mercator"\fB:\fP > oblmerc.ps
 .SS Transverse Mercator [conformal]
 A regular Transverse Mercator basemap for some region may look like
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP69:30/71:45/-17/-15:15 \fB\-Jt\fP70/1:1000000 \fB\-B\fP15\fBm\fP\fB:.\fP"Survey area"\fB:\fP \fB\-P\fP > transmerc.ps
+\fBpsbasemap\fP \fB\-R\fP 69:30/71:45/-17/-15:15 \fB\-Jt\fP 70/1:1000000 \fB\-B\fP 15\fBm\fP\fB:.\fP"Survey area"\fB:\fP \fB\-P\fP > transmerc.ps
 .SS Equidistant Cylindrical Projection
 This projection only needs the central meridian and scale.  A 25 cm wide global basemap centered on the 130E
 meridian is made by
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP-50/310/-90/90 \fB\-JQ\fP130/25\fBc\fP \fB\-B\fP30\fBg\fP30\fB:.\fP"Equidistant Cylindrical"\fB:\fP > cyl_eqdist.ps
+\fBpsbasemap\fP \fB\-R\fP-50/310/-90/90 \fB\-JQ\fP 130/25\fBc\fP \fB\-B\fP 30\fBg\fP30\fB:.\fP"Equidistant Cylindrical"\fB:\fP > cyl_eqdist.ps
 .SS Universal Transverse Mercator [conformal]
 To use this projection you must know the UTM zone number, which defines the central meridian.  A UTM
 basemap for Indo-China can be plotted as
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP95/5/108/20\fBr \-Ju\fP46/1:10000000 \fB\-B\fP3\fBg\fP3\fB:.\fPUTM\fB:\fP > utm.ps
+\fBpsbasemap\fP \fB\-R\fP 95/5/108/20\fBr \-Ju\fP46/1:10000000 \fB\-B\fP 3\fBg\fP3\fB:.\fPUTM\fB:\fP > utm.ps
 .SS Cylindrical Equal-Area
 First select which of the cylindrical equal-area projections you want by deciding on the standard parallel.
 Here we will use 45 degrees which gives the Gall-Peters projection.  A 9 inch wide global basemap centered on the Pacific
 is made by
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JY\fP180/45/9\fBi\fP \fB\-B\fP30\fBg\fP30\fB:.\fPGall-Peters\fB:\fP > gall-peters.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JY\fP 180/45/9\fBi\fP \fB\-B\fP 30\fBg\fP30\fB:.\fPGall-Peters\fB:\fP > gall-peters.ps
 .SH CONIC MAP PROJECTIONS
 .SS Albers [equal-area]
 A basemap for middle Europe may be created by
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP0/90/25/55 \fB\-Jb\fP45/20/32/45/0.25\fBc\fP \fB\-B\fP10\fBg\fP10\fB:.\fP"Albers Equal-area"\fB:\fP > albers.ps
+\fBpsbasemap\fP \fB\-R\fP 0/90/25/55 \fB\-Jb\fP 45/20/32/45/0.25\fBc\fP \fB\-B\fP 10\fBg\fP10\fB:.\fP"Albers Equal-area"\fB:\fP > albers.ps
 .SS Lambert [conformal]
 Another basemap for middle Europe may be created by
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP0/90/25/55 \fB\-Jl\fP45/20/32/45/0.1\fBi\fP \fB\-B\fP10\fBg\fP10\fB:.\fP"Lambert Conformal Conic"\fB:\fP > lambertc.ps
+\fBpsbasemap\fP \fB\-R\fP 0/90/25/55 \fB\-Jl\fP 45/20/32/45/0.1\fBi\fP \fB\-B\fP 10\fBg\fP10\fB:.\fP"Lambert Conformal Conic"\fB:\fP > lambertc.ps
 .SS Equidistant
 Yet another basemap of width 6 inch for middle Europe may be created by
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP0/90/25/55 \fB\-JD\fP45/20/32/45/6\fBi\fP \fB\-B\fP10\fBg\fP10\fB:.\fP"Equidistant conic"\fB:\fP > econic.ps
+\fBpsbasemap\fP \fB\-R\fP 0/90/25/55 \fB\-JD\fP 45/20/32/45/6\fBi\fP \fB\-B\fP 10\fBg\fP10\fB:.\fP"Equidistant conic"\fB:\fP > econic.ps
 .SS Polyconic
 A basemap for north America may be created by
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP-180/-20/0/90 \fB\-JPoly\fP/4\fBi\fP \fB\-B\fP30\fBg\fP10/10\fBg\fP10\fB:.\fP"Polyconic"\fB:\fP > polyconic.ps
+\fBpsbasemap\fP \fB\-R\fP-180/-20/0/90 \fB\-JPoly\fP/4\fBi\fP \fB\-B\fP 30\fBg\fP10/10\fBg\fP10\fB:.\fP"Polyconic"\fB:\fP > polyconic.ps
 .SH AZIMUTHAL MAP PROJECTIONS
 .SS Lambert [equal-area]
-A 15-cm-wide global view of the world from the vantage point -80/-30 will give the following basemap:
+A 15 -cm-wide global view of the world from the vantage point -80/-30 will give the following basemap:
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JA\fP-80/-30/15\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"Lambert Azimuthal"\fB:\fP > lamberta.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JA\fP-80/-30/15\fBc\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fP"Lambert Azimuthal"\fB:\fP > lamberta.ps
 .br
 .sp
 Follow the instructions for stereographic projection if you want to impose rectangular
 boundaries on the azimuthal equal-area map but substitute \fB\-Ja\fP for \fB\-Js\fP.
 .SS Equidistant
-A 15-cm-wide global map in which distances from the center (here 125/10) to any point is true can be obtained by:
+A 15 -cm-wide global map in which distances from the center (here 125/10) to any point is true can be obtained by:
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JE\fP125/10/15\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fPEquidistant\fB:\fP > equi.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JE\fP 125/10/15\fBc\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fPEquidistant\fB:\fP > equi.ps
 .SS Gnomonic
 A view of the world from the vantage point -100/40 out to a horizon of 60 degrees from the center can be made using
 the Gnomonic projection:
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JF\fP-100/40/60/6\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fPGnomonic\fB:\fP > gnomonic.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JF\fP-100/40/60/6\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fPGnomonic\fB:\fP > gnomonic.ps
 .SS Orthographic
 A global perspective (from infinite distance) view of the world from the vantage point 125/10 will give
-the following 6-inch-wide basemap:
+the following 6 -inch-wide basemap:
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JG\fP125/10/6\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fPOrthographic\fB:\fP > ortho.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JG\fP 125/10/6\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fPOrthographic\fB:\fP > ortho.ps
 .SS General Perspective
 The \fB\-JG\fP option can be used in a more generalized form, specifying altitude above the surface,
 width and height of the view point, and twist and tilt.
 A view from 160 km above -74/41.5 with a tilt of 55 and azimuth of 210 degrees, and limiting the
-viewpoint to 30 degrees width and height will product a 6-inch-wide basemap:
+viewpoint to 30 degrees width and height will product a 6 -inch-wide basemap:
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JG\fP-74/41.5/160/210/55/30/30/6\fBi\fP \fB\-B\fP5\fBg\fP1/5\fBg\fP1\fB:.\fP"General Perspective"\fB:\fP > genper.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JG\fP-74/41.5/160/210/55/30/30/6\fBi\fP \fB\-B\fP 5\fBg\fP1/5\fBg\fP1\fB:.\fP"General Perspective"\fB:\fP > genper.ps
 .SS Stereographic [conformal]
 To make a polar stereographic projection basemap with radius = 12 cm to \-60 degree latitude, with plot title
 "Salinity measurements", using 5 degrees annotation/tick interval and 1 degree gridlines, run
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP-45/45/-90/-60 \fB\-Js\fP0/-90/12\fBc\fP/-60 \fB\-B\fP5\fBg\fP5\fB:.\fP"Salinity measurements"\fB:\fP > stereo1.ps
+\fBpsbasemap\fP \fB\-R\fP-45/45/-90/-60 \fB\-Js\fP 0/-90/12\fBc\fP/-60 \fB\-B\fP 5\fBg\fP5\fB:.\fP"Salinity measurements"\fB:\fP > stereo1.ps
 .br
 .sp
-To make a 12-cm-wide stereographic basemap for Australia from an arbitrary view point (not the poles), and use a
+To make a 12 -cm-wide stereographic basemap for Australia from an arbitrary view point (not the poles), and use a
 rectangular boundary, we must give the pole for the new projection and use the \fB\-R\fP option to
 indicate the lower left and upper right corners (in lon/lat) that will define our rectangle.  We
 choose a pole at 130/-30 and use 100/-45 and 160/-5 as our corners.  The command becomes
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP100/-45/160/-5\fBfP \fB\-JS\fP130/-30/12\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"General Stereographic View"\fB:\fP > stereo2.ps
+\fBpsbasemap\fP \fB\-R\fP 100/-45/160/-5\fBfP \fB\-JS\fP 130/-30/12\fBc\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fP"General Stereographic View"\fB:\fP > stereo2.ps
 .SH MISCELLANEOUS MAP PROJECTIONS
 .SS Hammer [equal-area]
 The Hammer projection is mostly used for global maps and thus the spherical form is used.
 To get a world map centered on Greenwich at a scale of 1:200000000, use
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rd\fP \fB\-Jh\fP0/1:200000000 \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fPHammer\fB:\fP > hammer.ps
+\fBpsbasemap\fP \fB\-Rd\fP \fB\-Jh\fP 0/1:200000000 \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fPHammer\fB:\fP > hammer.ps
 .SS Sinusoidal [equal-area]
 To make a sinusoidal world map centered on Greenwich, with a scale along the equator of 0.02 inch/degree, use
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rd\fP \fB\-Ji\fP0/0.02\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fPSinusoidal\fB:\fP > sinus1.ps
+\fBpsbasemap\fP \fB\-Rd\fP \fB\-Ji\fP 0/0.02\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fPSinusoidal\fB:\fP > sinus1.ps
 .br
 .sp
 To make an interrupted sinusoidal world map with breaks at 160W, 20W, and 60E, with a scale along the equator of 0.02 inch/degree, run the following sequence of commands:
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP-160/-20/-90/90 \fB\-Ji\fP-90/0.02\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fBWesn\fP \fB\-K\fP > sinus_i.ps
+\fBpsbasemap\fP \fB\-R\fP-160/-20/-90/90 \fB\-Ji\fP-90/0.02\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fBWesn\fP \fB\-K\fP > sinus_i.ps
 .br
-\fBpsbasemap\fP \fB\-R\fP-20/60/-90/90 \fB\-Ji\fP20/0.02\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fBwesn\fP \fB\-O\fP \fB\-K\fP \fB\-X\fP2.8\fBi\fP >> sinus_i.ps
+\fBpsbasemap\fP \fB\-R\fP-20/60/-90/90 \fB\-Ji\fP 20/0.02\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fBwesn\fP \fB\-O\fP \fB\-K\fP \fB\-X\fP 2.8\fBi\fP >> sinus_i.ps
 .br
-\fBpsbasemap\fP \fB\-R\fP60/200/-90/90 \fB\-Ji\fP130/0.02\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fBwEsn\fP \fB\-O\fP \fB\-X\fP1.6\fBi\fP >> sinus_i.ps
+\fBpsbasemap\fP \fB\-R\fP 60/200/-90/90 \fB\-Ji\fP 130/0.02\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fBwEsn\fP \fB\-O\fP \fB\-X\fP 1.6\fBi\fP >> sinus_i.ps
 .br
 .SS Eckert IV [equal-area]
 Pseudo-cylindrical projection typically used for global maps only.  Set the central longitude and scale, e.g.,
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-Jkf\fP180/0.064\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"Eckert IV"\fB:\fP > eckert4.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-Jkf\fP 180/0.064\fBc\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fP"Eckert IV"\fB:\fP > eckert4.ps
 .SS Eckert VI [equal-area]
 Another pseudo-cylindrical projection typically used for global maps only.  Set the central longitude and scale, e.g.,
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-Jks\fP180/0.064\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"Eckert VI"\fB:\fP > eckert6.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-Jks\fP 180/0.064\fBc\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fP"Eckert VI"\fB:\fP > eckert6.ps
 .SS Robinson
 Projection designed to make global maps "look right".  Set the central longitude and width, e.g.,
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rd\fP \fB\-JN\fP0/8\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fPRobinson\fB:\fP > robinson.ps
+\fBpsbasemap\fP \fB\-Rd\fP \fB\-JN\fP 0/8\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fPRobinson\fB:\fP > robinson.ps
 .SS Winkel Tripel
 Yet another projection typically used for global maps only.  You can set the central longitude, e.g.,
 .br
 .sp
-\fBpsbasemap\fP \fB\-R\fP90/450/-90/90 \fB\-JR\fP270/25\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"Winkel Tripel"\fB:\fP > winkel.ps
+\fBpsbasemap\fP \fB\-R\fP 90/450/-90/90 \fB\-JR\fP 270/25\fBc\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fP"Winkel Tripel"\fB:\fP > winkel.ps
 .SS Mollweide [equal-area]
 The Mollweide projection is also mostly used for global maps and thus the spherical form is used.
-To get a 25-cm-wide world map centered on the Dateline:
+To get a 25 -cm-wide world map centered on the Dateline:
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JW\fP180/25\fBc\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fPMollweide\fB:\fP > mollweide.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JW\fP 180/25\fBc\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fPMollweide\fB:\fP > mollweide.ps
 .SS Van der Grinten
 The Van der Grinten projection is also mostly used for global maps and thus the spherical form is used.
-To get a 7-inch-wide world map centered on the Dateline:
+To get a 7 -inch-wide world map centered on the Dateline:
 .br
 .sp
-\fBpsbasemap\fP \fB\-Rg\fP \fB\-JV\fP180/7\fBi\fP \fB\-B\fP30\fBg\fP30/15\fBg\fP15\fB:.\fP"Van der Grinten"\fB:\fP > grinten.ps
+\fBpsbasemap\fP \fB\-Rg\fP \fB\-JV\fP 180/7\fBi\fP \fB\-B\fP 30\fBg\fP30/15\fBg\fP15\fB:.\fP"Van der Grinten"\fB:\fP > grinten.ps
 .SH RESTRICTIONS
 For some projections, a spherical earth is implicitly assumed.  A warning will notify the user if \fB\-V\fP
 is set. Also note that plot titles are not plotted if \fB\-E\fP is given.

@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: x2sys.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *      Copyright (c) 1999-2013 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -594,7 +594,7 @@ int x2sys_read_gmtfile (char *fname, double ***data, struct X2SYS_INFO *s, struc
 	else {
 		char name[80];
 		if (!(s->flags & 1)) {	/* Must init gmt file paths */
-			gmtmggpath_init (GMT_SHAREDIR);
+			gmtmggpath_init ();
 			s->flags |= 1;
 		}
 		strncpy (name, fname, (size_t)80);

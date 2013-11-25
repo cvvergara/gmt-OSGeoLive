@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_shore.c 9926 2012-12-20 00:17:04Z pwessel $
+ *	$Id: gmt_shore.c 10047 2013-06-08 18:53:02Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -72,6 +72,7 @@ void GMT_set_levels (char *info, struct GMT_SHORE_SELECT *I)
 	if ((p = strstr (info, "+p"))) {	/* Requested percentage limit on small features */
 		I->fraction = irint (1e6 * 0.01 * atoi (&p[2]));	/* Convert to integer microfraction */
 	}
+	if (info[0] == '+') return;	/* No area, etc, just modifiers that we just processed */
 	n = sscanf (info, "%lf/%d/%d", &I->area, &I->low, &I->high);
 	if (n == 0) {
 		fprintf (stderr, "%s: Error in -A: No area given\n", GMT_program);

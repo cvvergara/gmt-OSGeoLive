@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdlandmask.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: grdlandmask.c 10022 2013-04-20 04:15:51Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -87,6 +87,8 @@ int main (int argc, char **argv)
 	void *New_grdlandmask_Ctrl (), Free_grdlandmask_Ctrl (struct GRDLANDMASK_CTRL *C);
 
 	argc = (int)GMT_begin (argc, argv);
+	GMT_io.out_col_type[0] = GMT_IS_LON;
+	GMT_io.out_col_type[1] = GMT_IS_LAT;
 
 	Ctrl = (struct GRDLANDMASK_CTRL *) New_grdlandmask_Ctrl ();		/* Allocate and initialize defaults in a new control structure */
 
@@ -404,6 +406,7 @@ int main (int argc, char **argv)
 		header.x_max -= 360.0;
 	}
 
+	GMT_io.out_col_type[0] = GMT_IS_LON;	GMT_io.out_col_type[1] = GMT_IS_LAT;	/* Since -Jx1d will say output is Cartesian */
 	GMT_err_fail (GMT_write_grd (Ctrl->G.file, &header, data, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->G.file);
 
 	if (gmtdefs.verbose) fprintf (stderr, "%s: Done!\n", GMT_program);

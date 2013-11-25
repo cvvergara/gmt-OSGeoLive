@@ -46,7 +46,7 @@ ex09/track_d.365.xys ex09/track_d.367.xys ex09/track_d.369.xys ex09/track_d.395.
 ex09/track_d.427.xys ex09/track_d.451.xys ex09/track_d.453.xys ex09/track_d.455.xys ex09/track_d.481.xys ex09/track_d.483.xys \
 ex09/track_d.49.xys ex09/track_d.51.xys ex09/track_d.53.xys ex09/track_d.79.xys ex09/track_d.81.xys
 	cd ex09 ; ./job09.sh
-example_10.ps: ex10/job10.sh ex10/agu2008.d
+example_10.ps: ex10/job10.sh ex10/agu2013.txt
 	cd ex10 ; ./job10.sh
 example_11.ps: ex11/job11.sh ex11/cut-here.dat ex11/rays.dat
 	cd ex11 ; ./job11.sh

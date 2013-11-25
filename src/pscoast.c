@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pscoast.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: pscoast.c 9975 2013-01-10 20:16:44Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -766,8 +766,7 @@ int main (int argc, char **argv)
 			bin_y[2] = bin_y[3] = c.lat_sw + c.bsize;
 			GMT_geo_to_xy (c.lon_sw + 0.5 * c.bsize, c.lat_sw + 0.5 * c.bsize, &x_c, &y_c);
 			dist = hypot (x_c - x_0, y_c - y_0);
-			donut_hell = GMT_non_zero_winding (anti_lon, anti_lat, bin_x, bin_y, 5);
-			if (!donut_hell) donut_hell = (dist > 0.8 * project_info.r);
+			donut_hell = (dist > 0.8 * project_info.r || GMT_non_zero_winding (anti_lon, anti_lat, bin_x, bin_y, 5));
 		}
 
 		for (direction = start_direction; paint_polygons && direction <= stop_direction; direction += 2) {

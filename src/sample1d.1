@@ -1,4 +1,4 @@
-.TH SAMPLE1D 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH SAMPLE1D 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 sample1d \- Resampling of 1-D data sets
 .SH SYNOPSIS
@@ -98,14 +98,14 @@ To resample the file profiles.tdgmb, which contains (time,distance,gravity,magne
 at 1km equidistant intervals using Akima's spline, use\"'
 .br
 .sp
-\fBsample1d\fP profiles.tdgmb \fB\-I\fP1 \fB\-Fa\fP \fB\-T\fP1 > profiles_equi_d.tdgmb
+\fBsample1d\fP profiles.tdgmb \fB\-I\fP 1 \fB\-Fa\fP \fB\-T\fP 1 > profiles_equi_d.tdgmb
 .br
 .sp
 To resample the file depths.dt at positions listed in the file grav_pos.dg, using a cubic spline
 for the interpolation, use
 .br
 .sp
-\fBsample1d\fP depths.dt \fB\-N\fPgrav_pos.dg \fB\-Fc\fP > new_depths.dt
+\fBsample1d\fP depths.dt \fB\-N\fP grav_pos.dg \fB\-Fc\fP > new_depths.dt
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR filter1d (1)

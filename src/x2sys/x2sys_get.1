@@ -1,4 +1,4 @@
-.TH X2SYS_GET 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH X2SYS_GET 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 x2sys_get \- Get track listing from the x2sys track index databases
 .SH SYNOPSIS
@@ -69,21 +69,21 @@ a certain region in the south Pacific, and have at least free air anomalies
 and bathymetry, try
 .br
 .sp
-\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPMGD77 \fB\-R\fP180/240/-60/-30 \fB\-F\fPfaa,depth 
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fP MGD77 \fB\-R\fP 180/240/-60/-30 \fB\-F\fP faa,depth 
 .br
 .sp
 To find all the tracks associated with the tag MGD77 that have depth but not
 twt, try
 .br
 .sp
-\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPMGD77 \fB\-F\fPdepth \fB\-N\fPtwt
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fP MGD77 \fB\-F\fP depth \fB\-N\fP twt
 .br
 .sp
 To find all the pairs associated with the tag MGD77 that might intersect each
 other, but only those pairs which involves tracks in your list new.lis, try
 .br
 .sp
-\fBx2sys_get\fP \fB\-V\fP \fB\-T\fPMGD77 \fB\-L\fPnew.lis > xpairs.lis
+\fBx2sys_get\fP \fB\-V\fP \fB\-T\fP MGD77 \fB\-L\fP new.lis > xpairs.lis
 .SH NOTE
 The tracks that are returned all have the requested data (\fB\-F\fP) within the
 specified region (\fB\-R\fP).  Furthermore, the columns of Y and N for other data types

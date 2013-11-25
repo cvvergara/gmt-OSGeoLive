@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: xyz2grd.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: xyz2grd.c 9987 2013-01-30 21:35:50Z pwessel $
  *
  *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -453,7 +453,7 @@ int main (int argc, char **argv)
 		}
 		else if (Ctrl->E.active) {	/* Read an ESRI Arc Interchange grid format in ASCII */
 			GMT_LONG n_left, j;
-			float value;
+			double value;
 			
 			grd.node_offset = 0;
 			(void)fgets (line, BUFSIZ, fp);
@@ -510,7 +510,7 @@ int main (int argc, char **argv)
 			i = j = 0;
 			fscanf (fp, "%s", line);	GMT_str_tolower (line);
 			if (!strcmp (line, "nodata_value")) {	/* Found the optional nodata word */
-				fscanf (fp, "%f", &value);
+				fscanf (fp, "%lf", &value);
 				if (Ctrl->E.set && !GMT_IS_ZERO (value - Ctrl->E.nodata)) {
 					fprintf (stderr, "%s: Your -E%g overrides the nodata_value of %g found in the ESRI file\n", GMT_program, Ctrl->E.nodata, value);
 				}
@@ -518,13 +518,13 @@ int main (int argc, char **argv)
 					Ctrl->E.nodata = value;
 			}
 			else {	/* Instead got the very first data value */
-				value = (float) atof (line);
-				a[0] = ((double)value == Ctrl->E.nodata) ? GMT_f_NaN : value;
+				value = atof (line);
+				a[0] = (value == Ctrl->E.nodata) ? GMT_f_NaN : (float)value;
 				if (++i == grd.nx) i = 0, j++;
 				n_left--;
 			}
 			/* ESRI grids are scanline oriented (top to bottom) as are GMT grids */
-			while (fscanf (fp, "%f", &value) == 1 && n_left) {
+			while (fscanf (fp, "%lf", &value) == 1 && n_left) {
 				ij = j * grd.nx + i;
 				a[ij] = (value == Ctrl->E.nodata) ? GMT_f_NaN : (float) value;
 				if (++i == grd.nx) i = 0, j++;

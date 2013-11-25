@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77info.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: mgd77info.c 9989 2013-03-04 19:14:06Z pwessel $
  *
  *    Copyright (c) 2004-2013 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -29,7 +29,7 @@ int main (int argc, char **argv)
 	GMT_LONG i, id, rec, argno, col_listing = 3, length, id_col, t_col, x_col, y_col, saved_range, use;
 	GMT_LONG header_flag = 0, n_paths, counter[MGD77_MAX_COLS], agency_listing = 1, quad_no, n_quad;
 	
-	GMT_LONG error = FALSE, greenwich = FALSE, quick_summary = FALSE, dump_raw_header = FALSE;
+	GMT_LONG error = FALSE, quick_summary = FALSE, dump_raw_header = FALSE;
 	GMT_LONG first = TRUE, col_summary = FALSE, read_file, dump_formatted_header = FALSE;
 	GMT_LONG quick_agencies = FALSE, dump_e77_header = FALSE, dump_hist_header = FALSE;
 	GMT_LONG quad[4] = {FALSE, FALSE, FALSE, FALSE};
@@ -318,7 +318,6 @@ int main (int argc, char **argv)
 		ymin = 180.0;
 		ymax = -180.0;
 		memset ((void *)quad, 0, 4*sizeof(GMT_LONG));	/* Set al to FALSE */
-		greenwich = FALSE;
 		memset ((void *) counter, 0, (size_t)(MGD77_MAX_COLS * sizeof (GMT_LONG)));
 	
 		for (i = 0; i < MGD77_MAX_COLS; i++) {
@@ -355,7 +354,6 @@ int main (int argc, char **argv)
 			if (rec > 0) {	/* Need a previous point to calculate distance, speed, and heading */
 				dlon = this_lon - last_lon;
 				if (fabs (dlon) > 180.0) {
-					greenwich = TRUE;
 					dlon = copysign ((360.0 - fabs (dlon)), dlon);
 				}
 				dx = dlon * cosd (0.5 * (this_lat + last_lat));

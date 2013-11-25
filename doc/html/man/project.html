@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:58 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:30 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -494,7 +494,7 @@ points every 10km along a great circle from 10N,50W to
 30N,10W:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>project
-&minus;C</b>-50/10 <b>&minus;E</b>-10/30 <b>&minus;G</b>10
+&minus;C</b>-50/10 <b>&minus;E</b>-10/30 <b>&minus;G</b> 10
 <b>&minus;Q</b> &gt; great_circle_points.xyp</p>
 
 <p style="margin-left:11%; margin-top: 1em">(Note that
@@ -511,7 +511,7 @@ keeping only the data from NE of the profile and within +/-
 <p style="margin-left:11%; margin-top: 1em"><b>project</b>
 c2610.xygmb <b>&minus;C</b>-30/-30 <b>&minus;A</b>-20
 <b>&minus;W</b>-10000/0 <b>&minus;L</b>-500/500
-<b>&minus;F</b>pz <b>&minus;Q</b> &gt;
+<b>&minus;F</b> pz <b>&minus;Q</b> &gt;
 c2610_projected.pgmb</p>
 
 <p style="margin-left:11%; margin-top: 1em">(Note in this
@@ -527,8 +527,8 @@ makes an angle of 20 degrees with the old <i>x</i> axis,
 use:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>project</b>
-mydata.xy <b>&minus;C</b>5/3 <b>&minus;A</b>70
-<b>&minus;F</b>pq &gt; mydata.pq</p>
+mydata.xy <b>&minus;C</b> 5/3 <b>&minus;A</b> 70
+<b>&minus;F</b> pq &gt; mydata.pq</p>
 
 <p style="margin-left:11%; margin-top: 1em">To take data in
 the file pacific.lonlat and transform it into oblique
@@ -538,7 +538,7 @@ through Tahiti, run:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>project</b>
 pacific.lonlat <b>&minus;T</b>-75/68
-<b>&minus;C</b>-149:26/-17:37 <b>&minus;F</b>pq &gt;
+<b>&minus;C</b>-149:26/-17:37 <b>&minus;F</b> pq &gt;
 pacific.pq</p>
 
 <p style="margin-left:11%; margin-top: 1em">Suppose that
@@ -548,9 +548,9 @@ If you run:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b><A HREF="grd2xyz.html">grd2xyz</A></b>
 pacific_topo.grd | <b>project &minus;T</b>-75/68
-<b>&minus;C</b>0/-90 <b>&minus;F</b>xyq | <b>xyz2grd
+<b>&minus;C</b> 0/-90 <b>&minus;F</b> xyq | <b>xyz2grd
 &minus;R</b><i>etc</i> <b>&minus;I</b><i>etc</i>
-<b>&minus;C</b>flow.grd</p>
+<b>&minus;C</b> flow.grd</p>
 
 <p style="margin-left:11%; margin-top: 1em">then flow.grd
 is a file in the same area as pacific_topo.grd, but flow

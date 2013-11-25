@@ -1,4 +1,4 @@
-.TH GRDPROJECT 1 "1 Jan 2013" "GMT 4.5.9" "Generic Mapping Tools"
+.TH GRDPROJECT 1 "5 Nov 2013" "GMT 4.5.11" "Generic Mapping Tools"
 .SH NAME
 grdproject \- Forward and Inverse map transformation of 2-D grid files 
 .SH SYNOPSIS
@@ -190,6 +190,8 @@ the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions mus
 (however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
 You may ask to project only a subset of the grid by specifying a smaller input \fIw/e/s/n\fP region
 [Default is the region given by the grid file].
+Special case for the UTM projection: If \fB\-C\fP and \fB\-I\fP are used and \fB\-R\fP is not given then the region is set to coincide with
+the given UTM zone so as to preserve the full ellipsoidal solution (See RESTRICTIONS for more information).
 .TP
 \fB\-S\fP
 Select the interpolation mode by adding \fBb\fP for B-spline smoothing,
@@ -223,14 +225,14 @@ particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
 To transform the geographical grid dbdb5.grd onto a pixel Mercator grid at 300 dpi, run
 .br
 .sp
-\fBgrdproject\fP dbdb5.grd \fB\-R\fP20/50/12/25 \fB\-Jm\fP0.25\fBi\fP \fB\-E\fP300 \fB\-F\fP
-\fB\-G\fPdbdb5_merc.grd 
+\fBgrdproject\fP dbdb5.grd \fB\-R\fP 20/50/12/25 \fB\-Jm\fP 0.25\fBi\fP \fB\-E\fP 300 \fB\-F\fP
+\fB\-G\fP dbdb5_merc.grd 
 .br
 .sp
 To inversely transform the file topo_tm.grd back onto a geographical grid, use
 .br
 .sp
-\fBgrdproject\fP topo_tm.grd \fB\-R\fP-80/-70/20/40 \fB\-Jt\fP-75/1:500000 \fB\-I\fP \fB\-D\fP5\fBm \-V\fP \fB\-G\fPtopo.grd
+\fBgrdproject\fP topo_tm.grd \fB\-R\fP-80/-70/20/40 \fB\-Jt\fP-75/1:500000 \fB\-I\fP \fB\-D\fP 5\fBm \-V\fP \fB\-G\fP topo.grd
 .br
 .sp
 This assumes, of course, that the coordinates in topo_tm.grd were created with the same projection parameters.
@@ -239,12 +241,22 @@ To inversely transform the file topo_utm.grd (which is in UTM meters) back to a 
 specify a one-to-one mapping with meter as the measure unit:
 .br
 .sp
-\fBgrdproject\fP topo_utm.grd \fB\-R\fP203/205/60/65 \fB\-Ju\fP5/1:1 \fB\-I\fP \fB\-Mm\fP \fB\-G\fPtopo.grd \fB\-V\fP
+\fBgrdproject\fP topo_utm.grd \fB\-R\fP 203/205/60/65 \fB\-Ju\fP 5/1:1 \fB\-I\fP \fB\-Mm\fP \fB\-G\fP topo.grd \fB\-V\fP
 .br
 .SH RESTRICTIONS
 The boundaries of a projected (rectangular) data set will not necessarily give rectangular
 geographical boundaries (Mercator is one exception).  In those cases some nodes may be unconstrained (set to NaN).
 To get a full grid back, your input grid may have to cover a larger area than you are interested in.
+.br
+For some projections, a spherical solution may be used despite the user having
+selected an ellipsoid.  This occurs when the users \fB\-R\fP setting implies a
+region that exceeds the domain in which the ellipsoidal series expansions are
+valid.  These are the conditions: (1) Lambert Conformal Conic (\fB\-JL\fP) and Albers
+Equal-Area (\fB\-JB\fP) will use the spherical solution when the map scale exceeds
+1.0E7.  (2) Transverse Mercator (\fB\-JT\fP) and UTM (\fB\-JU\fP) will will use the
+spherical solution when either the west or east boundary given in \fB\-R\fP is
+more than 10 degrees from the central meridian, and (3) same for Cassini (\fB\-JC\fP)
+but with a limit of only 4 degrees.
 .SH "SEE ALSO"
 .IR GMT (1),
 .IR gmtdefaults (1),

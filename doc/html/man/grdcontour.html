@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Wed Jan  2 08:39:45 2013 -->
+<!-- CreationDate: Tue Nov  5 09:45:23 2013 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -422,8 +422,8 @@ font size in points [Default is 9].</p></td>
 <p style="margin-top: 1em" valign="top">Appends <i>unit</i>
 to all line labels. If <i>unit</i> starts with a leading
 hyphen (-) then there will be no space between label value
-and the unit. If no <i>unit</i> is appended we use the units
-listed in the grid file. [Default is no unit].</p></td>
+and the unit. If <i>z</i> is appended we use the unit
+specified in the grid file. [Default is no unit].</p></td>
 <tr valign="top" align="left">
 <td width="22%"></td>
 <td width="9%">
@@ -861,9 +861,9 @@ center of the page based on current page size.</p></td>
 <i>shift</i> from the data and multiply the results by
 <i>factor</i> before contouring starts [1/0]. (Numbers in
 <b>&minus;A</b>, <b>&minus;C</b>, <b>&minus;L</b> refer to
-values after this scaling has occurred.) Append <b>p</b> to
-indicate that this grid file contains z-values that are
-periodic in 360 degrees (e.g., phase data, angular
+values after scaling and translation have occurred.) Append
+<b>p</b> to indicate that this grid file contains z-values
+that are periodic in 360 degrees (e.g., phase data, angular
 distributions) and that special precautions must be taken
 when determining 0-contours.</p></td>
 <tr valign="top" align="left">
@@ -1049,9 +1049,9 @@ using 1 degree tickmarks, and draw 30 minute gridlines:</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdcontour</b>
-hawaii_grav.grd <b>&minus;Jm</b>0.5<b>i &minus;C</b>25
-<b>&minus;A</b>50<b>+f</b>10
-<b>&minus;B</b>1<b>g</b>30<b>m</b> &gt; hawaii_grav.ps</p>
+hawaii_grav.grd <b>&minus;Jm</b> 0.5<b>i &minus;C</b> 25
+<b>&minus;A</b> 50<b>+s</b>10 <b>&minus;B</b>
+1<b>g</b>30<b>m</b> &gt; hawaii_grav.ps</p>
 
 <p style="margin-left:11%; margin-top: 1em">To contour the
 file image.grd using the levels in the file cont.d on a
@@ -1063,11 +1063,10 @@ rest, and send the output to the default printer:</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>grdcontour</b>
-image.grd <b>&minus;Jx</b>0.1<b>c</b>/50.0<b>c
-&minus;C</b>cont.d <b>&minus;S</b>4
-<b>&minus;B</b>20/0.1:.&quot;RMS Misfit&quot;:
-<b>&minus;Wa</b>thick,red <b>&minus;Wc</b>thinnest,blue,- |
-lp</p>
+image.grd <b>&minus;Jx</b> 0.1<b>c</b>/50.0<b>c &minus;C</b>
+cont.d <b>&minus;S</b> 4 <b>&minus;B</b> 20/0.1:.&quot;RMS
+Misfit&quot;: <b>&minus;Wa</b> thick,red <b>&minus;Wc</b>
+thinnest,blue,- | lp</p>
 
 <p style="margin-left:11%; margin-top: 1em">The labeling of
 local highs and lows may plot outside the innermost contour
