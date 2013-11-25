@@ -1,7 +1,11 @@
 gmt (4.5.11-1) unstable; urgency=low
 
   * New upstream release for the 4.x series.
-  * Added patch gmt_io.c to avoid nested comments use while -pedantic mode is enabled.
+  * Added patch gmt_io.c and gmt_proj.c to avoid nested comments use 
+    while -pedantic mode is enabled.
+  * Added patch c++comments to remove C++ style comments in pure C code. This
+    is currently deprecated and should be avoided when strict option 
+    like -pedantic are used.
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 25 Nov 2013 15:57:54 +0100
 

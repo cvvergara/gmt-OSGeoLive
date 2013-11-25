@@ -4,3 +4,4 @@ gmt_proj.c
 kfreebsd
 bashism
 eglibc-2.17.patch
+c++comments
