@@ -1,0 +1,352 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>grd2xyz &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="up" title="GR" href="GR.html" />
+    <link rel="next" title="grdblend" href="grdblend.html" />
+    <link rel="prev" title="grd2rgb" href="grd2rgb.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="grdblend.html" title="grdblend"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="grd2rgb.html" title="grd2rgb"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="grd2xyz">
+<span id="index-0"></span><h1>grd2xyz<a class="headerlink" href="#grd2xyz" title="Permalink to this headline">¶</a></h1>
+<p>grd2xyz - Convert grid file to data table</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>grd2xyz</strong> <em>grid</em> [ <strong>-C</strong>[<strong>f</strong>|<strong>i</strong>] ] [ <strong>-N</strong>[<strong>i</strong>]<em>nodata</em> ]
+[ <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] ]
+[ <strong>-V</strong>[<em>level</em>] ]
+[ <strong>-W</strong>[<em>weight</em>] ] [ <strong>-Z</strong>[<em>flags</em>] ]
+[ <strong>-bo</strong>[<em>ncols</em>][<em>type</em>][w][<strong>+L</strong>|<strong>+B</strong>] ]
+[ <strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> ]
+[ <strong>-ho</strong>[<em>n</em>] ]
+[ <strong>-o</strong><em>cols</em>[,...] ]
+[ <strong>-s</strong>[<em>cols</em>][<strong>a</strong>|<strong>r</strong>] ]</p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><strong>grd2xyz</strong> reads one or more binary 2-D grid files and writes out
+xyz-triplets in ASCII [or binary] format to standard output. Modify the
+precision of the ASCII output format by editing the
+<a class="reference internal" href="gmt.conf.html#format-float-out"><em>FORMAT_FLOAT_OUT</em></a> parameter in your <a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a> file or use
+<strong>-</strong><strong>-D_FORMAT</strong>=<em>format</em> on the command line, or choose binary
+output using single or double precision storage. As an option you may
+output z-values without the (x,y) coordinates; see <strong>-Z</strong> below.</p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>grid</em></dt>
+<dd>Names of 2-D binary grid files to be converted. (See GRID FILE
+FORMATS below.)</dd>
+</dl>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-C</strong>[<strong>f</strong>|<strong>i</strong>]</dt>
+<dd>Replace the x- and y-coordinates on output with the corresponding
+column and row numbers. These start at 0 (C-style counting); append
+<strong>f</strong> to start at 1 (Fortran-style counting). Alternatively, append
+<strong>i</strong> to write just the two columns <em>index</em> and <em>z</em>, where <em>index</em>
+is the 1-D indexing that GMT uses when referring to grid nodes.</dd>
+<dt><strong>-N</strong>[<strong>i</strong>]<em>nodata</em></dt>
+<dd>Output this z-value where the latter equals NaN [Default writes NaN].
+Alternatively prepend <strong>i</strong> to do the inverse. That is, to replace the
+<em>nodata</em> values in grid with NaN. Useful to use with the <strong>-s</strong> option.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] <a class="reference internal" href="gmt.html#r-full"><em>(more ...)</em></a></dt>
+<dd>Specify the region of interest. Using the <strong>-R</strong> option
+will select a subsection of the grid. If this subsection exceeds the
+boundaries of the grid, only the common region will be output.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
+<dd>Select verbosity level [c].  </dd>
+<dt><strong>-W</strong>[<em>weight</em>]</dt>
+<dd>Write out x,y,z,w, where w is the supplied <em>weight</em> (or 1 if not
+supplied) [Default writes x,y,z only].</dd>
+<dt><strong>-Z</strong>[<em>flags</em>]</dt>
+<dd><p class="first">Write a 1-column ASCII [or binary] table. Output will be organized
+according to the specified ordering convention contained in <em>flags</em>.
+If data should be written by rows, make <em>flags</em> start with
+<strong>T</strong> (op) if first row is y = ymax or
+<strong>B</strong> (ottom) if first row is y = ymin. Then,
+append <strong>L</strong> or <strong>R</strong> to indicate that first element should start at
+left or right end of row. Likewise for column formats: start with
+<strong>L</strong> or <strong>R</strong> to position first column, and then append <strong>T</strong> or
+<strong>B</strong> to position first element in a row. For gridline registered
+grids: If grid is periodic in x but the outcoming data should not
+contain the (redundant) column at x = xmax, append <strong>x</strong>. For grid
+periodic in y, skip writing the redundant row at y = ymax by
+appending <strong>y</strong>. If the byte-order needs to be swapped, append
+<strong>w</strong>. Select one of several data types (all binary except <strong>a</strong>):</p>
+<ul class="simple">
+<li><strong>a</strong> ASCII representation of a single item per record</li>
+<li><strong>c</strong> int8_t, signed 1-byte character</li>
+<li><strong>u</strong> uint8_t, unsigned 1-byte character</li>
+<li><strong>h</strong> int16_t, short 2-byte integer</li>
+<li><strong>H</strong> uint16_t, unsigned short 2-byte integer</li>
+<li><strong>i</strong> int32_t, 4-byte integer</li>
+<li><strong>I</strong> uint32_t, unsigned 4-byte integer</li>
+<li><strong>l</strong> int64_t, long (8-byte) integer</li>
+<li><strong>L</strong> uint64_t, unsigned long (8-byte) integer</li>
+<li><strong>f</strong> 4-byte floating point single precision</li>
+<li><strong>d</strong> 8-byte floating point double precision</li>
+</ul>
+<p class="last">Default format is scanline orientation of ASCII numbers: <strong>-ZTLa</strong>.
+Note that <strong>-Z</strong> only applies to 1-column output.</p>
+</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dd>Select binary output. [Default is 3]. This option
+only applies to xyz output; see <strong>-Z</strong> for z table output.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> <a class="reference internal" href="gmt.html#f-full"><em>(more ...)</em></a></dt>
+<dd>Specify data types of input and/or output columns. See also <strong>TIME
+COORDINATES</strong> below. <strong>-h</strong> Output 1 header record based on
+information in the first grid file header. Ignored if binary output
+is selected. [Default is no header].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-o</strong><em>cols</em>[,...] <a class="reference internal" href="gmt.html#ocols-full"><em>(more ...)</em></a></dt>
+<dd>Select output columns.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-s</strong>[<em>cols</em>][<strong>a</strong>|<strong>r</strong>] <a class="reference internal" href="gmt.html#s-full"><em>(more ...)</em></a></dt>
+<dd>Set handling of NaN records.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-^</strong></dt>
+<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dt><strong>+</strong></dt>
+<dd>Print an extensive usage (help) message, including the explanation of
+any module-specific option (but not the GMT common options), then exits</dd>
+<dt><strong>-?</strong></dt>
+<dd>Print a complete usage (help) message, including the explanation of
+options, then exits.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print GMT version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Print full path to GMT share directory and exit.</dd>
+</dl>
+</div>
+<div class="section" id="ascii-format-precision">
+<h2>Ascii Format Precision<a class="headerlink" href="#ascii-format-precision" title="Permalink to this headline">¶</a></h2>
+<p>The ASCII output formats of numerical data are controlled by parameters
+in your <a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a> file. Longitude and latitude are formatted
+according to <a class="reference internal" href="gmt.conf.html#format-geo-out"><em>FORMAT_GEO_OUT</em></a>, whereas other values are formatted
+according to <a class="reference internal" href="gmt.conf.html#format-float-out"><em>FORMAT_FLOAT_OUT</em></a>. Be aware that the format in effect
+can lead to loss of precision in the output, which can lead to various
+problems downstream. If you find the output is not written with enough
+precision, consider switching to binary output (<strong>-bo</strong> if available) or
+specify more decimals using the <a class="reference internal" href="gmt.conf.html#format-float-out"><em>FORMAT_FLOAT_OUT</em></a> setting.</p>
+</div>
+<div class="section" id="grid-file-formats">
+<h2>Grid File Formats<a class="headerlink" href="#grid-file-formats" title="Permalink to this headline">¶</a></h2>
+<p>By default GMT writes out grid as single precision floats in a
+COARDS-complaint netCDF file format. However, GMT is able to produce
+grid files in many other commonly used grid file formats and also
+facilitates so called &#8220;packing&#8221; of grids, writing out floating point
+data as 1- or 2-byte integers. To specify the precision, scale and
+offset, the user should add the suffix
+<strong>=</strong><em>id</em>[<strong>/</strong><em>scale</em><strong>/</strong><em>offset</em>[<strong>/</strong><em>nan</em>]], where
+<em>id</em> is a two-letter identifier of the grid type and precision, and
+<em>scale</em> and <em>offset</em> are optional scale factor and offset to be applied
+to all grid values, and <em>nan</em> is the value used to indicate missing
+data. When reading grids, the format is generally automatically
+recognized. If not, the same suffix can be added to input grid file
+names. See <a class="reference internal" href="grdreformat.html"><em>grdreformat</em></a> and Section
+<a class="reference internal" href="GMT_Docs.html#grid-file-format"><em>Grid file format specifications</em></a>
+of the GMT Technical Reference and Cookbook for more information.</p>
+<p>When reading a netCDF file that contains multiple grids, GMT will
+read, by default, the first 2-dimensional grid that can find in that
+file. To coax GMT into reading another multi-dimensional variable in
+the grid file, append <strong>?</strong><em>varname</em> to the file name, where <em>varname</em>
+is the name of the variable. Note that you may need to escape the
+special meaning of <strong>?</strong> in your shell program by putting a backslash in
+front of it, or by placing the filename and suffix between quotes or
+double quotes. The <strong>?</strong><em>varname</em> suffix can also be used for output
+grids to specify a variable name different from the default: &#8220;z&#8221;. See
+<a class="reference internal" href="grdreformat.html"><em>grdreformat</em></a> and Section <a class="reference internal" href="GMT_Docs.html#grid-file-format"><em>Grid file format specifications</em></a> of the GMT
+Technical Reference and Cookbook for more information, particularly on
+how to read splices of 3-, 4-, or 5-dimensional grids.</p>
+</div>
+<div class="section" id="time-coordinates">
+<h2>Time Coordinates<a class="headerlink" href="#time-coordinates" title="Permalink to this headline">¶</a></h2>
+<p>Time coordinates in netCDF grids, be it the x, y, or z coordinate, will
+be recognized as such. The variable&#8217;s <strong>unit</strong> attribute is parsed to
+determine the unit and epoch of the time coordinate in the grid. Values
+are then converted to the internal time system specified by
+<a class="reference internal" href="gmt.conf.html#time-unit"><em>TIME_UNIT</em></a> and <a class="reference internal" href="gmt.conf.html#time-epoch"><em>TIME_EPOCH</em></a> in the
+<a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a> file or on the
+command line. The default output is relative time in that time system,
+or absolute time when using the option <strong>-f0T</strong>, <strong>-f1T</strong>, or <strong>-f2T</strong>
+for x, y, or z coordinate, respectively.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>To edit individual values in the 5’ by 5’ hawaii_grv.nc file, dump the .nc to ASCII:</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt grd2xyz hawaii_grv.nc &gt; hawaii_grv.xyz</pre>
+</div>
+</div></blockquote>
+<p>To write a single precision binary file without the x,y positions from
+the file raw_data.nc file, using scanline orientation, run</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt grd2xyz raw_data.nc -ZTLf &gt; hawaii_grv.b</pre>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a>, <a class="reference internal" href="gmt.html"><em>gmt</em></a>,
+<a class="reference internal" href="grdedit.html"><em>grdedit</em></a>, <a class="reference internal" href="grdreformat.html"><em>grdreformat</em></a>,
+<a class="reference internal" href="xyz2grd.html"><em>xyz2grd</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">grd2xyz</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#ascii-format-precision">Ascii Format Precision</a></li>
+<li><a class="reference internal" href="#grid-file-formats">Grid File Formats</a></li>
+<li><a class="reference internal" href="#time-coordinates">Time Coordinates</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="grd2rgb.html"
+                        title="previous chapter">grd2rgb</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="grdblend.html"
+                        title="next chapter">grdblend</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="grdblend.html" title="grdblend"
+             >next</a> </li>
+        <li class="right" >
+          <a href="grd2rgb.html" title="grd2rgb"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" >GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

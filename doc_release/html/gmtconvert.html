@@ -1,0 +1,389 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>gmtconvert &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="up" title="GM" href="GM.html" />
+    <link rel="next" title="gmtdefaults" href="gmtdefaults.html" />
+    <link rel="prev" title="gmtconnect" href="gmtconnect.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="gmtdefaults.html" title="gmtdefaults"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="gmtconnect.html" title="gmtconnect"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="gmtconvert">
+<span id="index-0"></span><h1>gmtconvert<a class="headerlink" href="#gmtconvert" title="Permalink to this headline">¶</a></h1>
+<p>gmtconvert - Convert, Paste, and/or Extract columns from data tables</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>gmtconvert</strong> [ <em>table</em> ] [ <strong>-A</strong> ] [ <strong>-D</strong>[<em>template</em>] ]
+[ <strong>-E</strong>[<strong>f</strong>|<strong>l</strong>|<strong>m</strong><em>stride</em>] ] [ <strong>-L</strong> ]
+[ <strong>-I</strong>[<strong>tsr</strong>] ] [ <strong>-N</strong> ] [ <strong>-Q</strong>[<strong>~</strong>]*selection* ]
+[ <strong>-S</strong>[<strong>~</strong>]<em>&#8220;search string&#8221;</em> |
+<strong>-S</strong>[<strong>~</strong>]/<em>regexp</em>/[<strong>i</strong>] ]
+[ <strong>-T</strong> ]
+[ <strong>-V</strong>[<em>level</em>] ]
+[ <strong>-a</strong><em>col</em>=<em>name</em>[<em>...</em>] ]
+[ <strong>-b</strong>[<strong>i</strong>|<strong>o</strong>][<em>ncol</em>][<strong>type</strong>][w][<strong>+L</strong>|<strong>+B</strong>] ]
+[ <strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> ]
+[ <strong>-g</strong>[<strong>a</strong>]<strong>x</strong>|<strong>y</strong>|<strong>d</strong>|<strong>X</strong>|<strong>Y</strong>|<strong>D</strong>|[<em>col</em>]<strong>z</strong>[+|-]<em>gap</em>[<strong>u</strong>] ]
+[ <strong>-h</strong>[<strong>i</strong>|<strong>o</strong>][<em>n</em>][<strong>+c</strong>][<strong>+d</strong>][<strong>+r</strong><em>remark</em>][<strong>+r</strong><em>title</em>] ]
+[ <strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,...] ]
+[ <strong>-o</strong><em>cols</em>[,...] ]
+[ <strong>-s</strong>[<em>cols</em>][<strong>a</strong>|<strong>r</strong>] ]
+[ <strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] ]</p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><strong>gmtconvert</strong> reads its standard input [or input files] and writes out
+the desired information to standard output. It can do a combination of
+seven tasks: (1) convert between binary and ASCII data tables, (2) paste
+corresponding records from multiple files horizontally into a single
+file, (3) extract a subset of the available columns, (4) only extract
+segments whose header record matches a text pattern search, (5) only
+list segment headers and no data records, (6) extract first and/or last
+data record for each segment, and (7) reverse the order
+of items on output. Input (and hence output) may have multiple
+sub-headers, and ASCII tables may have regular headers as well.</p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<p>None</p>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>table</em></dt>
+<dd>One or more ASCII (or binary, see <strong>-bi</strong>[<em>ncols</em>][<em>type</em>]) data
+table file(s) holding a number of data columns. If no tables are given
+then we read from standard input.  </dd>
+<dt><strong>-A</strong></dt>
+<dd>The records from the input files should be pasted horizontally, not
+appended vertically [Default]. All files must have the same number
+of segments and number of rows per segment. Note for binary input,
+all the files you want to paste must have the same number of columns
+(as set with <strong>-bi</strong>); ascii tables can have different number of columns.</dd>
+<dt><strong>-D</strong>[<em>template</em>]</dt>
+<dd>For multiple segment data, dump each segment to a separate output
+file [Default writes a multiple segment file to stdout]. Append a
+format template for the individual file names; this template
+<strong>must</strong> contain a C format specifier that can format an integer
+argument (the running segment number across all tables); this is
+usually %d but could be %08d which gives leading zeros, etc.
+[Default is gmtconvert_segment_%d.{txt|bin}, depending on
+<strong>-bo</strong>]. Alternatively, give a template with
+two C format specifiers and we will supply the table number and the
+segment number within the table to build the file name.</dd>
+<dt><strong>-E</strong>[<strong>f</strong>|<strong>l</strong>|<strong>m</strong><em>stride</em>]</dt>
+<dd>Only extract the first and last record for each segment of interest
+[Default extracts all records]. Optionally, append <strong>f</strong> or <strong>l</strong> to
+only extract the first or last record of each segment, respectively.
+Alternatively, append <strong>m</strong><em>stride</em> to extract only one out of <em>stride</em> records.</dd>
+<dt><strong>-I</strong></dt>
+<dd>Invert the order of items, i.e., output the items in reverse order,
+starting with the last and ending up with the first item [Default
+keeps original order]. Append up to three items that should be
+reversed: <strong>t</strong> will reverse the order of tables, <strong>s</strong> will reverse
+the order of segments within each table, and <strong>r</strong> will reverse the
+order of records within each segment [Default].</dd>
+<dt><strong>-L</strong></dt>
+<dd>Only output a listing of all segment header records and no data
+records (requires ASCII data).</dd>
+<dt><strong>-N</strong></dt>
+<dd>Do not write records that only contain NaNs in every field [Default writes all records].</dd>
+<dt><strong>-Q</strong>[<strong>~</strong>]*selection*</dt>
+<dd>Only write segments whose number is included in <em>selection</em> and skip
+all others. Cannot be used with <strong>-S</strong>. The <em>selection</em> syntax is
+<em>range*[,*range</em>,...] where each <em>range</em> of items is either a single
+segment <em>number</em>, a range of segment numbers <em>start-stop</em>, or a range with
+stepped increments given via <em>start:step:stop</em>.   A leading <strong>~</strong> will
+invert the selection and write all segments but the ones listed.  Instead
+of a list of ranges, use <strong>+f</strong><em>file</em> to supply a file list with one
+<em>range</em> per line.</dd>
+<dt><strong>-S</strong>[<strong>~</strong>]<em>&#8220;search string&#8221;</em> or <strong>-S</strong>[<strong>~</strong>]/<em>regexp</em>/[<strong>i</strong>]</dt>
+<dd>Only output those segments whose header record contains the
+specified text string. To reverse the search, i.e., to output
+segments whose headers do <em>not</em> contain the specified pattern, use
+<strong>-S~</strong>. Should your pattern happen to start with ~ you need to
+escape this character with a backslash &nbsp;[Default output all
+segments]. Cannot be used with <strong>-Q</strong>. For matching segments based
+on aspatial values (via OGR/GMT format), give the search string as
+<em>varname</em>=<em>value</em> and we will compare <em>value</em> against the value
+of <em>varname</em> for each segment. Note: If the features are polygons
+then a match of a particular polygon perimeter also means that any
+associated polygon holes will also be matched. For matching segment
+headers against extended regular expressions enclose the expression
+in slashes. Append <strong>i</strong> for caseless matching.
+For a list of such patterns, give <strong>+f</strong><em>file</em> with one pattern per line.
+To give a single pattern starting with +f, escape it with a backslash.</dd>
+<dt><strong>-T</strong></dt>
+<dd>Suppress the writing of segment headers on output.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
+<dd>Select verbosity level [c].  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-a</strong><em>col</em>=<em>name</em>[<em>...</em>] <a class="reference internal" href="gmt.html#aspatial-full"><em>(more ...)</em></a></dt>
+<dd>Set aspatial column associations <em>col</em>=<em>name</em>.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-bi</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bi-full"><em>(more ...)</em></a></dt>
+<dd>Select binary input.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dd>Select binary output. [Default is same as input].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> <a class="reference internal" href="gmt.html#f-full"><em>(more ...)</em></a></dt>
+<dd>Specify data types of input and/or output columns.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-g</strong>[<strong>a</strong>]<strong>x</strong>|<strong>y</strong>|<strong>d</strong>|<strong>X</strong>|<strong>Y</strong>|<strong>D</strong>|[<em>col</em>]<strong>z</strong>[+|-]<em>gap</em>[<strong>u</strong>] <a class="reference internal" href="gmt.html#g-full"><em>(more ...)</em></a></dt>
+<dd>Determine data gaps and line breaks.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-h</strong>[<strong>i</strong>|<strong>o</strong>][<em>n</em>][<strong>+c</strong>][<strong>+d</strong>][<strong>+r</strong><em>remark</em>][<strong>+r</strong><em>title</em>] <a class="reference internal" href="gmt.html#h-full"><em>(more ...)</em></a></dt>
+<dd>Skip or produce header record(s).  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
+<dd>Select input columns.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-o</strong><em>cols</em>[,...] <a class="reference internal" href="gmt.html#ocols-full"><em>(more ...)</em></a></dt>
+<dd>Select output columns.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-s</strong>[<em>cols</em>][<strong>a</strong>|<strong>r</strong>] <a class="reference internal" href="gmt.html#s-full"><em>(more ...)</em></a></dt>
+<dd>Set handling of NaN records.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] <a class="reference internal" href="gmt.html#colon-full"><em>(more ...)</em></a></dt>
+<dd>Swap 1st and 2nd column on input and/or output.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-^</strong></dt>
+<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dt><strong>+</strong></dt>
+<dd>Print an extensive usage (help) message, including the explanation of
+any module-specific option (but not the GMT common options), then exits</dd>
+<dt><strong>-?</strong></dt>
+<dd>Print a complete usage (help) message, including the explanation of
+options, then exits.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print GMT version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Print full path to GMT share directory and exit.</dd>
+</dl>
+</div>
+<div class="section" id="ascii-format-precision">
+<h2>Ascii Format Precision<a class="headerlink" href="#ascii-format-precision" title="Permalink to this headline">¶</a></h2>
+<p>The ASCII output formats of numerical data are controlled by parameters
+in your <a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a> file. Longitude and latitude are formatted
+according to <a class="reference internal" href="gmt.conf.html#format-geo-out"><em>FORMAT_GEO_OUT</em></a>, whereas other values are formatted
+according to <a class="reference internal" href="gmt.conf.html#format-float-out"><em>FORMAT_FLOAT_OUT</em></a>. Be aware that the format in effect
+can lead to loss of precision in the output, which can lead to various
+problems downstream. If you find the output is not written with enough
+precision, consider switching to binary output (<strong>-bo</strong> if available) or
+specify more decimals using the <a class="reference internal" href="gmt.conf.html#format-float-out"><em>FORMAT_FLOAT_OUT</em></a> setting.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>To convert the binary file test.b (single precision) with 4 columns to ASCII:</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert test.b -bi4f &gt; test.dat</pre>
+</div>
+</div></blockquote>
+<p>To convert the multiple segment ASCII table test.d to a double precision binary file:</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert test.d -bo &gt; test.b</pre>
+</div>
+</div></blockquote>
+<p>You have an ASCII table with 6 columns and you want to plot column 5 versus column 0. Try</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert table.d -o5,0 | psxy ...</pre>
+</div>
+</div></blockquote>
+<p>If the file instead is the binary file results.b which has 9
+single-precision values per record, we extract the last column and
+columns 4-6 and write ASCII with the command</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert results.b -o8,4-6 -bi9s | psxy ...</pre>
+</div>
+</div></blockquote>
+<p>You want to plot the 2nd column of a 2-column file left.d versus the
+first column of a file right.d:</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert left.d right.d -A -o1,2 | psxy ...</pre>
+</div>
+</div></blockquote>
+<p>To extract all segments in the file big_file.d whose headers contain
+the string &#8220;RIDGE AXIS&#8221;, try</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert big_file.d -S"RIDGE AXIS" &gt; subset.d</pre>
+</div>
+</div></blockquote>
+<p>To invert the selection of segments whose headers begin with &#8220;profile &#8221;
+followed by an integer number and any letter between &#8220;g&#8221; and &#8220;l&#8221;, try</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert -S~"/^profile [0-9]+[g-l]$/"</pre>
+</div>
+</div></blockquote>
+<p>To reverse the order of segments in a file without reversing the order
+of records within each segment, try</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert lots_of_segments.txt -Is &gt; last_segment_first.txt</pre>
+</div>
+</div></blockquote>
+<p>To extract segments 20 to 40 in steps of 2, plus segment 0 in a file, try</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt gmtconvert lots_of_segments.txt -Q0,20:2:40 &gt; my_segments.txt</pre>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmt.html"><em>gmt</em></a>,
+<a class="reference internal" href="gmtinfo.html"><em>gmtinfo</em></a>,
+<a class="reference internal" href="gmtselect.html"><em>gmtselect</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">gmtconvert</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#ascii-format-precision">Ascii Format Precision</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gmtconnect.html"
+                        title="previous chapter">gmtconnect</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gmtdefaults.html"
+                        title="next chapter">gmtdefaults</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="gmtdefaults.html" title="gmtdefaults"
+             >next</a> </li>
+        <li class="right" >
+          <a href="gmtconnect.html" title="gmtconnect"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="GM.html" >GM</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

@@ -1,0 +1,12 @@
+# $Id: legend.txt 12417 2013-10-31 21:03:41Z remko $
+# Legend for example 10
+C red
+L - - L dying
+C yellow
+L - - L in trouble
+C darkgreen
+L - - L vigorous
+C blue
+L - - L developing
+C purple
+L - - L institutional

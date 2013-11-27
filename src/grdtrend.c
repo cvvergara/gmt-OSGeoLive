@@ -1,395 +1,232 @@
 /*--------------------------------------------------------------------
- *	$Id: grdtrend.c 10089 2013-09-18 20:58:22Z pwessel $
+ *	$Id: grdtrend.c 12407 2013-10-30 16:46:27Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
-/* grdtrend <input.grd> -N[r]<n_model> [-T<trend.grd>] [-V]
-	[-W<weight.grd] [-D<differences.grd]
+/* 
+ * Brief synopsis: Reads a grid file and fits a trend surface.  Trend surface
+ * is defined by:
+ * 
+ * m1 +m2*x + m3*y + m4*xy + m5*x*x + m6*y*y + m7*x*x*x
+ * 	+ m8*x*x*y + m9*x*y*y + m10*y*y*y.
+ * 
+ * n_model is set by the user to be an integer in [1,10]
+ * which sets the number of model coefficients to fit.
+ * 
+ * Author:		W. H. F. Smith
+ * Date:		1 JAN, 2010
+ * Version:	5 API
+ * 
+ * Explanations:
+ * 
+ * Thus:
+ * n_model = 1 gives the mean value of the surface,
+ * n_model = 3 fits a plane,
+ * n_model = 4 fits a bilinear surface,
+ * n_model = 6 fits a biquadratic,
+ * n_model = 10 fits a bicubic surface.
+ * 
+ * The user may write out grid files of the fitted surface
+ * [-T<trend.grd>] and / or of the residuals (input data
+ * minus fitted trend) [-D<differences.grd] and / or of
+ * the weights used in iterative fitting [-W<weight.grd].
+ * This last option applies only when the surface is fit
+ * iteratively [-N<n>[r]].
+ * 
+ * A robust fit may be achieved by iterative fitting of
+ * a weighted least squares problem, where the weights
+ * are set according to a scale length based on the 
+ * Median absolute deviation (MAD: Huber, 1982).  The
+ * -N<n>r option achieves this.
+ * 
+ * Calls:		uses the QR solution of the Normal
+ * 		equations furnished by Wm. Menke's
+ * 		C routine "gauss".  We gratefully
+ * 		acknowledge this contribution, now
+ * 		as GMT_gauss in gmt_vector.c
+ * 
+ * Remarks:
+ * 
+ * We adopt a translation and scaling of the x,y coordinates.
+ * We choose x,y such that they are in [-1,1] over the range
+ * of the grid file.  If the problem is unweighted, all input
+ * values are filled (no "holes" or NaNs in the input grid file),
+ * and n_model <= 4 (bilinear or simpler), then the normal
+ * equations matrix (G'G in Menke notation) is diagonal under
+ * this change of coordinates, and the solution is trivial.
+ * In this case, it would be dangerous to try to accumulate
+ * the sums which are the elements of the normal equations;
+ * while they analytically cancel to zero, the addition errors
+ * would likely prevent this.  Therefore we have written a
+ * routine, grd_trivial_model(), to handle this case.
+ * 
+ * If the problem is more complex than the above trivial case,
+ * (missing values, weighted problem, or n_model > 4), then
+ * G'G is not trivial and we just naively accumulate sums in
+ * the G'G matrix.  We hope that the changed coordinates in
+ * [-1,1] will help the accuracy of the problem.  We also use
+ * Legendre polynomials in this case so that the matrix elements
+ * are conveniently sized near 0 or 1.
+ */
 
-Reads a grid file and fits a trend surface.  Trend surface
-is defined by:
+#define THIS_MODULE_NAME	"grdtrend"
+#define THIS_MODULE_LIB		"core"
+#define THIS_MODULE_PURPOSE	"Fit trend surface to grids and compute residuals"
 
-m1 +m2*x + m3*y + m4*xy + m5*x*x + m6*y*y + m7*x*x*x
-	+ m8*x*x*y + m9*x*y*y + m10*y*y*y.
+#include "gmt_dev.h"
 
-n_model is set by the user to be an integer in [1,10]
-which sets the number of model coefficients to fit.
-Thus:
-n_model = 1 gives the mean value of the surface,
-n_model = 3 fits a plane,
-n_model = 4 fits a bilinear surface,
-n_model = 6 fits a biquadratic,
-n_model = 10 fits a bicubic surface.
-
-The user may write out grid files of the fitted surface
-[-T<trend.grd>] and / or of the residuals (input data
-minus fitted trend) [-D<differences.grd] and / or of
-the weights used in iterative fitting [-W<weight.grd].
-This last option applies only when the surface is fit
-iteratively [-N<n>[r]].
-
-A robust fit may be achieved by iterative fitting of
-a weighted least squares problem, where the weights
-are set according to a scale length based on the 
-Median absolute deviation (MAD: Huber, 1982).  The
--N<n>r option achieves this.
-
-Author:		W. H. F. Smith
-Date:		21 May, 1991.
-Version:	4
-Calls:		uses the QR solution of the Normal
-		equations furnished by Wm. Menke's
-		C routine "gauss".  We gratefully
-		acknowledge this contribution, now
-		as GMT_gauss in gmt_vector.c
-Revised:	12-JUN-1998 PW, for GMT 3.1
-
-Remarks:
-
-We adopt a translation and scaling of the x,y coordinates.
-We choose x,y such that they are in [-1,1] over the range
-of the grid file.  If the problem is unweighted, all input
-values are filled (no "holes" or NaNs in the input grid file),
-and n_model <= 4 (bilinear or simpler), then the normal
-equations matrix (G'G in Menke notation) is diagonal under
-this change of coordinates, and the solution is trivial.
-In this case, it would be dangerous to try to accumulate
-the sums which are the elements of the normal equations;
-while they analytically cancel to zero, the addition errors
-would likely prevent this.  Therefore we have written a
-routine, grd_trivial_model(), to handle this case.
-
-If the problem is more complex than the above trivial case,
-(missing values, weighted problem, or n_model > 4), then
-G'G is not trivial and we just naively accumulate sums in
-the G'G matrix.  We hope that the changed coordinates in
-[-1,1] will help the accuracy of the problem.  We also use
-Legendre polynomials in this case so that the matrix elements
-are conveniently sized near 0 or 1.
-
-*/
-
-#include "gmt.h"
+#define GMT_PROG_OPTIONS "-RV"
 
 struct GRDTREND_CTRL {	/* All control options for this program (except common args) */
-	/* ctive is TRUE if the option has been activated */
+	struct In {
+		bool active;
+		char *file;
+	} In;
 	struct D {	/* -D<diffgrid> */
-		GMT_LONG active;
+		bool active;
 		char *file;
 	} D;
 	struct N {	/* -N[r]<n_model> */
-		GMT_LONG active;
-		GMT_LONG robust;
-		GMT_LONG value;
+		bool active;
+		bool robust;
+		unsigned int value;
 	} N;
 	struct T {	/* -T<trend.grd> */
-		GMT_LONG active;
+		bool active;
 		char *file;
 	} T;
 	struct W {	/* -W<weight.grd> */
-		GMT_LONG active;
+		bool active;
 		char *file;
 	} W;
 };
 
-int main(int argc, char **argv)
-{
-	GMT_LONG	error = FALSE, trivial, weighted;
-
-	char	*i_filename = NULL, format[BUFSIZ];
-
-	GMT_LONG	j, k, ierror = 0, iterations;
-	GMT_LONG	i, nxy;
-
-	float	*data = NULL;		/* Pointer for array from input grid file  */
-	float	*trend = NULL;		/* Pointer for array containing fitted surface  */
-	float	*resid = NULL;		/* Pointer for array containing residual surface  */
-	float	*weight = VNULL;/* Pointer for array containing data weights  */
-
-	double	chisq, old_chisq, zero_test = 1.0e-08, scale = 1.0;
-	double	*xval = NULL;		/* Pointer for array of change of variable:  x[i]  */
-	double	*yval = NULL;		/* Pointer for array of change of variable:  y[j]  */
-	double	*gtg = NULL;		/* Pointer for array for matrix G'G normal equations  */
-	double	*gtd = NULL;		/* Pointer for array for vector G'd normal equations  */
-	double	*old = NULL;		/* Pointer for array for old model, used for robust sol'n  */
-	double	*pstuff = NULL;	/* Pointer for array for Legendre polynomials of x[i],y[j]  */
-
-	struct GRD_HEADER head_d, head_w;
-	struct GRDTREND_CTRL *Ctrl = NULL;
-
-	void	set_up_vals(double *val, GMT_LONG nval, double vmin, double vmax, double dv, GMT_LONG pixel_reg);		/* Store x[i], y[j] once for all to save time  */
-	void	grd_trivial_model(float *data, GMT_LONG nx, GMT_LONG ny, double *xval, double *yval, double *gtd, GMT_LONG n_model);	/* Fit trivial models.  See Remarks above.  */
-	void	load_pstuff(double *pstuff, GMT_LONG n_model, double x, double y, GMT_LONG newx, GMT_LONG newy);		/* Compute Legendre polynomials of x[i],y[j] as needed  */
-	void	compute_trend(float *trend, GMT_LONG nx, GMT_LONG ny, double *xval, double *yval, double *gtd, GMT_LONG n_model, double *pstuff);	/* Find trend from a model  */
-	void	compute_resid(float *data, float *trend, float *resid, GMT_LONG nxy);	/* Find residuals from a trend  */
-	void	compute_chisq(float *resid, float *weight, GMT_LONG nxy, double *chisq, double scale);	/* Find Chi-Squared from weighted residuals  */
-	void	compute_robust_weight(float *resid, float *weight, GMT_LONG nxy, double *scale);	/* Find weights from residuals  */
-	void	write_model_parameters(double *gtd, GMT_LONG n_model);	/* Do reports if gmtdefs.verbose == TRUE  */
-	void	load_gtg_and_gtd(float *data, GMT_LONG nx, GMT_LONG ny, double *xval, double *yval, double *pstuff, double *gtg, double *gtd, GMT_LONG n_model, float *weight, GMT_LONG weighted);		/* Fill normal equations matrices  */
-	void	*New_grdtrend_Ctrl (), Free_grdtrend_Ctrl (struct GRDTREND_CTRL *C);
-
-/* Execution begins here with loop over arguments:  */
-
-	argc = (int)GMT_begin (argc, argv);
-
-	Ctrl = (struct GRDTREND_CTRL *) New_grdtrend_Ctrl ();		/* Allocate and initialize defaults in a new control structure */
-
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
-
-				/* Common parameters */
-
-				case 'V':
-				case '\0':
-					error += GMT_parse_common_options (argv[i], 0, 0, 0, 0);
-					break;
-
-				/* Supplemental parameters */
-
-				case 'D':
-					Ctrl->D.active = TRUE;
-					if (argv[i][2])
-						Ctrl->D.file = strdup (&argv[i][2]);
-					else {
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -D option:  Must specify file name\n", GMT_program);
-						error = TRUE;
-					}
-					break;
-				case 'N':
-					/* Must check for both -N[r]<n_model> and -N<n_model>[r] due to confusion */
-					Ctrl->N.active = TRUE;
-					if (strchr (argv[i], 'r')) Ctrl->N.robust = TRUE;
-					j = (argv[i][2] == 'r') ? 3 : 2;
-					if (argv[i][j]) Ctrl->N.value = atoi(&argv[i][j]);
-					break;
-				case 'T':
-					Ctrl->T.active = TRUE;
-					if (argv[i][2])
-						Ctrl->T.file = strdup (&argv[i][2]);
-					else {
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -T option:  Must specify file name\n", GMT_program);
-						error = TRUE;
-					}
-					break;
-				case 'W':
-					Ctrl->W.active = TRUE;
-					if (argv[i][2])
-						Ctrl->W.file = strdup (&argv[i][2]);
-					else {
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -W option:  Must specify file name\n", GMT_program);
-						error = TRUE;
-					}
-					/* OK if this file doesn't exist:  */
-					break;
-				default:
-					error = TRUE;
-					GMT_default_error (argv[i][1]);
-					break;
-			}
-		}
-		else
-			i_filename = argv[i];
-	}
-
-	if (argc == 1 || GMT_give_synopsis_and_exit) {
-		fprintf (stderr, "grdtrend %s - Fit trend surface to gridded data\n\n", GMT_VERSION);
-		fprintf (stderr,"usage:  grdtrend <input.grd> -N<n_model>[r] [-D<diff.grd>]\n");
-		fprintf (stderr,"\t[-T<trend.grd>] [-V] [-W<weight.grd>]\n\n");
-
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-
-		fprintf (stderr,"\t<input.grd> is name of grid file to fit trend to.\n");
-		fprintf(stderr,"\t-N fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3r.\n");
-		fprintf(stderr,"\t   Model parameters order is given as follows:\n");
-		fprintf(stderr,"\t   z = m1 + m2*x + m3*y + m4*x*y + m5*x^2 + m6*y^2 + m7*x^3 + m8*x^2*y + m9*x*y^2 + m10*y^3.\n");
-		fprintf (stderr,"\n\tOPTIONS:\n");
-		fprintf (stderr,"\t-D Supply filename to write grid file of differences (input - trend).\n");
-		fprintf (stderr,"\t-T Supply filename to write grid file of trend.\n");
-		GMT_explain_option ('V');
-		fprintf (stderr,"\t-W Supply filename if you want to [read and] write grid file of weights.\n");
-		fprintf (stderr,"\t   If <weight.grd> can be read at run, and if robust = FALSE, weighted problem will be solved.\n");
-		fprintf (stderr,"\t   If robust = TRUE, weights used for robust fit will be written to <weight.grd>.\n");
-		GMT_explain_option ('.');
-		exit (EXIT_FAILURE);
-	}
-
-	if (!i_filename) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify input file\n", GMT_program);
-		error++;
-	}
-	if (Ctrl->N.value <= 0 || Ctrl->N.value > 10) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR -N option:  Specify 1-10 model parameters\n", GMT_program);
-		error++;
-	}
-
-	if (error) exit (EXIT_FAILURE);
-
-/* End of argument parsing.  */
-
-	weighted = (Ctrl->N.robust || Ctrl->W.active);
-	trivial = (Ctrl->N.value < 5 && !weighted);
-
-/* Read the input file:  */
-
-	GMT_err_fail (GMT_read_grd_info (i_filename, &head_d), i_filename);
-
-	GMT_grd_init (&head_d, argc, argv, TRUE);
-	nxy = GMT_get_nm (head_d.nx, head_d.ny);
-	data = (float *) GMT_memory (VNULL, (size_t)nxy, sizeof (float), GMT_program);
-	GMT_err_fail (GMT_read_grd (i_filename, &head_d, data, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), i_filename);
-
-	/* Check for NaNs:  */
-	i = 0;
-	while (trivial && i < nxy) {
-		if (GMT_is_fnan (data[i])) trivial = FALSE;
-		i++;
-	}
-
-/* End input read section.  */
-
-/* Allocate other required arrays:  */
-
-	trend = (float *) GMT_memory (VNULL, (size_t)nxy, sizeof (float), GMT_program);
-	resid = (float *) GMT_memory (VNULL, (size_t)nxy, sizeof (float), GMT_program);
-	xval = (double *) GMT_memory (VNULL, (size_t)head_d.nx, sizeof (double), GMT_program);
-	yval = (double *) GMT_memory (VNULL, (size_t)head_d.ny, sizeof (double), GMT_program);
-	gtg = (double *) GMT_memory (VNULL, (size_t)(Ctrl->N.value*Ctrl->N.value), sizeof (double), GMT_program);
-	gtd = (double *) GMT_memory (VNULL, (size_t)Ctrl->N.value, sizeof (double), GMT_program);
-	old = (double *) GMT_memory (VNULL, (size_t)Ctrl->N.value, sizeof (double), GMT_program);
-	pstuff = (double *) GMT_memory (VNULL, (size_t)Ctrl->N.value, sizeof (double), GMT_program);
-	pstuff[0] = 1.0; /* This is P0(x) = 1, which is not altered in this program. */
-
-/* If a weight array is needed, get one:  */
-
-	if (weighted) {
-		weight = (float *) GMT_memory (VNULL, (size_t)nxy, sizeof (float), GMT_program);
-		if (!GMT_access (Ctrl->W.file, R_OK)) {	/* We have weights on input  */
-			GMT_grd_init (&head_w, argc, argv, FALSE);
-			GMT_err_fail (GMT_read_grd_info (Ctrl->W.file, &head_w), Ctrl->W.file);
-			if (head_w.nx != head_d.nx || head_w.ny != head_d.ny) {
-				fprintf (stderr,"%s:  Input weight file does not match input data file.  Ignoring.\n", GMT_program);
-				for (i = 0; i < nxy; i++) weight[i] = 1.0;
-			}
-			else
-				GMT_err_fail (GMT_read_grd (Ctrl->W.file, &head_w, weight, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->W.file);
-		}
-		else
-			for (i = 0; i < nxy; i++) weight[i] = 1.0;
-	}
-
-/* End of weight set up.  */
-
-/* Set up xval and yval lookup tables:  */
-
-	set_up_vals(xval, head_d.nx, head_d.x_min, head_d.x_max, head_d.x_inc,
-		 head_d.node_offset);
-	set_up_vals(yval, head_d.ny, head_d.y_min, head_d.y_max, head_d.y_inc,
-		 head_d.node_offset);
-
-/* End of set up of lookup values.  */
-
-/* Do the problem:  */
-
-	if (trivial) {
-		grd_trivial_model(data, head_d.nx, head_d.ny, xval, yval, gtd, Ctrl->N.value);
-		compute_trend(trend, head_d.nx, head_d.ny, xval, yval, gtd, Ctrl->N.value, pstuff);
-		compute_resid(data, trend, resid, nxy);
-	}
-	else {	/* Problem is not trivial  !!  */
-
-		load_gtg_and_gtd(data, head_d.nx, head_d.ny, xval, yval, pstuff, gtg, gtd, Ctrl->N.value, weight, weighted);
-		GMT_gauss (gtg, gtd, Ctrl->N.value, Ctrl->N.value, zero_test, &ierror, 1);
-		if (ierror) {
-			fprintf (stderr,"%s:  Gauss returns error code %ld\n", GMT_program, ierror);
-			exit (EXIT_FAILURE);
-		}
-		compute_trend(trend, head_d.nx, head_d.ny, xval, yval, gtd, Ctrl->N.value, pstuff);
-		compute_resid(data, trend, resid, nxy);
-
-		if (Ctrl->N.robust) {
-			compute_chisq(resid, weight, nxy, &chisq, scale);
-			iterations = 1;
-			sprintf(format, "%%s Robust iteration %%d:  Old Chi Squared:  %s  New Chi Squared %s\n", gmtdefs.d_format, gmtdefs.d_format);
-			do {
-				old_chisq = chisq;
-				for (k = 0; k < Ctrl->N.value; k++) old[k] = gtd[k];
-				compute_robust_weight(resid, weight, nxy, &scale);
-				load_gtg_and_gtd(data, head_d.nx, head_d.ny, xval, yval, pstuff, gtg, gtd, Ctrl->N.value, weight, weighted);
-				GMT_gauss (gtg, gtd, Ctrl->N.value, Ctrl->N.value, zero_test, &ierror, 1);
-				if (ierror) {
-					fprintf (stderr,"%s:  Gauss returns error code %ld\n", GMT_program, ierror);
-					exit (EXIT_FAILURE);
-				}
-				compute_trend(trend, head_d.nx, head_d.ny, xval, yval, gtd, Ctrl->N.value, pstuff);
-				compute_resid(data, trend, resid, nxy);
-				compute_chisq(resid, weight, nxy, &chisq, scale);
-				if (gmtdefs.verbose) fprintf (stderr, format, GMT_program, iterations, old_chisq, chisq);
-				iterations++;
-			} while (old_chisq / chisq > 1.0001);
-
-			/* Get here when new model not significantly better; use old one:  */
-
-			for (k = 0; k < Ctrl->N.value; k++) gtd[k] = old[k];
-			compute_trend(trend, head_d.nx, head_d.ny, xval, yval, gtd, Ctrl->N.value, pstuff);
-			compute_resid(data, trend, resid, nxy);
-		}
-	}
-
-/* End of do the problem section.  */
-
-/* Get here when ready to do output:  */
-
-	if (gmtdefs.verbose) write_model_parameters(gtd, Ctrl->N.value);
-	if (Ctrl->T.file) {
-		strcpy (head_d.title, "trend surface");
-		GMT_err_fail (GMT_write_grd (Ctrl->T.file, &head_d, trend, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->T.file);
-	}
-	if (Ctrl->D.file) {
-		strcpy (head_d.title, "trend residuals");
-		GMT_err_fail (GMT_write_grd (Ctrl->D.file, &head_d, resid, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->D.file);
-	}
-	if (Ctrl->W.file && Ctrl->N.robust) {
-		strcpy (head_d.title, "trend weights");
-		GMT_err_fail (GMT_write_grd (Ctrl->W.file, &head_d, weight, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->W.file);
-	}
-
-/* That's all, folks!  */
-
-	if (weighted) GMT_free ((void *)weight);
-	GMT_free ((void *)pstuff);
-	GMT_free ((void *)gtd);
-	GMT_free ((void *)gtg);
-	GMT_free ((void *)old);
-	GMT_free ((void *)yval);
-	GMT_free ((void *)xval);
-	GMT_free ((void *)resid);
-	GMT_free ((void *)trend);
-	GMT_free ((void *)data);
-
-	Free_grdtrend_Ctrl (Ctrl);	/* Deallocate control structure */
-
-	GMT_end (argc, argv);
-
-	exit (EXIT_SUCCESS);
+void *New_grdtrend_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct GRDTREND_CTRL *C;
+	
+	C = GMT_memory (GMT, NULL, 1, struct GRDTREND_CTRL);
+	
+	/* Initialize values whose defaults are not 0/false/NULL */
+		
+	return (C);
 }
 
-void set_up_vals (double *val, GMT_LONG nval, double vmin, double vmax, double dv, GMT_LONG pixel_reg)
-{
-	GMT_LONG	i;
-	double  v, middle, drange, true_min, true_max;
+void Free_grdtrend_Ctrl (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	if (C->In.file) free (C->In.file);	
+	if (C->D.file) free (C->D.file);	
+	if (C->T.file) free (C->T.file);	
+	if (C->W.file) free (C->W.file);	
+	GMT_free (GMT, C);	
+}
+
+int GMT_grdtrend_usage (struct GMTAPI_CTRL *API, int level) {
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: grdtrend <ingrid> -N<n_model>[r] [-D<diffgrid>] [%s]\n", GMT_Rgeo_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-T<trendgrid>] [%s] [-W<weightgrid>]\n\n", GMT_V_OPT);
+
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is name of grid file to fit trend to.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3r.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Model parameters order is given as follows:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   z = m1 + m2*x + m3*y + m4*x*y + m5*x^2 + m6*y^2 + m7*x^3 + m8*x^2*y + m9*x*y^2 + m10*y^3.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-D Supply filename to write grid file of differences (input - trend).\n");
+	GMT_Option (API, "R");
+	GMT_Message (API, GMT_TIME_NONE, "\t-T Supply filename to write grid file of trend.\n");
+	GMT_Option (API, "V");
+	GMT_Message (API, GMT_TIME_NONE, "\t-W Supply filename if you want to [read and] write grid file of weights.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   If <weightgrid> can be read at run, and if robust = false, weighted problem will be solved.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   If robust = true, weights used for robust fit will be written to <weightgrid>.\n");
+	GMT_Option (API, ".");
+	
+	return (EXIT_FAILURE);
+}
+
+int GMT_grdtrend_parse (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *Ctrl, struct GMT_OPTION *options) {
+
+	/* This parses the options provided to grdtrend and sets parameters in Ctrl.
+	 * Note Ctrl has already been initialized and non-zero default values set.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
+
+	unsigned int n_errors = 0, n_files = 0, j;
+	struct GMT_OPTION *opt = NULL;
+
+	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
+		switch (opt->option) {
+			/* Common parameters */
+
+			case '<':	/* Input file (only one is accepted) */
+				if (n_files++ > 0) break;
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+					Ctrl->In.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
+
+			/* Processes program-specific parameters */
+
+			case 'D':
+				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_OUT)))
+					Ctrl->D.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
+			case 'N':
+				/* Must check for both -N[r]<n_model> and -N<n_model>[r] due to confusion */
+				Ctrl->N.active = true;
+				if (strchr (opt->arg, 'r')) Ctrl->N.robust = true;
+				j = (opt->arg[0] == 'r') ? 1 : 0;
+				if (opt->arg[j]) Ctrl->N.value = atoi(&opt->arg[j]);
+				break;
+			case 'T':
+				if ((Ctrl->T.active = GMT_check_filearg (GMT, 'T', opt->arg, GMT_OUT)))
+					Ctrl->T.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
+			case 'W':
+				Ctrl->W.active = true;
+				/* OK if this file doesn't exist; we always write to that file on output */
+				if (GMT_check_filearg (GMT, 'W', opt->arg, GMT_IN) || GMT_check_filearg (GMT, 'W', opt->arg, GMT_OUT)) 
+					Ctrl->W.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
+
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
+				break;
+		}
+	}
+
+	n_errors += GMT_check_condition (GMT, n_files != 1, "Syntax error: Must specify an input grid file\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->N.value <= 0 || Ctrl->N.value > 10, "Syntax error -N option: Specify 1-10 model parameters\n");
+
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
+
+void set_up_vals (double *val, unsigned int nval, double vmin, double vmax, double dv, unsigned int pixel_reg)
+{	/* Store x[i], y[j] once for all to save time  */
+	unsigned int i;
+	double v, middle, drange, true_min, true_max;
 
 	true_min = (pixel_reg) ? vmin + 0.5 * dv : vmin;
 	true_max = (pixel_reg) ? vmax - 0.5 * dv : vmax;
@@ -400,14 +237,14 @@ void set_up_vals (double *val, GMT_LONG nval, double vmin, double vmax, double d
 		v = true_min + i * dv;
 		val[i] = (v - middle) * drange;
 	}
-	/* Just to be sure no rounding outside:  */
+	/* Just to be sure no rounding outside */
 	val[0] = -1.0;
 	val[nval - 1] = 1.0;
 	return;
 }
 
-void load_pstuff (double *pstuff, GMT_LONG n_model, double x, double y, GMT_LONG newx, GMT_LONG newy)
-{
+void load_pstuff (double *pstuff, unsigned int n_model, double x, double y, unsigned int newx, unsigned int newy)
+{	/* Compute Legendre polynomials of x[i],y[j] as needed  */
 	/* If either x or y has changed, compute new Legendre polynomials as needed  */
 
 	if (newx) {
@@ -420,7 +257,7 @@ void load_pstuff (double *pstuff, GMT_LONG n_model, double x, double y, GMT_LONG
 		if (n_model >= 6) pstuff[5] = 0.5*(3.0*pstuff[2]*pstuff[2] - 1.0);
 		if (n_model >= 10) pstuff[9] = (5.0*pstuff[2]*pstuff[5] - 2.0*pstuff[2])/3.0;
 	}
-	/* In either case, refresh cross terms:  */
+	/* In either case, refresh cross terms */
 
 	if (n_model >= 4) pstuff[3] = pstuff[1]*pstuff[2];
 	if (n_model >= 8) pstuff[7] = pstuff[4]*pstuff[2];
@@ -429,62 +266,60 @@ void load_pstuff (double *pstuff, GMT_LONG n_model, double x, double y, GMT_LONG
 	return;
 }
 
-void compute_trend (float *trend, GMT_LONG nx, GMT_LONG ny, double *xval, double *yval, double *gtd, GMT_LONG n_model, double *pstuff)
-{
-	GMT_LONG	i, j, k;
-	GMT_LONG	ij;
+void compute_trend (struct GMT_CTRL *GMT, struct GMT_GRID *T, double *xval, double *yval, double *gtd, unsigned int n_model, double *pstuff)
+{	/* Find trend from a model  */
+	unsigned int row, col, k;
+	uint64_t ij;
 
-	for (ij = 0, j = 0; j < ny; j++) {
-		for (i = 0; i < nx; i++, ij++) {
-			load_pstuff(pstuff, n_model, xval[i], yval[j], 1, (!(i)));
-			trend[ij] = 0.0;
-			for (k = 0; k < n_model; k++) trend[ij] += (float)(pstuff[k]*gtd[k]);
-		}
+	GMT_grd_loop (GMT, T, row, col, ij) {
+		load_pstuff (pstuff, n_model, xval[col], yval[row], 1, (!(col)));
+		T->data[ij] = 0.0f;
+		for (k = 0; k < n_model; k++) T->data[ij] += (float)(pstuff[k]*gtd[k]);
 	}
 }
 
-void compute_resid (float *data, float *trend, float *resid, GMT_LONG nxy)
-{
-	GMT_LONG	i;
+void compute_resid (struct GMT_CTRL *GMT, struct GMT_GRID *D, struct GMT_GRID *T, struct GMT_GRID *R)
+{	/* Find residuals from a trend  */
+	unsigned int row, col;
+	uint64_t ij;
 
-	for (i = 0; i < nxy; i++) resid[i] = data[i] - trend[i];
-	return;
+	GMT_grd_loop (GMT, T, row, col, ij) R->data[ij] = D->data[ij] - T->data[ij];
 }
 
-void grd_trivial_model (float *data, GMT_LONG nx, GMT_LONG ny, double *xval, double *yval, double *gtd, GMT_LONG n_model)
+void grd_trivial_model (struct GMT_CTRL *GMT, struct GMT_GRID *G, double *xval, double *yval, double *gtd, unsigned int n_model)
 {
 	/* Routine to fit up elementary polynomial model of grd data, 
 	model = gtd[0] + gtd[1]*x + gtd[2]*y + gtd[3] * x * y,
 	where x,y are normalized to range [-1,1] and there are no
 	NaNs in grid file, and problem is unweighted least squares.  */
 
-	GMT_LONG	i, j;
-	GMT_LONG	ij;
-	double	x2, y2, sumx2 = 0.0, sumy2 = 0.0, sumx2y2 = 0.0;
+	unsigned int row, col;
+	uint64_t ij;
+	double x2, y2, sumx2 = 0.0, sumy2 = 0.0, sumx2y2 = 0.0;
 
-	/* First zero the model parameters to use for sums:  */
+	/* First zero the model parameters to use for sums */
 
-	for (i = 0; i < n_model; i++) gtd[i] = 0.0;
+	GMT_memset (gtd, n_model, double);
 
-	/* Now accumulate sums:  */
+	/* Now accumulate sums */
 
-	for (ij = 0, j = 0; j < ny; j++) {
-		y2 = yval[j] * yval[j];
-		for (i = 0; i < nx; i++, ij++) {
-			x2 = xval[i] * xval[i];
+	GMT_row_loop (GMT, G, row) {
+		y2 = yval[row] * yval[row];
+		GMT_col_loop (GMT, G, row, col, ij) {
+			x2 = xval[col] * xval[col];
 			sumx2 += x2;
 			sumy2 += y2;
 			sumx2y2 += (x2 * y2);
-			gtd[0] += data[ij];
-			if (n_model >= 2) gtd[1] += data[ij] * xval[i];
-			if (n_model >= 3) gtd[2] += data[ij] * yval[j];
-			if (n_model == 4) gtd[3] += data[ij] * xval[i] * yval[j];
+			gtd[0] += G->data[ij];
+			if (n_model >= 2) gtd[1] += G->data[ij] * xval[col];
+			if (n_model >= 3) gtd[2] += G->data[ij] * yval[row];
+			if (n_model == 4) gtd[3] += G->data[ij] * xval[col] * yval[row];
 		}
 	}
 
 	/* See how trivial it is?  */
 
-	gtd[0] /= (nx * ny);
+	gtd[0] /= G->header->nm;
 	if (n_model >= 2) gtd[1] /= sumx2;
 	if (n_model >= 3) gtd[2] /= sumy2;
 	if (n_model == 4) gtd[3] /= sumx2y2;
@@ -492,84 +327,81 @@ void grd_trivial_model (float *data, GMT_LONG nx, GMT_LONG ny, double *xval, dou
 	return;
 }
 
-void compute_chisq (float *resid, float *weight, GMT_LONG nxy, double *chisq, double scale)
-{
-	GMT_LONG	i;
-	double	tmp;
+double compute_chisq (struct GMT_CTRL *GMT, struct GMT_GRID *R, struct GMT_GRID *W, double scale)
+{	/* Find Chi-Squared from weighted residuals  */
+	unsigned int row, col;
+	uint64_t ij;
+	double tmp, chisq = 0.0;
 
-	*chisq = 0.0;
-	for (i = 0; i < nxy; i++) {
-		if (GMT_is_fnan (resid[i])) continue;
-		tmp = resid[i];
+	GMT_grd_loop (GMT, R, row, col, ij) {
+		if (GMT_is_fnan (R->data[ij])) continue;
+		tmp = R->data[ij];
 		if (scale != 1.0) tmp /= scale;
 		tmp *= tmp;
-		if (weight[i] != 1.0) tmp *= weight[i];
-		*chisq += tmp;
+		if (W->data[ij] != 1.0) tmp *= W->data[ij];
+		chisq += tmp;
 	}
-	return;
+	return (chisq);
 }
 
-void compute_robust_weight (float *resid, float *weight, GMT_LONG nxy, double *scale)
-{
-	GMT_LONG	i, j, j2;
-	double	r, mad;
+double compute_robust_weight (struct GMT_CTRL *GMT, struct GMT_GRID *R, struct GMT_GRID *W)
+{	/* Find weights from residuals  */
+	unsigned int row, col;
+	uint64_t j = 0, j2, ij;
+	float r, mad, scale;
 
-	for (i = j = 0; i < nxy; i++) {
-		if (GMT_is_fnan (resid[i]))continue;
-		weight[j] = (float)fabs((double)resid[i]);
-		j++;
+	GMT_grd_loop (GMT, R, row, col, ij) {
+		if (GMT_is_fnan (R->data[ij])) continue;
+		W->data[j++] = fabsf (R->data[ij]);
 	}
 
-	qsort ((void *)weight, (size_t)j, sizeof(float), GMT_comp_float_asc);
+	GMT_sort_array (GMT, W->data, j, GMT_FLOAT);
 
 	j2 = j / 2;
-	if (j%2)
-		mad = weight[j2];
-	else
-		mad = 0.5 *(weight[j2] + weight[j2 - 1]);
+	mad = (j%2) ? W->data[j2] : 0.5f *(W->data[j2] + W->data[j2 - 1]);
 
-	/* Adjust mad to equal Gaussian sigma:  */
+	/* Adjust mad to equal Gaussian sigma */
 
-	*scale = 1.4826 * mad;
+	scale = 1.4826f * mad;
 
-	/* Use weight according to Huber (1981), but squared:  */
+	/* Use weight according to Huber (1981), but squared */
 
-	for (i = 0; i < nxy; i++) {
-		if (GMT_is_fnan (resid[i])) {
-			weight[i] = resid[i];
+	GMT_memset (W->data, W->header->size, float);	/* Wipe W clean */
+	GMT_grd_loop (GMT, R, row, col, ij) {
+		if (GMT_is_fnan (R->data[ij])) {
+			W->data[ij] = R->data[ij];
 			continue;
 		}
-		r = fabs(resid[i]) / (*scale);
+		r = fabsf (R->data[ij]) / scale;
 
-		weight[i] = (float)((r <= 1.5) ? 1.0 : (3.0 - 2.25/r) / r);
+		W->data[ij] = (r <= 1.5f) ? 1.0f : (3.0f - 2.25f/r) / r;
 	}
+	return (scale);
+}
+
+void write_model_parameters (struct GMT_CTRL *GMT, double *gtd, unsigned int n_model)
+{	/* Do reports if gmtdefs.verbose = NORMAL or above  */
+	unsigned int i;
+	char pbasis[10][16], format[GMT_BUFSIZ];
+
+	sprintf (pbasis[0], "Mean");
+	sprintf (pbasis[1], "X");
+	sprintf (pbasis[2], "Y");
+	sprintf (pbasis[3], "X*Y");
+	sprintf (pbasis[4], "P2(x)");
+	sprintf (pbasis[5], "P2(y)");
+	sprintf (pbasis[6], "P3(x)");
+	sprintf (pbasis[7], "P2(x)*P1(y)");
+	sprintf (pbasis[8], "P1(x)*P2(y)");
+	sprintf (pbasis[9], "P3(y)");
+
+	sprintf(format, "Coefficient fit to %%s: %s\n", GMT->current.setting.format_float_out);
+	for (i = 0; i < n_model; i++) GMT_Message (GMT->parent, GMT_TIME_NONE, format, pbasis[i], gtd[i]);
+
 	return;
 }
 
-void write_model_parameters (double *gtd, GMT_LONG n_model)
-{
-	GMT_LONG	i;
-	char	pbasis[10][16];
-	char format[BUFSIZ];
-
-	sprintf(pbasis[0], "Mean");
-	sprintf(pbasis[1], "X");
-	sprintf(pbasis[2], "Y");
-	sprintf(pbasis[3], "X*Y");
-	sprintf(pbasis[4], "P2(x)");
-	sprintf(pbasis[5], "P2(y)");
-	sprintf(pbasis[6], "P3(x)");
-	sprintf(pbasis[7], "P2(x)*P1(y)");
-	sprintf(pbasis[8], "P1(x)*P2(y)");
-	sprintf(pbasis[9], "P3(y)");
-
-	sprintf(format, "Coefficient fit to %%s:  %s\n", gmtdefs.d_format);
-	for (i = 0; i < n_model; i++) fprintf (stderr, format, pbasis[i], gtd[i]);
-
-	return;
-}
-
-void load_gtg_and_gtd (float *data, GMT_LONG nx, GMT_LONG ny, double *xval, double *yval, double *pstuff, double *gtg, double *gtd, GMT_LONG n_model, float *weight, GMT_LONG weighted)
+void load_gtg_and_gtd (struct GMT_CTRL *GMT, struct GMT_GRID *G, double *xval, double *yval, double *pstuff, double *gtg, double *gtd, unsigned int n_model, struct GMT_GRID *W, bool weighted)
 {
 	/* Routine to load the matrix G'G (gtg) and vector G'd (gtd)
 	for the normal equations.  Routine uses indices i,j to refer
@@ -579,78 +411,265 @@ void load_gtg_and_gtd (float *data, GMT_LONG nx, GMT_LONG ny, double *xval, doub
 	loading only lower triangular part of gtg and then filling
 	by symmetry after i,j loop.  */
 
-	GMT_LONG	i, j, k, l, n_used;
-	GMT_LONG	ij;
+	unsigned int row, col, k, l, n_used = 0;
+	uint64_t ij;
 
-/*	First zero things out to start:  */
+	/* First zero things out to start */
 
-	n_used = 0;
-	for (k = 0; k < n_model; k++) {
-		gtd[k] = 0.0;
-		for (l = 0; l < n_model; l++) gtg[k*n_model+l] = 0.0;
-	}
+	GMT_memset (gtd, n_model, double);
+	GMT_memset (gtg, n_model * n_model, double);
 
-/*  Now get going.  Have to load_pstuff separately in i and j,
-	because it is possible that we skip data when i = 0.
-	Loop over all data:  */
+	/* Now get going.  Have to load_pstuff separately in i and j,
+	   because it is possible that we skip data when i = 0.
+	   Loop over all data */
 
-	for (ij = 0, j = 0; j < ny; j++ ) {
-		load_pstuff(pstuff, n_model, xval[0], yval[j], 0, 1);
-		for (i = 0; i < nx; i++, ij++) {
+	GMT_row_loop (GMT, G, row) {
+		load_pstuff (pstuff, n_model, xval[0], yval[row], 0, 1);
+		GMT_col_loop (GMT, G, row, col, ij) {
 
-			if (GMT_is_fnan (data[ij]))continue;
+			if (GMT_is_fnan (G->data[ij]))continue;
 
 			n_used++;
-			load_pstuff(pstuff, n_model, xval[i], yval[j], 1, 0);
+			load_pstuff (pstuff, n_model, xval[col], yval[row], 1, 0);
 
-/* If weighted  */	if (weighted) {
-				/* Loop over all gtg and gtd elements:  */
-				gtd[0] += (data[ij] * weight[ij]);
-				gtg[0] += (weight[ij]);
+			if (weighted) {
+				/* Loop over all gtg and gtd elements */
+				gtd[0] += (G->data[ij] * W->data[ij]);
+				gtg[0] += W->data[ij];
 				for (k = 1; k < n_model; k++) {
-					gtd[k] += (data[ij] * weight[ij] * pstuff[k]);
-					gtg[k] += (weight[ij] * pstuff[k]);
-					for (l = k; l < n_model; l++) gtg[k + l*n_model] += (pstuff[k]*pstuff[l]*weight[ij]);
+					gtd[k] += (G->data[ij] * W->data[ij] * pstuff[k]);
+					gtg[k] += (W->data[ij] * pstuff[k]);
+					for (l = k; l < n_model; l++) gtg[k + l*n_model] += (pstuff[k]*pstuff[l]*W->data[ij]);
 				}
 			}
-/* If !weighted  */	else {
-				/* Loop over all gtg and gtd elements:  */
-				gtd[0] += data[ij];
+			else {	/* If !weighted  */
+				/* Loop over all gtg and gtd elements */
+				gtd[0] += G->data[ij];
 				for (k = 1; k < n_model; k++) {
-					gtd[k] += (data[ij] * pstuff[k]);
+					gtd[k] += (G->data[ij] * pstuff[k]);
 					gtg[k] += pstuff[k];
 					for (l = k; l < n_model; l++) gtg[k + l*n_model] += (pstuff[k]*pstuff[l]);
 				}
-/* End if  */		}
+			}	/* End if  */
 		}
-	}
-/* End of loop over data i,j  */
+	}	/* End of loop over data i,j  */
 
-/* Now if !weighted, use more accurate sum for gtg[0], and set symmetry:  */
+	/* Now if !weighted, use more accurate sum for gtg[0], and set symmetry */
 
 	if (!weighted) gtg[0] = (double)n_used;
 
 	for (k = 0; k < n_model; k++) {
 		for (l = 0; l < k; l++) gtg[l + k*n_model] = gtg[k + l*n_model];
 	}
-/* That is all there is to it!  */
+	/* That is all there is to it!  */
 
 	return;
 }
 
-void *New_grdtrend_Ctrl () {	/* Allocate and initialize a new control structure */
-	struct GRDTREND_CTRL *C;
-	
-	C = (struct GRDTREND_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct GRDTREND_CTRL), "New_grdtrend_Ctrl");
-	
-	/* Initialize values whose defaults are not 0/FALSE/NULL */
-		
-	return ((void *)C);
-}
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_grdtrend_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-void Free_grdtrend_Ctrl (struct GRDTREND_CTRL *C) {	/* Deallocate control structure */
-	if (C->D.file) free ((void *)C->D.file);	
-	if (C->T.file) free ((void *)C->T.file);	
-	if (C->W.file) free ((void *)C->W.file);	
-	GMT_free ((void *)C);	
+int GMT_grdtrend (void *V_API, int mode, void *args) {
+	/* High-level function that implements the grdcontour task */
+
+	bool trivial, weighted,iterations, set_ones = true;
+	int error = 0;
+	unsigned int row, col;
+	
+	uint64_t ij;
+	
+	char format[GMT_BUFSIZ];
+
+	double chisq, old_chisq, scale = 1.0, dv;
+	double *xval = NULL;	/* Pointer for array of change of variable: x[i]  */
+	double *yval = NULL;	/* Pointer for array of change of variable: y[j]  */
+	double *gtg = NULL;	/* Pointer for array for matrix G'G normal equations  */
+	double *gtd = NULL;	/* Pointer for array for vector G'd normal equations  */
+	double *old = NULL;	/* Pointer for array for old model, used for robust sol'n  */
+	double *pstuff = NULL;	/* Pointer for array for Legendre polynomials of x[i],y[j]  */
+	double wesn[4];		/* For optional subset specification */
+
+	struct GRDTREND_CTRL *Ctrl = NULL;
+	struct GMT_GRID *G = NULL, *R = NULL, *T = NULL, *W = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
+	struct GMT_OPTION *options = NULL;
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdtrend_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdtrend_usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdtrend_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_grdtrend_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_grdtrend_parse (GMT, Ctrl, options))) Return (error);
+
+	/*---------------------------- This is the grdtrend main code ----------------------------*/
+
+	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid\n");
+	weighted = (Ctrl->N.robust || Ctrl->W.active);
+	trivial = (Ctrl->N.value < 5 && !weighted);
+
+	GMT_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting, if any */
+	if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
+		Return (API->error);
+	}
+	if (GMT_is_subset (GMT, G->header, wesn)) GMT_err_fail (GMT, GMT_adjust_loose_wesn (GMT, wesn, G->header), "");	/* Subset requested; make sure wesn matches header spacing */
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->In.file, G) == NULL) {	/* Get subset */
+		Return (API->error);
+	}
+
+	/* Check for NaNs (we include the pad for simplicity)  */
+	ij = 0;
+	while (trivial && ij < G->header->size) if (GMT_is_fnan (G->data[ij++])) trivial = false;
+
+	/* Allocate other required arrays */
+
+	if ((T = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_ALLOC, G)) == NULL) Return (API->error);	/* Pointer for grid with array containing fitted surface  */
+	if (Ctrl->D.active || Ctrl->N.robust) {	/* If !D but robust, we would only need to allocate the data array */
+		if ((R = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_ALLOC, G)) == NULL) Return (API->error);	/* Pointer for grid with array containing residual surface  */
+	}
+	xval = GMT_memory (GMT, NULL, G->header->nx, double);
+	yval = GMT_memory (GMT, NULL, G->header->ny, double);
+	gtg = GMT_memory (GMT, NULL, Ctrl->N.value*Ctrl->N.value, double);
+	gtd = GMT_memory (GMT, NULL, Ctrl->N.value, double);
+	old = GMT_memory (GMT, NULL, Ctrl->N.value, double);
+	pstuff = GMT_memory (GMT, NULL, Ctrl->N.value, double);
+	pstuff[0] = 1.0; /* This is P0(x) = 1, which is not altered in this program. */
+
+	/* If a weight array is needed, get one */
+
+	if (weighted) {
+		if (!GMT_access (GMT, Ctrl->W.file, R_OK)) {	/* We have weights on input  */
+			if ((W = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->W.file, NULL)) == NULL) {	/* Get header only */
+				Return (API->error);
+			}
+			if (W->header->nx != G->header->nx || W->header->ny != G->header->ny)
+				GMT_Report (API, GMT_MSG_NORMAL, "Error: Input weight file does not match input data file.  Ignoring.\n");
+			else {
+				if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->W.file, W) == NULL) {	/* Get data */
+					Return (API->error);
+				}
+				set_ones = false;
+			}
+		}
+		if (set_ones) {
+			if ((W = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_ALLOC, G)) == NULL) Return (API->error);	/* Pointer for grid with unit weights  */
+			GMT_setnval (W->data, W->header->size, 1.0f);
+		}
+	}
+
+	/* End of weight set up.  */
+
+	/* Set up xval and yval lookup tables */
+
+	dv = 2.0 / (double)(G->header->nx - 1);
+	for (col = 0; col < G->header->nx - 1; col++) xval[col] = -1.0 + col * dv;
+	dv = 2.0 / (double)(G->header->ny - 1);
+	for (row = 0; row < G->header->ny - 1; row++) yval[row] = -1.0 + row * dv;
+	xval[G->header->nx - 1] = yval[G->header->ny - 1] = 1.0;
+
+	/* Do the problem */
+
+	if (trivial) {
+		grd_trivial_model (GMT, G, xval, yval, gtd, Ctrl->N.value);
+		compute_trend (GMT, T, xval, yval, gtd, Ctrl->N.value, pstuff);
+		if (Ctrl->D.active) compute_resid (GMT, G, T, R);
+	}
+	else {	/* Problem is not trivial  !!  */
+		int ierror;
+		load_gtg_and_gtd (GMT, G, xval, yval, pstuff, gtg, gtd, Ctrl->N.value, W, weighted);
+		ierror = GMT_gauss (GMT, gtg, gtd, Ctrl->N.value, Ctrl->N.value, true);
+		if (ierror) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Gauss returns error code %d\n", ierror);
+			return (EXIT_FAILURE);
+		}
+		compute_trend (GMT, T, xval, yval, gtd, Ctrl->N.value, pstuff);
+		if (Ctrl->D.active || Ctrl->N.robust) compute_resid (GMT, G, T, R);
+
+		if (Ctrl->N.robust) {
+			chisq = compute_chisq (GMT, R, W, scale);
+			iterations = 1;
+			sprintf (format, "grdtrend: Robust iteration %%d:  Old Chi Squared: %s  New Chi Squared: %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+			do {
+				old_chisq = chisq;
+				GMT_memcpy (old, gtd, Ctrl->N.value, double);
+				scale = compute_robust_weight (GMT, R, W);
+				load_gtg_and_gtd (GMT, G, xval, yval, pstuff, gtg, gtd, Ctrl->N.value, W, weighted);
+				ierror = GMT_gauss (GMT, gtg, gtd, Ctrl->N.value, Ctrl->N.value, true);
+				if (ierror) {
+					GMT_Report (API, GMT_MSG_NORMAL, "Gauss returns error code %d\n", ierror);
+					return (EXIT_FAILURE);
+				}
+				compute_trend (GMT, T, xval, yval, gtd, Ctrl->N.value, pstuff);
+				compute_resid (GMT, G, T, R);
+				chisq = compute_chisq (GMT, R, W, scale);
+				GMT_Report (API, GMT_MSG_VERBOSE, format, iterations, old_chisq, chisq);
+				iterations++;
+			} while (old_chisq / chisq > 1.0001);
+
+			/* Get here when new model not significantly better; use old one */
+
+			GMT_memcpy (gtd, old, Ctrl->N.value, double);
+			compute_trend (GMT, T, xval, yval, gtd, Ctrl->N.value, pstuff);
+			compute_resid (GMT, G, T, R);
+		}
+	}
+
+	/* End of do the problem section.  */
+
+	/* Get here when ready to do output */
+
+	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) write_model_parameters (GMT, gtd, Ctrl->N.value);
+	if (Ctrl->T.file) {
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "trend surface", T)) Return (API->error);
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, T)) Return (API->error);
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->T.file, T) != GMT_OK) {
+			Return (API->error);
+		}
+	}
+	else if (GMT_Destroy_Data (API, &T) != GMT_OK) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Failed to free T\n");
+	}
+	if (Ctrl->D.file) {
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "trend residuals", R)) Return (API->error);
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, R)) Return (API->error);
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->D.file, R) != GMT_OK) {
+			Return (API->error);
+		}
+	}
+	else if (Ctrl->D.active || Ctrl->N.robust) {
+		if (GMT_Destroy_Data (API, &R) != GMT_OK) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Failed to free R\n");
+		}
+	}
+	if (Ctrl->W.file && Ctrl->N.robust) {
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "trend weights", W)) Return (API->error);
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, W)) Return (API->error);
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->W.file, W) != GMT_OK) {
+			Return (API->error);
+		}
+	}
+	else if (set_ones && GMT_Destroy_Data (API, &W) != GMT_OK) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Failed to free W\n");
+	}
+
+	/* That's all, folks!  */
+
+
+	GMT_free (GMT, pstuff);
+	GMT_free (GMT, gtd);
+	GMT_free (GMT, gtg);
+	GMT_free (GMT, old);
+	GMT_free (GMT, yval);
+	GMT_free (GMT, xval);
+
+	GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
+
+	Return (EXIT_SUCCESS);
 }

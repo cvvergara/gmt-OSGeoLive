@@ -1,0 +1,390 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>psscale &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="up" title="PS" href="PS.html" />
+    <link rel="next" title="pstext" href="pstext.html" />
+    <link rel="prev" title="psrose" href="psrose.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="pstext.html" title="pstext"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="psrose.html" title="psrose"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="psscale">
+<span id="index-0"></span><h1>psscale<a class="headerlink" href="#psscale" title="Permalink to this headline">¶</a></h1>
+<p>psscale - Plot a gray or color scale-bar on maps</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>psscale</strong> <strong>-D</strong><em>xpos</em>/<em>ypos</em>/<em>length</em>/<em>width</em>[<strong>h</strong>]
+[ <strong>-A</strong>[<strong>a</strong>|<strong>l</strong>|<strong>c</strong>] ]
+[ <strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> ]
+[ <strong>-C</strong><em>cpt_file</em> ]
+[ <strong>-E</strong>[<strong>b</strong>|<strong>f</strong>][<em>length</em>][<strong>+n</strong>[<em>text</em>]] ]
+[ <strong>-G</strong><em>zlo</em>/<em>zhi</em> ]
+[ <strong>-I</strong>[<em>max_intens</em>|<em>low_i</em>/<em>high_i</em>] ]
+[ <strong>-J</strong><em>parameters</em> ]
+[ <strong>-Jz</strong>|<strong>Z</strong><em>parameters</em> ] [ <strong>-K</strong> ]
+[ <strong>-L</strong>[<strong>i</strong>][<em>gap</em>] ] [ <strong>-M</strong> ] [ <strong>-N</strong>[<strong>p</strong>|<em>dpi</em> ]] [ <strong>-O</strong> ]
+[ <strong>-P</strong> ] [ <strong>-Q</strong> ]
+[ <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] ]
+[ <strong>-S</strong> ]
+[ <strong>-T</strong>[<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>][<strong>+l</strong>|<strong>r</strong>|<strong>b</strong>|<strong>t</strong><em>off</em>] ]
+[ <strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] ]
+[ <strong>-V</strong>[<em>level</em>] ]
+[ <strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]] ]
+[ <strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] ]
+[ <strong>-Z</strong><em>zfile</em> ]
+[ <strong>-c</strong><em>copies</em> ]
+[ <strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] ]
+[ <strong>-t</strong>[<em>transp</em>] ]</p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><strong>psscale</strong> plots gray scales or color scales on maps. Both horizontal
+and vertical scales are supported. For cpt_files with gradational
+colors (i.e., the lower and upper boundary of an interval have different
+colors) <strong>psscale</strong> will interpolate to give a continuous scale.
+Variations in intensity due to shading/illumination may be displayed by
+setting the option <strong>-I</strong>. Colors may be spaced according to a linear
+scale, all be equal size, or by providing a file with individual tile
+widths. The font used for the annotations along the scale and optional
+units is specified by <strong>FONT_ANNOT_PRIMARY</strong>. If a label is requested,
+it is plotted with <strong>FONT_LABEL</strong></p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-D</strong><em>xpos</em>/<em>ypos</em>/<em>length</em>/<em>width</em>[<strong>h</strong>]</dt>
+<dd>Defines the position of the center/top (for horizontal scale) or
+center/left (for vertical scale) and the dimensions of the scale.
+Give a negative length to reverse the scalebar. Append <em>h</em> to get a
+horizontal scale [Default is vertical].</dd>
+</dl>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-A</strong>[<strong>a</strong>|<strong>l</strong>|<strong>c</strong>]</dt>
+<dd>Place annotations and labels above (instead of below) horizontal
+scalebars and to the left (instead of the right) of vertical
+scalebars. Append <strong>a</strong> or <strong>l</strong> to move only the annotations or the
+label to the other side. Append <strong>c</strong> if you want to print a
+vertical label as a column of characters (does not work with special characters).</dd>
+<dt><strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em></dt>
+<dd>Set annotation, tick, and gridline interval for the colorbar. The
+x-axis label will plot beneath a horizontal bar (or vertically to
+the right of a vertical bar), except when using <strong>-A</strong>. As an
+option, use the y-axis label to plot the data unit to the right of a
+horizontal bar (and above a vertical bar). When using <strong>-Ba</strong> or
+<strong>-Baf</strong> annotation and/or minor tick intervals are chosen
+automatically. If <strong>-B</strong> is omitted, or no annotation intervals are
+provided, the default is to annotate every color level based on the
+numerical entries in the cpt file (which may be overridden by ULB
+flags in the cpt file). To specify custom text annotations for
+intervals, you must append ;<em>annotation</em> to each z-slice in the cpt file.</dd>
+<dt><strong>-C</strong><em>cpt_file</em></dt>
+<dd><em>cpt_file</em> is the color palette file to be used. By default all
+color changes are annotated. To use a subset, add an extra column to
+the cpt-file with a L, U, or B to annotate Lower, Upper, or Both
+color segment boundaries (but see <strong>-B</strong>). If not given, <strong>psscale</strong>
+will read stdin. Like <strong>grdview</strong>, <strong>psscale</strong> can understand
+pattern specifications in the cpt file. For CPT files where the
+<em>z</em> range is in meters, it may be useful to change to another unit
+when plotting.  To do so, append <strong>+U</strong><em>unit</em> to the file name.
+Likewise, if the CPT file uses another unit than meter and you wish
+to plot the CPT versus meters, append <strong>+u</strong><em>unit</em>.</dd>
+<dt><strong>-E</strong>[<strong>b</strong>|<strong>f</strong>][<em>length</em>][<strong>+n</strong>[<em>text</em>]]</dt>
+<dd>Add sidebar triangles for <strong>b</strong>ack- and/or <strong>f</strong>oreground
+colors. Add <strong>f</strong> or <strong>b</strong> for only one sidebar triangle [Default
+gives both]. Optionally, append triangle height [Default is half the
+barwidth]. Finally, you can plot a rectangle with the NaN color at
+the start of the bar, labeled with <em>text</em> [NaN].</dd>
+<dt><strong>-G</strong><em>zlo</em>/<em>zhi</em></dt>
+<dd>Truncate the incoming CPT so that the lowest and highest z-levels
+are to <em>zlo</em> and <em>zhi</em>.  If one of these equal NaN then
+we leave that end of the CPT alone.  The truncation takes place
+before the plotting.</dd>
+<dt><strong>-I</strong>[<em>max_intens</em>|<em>low_i</em>/<em>high_i</em>]</dt>
+<dd>Add illumination effects. Optionally, set the range of intensities
+from - to + <em>max_intens</em>. If not specified, 1 is used.
+Alternatively, append <em>low/high</em> intensities to specify an
+asymmetric range [Default is no illumination].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-J</strong><em>parameters</em> <a class="reference internal" href="gmt.html#j-full"><em>(more ...)</em></a></dt>
+<dd>Select map projection.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-Jz</strong>|<strong>Z</strong><em>parameters</em> <a class="reference internal" href="gmt.html#jz-full"><em>(more ...)</em></a></dt>
+<dd>Set z-axis scaling; same syntax as <strong>-Jx</strong>.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-K</strong> <a class="reference internal" href="gmt.html#k-full"><em>(more ...)</em></a></dt>
+<dd>Do not finalize the PostScript plot.</dd>
+<dt><strong>-L</strong>[<strong>i</strong>][<em>gap</em>]</dt>
+<dd>Gives equal-sized color rectangles. Default scales rectangles
+according to the z-range in the cpt-file (Also see <strong>-Z</strong>). If set,
+any equal interval annotation set with <strong>-B</strong> will be ignored. If
+<em>gap</em> is appended and the cpt table is discrete we will center each
+annotation on each rectangle, using the lower boundary z-value for
+the annotation. If <strong>i</strong> is prepended we annotate the interval range
+instead. If <strong>-I</strong> is used then each rectangle will have its
+constant color modified by the specified intensity.</dd>
+<dt><strong>-M</strong></dt>
+<dd>Force a monochrome graybar using the (television) YIQ transformation.</dd>
+<dt><strong>-N</strong>[<strong>p</strong>|<em>dpi</em> ]</dt>
+<dd>Controls how the color scale is represented by the PostScript language.
+To preferentially draw color rectangles (e.g., for discrete colors), append <strong>p</strong>.
+Otherwise we will preferentially draw images (e.g., for continuous colors).
+Optionally append effective dots-per-inch for rasterization of color scales [600].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-O</strong> <a class="reference internal" href="gmt.html#o-full"><em>(more ...)</em></a></dt>
+<dd>Append to existing PostScript plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-P</strong> <a class="reference internal" href="gmt.html#p-full"><em>(more ...)</em></a></dt>
+<dd>Select &#8220;Portrait&#8221; plot orientation.</dd>
+<dt><strong>-Q</strong></dt>
+<dd>Select logarithmic scale and power of ten annotations. All z-values
+in the cpt file will be converted to p = log10(z) and only integer p
+values will be annotated using the 10^p format [Default is linear
+scale].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
+<dd><em>west</em>, <em>east</em>, <em>south</em>, and <em>north</em> specify the region of interest,
+and you may specify them in decimal degrees or in
+[+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
+and upper right map coordinates are given instead of w/e/s/n. The
+two shorthands <strong>-Rg</strong> and <strong>-Rd</strong> stand for global domain (0/360
+and -180/+180 in longitude respectively, with -90/+90 in latitude).
+Alternatively, specify the name of an existing grid file and the
+<strong>-R</strong> settings (and grid spacing, if applicable) are copied from
+the grid. Using <strong>-R</strong><em>unit</em> expects projected (Cartesian)
+coordinates compatible with chosen <strong>-J</strong> and we inversely project
+to determine actual rectangular geographic region.
+For perspective view (<strong>-p</strong>), optionally append /<em>zmin</em>/<em>zmax</em>.
+In case of perspective view (<strong>-p</strong>), a z-range (<em>zmin</em>, <em>zmax</em>)
+can be appended to indicate the third dimension. This needs to be
+done only when using the <strong>-Jz</strong> option, not when using only the
+<strong>-p</strong> option. In the latter case a perspective view of the plane is
+plotted, with no third dimension.  </dd>
+</dl>
+<p>For perspective view <strong>p</strong>, optionally append /<em>zmin</em>/<em>zmax</em>. <a class="reference internal" href="gmt.html#rz-full"><em>(more ...)</em></a>  </p>
+<dl class="docutils">
+<dt><strong>-S</strong></dt>
+<dd>Do not separate different color intervals with black grid lines.</dd>
+<dt><strong>-T</strong>[<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>][<strong>+l</strong>|<strong>r</strong>|<strong>b</strong>|<strong>t</strong><em>off</em>]</dt>
+<dd>Place a rectangle as background to the color scale. You must specify
+either a pen outline (with modifier <strong>+p</strong><em>pen</em>) or a fill (with
+modifier <strong>+g</strong><em>fill</em>), or both. The size of the rectangle is
+computed from <strong>-D</strong> and the current fontsize and offset parameters.
+You can add (or remove) additional space on any side by appending
+<strong>+s</strong><em>off</em>, where <strong>s</strong> is one of <strong>l</strong>eft, <strong>r</strong>ight,
+<strong>b</strong>ottom, or <strong>t</strong>op.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] <a class="reference internal" href="gmt.html#u-full"><em>(more ...)</em></a></dt>
+<dd>Draw GMT time stamp logo on plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
+<dd>Select verbosity level [c].  </dd>
+</dl>
+<p><strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]]</p>
+<dl class="docutils">
+<dt><strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] <a class="reference internal" href="gmt.html#xy-full"><em>(more ...)</em></a></dt>
+<dd>Shift plot origin.</dd>
+<dt><strong>-Z</strong><em>zfile</em></dt>
+<dd>File with colorbar-width per color entry. By default, width of entry
+is scaled to color range, i.e., z = 0-100 gives twice the width as z
+= 100-150 (Also see <strong>-L</strong>).</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-c</strong><em>copies</em> <a class="reference internal" href="gmt.html#c-full"><em>(more ...)</em></a></dt>
+<dd>Specify number of plot copies [Default is 1].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] <a class="reference internal" href="gmt.html#perspective-full"><em>(more ...)</em></a></dt>
+<dd>Select perspective view. (Required <strong>-R</strong> and <strong>-J</strong> for proper functioning).</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-t</strong>[<em>transp</em>] <a class="reference internal" href="gmt.html#t-full"><em>(more ...)</em></a></dt>
+<dd>Set PDF transparency level in percent.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-^</strong></dt>
+<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dt><strong>+</strong></dt>
+<dd>Print an extensive usage (help) message, including the explanation of
+any module-specific option (but not the GMT common options), then exits</dd>
+<dt><strong>-?</strong></dt>
+<dd>Print a complete usage (help) message, including the explanation of
+options, then exits.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print GMT version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Print full path to GMT share directory and exit.</dd>
+</dl>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>To append a vertical color scale (7.5 cm long; 1.25 cm wide) to the
+right of a plot that is 6 inch wide and 4 inch high, using illumination,
+and show back- and foreground colors, and annotating every 5 units, use</p>
+<blockquote>
+<div><div class="highlight-python"><pre>gmt psscale -D6.5i/2i/7.5c/1.25c -O -Ccolors.cpt -I -E -B5:BATHYMETRY:/:m: &gt; map.ps</pre>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<p>When the cpt file is discrete and no illumination is specified, the
+color bar will be painted using polygons. For all other cases we must
+paint with an image. Some color printers may give slightly different
+colors for the two methods given identical RGB values.</p>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="makecpt.html"><em>makecpt</em></a>, <a class="reference internal" href="grd2cpt.html"><em>grd2cpt</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">psscale</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#notes">Notes</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="psrose.html"
+                        title="previous chapter">psrose</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pstext.html"
+                        title="next chapter">pstext</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="pstext.html" title="pstext"
+             >next</a> </li>
+        <li class="right" >
+          <a href="psrose.html" title="psrose"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="PS.html" >PS</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

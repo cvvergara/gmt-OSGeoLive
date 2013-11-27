@@ -1,0 +1,379 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>(3) Spectral estimation and xy-plots &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="../index.html" />
+    <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
+    <link rel="next" title="(4) A 3-D perspective mesh plot" href="ex04.html" />
+    <link rel="prev" title="(2) Image presentations" href="ex02.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ex04.html" title="(4) A 3-D perspective mesh plot"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="ex02.html" title="(2) Image presentations"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="spectral-estimation-and-xy-plots">
+<span id="example-03"></span><h1>(3) Spectral estimation and xy-plots<a class="headerlink" href="#spectral-estimation-and-xy-plots" title="Permalink to this headline">¶</a></h1>
+<p>In this example we will show how to use the GMT programs
+<a class="reference internal" href="../fitcircle.html"><em>fitcircle</em></a>, <a class="reference internal" href="../project.html"><em>project</em></a>,
+<a class="reference internal" href="../sample1d.html"><em>sample1d</em></a>, <a class="reference internal" href="../spectrum1d.html"><em>spectrum1d</em></a>,
+<a class="reference internal" href="../psxy.html"><em>psxy</em></a>, and
+<a class="reference internal" href="../pstext.html"><em>pstext</em></a>. Suppose you have (lon, lat,
+gravity) along a satellite track in a file called <tt class="docutils literal"><span class="pre">sat.xyg</span></tt>, and (lon, lat,
+gravity) along a ship track in a file called <tt class="docutils literal"><span class="pre">ship.xyg</span></tt>. You want to make a
+cross-spectral analysis of these data. First, you will have to get the
+two data sets into equidistantly sampled time-series form. To do this,
+it will be convenient to project these along the great circle that best
+fits the sat track. We must use
+<a class="reference internal" href="../fitcircle.html"><em>fitcircle</em></a> to find this great circle
+and choose the L<sub>2</sub> estimates of best pole. We project the data
+using <a class="reference internal" href="../project.html"><em>project</em></a> to find out what their
+ranges are in the projected coordinate. The
+<a class="reference internal" href="../gmtinfo.html"><em>gmtinfo</em></a> utility will report the minimum
+and maximum values for multi-column ASCII tables. Use this information
+to select the range of the projected distance coordinate they have in
+common. The script prompts you for that information after reporting the
+values. We decide to make a file of equidistant sampling points spaced 1
+km apart from -1167 to +1169, and use the UNIX utility <strong>awk</strong> to
+accomplish this step. We can then resample the projected data, and carry
+out the cross-spectral calculations, assuming that the ship is the input
+and the satellite is the output data. There are several intermediate
+steps that produce helpful plots showing the effect of the various
+processing steps (<tt class="docutils literal"><span class="pre">example_03[a-f].ps</span></tt>), while the final plot <tt class="docutils literal"><span class="pre">example_03.ps</span></tt> shows the ship and sat power
+in one diagram and the coherency on another diagram, both on the same
+page. Note the extended use of <a class="reference internal" href="../pstext.html"><em>pstext</em></a>
+and <a class="reference internal" href="../psxy.html"><em>psxy</em></a> to put labels and legends
+directly on the plots. For that purpose we often use <strong>-Jx</strong>1i and
+specify positions in inches directly. Thus, the complete automated script reads:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+<span class="c">#		GMT EXAMPLE 03</span>
+<span class="c">#</span>
+<span class="c"># Purpose:	Resample track data, do spectral analysis, and plot</span>
+<span class="c"># GMT progs:	filter1d, fitcircle, gmtinfo, project, sample1d</span>
+<span class="c"># GMT progs:	spectrum1d, trend1d, pshistogram, psxy, pstext</span>
+<span class="c"># Unix progs:	$AWK, cat, echo, head, paste, rm, tail</span>
+<span class="c">#</span>
+<span class="c"># This example begins with data files &quot;ship.xyg&quot; and &quot;sat.xyg&quot; which</span>
+<span class="c"># are measurements of a quantity &quot;g&quot; (a &quot;gravity anomaly&quot; which is an</span>
+<span class="c"># anomalous increase or decrease in the magnitude of the acceleration</span>
+<span class="c"># of gravity at sea level).  g is measured at a sequence of points &quot;x,y&quot;</span>
+<span class="c"># which in this case are &quot;longitude,latitude&quot;.  The &quot;sat.xyg&quot; data were</span>
+<span class="c"># obtained by a satellite and the sequence of points lies almost along</span>
+<span class="c"># a great circle.  The &quot;ship.xyg&quot; data were obtained by a ship which</span>
+<span class="c"># tried to follow the satellite&#39;s path but deviated from it in places.</span>
+<span class="c"># Thus the two data sets are not measured at the same of points,</span>
+<span class="c"># and we use various GMT tools to facilitate their comparison.</span>
+<span class="c"># The main illustration (example_03.ps) are accompanied with 5 support</span>
+<span class="c"># plots (03a-f) showing data distributions and various intermediate steps.</span>
+<span class="c">#</span>
+<span class="c"># First, we use &quot;gmt fitcircle&quot; to find the parameters of a great circle</span>
+<span class="c"># most closely fitting the x,y points in &quot;sat.xyg&quot;:</span>
+<span class="c">#</span>
+<span class="nv">ps</span><span class="o">=</span>example_03.ps
+gmt fitcircle sat.xyg -L2 &gt; report
+<span class="nv">cposx</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 Average Position&quot;</span> report | cut -f1<span class="sb">`</span> 
+<span class="nv">cposy</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 Average Position&quot;</span> report | cut -f2<span class="sb">`</span> 
+<span class="nv">pposx</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 N Hemisphere&quot;</span> report | cut -f1<span class="sb">`</span> 
+<span class="nv">pposy</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 N Hemisphere&quot;</span> report | cut -f2<span class="sb">`</span> 
+<span class="c">#</span>
+<span class="c"># Now we use &quot;gmt project&quot; to gmt project the data in both sat.xyg and ship.xyg</span>
+<span class="c"># into data.pg, where g is the same and p is the oblique longitude around</span>
+<span class="c"># the great circle.  We use -Q to get the p distance in kilometers, and -S</span>
+<span class="c"># to sort the output into increasing p values.</span>
+<span class="c">#</span>
+gmt project  sat.xyg -C<span class="nv">$cposx</span>/<span class="nv">$cposy</span> -T<span class="nv">$pposx</span>/<span class="nv">$pposy</span> -S -Fpz -Q &gt; sat.pg
+gmt project ship.xyg -C<span class="nv">$cposx</span>/<span class="nv">$cposy</span> -T<span class="nv">$pposx</span>/<span class="nv">$pposy</span> -S -Fpz -Q &gt; ship.pg
+<span class="c">#</span>
+<span class="c"># The gmtinfo utility will report the minimum and maximum values for all columns. </span>
+<span class="c"># We use this information first with a large -I value to find the appropriate -R</span>
+<span class="c"># to use to plot the .pg data. </span>
+<span class="c">#</span>
+<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>cat sat.pg ship.pg | gmt info -I100/25<span class="sb">`</span>
+gmt psxy <span class="nv">$R</span> -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3a in Cookbook&quot;</span> -BWeSn <span class="se">\</span>
+	-Bxa500f100+l<span class="s2">&quot;Distance along great circle&quot;</span> -Bya100f25+l<span class="s2">&quot;Gravity anomaly (mGal)&quot;</span> <span class="se">\</span>
+	-JX8i/5i -X2i -Y1.5i -K -Wthick sat.pg &gt; example_03a.ps
+gmt psxy -R -JX -O -Sp0.03i ship.pg &gt;&gt; example_03a.ps
+<span class="c">#</span>
+<span class="c"># From this plot we see that the ship data have some &quot;spikes&quot; and also greatly</span>
+<span class="c"># differ from the satellite data at a point about p ~= +250 km, where both of</span>
+<span class="c"># them show a very large anomaly.</span>
+<span class="c">#</span>
+<span class="c"># To facilitate comparison of the two with a cross-spectral analysis using &quot;gmt spectrum1d&quot;,</span>
+<span class="c"># we resample both data sets at intervals of 1 km.  First we find out how the data are</span>
+<span class="c"># typically spaced using $AWK to get the delta-p between points and view it with </span>
+<span class="c"># &quot;gmt pshistogram&quot;.</span>
+<span class="c">#</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{ if (NR &gt; 1) print $1 - last1; last1=$1; }&#39;</span> ship.pg | gmt pshistogram  -W0.1 -Gblack <span class="se">\</span>
+	-JX3i -K -X2i -Y1.5i -B0 -B+t<span class="s2">&quot;Ship&quot;</span> -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3b in Cookbook&quot;</span> <span class="se">\</span>
+	&gt; example_03b.ps
+<span class="nv">$AWK</span> <span class="s1">&#39;{ if (NR &gt; 1) print $1 - last1; last1=$1; }&#39;</span> sat.pg  | gmt pshistogram  -W0.1 -Gblack <span class="se">\</span>
+	-JX3i -O -X5i -B0 -B+t<span class="s2">&quot;Sat&quot;</span> &gt;&gt; example_03b.ps
+<span class="c">#</span>
+<span class="c"># This experience shows that the satellite values are spaced fairly evenly, with</span>
+<span class="c"># delta-p between 3.222 and 3.418.  The ship values are spaced quite unevenly, with</span>
+<span class="c"># delta-p between 0.095 and 9.017.  This means that when we want 1 km even sampling,</span>
+<span class="c"># we can use &quot;gmt sample1d&quot; to interpolate the sat data, but the same procedure applied</span>
+<span class="c"># to the ship data could alias information at shorter wavelengths.  So we have to use</span>
+<span class="c"># &quot;gmt filter1d&quot; to resample the ship data.  Also, since we observed spikes in the ship</span>
+<span class="c"># data, we use a median filter to clean up the ship values.  We will want to use &quot;paste&quot;</span>
+<span class="c"># to put the two sampled data sets together, so they must start and end at the same</span>
+<span class="c"># point, without NaNs.  So we want to get a starting and ending point which works for</span>
+<span class="c"># both of them.  This is a job for gmt gmtmath UPPER/LOWER.</span>
+<span class="c">#</span>
+head -1 ship.pg &gt; tmp
+head -1 sat.pg &gt;&gt; tmp
+<span class="nv">sampr1</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath tmp -Ca -Sf -o0 UPPER <span class="nv">CEIL</span> <span class="o">=</span><span class="sb">`</span>
+tail -1 ship.pg &gt; tmp
+tail -1 sat.pg &gt;&gt; tmp 
+<span class="nv">sampr2</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath tmp -Ca -Sf -o0 LOWER <span class="nv">FLOOR</span> <span class="o">=</span><span class="sb">`</span>
+<span class="c">#</span>
+<span class="c"># Now we can use sampr1|2 in gmt gmtmath to make a sampling points file for gmt sample1d:</span>
+gmt gmtmath -T<span class="nv">$sampr1</span>/<span class="nv">$sampr2</span>/1 -N1/0 <span class="nv">T</span> <span class="o">=</span> samp.x
+<span class="c">#</span>
+<span class="c"># Now we can resample the gmt projected satellite data:</span>
+<span class="c">#</span>
+gmt sample1d sat.pg -Nsamp.x &gt; samp_sat.pg
+<span class="c">#</span>
+<span class="c"># For reasons above, we use gmt filter1d to pre-treat the ship data.  We also need to sample</span>
+<span class="c"># it because of the gaps &gt; 1 km we found.  So we use gmt filter1d | gmt sample1d.  We also</span>
+<span class="c"># use the -E on gmt filter1d to use the data all the way out to sampr1/sampr2 :</span>
+<span class="c">#</span>
+gmt filter1d ship.pg -Fm1 -T<span class="nv">$sampr1</span>/<span class="nv">$sampr2</span>/1 -E | gmt sample1d -Nsamp.x &gt; samp_ship.pg
+<span class="c">#</span>
+<span class="c"># Now we plot them again to see if we have done the right thing:</span>
+<span class="c">#</span>
+gmt psxy <span class="nv">$R</span> -JX8i/5i -X2i -Y1.5i -K -Wthick samp_sat.pg <span class="se">\</span>
+	-Bxa500f100+l<span class="s2">&quot;Distance along great circle&quot;</span> -Bya100f25+l<span class="s2">&quot;Gravity anomaly (mGal)&quot;</span> <span class="se">\</span>
+	-BWeSn -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3c in Cookbook&quot;</span> &gt; example_03c.ps
+gmt psxy -R -JX -O -Sp0.03i samp_ship.pg &gt;&gt; example_03c.ps
+<span class="c">#</span>
+<span class="c"># Now to do the cross-spectra, assuming that the ship is the input and the sat is the output </span>
+<span class="c"># data, we do this:</span>
+<span class="c"># </span>
+gmt gmtconvert -A samp_ship.pg samp_sat.pg -o1,3 | gmt spectrum1d -S256 -D1 -W -C &gt; /dev/null
+<span class="c"># </span>
+<span class="c"># Now we want to plot the spectra. The following commands will plot the ship and sat </span>
+<span class="c"># power in one diagram and the coherency on another diagram, both on the same page.  </span>
+<span class="c"># Note the extended use of gmt pstext and gmt psxy to put labels and legends directly on the</span>
+<span class="c"># plots. For that purpose we often use -Jx1i and specify positions in inches directly:</span>
+<span class="c">#</span>
+gmt psxy spectrum.coh -Bxa1f3p+l<span class="s2">&quot;Wavelength (km)&quot;</span> -Bya0.25f0.05+l<span class="s2">&quot;Coherency@+2@+&quot;</span> <span class="se">\</span>
+	-BWeSn+g240/255/240 -JX-4il/3.75i -R1/1000/0/1 -P -K -X2.5i -Sc0.07i -Gmagenta <span class="se">\</span>
+	-Ey/0.5p -Y1.5i &gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.85 3.6 Coherency@+2@+&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx1i -F+f18p,Helvetica-Bold+jTR <span class="se">\</span>
+	-O -K &gt;&gt; <span class="nv">$ps</span>
+gmt psxy spectrum.xpower -Bxa1f3p -Bya1f3p+l<span class="s2">&quot;Power (mGal@+2@+km)&quot;</span> <span class="se">\</span>
+	-BWeSn+t<span class="s2">&quot;Ship and Satellite Gravity&quot;</span>+g240/255/240 <span class="se">\</span>
+	-Gred -ST0.07i -O -R1/1000/0.1/10000 -JX-4il/3.75il -Y4.2i -K -Ey/0.5p &gt;&gt; <span class="nv">$ps</span>
+gmt psxy spectrum.ypower -R -JX -O -K -Gblue -Sc0.07i -Ey/0.5p &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.9 3.6 Input Power&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O -K &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R -Jx -O -K -Gwhite -L -Wthicker &gt;&gt; <span class="nv">$ps</span> <span class="s">&lt;&lt; END</span>
+<span class="s">0.25	0.25</span>
+<span class="s">1.4	0.25</span>
+<span class="s">1.4	0.9</span>
+<span class="s">0.25	0.9</span>
+<span class="s">END</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.7&quot;</span> | gmt psxy -R -Jx -O -K -ST0.07i -Gred &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.7 Ship&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.4&quot;</span> | gmt psxy -R -Jx -O -K -Sc0.07i -Gblue &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.4 Satellite&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O &gt;&gt; <span class="nv">$ps</span>
+<span class="c">#</span>
+<span class="c"># Now we wonder if removing that large feature at 250 km would make any difference.</span>
+<span class="c"># We could throw away a section of data with $AWK or sed or head and tail, but we</span>
+<span class="c"># demonstrate the use of &quot;gmt trend1d&quot; to identify outliers instead.  We will fit a</span>
+<span class="c"># straight line to the samp_ship.pg data by an iteratively-reweighted method and</span>
+<span class="c"># save the weights on output.  Then we will plot the weights and see how things</span>
+<span class="c"># look:</span>
+<span class="c">#</span>
+gmt trend1d -Fxw -N2r samp_ship.pg &gt; samp_ship.xw
+gmt psxy <span class="nv">$R</span> -JX8i/4i -X2i -Y1.5i -K -Sp0.03i <span class="se">\</span>
+	-Bxa500f100+l<span class="s2">&quot;Distance along great circle&quot;</span> -Bya100f25+l<span class="s2">&quot;Gravity anomaly (mGal)&quot;</span> <span class="se">\</span>
+	-BWeSn -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3d in Cookbook&quot;</span> samp_ship.pg &gt; example_03d.ps
+<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>gmt info samp_ship.xw -I100/1.1<span class="sb">`</span>
+gmt psxy <span class="nv">$R</span> -JX8i/1.1i -O -Y4.25i -Bxf100 -Bya0.5f0.1+l<span class="s2">&quot;Weight&quot;</span> -BWesn -Sp0.03i <span class="se">\</span>
+	samp_ship.xw &gt;&gt; example_03d.ps
+<span class="c">#</span>
+<span class="c"># From this we see that we might want to throw away values where w &lt; 0.6.  So we try that,</span>
+<span class="c"># and this time we also use gmt trend1d to return the residual from the model fit (the </span>
+<span class="c"># de-trended data):</span>
+gmt trend1d -Fxrw -N2r samp_ship.pg | <span class="nv">$AWK</span> <span class="s1">&#39;{ if ($3 &gt; 0.6) print $1, $2 }&#39;</span> <span class="se">\</span>
+	| gmt sample1d -Nsamp.x &gt; samp2_ship.pg
+gmt trend1d -Fxrw -N2r samp_sat.pg  | <span class="nv">$AWK</span> <span class="s1">&#39;{ if ($3 &gt; 0.6) print $1, $2 }&#39;</span> <span class="se">\</span>
+	| gmt sample1d -Nsamp.x &gt; samp2_sat.pg
+<span class="c">#</span>
+<span class="c"># We plot these to see how they look:</span>
+<span class="c">#</span>
+<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>cat samp2_sat.pg samp2_ship.pg | gmt info -I100/25<span class="sb">`</span>
+gmt psxy <span class="nv">$R</span> -JX8i/5i -X2i -Y1.5i -K -Wthick <span class="se">\</span>
+	-Bxa500f100+l<span class="s2">&quot;Distance along great circle&quot;</span> -Bya50f25+l<span class="s2">&quot;Gravity anomaly (mGal)&quot;</span> <span class="se">\</span>
+	-BWeSn -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3e in Cookbook&quot;</span> samp2_sat.pg &gt; example_03e.ps
+gmt psxy -R -JX -O -Sp0.03i samp2_ship.pg &gt;&gt; example_03e.ps
+<span class="c">#</span>
+<span class="c"># Now we do the cross-spectral analysis again.  Comparing this plot (example_03e.ps) with</span>
+<span class="c"># the previous one (example_03d.ps) we see that throwing out the large feature has reduced</span>
+<span class="c"># the power in both data sets and reduced the coherency at wavelengths between 20--60 km.</span>
+<span class="c">#</span>
+gmt gmtconvert -A samp2_ship.pg samp2_sat.pg -o1,3 | gmt spectrum1d -S256 -D1 -W -C &gt; /dev/null
+<span class="c"># </span>
+gmt psxy spectrum.coh -Bxa1f3p+l<span class="s2">&quot;Wavelength (km)&quot;</span> -Bya0.25f0.05+l<span class="s2">&quot;Coherency@+2@+&quot;</span> -BWeSn <span class="se">\</span>
+	-JX-4il/3.75i -R1/1000/0/1 -UL/-2.25i/-1.25i/<span class="s2">&quot;Example 3f in Cookbook&quot;</span> -P -K -X2.5i <span class="se">\</span>
+	-Sc0.07i -Gblack -Ey/0.5p -Y1.5i &gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;3.85 3.6 Coherency@+2@+&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O <span class="se">\</span>
+	-K &gt;&gt; example_03f.ps
+cat &gt; box.d <span class="s">&lt;&lt; END</span>
+<span class="s">2.375	3.75</span>
+<span class="s">2.375	3.25</span>
+<span class="s">4	3.25</span>
+<span class="s">END</span>
+gmt psxy -R -Jx -O -K -Wthicker box.d &gt;&gt; example_03f.ps
+gmt psxy -Bxa1f3p -Bya1f3p+l<span class="s2">&quot;Power (mGal@+2@+km)&quot;</span> -BWeSn+t<span class="s2">&quot;Ship and Satellite Gravity&quot;</span> <span class="se">\</span>
+	spectrum.xpower -ST0.07i -O -R1/1000/0.1/10000 -JX-4il/3.75il -Y4.2i -K -Ey/0.5p <span class="se">\</span>
+	&gt;&gt; example_03f.ps
+gmt psxy spectrum.ypower -R -JX -O -K -Gblack -Sc0.07i -Ey/0.5p &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;3.9 3.6 Input Power&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O <span class="se">\</span>
+	-K &gt;&gt; example_03f.ps
+gmt psxy -R -Jx -O -K -Wthicker box.d &gt;&gt; example_03f.ps
+gmt psxy -R -Jx -O -K -Glightgray -L -Wthicker &gt;&gt; example_03f.ps <span class="s">&lt;&lt; END</span>
+<span class="s">0.25	0.25</span>
+<span class="s">1.4	0.25</span>
+<span class="s">1.4	0.9</span>
+<span class="s">0.25	0.9</span>
+<span class="s">END</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.7&quot;</span> | gmt psxy -R -Jx -O -K -ST0.07i -Gblack &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.7 Ship&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O -K &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.4&quot;</span> | gmt psxy -R -Jx -O -K -Sc0.07i -Gblack &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.4 Satellite&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O &gt;&gt; example_03f.ps
+<span class="c">#</span>
+rm -f box.d report tmp samp* *.pg *.extr spectrum.*
+</pre></div>
+</div>
+<p>The final illustration shows that the
+ship gravity anomalies have more power than altimetry derived gravity
+for short wavelengths and that the coherency between the two signals
+improves dramatically for wavelengths &gt; 20 km.</p>
+<div class="figure align-center">
+<img alt="../_images/example_03.png" src="../_images/example_03.png" style="width: 500px;" />
+<p class="caption">Spectral estimation and x=y-plots.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ex02.html"
+                        title="previous chapter">(2) Image presentations</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ex04.html"
+                        title="next chapter">(4) A 3-D perspective mesh plot</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ex04.html" title="(4) A 3-D perspective mesh plot"
+             >next</a> </li>
+        <li class="right" >
+          <a href="ex02.html" title="(2) Image presentations"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

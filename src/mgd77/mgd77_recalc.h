@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77_recalc.h 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: mgd77_recalc.h 10188 2012-05-30 00:52:15Z pwessel $
  *
- *    Copyright (c) 2004-2013 by P. Wessel
+ *    Copyright (c) 2004-2012 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* Here lies some defines and a structure of items that are used when we
@@ -39,9 +39,9 @@ struct MGD77_E77_APPLY {
 	   3. Recalculate mag using the latest IGRF reference field and mtf1
 	   4. Recalculate faa using the latest IGF80 reference field and gobs
 	*/
-	GMT_LONG apply_corrections;	/* TRUE if one or more corrections are requested */
-	GMT_LONG correction_requested[N_E77_CORR_FIELDS];	/* TRUE for each field we must correct */
-	GMT_LONG got_it[MGD77_SET_COLS];	/* TRUE for each original MGD77 column that was requested among the output columns */
+	bool apply_corrections;	/* true if one or more corrections are requested */
+	bool correction_requested[N_E77_CORR_FIELDS];	/* true for each field we must correct */
+	bool got_it[MGD77_SET_COLS];	/* true for each original MGD77 column that was requested among the output columns */
 	int needed[N_E77_AUX_FIELDS];	/* 0 if aux field not used, 1 if part of output cols, 2 is allocated separately */
 	int col[N_E77_CORR_FIELDS];	/* The output column number for each corrected field */
 	int id[N_E77_CORR_FIELDS];	/* The id number for each corrected field */

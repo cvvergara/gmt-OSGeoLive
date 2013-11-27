@@ -1,0 +1,7 @@
+#	$Id: red2green.cpt 10084 2012-05-12 21:04:53Z fwobbe $
+#
+# Like POLAR, but red to green instead
+# Designed by P. Wessel, SOEST
+#
+-1	red	0	white
+0	white	1	green

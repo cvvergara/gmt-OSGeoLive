@@ -1,6 +1,6 @@
 # GMT Time language file for Irish mode [IE]
 #
-#	$Id: ie.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: ie.d 10084 2012-05-12 21:04:53Z fwobbe $
 #-------------------------------------------------
 # Anam agus giorrúchán le na míonna os Gaeilge
 M	1	Eanáir			Ean	E
