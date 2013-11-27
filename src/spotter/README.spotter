@@ -1,19 +1,21 @@
-	$Id: README.spotter 9545 2011-07-27 19:31:54Z pwessel $
+	$Id: README.spotter 10084 2012-05-12 21:04:53Z fwobbe $
 
 SPOTTER Supplemental Package
-Distributed under the GNU Public License (see file ../LICENSE.TXT)
+Distributed under the GNU Lesser Public License; see file
+LICENSE.TXT in main GMT directory.
 
 ------------------------------------------------------
 Author:		Paul Wessel (pwessel@hawaii.edu)
 		SOEST, University of Hawaii
 Date:		October 18, 2007
-Version:	2.0
+Version:	5 (for GMT 5 release).  All tools made into modules
 ------------------------------------------------------
 
 This directory contains:
 
 README.spotter		: This document
 backtracker.c		: backtracker C program code
+grdpmodeler.c		: grdpmodeler C program code
 grdrotater.c		: grdrotater C program code
 grdspotter.c		: grdspotter C program code
 hotspotter.c		: hotspotter C program code

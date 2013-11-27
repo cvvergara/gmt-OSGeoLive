@@ -1,677 +1,733 @@
 /*--------------------------------------------------------------------
- *	$Id: xyz2grd.c 9987 2013-01-30 21:35:50Z pwessel $
+ *	$Id: xyz2grd.c 12407 2013-10-30 16:46:27Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * xyz2grd reads a xyz file from standard input and creates the
+ * Brief synopsis: xyz2grd reads a xyz file from standard input and creates the
  * corresponding grd-file. The input file does not have to be
  * sorted. xyz2grd will report if some nodes are missing.
  *
  * Author:	Paul Wessel
- * Date:	3-JAN-1991-2000
- * Version:	2.0	Based on old v1.x
- * Version:	3.1	Based on old 3.0
- * Version:	3.2	Added -S option for swapping only
- *		3.3.1	-S option need to set fopen modes to rb an wb
- *		3.3.4	-L option finally fixed
- *		3.3.5	-L option finally fixed, part II.  Also added -A[z|n]
- * Version:	3.3.6
- *		3.4	Now can handle multiple input files (except with -S)
- *		4
+ * Date:	1-JAN-2010
+ * Version:	5 API
  */
  
-#include "gmt.h"
+#define THIS_MODULE_NAME	"xyz2grd"
+#define THIS_MODULE_LIB		"core"
+#define THIS_MODULE_PURPOSE	"Convert data table to a grid file"
 
-#include "gmt_parse_z_io.h"	/* To define the Z structure used for parsing */
+#include "gmt_dev.h"
+
+#define GMT_PROG_OPTIONS "-:RVbfhirs" GMT_OPT("FH")
+
+void GMT_str_tolower (char *string);
 
 struct XYZ2GRD_CTRL {
-	struct A {	/* -A[n|z|u|l] */
-		GMT_LONG active;
+	struct In {
+		bool active;
+		char *file;
+	} In;
+	struct A {	/* -A[f|l|n|m|r|s|u|z] */
+		bool active;
 		char mode;
 	} A;
-	struct D {	/* -D<xname>/<yname>/<zname>/<scale>/<offset>/<title>/<remark> */
-		GMT_LONG active;
+	struct D {	/* -D<xname>/<yname>/<zname>/<scale>/<offset>/<invalid>/<title>/<remark> */
+		bool active;
 		char *information;
 	} D;
 	struct E {	/* -E[<nodata>] */
-		GMT_LONG active;
-		GMT_LONG set;
+		bool active;
+		bool set;
 		double nodata;
 	} E;
-	struct F {	/* -F */
-		GMT_LONG active;
-	} F;
 	struct G {	/* -G<output_grdfile> */
-		GMT_LONG active;
+		bool active;
 		char *file;
 	} G;
 	struct I {	/* -Idx[/dy] */
-		GMT_LONG active;
-		double xinc, yinc;
+		bool active;
+		double inc[2];
 	} I;
 	struct N {	/* -N<nodata> */
-		GMT_LONG active;
+		bool active;
 		double value;
 	} N;
 	struct S {	/* -S */
-		GMT_LONG active;
+		bool active;
 		char *file;
 	} S;
-	struct Z Z;
+	struct GMT_PARSE_Z_IO Z;
 };
 
-int main (int argc, char **argv)
+void *New_xyz2grd_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct XYZ2GRD_CTRL *C = NULL;
+	
+	C = GMT_memory (GMT, NULL, 1, struct XYZ2GRD_CTRL);
+	
+	/* Initialize values whose defaults are not 0/false/NULL */
+	C->N.value = GMT->session.d_NaN;
+	C->Z.type = 'a';
+	C->Z.format[0] = 'T';	C->Z.format[1] = 'L';
+	return (C);
+}
+
+void Free_xyz2grd_Ctrl (struct GMT_CTRL *GMT, struct XYZ2GRD_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	if (C->In.file) free (C->In.file);	
+	if (C->D.information) free (C->D.information);	
+	if (C->G.file) free (C->G.file);	
+	if (C->S.file) free (C->S.file);	
+	GMT_free (GMT, C);	
+}
+
+int GMT_xyz2grd_usage (struct GMTAPI_CTRL *API, int level)
 {
-	GMT_LONG error = FALSE, do_grid = FALSE, count = FALSE, average = TRUE;
-	GMT_LONG b_only = FALSE, done = FALSE, nofile = TRUE;
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: xyz2grd [<table>] -G<outgrid> %s\n", GMT_I_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t%s [-A[f|l|m|n|r|s|u|z]]\n\t[%s]\n", GMT_Rgeo_OPT, GMT_GRDEDIT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-N<nodata>] [-S[<zfile]] [%s] [-Z[<flags>]] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n",
+		GMT_V_OPT, GMT_bi_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
+
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_Message (API, GMT_TIME_NONE, "\t-G Sets name of the output grid file.\n");
+	GMT_Option (API, "IR");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+	GMT_Option (API, "<");
+	GMT_Message (API, GMT_TIME_NONE, "\t-A Determine what to do if multiple entries are found for a node:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -Af: Keep first value if multiple entries per node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -Al: Keep lower (minimum) value if multiple entries per node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -Am: Compute mean of multiple entries per node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -An: Count number of multiple entries per node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -Ar: Compute RMS of multiple entries per node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -As: Keep last value if multiple entries per node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -Au: Keep upper (maximum) value if multiple entries per node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -Az: Sum multiple entries at the same node.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default will compute mean values].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-D Append header information; leave field blank to get default value.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Set value for nodes without input xyz triplet [Default is NaN].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Z-table entries that equal <nodata> are replaced by NaN.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-S Swap the byte-order of the input data and write result to <zfile>\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   (or stdout if no file given).  Requires -Z, and no grid file created!\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   For this option, only one input file (or stdin) is allowed.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Note: Cannot handle swapping of 64-bit integers.\n");
+	GMT_Option (API, "V");
+	GMT_Message (API, GMT_TIME_NONE, "\t-Z Set exact specification of incoming 1-column z-table.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Unless -S is used, append two chars that indicate file organization:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   If data is in row format, state if first row is at T(op) or B(ottom).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     Then, append L or R to indicate starting point in row.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   If data is in column format, state if first columns is L(left) or R(ight).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     Then, append T or B to indicate starting point in column.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   To skip a header of size <n> bytes, append s<n> [<n> = 0].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   To swap the byte-order of each word, append w.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append x if gridline-registered, periodic data in x without repeating column at xmax.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append y if gridline-registered, periodic data in y without repeating row at ymax.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Specify one of the following data types (all binary except a):\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     A  Ascii (multiple floating point values per record).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     a  Ascii (one value per record).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     c  int8_t, signed 1-byte character.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     u  uint8_t, unsigned 1-byte character.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     h  int16_t, signed 2-byte integer.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     H  uint16_t, unsigned 2-byte integer.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     i  int32_t, signed 4-byte integer.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     I  uint32_t, unsigned 4-byte integer.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     l  int64_t, signed long (8-byte) integer.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     L  uint64_t, unsigned long (8-byte) integer.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     f  4-byte floating point single precision.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     d  8-byte floating point double precision.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default format is scanline orientation in ASCII representation: -ZTLa].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   This option assumes all nodes have data values.\n");
+	GMT_Option (API, "bi3,f,h,i,r,s,:,.");
 	
-	GMT_LONG z = 2, fno, n_args, *flag = VNULL;
-	GMT_LONG n_expected_fields, n_fields, n_files = 0, high_low = 0;
-	GMT_LONG i, ii, jj , gmt_ij, nm = 0, n_read = 0, n_filled = 0, n_used = 0;
-	GMT_LONG ij = -1;	/* Will be incremented to 0 or set first time around */
-	GMT_LONG n_empty = 0, n_stuffed = 0, n_bad = 0, n_confused = 0;
+	return (EXIT_FAILURE);
+}
 
-	double *in, d_value, wesn[4];
+int GMT_xyz2grd_parse (struct GMT_CTRL *GMT, struct XYZ2GRD_CTRL *Ctrl, struct GMT_Z_IO *io, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to xyz2grd and sets parameters in CTRL.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
 
-	float no_data_f, *a = VNULL;
+	unsigned int n_errors = 0, n_files = 0;
+	bool do_grid, b_only = false;
+	char *ptr_to_arg = NULL;
+	struct GMT_OPTION *opt = NULL;
+	struct GMTAPI_CTRL *API = GMT->parent;
 
-	char line[BUFSIZ];
+	memset (io, 0, sizeof(struct GMT_Z_IO)); /* Initialize with zero */
 
-	FILE *fp = NULL;
+	for (opt = options; opt; opt = opt->next) {
+		switch (opt->option) {
 
-	struct GRD_HEADER grd;
-	struct GMT_Z_IO io;
-	struct XYZ2GRD_CTRL *Ctrl = NULL;
-	
-	void *New_xyz2grd_Ctrl (), Free_xyz2grd_Ctrl (struct XYZ2GRD_CTRL *C);
-	
-	argc = (int)GMT_begin (argc, argv);
+			case '<':	/* Input files */
+				if (n_files++ > 0) break;
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+					Ctrl->In.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
 
-	Ctrl = (struct XYZ2GRD_CTRL *)New_xyz2grd_Ctrl ();	/* Allocate and initialize a new control structure */
+			/* Processes program-specific parameters */
 
-	GMT_grd_init (&grd, argc, argv, FALSE);
-
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
-				/* Common parameters */
-
-				case 'b':
-					b_only = TRUE;
-				case 'H':
-				case 'R':
-				case 'V':
-				case ':':
-				case 'f':
-				case '\0':
-					error += (GMT_LONG)GMT_parse_common_options (argv[i], &grd.x_min, &grd.x_max, &grd.y_min, &grd.y_max);
-					break;
-
-				case 'A':
-					if (argv[i][2] && !strchr ("nluz", argv[i][2])) {
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -A option:  Select -An, -Al, -Au, or -A[z]\n", GMT_program);
-						error++;
+			case 'A':
+				if (!opt->arg[0] && GMT_compat_check (GMT, 4)) {	/* In GMT4, just -A implied -Az */
+					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -A is deprecated; use -Az instead.\n");
+					Ctrl->A.active = true;
+					Ctrl->A.mode = 'z';
+				}
+				else if (!strchr ("flmnrsuz", opt->arg[0])) {
+					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -A option: Select -Af, -Al, -Am, -An, -Ar, -As, -Au, or -Az\n");
+					n_errors++;
+				}
+				else {
+					Ctrl->A.active = true;
+					Ctrl->A.mode = opt->arg[0];
+				}
+				break;
+			case 'D':
+				Ctrl->D.active = true;
+				Ctrl->D.information = strdup (opt->arg);
+				break;
+			case 'E':
+				if (GMT_compat_check (GMT, 4)) {
+					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -E is deprecated; use grdreformat instead.\n");
+					Ctrl->E.active = true;
+					if (opt->arg[0]) {
+						Ctrl->E.nodata = atof (opt->arg);
+						Ctrl->E.set = true;
 					}
-					else {
-						Ctrl->A.active = TRUE;
-						Ctrl->A.mode = argv[i][2];
-					}
-					break;
-				case 'D':
-					Ctrl->D.active = TRUE;
-					Ctrl->D.information = strdup (&argv[i][2]);
-					break;
-				case 'E':
-					Ctrl->E.active = TRUE;
-					if (argv[i][2]) {
-						Ctrl->E.nodata = atof (&argv[i][2]);
-						Ctrl->E.set = TRUE;
-					}
-					break;
-				case 'F':
-					Ctrl->F.active = TRUE;
-					break;
-				case 'G':
-					Ctrl->G.active = TRUE;
-					Ctrl->G.file = strdup (&argv[i][2]);
-					break;
-				case 'I':
-					Ctrl->I.active = TRUE;
-					if (GMT_getinc (&argv[i][2], &Ctrl->I.xinc, &Ctrl->I.yinc)) {
-						GMT_inc_syntax ('I', 1);
-						error = TRUE;
-					}
-					break;
-				case 'L':	/* Obsolete, but backward compatibility prevails [use -f instead] */
-					GMT_io.in_col_type[0] = GMT_io.out_col_type[0] = GMT_IS_LON;
-					GMT_io.in_col_type[1] = GMT_io.out_col_type[1] = GMT_IS_LAT;
-					fprintf (stderr, "%s: Option -L is obsolete (but is processed correctly).  Please use -f instead\n", GMT_program);
-					break;
-				case 'N':
-					if (!argv[i][2]) {
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -N option:  Must specify value or NaN\n", GMT_program);
-						error++;
-					}
-					else {
-						Ctrl->N.value = (argv[i][2] == 'N' || argv[i][2] == 'n') ? GMT_d_NaN : atof (&argv[i][2]);
-						Ctrl->N.active = TRUE;
-					}
-					break;
-				case 'S':
-					Ctrl->S.active = TRUE;
-					if (argv[i][2]) Ctrl->S.file = strdup (&argv[i][2]);
-					break;
-				case 'Z':
-					Ctrl->Z.active = TRUE;
-					error += (GMT_LONG)GMT_parse_z_io (&argv[i][2], &Ctrl->Z);
-					break;
-				default:
-					error = TRUE;
-					GMT_default_error (argv[i][1]);
-					break;
-			}
+				}
+				else
+					n_errors += GMT_default_error (GMT, opt->option);
+				break;
+			case 'G':
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+					Ctrl->G.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
+			case 'I':
+				Ctrl->I.active = true;
+				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					GMT_inc_syntax (GMT, 'I', 1);
+					n_errors++;
+				}
+				break;
+			case 'N':
+				Ctrl->N.active = true;
+				if (opt->arg[0])
+					Ctrl->N.value = (opt->arg[0] == 'N' || opt->arg[0] == 'n') ? GMT->session.d_NaN : atof (opt->arg);
+				else {
+					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -N option: Must specify value or NaN\n");
+					n_errors++;
+				}
+				break;
+			case 'S':
+				Ctrl->S.active = true;
+				if (opt->arg[0]) Ctrl->S.file = strdup (opt->arg);
+				break;
+			case 'Z':
+				Ctrl->Z.active = true;
+				ptr_to_arg = opt->arg;
+				break;
+
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
+				if (opt->option == 'b') b_only = true;
+				break;
 		}
-		else
-			n_files++;
 	}
 
-	if (argc == 1 || GMT_give_synopsis_and_exit) {
-		fprintf (stderr, "xyz2grd %s - Converting [xy]z data to a GMT grid file\n\n", GMT_VERSION);
-		fprintf (stderr, "usage: xyz2grd [<[xy]zfile(s)>] -G<grdfile> %s %s\n", GMT_I_OPT, GMT_Rgeo_OPT);
-		fprintf (stderr, "\t[-A[n|z|u|l]] [%s] [E[<nodata>]] [-F] [%s]\n", GMT_GRDEDIT, GMT_Ho_OPT);
-		fprintf (stderr, "\t[-N<nodata>] [-S[<zfile]] [-V] [-Z[<flags>]] [%s] [%s] [%s]\n", GMT_t_OPT, GMT_bi_OPT, GMT_f_OPT);
-
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-
-		fprintf (stderr, "\txyzfile(s) is a 1- or 3-column file [or standard input] with [x,y,]z values.\n");
-		fprintf (stderr, "\t-G to name the output grid file.\n");
-		GMT_inc_syntax ('I', 0);
-		GMT_explain_option ('R');
-		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-A (or -Az): Sum up multiple entries at the same node.\n");
-		fprintf (stderr, "\t   Append n (-An): Count number of multiple entries per node instead.\n");
-		fprintf (stderr, "\t   Append u (-Au): Keep maximum value if multiple entries per node.\n");
-		fprintf (stderr, "\t   Append l (-Al): Keep minimum value if multiple entries per node.\n");
-		fprintf (stderr, "\t   [Default (no -A option) will compute mean values].\n");
-		fprintf (stderr, "\t-D to enter header information.  Specify '=' to get default value.\n");
-		fprintf (stderr, "\t-E input is an ESRI ArcInfo interchange ASCII grid.  Optionally,\n");
-		fprintf (stderr, "\t   append the nodata value that represents nodes that should be NaN\n");
-		fprintf (stderr, "\t   [Normally, a nodata_value declaration may be found in the ESRI grid].\n");
-		fprintf (stderr, "\t   Information for -R , -I, and -F are obtained from the ESRI file.\n");
-		fprintf (stderr, "\t-F will force pixel registration [Default is grid registration].\n");
-		GMT_explain_option ('H');
-		fprintf (stderr, "\t-N set value for nodes without input xyz triplet [Default is NaN].\n");
-		fprintf (stderr, "\t   Z-table entries that equal <nodata> are replaced by NaN.\n");
-		fprintf (stderr, "\t-S Requires -Z and will swap the byte-order of the input data and write\n");
-		fprintf (stderr, "\t   the result to <zfile> (or stdout if no file given).  No grid file created!\n");
-		fprintf (stderr, "\t   For this option, only one input file (or stdin) is allowed.\n");
-		GMT_explain_option ('V');
-		fprintf (stderr, "\t-Z sets exact specification of incoming 1-column z-table.\n");
-		fprintf (stderr, "\t   If data is in row format, state if first row is at T(op) or B(ottom).\n");
-		fprintf (stderr, "\t     Then, append L or R to indicate starting point in row.\n");
-		fprintf (stderr, "\t   If data is in column format, state if first columns is L(left) or R(ight).\n");
-		fprintf (stderr, "\t     Then, append T or B to indicate starting point in column.\n");
-		fprintf (stderr, "\t   To skip a header of size <n> bytes, append s<n> [<n> = 0].\n");
-		fprintf (stderr, "\t   To swap byte-order in 2-byte words, append w.\n");
-		fprintf (stderr, "\t   Append x if gridline-registered, periodic data in x without repeating column at xmax.\n");
-		fprintf (stderr, "\t   Append y if gridline-registered, periodic data in y without repeating row at ymax.\n");
-		fprintf (stderr, "\t   Specify one of the following data types (all binary except a):\n");
-		fprintf (stderr, "\t     A  Ascii (multiple floating point values per record).\n");
-		fprintf (stderr, "\t     a  Ascii (one value per record).\n");
-		fprintf (stderr, "\t     c  signed 1-byte character.\n");
-		fprintf (stderr, "\t     u  unsigned 1-byte character.\n");
-		fprintf (stderr, "\t     h  signed short 2-byte integer.\n");
-		fprintf (stderr, "\t     H  unsigned short 2-byte integer.\n");
-		fprintf (stderr, "\t     i  signed 4-byte integer.\n");
-		fprintf (stderr, "\t     I  unsigned 4-byte integer.\n");
-		fprintf (stderr, "\t     l  signed long (4- or 8-byte) integer.\n");
-		fprintf (stderr, "\t     f  4-byte floating point single precision.\n");
-		fprintf (stderr, "\t     d  8-byte floating point double precision.\n");
-		fprintf (stderr, "\t   [Default format is scanline orientation in ASCII representation: -ZTLa].\n");
-		fprintf (stderr, "\t   This option assumes all nodes have data values.\n");
-		GMT_explain_option (':');
-		GMT_explain_option ('i');
-		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 3 input columns.\n");
-		GMT_explain_option ('f');
-		GMT_explain_option ('.');
-		exit (EXIT_FAILURE);
+	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	if (Ctrl->Z.active) {
+		if (Ctrl->S.active) Ctrl->Z.not_grid = true;	/* The row/col organization does not apply */
+		n_errors += GMT_parse_z_io (GMT, ptr_to_arg, &Ctrl->Z);
 	}
 
-	GMT_check_lattice (&Ctrl->I.xinc, &Ctrl->I.yinc, &Ctrl->F.active, &Ctrl->I.active);
-
-	if (Ctrl->S.active && !Ctrl->Z.active) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR option -S:  Must also specify -Z\n", GMT_program);
-		error++;
-	}
+	n_errors += GMT_check_condition (GMT, Ctrl->S.active && !Ctrl->Z.active, "Syntax error -S option: Must also specify -Z\n");
 	if (Ctrl->S.active) {	/* Reading and writing binary file */
 		if (n_files > 1) {
-			fprintf (stderr, "%s: GMT SYNTAX ERROR:  -S can only handle one input file\n", GMT_program);
-			error++;
+			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: -S can only handle one input file\n");
+			n_errors++;
 		}
 		else {
-			strcpy (GMT_io.r_mode, "rb");
-			strcpy (GMT_io.w_mode, "wb");
+			strcpy (GMT->current.io.r_mode, "rb");
+			strcpy (GMT->current.io.w_mode, "wb");
 		}
+		Ctrl->Z.swab = 1;	/* Only swap on input */
 	}
 
-	GMT_init_z_io (Ctrl->Z.format, Ctrl->Z.repeat, Ctrl->Z.swab, Ctrl->Z.skip, Ctrl->Z.type, &io);
-	if (b_only && Ctrl->Z.active) GMT_io.binary[GMT_IN] = FALSE;
+	if (Ctrl->Z.active) {
+		GMT_init_z_io (GMT, Ctrl->Z.format, Ctrl->Z.repeat, Ctrl->Z.swab, Ctrl->Z.skip, Ctrl->Z.type, io);
+		GMT->common.b.type[GMT_IN] = Ctrl->Z.type;
+		if (b_only) {
+			GMT->common.b.active[GMT_IN] = false;
+			GMT_Report (API, GMT_MSG_NORMAL, "Warning: -Z overrides -bi\n");
+		}
+	}
 
 	do_grid = !(Ctrl->S.active || Ctrl->E.active);
 	if (do_grid) {
-		if (!project_info.region_supplied) {
-			fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify -R option\n", GMT_program);
-			error++;
+		n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+		n_errors += GMT_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	}
+	n_errors += GMT_check_condition (GMT, !Ctrl->S.active && !(Ctrl->G.active || Ctrl->G.file), "Syntax error option -G: Must specify output file\n");
+	n_errors += GMT_check_binary_io (GMT, 3);
+
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
+
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_xyz2grd_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+
+int GMT_xyz2grd (void *V_API, int mode, void *args)
+{
+	bool previous_bin_i = false, previous_bin_o = false;
+	int error = 0, scol, srow;
+	unsigned int zcol, row, col, i, *flag = NULL;
+	uint64_t n_empty = 0, n_stuffed = 0, n_bad = 0, n_confused = 0;
+	uint64_t ij, gmt_ij, n_read = 0, n_filled = 0, n_used = 0;
+
+	char c, Amode;
+
+	double *in = NULL, wesn[4];
+
+	float no_data_f;
+
+	void * (*save_i) (struct GMT_CTRL *, FILE *, uint64_t *, int *) = NULL;
+	int (*save_o) (struct GMT_CTRL *, FILE *, uint64_t, double *);
+	
+	struct GMT_GRID *Grid = NULL;
+	struct GMT_Z_IO io;
+	struct XYZ2GRD_CTRL *Ctrl = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
+	struct GMT_OPTION *options = NULL;
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_xyz2grd_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_xyz2grd_usage (API, GMT_USAGE));/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_xyz2grd_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	/* Parse the command-line arguments */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_xyz2grd_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_xyz2grd_parse (GMT, Ctrl, &io, options))) Return (error);
+
+	/*---------------------------- This is the xyz2grd main code ----------------------------*/
+
+	if (Ctrl->S.active) {	/* Just swap data and bail */
+		int out_ID;
+		unsigned w_mode = GMT_ADD_DEFAULT;
+		
+		save_i = GMT->current.io.input;			/* Save previous i/0 parameters */
+		save_o = GMT->current.io.output;
+		previous_bin_i = GMT->common.b.active[GMT_IN];
+		previous_bin_o = GMT->common.b.active[GMT_OUT];
+		GMT->current.io.input = GMT_z_input;		/* Override input reader with chosen binary reader for selected type */
+		GMT->current.io.output = GMT_z_output;		/* Override output writer with chosen binary writer for selected type */
+		GMT->common.b.active[GMT_IN] = io.binary;	/* May have to set input binary as well */
+		GMT->common.b.active[GMT_OUT] = io.binary;	/* May have to set output binary as well */
+		if ((error = GMT_set_cols (GMT, GMT_IN, 1))) Return (error);
+		/* Initialize the i/o since we are doing record-by-record reading/writing */
+		GMT_Report (API, GMT_MSG_VERBOSE, "Swapping data bytes only\n");
+		if (Ctrl->S.active) io.swab = true;	/* Need to pass swabbing down to the gut level */
+
+		/* Register the data source */
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default input sources, unless already set via file */
+			Return (API->error);
 		}
-		if (Ctrl->I.xinc <= 0.0 || Ctrl->I.yinc <= 0.0) {
-			fprintf (stderr, "%s: GMT SYNTAX ERROR -I option.  Must specify positive increment(s)\n", GMT_program);
-			error++;
+		if (Ctrl->S.file) {	/* Specified an output file */
+			if ((out_ID = GMT_Register_IO (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_OUT, NULL, Ctrl->S.file)) == GMT_NOTSET) {
+				Return (API->error);
+			}
+			w_mode = GMT_ADD_EXISTING;
 		}
-	}
-	if (!Ctrl->S.active && !(Ctrl->G.active || Ctrl->G.file)) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR option -G:  Must specify output file\n", GMT_program);
-		error++;
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, w_mode, 0, options) != GMT_OK) {	/* Establishes data output to stdout */
+			Return (API->error);
+		}
+		if ((error = GMT_set_cols (GMT, GMT_IN, 1)) != GMT_OK) {	/* We dont really care or know about columns so must use 1 */
+			Return (API->error);
+		}
+		if ((error = GMT_set_cols (GMT, GMT_OUT, 1)) != GMT_OK) {	/* We dont really care or know about columns so must use 1 */
+			Return (API->error);
+		}
+		/* Initialize the i/o for doing record-by-record reading/writing */
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_OFF) != GMT_OK) {	/* Enables data input and sets access mode */
+			Return (API->error);
+		}
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_OFF) != GMT_OK) {	/* Enables data output and sets access mode */
+			Return (API->error);
+		}
+		do {	/* Keep returning records until we reach EOF */
+			if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+				if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+					Return (GMT_RUNTIME_ERROR);
+				if (GMT_REC_IS_ANY_HEADER (GMT)) 	/* Skip all headers */
+					continue;
+				if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+					break;
+			}
+
+			/* Data record to process */
+
+			GMT_Put_Record (API, GMT_WRITE_DOUBLE, in);
+		} while (true);
+
+		GMT->current.io.input = save_i;			/* Reset input pointer */
+		GMT->common.b.active[GMT_IN] = previous_bin_i;	/* Reset input binary */
+		GMT->current.io.output = save_o;		/* Reset output pointer */
+		GMT->common.b.active[GMT_OUT] = previous_bin_o;	/* Reset output binary */
+
+		if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+			Return (API->error);
+		}
+		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+			Return (API->error);
+		}
+		Return (GMT_OK);	/* We are done here */
 	}
 
-	if ((GMT_io.binary[GMT_IN] || io.binary) && GMT_io.io_header[GMT_IN]) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR.  Binary input data cannot have header -H\n", GMT_program);
-		error++;
-	}
-	if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] == 0) GMT_io.ncol[GMT_IN] = 3;
-	if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] < 3) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR.  Binary input data (-bi) must have at least 3 columns\n", GMT_program);
-		error++;
+	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
+
+	/* PW: This is now done in grdreformat since ESRI Arc Interchange is a recognized format */
+	if (Ctrl->E.active && GMT_compat_check (GMT, 4)) {	/* Read an ESRI Arc Interchange grid format in ASCII.  This must be a single physical file. */
+		uint64_t n_left;
+		double value;
+		char line[GMT_BUFSIZ];
+		FILE *fp = GMT->session.std[GMT_IN];
+		
+		if (Ctrl->In.file && (fp = GMT_fopen (GMT, Ctrl->In.file, "r")) == NULL) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Cannot open file %s\n", Ctrl->In.file);
+			Return (EXIT_FAILURE);
+		}
+		
+		if ((Grid = GMT_create_grid (GMT)) == NULL) Return (API->error);
+		GMT_grd_init (GMT, Grid->header, options, false);
+		Grid->header->registration = GMT_GRID_NODE_REG;
+		GMT_fgets (GMT, line, GMT_BUFSIZ, fp);
+		if (sscanf (line, "%*s %d", &Grid->header->nx) != 1) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error decoding ncols record\n");
+			Return (EXIT_FAILURE);
+		}
+		GMT_fgets (GMT, line, GMT_BUFSIZ, fp);
+		if (sscanf (line, "%*s %d", &Grid->header->ny) != 1) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error decoding ncols record\n");
+			Return (EXIT_FAILURE);
+		}
+		GMT_fgets (GMT, line, GMT_BUFSIZ, fp);
+		if (sscanf (line, "%*s %lf", &Grid->header->wesn[XLO]) != 1) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error decoding xll record\n");
+			Return (EXIT_FAILURE);
+		}
+		if (!strncmp (line, "xllcorner", 9U)) Grid->header->registration = GMT_GRID_PIXEL_REG;	/* Pixel grid */
+		GMT_fgets (GMT, line, GMT_BUFSIZ, fp);
+		if (sscanf (line, "%*s %lf", &Grid->header->wesn[YLO]) != 1) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error decoding yll record\n");
+			Return (EXIT_FAILURE);
+		}
+		if (!strncmp (line, "yllcorner", 9U)) Grid->header->registration = GMT_GRID_PIXEL_REG;	/* Pixel grid */
+		GMT_fgets (GMT, line, GMT_BUFSIZ, fp);
+		if (sscanf (line, "%*s %lf", &Grid->header->inc[GMT_X]) != 1) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error decoding cellsize record\n");
+			Return (EXIT_FAILURE);
+		}
+		Grid->header->inc[GMT_Y] = Grid->header->inc[GMT_X];
+		Grid->header->xy_off = 0.5 * Grid->header->registration;
+		Grid->header->wesn[XHI] = Grid->header->wesn[XLO] + (Grid->header->nx - 1 + Grid->header->registration) * Grid->header->inc[GMT_X];
+		Grid->header->wesn[YHI] = Grid->header->wesn[YLO] + (Grid->header->ny - 1 + Grid->header->registration) * Grid->header->inc[GMT_Y];
+		GMT_set_grddim (GMT, Grid->header);
+		GMT_err_fail (GMT, GMT_grd_RI_verify (GMT, Grid->header, 1), Ctrl->G.file);
+
+		GMT_Report (API, GMT_MSG_VERBOSE, "nx = %d  ny = %d\n", Grid->header->nx, Grid->header->ny);
+		n_left = Grid->header->nm;
+
+		Grid->data = GMT_memory_aligned (GMT, NULL, Grid->header->nm, float);
+		/* ESRI grids are scanline oriented (top to bottom), as are the GMT grids */
+		row = col = 0;
+		fscanf (fp, "%s", line);
+		GMT_str_tolower (line);
+		if (!strcmp (line, "nodata_value")) {	/* Found the optional nodata word */
+			fscanf (fp, "%lf", &value);
+			if (Ctrl->E.set && !doubleAlmostEqualZero (value, Ctrl->E.nodata)) {
+				GMT_Report (API, GMT_MSG_NORMAL, "Your -E%g overrides the nodata_value of %g found in the ESRI file\n", Ctrl->E.nodata, value);
+			}
+			else
+				Ctrl->E.nodata = value;
+		}
+		else {	/* Instead got the very first data value */
+			ij = GMT_IJP (Grid->header, row, col);
+			value = atof (line);
+			Grid->data[ij] = (value == Ctrl->E.nodata) ? GMT->session.f_NaN : (float) value;
+			if (++col == Grid->header->nx) col = 0, row++;
+			n_left--;
+		}
+		while (fscanf (fp, "%lf", &value) == 1 && n_left) {
+			ij = GMT_IJP (Grid->header, row, col);
+			Grid->data[ij] = (value == Ctrl->E.nodata) ? GMT->session.f_NaN : (float) value;
+			if (++col == Grid->header->nx) col = 0, row++;
+			n_left--;
+		}
+		GMT_fclose (GMT, fp);
+		if (n_left) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Expected %" PRIu64 " points, found only %" PRIu64 "\n", Grid->header->nm, Grid->header->nm - n_left);
+			Return (EXIT_FAILURE);
+		}
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_OK) {
+			Return (API->error);
+		}
+		Return (EXIT_SUCCESS);
 	}
 
-	if (error) exit (EXIT_FAILURE);
-
+	/* Here we will read either x,y,z or z data, using -R -I [-r] for sizeing */
+	
 	no_data_f = (float)Ctrl->N.value;
 	
-	if (do_grid) {
-		grd.x_inc = Ctrl->I.xinc;
-		grd.y_inc = Ctrl->I.yinc;
-		grd.node_offset = (int)Ctrl->F.active;
-		GMT_RI_prepare (&grd);	/* Ensure -R -I consistency and set nx, ny */
-	}
+	/* Set up and allocate output grid [note: zero padding specificied] */
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
+		GMT_GRID_DEFAULT_REG, 0, Ctrl->G.file)) == NULL) Return (API->error);
 	
-	if (Ctrl->A.active) {
-		switch (Ctrl->A.mode) {
-			case 'n':	/* Count the number of values for each node */
-				count = TRUE;
-				average = FALSE;
-				break;
-			case 'l':	/* Return the lowest (minimum) value at each node */
-				high_low = -1;
-				break;
-			case 'u':	/* Return the upper (maximum)  value at each node */
-				high_low = +1;
-				break;
-			case 'z':	/* Return the sum of multiple values at each node */
-			case '\0':
-				average = count = FALSE;
-				break;
-			default:
-				fprintf (stderr, "%s: GMT SYNTAX ERROR -A option:  Select -An, -Al, -Au, or -A[z]\n", GMT_program);
-				error++;
-				break;
-		}
-	}
-	if (b_only && Ctrl->Z.active) fprintf (stderr, "%s: GMT Warning.  -Z overrides -bi\n", GMT_program);
+	Amode = Ctrl->A.active ? Ctrl->A.mode : 'm';
 
-	if (GMT_io.binary[GMT_IN] && gmtdefs.verbose) {
-		char *type[2] = {"double", "single"};
-		fprintf (stderr, "%s: Expects %ld-column %s-precision binary data\n", GMT_program, GMT_io.ncol[GMT_IN], type[GMT_io.single_precision[GMT_IN]]);
+	if (GMT->common.b.active[GMT_IN] && GMT->current.io.col_type[GMT_IN][GMT_Z] & GMT_IS_RATIME && GMT->current.io.fmt[GMT_IN][GMT_Z].type == GMT_FLOAT) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Warning: Your single precision binary input data are unlikely to hold absolute time coordinates without serious truncation.\n");
+		GMT_Report (API, GMT_MSG_NORMAL, "Warning: You must use double precision when storing absolute time coordinates in binary data tables.\n");
 	}
 
-	if (GMT_io.binary[GMT_IN] && GMT_io.in_col_type[2] & GMT_IS_RATIME && GMT_io.single_precision[GMT_IN]) {
-		fprintf (stderr, "%s: Warning: Your single precision binary input data are unlikely to hold absolute time coordinates without serious truncation.\n", GMT_program);
-		fprintf (stderr, "%s: Warning: You must use double precision when storing absolute time coordinates in binary data tables.\n", GMT_program);
+	if (Ctrl->D.active) GMT_decode_grd_h_info (GMT, Ctrl->D.information, Grid->header);
+
+	GMT_Report (API, GMT_MSG_VERBOSE, "nx = %d  ny = %d  nm = %" PRIu64 "  size = %" PRIuS "\n", Grid->header->nx, Grid->header->ny, Grid->header->nm, Grid->header->size);
+
+	GMT_err_fail (GMT, GMT_set_z_io (GMT, &io, Grid), Ctrl->G.file);
+
+	GMT_set_xy_domain (GMT, wesn, Grid->header);	/* May include some padding if gridline-registered */
+	if (Ctrl->Z.active && Ctrl->N.active && GMT_is_dnan (Ctrl->N.value)) Ctrl->N.active = false;	/* No point testing */
+
+	if (Ctrl->Z.active) {	/* Need to override input method since reading single input column as z (not x,y) */
+		zcol = GMT_X;
+		save_i = GMT->current.io.input;
+		previous_bin_i = GMT->common.b.active[GMT_IN];
+		GMT->current.io.input = GMT_z_input;		/* Override and use chosen input mode */
+		GMT->common.b.active[GMT_IN] = io.binary;	/* May have to set binary as well */
+		in = GMT->current.io.curr_rec;
+		GMT->current.io.fmt[GMT_IN][zcol].type = GMT_get_io_type (GMT, Ctrl->Z.type);
+	}
+	else {
+		zcol = GMT_Z;
+		flag = GMT_memory (GMT, NULL, Grid->header->nm, unsigned int);	/* No padding needed for flag array */
+		GMT_memset (Grid->header->pad, 4, unsigned int);	/* Algorithm below expects no padding; we repad at the end */
+		GMT->current.setting.io_nan_records = false;	/* Cannot have x,y as NaNs here */
 	}
 
-	if (Ctrl->D.active) GMT_decode_grd_h_info (Ctrl->D.information, &grd);
-
-	if (Ctrl->S.active)
-		io.swab = TRUE;
-	else if (!Ctrl->E.active) {
-		grd.xy_off = 0.5 * grd.node_offset;
-
-		GMT_err_fail (GMT_grd_RI_verify (&grd, 1), Ctrl->G.file);
-
-		if (gmtdefs.verbose) fprintf (stderr, "%s: nx = %d  ny = %d\n", GMT_program, grd.nx, grd.ny);
-
-		nm = GMT_get_nm (grd.nx, grd.ny);
-
-		a = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
-		flag = (GMT_LONG *) GMT_memory (VNULL, (size_t)nm, sizeof (GMT_LONG), GMT_program);
-
-		n_expected_fields = (Ctrl->Z.active) ? 1 : Ctrl->A.mode == 'n' ? 2 : 3;
-		z = (Ctrl->Z.active) ? 0 : 2;
+	if ((error = GMT_set_cols (GMT, GMT_IN, Ctrl->Z.active ? 1 : Ctrl->A.mode == 'n' ? 2 : 3)) != GMT_OK) {
+		Return (error);
+	}
+	/* Initialize the i/o since we are doing record-by-record reading/writing */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {
+		Return (API->error);	/* Establishes data input */
+	}
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {
+		Return (API->error);	/* Enables data input and sets access mode */
 	}
 
-	GMT_err_fail (GMT_set_z_io (&io, &grd), Ctrl->G.file);
+	n_read = ij = 0;
+	if (Ctrl->Z.active) for (i = 0; i < io.skip; i++)
+		fread (&c, sizeof (char), 1, API->object[API->current_item[GMT_IN]]->fp);
 
-	GMT_set_xy_domain (wesn, &grd);	/* May include some padding if gridline-registered */
-
-	if (n_files > 0)
-		nofile = FALSE;
-	else
-		n_files = 1;
-	n_args = (argc > 1) ? argc : 2;
-
-	for (fno = 1; !done && fno < n_args; fno++) {	/* Loop over input files, if any */
-		if (!nofile && argv[fno][0] == '-') continue;
-
-		if (nofile) {	/* Just read standard input */
-			fp = GMT_stdin;
-			done = TRUE;
-			if (gmtdefs.verbose) fprintf (stderr, "%s: Reading from standard input\n", GMT_program);
-#ifdef SET_IO_MODE
-			GMT_setmode (GMT_IN);
-#endif
-		}
-#ifdef WIN32
-		else if (Ctrl->E.active && (fp = fopen (argv[fno], GMT_io.r_mode)) == NULL) {
-			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
-			continue;
-		}
-		else if ((fp = GMT_fopen (argv[fno], GMT_io.r_mode)) == NULL) {
-			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
-			continue;
-		}
-#else
-		else if ((fp = GMT_fopen (argv[fno], GMT_io.r_mode)) == NULL) {
-			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
-			continue;
-		}
-#endif
-
-		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
-
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
-
-		if (Ctrl->S.active) {	/* Just swap data and exit */
-			FILE *fps = NULL;
-
-			if (gmtdefs.verbose) fprintf (stderr, "%s: Swapping data bytes only\n", GMT_program);
-
-			if (!Ctrl->S.file) {
-				fps = GMT_stdout;
-#ifdef SET_IO_MODE
-				GMT_setmode (GMT_OUT);
-#endif
-			}
-			else if ((fps = GMT_fopen (Ctrl->S.file, GMT_io.w_mode)) == NULL) {
-				fprintf (stderr, "%s: Cannot create file %s\n", GMT_program, Ctrl->S.file);
-				exit (EXIT_FAILURE);
-			}
-
-			if (io.skip) GMT_fseek (fp, (long)io.skip, SEEK_CUR);
-			while ((io.read_item) (fp, &d_value)) (io.write_item) (fps, d_value);
-
-			if (fp != GMT_stdin) GMT_fclose (fp);
-			if (fps != GMT_stdout) GMT_fclose (fps);
-
-			exit (EXIT_SUCCESS);	/* We are done here */
+	do {	/* Keep returning records until we reach EOF */
+		n_read++;
+		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+				Return (GMT_RUNTIME_ERROR);
+			if (GMT_REC_IS_ANY_HEADER (GMT)) 	/* Skip all headers */
+				continue;
+			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+				break;
 		}
 
+		/* Data record to process */
+	
+		n_read++;
 		if (Ctrl->Z.active) {	/* Read separately because of all the possible formats */
-			if (Ctrl->N.active && GMT_is_dnan (Ctrl->N.value)) Ctrl->N.active = FALSE;	/* No point testing */
-			if (io.skip) GMT_fseek (fp, (long)io.skip, SEEK_CUR);
-			while ((io.read_item) (fp, &d_value)) {
-				ij++;
-				if (ij == io.n_expected) {
-					fprintf (stderr, "%s: More than %ld records, only %ld was expected (aborting)!\n", GMT_program, ij, io.n_expected);
-					exit (EXIT_FAILURE);
-				}
-				(io.get_gmt_ij) (&io, ij, &gmt_ij);
-				if (Ctrl->N.active && d_value == Ctrl->N.value)
-					a[gmt_ij] = GMT_f_NaN;
-				else
-					a[gmt_ij] = (float)d_value;
+			if (ij == io.n_expected) {
+				GMT_Report (API, GMT_MSG_NORMAL, "More than %" PRIu64 " records, only %" PRIu64 " was expected (aborting)!\n", ij, io.n_expected);
+				Return (EXIT_FAILURE);
 			}
+			gmt_ij = io.get_gmt_ij (&io, Grid, ij);	/* Convert input order to output node (with padding) as per -Z */
+			Grid->data[gmt_ij] = (Ctrl->N.active && in[zcol] == Ctrl->N.value) ? GMT->session.f_NaN : (float)in[zcol];
 			ij++;
-			if (ij != io.n_expected) {	/* Input amount doesn't match expectations */
-				fprintf (stderr, "%s: Found %ld records, but %ld was expected (aborting)!\n", GMT_program, ij, io.n_expected);
-				exit (EXIT_FAILURE);
-			}
-
-			GMT_check_z_io (&io, a);	/* This fills in missing periodic row or column */
-		}
-		else if (Ctrl->E.active) {	/* Read an ESRI Arc Interchange grid format in ASCII */
-			GMT_LONG n_left, j;
-			double value;
-			
-			grd.node_offset = 0;
-			(void)fgets (line, BUFSIZ, fp);
-			GMT_chop (line);					/* Rid the world of CR/LF */
-			if (sscanf (line, "%*s %d", &grd.nx) != 1) {
-				fprintf (stderr, "%s: Error decoding ncols record\n", GMT_program);
-				exit (EXIT_FAILURE);
-			}
-			(void)fgets (line, BUFSIZ, fp);
-			GMT_chop (line);					/* Rid the world of CR/LF */
-			if (sscanf (line, "%*s %d", &grd.ny) != 1) {
-				fprintf (stderr, "%s: Error decoding ncols record\n", GMT_program);
-				exit (EXIT_FAILURE);
-			}
-			(void)fgets (line, BUFSIZ, fp);	GMT_str_tolower (line);
-			GMT_chop (line);					/* Rid the world of CR/LF */
-			if (sscanf (line, "%*s %lf", &grd.x_min) != 1) {
-				fprintf (stderr, "%s: Error decoding xll record\n", GMT_program);
-				exit (EXIT_FAILURE);
-			}
-			if (!strncmp (line, "xllcorner", (size_t)9)) grd.node_offset = 1;	/* Pixel grid */
-			(void)fgets (line, BUFSIZ, fp);	GMT_str_tolower (line);
-			GMT_chop (line);					/* Rid the world of CR/LF */
-			if (sscanf (line, "%*s %lf", &grd.y_min) != 1) {
-				fprintf (stderr, "%s: Error decoding yll record\n", GMT_program);
-				exit (EXIT_FAILURE);
-			}
-			if (!strncmp (line, "yllcorner", (size_t)9)) grd.node_offset = 1;	/* Pixel grid */
-			(void)fgets (line, BUFSIZ, fp);
-			GMT_chop (line);					/* Rid the world of CR/LF */
-			if (sscanf (line, "%*s %lf", &grd.x_inc) != 1) {
-				fprintf (stderr, "%s: Error decoding cellsize record\n", GMT_program);
-				exit (EXIT_FAILURE);
-			}
-			grd.y_inc = grd.x_inc;
-			grd.xy_off = 0.5 * grd.node_offset;
-			grd.x_max = grd.x_min + (grd.nx - 1 + grd.node_offset) * grd.x_inc;
-			grd.y_max = grd.y_min + (grd.ny - 1 + grd.node_offset) * grd.y_inc;
-			
-			GMT_err_fail (GMT_grd_RI_verify (&grd, 1), Ctrl->G.file);
-
-			if (gmtdefs.verbose) fprintf (stderr, "%s: nx = %d  ny = %d\n", GMT_program, grd.nx, grd.ny);
-			nm = n_left = GMT_get_nm (grd.nx, grd.ny);
-
-			a = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
-			if (!Ctrl->E.set) {	/* Only read if not specified in -E */
-				(void)fgets (line, BUFSIZ, fp);
-				GMT_chop (line);					/* Rid the world of CR/LF */
-				if (sscanf (line, "%*s %lf", &Ctrl->E.nodata) != 1) {
-					fprintf (stderr, "%s: Error decoding nodata_value record\n", GMT_program);
-					exit (EXIT_FAILURE);
-				}
-			}
-			i = j = 0;
-			fscanf (fp, "%s", line);	GMT_str_tolower (line);
-			if (!strcmp (line, "nodata_value")) {	/* Found the optional nodata word */
-				fscanf (fp, "%lf", &value);
-				if (Ctrl->E.set && !GMT_IS_ZERO (value - Ctrl->E.nodata)) {
-					fprintf (stderr, "%s: Your -E%g overrides the nodata_value of %g found in the ESRI file\n", GMT_program, Ctrl->E.nodata, value);
-				}
-				else
-					Ctrl->E.nodata = value;
-			}
-			else {	/* Instead got the very first data value */
-				value = atof (line);
-				a[0] = (value == Ctrl->E.nodata) ? GMT_f_NaN : (float)value;
-				if (++i == grd.nx) i = 0, j++;
-				n_left--;
-			}
-			/* ESRI grids are scanline oriented (top to bottom) as are GMT grids */
-			while (fscanf (fp, "%lf", &value) == 1 && n_left) {
-				ij = j * grd.nx + i;
-				a[ij] = (value == Ctrl->E.nodata) ? GMT_f_NaN : (float) value;
-				if (++i == grd.nx) i = 0, j++;
-				n_left--;
-			}
-			if (n_left) {
-				fprintf (stderr, "%s: Expected %ld points, found only %ld\n", GMT_program, nm, nm - n_left);
-				exit (EXIT_FAILURE);
-			}
 		}
 		else {	/* Get x, y, z */
-			gmtdefs.nan_is_gap = FALSE;	/* Here, all x,y matters */
-			while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
+			if (GMT_y_is_outside (GMT, in[GMT_Y],  wesn[YLO], wesn[YHI])) continue;	/* Outside y-range */
+			if (GMT_x_is_outside (GMT, &in[GMT_X], wesn[XLO], wesn[XHI])) continue;	/* Outside x-range */
 
-				n_read++;
-				if (GMT_io.status & GMT_IO_MISMATCH) {
-					fprintf (stderr, "%s: Mismatch between actual (%ld) and expected (%ld) fields near line %ld (skipped)\n", GMT_program, n_fields, n_expected_fields, n_read);
-					continue;
+			/* Ok, we are inside the region - process data */
+
+			scol = (int)GMT_grd_x_to_col (GMT, in[GMT_X], Grid->header);
+			if (scol == -1) scol++, n_confused++;
+			col = scol;
+			if (col == Grid->header->nx) col--, n_confused++;
+			srow = (int)GMT_grd_y_to_row (GMT, in[GMT_Y], Grid->header);
+			if (srow == -1) srow++, n_confused++;
+			row = srow;
+			if (row == Grid->header->ny) row--, n_confused++;
+			ij = GMT_IJ0 (Grid->header, row, col);	/* Because padding is turned off we can use ij for both Grid and flag */
+			if (Amode == 'f') {	/* Want the first value to matter only */
+				if (flag[ij] == 0) {	/* Assign first value and that is the end of it */
+					Grid->data[ij] = (float)in[zcol];
+					flag[ij] = 1;
 				}
-
-				if (GMT_y_is_outside (in[GMT_Y],  wesn[2], wesn[3])) continue;	/* Outside y-range */
-				if (GMT_x_is_outside (&in[GMT_X], wesn[0], wesn[1])) continue;	/* Outside x-range */
-
-				/* Ok, we are inside the region - process data */
-
-				ii = GMT_x_to_i (in[GMT_X], grd.x_min, grd.x_inc, grd.xy_off, grd.nx);
-				if (ii == -1) ii++, n_confused++;
-				if (ii == grd.nx) ii--, n_confused++;
-				jj = GMT_y_to_j (in[GMT_Y], grd.y_min, grd.y_inc, grd.xy_off, grd.ny);
-				if (jj == -1) jj++, n_confused++;
-				if (jj == grd.ny) jj--, n_confused++;
-				ij = GMT_IJ (jj, ii, grd.nx);
-				if (high_low) {	/* Always come here if looking for extreme values */
-					if (flag[ij]) {	/* Already assigned the first value */
-						if ((high_low == -1 && (in[z] < (double)a[ij])) || (high_low == +1 && (in[z] > (double)a[ij]))) a[ij] = (float)in[z];
-					}
-					else {	/* First time, just assign the current value */
-						a[ij] = (float)in[z];
-						flag[ij] = 1;
-					}
-				}
-				else { 	/* Add up incase we must average */
-					a[ij] += (float)in[z];
-					flag[ij]++;
-				}
-				n_used++;
 			}
+			else if (Amode == 's') {	/* Want the last value to matter only */
+				Grid->data[ij] = (float)in[zcol];	/* Assign last value and that is it */
+				flag[ij] = 1;
+			}
+			else if (Amode == 'l') {	/* Keep lowest value */
+				if (flag[ij]) {	/* Already assigned the first value */
+					if (in[zcol] < (double)Grid->data[ij]) Grid->data[ij] = (float)in[zcol];
+				}
+				else {	/* First time, just assign the current value */
+					Grid->data[ij] = (float)in[zcol];
+					flag[ij] = 1;
+				}
+			}
+			else if (Amode == 'u') {	/* Keep highest value */
+				if (flag[ij]) {	/* Already assigned the first value */
+					if (in[zcol] > (double)Grid->data[ij]) Grid->data[ij] = (float)in[zcol];
+				}
+				else {	/* First time, just assign the current value */
+					Grid->data[ij] = (float)in[zcol];
+					flag[ij] = 1;
+				}
+			}
+			else if (Amode == 'r') { 	/* Add up squares in case we must rms */
+				Grid->data[ij] += (float)in[zcol] * (float)in[zcol];
+				flag[ij]++;
+			}
+			else { 	/* Add up in case we must sum or mean */
+				Grid->data[ij] += (float)in[zcol];
+				flag[ij]++;
+			}
+			n_used++;
 		}
-#ifdef WIN32
-		if (fp != GMT_stdin) {
-			(Ctrl->E.active) ? fclose (fp) : GMT_fclose (fp);
-		}
-#else
-		if (fp != GMT_stdin) GMT_fclose (fp);
-#endif
+	} while (true);
+	
+	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+		Return (API->error);
 	}
 
-	if (!(Ctrl->Z.active || Ctrl->E.active)) {	/* xyz data could have resulted in duplicates */
-		if (GMT_io.in_col_type[0] == GMT_IS_LON && GMT_360_RANGE (grd.x_max, grd.x_min) && !grd.node_offset) {	/* Make sure longitudes got replicated */
-			GMT_LONG j, ij_west, ij_east;
+	if (Ctrl->Z.active) {
+		GMT->current.io.input = save_i;	/* Reset pointer */
+		GMT->common.b.active[GMT_IN] = previous_bin_i;	/* Reset binary */
+		if (ij != io.n_expected) {	/* Input amount does not match expectations */
+			GMT_Report (API, GMT_MSG_NORMAL, "Found %" PRIu64 " records, but %" PRIu64 " was expected (aborting)!\n", ij, io.n_expected);
+			Return (EXIT_FAILURE);
+		}
+		GMT_check_z_io (GMT, &io, Grid);	/* This fills in missing periodic row or column */
+	}
+	else {	/* xyz data could have resulted in duplicates */
+		if (GMT_grd_duplicate_column (GMT, Grid->header, GMT_IN)) {	/* Make sure longitudes got replicated */
+			uint64_t ij_west, ij_east;
+			bool first_bad = true;
 
-			for (j = 0; j < grd.ny; j++) {	/* For each row, look at west and east bin */
-				ij_west = j * grd.nx;
-				ij_east = ij_west + grd.nx - 1;
+			for (row = 0; row < Grid->header->ny; row++) {	/* For each row, look at west and east bin */
+				ij_west = GMT_IJ0 (Grid->header, row, 0);
+				ij_east = GMT_IJ0 (Grid->header, row, Grid->header->nx - 1);
 				
 				if (flag[ij_west] && !flag[ij_east]) {		/* Nothing in east bin, just copy from west */
-					a[ij_east] = a[ij_west];
+					Grid->data[ij_east] = Grid->data[ij_west];
 					flag[ij_east] = flag[ij_west];
 				}
 				else if (flag[ij_east] && !flag[ij_west]) {	/* Nothing in west bin, just copy from east */
-					a[ij_west] = a[ij_east];
+					Grid->data[ij_west] = Grid->data[ij_east];
 					flag[ij_west] = flag[ij_east];
 				}
 				else {	/* Both have some stuff, consolidate combined value into the west bin, then replicate to the east */
-					if (high_low) {	/* Always come here if looking for extreme values */
-						if ((high_low == -1 && (a[ij_east] < a[ij_west])) || (high_low == +1 && (a[ij_east] > a[ij_west]))) a[ij_west] = a[ij_east];
+					if (Amode == 'f' || Amode == 's') {	/* Trouble since we did not store when we added these points */
+						if (first_bad) {
+							GMT_Report (API, GMT_MSG_VERBOSE, "Using -Af|s with replicated longitude bins may give inaccurate values");
+							first_bad = false;
+						}
 					}
-					else { 	/* Add up incase we must average */
-						a[ij_west] += a[ij_east];
+					else if (Amode == 'l') {
+						if (Grid->data[ij_east] < Grid->data[ij_west]) Grid->data[ij_west] = Grid->data[ij_east];
+					}
+					else if (Amode == 'u') {
+						if (Grid->data[ij_east] > Grid->data[ij_west]) Grid->data[ij_west] = Grid->data[ij_east];
+					}
+					else { 	/* Add up incase we must sum, rms or mean */
+						Grid->data[ij_west] += Grid->data[ij_east];
 						flag[ij_west] += flag[ij_east];
 					}
 					/* Replicate: */
-					a[ij_east] = a[ij_west];
+					Grid->data[ij_east] = Grid->data[ij_west];
 					flag[ij_east] = flag[ij_west];
 				}
-
 			}
 		}
 
-		for (ij = 0; ij < nm; ij++) {	/* Check if all nodes got one value only */
+		for (ij = 0; ij < Grid->header->nm; ij++) {	/* Check if all nodes got one value only */
 			if (flag[ij] == 1) {	/* This catches nodes with one value or the -Al|u single values */
-				if (count) a[ij] = 1.0;
+				if (Amode == 'n') Grid->data[ij] = 1.0f;
 				n_filled++;
 			}
 			else if (flag[ij] == 0) {
 				n_empty++;
-				a[ij] = no_data_f;
+				Grid->data[ij] = no_data_f;
 			}
 			else {	/* More than 1 value went to this node */
-				if (count)
-					a[ij] = (float)flag[ij];
-				else if (average)
-					a[ij] /= (float)flag[ij];
+				if (Amode == 'n')
+					Grid->data[ij] = (float)flag[ij];
+				else if (Amode == 'm')
+					Grid->data[ij] /= (float)flag[ij];
+				else if (Amode == 'r')
+					Grid->data[ij] = (float)sqrt (Grid->data[ij] / (float)flag[ij]);
 				/* implicit else means return the sum of the values */
 				n_filled++;
 				n_stuffed++;
 			}
 		}
+		GMT_free (GMT, flag);
 		
-		if (gmtdefs.verbose) {
-			sprintf (line, "%s\n", gmtdefs.d_format);
-			fprintf (stderr, "%s:  n_read: %ld  n_used: %ld  n_filled: %ld  n_empty: %ld set to ", GMT_program,
+		if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+			char line[GMT_BUFSIZ];
+			sprintf (line, "%s\n", GMT->current.setting.format_float_out);
+			GMT_Report (API, GMT_MSG_VERBOSE, " n_read: %" PRIu64 "  n_used: %" PRIu64 "  n_filled: %" PRIu64 " n_empty: %" PRIu64 " set to ",
 				n_read, n_used, n_filled, n_empty);
-			(GMT_is_dnan (Ctrl->N.value)) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.value);
-			if (n_bad) fprintf (stderr, "%s: %ld records unreadable\n", GMT_program, n_bad);
-			if (n_stuffed && !count) fprintf (stderr, "%s: Warning - %ld nodes had multiple entries that were processed\n", GMT_program, n_stuffed);
-			if (n_confused) fprintf (stderr, "%s: Warning - %ld values gave bad indices: Pixel vs gridline confusion?\n", GMT_program, n_confused);
+			(GMT_is_dnan (Ctrl->N.value)) ? GMT_Report (API, GMT_MSG_VERBOSE, "NaN\n") : GMT_Report (API, GMT_MSG_VERBOSE, line, Ctrl->N.value);
+			if (n_bad) GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " records unreadable\n", n_bad);
+			if (n_stuffed && Amode != 'n') GMT_Report (API, GMT_MSG_VERBOSE, "Warning - %" PRIu64 " nodes had multiple entries that were processed\n", n_stuffed);
+			if (n_confused) GMT_Report (API, GMT_MSG_VERBOSE, "Warning - %" PRIu64 " values gave bad indices: Pixel vs gridline confusion?\n", n_confused);
 		}
 	}
 
-	GMT_err_fail (GMT_write_grd (Ctrl->G.file, &grd, a, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->G.file);
+	GMT_grd_pad_on (GMT, Grid, GMT->current.io.pad);	/* Restore padding */
+	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_OK) {
+		Return (API->error);
+	}
 
-	GMT_free ((void *)a);
-	if (!Ctrl->E.active) GMT_free ((void *)flag);
-
-	Free_xyz2grd_Ctrl (Ctrl);	/* Deallocate control structure */
-
-	GMT_end (argc, argv);
-
-	exit (EXIT_SUCCESS);
-}
-
-void *New_xyz2grd_Ctrl () {	/* Allocate and initialize a new control structure */
-	struct XYZ2GRD_CTRL *C;
-	
-	C = (struct XYZ2GRD_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct XYZ2GRD_CTRL), "New_xyz2grd_Ctrl");
-	
-	/* Initialize values whose defaults are not 0/FALSE/NULL */
-	C->N.value = GMT_d_NaN;
-	C->Z.type = 'a';
-	C->Z.format[0] = 'T';	C->Z.format[1] = 'L';
-	return ((void *)C);
-}
-
-void Free_xyz2grd_Ctrl (struct XYZ2GRD_CTRL *C) {	/* Deallocate control structure */
-	if (C->D.information) free ((void *)C->D.information);	
-	if (C->G.file) free ((void *)C->G.file);	
-	if (C->S.file) free ((void *)C->S.file);	
-	GMT_free ((void *)C);	
+	Return (GMT_OK);
 }

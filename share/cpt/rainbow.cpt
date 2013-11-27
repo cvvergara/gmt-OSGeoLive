@@ -1,0 +1,6 @@
+#	$Id: rainbow.cpt 10084 2012-05-12 21:04:53Z fwobbe $
+#
+# Standard rainbow colortable for hue = 300 (magenta) to 0 (red)
+#
+# COLOR_MODEL = hsv
+0	magenta	1	red

@@ -1,0 +1,257 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>(20) Custom plot symbols &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="../index.html" />
+    <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
+    <link rel="next" title="(21) Time-series of RedHat stock price" href="ex21.html" />
+    <link rel="prev" title="(19) Color patterns on maps" href="ex19.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ex21.html" title="(21) Time-series of RedHat stock price"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="ex19.html" title="(19) Color patterns on maps"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="custom-plot-symbols">
+<span id="example-20"></span><h1>(20) Custom plot symbols<a class="headerlink" href="#custom-plot-symbols" title="Permalink to this headline">¶</a></h1>
+<p>One is often required to make special maps that shows the distribution
+of certain features but one would prefer to use a custom symbol instead
+of the built-in circles, squares, triangles, etc. in the GMT plotting
+programs <a class="reference internal" href="../psxy.html"><em>psxy</em></a> and
+<a class="reference internal" href="../psxyz.html"><em>psxyz</em></a>. Here we demonstrate one approach
+that allows for a fair bit of flexibility in designing ones own symbols.
+The following recipe is used when designing a new symbol.</p>
+<ol class="arabic simple">
+<li>Use <a class="reference internal" href="../psbasemap.html"><em>psbasemap</em></a> (or engineering
+paper!) to set up an empty grid that goes from -0.5 to +0.5 in both
+<em>x</em> and <em>y</em>. Use ruler and compass to draw your new symbol using
+straight lines, arcs of circles, and stand-alone geometrical objects
+(see <a class="reference internal" href="../psxy.html"><em>psxy</em></a> man page for a full
+description of symbol design). In this Section we will create two new
+symbols: a volcano and a bulls eye.</li>
+</ol>
+<div class="figure align-center">
+<img alt="../_images/GMT_volcano.png" src="../_images/GMT_volcano.png" style="width: 500px;" />
+</div>
+<ol class="arabic">
+<li><p class="first">After designing the symbol we will encode it using a simple set of
+rules. In our case we describe our volcano and bulls eye using these
+three freeform polygon generators:</p>
+<p><img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/> <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/> <em>r</em> <strong>C</strong> [ <strong>-G</strong><em>fill</em> ] [
+<strong>-W</strong><em>pen</em> ] Draw <img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/> <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/> <strong>M</strong> [ <strong>-G</strong><em>fill</em> ]
+[ <strong>-W</strong><em>pen</em> ] Start new element at <img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/>, <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/></p>
+<p><img class="math" src="../_images/math/ccada11db7b2b90693e2fac4f887a57fce6f96bf.png" alt="x_1"/> <img class="math" src="../_images/math/4ae250d1bdd46e5677f27edcf5efb34587b6fc1a.png" alt="y_1"/> <strong>D</strong> Draw straight line from current point
+to <img class="math" src="../_images/math/ccada11db7b2b90693e2fac4f887a57fce6f96bf.png" alt="x_1"/>, <img class="math" src="../_images/math/4ae250d1bdd46e5677f27edcf5efb34587b6fc1a.png" alt="y_1"/> around (<img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/>, <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/>)</p>
+<p><img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/> <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/> <em>r</em> <img class="math" src="../_images/math/cc6884a0da7478819612e0f7dab7a2f493884ef8.png" alt="\alpha_1"/> <img class="math" src="../_images/math/8fcdd27c8c8d3d90409dcb7b1e7ea7052c6b899b.png" alt="\alpha_2"/>
+<strong>A</strong> Draw arc segment of radius <em>r</em> from angle
+<img class="math" src="../_images/math/cc6884a0da7478819612e0f7dab7a2f493884ef8.png" alt="\alpha_1"/> to <img class="math" src="../_images/math/8fcdd27c8c8d3d90409dcb7b1e7ea7052c6b899b.png" alt="\alpha_2"/></p>
+<p>We also add a few stand-alone circles (for other symbols, see
+<a class="reference internal" href="../psxy.html"><em>psxy</em></a> man page):</p>
+<p><img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/> <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/> <em>r</em> <strong>C</strong> [ <strong>-G</strong><em>fill</em> ] [
+<strong>-W</strong><em>pen</em> ] Draw <img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/> <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/> <em>r</em> <strong>c</strong> [
+<strong>-G</strong><em>fill</em> ] [ <strong>-W</strong><em>pen</em> ] Draw single circle of radius
+<em>r</em> around <img class="math" src="../_images/math/17f1249ad95b7682b8316ad21de8ce4ee9fdcf93.png" alt="x_0"/>, <img class="math" src="../_images/math/721e40b7e0ac4359611aebe48cfb63122a347798.png" alt="y_0"/></p>
+<p>The optional <strong>-G</strong> and <strong>-W</strong> can be used to hardwire the color fill
+and pen for segments (use <strong>-</strong> to disallow fill or line for any
+specific feature). By default the segments are painted based on the
+values of the command line settings.</p>
+<p>Manually applying these rules to our volcano symbol results in a
+definition file <tt class="docutils literal"><span class="pre">volcano.def</span></tt>:</p>
+<p>Without much further discussion we also make a definition file <tt class="docutils literal"><span class="pre">bullseye.def</span></tt> for a
+multi-colored bulls eye symbol. Note that the symbol can be created
+beyond the -0.5 to +0.5 range, as shown by the red lines. There is no
+limit in GMT to the size of the symbols. The center, however, will
+always be at (0,0). This is the point to which the coordinates in
+<a class="reference internal" href="../psxy.html"><em>psxy</em></a> refers.</p>
+<p>The values refer to positions and dimensions illustrated in the
+Figure above.</p>
+</li>
+<li><p class="first">Given proper definition files we may now use them with
+<a class="reference internal" href="../psxy.html"><em>psxy</em></a> or <a class="reference internal" href="../psxyz.html"><em>psxyz</em></a>.</p>
+</li>
+</ol>
+<p>We are now ready to give it a try. Based on the hotspot locations in the
+file <tt class="docutils literal"><span class="pre">hotspots.d</span></tt> (with a 3rd column giving the desired symbol sizes in inches) we
+lay down a world map and overlay red volcano symbols using our
+custom-built volcano symbol and <a class="reference internal" href="../psxy.html"><em>psxy</em></a>. We
+do something similar with the bulls eye symbols. Without the <strong>-G</strong>
+option, however, they get the colors defined in <tt class="docutils literal"><span class="pre">bullseye.def</span></tt>.</p>
+<p>Here is our final map script that produces the Figure:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+<span class="c">#		GMT EXAMPLE 20</span>
+<span class="c">#</span>
+<span class="c"># Purpose:	Extend GMT to plot custom symbols</span>
+<span class="c"># GMT progs:	pscoast, psxy</span>
+<span class="c"># Unix progs:	rm</span>
+<span class="c">#</span>
+<span class="c"># Plot a world-map with volcano symbols of different sizes</span>
+<span class="c"># on top given locations and sizes in hotspots.d</span>
+<span class="nv">ps</span><span class="o">=</span>example_20.ps
+
+cat &gt; hotspots.d <span class="s">&lt;&lt; END</span>
+<span class="s">55.5	-21.0	0.25</span>
+<span class="s">63.0	-49.0	0.25</span>
+<span class="s">-12.0	-37.0	0.25</span>
+<span class="s">-28.5	29.34	0.25</span>
+<span class="s">48.4	-53.4	0.25</span>
+<span class="s">155.5	-40.4	0.25</span>
+<span class="s">-155.5	19.6	0.5</span>
+<span class="s">-138.1	-50.9	0.25</span>
+<span class="s">-153.5	-21.0	0.25</span>
+<span class="s">-116.7	-26.3	0.25</span>
+<span class="s">-16.5	64.4	0.25</span>
+<span class="s">END</span>
+
+gmt pscoast -Rg -JR9i -Bx60 -By30 -B+t<span class="s2">&quot;Hotspot Islands and Cities&quot;</span> -Gdarkgreen -Slightblue <span class="se">\</span>
+	-Dc -A5000 -K &gt; <span class="nv">$ps</span>
+
+gmt psxy -R -J hotspots.d -Skvolcano -O -K -Wthinnest -Gred &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Overlay a few bullseyes at NY, Cairo, and Perth</span>
+
+cat &gt; cities.d <span class="s">&lt;&lt; END</span>
+<span class="s">286	40.45	0.8</span>
+<span class="s">31.15	30.03	0.8</span>
+<span class="s">115.49	-31.58	0.8</span>
+<span class="s">END</span>
+
+gmt psxy -R -J cities.d -Skbullseye -O &gt;&gt; <span class="nv">$ps</span>
+
+rm -f hotspots.d cities.d
+</pre></div>
+</div>
+<div class="figure align-center">
+<img alt="../_images/example_20.png" src="../_images/example_20.png" style="width: 500px;" />
+<p class="caption">Using custom symbols in GMT.</p>
+</div>
+<p>Given these guidelines you can easily make your own symbols. Symbols
+with more than one color can be obtained by making several symbol
+components. E.g., to have yellow smoke coming out of red volcanoes we
+would make two symbols: one with just the cone and caldera and the other
+with the bubbles. These would be plotted consecutively using the desired
+colors. Alternatively, like in <tt class="docutils literal"><span class="pre">bullseye.def</span></tt>, we may specify colors directly for the
+various segments. Note that the custom symbols (Appendix [app:N]),
+unlike the built-in symbols in GMT, can be used with the built-in
+patterns (Appendix [app:E]). Other approaches are also possible, of course.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ex19.html"
+                        title="previous chapter">(19) Color patterns on maps</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ex21.html"
+                        title="next chapter">(21) Time-series of RedHat stock price</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ex21.html" title="(21) Time-series of RedHat stock price"
+             >next</a> </li>
+        <li class="right" >
+          <a href="ex19.html" title="(19) Color patterns on maps"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

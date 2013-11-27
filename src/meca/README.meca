@@ -1,6 +1,13 @@
-	$Id: README.meca 9545 2011-07-27 19:31:54Z pwessel $
+	$Id: README.meca 11286 2013-04-09 17:08:06Z pwessel $
 
-Distributed under the GNU Public License (see file ../LICENSE.TXT)
+Distributed under the GNU Lesser Public License; see file
+LICENSE.TXT in main GMT directory.
+
+GMT 5 version converted these tools to modules.
+
+-----------------------------------------------------------
+Comments from the original author Genevieve Patau.  She has
+since retired and no longer maintains the package.
 
 Dear colleagues,
 
@@ -30,16 +37,13 @@ psvelo plots velocity ellipses, strain crosses and strain wedges.
 It is a part of the GMT supplemental archive, so it can be installed
 automatically via install_gmt.
 
-The scripts meca_1.csh (psmeca) meca_2.csh (pscoupe) meca_3.csh
-(pspolar) and meca_4.csh (psvelo) will generate meca_1.ps,
-meca_2.ps, meca_3.ps and meca_4.ps.
-
-
 Psmeca plots seismic moment tensor and/or double couples on a map.
 Pscoupe plots seismic moment tensor and/or double couples on a 
 cross-section. 
 Pspolar plots polarities on the lower half-sphere.
 Psvelo plots velocity ellipses, strain crosses, or strain wedges on a map.
+
+For examples, see the directory test/meca.
 
 
 Genevieve Patau  
@@ -52,3 +56,16 @@ Tel: (33) (0)1 44 27 47 79
 Telex:202810 Volsism
 Fax: (33) (0)1 44 27 38 94
 E-mail: patau@ipgp.jussieu.fr
+
+Comment from Kurt Feigl regarding distribution rights for meca:
+
+April 5, 2013,
+
+Thanks for your message. Yes, I agree that psvelo and psmeca and their derivatives should be
+licensed under the Lesser GNU public license. When Genevieve Patau and I wrote the original
+code in 1992, we were both government employees of France. I am not aware of any
+restrictions on the intellectual property. 
+
+Sincerely,
+
+Kurt Feigl

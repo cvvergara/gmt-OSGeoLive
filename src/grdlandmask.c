@@ -1,319 +1,352 @@
 /*--------------------------------------------------------------------
- *	$Id: grdlandmask.c 10022 2013-04-20 04:15:51Z pwessel $
+ *	$Id: grdlandmask.c 12407 2013-10-30 16:46:27Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * grdlandmask defines a grid based on region and xinc/yinc values,
+ * Brief synopsis: grdlandmask defines a grid based on region and xinc/yinc values,
  * reads a shoreline data base, and sets the grid nodes inside, on the
  * boundary, and outside of the polygons to the user-defined values
  * <in>, <on>, and <out>.  These may be any number, including NaN.
  *
  * Author:	P. Wessel
- * Date:	23-Sep-1994
- * Version:	3.0
- * Modified:	24-JUN-1998, for GMT 3.1
- *		18-AUG-1999, for GMT 3.3.2
- *		13-JUL-2000, for GMT 3.3.5
- * Version:	4
+ * Date:	1-JAN-2010
+ * Version:	5 API
  */
  
-#include "gmt.h"
+#define THIS_MODULE_NAME	"grdlandmask"
+#define THIS_MODULE_LIB		"core"
+#define THIS_MODULE_PURPOSE	"Create a \"wet-dry\" mask grid from shoreline data base"
 
-#define GRDLANDMASK_N_CLASSES	(GMT_MAX_GSHHS_LEVEL + 1)	/* Number of bands separated by the levels */
+#include "gmt_dev.h"
+
+#define GMT_PROG_OPTIONS "-VRr" GMT_OPT("F")
+
+#define GRDLANDMASK_N_CLASSES	(GSHHS_MAX_LEVEL + 1)	/* Number of bands separated by the levels */
 
 struct GRDLANDMASK_CTRL {	/* All control options for this program (except common args) */
-	/* ctive is TRUE if the option has been activated */
+	/* ctive is true if the option has been activated */
 	struct A {	/* -A<min_area>[/<min_level>/<max_level>] */
-		GMT_LONG active;
+		bool active;
 		struct GMT_SHORE_SELECT info;
 	} A;
 	struct D {	/* -D<resolution> */
-		GMT_LONG active;
-		GMT_LONG force;	/* if TRUE, select next highest level if current set is not avaialble */
+		bool active;
+		bool force;	/* if true, select next highest level if current set is not avaialble */
 		char set;	/* One of f, h, i, l, c */
 	} D;
-	struct F {	/* -F */
-		GMT_LONG active;
-	} F;
+	struct E {	/* -E */
+		bool active;
+		unsigned int inside;	/* if 2, then a point exactly on a polygon boundary is considered OUTSIDE, else 1 */
+	} E;
 	struct G {	/* -G<maskfile> */
-		GMT_LONG active;
+		bool active;
 		char *file;
 	} G;
 	struct I {	/* -Idx[/dy] */
-		GMT_LONG active;
-		double xinc, yinc;
+		bool active;
+		double inc[2];
 	} I;
-	struct N {	/* -N<maskvalues>[o] */
-		GMT_LONG active;
-		GMT_LONG edge;	/* TRUE if edges are considere outside */
+	struct N {	/* -N<maskvalues> */
+		bool active;
+		unsigned int mode;	/* 1 if dry/wet only, 0 if 5 mask levels */
 		double mask[GRDLANDMASK_N_CLASSES];	/* values for each level */
 	} N;
 };
 
-int main (int argc, char **argv)
+void *New_grdlandmask_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct GRDLANDMASK_CTRL *C;
+	
+	C = GMT_memory (GMT, NULL, 1, struct GRDLANDMASK_CTRL);
+	
+	/* Initialize values whose defaults are not 0/false/NULL */
+	
+	C->A.info.high = GSHHS_MAX_LEVEL;				/* Include all GSHHS levels */
+	C->D.set = 'l';							/* Low-resolution coastline data */
+	C->E.inside = GMT_ONEDGE;					/* Default is that points on a boundary are inside */
+	GMT_memset (C->N.mask, GRDLANDMASK_N_CLASSES, double);		/* Default "wet" value = 0 */
+	C->N.mask[1] = C->N.mask[3] = 1.0;				/* Default for "dry" areas = 1 (inside) */
+	
+	return (C);
+}
+
+void Free_grdlandmask_Ctrl (struct GMT_CTRL *GMT, struct GRDLANDMASK_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	if (C->G.file) free (C->G.file);	
+	GMT_free (GMT, C);	
+}
+
+int GMT_grdlandmask_usage (struct GMTAPI_CTRL *API, int level)
 {
-	GMT_LONG	error = FALSE, dry_wet_only = FALSE, greenwich = FALSE;
-	GMT_LONG temp_shift = FALSE, wrap, used_polygons;
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: grdlandmask -G<outgrid> %s\n\t%s\n", GMT_I_OPT, GMT_Rgeo_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-D<resolution>][+] [-E]\n\t[-N<maskvalues>] [%s] [%s]\n\n", GMT_A_OPT, GMT_V_OPT, GMT_r_OPT);
 
-	char line[GMT_LONG_TEXT], ptr[BUFSIZ];
-	char *shore_resolution[5] = {"full", "high", "intermediate", "low", "crude"};
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
-	GMT_LONG	i, j, k, ii, bin, ind, np, side, i_min, i_max, j_min, j_max, nx1, ny1, np_new, pos;
-	GMT_LONG	base = 3, direction, is_inside = 1, err, ij, nm;
+	GMT_Message (API, GMT_TIME_NONE, "\t-G Specify file name for output mask grid file.\n");
+	GMT_Option (API, "I,R");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+	GMT_Option (API, "A");
+	GMT_Message (API, GMT_TIME_NONE, "\t-D Choose one of the following resolutions:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   f - full resolution (may be very slow for large regions).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   h - high resolution (may be slow for large regions).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   i - intermediate resolution.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   l - low resolution [Default].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   c - crude resolution, for tasks that need crude continent outlines only.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append + to use a lower resolution should the chosen one not be available [abort].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-E Indicate that nodes exactly on a polygon boundary are outside [inside].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Give values to use if a node is outside or inside a feature.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Specify this information using 1 of 2 formats:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -N<wet>/<dry>.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -N<ocean>/<land>/<lake>/<island>/<pond>.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   NaN is a valid entry.  Default values are 0/1/0/1/0 (i.e., 0/1).\n");
+	GMT_Option (API, "V,r,.");
+	
+	return (EXIT_FAILURE);
+}
 
-	float *data;
+int GMT_grdlandmask_parse (struct GMT_CTRL *GMT, struct GRDLANDMASK_CTRL *Ctrl, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to grdlandmask and sets parameters in CTRL.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
 
-	double	*x = NULL, *y = NULL, xmin, xmax, ymin, ymax, west_border, east_border, i_dx_inch, i_dy_inch;
-	double i_dx, i_dy, del_off, dummy;
+	unsigned int n_errors = 0, j, pos, n_files = 0;
+	char line[GMT_LEN256] = {""}, ptr[GMT_BUFSIZ] = {""};
+	struct GMT_OPTION *opt = NULL;
+	struct GMTAPI_CTRL *API = GMT->parent;
 
-	struct GMT_SHORE c;
-	struct GRD_HEADER header;
-	struct GMT_GSHHS_POL *p = NULL;
-	struct GRDLANDMASK_CTRL *Ctrl = NULL;
+	for (opt = options; opt; opt = opt->next) {
+		switch (opt->option) {
 
-	void *New_grdlandmask_Ctrl (), Free_grdlandmask_Ctrl (struct GRDLANDMASK_CTRL *C);
+			case '<':	/* Input files */
+				n_files++;
+				break;
 
-	argc = (int)GMT_begin (argc, argv);
-	GMT_io.out_col_type[0] = GMT_IS_LON;
-	GMT_io.out_col_type[1] = GMT_IS_LAT;
+			/* Processes program-specific parameters */
 
-	Ctrl = (struct GRDLANDMASK_CTRL *) New_grdlandmask_Ctrl ();		/* Allocate and initialize defaults in a new control structure */
+			case 'A':	/* Restrict GSHHS features */
+				Ctrl->A.active = true;
+				GMT_set_levels (GMT, opt->arg, &Ctrl->A.info);
+				break;
+			case 'D':	/* Set GSHHS resolution */
+				Ctrl->D.active = true;
+				Ctrl->D.set = opt->arg[0];
+				Ctrl->D.force = (opt->arg[1] == '+');
+				break;
+			case 'E':	/* On-boundary setting */
+				Ctrl->E.active = true;
+				Ctrl->E.inside = GMT_INSIDE;
+				break;
+			case 'G':	/* Output filename */
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+					Ctrl->G.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
+			case 'I':	/* Grid spacings */
+				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					GMT_inc_syntax (GMT, 'I', 1);
+					n_errors++;
+				}
+				Ctrl->I.active = true;
+				break;
+			case 'N':	/* Mask values */
+				Ctrl->N.active = true;
+				strncpy (line, opt->arg,  GMT_LEN256);
+				if (line[strlen(line)-1] == 'o' && GMT_compat_check (GMT, 4)) { /* Edge is considered outside */
+					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -N...o is deprecated; use -E instead\n");
+					Ctrl->E.active = true;
+					Ctrl->E.inside = GMT_INSIDE;
+					line[strlen(line)-1] = 0;
+				}
+				j = pos = 0;
+				while (j < 5 && (GMT_strtok (line, "/", &pos, ptr))) {
+					Ctrl->N.mask[j] = (ptr[0] == 'N' || ptr[0] == 'n') ? GMT->session.f_NaN : (float)atof (ptr);
+					j++;
+				}
+				if (!(j == 2 || j == 5)) {
+					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -N option: Specify 2 or 5 arguments\n");
+					n_errors++;
+				}
+				Ctrl->N.mode = (j == 2);
+				break;
 
-	GMT_grd_init (&header, argc, argv, FALSE);
-
-	/* Check command line arguments */
-
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
-
-				/* Common parameters */
-
-				case 'R':
-				case 'V':
-				case ':':
-				case '\0':
-					error += GMT_parse_common_options (argv[i], &header.x_min, &header.x_max, &header.y_min, &header.y_max);
-					break;
-
-				/* Supplemental parameters */
-
-				case 'A':
-					Ctrl->A.active = TRUE;
-					GMT_set_levels (&argv[i][2], &Ctrl->A.info);
-					break;
-				case 'D':
-					Ctrl->D.active = TRUE;
-					Ctrl->D.set = argv[i][2];
-					if (argv[i][3] == '+') Ctrl->D.force = TRUE;
-					break;
-				case 'N':
-					Ctrl->N.active = TRUE;
-					strcpy (line, &argv[i][2]);
-					if (line[strlen(line)-1] == 'o') { /* Edge is considered outside */
-						Ctrl->N.edge = TRUE;
-						line[strlen(line)-1] = 0;
-					}
-					j = pos = 0;
-					while (j < 5 && (GMT_strtok (line, "/", &pos, ptr))) {
-						Ctrl->N.mask[j] = (ptr[0] == 'N' || ptr[0] == 'n') ? GMT_f_NaN : (float)atof (ptr);
-						j++;
-					}
-					if (!(j == 2 || j == 5)) {
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -N option:  Specify 2 or 5 arguments\n", GMT_program);
-						exit (EXIT_FAILURE);
-					}
-					dry_wet_only = (j == 2);
-					break;
-				case 'F':
-					Ctrl->F.active = TRUE;
-					break;
-				case 'G':
-					Ctrl->G.active = TRUE;
-					Ctrl->G.file = strdup (&argv[i][2]);
-					break;
-				case 'I':
-					if (GMT_getinc (&argv[i][2], &Ctrl->I.xinc, &Ctrl->I.yinc)) {
-						GMT_inc_syntax ('I', 1);
-						error = TRUE;
-					}
-					Ctrl->I.active = TRUE;
-					break;
-				default:
-					error = TRUE;
-					GMT_default_error (argv[i][1]);
-					break;
-			}
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
+				break;
 		}
 	}
 
-	if (argc == 1 || GMT_give_synopsis_and_exit) {
-		fprintf (stderr, "grdlandmask %s - Create \"wet-dry\" mask grid file from shoreline data base\n\n", GMT_VERSION);
-		fprintf (stderr, "usage: grdlandmask -G<mask_grd_file> %s %s\n", GMT_I_OPT, GMT_Rgeo_OPT);
-		fprintf (stderr, "\t[%s] [-D<resolution>][+] [-F] [-N<maskvalues>[o]] [-V]\n\n", GMT_A_OPT);
+	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
 
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
+	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += GMT_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify an output file\n");
+	n_errors += GMT_check_condition (GMT, n_files, "Syntax error: No input files allowed.\n");
 
-		fprintf (stderr, "\t-G Specify file name for output mask grid file.\n");
-		GMT_inc_syntax ('I', 0);
-		GMT_explain_option ('R');
-		fprintf (stderr, "\n\tOPTIONS:\n");
-		GMT_GSHHS_syntax ('A', "Place limits on coastline features from the GSHHS data base.");
-		fprintf (stderr, "\t-D Choose one of the following resolutions:\n");
-		fprintf (stderr, "\t   f - full resolution (may be very slow for large regions).\n");
-		fprintf (stderr, "\t   h - high resolution (may be slow for large regions).\n");
-		fprintf (stderr, "\t   i - intermediate resolution.\n");
-		fprintf (stderr, "\t   l - low resolution [Default].\n");
-		fprintf (stderr, "\t   c - crude resolution, for tasks that need crude continent outlines only.\n");
-		fprintf (stderr, "\t   Append + to use a lower resolution should the chosen one not be available [abort].\n");
-		fprintf (stderr, "\t-F Force pixel registration for output grid [Default is gridline orientation].\n");
-		fprintf (stderr, "\t-N gives values to use if a node is outside or inside a feature.\n");
-		fprintf (stderr, "\t   Append o to let feature boundary be considered outside [Default is inside].\n");
-		fprintf (stderr, "\t   Specify this information using 1 of 2 formats:\n");
-		fprintf (stderr, "\t   -N<wet>/<dry>.\n");
-		fprintf (stderr, "\t   -N<ocean>/<land>/<lake>/<island>/<pond>.\n");
-		fprintf (stderr, "\t   NaN is a valid entry.  Default values are 0/1/0/1/0 (i.e., 0/1).\n");
-		GMT_explain_option ('V');
-		exit (EXIT_FAILURE);
-	}
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
 
-	GMT_check_lattice (&Ctrl->I.xinc, &Ctrl->I.yinc, &Ctrl->F.active, &Ctrl->I.active);
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_grdlandmask_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-	if (!project_info.region_supplied) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify -R option\n", GMT_program);
-		error++;
-	}
-	if (Ctrl->I.xinc <= 0.0 || Ctrl->I.yinc <= 0.0) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR -I option.  Must specify positive increment(s)\n", GMT_program);
-		error = TRUE;
-	}
-	if (!Ctrl->G.file) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR -G:  Must specify output file\n", GMT_program);
-		error = TRUE;
-	}
-
-	if (error) exit (EXIT_FAILURE);
-
-	header.x_inc = Ctrl->I.xinc;
-	header.y_inc = Ctrl->I.yinc;
-	header.node_offset = (int)Ctrl->F.active;
+int GMT_grdlandmask (void *V_API, int mode, void *args)
+{
+	bool temp_shift = false, wrap, used_polygons;
+	unsigned int base = 3, k, bin, np, side, np_new;
+	int row, row_min, row_max, ii, col, col_min, col_max, i, direction, err, ind, nx1, ny1, error = 0;
 	
-	GMT_RI_prepare (&header);	/* Ensure -R -I consistency and set nx, ny */
+	uint64_t ij;
 
-	if (header.x_min < 0.0 && header.x_max < 0.0) {	/* Shift longitudes */
-		temp_shift = TRUE;
-		header.x_min += 360.0;
-		header.x_max += 360.0;
+	char line[GMT_LEN256] = {""};
+	char *shore_resolution[5] = {"full", "high", "intermediate", "low", "crude"};
+
+	double xmin, xmax, ymin, ymax, west_border, east_border, i_dx_inch, i_dy_inch;
+	double dummy, *x = NULL, *y = NULL;
+
+	struct GMT_SHORE c;
+	struct GMT_GRID *Grid = NULL;
+	struct GMT_GSHHS_POL *p = NULL;
+	struct GRDLANDMASK_CTRL *Ctrl = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
+	struct GMT_OPTION *options = NULL;
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdlandmask_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdlandmask_usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdlandmask_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	/* Parse the command-line arguments */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_grdlandmask_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_grdlandmask_parse (GMT, Ctrl, options))) Return (error);
+
+	/*---------------------------- This is the grdlandmask main code ----------------------------*/
+
+	/* We know coastline data are geographic so we hardwire this here: */
+	GMT_set_geographic (GMT, GMT_IN);
+
+	/* Create the empty grid and allocate space */
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
+		GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+	
+	if (Grid->header->wesn[XLO] < 0.0 && Grid->header->wesn[XHI] < 0.0) {	/* Shift longitudes */
+		temp_shift = true;
+		Grid->header->wesn[XLO] += 360.0;
+		Grid->header->wesn[XHI] += 360.0;
 	}
 
-	GMT_err_fail (GMT_grd_RI_verify (&header, 1), Ctrl->G.file);
-
-	if (Ctrl->D.force) Ctrl->D.set = GMT_shore_adjust_res (Ctrl->D.set);
-	base = GMT_set_resolution (&Ctrl->D.set, 'D');
+	if (Ctrl->D.force) Ctrl->D.set = GMT_shore_adjust_res (GMT, Ctrl->D.set);
+	base = GMT_set_resolution (GMT, &Ctrl->D.set, 'D');
 	
-	is_inside = (Ctrl->N.edge) ? 2 : 1;		/* Whether of not being exactly on an edge is outside */
-	if (dry_wet_only) {
+	if (Ctrl->N.mode) {
 		Ctrl->N.mask[3] = Ctrl->N.mask[1];
 		Ctrl->N.mask[2] = Ctrl->N.mask[4] = Ctrl->N.mask[0];
 	}
 
-	if (GMT_init_shore (Ctrl->D.set, &c, header.x_min, header.x_max, header.y_min, header.y_max, &Ctrl->A.info)) {
-		fprintf (stderr, "%s: %s resolution shoreline data base not installed\n", GMT_program, shore_resolution[base]);
-		exit (EXIT_FAILURE);
+	if (GMT_init_shore (GMT, Ctrl->D.set, &c, Grid->header->wesn, &Ctrl->A.info)) {
+		GMT_Report (API, GMT_MSG_NORMAL, "%s resolution shoreline data base not installed\n", shore_resolution[base]);
+		Return (EXIT_FAILURE);
 	}
-	if (gmtdefs.verbose == 2) fprintf (stderr, "GSHHS version %s\n%s\n%s\n", c.version, c.title, c.source);
+	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+		GMT_Report (API, GMT_MSG_VERBOSE, "GSHHG version %s\n%s\n%s\n", c.version, c.title, c.source);
 
-	sprintf (line, "%s\n", gmtdefs.d_format);
-	if (gmtdefs.verbose && dry_wet_only) {
-		fprintf (stderr, "%s: Nodes in water will be set to ", GMT_program);
-		(GMT_is_fnan (Ctrl->N.mask[0])) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.mask[0]);
-		fprintf (stderr, "%s: Nodes on land will be set to ", GMT_program);
-		(GMT_is_fnan (Ctrl->N.mask[1])) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.mask[1]);
-	}
-	else if (gmtdefs.verbose && !dry_wet_only) {
-		fprintf (stderr, "%s: Nodes in the oceans will be set to ", GMT_program);
-		(GMT_is_fnan (Ctrl->N.mask[0])) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.mask[0]);
-		fprintf (stderr, "%s: Nodes on land will be set to ", GMT_program);
-		(GMT_is_fnan (Ctrl->N.mask[1])) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.mask[1]);
-		fprintf (stderr, "%s: Nodes in lakes will be set to ", GMT_program);
-		(GMT_is_fnan (Ctrl->N.mask[2])) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.mask[2]);
-		fprintf (stderr, "%s: Nodes in islands will be set to ", GMT_program);
-		(GMT_is_fnan (Ctrl->N.mask[3])) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.mask[3]);
-		fprintf (stderr, "%s: Nodes in ponds will be set to ", GMT_program);
-		(GMT_is_fnan (Ctrl->N.mask[4])) ? fprintf (stderr, "NaN\n") : fprintf (stderr, line, Ctrl->N.mask[4]);
+		sprintf (line, "%s\n", GMT->current.setting.format_float_out);
+		if (Ctrl->N.mode) {
+			GMT_Report (API, GMT_MSG_VERBOSE, "Nodes in water will be set to ");
+			(GMT_is_dnan (Ctrl->N.mask[0])) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.mask[0]);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Nodes on land will be set to ");
+			(GMT_is_dnan (Ctrl->N.mask[1])) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.mask[1]);
+		}
+		else {
+			GMT_Report (API, GMT_MSG_VERBOSE, "Nodes in the oceans will be set to ");
+			(GMT_is_dnan (Ctrl->N.mask[0])) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.mask[0]);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Nodes on land will be set to ");
+			(GMT_is_dnan (Ctrl->N.mask[1])) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.mask[1]);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Nodes in lakes will be set to ");
+			(GMT_is_dnan (Ctrl->N.mask[2])) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.mask[2]);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Nodes in islands will be set to ");
+			(GMT_is_dnan (Ctrl->N.mask[3])) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.mask[3]);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Nodes in ponds will be set to ");
+			(GMT_is_dnan (Ctrl->N.mask[4])) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.mask[4]);
+		}
 	}
 
-	i_dx = 1.0 / header.x_inc;
-	i_dy = 1.0 / header.y_inc;
-	del_off = (header.node_offset) ? 0.5 : 0.0;
-	nm = GMT_get_nm (header.nx, header.ny);
-	data = (float *) GMT_memory (VNULL, (size_t)nm, sizeof(float), GMT_program);
 	/* All data nodes are thus initialized to 0 */
-	x = (double *) GMT_memory (VNULL, (size_t)header.nx, sizeof(double), GMT_program);
-	y = (double *) GMT_memory (VNULL, (size_t)header.ny, sizeof(double), GMT_program);
+	x = GMT_memory (GMT, NULL, Grid->header->nx, double);
+	y = GMT_memory (GMT, NULL, Grid->header->ny, double);
 
-	nx1 = header.nx - 1;	ny1 = header.ny - 1;
+	nx1 = Grid->header->nx - 1;	ny1 = Grid->header->ny - 1;
 
-	if (header.x_min < 0.0 && header.x_max > 0.0) {	/* Must shift longitudes */
-		greenwich = TRUE;
-	}
+	GMT_parse_common_options (GMT, "J", 'J', "x1d");	/* Fake linear projection so the shore machinery will work */
+	GMT_err_fail (GMT, GMT_map_setup (GMT, Grid->header->wesn), "");
+	GMT->current.map.parallel_straight = GMT->current.map.meridian_straight = 2;	/* No resampling along bin boundaries */
+	wrap = GMT->current.map.is_world = GMT_grd_is_global (GMT, Grid->header);
+	/* Using -Jx1d means output is Cartesian but we want to force geographic */
+	GMT_set_geographic (GMT, GMT_OUT);
 
-	GMT_parse_J_option ("x1d");	/* Fake linear projection */
-	GMT_err_fail (GMT_map_setup (header.x_min, header.x_max, header.y_min, header.y_max), "");
-	GMT_parallel_straight = GMT_meridian_straight = 2;	/* No resampling along bin boundaries */
-	wrap = GMT_world_map = GMT_grd_is_global (&header);
-	
 	/* Fill out gridnode coordinates and apply the implicit linear projection */
 
-	for (i = 0; i < header.nx; i++) GMT_geo_to_xy (GMT_i_to_x (i, header.x_min, header.x_max, header.x_inc, header.xy_off, header.nx), 0.0, &x[i], &dummy);
-	for (j = 0; j < header.ny; j++) GMT_geo_to_xy (0.0, GMT_j_to_y (j, header.y_min, header.y_max, header.y_inc, header.xy_off, header.ny), &dummy, &y[j]);
+	for (col = 0; col <= nx1; col++) GMT_geo_to_xy (GMT, GMT_grd_col_to_x (GMT, col, Grid->header), 0.0, &x[col], &dummy);
+	for (row = 0; row <= ny1; row++) GMT_geo_to_xy (GMT, 0.0, GMT_grd_row_to_y (GMT, row, Grid->header), &dummy, &y[row]);
 	i_dx_inch = 1.0 / fabs (x[1] - x[0]);
 	i_dy_inch = 1.0 / fabs (y[1] - y[0]);
 
-        west_border = floor (project_info.w / c.bsize) * c.bsize;
-        east_border = ceil (project_info.e / c.bsize) * c.bsize;
+	west_border = floor (GMT->common.R.wesn[XLO] / c.bsize) * c.bsize;
+	east_border =  ceil (GMT->common.R.wesn[XHI] / c.bsize) * c.bsize;
 	for (ind = 0; ind < c.nb; ind++) {	/* Loop over necessary bins only */
 
 		bin = c.bins[ind];
-		if (gmtdefs.verbose) fprintf (stderr, "%s: Working on block # %5ld\r", GMT_program, bin);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Working on block # %5ld\r", bin);
 
-		if ((err = GMT_get_shore_bin (ind, &c))) {
-			fprintf (stderr, "%s: %s [%s resolution shoreline]\n", GMT_program, GMT_strerror(err), shore_resolution[base]);
-			exit (EXIT_FAILURE);
+		if ((err = GMT_get_shore_bin (GMT, ind, &c))) {
+			GMT_Report (API, GMT_MSG_NORMAL, "%s [%s resolution shoreline]\n", GMT_strerror(err), shore_resolution[base]);
+			Return (EXIT_FAILURE);
 		}
 
 		/* Use polygons, if any.  Go in both directions to cover both land and sea */
 
-		used_polygons = FALSE;
+		used_polygons = false;
 
 		for (direction = -1; c.ns > 0 && direction < 2; direction += 2) {
 
 			/* Assemble one or more segments into polygons */
 
-			np = GMT_assemble_shore (&c, direction, TRUE, greenwich, west_border, east_border, &p);
+			np = GMT_assemble_shore (GMT, &c, direction, true, west_border, east_border, &p);
 
 			/* Get clipped polygons in x,y inches that can be processed */
 
-			np_new = GMT_prep_polygons (&p, np, FALSE, 0.0, -1);
+			np_new = GMT_prep_shore_polygons (GMT, &p, np, false, 0.0, -1);
 
 			for (k = 0; k < np_new; k++) {
 
 				if (p[k].n == 0) continue;
 
-				used_polygons = TRUE;	/* At least som points made it to here */
+				used_polygons = true;	/* At least som points made it to here */
 
 				/* Find min/max of polygon in inches */
 
@@ -325,28 +358,33 @@ int main (int argc, char **argv)
 					if (p[k].lat[i] < ymin) ymin = p[k].lat[i];
 					if (p[k].lat[i] > ymax) ymax = p[k].lat[i];
 				}
-				i_min = (GMT_LONG)MAX (0, ceil (xmin * i_dx_inch - del_off - GMT_CONV_LIMIT));
-				if (i_min > nx1) i_min = 0;
-				i_max = (GMT_LONG)MIN (nx1, floor (xmax * i_dx_inch - del_off + GMT_CONV_LIMIT));
-				if (i_max <= 0 || i_max < i_min) i_max = nx1;
-				j_min = (GMT_LONG)MAX (0, ceil ((project_info.ymax - ymax) * i_dy_inch - del_off - GMT_CONV_LIMIT));
-				j_max = (GMT_LONG)MIN (ny1, floor ((project_info.ymax - ymin) * i_dy_inch - del_off + GMT_CONV_LIMIT));
+				col_min = MAX (0, irint (ceil (xmin * i_dx_inch - Grid->header->xy_off - GMT_CONV_LIMIT)));
+				if (col_min > nx1) col_min = 0;
+				/* So col_min is in range [0,nx1] */
+				col_max = MIN (nx1, irint (floor (xmax * i_dx_inch - Grid->header->xy_off + GMT_CONV_LIMIT)));
+				if (col_max <= 0 || col_max < col_min) col_max = nx1;
+				/* So col_max is in range [1,nx1] */
+				row_min = MAX (0, irint (ceil ((GMT->current.proj.rect[YHI] - ymax) * i_dy_inch - Grid->header->xy_off - GMT_CONV_LIMIT)));
+				/* So row_min is in range [0,?] */
+				row_max = MIN (ny1, irint (floor ((GMT->current.proj.rect[YHI] - ymin) * i_dy_inch - Grid->header->xy_off + GMT_CONV_LIMIT)));
+				/* So row_max is in range [?,ny1] */
 
-				for (j = j_min; j <= j_max; j++) {
-					for (i = i_min; i <= i_max; i++) {
+				for (row = row_min; row <= row_max; row++) {
+					assert (row >= 0);	/* Just in case we have a logic bug somewhere */
+					for (col = col_min; col <= col_max; col++) {
 
-						if ((side = GMT_non_zero_winding (x[i], y[j], p[k].lon, p[k].lat, p[k].n)) < is_inside) continue;	/* Outside */
+						if ((side = GMT_non_zero_winding (GMT, x[col], y[row], p[k].lon, p[k].lat, p[k].n)) < Ctrl->E.inside) continue;	/* Outside */
 
 						/* Here, point is inside, we must assign value */
 
-						ij = GMT_IJ (j, i, header.nx);
-						if (p[k].level > data[ij]) data[ij] = (float)p[k].level;
+						ij = GMT_IJP (Grid->header, row, col);
+						if (p[k].level > Grid->data[ij]) Grid->data[ij] = (float)p[k].level;
 					}
 				}
 			}
 
-			GMT_free_polygons (p, np_new);
-			GMT_free ((void *)p);
+			GMT_free_shore_polygons (GMT, p, np_new);
+			GMT_free (GMT, p);
 		}
 
 		if (!used_polygons) {	/* Lack of polygons or clipping etc resulted in no polygons after all, must deal with background */
@@ -354,10 +392,10 @@ int main (int argc, char **argv)
 			k = INT_MAX;	/* Initialize to outside range of levels (4 is highest) */
 			/* Visit each of the 4 nodes, test if it is inside -R, and if so update lowest level found so far */
 
-			if (!GMT_map_outside (c.lon_sw, c.lat_sw)) k = MIN (k, c.node_level[0]);			/* SW */
-			if (!GMT_map_outside (c.lon_sw + c.bsize, c.lat_sw)) k = MIN (k, c.node_level[1]);		/* SE */
-			if (!GMT_map_outside (c.lon_sw + c.bsize, c.lat_sw - c.bsize)) k = MIN (k, c.node_level[2]);	/* NE */
-			if (!GMT_map_outside (c.lon_sw, c.lat_sw - c.bsize)) k = MIN (k, c.node_level[3]);		/* NW */
+			if (!GMT_map_outside (GMT, c.lon_sw, c.lat_sw)) k = MIN (k, c.node_level[0]);				/* SW */
+			if (!GMT_map_outside (GMT, c.lon_sw + c.bsize, c.lat_sw)) k = MIN (k, c.node_level[1]);			/* SE */
+			if (!GMT_map_outside (GMT, c.lon_sw + c.bsize, c.lat_sw - c.bsize)) k = MIN (k, c.node_level[2]);	/* NE */
+			if (!GMT_map_outside (GMT, c.lon_sw, c.lat_sw - c.bsize)) k = MIN (k, c.node_level[3]);			/* NW */
 
 			/* If k is still INT_MAX we must assume this patch should have the min level of the bin */
 
@@ -365,79 +403,57 @@ int main (int argc, char **argv)
 
 			/* Determine nodes to initialize */
 
-			j_min = (GMT_LONG)MAX (0, ceil ((header.y_max - c.lat_sw - c.bsize) * i_dy - del_off));
-			j_max = (GMT_LONG)MIN (ny1, floor ((header.y_max - c.lat_sw) * i_dy - del_off));
-			i_min = (GMT_LONG)ceil (fmod (c.lon_sw - header.x_min, 360.0) * i_dx - del_off);
-			i_max = (GMT_LONG)floor (fmod (c.lon_sw + c.bsize - header.x_min, 360.0) * i_dx - del_off);
-			if (wrap) {
-				if (i_max < i_min) i_max += header.nx;
+			row_min = MAX (0, irint (ceil ((Grid->header->wesn[YHI] - c.lat_sw - c.bsize) * Grid->header->r_inc[GMT_Y] - Grid->header->xy_off)));
+			row_max = MIN (ny1, irint (floor ((Grid->header->wesn[YHI] - c.lat_sw) * Grid->header->r_inc[GMT_Y] - Grid->header->xy_off)));
+			col_min = irint (ceil (fmod (c.lon_sw - Grid->header->wesn[XLO], 360.0) * Grid->header->r_inc[GMT_X] - Grid->header->xy_off));
+			col_max = irint (floor (fmod (c.lon_sw + c.bsize - Grid->header->wesn[XLO], 360.0) * Grid->header->r_inc[GMT_X] - Grid->header->xy_off));
+			if (wrap) {	/* Handle jumps */
+				if (col_max < col_min) col_max += Grid->header->nx;
 			}
 			else {	/* Make sure we are inside our grid */
-				if (i_min < 0) i_min = 0;
-				if (i_max > nx1) i_max = nx1;
+				if (col_min < 0) col_min = 0;
+				if (col_max > nx1) col_max = nx1;
 			}
-			for (j = j_min; j <= j_max; j++) {
-				for (i = i_min; i <= i_max; i++) {
-					ii = (wrap) ? i % header.nx : i;
+			for (row = row_min; row <= row_max; row++) {
+				for (col = col_min; col <= col_max; col++) {
+					ii = (wrap) ? col % (int)Grid->header->nx : col;
 					if (ii < 0 || ii > nx1) continue;
-					ij = GMT_IJ (j, ii, header.nx);
-					data[ij] = (float)k;
+					ij = GMT_IJP (Grid->header, row, ii);
+					Grid->data[ij] = (float)k;
 				}
 			}
 		}
 
-		GMT_free_shore (&c);
+		GMT_free_shore (GMT, &c);
 	}
 
-	GMT_shore_cleanup (&c);
-	if (gmtdefs.verbose) fprintf (stderr, "\n");
+	GMT_shore_cleanup (GMT, &c);
+	GMT_free (GMT, x);
+	GMT_free (GMT, y);
 
-	for (ij = 0; ij < nm; ij++) {
-		k = irint (data[ij]);
-		data[ij] = (float)Ctrl->N.mask[k];
+	GMT_grd_loop (GMT, Grid, row, col, ij) {	/* Turn levels into mask values */
+		k = urint (Grid->data[ij]);
+		Grid->data[ij] = (float)Ctrl->N.mask[k];
 	}
 
-	if (wrap && header.node_offset == 0) { /* Copy over values to the repeating right column */
-		for (j = 0, ij = 0; j < header.ny; j++, ij += header.nx) data[ij+nx1] = data[ij];
+	if (wrap && Grid->header->registration == GMT_GRID_NODE_REG) { /* Copy over values to the repeating right column */
+		unsigned int row_l;
+		for (row_l = 0, ij = GMT_IJP (Grid->header, row_l, 0); row_l < Grid->header->ny; row_l++, ij += Grid->header->mx) Grid->data[ij+nx1] = Grid->data[ij];
 	}
 	
 	if (temp_shift) {
-		header.x_min -= 360.0;
-		header.x_max -= 360.0;
+		Grid->header->wesn[XLO] -= 360.0;
+		Grid->header->wesn[XHI] -= 360.0;
 	}
 
-	GMT_io.out_col_type[0] = GMT_IS_LON;	GMT_io.out_col_type[1] = GMT_IS_LAT;	/* Since -Jx1d will say output is Cartesian */
-	GMT_err_fail (GMT_write_grd (Ctrl->G.file, &header, data, 0.0, 0.0, 0.0, 0.0, GMT_pad, FALSE), Ctrl->G.file);
+	sprintf (line, "Derived from the %s resolution shorelinen", shore_resolution[base]);
+	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, line, Grid)) return (API->error);
+	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_OK) {
+		Return (API->error);
+	}
 
-	if (gmtdefs.verbose) fprintf (stderr, "%s: Done!\n", GMT_program);
+	GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
 
-	GMT_free ((void *)data);
-	GMT_free ((void *)x);
-	GMT_free ((void *)y);
-
-	Free_grdlandmask_Ctrl (Ctrl);	/* Deallocate control structure */
-
-	GMT_end (argc, argv);
-
-	exit (EXIT_SUCCESS);
-}
-
-void *New_grdlandmask_Ctrl () {	/* Allocate and initialize a new control structure */
-	struct GRDLANDMASK_CTRL *C;
-	
-	C = (struct GRDLANDMASK_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct GRDLANDMASK_CTRL), "New_grdlandmask_Ctrl");
-	
-	/* Initialize values whose defaults are not 0/FALSE/NULL */
-	
-	C->A.info.high = GMT_MAX_GSHHS_LEVEL;				/* Include all GSHHS levels */
-	C->D.set = 'l';							/* Low-resolution coastline data */
-	memset ((void *)C->N.mask, 0, (size_t)(GRDLANDMASK_N_CLASSES * sizeof (float)));	/* Default "wet" value = 0 */
-	C->N.mask[1] = C->N.mask[3] = 1.0;				/* Default for "dry" areas = 1 (inside) */
-	
-	return ((void *)C);
-}
-
-void Free_grdlandmask_Ctrl (struct GRDLANDMASK_CTRL *C) {	/* Deallocate control structure */
-	if (C->G.file) free ((void *)C->G.file);	
-	GMT_free ((void *)C);	
+	Return (GMT_OK);
 }

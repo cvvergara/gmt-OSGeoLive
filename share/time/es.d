@@ -1,6 +1,6 @@
 # GMT Time language file for ES (spanish) mode [ES]
 #
-#	$Id: es.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: es.d 10084 2012-05-12 21:04:53Z fwobbe $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Enero		Ene	E
@@ -22,7 +22,7 @@ U	1	Semana		Sem	S
 W	1	Domingo		Dgo	D
 W	2	Lunes		Lun	L
 W	3	Martes		Mar	M
-W	4	Miércoles	Mie	M
+W	4	MiÃ©rcoles	Mie	M
 W	5	Jueves		Jue	J
 W	6	Viernes		Vie	V
-W	7	Sábado		Sab	S
+W	7	SÃ¡bado		Sab	S

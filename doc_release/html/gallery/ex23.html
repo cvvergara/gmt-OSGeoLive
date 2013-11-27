@@ -1,0 +1,226 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>(23) All great-circle paths lead to Rome &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="../index.html" />
+    <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
+    <link rel="next" title="(24) Data selection based on geospatial criteria" href="ex24.html" />
+    <link rel="prev" title="(22) World-wide seismicity the last 7 days" href="ex22.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ex24.html" title="(24) Data selection based on geospatial criteria"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="ex22.html" title="(22) World-wide seismicity the last 7 days"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="all-great-circle-paths-lead-to-rome">
+<span id="example-23"></span><h1>(23) All great-circle paths lead to Rome<a class="headerlink" href="#all-great-circle-paths-lead-to-rome" title="Permalink to this headline">¶</a></h1>
+<p>While motorists recently have started to question the old saying &#8220;all
+roads lead to Rome&#8221;, aircraft pilots have known from the start that only
+one great-circle path connects the points of departure and
+arrival <a class="footnote-reference" href="#id2" id="id1">[1]</a>. This provides the inspiration for our next example which
+uses <a class="reference internal" href="../grdmath.html"><em>grdmath</em></a> to calculate distances
+from Rome to anywhere on Earth and
+<a class="reference internal" href="../grdcontour.html"><em>grdcontour</em></a> to contour these
+distances. We pick five cities that we connect to Rome with great circle
+arcs, and label these cities with their names and distances (in km) from
+Rome, all laid down on top of a beautiful world map. Note that we
+specify that contour labels only be placed along the straight map-line
+connecting Rome to its antipode, and request curved labels that follows
+the shape of the contours.</p>
+<p>The script produces the plot in Figure; note
+how interesting the path to Seattle appears in this particular
+projection (Hammer). We also note that Rome&#8217;s antipode lies somewhere
+near the Chatham plateau (antipodes will be revisited in
+Section [sec:example<sub>2</sub>5]).</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+<span class="c">#		GMT EXAMPLE 23</span>
+<span class="c">#</span>
+<span class="c"># Purpose:	Plot distances from Rome and draw shortest paths</span>
+<span class="c"># GMT progs:	grdmath, grdcontour, pscoast, psxy, pstext, grdtrack</span>
+<span class="c"># Unix progs:	echo, cat, awk</span>
+<span class="c">#</span>
+<span class="nv">ps</span><span class="o">=</span>example_23.ps
+
+<span class="c"># Position and name of central point:</span>
+
+<span class="nv">lon</span><span class="o">=</span>12.50
+<span class="nv">lat</span><span class="o">=</span>41.99
+<span class="nv">name</span><span class="o">=</span><span class="s2">&quot;Rome&quot;</span>
+
+<span class="c"># Calculate distances (km) to all points on a global 1x1 grid</span>
+
+gmt grdmath -Rg -I1 <span class="nv">$lon</span> <span class="nv">$lat</span> SDIST 111.13 <span class="nv">MUL</span> <span class="o">=</span> dist.nc
+
+<span class="c"># Location info for 5 other cities + label justification</span>
+
+cat <span class="s">&lt;&lt; END &gt; cities.d</span>
+<span class="s">105.87	21.02	HANOI		LM</span>
+<span class="s">282.95	-12.1	LIMA		LM</span>
+<span class="s">178.42	-18.13	SUVA		LM</span>
+<span class="s">237.67	47.58	SEATTLE		RM</span>
+<span class="s">28.20	-25.75	PRETORIA	LM</span>
+<span class="s">END</span>
+
+gmt pscoast -Rg -JH90/9i -Glightgreen -Sblue -A1000 -Dc -Bg30 <span class="se">\</span>
+	-B+t<span class="s2">&quot;Distances from $name to the World&quot;</span> -K -Wthinnest &gt; <span class="nv">$ps</span>
+
+gmt grdcontour dist.nc -A1000+v+u<span class="s2">&quot; km&quot;</span>+fwhite -Glz-/z+ -S8 -C500 -O -K -J <span class="se">\</span>
+	-Wathin,white -Wcthinnest,white,- &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># For each of the cities, plot great circle arc to Rome with gmt psxy</span>
+
+<span class="k">while </span><span class="nb">read </span>clon clat city; <span class="k">do</span>
+	<span class="o">(</span><span class="nb">echo</span> <span class="nv">$lon</span> <span class="nv">$lat</span>; <span class="nb">echo</span> <span class="nv">$clon</span> <span class="nv">$clat</span><span class="o">)</span> | gmt psxy -R -J -O -K -Wthickest,red &gt;&gt; <span class="nv">$ps</span>
+<span class="k">done</span> &lt; cities.d
+
+<span class="c"># Plot red squares at cities and plot names:</span>
+gmt psxy -R -J -O -K -Ss0.2 -Gred -Wthinnest cities.d &gt;&gt; <span class="nv">$ps</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $4, $3}&#39;</span> cities.d | gmt pstext -R -J -O -K -Dj0.15/0 <span class="se">\</span>
+	-F+f12p,Courier-Bold,red+j -N &gt;&gt; <span class="nv">$ps</span>
+<span class="c"># Place a yellow star at Rome</span>
+<span class="nb">echo</span> <span class="s2">&quot;$lon $lat&quot;</span> | gmt psxy -R -J -O -K -Sa0.2i -Gyellow -Wthin &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Sample the distance grid at the cities and use the distance in km for labels</span>
+
+gmt grdtrack -Gdist.nc cities.d <span class="se">\</span>
+	| <span class="nv">$AWK</span> <span class="s1">&#39;{printf &quot;%s %s %d\n&quot;, $1, $2, int($NF+0.5)}&#39;</span> <span class="se">\</span>
+	| gmt pstext -R -J -O -D0/-0.2i -N -Gwhite -W -C0.02i -F+f12p,Helvetica-Bold+jCT &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Clean up after ourselves:</span>
+
+rm -f cities.d dist.nc
+</pre></div>
+</div>
+<div class="figure align-center">
+<img alt="../_images/example_23.png" src="../_images/example_23.png" style="width: 500px;" />
+<p class="caption">All great-circle paths lead to Rome.</p>
+</div>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Pedants who wish to argue about the &#8220;other&#8221; arc going the long way
+should consider using it.</td></tr>
+</tbody>
+</table>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ex22.html"
+                        title="previous chapter">(22) World-wide seismicity the last 7 days</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ex24.html"
+                        title="next chapter">(24) Data selection based on geospatial criteria</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ex24.html" title="(24) Data selection based on geospatial criteria"
+             >next</a> </li>
+        <li class="right" >
+          <a href="ex22.html" title="(22) World-wide seismicity the last 7 days"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

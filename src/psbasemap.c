@@ -1,246 +1,210 @@
 /*--------------------------------------------------------------------
- *	$Id: psbasemap.c 9923 2012-12-18 20:45:53Z pwessel $
+ *	$Id: psbasemap.c 12229 2013-09-30 18:48:50Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * psbasemap plots out a basemap for the given area using the specified map
- * projection.
+ * API functions to support the psbasemap application.
  *
  * Author:	Paul Wessel
- * Date:	08-JUL-2000
- * Version:	4
+ * Date:	1-JAN-2010
+ * Version:	5 API
  *
+ * Brief synopsis: psbasemap plots a basemap for the given area using
+ * the specified map projection.
  */
- 
-#include "gmt.h"
-#include "pslib.h"
+
+#define THIS_MODULE_NAME	"psbasemap"
+#define THIS_MODULE_LIB		"core"
+#define THIS_MODULE_PURPOSE	"Plot PostScript base maps"
+
+#include "gmt_dev.h"
+
+#define GMT_PROG_OPTIONS "->BJKOPRUVXYcfptxy" GMT_OPT("EZ")
+
+/* Control structure for psbasemap */
 
 struct PSBASEMAP_CTRL {
-	struct E {	/* -Eazim/elev */
-		GMT_LONG active;
-		double azimuth, elevation;
-	} E;
-	struct G {	/* -G<fill> */
-		GMT_LONG active;
-		struct GMT_FILL fill;
-	} G;
+	struct D {	/* -D */
+		bool active;
+		struct GMT_MAP_INSERT item;
+	} D;
 	struct L {	/* -L */
-		GMT_LONG active;
+		bool active;
 		struct GMT_MAP_SCALE item;
 	} L;
-	struct T {	/* -L */
-		GMT_LONG active;
+	struct T {	/* -T */
+		bool active;
 		struct GMT_MAP_ROSE item;
 	} T;
-	struct Z {	/* -Z<z_level> */
-		GMT_LONG active;
-		double level;
-	} Z;
 };
 
-int main (int argc, char **argv)
-{
-	GMT_LONG i;
-
-	GMT_LONG error = FALSE;
-
-	double w = 0.0, e = 0.0, s = 0.0, n = 0.0;
-
-	struct PSBASEMAP_CTRL *Ctrl = NULL;
-
-	void *New_psbasemap_Ctrl (), Free_psbasemap_Ctrl (struct PSBASEMAP_CTRL *C);
-	
-	argc = (int)GMT_begin (argc, argv);
-
-	Ctrl = (struct PSBASEMAP_CTRL *)New_psbasemap_Ctrl ();	/* Allocate and initialize a new control structure */
-
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
-
-				/* Common parameters */
-
-				case 'B':
-				case 'J':
-				case 'K':
-				case 'O':
-				case 'P':
-				case 'R':
-				case 'U':
-				case 'V':
-				case 'X':
-				case 'x':
-				case 'Y':
-				case 'y':
-				case 'c':
-				case '\0':
-					error += GMT_parse_common_options (argv[i], &w, &e, &s, &n);
-					break;
-
-				/* Supplemental options */
-
-				case 'E':
-					Ctrl->E.active = TRUE;
-					error += GMT_get_proj3D (&argv[i][2], &Ctrl->E.azimuth, &Ctrl->E.elevation);
-					break;
-
-				case 'G':
-					Ctrl->G.active = TRUE;
-					if (GMT_getfill (&argv[i][2], &Ctrl->G.fill)) {
-						GMT_fill_syntax ('G', " ");
-						error++;
-					}
-					break;
-
-				case 'L':
-					Ctrl->L.active = TRUE;
-					error += GMT_getscale (&argv[i][2], &Ctrl->L.item);
-					break;
-
-				case 'T':
-					Ctrl->T.active = TRUE;
-					error += GMT_getrose (&argv[i][2], &Ctrl->T.item);
-					break;
-
-				case 'Z':
-					if (argv[i][2]) {
-						Ctrl->Z.level = atof (&argv[i][2]);
-						Ctrl->Z.active = TRUE;
-					}
-					else {
-						error++;
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -Z:  Must append a z-value\n", GMT_program);
-					}
-					break;
-
-				/* Illegal options */
-
-				default:
-					error = TRUE;
-					GMT_default_error (argv[i][1]);
-					break;
-			}
-		}
-		else
-			fprintf (stderr, "%s: Warning: Ignoring filename %s\n", GMT_program, argv[i]);
-	}
-
-	if (GMT_give_synopsis_and_exit || argc == 1) {
-		fprintf (stderr,"psbasemap %s - To plot PostScript basemaps\n\n", GMT_VERSION);
-		fprintf (stderr, "usage: psbasemap %s %s %s [%s] [-G<fill>]\n", GMT_B_OPT, GMT_J_OPT, GMT_Rgeoz_OPT, GMT_E_OPT);
-		fprintf (stderr, "\t[-K] [%s] [%s]\n", GMT_Jz_OPT, GMT_SCALE);
-		fprintf (stderr, "\t[-O] [-P] [%s] [%s] [-V]\n", GMT_TROSE, GMT_U_OPT);
-		fprintf (stderr, "\t[%s] [%s] [-Z<zlevel>] [%s]\n\n", GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT);
-
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-
-		GMT_explain_option ('B');
-		GMT_explain_option ('J');
-		GMT_explain_option ('Z');
-		GMT_explain_option ('R');
-		fprintf (stderr, "\n\tOPTIONS:\n");
-		GMT_explain_option ('E');
-		GMT_fill_syntax ('G', "Select fill inside of basemap.");
-		GMT_explain_option ('K');
-		GMT_mapscale_syntax ('L', "Draws a simple map scale centered on <lon0>/<lat0>.");
-		GMT_explain_option ('O');
-		GMT_explain_option ('P');
-		GMT_maprose_syntax ('T', "Draws a north-pointing map rose centered on <lon0>/<lat0>.");
-		GMT_explain_option ('U');
-		GMT_explain_option ('V');
-		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [Default is at bottom of z-axis].\n");
-		GMT_explain_option ('c');
-		GMT_explain_option ('.');
-		exit (EXIT_FAILURE);
-	}
-
-	if (!project_info.region_supplied) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify -R option\n", GMT_program);
-		error++;
-	}
-	if (!(frame_info.plot || Ctrl->L.active || Ctrl->T.active || Ctrl->G.active)) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify at least one of -B, -G, -L, -T\n", GMT_program);
-		error++;
-	}
-	if (Ctrl->E.elevation <= 0.0 || Ctrl->E.elevation > 90.0) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR -E option:  Elevation must be in 0-90 range\n", GMT_program);
-		error++;
-	}
-	if (Ctrl->L.active && ! GMT_IS_MAPPING) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  -L applies to geographical data only\n", GMT_program);
-		error++;
-	}
-	if (error) exit (EXIT_FAILURE);
-
-	z_project.view_azimuth = Ctrl->E.azimuth;
-	z_project.view_elevation = Ctrl->E.elevation;
-
-	if (gmtdefs.verbose) fprintf (stderr, "psbasemap: Constructing basemap\n");
-
-	GMT_err_fail (GMT_map_setup (w, e, s, n), "");
-
-	GMT_plotinit (argc, argv);
-
-	if (project_info.three_D) ps_transrotate (-z_project.xmin, -z_project.ymin, 0.0);
-
-	if (Ctrl->G.active) {
-		double *x, *y;
-		GMT_LONG np;
-		GMT_LONG donut;
-		np = GMT_map_clip_path (&x, &y, &donut);
-		GMT_fill (x, y, (1 + donut) * np, &Ctrl->G.fill, FALSE);
-		GMT_free ((void *)x);
-		GMT_free ((void *)y);
-	}
-
-	if (Ctrl->Z.active) project_info.z_level = Ctrl->Z.level;
-
-	GMT_map_basemap ();
-
-	if (Ctrl->L.active) GMT_draw_map_scale (&Ctrl->L.item);
-
-	if (Ctrl->T.active) GMT_draw_map_rose (&Ctrl->T.item);
-
-	if (project_info.three_D) ps_rotatetrans (z_project.xmin, z_project.ymin, 0.0);
-	
-	GMT_plotend ();
-
-	Free_psbasemap_Ctrl (Ctrl);	/* Deallocate control structure */
-
-	GMT_end (argc, argv);
-
-	exit (EXIT_SUCCESS);
-}
-
-void *New_psbasemap_Ctrl () {	/* Allocate and initialize a new control structure */
+void *New_psbasemap_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct PSBASEMAP_CTRL *C;
-	
-	C = (struct PSBASEMAP_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct PSBASEMAP_CTRL), "New_psbasemap_Ctrl");
-	
-	/* Initialize values whose defaults are not 0/FALSE/NULL */
-	C->E.azimuth = 180.0;
-	C->E.elevation = 90.0;
-	GMT_init_fill (&C->G.fill, -1, -1, -1);
-	memset ((void *)&C->L.item, 0, sizeof (struct GMT_MAP_SCALE));
-	memset ((void *)&C->T.item, 0, sizeof (struct GMT_MAP_ROSE));
-		
-	return ((void *)C);
+
+	C = GMT_memory (GMT, NULL, 1, struct PSBASEMAP_CTRL);
+
+	/* Initialize values whose defaults are not 0/false/NULL */
+	GMT_memset (&C->D.item, 1, struct GMT_MAP_INSERT);
+	GMT_memset (&C->L.item, 1, struct GMT_MAP_SCALE);
+	GMT_memset (&C->T.item, 1, struct GMT_MAP_ROSE);
+
+	return (C);
 }
 
-void Free_psbasemap_Ctrl (struct PSBASEMAP_CTRL *C) {	/* Deallocate control structure */
-	GMT_free ((void *)C);	
+void Free_psbasemap_Ctrl (struct GMT_CTRL *GMT, struct PSBASEMAP_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	GMT_free (GMT, C);
+}
+
+int GMT_psbasemap_usage (struct GMTAPI_CTRL *API, int level)
+{
+	/* This displays the psbasemap synopsis and optionally full usage information */
+
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: psbasemap %s %s %s\n", GMT_B_OPT, GMT_J_OPT, GMT_Rgeoz_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-D%s]\n\t[%s] [-K]\n", GMT_INSERT, GMT_Jz_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-L%s]\n", GMT_SCALE);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-O] [-P] [-T%s]\n", GMT_TROSE);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT,
+		GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_f_OPT, GMT_p_OPT, GMT_t_OPT);
+
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_Option (API, "B,JZ,R");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+	GMT_mapinsert_syntax (API->GMT, 'D', "Draw a simple map insert box as specified below:");
+	GMT_Option (API, "K");
+	GMT_mapscale_syntax (API->GMT, 'L', "Draw a simple map scale centered on <lon0>/<lat0>.");
+	GMT_Option (API, "O,P");
+	GMT_maprose_syntax (API->GMT, 'T', "Draw a north-pointing map rose centered on <lon0>/<lat0>.");
+	GMT_Option (API, "U,V,X,c,f,p,t,.");
+
+	return (EXIT_FAILURE);
+}
+
+int GMT_psbasemap_parse (struct GMT_CTRL *GMT, struct PSBASEMAP_CTRL *Ctrl, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to psbasemap and sets parameters in Ctrl.
+	 * Note Ctrl has already been initialized and non-zero default values set.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
+
+	unsigned int n_errors = 0;
+	struct GMT_OPTION *opt = NULL;
+	struct GMTAPI_CTRL *API = GMT->parent;
+
+	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
+
+		switch (opt->option) {
+
+			/* Processes program-specific parameters */
+
+			case 'D':	/* Draw map insert */
+				Ctrl->D.active = true;
+				n_errors += GMT_getinsert (GMT, 'D', opt->arg, &Ctrl->D.item);
+				break;
+			case 'G':	/* Set canvas color */
+				if (GMT_compat_check (GMT, 4)) {
+					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -G is deprecated; -B...+g%s was set instead, use this in the future.\n", opt->arg);
+					GMT->current.map.frame.paint = true;
+					if (GMT_getfill (GMT, opt->arg, &GMT->current.map.frame.fill)) {
+						GMT_fill_syntax (GMT, 'G', " ");
+						n_errors++;
+					}
+				}
+				else
+					n_errors += GMT_default_error (GMT, opt->option);
+				break;
+			case 'L':	/* Draw map scale */
+				Ctrl->L.active = true;
+				n_errors += GMT_getscale (GMT, 'L', opt->arg, &Ctrl->L.item);
+				break;
+			case 'T':	/* Draw map rose */
+				Ctrl->T.active = true;
+				n_errors += GMT_getrose (GMT, 'T', opt->arg, &Ctrl->T.item);
+				break;
+
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
+				break;
+		}
+	}
+
+	n_errors += GMT_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
+	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += GMT_check_condition (GMT, !(GMT->current.map.frame.init || Ctrl->D.active || Ctrl->L.active || Ctrl->T.active), "Syntax error: Must specify at least one of -B, -D, -L, -T\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->L.active && !GMT_is_geographic (GMT, GMT_IN), "Syntax error: -L applies to geographical data only\n");
+
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
+
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_psbasemap_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout(code);}
+
+int GMT_psbasemap (void *V_API, int mode, void *args)
+{	/* High-level function that implements the psbasemap task */
+	int error;
+	
+	struct PSBASEMAP_CTRL *Ctrl = NULL;	/* Control structure specific to program */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_OPTION *options = NULL;
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_psbasemap_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_psbasemap_usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_psbasemap_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	/* Parse the command-line arguments; return if errors are encountered */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_psbasemap_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_psbasemap_parse (GMT, Ctrl, options))) Return (error);
+
+	/*---------------------------- This is the psbasemap main code ----------------------------*/
+
+	/* Ready to make the plot */
+
+	GMT_Report (API, GMT_MSG_VERBOSE, "Constructing the basemap\n");
+
+	if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_RUNTIME_ERROR);
+
+	GMT_plotinit (GMT, options);
+
+	GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
+
+	GMT_plotcanvas (GMT);	/* Fill canvas if requested */
+
+	GMT_map_basemap (GMT);	/* Plot base map */
+
+	if (Ctrl->D.active) GMT_draw_map_insert (GMT, &Ctrl->D.item);
+	if (Ctrl->L.active) GMT_draw_map_scale (GMT, &Ctrl->L.item);
+	if (Ctrl->T.active) GMT_draw_map_rose (GMT, &Ctrl->T.item);
+
+	GMT_plane_perspective (GMT, -1, 0.0);
+
+	GMT_plotend (GMT);
+
+	Return (GMT_OK);
 }

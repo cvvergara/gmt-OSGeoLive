@@ -1,28 +1,28 @@
 # GMT Time language file for TR (turkish) mode [TR]
 #
-#	$Id: tr.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: tr.d 10084 2012-05-12 21:04:53Z fwobbe $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Ocak		Oca	O
-M	2	Þubat		Þub	Þ
+M	2	Ãžubat		Ãžub	Ãž
 M	3	Mart		Mar	M
 M	4	Nisan		Nis	N
-M	5	Mayýs		May	M
+M	5	MayÃ½s		May	M
 M	6	Haziran		Haz	H
 M	7	Temmuz		Tem	T
-M	8	Aðustos		Aðu	A
-M	9	Eylül		Eyl	E
+M	8	AÃ°ustos		AÃ°u	A
+M	9	EylÃ¼l		Eyl	E
 M	10	Ekim		Eki	E
-M	11	Kasým		Kas	K
-M	12	Aralýk		Ara	A
+M	11	KasÃ½m		Kas	K
+M	12	AralÃ½k		Ara	A
 # Name and abbreviations for the word Week in this language
 U	1	Hafta		Haf	H
 # Weeknames, with 3-char and 1-char abbreviations
 # (List starts on Sunday regardless of TIME_WEEK_START)
 W	1	Pazar		Paz	P
 W	2	Pazartesi	Pts	P
-W	3	Salý		Sal	S
-W	4	Çarþamba	Çar	Ç
-W	5	Perþembe	Per	P
+W	3	SalÃ½		Sal	S
+W	4	Ã‡arÃ¾amba	Ã‡ar	Ã‡
+W	5	PerÃ¾embe	Per	P
 W	6	Cuma		Cum	C
 W	7	Cumartesi	Cts	C

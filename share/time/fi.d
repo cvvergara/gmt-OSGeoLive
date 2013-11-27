@@ -1,6 +1,6 @@
 # GMT Time language file for FI (finnish) mode [FI]
 #
-#	$Id: fi.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: fi.d 10084 2012-05-12 21:04:53Z fwobbe $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Tammikuu	Tam	T
@@ -8,8 +8,8 @@ M	2	Helmikuu	Hel	H
 M	3	Maaliskuu	Maa	M
 M	4	Huhtikuu	Huh	H
 M	5	Toukokuu	Tou	T
-M	6	Kes‰kuu		Kes	K
-M	7	Hein‰kuu	Hei	H
+M	6	Kes√§kuu		Kes	K
+M	7	Hein√§kuu	Hei	H
 M	8	Elokuu		Elo	E
 M	9	Syyskuu		Syy	S
 M	10	Lokakuu		Lok	L

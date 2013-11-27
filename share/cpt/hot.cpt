@@ -1,0 +1,7 @@
+#	$Id: hot.cpt 10084 2012-05-12 21:04:53Z fwobbe $
+#
+# Simulates the HOT colormap in Matlab
+#
+0	black	0.375	red
+0.375	red	0.75	yellow
+0.75	yellow	1	white

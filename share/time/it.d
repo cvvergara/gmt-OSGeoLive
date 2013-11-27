@@ -1,6 +1,6 @@
 # GMT Time language file for IT (italian) mode [IT]
 #
-#	$Id: it.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: it.d 10084 2012-05-12 21:04:53Z fwobbe $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	gennaio		gen	g
@@ -20,9 +20,9 @@ U	1	settimana	sett	s
 # Weeknames, with 3-char and 1-char abbreviations
 # (List starts on Sunday regardless of TIME_WEEK_START)
 W	1	domenica	dom	d
-W	2	lunedì		lun	l
-W	3	martedì		mar	m
-W	4	mercoledì	mer	m
-W	5	giovedì		gio	g
-W	6	venerdì		ven	v
+W	2	lunedÃ¬		lun	l
+W	3	martedÃ¬		mar	m
+W	4	mercoledÃ¬	mer	m
+W	5	giovedÃ¬		gio	g
+W	6	venerdÃ¬		ven	v
 W	7	sabato		sab	s

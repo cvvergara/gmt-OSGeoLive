@@ -1,0 +1,205 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>(19) Color patterns on maps &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="../index.html" />
+    <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
+    <link rel="next" title="(20) Custom plot symbols" href="ex20.html" />
+    <link rel="prev" title="(18) Volumes and Spatial Selections" href="ex18.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ex20.html" title="(20) Custom plot symbols"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="ex18.html" title="(18) Volumes and Spatial Selections"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="color-patterns-on-maps">
+<span id="example-19"></span><h1>(19) Color patterns on maps<a class="headerlink" href="#color-patterns-on-maps" title="Permalink to this headline">¶</a></h1>
+<p>GMT 3.1 introduced color patterns and this examples give a few cases
+of how to use this new feature. We make a phony poster that advertises
+an international conference on GMT in Honolulu. We use
+<a class="reference internal" href="../grdmath.html"><em>grdmath</em></a>, <a class="reference internal" href="../makecpt.html"><em>makecpt</em></a>, and
+<a class="reference internal" href="../grdimage.html"><em>grdimage</em></a> to draw pleasing color
+backgrounds on maps, and overlay
+<a class="reference internal" href="../pscoast.html"><em>pscoast</em></a> clip paths to have the
+patterns change at the coastlines. The middle panel demonstrates a
+simple <a class="reference internal" href="../pscoast.html"><em>pscoast</em></a> call where the built-in
+pattern # 86 is drawn at 100 dpi but with the black and white pixels
+replaced with color combinations. At the same time the ocean is filled
+with a repeating image of a circuit board (provides in Sun raster
+format). The text GMT in the center is an off-line PostScript file
+that was overlaid using <a class="reference internal" href="../psimage.html"><em>psimage</em></a>. The
+final panel repeats the top panel except that the land and sea images
+have changed places.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+<span class="c">#		GMT EXAMPLE 19</span>
+<span class="c">#</span>
+<span class="c"># Purpose:	Illustrates various color pattern effects for maps</span>
+<span class="c"># GMT progs:	gmtset, grdimage, grdmath, makecpt, pscoast, pstext, psimage</span>
+<span class="c"># Unix progs:	rm</span>
+<span class="c">#</span>
+<span class="nv">ps</span><span class="o">=</span>example_19.ps
+
+<span class="c"># First make a worldmap with graded blue oceans and rainbow continents</span>
+
+gmt grdmath -Rd -I1 -r Y COSD 2 <span class="nv">POW</span> <span class="o">=</span> lat.nc
+gmt grdmath -Rd -I1 -r <span class="nv">X</span> <span class="o">=</span> lon.nc
+<span class="nb">echo</span> <span class="s2">&quot;0 white 1 blue&quot;</span> &gt; lat.cpt
+gmt makecpt -Crainbow -T-180/180/360 -Z &gt; lon.cpt
+gmt grdimage lat.nc -JI0/6.5i -Clat.cpt -P -K -Y7.5i -B0 -nl &gt; <span class="nv">$ps</span>
+gmt pscoast -R -J -O -K -Dc -A5000 -Gc &gt;&gt; <span class="nv">$ps</span>
+gmt grdimage lon.nc -J -Clon.cpt -O -K -nl &gt;&gt; <span class="nv">$ps</span>
+gmt pscoast -R -J -O -K -Q &gt;&gt; <span class="nv">$ps</span>
+gmt pscoast -R -J -O -K -Dc -A5000 -Wthinnest &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 20 10TH INTERNATIONAL&quot;</span> | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red<span class="o">=</span>thinner &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 -10 GMT CONFERENCE&quot;</span> | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red<span class="o">=</span>thinner &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 -30 Honolulu, Hawaii, April 1, 2013&quot;</span> | gmt pstext -R -J -O -K <span class="se">\</span>
+	-F+f18p,Helvetica-Bold,green<span class="o">=</span>thinnest &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Then show example of color patterns and placing a PostScript image</span>
+
+gmt pscoast -R -J -O -K -Dc -A5000 -Gp100/86:FredByellow -Sp100/circuit.ras -B0 -Y-3.25i &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 30 SILLY USES OF&quot;</span> | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,lightgreen<span class="o">=</span>thinner &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 -30 COLOR PATTERNS&quot;</span> | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,magenta<span class="o">=</span>thinner &gt;&gt; <span class="nv">$ps</span>
+gmt psimage -C3.25i/1.625i/CM -W3i GMT_covertext.eps -O -K &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Finally repeat 1st plot but exchange the patterns</span>
+
+gmt grdimage lon.nc -J -Clon.cpt -O -K -Y-3.25i -B0 -nl &gt;&gt; <span class="nv">$ps</span>
+gmt pscoast -R -J -O -K -Dc -A5000 -Gc &gt;&gt; <span class="nv">$ps</span>
+gmt grdimage lat.nc -J -Clat.cpt -O -K -nl &gt;&gt; <span class="nv">$ps</span>
+gmt pscoast -R -J -O -K -Q &gt;&gt; <span class="nv">$ps</span>
+gmt pscoast -R -J -O -K -Dc -A5000 -Wthinnest &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 20 10TH INTERNATIONAL&quot;</span> | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red<span class="o">=</span>thinner &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 -10 GMT CONFERENCE&quot;</span> | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red<span class="o">=</span>thinner &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 -30 Honolulu, Hawaii, April 1, 2013&quot;</span> | gmt pstext -R -J -O <span class="se">\</span>
+	-F+f18p,Helvetica-Bold,green<span class="o">=</span>thinnest &gt;&gt; <span class="nv">$ps</span>
+
+rm -f l*.nc l*.cpt gmt.conf
+</pre></div>
+</div>
+<div class="figure align-center">
+<img alt="../_images/example_19.png" src="../_images/example_19.png" style="width: 500px;" />
+<p class="caption">Using color patterns and additional PostScript material in illustrations.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ex18.html"
+                        title="previous chapter">(18) Volumes and Spatial Selections</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ex20.html"
+                        title="next chapter">(20) Custom plot symbols</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ex20.html" title="(20) Custom plot symbols"
+             >next</a> </li>
+        <li class="right" >
+          <a href="ex18.html" title="(18) Volumes and Spatial Selections"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

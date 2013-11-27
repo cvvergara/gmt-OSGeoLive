@@ -1,0 +1,186 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>gmtlogo &mdash; GMT 5.1.0 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '5.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="up" title="GM" href="GM.html" />
+    <link rel="next" title="gmtmath" href="gmtmath.html" />
+    <link rel="prev" title="gmtinfo" href="gmtinfo.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="gmtmath.html" title="gmtmath"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="gmtinfo.html" title="gmtinfo"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="gmtlogo">
+<span id="index-0"></span><h1>gmtlogo<a class="headerlink" href="#gmtlogo" title="Permalink to this headline">¶</a></h1>
+<p>gmtlogo - Adding a GMT graphics logo overlay to an illustration</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>gmtlogo</strong> <em>dx</em> <em>dy</em> [ <strong>-G</strong><em>fill</em> ] [ <strong>-W</strong>[<em>pen</em>] ] &gt;&gt; <em>plot.ps</em></p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>This scrips appends the GMT logo as an overlay to an &#8220;open&#8221;
+PostScript file. The logo is 2 inches wide and 1 inch high and will be
+positioned relative to the current plot origin.</p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>dx</em>,<em>dy</em></dt>
+<dd>Sets the lower-left corner of the logo relative to current plot
+origin.</dd>
+</dl>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-G</strong><em>fill</em></dt>
+<dd>Select color or pattern for filling the underlying box [Default is
+no fill].</dd>
+<dt><strong>-W</strong>[<em>pen</em>]</dt>
+<dd>Set pen attributes for the outline of the box [Default is no
+outline].</dd>
+</dl>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="gmtcolors.html"><em>gmtcolors</em></a>,
+<a class="reference internal" href="psimage.html"><em>psimage</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">gmtlogo</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gmtinfo.html"
+                        title="previous chapter">gmtinfo</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gmtmath.html"
+                        title="next chapter">gmtmath</a></p>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="gmtmath.html" title="gmtmath"
+             >next</a> </li>
+        <li class="right" >
+          <a href="gmtinfo.html" title="gmtinfo"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+
+          <li><a href="GM.html" >GM</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Nov 05, 2013.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>
