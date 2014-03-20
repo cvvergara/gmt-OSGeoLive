@@ -5,7 +5,7 @@ Source: http://gmt.soest.hawaii.edu/
 
 File: *
 Copyright: 1991-2011 P.Wessel & W.H.F.Smith
-License: GPL-2+
+License: GPL-3+ or LGPL3+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; version 2 or any later version.
@@ -16,6 +16,8 @@ License: GPL-2+
  GNU General Public License for more details.
  .
  On Debian GNU/Linux systems, the complete text of the GNU General
- Public License can be found in `/usr/share/common-licenses/GPL-2'. If 
+ Public License can be found in `/usr/share/common-licenses/GPL-3'. 
+ On Debian GNU/Linux systems, the complete text of the GNU Lesser General
+ Public License can be found in `/usr/share/common-licenses/LGPL-3'. If 
  you got the source archive you will find the license in the file COPYING 
  in the top directory.

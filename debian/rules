@@ -1,7 +1,5 @@
 #! /usr/bin/make -f
 
-#CFLAGS := -fPIC -ansi
-
 # Some special build options
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
    CFLAGS += -g -O0
@@ -15,29 +13,35 @@ ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
    export DH_VERBOSE
 endif
 
-build:		build-stamp
-install:	install-stamp
-binary:		binary-arch binary-indep
+BUILDDIR = $(CURDIR)/debian/build
+DESTDIR	= $(CURDIR)/debian/tmp
 
-BUILDDIR	:= $(CURDIR)/debian/build
-DESTDIR		:= $(BUILDDIR)/debian/tmp
+CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+			-DDCW_ROOT=/usr/share/gmt/dcw \
+			-DGSHHG_ROOT=/usr/share/gmt/gshhg \
+			-DNETCDF_ROOT=/usr \
+			-DFFTW3_ROOT=/usr \
+			-DGDAL_ROOT=/usr \
+			-DPCRE_ROOT=/usr \
+			-DFLOCK=on \
+			-DGMT_INSTALL_MODULE_LINKS=off \
+			-DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=off \
+			-DLICENSE_RESTRICTED=LGPL 
 
-build-stamp: 
-	dh_testdir
-	dh_prep
-#		--enable-shared $(PATHCONFIG) --disable-mex --enable-netcdf=/usr \
-#		--enable-octave \
-#	    --enable-mex-mdir=$(shell octave-config --m-site-dir) \
-#		--enable-mex-xdir=$(shell octave-config --oct-site-dir) 
-	mkdir debian/build || true 
-	cd debian/build && cmake ../..
-	$(MAKE) -C debian/build CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 
+%:
+	dh $@ --buildsystem cmake \
+		--sourcedirectory=$(CURDIR) --builddirectory=$(BUILDDIR) \
+		--parallel
 
-install-stamp: build-stamp
-	dh_testdir
-	dh_testroot
-	
-	DESTDIR=$(DESTDIR) $(MAKE) -C debian/build install
+override_dh_auto_build:
+	mkdir $(BUILDDIR) || true 
+	cd $(BUILDDIR) && cmake $(CMAKE_OPTS) ../..
+	$(MAKE) -C $(BUILDDIR) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 
+
+override_dh_auto_install:
+	DESTDIR=$(DESTDIR) $(MAKE) -C $(BUILDDIR) install
 	# remove duplicated stuff
 	rm -rf debian/tmp/usr/share/conf \
 		debian/tmp/usr/share/cpt \
@@ -51,6 +55,11 @@ install-stamp: build-stamp
 		debian/tmp/usr/share/tools \
 		debian/tmp/usr/share/VERSION \
 		debian/tmp/usr/share/x2sys
+	dh_auto_install
+	# Uncompress examples stuff 
+	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
+	# Remove +x 
+	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
 
 #	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
 #	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
@@ -88,55 +97,7 @@ install-stamp: build-stamp
 #	done
 #	rm -rf $(DESTDIR)/usr/share/gmt/man
 	
-	touch $@
 
-binary-arch: install-stamp
-	dh_testdir -a
-	dh_testroot -a
-	dh_install --list-missing 
-	dh_installchangelogs -a
-	dh_installchangelogs -pgmt ChangeLog
-	dh_installdocs -a
-	dh_installexamples -a
-	dh_installmenu -a
-	dh_installman -a
-	dh_strip -a
-	dh_link -a
-	dh_compress -a -X.pdf
-	dh_fixperms -a
-	dh_makeshlibs -a
-	dh_shlibdeps -a 
-	dh_installdeb -a
-	dh_gencontrol -a
-	dh_md5sums -a
-	dh_builddeb -a
-	
-
-binary-indep: install-stamp
-	dh_testdir -i
-	dh_testroot -i
-	dh_install --list-missing 
-	dh_installchangelogs -i
-	dh_installdocs -i
-	dh_installexamples -i
-	dh_installmenu -i
-	dh_installman -i
-	dh_strip -i
-	dh_link -i
-	dh_compress -i -X.pdf
-	# Uncompress examples stuff 
-	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
-	# Remove +x 
-	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
-	dh_fixperms -i
-	dh_installdeb -i
-	dh_gencontrol -i
-	dh_md5sums -i
-	dh_builddeb -i
-
-clean:
-	dh_testdir
-	dh_testroot
-	rm -f install-stamp build-stamp
+override_dh_auto_clean:
 	rm -rf $(BUILDDIR) $(DESTDIR)
-	dh_clean
+	dh_auto_clean

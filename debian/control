@@ -3,20 +3,29 @@ Section: science
 Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Francesco Paolo Lovergine <frankie@debian.org>
-Build-Depends: cmake, libnetcdf-dev, debhelper (>= 8), bzip2, libxmu-headers,
- libxaw7-dev, octave-pkg-dev (>= 1.0.0)
+Build-Depends: cmake
+ , libnetcdf-dev
+ , debhelper (>= 9)
+ , libxmu-headers
+ , libxaw7-dev
+ , libgdal-dev
+ , libpcre3-dev
+ , zlib1g-dev
+ , sfftw-dev
+ , python-sphinx
 Build-Depends-Indep: debhelper (>= 9)
-Standards-Version: 3.9.3
-Homepage: http://gmt.soest.hawaii.edu/
-Vcs-Browser: http://git.debian.org/?p=pkg-grass/gmt.git
-Vcs-Git: git://git.debian.org/git/pkg-grass/gmt.git
+Standards-Version: 3.9.5
+Homepage: http://gmt.soest.hawaii.edu/projects/gmt
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-grass/gmt.git
+Vcs-Git: git://anonscm.debian.org/pkg-grass/gmt.git
+
 
 Package: gmt
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Replaces: gmt-manpages
 Conflicts: gmt-manpages
-Recommends: gmt-gshhs-data | gmt-gshhs-low (>= 2.2.0), gmt-doc
+Recommends: gmt-gshhs-data | gmt-gshhs-low (>= 2.2.0), gmt-doc, gmt-dcw
 Suggests: gmt-tutorial-pdf, gmt-doc-pdf, gmt-examples
 Description: Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
@@ -30,7 +39,7 @@ Description: Generic Mapping Tools
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
 
-Package: libgmt4
+Package: libgmt5
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -45,7 +54,7 @@ Description: Generic Mapping Tools Library
 Package: libgmt-dev
 Architecture: any
 Section: libdevel
-Depends: ${shlibs:Depends}, libgmt4 (=${binary:Version}), libnetcdf-dev, ${misc:Depends}
+Depends: ${shlibs:Depends}, libgmt5 (=${binary:Version}), libnetcdf-dev, ${misc:Depends}
 Suggests: gmt
 Description: Generic Mapping Tools Library
  These set of libraries allow manipulating geographic and Cartesian data sets
@@ -131,18 +140,3 @@ Description: Example scripts illustrating the use of GMT
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
 
-Package: octave-gmt
-Architecture: any
-Section: math
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${octave:Depends}
-Suggests: gmt
-Description: Support of GMT grid files for Octave
- GMT is a collection of tools that allow users to manipulate
- (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
- projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
- ranging from simple x-y plots through contour maps to artificially illuminated
- surfaces and 3-D perspective views in black and white, gray tone, hachure
- patterns, and 24-bit color. 
- .
- This package provides an interface for GNU Octave to query and read/write 
- GMT grid files.
