@@ -1,22 +1,22 @@
 /*--------------------------------------------------------------------
- *	$Id: sample1d.c 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: sample1d.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * sample1d reads a 1-D dataset, and resamples the values on (1) user
+ * Brief synopsis: sample1d reads a 1-D dataset, and resamples the values on (1) user
  * supplied time values or (2) equidistant time-values based on <timestart> and
  * <dt>, both supplied at the command line. Choose among linear, cubic
  * spline, and Akima's spline.  sample1d will handle multiple column files,
@@ -24,511 +24,451 @@
  * increasing variable.
  *
  * Author:	Paul Wessel
- * Date:	05-JUL-2000
- * Version:	4
- *
+ * Date:	1-JUN-2010
+ * Version:	5 API
  */
  
-#include "gmt.h"
+#define THIS_MODULE_NAME	"sample1d"
+#define THIS_MODULE_LIB		"core"
+#define THIS_MODULE_PURPOSE	"Resample 1-D table data using splines"
 
-#define INT_1D	0	/* Regular 1-D interpolation */
-#define INT_2D	1	/* Spatial 2-D path interpolation */
+#include "gmt_dev.h"
+
+#define GMT_PROG_OPTIONS "->Vbfghios" GMT_OPT("HMm")
+
+#define INT_1D_CART	0	/* Regular 1-D interpolation */
+#define INT_2D_CART	1	/* Cartesian 2-D path interpolation */
+#define INT_2D_GEO	2	/* Spherical 2-D path interpolation */
 
 struct SAMPLE1D_CTRL {
-#ifdef DEBUG
-	struct A {	/* -A[m|p] */
-		int mode;
+	struct Out {	/* -> */
+		bool active;
+		char *file;
+	} Out;
+	struct A {	/* -A[f|m|p|r|R|l][+l] */
+		bool active, loxo;
+		enum GMT_enum_track mode;
 	} A;
-#endif
 	struct F {	/* -Fl|a|c */
-		GMT_LONG active;
-		GMT_LONG mode;
+		bool active;
+		unsigned int mode;
 	} F;
-	struct I {	/* -I<inc>[e|E|k|K|m|M|n|N|c|C|d|D] */
-		GMT_LONG active;
-		GMT_LONG mode;
+	struct I {	/* -I<inc>[d|m|s|e|f|k|M|n|u|c] (c means x/y Cartesian path) */
+		bool active;
+		unsigned int mode;
+		int smode;
 		double inc;
 		char unit;
 	} I;
-	struct T {	/* -T<time_col> */
-		GMT_LONG active;
-		GMT_LONG col;
-	} T;
 	struct N {	/* -N<knotfile> */
-		GMT_LONG active;
+		bool active;
 		char *file;
 	} N;
-	struct S {	/* -S<xstart> */
-		GMT_LONG active;
-		double start;
+	struct S {	/* -S<xstart>[/<xstop>] */
+		bool active;
+		unsigned int mode;
+		double start, stop;
 	} S;
+	struct T {	/* -T<time_col> */
+		bool active;
+		unsigned int col;
+	} T;
 };
 
-int main (int argc, char **argv)
+void *New_sample1d_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct SAMPLE1D_CTRL *C = NULL;
+	
+	C = GMT_memory (GMT, NULL, 1, struct SAMPLE1D_CTRL);
+	
+	/* Initialize values whose defaults are not 0/false/NULL */
+	C->F.mode = GMT->current.setting.interpolant;
+		
+	return (C);
+}
+
+void Free_sample1d_Ctrl (struct GMT_CTRL *GMT, struct SAMPLE1D_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	if (C->Out.file) free (C->Out.file);	
+	if (C->N.file) free (C->N.file);	
+	GMT_free (GMT, C);	
+}
+
+int GMT_sample1d_usage (struct GMTAPI_CTRL *API, int level)
 {
-	GMT_LONG result, n_col = 0, n_read, n_fields, n_expected_fields, n_files = 0, fno, n_args, n_req;
-	GMT_LONG i, j, k, n, m, n_alloc = 0, m_alloc, rows = 1, m_supplied = 0;
+	char type[3] = {'l', 'a', 'c'};
 
-	GMT_LONG error = FALSE, *nan_flag = VNULL, nofile = TRUE, done = FALSE;
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: sample1d [<table>] [-A[f|m|p|r|R]+l] [-Fl|a|c|n] [-I<inc>[<unit>]] [-N<knottable>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-S<start>[/<stop]] [-T<time_col>] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
+		GMT_V_OPT, GMT_b_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT);
 
-	double *t_supplied_out = VNULL, *t_out, *ttime, *data, **col = VNULL, **out = VNULL;
-	double tt, low_t, high_t, *in = NULL, *dout = VNULL;
-#ifdef DEBUG
-	GMT_LONG proj_type = 0;
-	double d_scale;
-	PFD distance_func;
-#endif
-	char line[BUFSIZ], type[3];
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
-	FILE *fp = NULL, *fpt = NULL;
-
-
-	struct SAMPLE1D_CTRL *Ctrl = NULL;
-
-	void *New_sample1d_Ctrl (), Free_sample1d_Ctrl (struct SAMPLE1D_CTRL *C);
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+	GMT_Option (API, "<");
+	GMT_Message (API, GMT_TIME_NONE, "\t   The independent variable (see -T) must be monotonically in/de-creasing.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-A Controls how the input track in <table> is resampled when -I..<unit> is selected:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   f: Keep original points, but add intermediate points if needed [Default].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   m: Same, but first follow meridian (along y) then parallel (along x).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   p: Same, but first follow parallel (along x) then meridian (along y).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   r: Resample at equidistant locations; input points not necessarily included.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   R: Same, but adjust given spacing to fit the track length exactly.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append +l to compute distances along rhumblines (loxodromes) [no].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-F Set the interpolation mode.  Choose from:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   l Linear interpolation.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   a Akima spline interpolation.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   c Cubic spline interpolation.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   n No interpolation (nearest point).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default is -F%c].\n", type[API->GMT->current.setting.interpolant]);
+	GMT_Message (API, GMT_TIME_NONE, "\t-I Set equidistant grid interval <inc> [t1 - t0].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append %s to indicate that the first two columns contain\n", GMT_LEN_UNITS_DISPLAY);
+	GMT_Message (API, GMT_TIME_NONE, "\t   longitude, latitude and you wish to resample this path with a nominal spacing of <inc>\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   in the chosen units.  For Cartesian paths specify unit as c.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   See -A to control how the resampling is done.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N The <knottable> is an ASCII table with the desired time positions in column 0.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Overrides the -I and -S settings.  If none of -I, -S, and -N is set\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   then <tstart> = first input point, <t_inc> = (t[1] - t[0]).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-S Set the first output point to be <start> [first multiple of inc in range].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally, append /<stop> for last output point [last multiple of inc in range].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-T Give column number of the independent variable (time) [Default is 0 (first)].\n");
+	GMT_Option (API, "V,bi2,bo,f,g,h,i,o,s,.");
 	
-	argc = (int)GMT_begin (argc, argv);
+	return (EXIT_FAILURE);
+}
 
-	Ctrl = (struct SAMPLE1D_CTRL *)New_sample1d_Ctrl ();	/* Allocate and initialize a new control structure */
-	
-	type[0] = 'l';	type[1] = 'a';	type[2] = 'c';
+int GMT_sample1d_parse (struct GMT_CTRL *GMT, struct SAMPLE1D_CTRL *Ctrl, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to sample1d and sets parameters in CTRL.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
 
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
+	unsigned int n_errors = 0, n_files = 0;
+	int col;
+	char A[GMT_LEN64] = {""}, B[GMT_LEN64] = {""}, *c = NULL;
+	struct GMT_OPTION *opt = NULL;
+	struct GMTAPI_CTRL *API = GMT->parent;
 
-				/* Common parameters */
+	for (opt = options; opt; opt = opt->next) {
+		switch (opt->option) {
 
-				case 'H':
-				case 'M':
-				case 'V':
-				case 'b':
-				case 'f':
-				case 'm':
-				case '\0':
-					error += (GMT_LONG)GMT_parse_common_options (argv[i], 0, 0, 0, 0);
-					break;
+			case '<':	/* Skip input files */
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				break;
+			case '>':	/* Got named output file */
+				if (n_files++ == 0 && GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT))
+					Ctrl->Out.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
 
-				/* Supplemental parameters */
+			/* Processes program-specific parameters */
 
-				case 'F':
-					Ctrl->F.active = TRUE;
-					switch (argv[i][2]) {
-						case 'l':
-							Ctrl->F.mode = 0;
-							break;
-						case 'a':
-							Ctrl->F.mode = 1;
-							break;
-						case 'c':
-							Ctrl->F.mode = 2;
-							break;
-						case 'n':
-							Ctrl->F.mode = 3;
-							break;
-						default:	/* Use GMT defaults */
-							break;
-					}
-					break;
-				case 'I':
-					Ctrl->I.active = TRUE;
-					Ctrl->I.inc = atof (&argv[i][2]);
-#ifdef DEBUG
-					n = strlen (argv[i]) - 1;
-					if (strchr ("ekmnd", argv[i][n])) {
-						Ctrl->I.unit = argv[i][n];
-						Ctrl->I.mode = INT_2D;
-					}
-#endif
-					break;
-				case 'T':
-					Ctrl->T.active = TRUE;
-					Ctrl->T.col = atoi (&argv[i][2]);
-					break;
-				case 'N':
-					Ctrl->N.file = strdup (&argv[i][2]);
-					Ctrl->N.active = TRUE;
-					break;
-				case 'S':
-					Ctrl->S.active = TRUE;
-					GMT_scanf_arg (&argv[i][2], GMT_IS_UNKNOWN, &Ctrl->S.start);
-					break;
-
-				/* For backward compatibility for now */
-
-				case 'L':
-					Ctrl->F.active = TRUE;
-					Ctrl->F.mode = 0;
-					break;
-				case 'A':
-#ifdef DEBUG
-					if (argv[i][2] == 'm')
-						Ctrl->A.mode = 1;
-					else if (argv[i][2] == 'p')
-						Ctrl->A.mode = 2;
-					else {	/* Old backwards compatible -A option */
-#endif
-						Ctrl->F.active = TRUE;
+			case 'A':	/* Change track resampling mode */
+				Ctrl->A.active = true;
+				switch (opt->arg[0]) {
+					case 'f': Ctrl->A.mode = GMT_TRACK_FILL;   break;
+					case 'm': Ctrl->A.mode = GMT_TRACK_FILL_M; break;
+					case 'p': Ctrl->A.mode = GMT_TRACK_FILL_P; break;
+					case 'r': Ctrl->A.mode = GMT_TRACK_SAMPLE_FIX; break;
+					case 'R': Ctrl->A.mode = GMT_TRACK_SAMPLE_ADJ; break;
+					default: GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -A option: Bad modifier %c\n", opt->arg[0]); n_errors++; break;
+				}
+				if (strstr (opt->arg, "+l")) Ctrl->A.loxo = true;
+				break;
+			case 'F':
+				Ctrl->F.active = true;
+				switch (opt->arg[0]) {
+					case 'l':
+						Ctrl->F.mode = 0;
+						break;
+					case 'a':
 						Ctrl->F.mode = 1;
-#ifdef DEBUG
-					}
-#endif
-					break;
-				case 'C':
-					Ctrl->F.active = TRUE;
-					Ctrl->F.mode = 2;
-					break;
+						break;
+					case 'c':
+						Ctrl->F.mode = 2;
+						break;
+					case 'n':
+						Ctrl->F.mode = 3;
+						break;
+					default:
+						n_errors++;
+						break;
+				}
+				break;
+			case 'I':
+				Ctrl->I.active = true;
+				if ((c = strchr (opt->arg, 'c'))) Ctrl->I.mode = INT_2D_CART, *c = 0;	/* Chop off unit c as not understood by GMT_get_distance */
+				Ctrl->I.smode = GMT_get_distance (GMT, opt->arg, &(Ctrl->I.inc), &(Ctrl->I.unit));
+				if (strchr (GMT_LEN_UNITS, Ctrl->I.unit)) Ctrl->I.mode = INT_2D_GEO;
+				if (Ctrl->I.mode == INT_2D_CART) *c = 'c';	/* Restore the c */
+				break;
+			case 'N':
+				if ((Ctrl->N.active = GMT_check_filearg (GMT, 'N', opt->arg, GMT_IN)))
+					Ctrl->N.file = strdup (opt->arg);
+				else
+					n_errors++;
+				break;
+			case 'S':
+				Ctrl->S.active = true;
+				if (strchr (opt->arg, '/')) {	/* Got start/stop */
+					Ctrl->S.mode = 1;
+					sscanf (opt->arg, "%[^/]/%s", A, B);
+					GMT_scanf_arg (GMT, A, GMT_IS_UNKNOWN, &Ctrl->S.start);
+					GMT_scanf_arg (GMT, B, GMT_IS_UNKNOWN, &Ctrl->S.stop);
+				}
+				else
+					GMT_scanf_arg (GMT, opt->arg, GMT_IS_UNKNOWN, &Ctrl->S.start);
+				break;
+			case 'T':
+				Ctrl->T.active = true;
+				col = atoi (opt->arg);
+				n_errors += GMT_check_condition (GMT, col < 0, "Syntax error -T option: Column number cannot be negative\n");
+				Ctrl->T.col = col;
+				break;
 
-				default:
-					error = TRUE;
-					GMT_default_error (argv[i][1]);
-					break;
-			}
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
+				break;
 		}
-		else
-			n_files++;
-
 	}
 
-	if (argc == 1 || GMT_give_synopsis_and_exit) {	/* Display usage */
-		fprintf (stderr,"sample1d %s - Resampling of 1-D data sets\n\n", GMT_VERSION);
-		fprintf (stderr, "usage: sample1d <infile(s)> [-Fl|a|c|n] [%s] [-I<t_inc>] [-N<knotfile>]\n", GMT_H_OPT);
-		fprintf (stderr, "\t[-S<xstart>] [-T<time_col>] [-V] [%s] [%s] [%s]\n\n", GMT_b_OPT, GMT_f_OPT, GMT_m_OPT);
+	n_errors += GMT_check_condition (GMT, Ctrl->S.mode == 1 && Ctrl->S.stop <= Ctrl->S.start, "Syntax error -S option: <stop> must exceed <start>\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->N.active && Ctrl->I.active, "Syntax error: Specify only one of -N and -S\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->I.active && Ctrl->I.inc <= 0.0, "Syntax error -I option: Must specify positive increment\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->N.active && GMT_access (GMT, Ctrl->N.file, R_OK), "Syntax error -N. Cannot read file %s\n", Ctrl->N.file);
+	n_errors += GMT_check_binary_io (GMT, (Ctrl->T.col >= 2) ? Ctrl->T.col + 1 : 2);
+	n_errors += GMT_check_condition (GMT, n_files > 1, "Syntax error: Only one output destination can be specified\n");
 
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
 
-		fprintf (stderr, "\t<infile> is one or more multicolumn ASCII (or binary, see -b) tables. [Default is standard input].\n");
-		fprintf (stderr, "\tThe independent variable (see -T) must be monotonically in/de-creasing.\n");
-		fprintf (stderr, "\n\tOPTIONS:\n");
-		fprintf (stderr, "\t-F sets the interpolation mode.  Choose from:\n");
-		fprintf (stderr, "\t   l Linear interpolation.\n");
-		fprintf (stderr, "\t   a Akima spline interpolation.\n");
-		fprintf (stderr, "\t   c Cubic spline interpolation.\n");
-		fprintf (stderr, "\t   n No interpolation (nearest point).\n");
-		fprintf (stderr, "\t   [Default is -F%c].\n", type[Ctrl->F.mode]);
-		GMT_explain_option ('H');
-		fprintf (stderr, "\t-I <x_inc> sets equidistant grid interval [x1 - x0].\n");
-#ifdef DEBUG
-		fprintf (stderr, "\t   Append e|k|m|n|d to indicate that the first two columns contain\n");
-		fprintf (stderr, "\t   longitude, latitude and you wish to resample this path using great\n");
-		fprintf (stderr, "\t   circle segment with a nominal spacing of <t_inc> in those units.\n");
-		fprintf (stderr, "\t   See -Am|p to only sample along meridians and parallels.\n");
-#endif
-		fprintf (stderr, "\t-N <knotfile> is an ASCII table with the desired time positions in column 0.\n");
-		fprintf (stderr, "\t   Overrides the -I and -S settings.  If none of -I, -S, and -N is set\n");
-		fprintf (stderr, "\t   then <tstart> = first input point, <t_inc> = (t[1] - t[0]).\n");
-		fprintf (stderr, "\t-S <xstart> sets the first output point [first multiple of x_inc in range].\n");
-		fprintf (stderr, "\t-T gives column number of the independent variable (time) [Default is 0 (first)].\n");
-		GMT_explain_option ('V');
-		GMT_explain_option ('i');
-		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns.\n");
-		GMT_explain_option ('o');
-		GMT_explain_option ('n');
-		GMT_explain_option ('f');
-		GMT_explain_option ('m');
-		GMT_explain_option ('.');
-		exit (EXIT_FAILURE);
-	}
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_sample1d_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-	if (Ctrl->T.col < 0) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR -T option: Column number cannot be negative\n", GMT_program);
-		error++;
-	}
-	if (Ctrl->N.active && Ctrl->I.active) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR: Specify only one of -N and -S\n", GMT_program);
-		error++;
-	}
-	if (Ctrl->I.active && Ctrl->I.inc <= 0.0) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR -I option: Must specify positive increment\n", GMT_program);
-		error++;
-	}
-	if (GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR.  Binary input data cannot have header -H\n", GMT_program);
-		error++;
-	}
-        if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] == 0) GMT_io.ncol[GMT_IN] = 2;
-	n_req = (Ctrl->T.col >= 2) ? Ctrl->T.col + 1 : 2;
-        if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] < n_req) {
-                fprintf (stderr, "%s: GMT SYNTAX ERROR.  Binary input data (-bi) must have at least %ld columns\n", GMT_program, n_req);
-		error++;
-	}
-	if (Ctrl->N.active && (fpt = GMT_fopen (Ctrl->N.file, "r")) == NULL) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR -N. Cannot open file %s\n", GMT_program, Ctrl->N.file);
-		error++;
-	}
-
-#ifdef DEBUG
-	if (Ctrl->I.mode) error += GMT_get_dist_scale (Ctrl->I.unit, &d_scale, &proj_type, &distance_func);
-	if (Ctrl->I.mode) Ctrl->I.inc /= d_scale;			/* Convert increment to spherical degrees */
-#endif
-	if (error) exit (EXIT_FAILURE);
-
-	if (GMT_io.binary[GMT_IN] && gmtdefs.verbose) {
-		char *type[2] = {"double", "single"};
-		fprintf (stderr, "%s: Expects %ld-column %s-precision binary data\n", GMT_program, GMT_io.ncol[GMT_IN], type[GMT_io.single_precision[GMT_IN]]);
-	}
-
-#ifdef SET_IO_MODE
-	GMT_setmode (GMT_OUT);
-#endif
-
-	gmtdefs.interpolant = Ctrl->F.mode;
-	GMT_io.skip_if_NaN[GMT_X] = GMT_io.skip_if_NaN[GMT_Y] = FALSE;	/* Turn off default GMT NaN-handling for (x,y) which is not the case here */
-	GMT_io.skip_if_NaN[Ctrl->T.col] = TRUE;				/* ... But disallow NaN in "time" column */
+int GMT_sample1d (void *V_API, int mode, void *args)
+{
+	unsigned int geometry;
+	bool resample_path = false;
+	int error = 0, result;
 	
-	t_out = (double *)NULL;
+	unsigned char *nan_flag = NULL;
+	
+	size_t m_alloc;
+	uint64_t k, tbl, col, row, seg, m = 0, m_supplied = 0, dim[4] = {0, 0, 0, 0};
 
-	if (Ctrl->N.active) {	/* read file with abscissae */
-		m_alloc = GMT_CHUNK;
-		t_supplied_out = (double *) GMT_memory (VNULL, (size_t)m_alloc, sizeof (double), GMT_program);
-		m = 0;
-		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fpt);
-		n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : GMT_MAX_COLUMNS;
-		n_fields = GMT_input (fpt, &n_expected_fields, &in);
-		while (! (GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
-			while (GMT_io.status & GMT_IO_SEGMENT_HEADER) {
-				n_fields = GMT_input (fpt, &n_expected_fields, &in);
-			}
-			if (GMT_io.status & GMT_IO_EOF) continue;	/* At EOF */
-			t_supplied_out[m] = in[GMT_X];
-			m++;
-			if (m == m_alloc) {	/* Get more memory */
-				m_alloc <<= 1;
-				t_supplied_out = (double *) GMT_memory ((void *)t_supplied_out, (size_t)m_alloc, sizeof (double), GMT_program);
-			}
-			n_fields = GMT_input (fpt, &n_expected_fields, &in);
+	double *t_supplied_out = NULL, *t_out = NULL, *dist_in = NULL, *ttime = NULL, *data = NULL;
+	double tt, low_t, high_t, last_t, *lon = NULL, *lat = NULL;
+
+	struct GMT_DATASET *Din = NULL, *Dout = NULL;
+	struct GMT_DATATABLE *T = NULL, *Tout = NULL;
+	struct GMT_DATASEGMENT *S = NULL, *Sout = NULL;
+	struct SAMPLE1D_CTRL *Ctrl = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
+	struct GMT_OPTION *options = NULL;
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_sample1d_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_sample1d_usage (API, GMT_USAGE));/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_sample1d_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	/* Parse the command-line arguments */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_sample1d_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_sample1d_parse (GMT, Ctrl, options))) Return (error);
+	
+	/*---------------------------- This is the sample1d main code ----------------------------*/
+
+	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
+	GMT->current.setting.interpolant = Ctrl->F.mode;
+	GMT->current.io.skip_if_NaN[GMT_X] = GMT->current.io.skip_if_NaN[GMT_Y] = false;	/* Turn off default GMT NaN-handling for (x,y) which is not the case here */
+	GMT->current.io.skip_if_NaN[Ctrl->T.col] = true;				/* ... But disallow NaN in "time" column */
+	
+	if (Ctrl->I.mode) {
+		if (Ctrl->I.smode == GMT_GEODESIC) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Warning: Cannot use geodesic distances as path interpolation is spherical; changed to spherical\n");
+			Ctrl->I.smode = GMT_GREATCIRCLE;
 		}
-		GMT_fclose (fpt);
-		m_supplied = m;
-		t_supplied_out = (double *) GMT_memory ((void *)t_supplied_out, (size_t)m_supplied, sizeof (double), GMT_program);
-		t_out = (double *) GMT_memory (VNULL, (size_t)m_supplied, sizeof (double), GMT_program);
-                if (gmtdefs.verbose) fprintf (stderr, "%s: Read %ld knots from file\n", GMT_program, m_supplied);
+		if (Ctrl->I.mode == INT_2D_GEO && !GMT_is_geographic (GMT, GMT_IN)) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Set -fg unless already set */
+		if (!GMT_is_geographic (GMT, GMT_IN) && Ctrl->A.loxo) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Warning: Loxodrome mode ignored for Cartesian data.\n");
+			Ctrl->A.loxo = false;
+		}
+		if (Ctrl->A.loxo) GMT->current.map.loxodrome = true;
+		GMT_init_distaz (GMT, Ctrl->I.unit, Ctrl->I.smode, GMT_MAP_DIST);		
+		resample_path = true;	/* Resample (x,y) track according to -I and -A */
 	}
 
-	if (n_files > 0)
-		nofile = FALSE;
-	else
-		n_files = 1;
+	geometry = (resample_path) ? GMT_IS_LINE : GMT_IS_NONE;
+	if (GMT_Init_IO (API, GMT_IS_DATASET, geometry, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
+		Return (API->error);
+	}
+	if (GMT_Init_IO (API, GMT_IS_DATASET, geometry, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+		Return (API->error);
+	}
 
-	n_args = (argc > 1) ? argc : 2;
-
-	for (fno = 1; !done && fno < n_args; fno++) {	/* Loop over input files, if any */
-		if (!nofile && argv[fno][0] == '-') continue;
-
-		if (nofile) {	/* Just read standard input */
-			fp = GMT_stdin;
-			done = TRUE;
-#ifdef SET_IO_MODE
-			GMT_setmode (GMT_IN);
-#endif
+	/* First read input data to be sampled */
+	
+	if ((error = GMT_set_cols (GMT, GMT_IN, 0))) Return (error);
+	if ((Din = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, 0, GMT_READ_NORMAL, NULL, NULL, NULL)) == NULL) {
+		Return (API->error);
+	}
+	
+	if (Ctrl->N.active) {	/* read file with abscissae */
+		struct GMT_DATASET *Cin = NULL;
+		GMT_init_io_columns (GMT, GMT_IN);	/* Reset any effects of -i */
+		if ((Cin = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL) {
+			Return (API->error);
 		}
-		else if ((fp = GMT_fopen (argv[fno], GMT_io.r_mode)) == NULL) {
-			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
-			continue;
+		T = Cin->table[0];	/* Since we only have one table here */
+		t_supplied_out = GMT_memory (GMT, NULL, Cin->table[0]->n_records, double);
+		for (seg = 0; seg < T->n_segments; seg++) {
+			GMT_memcpy (&t_supplied_out[m], T->segment[seg]->coord[GMT_X], T->segment[seg]->n_rows, double);
+			m += T->segment[seg]->n_rows;
 		}
-
-		if (!nofile && gmtdefs.verbose) fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
-
-		if (GMT_io.io_header[GMT_IN]) {
-			for (i = 0; i < GMT_io.n_header_recs; i++) {
-				GMT_fgets (line, BUFSIZ, fp);
-				if (GMT_io.io_header[GMT_OUT]) GMT_fputs (line, GMT_stdout);
-			}
+		m_supplied = m;
+		t_out = GMT_memory (GMT, NULL, m_supplied, double);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Read %" PRIu64 " knots from file\n", m_supplied);
+		if (GMT_Destroy_Data (API, &Cin) != GMT_OK) {
+			Return (API->error);
 		}
+	}
 
-		n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : GMT_MAX_COLUMNS;
-		n_read = n_col = 0;
-		n_fields = GMT_input (fp, &n_expected_fields, &in);
+	dim[GMT_COL] = Din->n_columns;	/* Only known dimension, the rest is 0 */
+	if ((Dout = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (API->error);
+	Dout->table = GMT_memory (GMT, NULL, Din->n_tables, struct GMT_DATATABLE *);	/* with table array */
+	Dout->n_tables = Din->n_tables;
 
-		while (! (GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
-
-			while (GMT_io.status & GMT_IO_SEGMENT_HEADER) {
-				GMT_write_segmentheader (GMT_stdout, n_expected_fields);
-				n_fields = GMT_input (fp, &n_expected_fields, &in);
-			}
-			if (GMT_io.status & GMT_IO_EOF) continue;	/* At EOF */
-
-			n = 0;
-
-			while (! (GMT_io.status & (GMT_IO_SEGMENT_HEADER | GMT_IO_EOF))) {	/* Keep going until FALSE or = 2 segment header */
-				n_read++;
-				if (GMT_io.status & GMT_IO_MISMATCH) {
-					fprintf (stderr, "%s: Mismatch between actual (%ld) and expected (%ld) fields near line %ld\n", GMT_program, n_fields, n_expected_fields, n_read);
-					continue;
-				}
-
-				if (n_col == 0) {	/* Allocate memory first time around */
-					n_col = n_expected_fields;
-					if (Ctrl->T.col >= n_col) {
-						fprintf (stderr, "%s: time_col = %ld exceeds range of columns (%ld)!\n", GMT_program, Ctrl->T.col, n_col);
-						exit (EXIT_FAILURE);
-					}
-					dout = (double *) GMT_memory (VNULL, (size_t)n_col, sizeof (double), GMT_program);
-					col = (double **) GMT_memory (VNULL, (size_t)n_col, sizeof (double *), GMT_program);
-					out = (double **) GMT_memory (VNULL, (size_t)n_col, sizeof (double *), GMT_program);
-					nan_flag = (GMT_LONG *) GMT_memory (VNULL, (size_t)n_col, sizeof (GMT_LONG), GMT_program);
-					n_alloc = GMT_CHUNK;
-					for (j = 0; j < n_col; j++) col[j] = (double *) GMT_memory (VNULL, (size_t)n_alloc, sizeof (double), GMT_program);
-				}
-
-				for (j = 0; j < n_col; j++) {
-					if (GMT_is_dnan (in[j])) nan_flag[j] = TRUE;
-					col[j][n] = in[j];
-				}
-				n++;
-
-				if (n == n_alloc) {	/* Get more memory */
-					n_alloc <<= 1;
-					for (j = 0; j < n_col; j++) col[j] = (double *) GMT_memory ((void *)col[j], (size_t)n_alloc, sizeof (double), GMT_program);
-				}
-
-				n_fields = GMT_input (fp, &n_expected_fields, &in);
-			}
-
-			/* Here we have one segment to work on */
-
-			/* If we didn't get input abscissa, now's the time to generate them */
-
-#ifdef DEBUG
-			if (Ctrl->I.active && Ctrl->I.mode == INT_2D) {	/* Special spatial interpolation */
-				GMT_LONG np;
-				double *lon, *lat, xyout[2];
-				lon = (double *) GMT_memory (VNULL, n, sizeof (double), GMT_program);
-				lat = (double *) GMT_memory (VNULL, n, sizeof (double), GMT_program);
-				memcpy ((void *)lon, (void *)col[GMT_X], n*sizeof(double));
-				memcpy ((void *)lat, (void *)col[GMT_Y], n*sizeof(double));
-				np = GMT_fix_up_path (&lon, &lat, n, Ctrl->I.inc, Ctrl->A.mode);
-				for (i = 0; i < np; i++) {
-					xyout[GMT_X] = lon[i];	xyout[GMT_Y] = lat[i];
-					GMT_output (GMT_stdout, 2, xyout);
-				}
-				rows += n + 1;
-				GMT_free ((void *)lon);
-				GMT_free ((void *)lat);
+	nan_flag = GMT_memory (GMT, NULL, Din->n_columns, unsigned char);
+	for (tbl = 0; tbl < Din->n_tables; tbl++) {
+		Tout = GMT_create_table (GMT, Din->table[tbl]->n_segments, 0, Din->n_columns, false);
+		Dout->table[tbl] = Tout;
+		for (seg = 0; seg < Din->table[tbl]->n_segments; seg++) {
+			S = Din->table[tbl]->segment[seg];	/* Current segment */
+			if (S->n_rows < 2) {
+				GMT_Report (API, GMT_MSG_NORMAL, "Warning: Segment %" PRIu64 " in table %" PRIu64 " has < 2 records - skipped as no interpolation is possible\n", seg, tbl);
 				continue;
 			}
-#endif
-			if (Ctrl->N.active) {	/* Get relevant t_out segment */
-				low_t  = MIN (col[Ctrl->T.col][0], col[Ctrl->T.col][n-1]);
-				high_t = MAX (col[Ctrl->T.col][0], col[Ctrl->T.col][n-1]);
-				for (i = m = 0; i < m_supplied; i++) {
-					if (t_supplied_out[i] < low_t || t_supplied_out[i] > high_t) continue;
-					t_out[m++] = t_supplied_out[i];
-				}
-				if (m == 0) fprintf (stderr, "%s: Warning: No output points for range %g to %g\n", GMT_program, col[Ctrl->T.col][0], col[Ctrl->T.col][n-1]);
+			GMT_memset (nan_flag, Din->n_columns, unsigned char);
+			for (col = 0; col < Din->n_columns; col++) for (row = 0; row < S->n_rows; row++) if (GMT_is_dnan (S->coord[col][row])) nan_flag[col] = true;
+			if (resample_path) {	/* Need distances for path interpolation */
+				dist_in = GMT_dist_array (GMT, S->coord[GMT_X], S->coord[GMT_Y], S->n_rows, true);
+				lon = GMT_memory (GMT, NULL, S->n_rows, double);
+				lat = GMT_memory (GMT, NULL, S->n_rows, double);
+				GMT_memcpy (lon, S->coord[GMT_X], S->n_rows, double);
+				GMT_memcpy (lat, S->coord[GMT_Y], S->n_rows, double);
+				m = GMT_resample_path (GMT, &lon, &lat, S->n_rows, Ctrl->I.inc, Ctrl->A.mode);
+				t_out = GMT_dist_array (GMT, lon, lat, m, true);
 			}
-			else {	/* Generate evenly spaced grid */
-				if (!Ctrl->I.active) Ctrl->I.inc = col[Ctrl->T.col][1] - col[Ctrl->T.col][0];
-				if (Ctrl->I.active && (col[Ctrl->T.col][1] - col[Ctrl->T.col][0]) < 0.0 && Ctrl->I.inc > 0.0) Ctrl->I.inc = -Ctrl->I.inc;	/* For monotonically decreasing data */
+			else if (Ctrl->N.active) {	/* Get relevant t_out segment */
+				low_t  = MIN (S->coord[Ctrl->T.col][0], S->coord[Ctrl->T.col][S->n_rows-1]);
+				high_t = MAX (S->coord[Ctrl->T.col][0], S->coord[Ctrl->T.col][S->n_rows-1]);
+				for (row = m = 0; row < m_supplied; row++) {
+					if (t_supplied_out[row] < low_t || t_supplied_out[row] > high_t) continue;
+					t_out[m++] = t_supplied_out[row];
+				}
+				if (m == 0) {
+					GMT_Report (API, GMT_MSG_NORMAL, "Warning: No output points for range %g to %g\n", S->coord[Ctrl->T.col][0], S->coord[Ctrl->T.col][S->n_rows-1]);
+					continue;
+				}
+			}
+			else {	/* Generate evenly spaced output */
+				if (!Ctrl->I.active) Ctrl->I.inc = S->coord[Ctrl->T.col][1] - S->coord[Ctrl->T.col][0];
+				if (Ctrl->I.active && (S->coord[Ctrl->T.col][1] - S->coord[Ctrl->T.col][0]) < 0.0 && Ctrl->I.inc > 0.0) Ctrl->I.inc = -Ctrl->I.inc;	/* For monotonically decreasing data */
 				if (!Ctrl->S.active) {
 					if (Ctrl->I.inc > 0.0) {
-						Ctrl->S.start = floor (col[Ctrl->T.col][0] / Ctrl->I.inc) * Ctrl->I.inc;
-						if (Ctrl->S.start < col[Ctrl->T.col][0]) Ctrl->S.start += Ctrl->I.inc;
+						Ctrl->S.start = floor (S->coord[Ctrl->T.col][0] / Ctrl->I.inc) * Ctrl->I.inc;
+						if (Ctrl->S.start < S->coord[Ctrl->T.col][0]) Ctrl->S.start += Ctrl->I.inc;
 					}
 					else {
-						Ctrl->S.start = ceil (col[Ctrl->T.col][0] / (-Ctrl->I.inc)) * (-Ctrl->I.inc);
-						if (Ctrl->S.start > col[Ctrl->T.col][0]) Ctrl->S.start += Ctrl->I.inc;
+						Ctrl->S.start = ceil (S->coord[Ctrl->T.col][0] / (-Ctrl->I.inc)) * (-Ctrl->I.inc);
+						if (Ctrl->S.start > S->coord[Ctrl->T.col][0]) Ctrl->S.start += Ctrl->I.inc;
 					}
 				}
-				m = m_alloc = irint (fabs((col[Ctrl->T.col][n-1] - Ctrl->S.start) / Ctrl->I.inc)) + 1;
-				t_out = (double *) GMT_memory ((void *)t_out, (size_t)m_alloc, sizeof (double), GMT_program);
+				last_t = (Ctrl->S.mode) ? Ctrl->S.stop : S->coord[Ctrl->T.col][S->n_rows-1];
+				m = m_alloc = lrint (fabs((last_t - Ctrl->S.start) / Ctrl->I.inc)) + 1;
+				t_out = GMT_memory (GMT, t_out, m_alloc, double);
 				t_out[0] = Ctrl->S.start;
-				i = 1;
+				row = 1;
 				if (Ctrl->I.inc > 0.0) {
-					while (i < m && (tt = Ctrl->S.start + i * Ctrl->I.inc) <= col[Ctrl->T.col][n-1]) {
-						t_out[i] = tt;
-						i++;
+					while (row < m && (tt = Ctrl->S.start + row * Ctrl->I.inc) <= last_t) {
+						t_out[row] = tt;
+						row++;
 					}
 				}
 				else {
-					while (i < m && (tt = Ctrl->S.start + i * Ctrl->I.inc) >= col[Ctrl->T.col][n-1]) {
-						t_out[i] = tt;
-						i++;
+					while (row < m && (tt = Ctrl->S.start + row * Ctrl->I.inc) >= last_t) {
+						t_out[row] = tt;
+						row++;
 					}
 				}
-				m = i;
-				if (fabs (t_out[m-1]-col[Ctrl->T.col][n-1]) < GMT_SMALL) {	/* Fix roundoff */
-					t_out[m-1] = col[Ctrl->T.col][n-1];
-				}
+				m = row;
+				if (fabs (t_out[m-1]-last_t) < GMT_SMALL) t_out[m-1] = last_t;	/* Fix roundoff */
 			}
-
-			if (nan_flag[Ctrl->T.col]) {
-				fprintf (stderr, "%s: Independent column has NaN's!\n", GMT_program);
-				exit (EXIT_FAILURE);
+			Sout = Tout->segment[seg];	/* Current output segment */
+			GMT_alloc_segment (GMT, Sout, m, Din->n_columns, false);	/* Readjust the row allocation */
+			if (resample_path) {	/* Use resampled path coordinates */
+				GMT_memcpy (Sout->coord[GMT_X], lon, m, double);
+				GMT_memcpy (Sout->coord[GMT_Y], lat, m, double);
 			}
+			else
+				GMT_memcpy (Sout->coord[Ctrl->T.col], t_out, m, double);
+			if (S->header) Sout->header = strdup (S->header);	/* Duplicate header */
+			Sout->n_rows = m;
+				
+			for (col = 0; m && col < Din->n_columns; col++) {
 
-			for (j = 0; m && j < n_col; j++) {
+				if (col == Ctrl->T.col && !resample_path) continue;	/* Skip the time column */
+				if (resample_path && col <= GMT_Y) continue;		/* Skip the lon,lat columns */
+				
+				if (nan_flag[col] && !GMT->current.setting.io_nan_records) {	/* NaN's present, need "clean" time and data columns */
 
-				if (j == Ctrl->T.col) continue;	/* Skip the time column */
-
-				out[j] = (double *) GMT_memory (VNULL, (size_t)m, sizeof (double), GMT_program);
-
-				if (nan_flag[j] && !gmtdefs.nan_is_gap) {	/* NaN's present, need "clean" time and data columns */
-
-					ttime = (double *) GMT_memory (VNULL, (size_t)n, sizeof (double), GMT_program);
-					data = (double *) GMT_memory (VNULL, (size_t)n, sizeof (double), GMT_program);
-					for (i = k = 0; i < n; i++) {
-						if ( GMT_is_dnan (col[j][i]) ) continue;
-						ttime[k] = col[Ctrl->T.col][i];
-						data[k] = col[j][i];
-						k++;
+					ttime = GMT_memory (GMT, NULL, S->n_rows, double);
+					data = GMT_memory (GMT, NULL, S->n_rows, double);
+					for (row = k = 0; row < S->n_rows; row++) {
+						if (GMT_is_dnan (S->coord[col][row])) continue;
+						ttime[k] = (resample_path) ? dist_in[row] : S->coord[Ctrl->T.col][row];
+						data[k++] = S->coord[col][row];
 					}
-					result = GMT_intpol (ttime, data, k, m, t_out, out[j], Ctrl->F.mode);
-					GMT_free ((void *)ttime);
-					GMT_free ((void *)data);
+					result = GMT_intpol (GMT, ttime, data, k, m, t_out, Sout->coord[col], Ctrl->F.mode);
+					GMT_free (GMT, ttime);
+					GMT_free (GMT, data);
 				}
-				else
-					result = GMT_intpol (col[Ctrl->T.col], col[j], n, m, t_out, out[j], Ctrl->F.mode);
+				else {
+					ttime = (resample_path) ? dist_in : S->coord[Ctrl->T.col];
+					result = GMT_intpol (GMT, ttime, S->coord[col], S->n_rows, m, t_out, Sout->coord[col], Ctrl->F.mode);
+				}
 
-				if (result != 0) {
-					fprintf (stderr, "%s: Error from GMT_intpol near row %ld!\n", GMT_program, rows+result+1);
-					exit (EXIT_FAILURE);
+				if (result != GMT_OK) {
+					GMT_Report (API, GMT_MSG_NORMAL, "Error from GMT_intpol near row %d!\n", result+1);
+					return (result);
 				}
 			}
-
-			out[Ctrl->T.col] = t_out;
-
-			for (i = 0; i < m; i++) {
-				for (j = 0; j < n_col; j++) dout[j] = out[j][i];
-				GMT_output (GMT_stdout, n_col, dout);
+			if (resample_path) {	/* Free up memory used */
+				GMT_free (GMT, dist_in);	GMT_free (GMT, t_out);
+				GMT_free (GMT, lon);		GMT_free (GMT, lat);
 			}
-			for (j = 0; m && j < n_col; j++) if (j != Ctrl->T.col) GMT_free ((void *)out[j]);
-
-			rows += n + 1;
+			else if (!Ctrl->N.active)
+				GMT_free (GMT, t_out);
 		}
-
-		if (fp != GMT_stdin) GMT_fclose(fp);
 	}
+	if (GMT_Write_Data (API, GMT_IS_DATASET, GMT_IS_FILE, geometry, Dout->io_mode, NULL, Ctrl->Out.file, Dout) != GMT_OK) {
+		Return (API->error);
+	}
+	//GMT_free_dataset (API->GMT, &Dout);	/* Since not registered */
 
-	for (j = 0; j < n_col; j++) GMT_free ((void *)col[j]);
-
-	GMT_free ((void *)t_out);
-	GMT_free ((void *)out);
-	GMT_free ((void *)col);
-	if (dout) GMT_free ((void *)dout);
-	if (nan_flag) GMT_free ((void *)nan_flag);
-	if (Ctrl->N.active) GMT_free ((void *)t_supplied_out);
+	if (Ctrl->N.active) GMT_free (GMT, t_out);
+	if (nan_flag) GMT_free (GMT, nan_flag);
+	if (Ctrl->N.active) GMT_free (GMT, t_supplied_out);
 	
-	Free_sample1d_Ctrl (Ctrl);	/* Deallocate control structure */
-
-	GMT_end (argc, argv);
-
-	exit (EXIT_SUCCESS);
-}
-
-void *New_sample1d_Ctrl () {	/* Allocate and initialize a new control structure */
-	struct SAMPLE1D_CTRL *C;
-	
-	C = (struct SAMPLE1D_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct SAMPLE1D_CTRL), "New_sample1d_Ctrl");
-	
-	/* Initialize values whose defaults are not 0/FALSE/NULL */
-	C->F.mode = gmtdefs.interpolant;
-		
-	return ((void *)C);
-}
-
-void Free_sample1d_Ctrl (struct SAMPLE1D_CTRL *C) {	/* Deallocate control structure */
-	if (C->N.file) free ((void *)C->N.file);	
-	GMT_free ((void *)C);	
+	Return (GMT_OK);
 }

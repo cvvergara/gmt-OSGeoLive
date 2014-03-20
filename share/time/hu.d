@@ -1,6 +1,6 @@
 # GMT Time language file for US (english) mode [US]
 #
-#	$Id: hu.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: hu.d 12807 2014-01-30 10:31:56Z remko $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Január		Jan	J

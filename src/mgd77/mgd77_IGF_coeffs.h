@@ -1,5 +1,5 @@
 /*-------------------------------------------------------------------------
- *	$Id: mgd77_IGF_coeffs.h 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: mgd77_IGF_coeffs.h 12822 2014-01-31 23:39:56Z remko $
  * 
  *    Copyright (c) 2005-2014 by P. Wessel
  *    See README file for copying and redistribution conditions.

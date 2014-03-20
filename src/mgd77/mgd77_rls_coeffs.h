@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77_rls_coeffs.h 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: mgd77_rls_coeffs.h 12822 2014-01-31 23:39:56Z remko $
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *    Copyright (c) 2004-2014 by P. Wessel and M. T. Chandler

@@ -1,51 +1,63 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_shore.h 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: gmt_shore.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
-
-#ifndef _GMT_SHORE_H
-#define _GMT_SHORE_H
-
 /*
  * Include file for gmt_shore.c
  *
  * Author:	Paul Wessel
- * Date:	12-AUG-1995
- * Revised:	6-NOV-2009
- * Version:	4.5.6
+ * Date:	1-JAN-2010
+ * Version:	5 API
  */
+
+#ifndef _GMT_SHORE_H
+#define _GMT_SHORE_H
+
+/* Declaration modifier for netcdf DLL support
+ * annoying: why can't netcdf.h do this on its own? */
+#if defined WIN32 && ! defined NETCDF_STATIC
+#define DLL_NETCDF
+#endif
 
 #include "netcdf.h"
 
-#define GSHHS_MAX_DELTA		65535	/* Largest value to store in a unsigned short, used as largest dx or dy in bin  */
-#define GMT_MAX_GSHHS_LEVEL	4	/* Highest hierarchical level of coastlines */
-
-#define GMT_N_BLEVELS		3	/* Number of levels for borders */
-#define GMT_N_RLEVELS		11	/* Number of levels for rivers */
-#define GMT_RIV_INTERMITTENT	5	/* Id for intermittent rivers */
-#define GMT_RIV_CANALS		8	/* Id for river canals */
-
-#define GMT_NO_RIVERLAKES	1
-#define GMT_NO_LAKES		2
+enum GMT_enum_gshhs {GSHHS_MAX_DELTA = 65535,	/* Largest value to store in a unsigned short, used as largest dx or dy in bin  */
+	GSHHS_MAX_LEVEL			= 4,	/* Highest hierarchical level of coastlines */
+	GSHHS_N_BLEVELS			= 3,	/* Number of levels for borders */
+	GSHHS_N_RLEVELS			= 11,	/* Number of levels for rivers */
+	GSHHS_RIVER_INTERMITTENT	= 5,	/* Id for intermittent rivers */
+	GSHHS_RIVER_CANALS		= 8,	/* Id for river canals */
+	GSHHS_NO_RIVERLAKES		= 1,	/* Flag value */
+	GSHHS_NO_LAKES			= 2,	/* Flag value */
+	GSHHS_OCEAN_LEVEL		= 0,	/* Level assigned to nodes in the ocean */
+	GSHHS_LAND_LEVEL		= 1,	/* Level assigned to nodes on land */
+	GSHHS_ANTARCTICA_LIMBO		= 7,	/* Level assigned to nodes between ice and grounding lines */
+	GSHHS_ANTARCTICA_ICE_SRC	= 2,	/* Source ID for Antarctica ice line */
+	GSHHS_ANTARCTICA_GROUND_SRC	= 3,	/* Source ID for Antarctica grounding line */
+	GSHHS_ANTARCTICA_GROUND		= 0,	/* Use Antarctica igrounding line as coastline [Default] */
+	GSHHS_ANTARCTICA_ICE		= 1,	/* Use Antarctica ice boundary as coastline */
+	GSHHS_ANTARCTICA_SKIP		= 2,	/* Skip Antarctica coastline */
+	GSHHS_ANTARCTICA_LIMIT		= -60};	/* Data below 60S is Antarctica */
 
 struct GMT_SHORE_SELECT {	/* Information on levels and min area to use */
 	int low;	/* Lowest hierarchical level to use [0] */
 	int high;	/* Highest hierarchical level to use [4] */
 	int flag;	/* 1 = no riverlakes from level 2; 2 = only riverlakes from level 2 */
 	int fraction;	/* If not 0, the microfraction limit on a polygons area vs the full resolution version */
+	int antarctica_mode;	/* If 1, we skip all data south of 60S, i.e. the Antarctica continent and islands */
 	double area;	/* Area of smallest geographical feature to include [0] */
 };
 
@@ -59,25 +71,27 @@ struct GMT_SHORE {	/* Struct used by pscoast and others */
 
 	/* Global variables that remain fixed for all bins */
 	
-	GMT_LONG nb;		/* Number of bins to use */
-	GMT_LONG *bins;		/* Array with the nb bin numbers to use */
-	GMT_LONG min_level;	/* Lowest level to include [0] */
-	GMT_LONG max_level;	/* Highest level to include [4] */
-	GMT_LONG flag;		/* If riverlakes or lakes are to be excluded */
-	GMT_LONG fraction;	/* If not 0, the microfraction limit on a polygons area vs the full resolution version */
+	int nb;		/* Number of bins to use */
+	int *bins;		/* Array with the nb bin numbers to use */
+	int min_level;	/* Lowest level to include [0] */
+	int max_level;	/* Highest level to include [4] */
+	int flag;		/* If riverlakes or lakes are to be excluded */
+	int has_source;		/* 1 if this GSHHG file contains feature source (0 for older files) */
+	int fraction;	/* If not 0, the microfraction limit on a polygons area vs the full resolution version */
 	double min_area;	/* Smallest feature to include in km^2 */
 	double scale;		/* Multiplier to convert dx, dy back to dlon, dlat in degrees */
 	
 	/* Variables associated with the current bin */
 	
-	GMT_LONG ns;			/* Number of segments to use in current bin */
+	int ns;			/* Number of segments to use in current bin */
 	unsigned char node_level[4];
 	struct GMT_SHORE_SEGMENT *seg;	/* Array of these segments */
 	struct GSHHS_SIDE *side[4];	/* Has position & id for each side exit/entry */
-	GMT_LONG nside[4];		/* Number of entries per side, including corner */
-	GMT_LONG n_entries;
-	GMT_LONG leftmost_bin;		/* TRUE if current bin is at left edge of map */
-	GMT_LONG skip_feature;		/* TRUE if GSHHS version > 2.0 and +r or +l is in use */
+	int nside[4];		/* Number of entries per side, including corner */
+	int n_entries;
+	int leftmost_bin;		/* true if current bin is at left edge of map */
+	int skip_feature;		/* true if GSHHS version > 2.0 and +r or +l is in use */
+	int ant_mode;			/* Antarctica mode [0-2] */
 	double bsize;			/* Size of square bins in degrees */
 	double lon_sw;			/* Longitude of SW corner */
 	double lat_sw;			/* Latitude of SW corner */
@@ -157,13 +171,13 @@ struct GMT_BR {	/* Structure for Borders and Rivers */
 
 	/* Global variables that remain fixed for all bins */
 	
-	GMT_LONG nb;		/* Number of bins to use */
-	GMT_LONG *bins;		/* Array with the nb bin numbers to use */
+	int nb;		/* Number of bins to use */
+	int *bins;		/* Array with the nb bin numbers to use */
 	double scale;		/* Multiplier to convert dx, dy back to dlon, dlat in degrees */
 	
 	/* Variables associated with the current bin */
 	
-	GMT_LONG ns;		/* Number of segments to use in current bin */
+	int ns;		/* Number of segments to use in current bin */
 	struct GMT_BR_SEGMENT *seg;	/* Array of these segments */
 	double lon_sw;		/* Longitude of SW corner */
 	double lat_sw;		/* Latitude of SW corner */
@@ -215,30 +229,12 @@ struct GMT_BR_SEGMENT {
 };
 
 struct GMT_GSHHS_POL {
-	GMT_LONG n;
-	GMT_LONG interior;	/* TRUE if polygon is inside bin */
-	GMT_LONG level;
-	GMT_LONG fid;		/* Fill id; same as level but 5 if riverlake */
+	int n;
+	int interior;	/* true if polygon is inside bin */
+	int level;
+	int fid;		/* Fill id; same as level but 5 if riverlake */
 	double *lon;
 	double *lat;
 };
-
-/* Public functions */
-
-EXTERN_MSC void GMT_set_levels (char *info, struct GMT_SHORE_SELECT *I);
-EXTERN_MSC GMT_LONG GMT_get_shore_bin (GMT_LONG b, struct GMT_SHORE *c);
-EXTERN_MSC GMT_LONG GMT_get_br_bin (GMT_LONG b, struct GMT_BR *c, GMT_LONG *level, GMT_LONG n_levels);
-EXTERN_MSC void GMT_free_polygons (struct GMT_GSHHS_POL *p, GMT_LONG n);
-EXTERN_MSC void GMT_free_shore (struct GMT_SHORE *c);
-EXTERN_MSC void GMT_free_br (struct GMT_BR *c);
-EXTERN_MSC void GMT_shore_cleanup (struct GMT_SHORE *c);
-EXTERN_MSC void GMT_br_cleanup (struct GMT_BR *c);
-EXTERN_MSC GMT_LONG GMT_init_shore (char res, struct GMT_SHORE *c, double w, double e, double s, double n, struct GMT_SHORE_SELECT *I);
-EXTERN_MSC GMT_LONG GMT_init_br (char which, char res, struct GMT_BR *c, double w, double e, double s, double n);
-EXTERN_MSC GMT_LONG GMT_assemble_shore (struct GMT_SHORE *c, GMT_LONG dir, GMT_LONG assemble, GMT_LONG shift, double west, double east, struct GMT_GSHHS_POL **pol);
-EXTERN_MSC GMT_LONG GMT_assemble_br (struct GMT_BR *c, GMT_LONG shift, double edge, struct GMT_GSHHS_POL **pol);
-EXTERN_MSC GMT_LONG GMT_prep_polygons (struct GMT_GSHHS_POL **p, GMT_LONG np, GMT_LONG sample, double step, GMT_LONG anti_bin);
-EXTERN_MSC GMT_LONG GMT_set_resolution (char *res, char opt);
-EXTERN_MSC char GMT_shore_adjust_res (char res);
 
 #endif /* _GMT_SHORE_H */

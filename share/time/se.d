@@ -1,6 +1,6 @@
 # GMT Time language file for SE (Swedish) mode [SE]
 #
-#	$Id: se.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: se.d 12807 2014-01-30 10:31:56Z remko $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Januari		Jan	J

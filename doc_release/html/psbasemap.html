@@ -1,0 +1,754 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>psbasemap &mdash; GMT 5.1.1 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="up" title="PS" href="PS.html" />
+    <link rel="next" title="psclip" href="psclip.html" />
+    <link rel="prev" title="ps2raster" href="ps2raster.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="psclip.html" title="psclip"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="ps2raster.html" title="ps2raster"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="psbasemap">
+<span id="index-0"></span><h1>psbasemap<a class="headerlink" href="#psbasemap" title="Permalink to this headline">¶</a></h1>
+<p>psbasemap - Plot PostScript base maps</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>psbasemap</strong> <strong>-J</strong><em>parameters</em>
+<strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]
+[ <strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> ]
+[ <strong>-D</strong>[<em>unit</em>]<em>xmin/xmax/ymin/ymax</em>[<strong>r</strong>]|<em>width</em>[/<em>height</em>][<strong>+c</strong><em>clon/clat</em>][<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>]]
+[ <strong>-K</strong> ] [ <strong>-Jz</strong>|<strong>Z</strong><em>parameters</em> ]
+<strong>-L</strong>[<strong>f</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>[/<em>slon</em>]/<em>slat</em>/<em>length</em>[<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>M</strong>|<strong>n</strong>|<strong>u</strong>][<strong>+l</strong><em>label</em>][<strong>+j</strong><em>just</em>][<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>][<strong>+u</strong>] ] ]
+[ <strong>-O</strong> ] [ <strong>-P</strong> ]
+[ <strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] ]
+[ <strong>-T</strong>[<strong>f</strong>|<strong>m</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>/<em>size</em>[/<em>info</em>][<strong>:</strong><em>w</em>,<em>e</em>,<em>s</em>,<em>n</em><strong>:</strong>][<strong>+</strong><em>gint</em>[/<em>mint</em>]] ]
+[ <strong>-V</strong>[<em>level</em>] ]
+[ <strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]] ]
+[ <strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] ]
+[ <strong>-c</strong><em>copies</em> ]
+[ <strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> ]
+[ <strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] ]
+[ <strong>-t</strong>[<em>transp</em>] ]</p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><strong>psbasemap</strong> creates PostScript code that will produce a basemap.
+Several map projections are available, and the user may specify separate
+tickmark intervals for boundary annotation, ticking, and [optionally]
+gridlines. A simple map scale or directional rose may also be plotted.
+At least one of the options <strong>-B</strong>,
+<strong>-L</strong>[<strong>f</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>[/<em>slon</em>]/<em>slat</em>/<em>length</em>[<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>M</strong>|<strong>n</strong>|<strong>u</strong>][<strong>+l</strong><em>label</em>][<strong>+j</strong><em>just</em>][<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>][<strong>+u</strong>],
+or
+<strong>-T</strong>[<strong>f</strong>|<strong>m</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>/<em>size</em>[/<em>info</em>][<strong>:</strong><em>w</em>,<em>e</em>,<em>s</em>,<em>n</em><strong>:</strong>][<strong>+</strong><em>gint</em>[/<em>mint</em>]]
+must be specified.</p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-J</strong><em>parameters</em> <a class="reference internal" href="gmt.html#j-full"><em>(more ...)</em></a></dt>
+<dd>Select map projection.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] <a class="reference internal" href="gmt.html#r-full"><em>(more ...)</em></a></dt>
+<dd>Specify the region of interest.  </dd>
+</dl>
+<p>For perspective view <strong>p</strong>, optionally append /<em>zmin</em>/<em>zmax</em>. <a class="reference internal" href="gmt.html#rz-full"><em>(more ...)</em></a>  </p>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> <a class="reference internal" href="gmt.html#b-full"><em>(more ...)</em></a></dt>
+<dd>Set map boundary intervals.</dd>
+<dt><strong>-D</strong>[<em>unit</em>]<em>xmin/xmax/ymin/ymax</em>[<strong>r</strong>]|<em>width</em>[/<em>height</em>][<strong>+c</strong><em>clon/clat</em>][<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>]</dt>
+<dd>Draw a simple map insert box on the map.  Specify the box in one of three ways:
+(a) Give <em>west/east/south/north</em> of geographic rectangle bounded by parallels
+and meridians; append <strong>r</strong> if the coordinates instead are the lower left and
+upper right corners of the desired rectangle. (b) Give <strong>u</strong><em>xmin/xmax/ymin/ymax</em>
+of bounding rectangle in projected coordinates (here, <strong>u</strong> is the coordinate unit).
+(c) Give [<strong>u</strong>]<em>width</em>[/<em>height</em>] of bounding rectangle and use <strong>+c</strong> to set
+box center. Append any combination of the following modifiers to draw the insert box:
+<strong>+c</strong><em>lon/lat</em> to specify box center.
+<strong>+g</strong><em>fill</em> to paint a insert [no fill].
+<strong>+p</strong><em>pen</em> to draw the insert outline [no outline].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-Jz</strong>|<strong>Z</strong><em>parameters</em> <a class="reference internal" href="gmt.html#jz-full"><em>(more ...)</em></a></dt>
+<dd>Set z-axis scaling; same syntax as <strong>-Jx</strong>.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-K</strong> <a class="reference internal" href="gmt.html#k-full"><em>(more ...)</em></a></dt>
+<dd>Do not finalize the PostScript plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-L</strong>[<strong>f</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>[/<em>slon</em>]/<em>slat</em>/<em>length</em>[<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>M</strong>|<strong>n</strong>|<strong>u</strong>][<strong>+l</strong><em>label</em>][<strong>+j</strong><em>just</em>][<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>][<strong>+u</strong>]</dt>
+<dd>Draws a simple map scale centered on <em>lon0/lat0</em>. Use <strong>-Lx</strong> to
+specify x/y position instead. Scale is calculated at latitude <em>slat</em>
+(optionally supply longitude <em>slon</em> for oblique projections [Default
+is central meridian]), <em>length</em> is in km, or append unit from
+<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>M</strong>|<strong>n</strong>|<strong>u</strong>. Use
+<strong>-Lf</strong> to get a &#8220;fancy&#8221; scale [Default is plain]. Append <strong>+l</strong> to
+select the default label which equals the distance unit (meter,
+foot, km, mile, nautical mile, US survey foot) and is justified on
+top of the scale [t]. Change this by giving your own label (append
+<strong>+l</strong><em>label</em>). Change label justification with
+<strong>+j</strong><em>justification</em> (choose among l(eft), r(ight), t(op), and b(ottom)). Apply
+<strong>+u</strong> to append the unit to all distance annotations along the
+scale. If you want to place a rectangle behind the scale, specify
+suitable <strong>+p</strong><em>pen</em> and/or <strong>+g</strong><em>fill</em> parameters. Note:
+Use <a class="reference internal" href="gmt.conf.html#font-label"><em>FONT_LABEL</em></a> to change the label font and <a class="reference internal" href="gmt.conf.html#font-annot-primary"><em>FONT_ANNOT_PRIMARY</em></a>
+to change the annotation font.  The height of the map scale is controlled
+by <a class="reference internal" href="gmt.conf.html#map-scale-height"><em>MAP_SCALE_HEIGHT</em></a>.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-O</strong> <a class="reference internal" href="gmt.html#o-full"><em>(more ...)</em></a></dt>
+<dd>Append to existing PostScript plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-P</strong> <a class="reference internal" href="gmt.html#p-full"><em>(more ...)</em></a></dt>
+<dd>Select &#8220;Portrait&#8221; plot orientation.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-T</strong>[<strong>f</strong>|<strong>m</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>/<em>size</em>[/<em>info</em>][<strong>:</strong><em>w</em>,<em>e</em>,<em>s</em>,<em>n</em><strong>:</strong>][<strong>+</strong><em>gint</em>[/<em>mint</em>]]</dt>
+<dd>Draws a simple map directional rose centered on <em>lon0/lat0</em>. Use
+<strong>-Tx</strong> to specify x/y position instead. The <em>size</em> is the diameter
+of the rose, and optional label information can be specified to
+override the default values of W, E, S, and N (Give <strong>::</strong> to
+suppress all labels). The default [plain] map rose only labels
+north. Use <strong>-Tf</strong> to get a &#8220;fancy&#8221; rose, and specify in <em>info</em> what
+you want drawn. The default [<strong>1</strong>] draws the two principal E-W,
+N-S orientations, <strong>2</strong> adds the two intermediate NW-SE and NE-SW
+orientations, while <strong>3</strong> adds the eight minor orientations WNW-ESE,
+NNW-SSE, NNE-SSW, and ENE-WSW. For a magnetic compass rose, specify
+<strong>-Tm</strong>. If given, <em>info</em> must be the two parameters <em>dec/dlabel</em>,
+where <em>dec</em> is the magnetic declination and <em>dlabel</em> is a label for
+the magnetic compass needle (specify <strong>-</strong> to format a label from
+<em>dec</em>). Then, both directions to geographic and magnetic north are
+plotted [Default is geographic only]. If the north label is <strong>*</strong>
+then a north star is plotted instead of the north label. Annotation
+and two levels of tick intervals for both geographic and magnetic
+directions are 30/5/1 degrees; override these settings by appending
+<strong>+</strong><em>gints</em>[/<em>mints</em>]. Color and pen attributes for the rose
+are taken from <strong>COLOR_BACKGROUND</strong> and <strong>MAP_TICK_PEN</strong>,
+respectively, while label fonts, colors and sizes follow
+<strong>FONT_TITLE</strong> for the four major directions and <strong>FONT_LABEL</strong>
+for minor directions.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] <a class="reference internal" href="gmt.html#u-full"><em>(more ...)</em></a></dt>
+<dd>Draw GMT time stamp logo on plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
+<dd>Select verbosity level [c].  </dd>
+</dl>
+<p><strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]]</p>
+<dl class="docutils">
+<dt><strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] <a class="reference internal" href="gmt.html#xy-full"><em>(more ...)</em></a></dt>
+<dd>Shift plot origin.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-c</strong><em>copies</em> <a class="reference internal" href="gmt.html#c-full"><em>(more ...)</em></a></dt>
+<dd>Specify number of plot copies [Default is 1].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> <a class="reference internal" href="gmt.html#f-full"><em>(more ...)</em></a></dt>
+<dd>Specify data types of input and/or output columns. This applies only to the coordinates specified in the <strong>-R</strong> option.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] <a class="reference internal" href="gmt.html#perspective-full"><em>(more ...)</em></a></dt>
+<dd>Select perspective view.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-t</strong>[<em>transp</em>] <a class="reference internal" href="gmt.html#t-full"><em>(more ...)</em></a></dt>
+<dd>Set PDF transparency level in percent.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-^</strong></dt>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
+<dt><strong>+</strong></dt>
+<dd>Print an extensive usage (help) message, including the explanation of
+any module-specific option (but not the GMT common options), then exits.</dd>
+<dt><strong>-?</strong></dt>
+<dd>Print a complete usage (help) message, including the explanation of
+options, then exits.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print GMT version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Print full path to GMT share directory and exit.</dd>
+</dl>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>The following section illustrates the use of the options by giving some
+examples for the available map projections. Note how scales may be given
+in several different ways depending on the projection. Also note the use
+of upper case letters to specify map width instead of map scale.</p>
+</div>
+<div class="section" id="non-geographical-projections">
+<h2>Non-geographical Projections<a class="headerlink" href="#non-geographical-projections" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="linear-x-y-plot">
+<h3>Linear x-y plot<a class="headerlink" href="#linear-x-y-plot" title="Permalink to this headline">¶</a></h3>
+<p>To make a linear x/y frame with all axes, but with only left and bottom
+axes annotated, using xscale = yscale = 1.0, ticking every 1 unit and
+annotating every 2, and using xlabel = &#8220;Distance&#8221; and ylabel = &#8220;No of samples&#8221;, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R0/9/0/5 -Jx1 -Bf1a2:Distance:/:&quot;No of samples&quot;:WeSn &gt; linear.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="log-log-plot">
+<h3>Log-log plot<a class="headerlink" href="#log-log-plot" title="Permalink to this headline">¶</a></h3>
+<p>To make a log-log frame with only the left and bottom axes, where the
+x-axis is 25 cm and annotated every 1-2-5 and the y-axis is 15 cm and
+annotated every power of 10 but has tickmarks every 0.1, run</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R1/10000/1e20/1e25 -JX25cl/15cl -B2:Wavelength:/a1pf3:Power:WS &gt; loglog.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="power-axes">
+<h3>Power axes<a class="headerlink" href="#power-axes" title="Permalink to this headline">¶</a></h3>
+<p>To design an axis system to be used for a depth-sqrt(age) plot with
+depth positive down, ticked and annotated every 500m, and ages annotated
+at 1 my, 4 my, 9 my etc, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R0/100/0/5000 -Jx1p0.5/-0.001 -B1p:&quot;Crustal age&quot;:/500:Depth: &gt; power.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="polar-theta-r-plot">
+<h3>Polar (theta,r) plot<a class="headerlink" href="#polar-theta-r-plot" title="Permalink to this headline">¶</a></h3>
+<p>For a base map for use with polar coordinates, where the radius from 0
+to 1000 should correspond to 3 inch and with gridlines and ticks every
+30 degrees and 100 units, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R0/360/0/1000 -JP6i -B30p/100 &gt; polar.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="cylindrical-map-projections">
+<h2>Cylindrical Map Projections<a class="headerlink" href="#cylindrical-map-projections" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cassini">
+<h3>Cassini<a class="headerlink" href="#cassini" title="Permalink to this headline">¶</a></h3>
+<p>A 10-cm-wide basemap using the Cassini projection may be obtained by</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R20/50/20/35 -JC35/28/10c -P -B5g5:.Cassini: &gt; cassini.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="mercator-conformal">
+<h3>Mercator [conformal]<a class="headerlink" href="#mercator-conformal" title="Permalink to this headline">¶</a></h3>
+<p>A Mercator map with scale 0.025 inch/degree along equator, and showing
+the length of 5000 km along the equator (centered on 1/1 inch), may be
+plotted as</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R90/180/-50/50 -Jm0.025i -B30g30:.Mercator: -Lx1i/1i/0/5000 &gt; mercator.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="miller">
+<h3>Miller<a class="headerlink" href="#miller" title="Permalink to this headline">¶</a></h3>
+<p>A global Miller cylindrical map with scale 1:200,000,000 may be plotted as</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -Jj180/1:200000000 -B30g30:.Miller: &gt; miller.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="oblique-mercator-conformal">
+<h3>Oblique Mercator [conformal]<a class="headerlink" href="#oblique-mercator-conformal" title="Permalink to this headline">¶</a></h3>
+<p>To create a page-size global oblique Mercator basemap for a pole at
+(90,30) with gridlines every 30 degrees, run</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R0/360/-70/70 -Joc0/0/90/30/0.064cd -B30g30:.&quot;Oblique Mercator&quot;: &gt; oblmerc.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="transverse-mercator-conformal">
+<h3>Transverse Mercator [conformal]<a class="headerlink" href="#transverse-mercator-conformal" title="Permalink to this headline">¶</a></h3>
+<p>A regular Transverse Mercator basemap for some region may look like</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R69:30/71:45/-17/-15:15 -Jt70/1:1000000 -B15m:.&quot;Survey area&quot;: -P &gt; transmerc.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="equidistant-cylindrical-projection">
+<h3>Equidistant Cylindrical Projection<a class="headerlink" href="#equidistant-cylindrical-projection" title="Permalink to this headline">¶</a></h3>
+<p>This projection only needs the central meridian and scale. A 25 cm wide
+global basemap centered on the 130E meridian is made by</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R-50/310/-90/90 -JQ130/25c -B30g30:.&quot;Equidistant Cylindrical&quot;: &gt; cyl\_eqdist.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="universal-transverse-mercator-conformal">
+<h3>Universal Transverse Mercator [conformal]<a class="headerlink" href="#universal-transverse-mercator-conformal" title="Permalink to this headline">¶</a></h3>
+<p>To use this projection you must know the UTM zone number, which defines
+the central meridian. A UTM basemap for Indo-China can be plotted as</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R95/5/108/20r -Ju46/1:10000000 -B3g3:.UTM: &gt; utm.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="cylindrical-equal-area">
+<h3>Cylindrical Equal-Area<a class="headerlink" href="#cylindrical-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>First select which of the cylindrical equal-area projections you want by
+deciding on the standard parallel. Here we will use 45 degrees which
+gives the Gall-Peters projection. A 9 inch wide global basemap centered
+on the Pacific is made by</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -JY180/45/9i -B30g30:.Gall-Peters: &gt; gall-peters.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="conic-map-projections">
+<h2>Conic Map Projections<a class="headerlink" href="#conic-map-projections" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="albers-equal-area">
+<h3>Albers [equal-area]<a class="headerlink" href="#albers-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>A basemap for middle Europe may be created by</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R0/90/25/55 -Jb45/20/32/45/0.25c -B10g10:.&quot;Albers Equal-area&quot;: &gt; albers.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="lambert-conformal">
+<h3>Lambert [conformal]<a class="headerlink" href="#lambert-conformal" title="Permalink to this headline">¶</a></h3>
+<p>Another basemap for middle Europe may be created by</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R0/90/25/55 -Jl45/20/32/45/0.1i -B10g10:.&quot;Lambert Conformal Conic&quot;: &gt; lambertc.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="equidistant">
+<h3>Equidistant<a class="headerlink" href="#equidistant" title="Permalink to this headline">¶</a></h3>
+<p>Yet another basemap of width 6 inch for middle Europe may be created by</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R0/90/25/55 -JD45/20/32/45/6i -B10g10:.&quot;Equidistant conic&quot;: &gt; econic.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="polyconic">
+<h3>Polyconic<a class="headerlink" href="#polyconic" title="Permalink to this headline">¶</a></h3>
+<p>A basemap for north America may be created by</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R-180/-20/0/90 -JPoly/4i -B30g10/10g10:.&quot;Polyconic&quot;: &gt; polyconic.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="azimuthal-map-projections">
+<h2>Azimuthal Map Projections<a class="headerlink" href="#azimuthal-map-projections" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="lambert-equal-area">
+<h3>Lambert [equal-area]<a class="headerlink" href="#lambert-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>A 15-cm-wide global view of the world from the vantage point -80/-30
+will give the following basemap:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -JA-80/-30/15c -B30g30/15g15:.&quot;Lambert Azimuthal&quot;: &gt; lamberta.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>Follow the instructions for stereographic projection if you want to
+impose rectangular boundaries on the azimuthal equal-area map but
+substitute <strong>-Ja</strong> for <strong>-Js</strong>.</p>
+</div>
+<div class="section" id="id1">
+<h3>Equidistant<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>A 15-cm-wide global map in which distances from the center (here 125/10)
+to any point is true can be obtained by:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -JE125/10/15c -B30g30/15g15:.Equidistant: &gt; equi.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="gnomonic">
+<h3>Gnomonic<a class="headerlink" href="#gnomonic" title="Permalink to this headline">¶</a></h3>
+<p>A view of the world from the vantage point -100/40 out to a horizon of
+60 degrees from the center can be made using the Gnomonic projection:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -JF-100/40/60/6i -B30g30/15g15:.Gnomonic: &gt; gnomonic.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="orthographic">
+<h3>Orthographic<a class="headerlink" href="#orthographic" title="Permalink to this headline">¶</a></h3>
+<p>A global perspective (from infinite distance) view of the world from the
+vantage point 125/10 will give the following 6-inch-wide basemap:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -JG125/10/6i -B30g30/15g15:.Orthographic: &gt; ortho.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="general-perspective">
+<h3>General Perspective<a class="headerlink" href="#general-perspective" title="Permalink to this headline">¶</a></h3>
+<p>The <strong>-JG</strong> option can be used in a more generalized form, specifying
+altitude above the surface, width and height of the view point, and
+twist and tilt. A view from 160 km above -74/41.5 with a tilt of 55 and
+azimuth of 210 degrees, and limiting the viewpoint to 30 degrees width
+and height will product a 6-inch-wide basemap:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -JG-74/41.5/160/210/55/30/30/6i -B5g1/5g1:.&quot;General Perspective&quot;: &gt; genper.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="stereographic-conformal">
+<h3>Stereographic [conformal]<a class="headerlink" href="#stereographic-conformal" title="Permalink to this headline">¶</a></h3>
+<p>To make a polar stereographic projection basemap with radius = 12 cm to
+-60 degree latitude, with plot title &#8220;Salinity measurements&#8221;, using 5
+degrees annotation/tick interval and 1 degree gridlines, run</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R-45/45/-90/-60 -Js0/-90/12c/-60 -B5g5:.&quot;Salinity measurements&quot;: &gt; stereo1.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>To make a 12-cm-wide stereographic basemap for Australia from an
+arbitrary view point (not the poles), and use a rectangular boundary, we
+must give the pole for the new projection and use the <strong>-R</strong> option to
+indicate the lower left and upper right corners (in lon/lat) that will
+define our rectangle. We choose a pole at 130/-30 and use 100/-45 and
+160/-5 as our corners. The command becomes</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R100/-45/160/-5r -JS130/-30/12c -B30g30/15g15:.&quot;General Stereographic View&quot;: &gt; stereo2.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="id2">
+<h2><a class="reference external" href="#toc33">Miscellaneous Map Projections</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="hammer-equal-area">
+<h3>Hammer [equal-area]<a class="headerlink" href="#hammer-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>The Hammer projection is mostly used for global maps and thus the
+spherical form is used. To get a world map centered on Greenwich at a
+scale of 1:200000000, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rd -Jh0/1:200000000 -B30g30/15g15:.Hammer: &gt; hammer.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="sinusoidal-equal-area">
+<h3>Sinusoidal [equal-area]<a class="headerlink" href="#sinusoidal-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>To make a sinusoidal world map centered on Greenwich, with a scale along
+the equator of 0.02 inch/degree, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rd -Ji0/0.02i -B30g30/15g15:.Sinusoidal: &gt; sinus1.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>To make an interrupted sinusoidal world map with breaks at 160W, 20W,
+and 60E, with a scale along the equator of 0.02 inch/degree, run the
+following sequence of commands:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R-160/-20/-90/90 -Ji-90/0.02i -B30g30/15g15Wesn -K &gt; sinus_i.ps
+gmt psbasemap -R-20/60/-90/90 -Ji20/0.02i -B30g30/15g15wesn -O -K -X2.8i &gt;&gt; sinus_i.ps
+gmt psbasemap -R60/200/-90/90 -Ji130/0.02i -B30g30/15g15wEsn -O -X1.6i &gt;&gt; sinus_i.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="eckert-iv-equal-area">
+<h3>Eckert IV [equal-area]<a class="headerlink" href="#eckert-iv-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>Pseudo-cylindrical projection typically used for global maps only. Set
+the central longitude and scale, e.g.,</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -Jkf180/0.064c -B30g30/15g15:.&quot;Eckert IV&quot;: &gt; eckert4.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="eckert-vi-equal-area">
+<h3>Eckert VI [equal-area]<a class="headerlink" href="#eckert-vi-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>Another pseudo-cylindrical projection typically used for global maps
+only. Set the central longitude and scale, e.g.,</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -Jks180/0.064c -B30g30/15g15:.&quot;Eckert VI&quot;: &gt; eckert6.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="robinson">
+<h3>Robinson<a class="headerlink" href="#robinson" title="Permalink to this headline">¶</a></h3>
+<p>Projection designed to make global maps &#8220;look right&#8221;. Set the central
+longitude and width, e.g.,</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rd -JN0/8i -B30g30/15g15:.Robinson: &gt; robinson.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="winkel-tripel">
+<h3>Winkel Tripel<a class="headerlink" href="#winkel-tripel" title="Permalink to this headline">¶</a></h3>
+<p>Yet another projection typically used for global maps only. You can set
+the central longitude, e.g.,</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -R90/450/-90/90 -JR270/25c -B30g30/15g15:.&quot;Winkel Tripel&quot;: &gt; winkel.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="mollweide-equal-area">
+<h3>Mollweide [equal-area]<a class="headerlink" href="#mollweide-equal-area" title="Permalink to this headline">¶</a></h3>
+<p>The Mollweide projection is also mostly used for global maps and thus
+the spherical form is used. To get a 25-cm-wide world map centered on
+the Dateline:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>psbasemap -Rg -JW180/25c -B30g30/15g15:.Mollweide: &gt; mollweide.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="van-der-grinten">
+<h3>Van der Grinten<a class="headerlink" href="#van-der-grinten" title="Permalink to this headline">¶</a></h3>
+<p>The Van der Grinten projection is also mostly used for global maps and
+thus the spherical form is used. To get a 7-inch-wide world map centered on the Dateline:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psbasemap -Rg -JV180/7i -B30g30/15g15:.&quot;Van der Grinten&quot;: &gt; grinten.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="custom-labels-or-intervals">
+<h2>CUSTOM lABELS OR INTERVALS<a class="headerlink" href="#custom-labels-or-intervals" title="Permalink to this headline">¶</a></h2>
+<p>The <strong>-B</strong> option sets up a regular annotation interval and the
+annotations derive from the corresponding <em>x</em>, <em>y</em>, or <em>z</em> coordinates.
+However, some applications requires special control on which annotations
+to plot and even replace the annotation with other labels. This is
+achieved by using <strong>c</strong><em>intfile</em> in the <strong>-B</strong> option, where <em>intfile</em>
+contains all the information about annotations, ticks, and even
+gridlines. Each record is of the form <em>coord</em> <em>type</em> [<em>label</em>], where
+<em>coord</em> is the coordinate for this annotation (or tick or gridline),
+<em>type</em> is one or more letters from <strong>a</strong> (annotation), <strong>i</strong> interval
+annotation, <strong>f</strong> tickamrk, and <strong>g</strong> gridline. Note that <strong>a</strong> and
+<strong>i</strong> are mutually exclusive and cannot both appear in the same
+<em>intfile</em>. Both <strong>a</strong> and <strong>i</strong> requires you to supply a <em>label</em> which
+is used as the plot annotation. If not given then a regular formatted
+annotation based on the coordinate will occur.</p>
+</div>
+<div class="section" id="restrictions">
+<h2>Restrictions<a class="headerlink" href="#restrictions" title="Permalink to this headline">¶</a></h2>
+<p>For some projections, a spherical earth is implicitly assumed. A warning
+will notify the user if <strong>-V</strong> is set.</p>
+</div>
+<div class="section" id="bugs">
+<h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this headline">¶</a></h2>
+<p>The <strong>-B</strong> option is somewhat complicated to explain and comprehend.
+However, it is fairly simple for most applications (see examples).</p>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a>, <a class="reference internal" href="gmtcolors.html"><em>gmtcolors</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">psbasemap</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#non-geographical-projections">Non-geographical Projections</a><ul>
+<li><a class="reference internal" href="#linear-x-y-plot">Linear x-y plot</a></li>
+<li><a class="reference internal" href="#log-log-plot">Log-log plot</a></li>
+<li><a class="reference internal" href="#power-axes">Power axes</a></li>
+<li><a class="reference internal" href="#polar-theta-r-plot">Polar (theta,r) plot</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cylindrical-map-projections">Cylindrical Map Projections</a><ul>
+<li><a class="reference internal" href="#cassini">Cassini</a></li>
+<li><a class="reference internal" href="#mercator-conformal">Mercator [conformal]</a></li>
+<li><a class="reference internal" href="#miller">Miller</a></li>
+<li><a class="reference internal" href="#oblique-mercator-conformal">Oblique Mercator [conformal]</a></li>
+<li><a class="reference internal" href="#transverse-mercator-conformal">Transverse Mercator [conformal]</a></li>
+<li><a class="reference internal" href="#equidistant-cylindrical-projection">Equidistant Cylindrical Projection</a></li>
+<li><a class="reference internal" href="#universal-transverse-mercator-conformal">Universal Transverse Mercator [conformal]</a></li>
+<li><a class="reference internal" href="#cylindrical-equal-area">Cylindrical Equal-Area</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#conic-map-projections">Conic Map Projections</a><ul>
+<li><a class="reference internal" href="#albers-equal-area">Albers [equal-area]</a></li>
+<li><a class="reference internal" href="#lambert-conformal">Lambert [conformal]</a></li>
+<li><a class="reference internal" href="#equidistant">Equidistant</a></li>
+<li><a class="reference internal" href="#polyconic">Polyconic</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#azimuthal-map-projections">Azimuthal Map Projections</a><ul>
+<li><a class="reference internal" href="#lambert-equal-area">Lambert [equal-area]</a></li>
+<li><a class="reference internal" href="#id1">Equidistant</a></li>
+<li><a class="reference internal" href="#gnomonic">Gnomonic</a></li>
+<li><a class="reference internal" href="#orthographic">Orthographic</a></li>
+<li><a class="reference internal" href="#general-perspective">General Perspective</a></li>
+<li><a class="reference internal" href="#stereographic-conformal">Stereographic [conformal]</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">Miscellaneous Map Projections</a><ul>
+<li><a class="reference internal" href="#hammer-equal-area">Hammer [equal-area]</a></li>
+<li><a class="reference internal" href="#sinusoidal-equal-area">Sinusoidal [equal-area]</a></li>
+<li><a class="reference internal" href="#eckert-iv-equal-area">Eckert IV [equal-area]</a></li>
+<li><a class="reference internal" href="#eckert-vi-equal-area">Eckert VI [equal-area]</a></li>
+<li><a class="reference internal" href="#robinson">Robinson</a></li>
+<li><a class="reference internal" href="#winkel-tripel">Winkel Tripel</a></li>
+<li><a class="reference internal" href="#mollweide-equal-area">Mollweide [equal-area]</a></li>
+<li><a class="reference internal" href="#van-der-grinten">Van der Grinten</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#custom-labels-or-intervals">CUSTOM lABELS OR INTERVALS</a></li>
+<li><a class="reference internal" href="#restrictions">Restrictions</a></li>
+<li><a class="reference internal" href="#bugs">Bugs</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ps2raster.html"
+                        title="previous chapter">ps2raster</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="psclip.html"
+                        title="next chapter">psclip</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/psbasemap.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="psclip.html" title="psclip"
+             >next</a> </li>
+        <li class="right" >
+          <a href="ps2raster.html" title="ps2raster"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="PS.html" >PS</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

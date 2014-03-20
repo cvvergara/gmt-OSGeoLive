@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>(12) Optimal triangulation of data &mdash; GMT 5.1.1 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '5.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
+    <link rel="next" title="(13) Plotting of vector fields" href="ex13.html" />
+    <link rel="prev" title="(11) A 3-D RGB color cube" href="ex11.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ex13.html" title="(13) Plotting of vector fields"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="ex11.html" title="(11) A 3-D RGB color cube"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="optimal-triangulation-of-data">
+<span id="example-12"></span><h1>(12) Optimal triangulation of data<a class="headerlink" href="#optimal-triangulation-of-data" title="Permalink to this headline">¶</a></h1>
+<p>Our next example operates on a data
+set of topographic readings non-uniformly distributed in the plane
+(Table 5.11 in Davis: <em>Statistics and Data Analysis in Geology</em>, J.
+Wiley). We use <a class="reference internal" href="../triangulate.html"><em>triangulate</em></a> to
+perform the optimal Delaunay triangulation, then use the output to draw
+the resulting network. We label the node numbers as well as the node
+values, and call <a class="reference internal" href="../pscontour.html"><em>pscontour</em></a> to make a
+contour map and image directly from the raw data. Thus, in this example
+we do not actually make grid files but still are able to contour and
+image the data. We use a color palette table <tt class="docutils literal"><span class="pre">topo.cpt</span></tt> (created via
+<a class="reference internal" href="../gmtinfo.html"><em>gmtinfo</em></a> and <a class="reference internal" href="../makecpt.html"><em>makecpt</em></a>). The script becomes:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+<span class="c">#		GMT EXAMPLE 12</span>
+<span class="c">#</span>
+<span class="c"># Purpose:	Illustrates Delaunay triangulation of points, and contouring</span>
+<span class="c"># GMT progs:	makecpt, gmtinfo, pscontour, pstext, psxy, triangulate</span>
+<span class="c"># Unix progs:	$AWK, echo, rm</span>
+<span class="c">#</span>
+<span class="c"># First draw network and label the nodes</span>
+<span class="c">#</span>
+<span class="nv">ps</span><span class="o">=</span>example_12.ps
+gmt triangulate table_5.11 -M &gt; net.xy
+gmt psxy -R0/6.5/-0.2/6.5 -JX3.06i/3.15i -B2f1 -BWSNe net.xy -Wthinner -P -K -X0.9i -Y4.65i &gt; <span class="nv">$ps</span>
+gmt psxy table_5.11 -R -J -O -K -Sc0.12i -Gwhite -Wthinnest &gt;&gt; <span class="nv">$ps</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, NR-1}&#39;</span> table_5.11 | gmt pstext -R -J -F+f6p -O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="c">#</span>
+<span class="c"># Then draw network and print the node values</span>
+<span class="c">#</span>
+gmt psxy -R -J -B2f1 -BeSNw net.xy -Wthinner -O -K -X3.25i &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R -J -O -K table_5.11 -Sc0.03i -Gblack &gt;&gt; <span class="nv">$ps</span>
+gmt pstext table_5.11 -R -J -F+f6p+jLM -O -K -Gwhite -W -C0.01i -D0.08i/0i -N &gt;&gt; <span class="nv">$ps</span>
+<span class="c">#</span>
+<span class="c"># Then contour the data and draw triangles using dashed pen; use &quot;gmt gmtinfo&quot; and &quot;gmt makecpt&quot; to make a</span>
+<span class="c"># color palette (.cpt) file</span>
+<span class="c">#</span>
+<span class="nv">T</span><span class="o">=</span><span class="sb">`</span>gmt info -T25/2 table_5.11<span class="sb">`</span>
+gmt makecpt -Cjet <span class="nv">$T</span> &gt; topo.cpt
+gmt pscontour -R -J table_5.11 -B2f1 -BWSne -Wthin -Ctopo.cpt -Lthinnest,- -Gd1i -X-3.25i -Y-3.65i <span class="se">\</span>
+	-O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="c">#</span>
+<span class="c"># Finally color the topography</span>
+<span class="c">#</span>
+gmt pscontour -R -J table_5.11 -B2f1 -BeSnw -Ctopo.cpt -I -X3.25i -O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.16 8 Delaunay Triangulation&quot;</span> | <span class="se">\</span>
+	gmt pstext -R0/8/0/11 -Jx1i -F+f30p,Helvetica-Bold+jCB -O -X-3.25i &gt;&gt; <span class="nv">$ps</span>
+<span class="c">#</span>
+rm -f net.xy topo.cpt
+</pre></div>
+</div>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="../_images/example_12.png"><img alt="../_images/example_12.png" src="../_images/example_12.png" style="width: 500px;" /></a>
+<p class="caption">Optimal triangulation of data.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ex11.html"
+                        title="previous chapter">(11) A 3-D RGB color cube</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ex13.html"
+                        title="next chapter">(13) Plotting of vector fields</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/gallery/ex12.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ex13.html" title="(13) Plotting of vector fields"
+             >next</a> </li>
+        <li class="right" >
+          <a href="ex11.html" title="(11) A 3-D RGB color cube"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

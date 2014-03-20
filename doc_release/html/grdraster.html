@@ -1,0 +1,324 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>grdraster &mdash; GMT 5.1.1 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="up" title="GR" href="GR.html" />
+    <link rel="next" title="grdreformat" href="grdreformat.html" />
+    <link rel="prev" title="grdproject" href="grdproject.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="grdreformat.html" title="grdreformat"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="grdproject.html" title="grdproject"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="grdraster">
+<span id="index-0"></span><h1>grdraster<a class="headerlink" href="#grdraster" title="Permalink to this headline">¶</a></h1>
+<p>grdraster - Extract subregion from a binary raster and save as a GMT grid</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>grdraster</strong> [ <em>filenumber</em> | <em>&#8220;text pattern&#8221;</em> ]
+<strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>]
+[ <strong>-G</strong><em>grdfile</em> ]
+[ <strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]] ]
+[ <strong>-J</strong><em>parameters</em> ]
+[ <strong>-V</strong>[<em>level</em>] ]
+[ <strong>-bo</strong>[<em>ncols</em>][<em>type</em>][w][<strong>+L</strong>|<strong>+B</strong>] ]
+[ <strong>-o</strong><em>cols</em>[,...] ]</p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><strong>grdraster</strong> reads a file called <em>grdraster.info</em> from the current
+working directory, the directories pointed to by the environment
+variables <strong>$GMT_USERDIR</strong> and <strong>$GMT_DATADIR</strong>, or in
+<strong>$GMT_SHAREDIR</strong>/dbase (in that order). The file <em>grdraster.info</em>
+defines binary arrays of data stored in scan-line format in data files.
+Each file is given a <em>filenumber</em> in the info file. <strong>grdraster</strong>
+figures out how to load the raster data into a grid file spanning a
+region defined by <strong>-R</strong>. By default the grid spacing equals the raster
+spacing. The <strong>-I</strong> option may be used to sub-sample the raster data. No
+filtering or interpolating is done, however; the <em>x_inc</em> and <em>y_inc</em>
+of the grid must be multiples of the increments of the raster file and
+<strong>grdraster</strong> simply takes every n&#8217;th point. The output of <strong>grdraster</strong>
+is either grid or pixel registered depending on the registration of the
+raster used. It is up to the GMT system person to maintain the
+<em>grdraster.info</em> file in accordance with the available rasters at each
+site. Raster data sets are not supplied with GMT but can be obtained
+by anonymous ftp and on CD-ROM (see README page in dbase directory).
+<strong>grdraster</strong> will list the available files if no arguments are given.
+Finally, <strong>grdraster</strong> will write xyz-triplets to stdout if no output
+gridfile name is given</p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>filenumber</em></dt>
+<dd>If an integer matching one of the files listed in the
+<em>grdraster.info</em> file is given we will use that data set, else we
+will match the given text pattern with the data set description in
+order to determine the data set.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
+<dd><em>west</em>, <em>east</em>, <em>south</em>, and <em>north</em> specify the region of interest,
+and you may specify them in decimal degrees or in
+[+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
+and upper right map coordinates are given instead of w/e/s/n. The
+two shorthands <strong>-Rg</strong> and <strong>-Rd</strong> stand for global domain (0/360
+and -180/+180 in longitude respectively, with -90/+90 in latitude).
+Alternatively, specify the name of an existing grid file and the
+<strong>-R</strong> settings (and grid spacing, if applicable) are copied from
+the grid. Using <strong>-R</strong><em>unit</em> expects projected (Cartesian)
+coordinates compatible with chosen <strong>-J</strong> and we inversely project
+to determine actual rectangular geographic region.
+For perspective view (<strong>-p</strong>), optionally append /<em>zmin</em>/<em>zmax</em>.
+In case of perspective view (<strong>-p</strong>), a z-range (<em>zmin</em>, <em>zmax</em>)
+can be appended to indicate the third dimension. This needs to be
+done only when using the <strong>-Jz</strong> option, not when using only the
+<strong>-p</strong> option. In the latter case a perspective view of the plane is
+plotted, with no third dimension. If <strong>r</strong> is appended, you may also specify a
+map projection to define the shape of your region. The output region
+will be rounded off to the nearest whole grid-step in both dimensions.</dd>
+</dl>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-G</strong><em>grdfile</em></dt>
+<dd>Name of output grid file. If not set, the grid will be written as
+ASCII (or binary; see <strong>-bo</strong>) xyz-triplets
+to stdout instead.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]]</dt>
+<dd><em>x_inc</em> [and optionally <em>y_inc</em>] is the grid spacing. Optionally,
+append a suffix modifier. <strong>Geographical (degrees) coordinates</strong>: Append
+<strong>m</strong> to indicate arc minutes or <strong>s</strong> to indicate arc seconds. If one
+of the units <strong>e</strong>, <strong>f</strong>, <strong>k</strong>, <strong>M</strong>, <strong>n</strong> or <strong>u</strong> is appended
+instead, the increment is assumed to be given in meter, foot, km, Mile,
+nautical mile or US survey foot, respectively, and will be converted to
+the equivalent degrees longitude at the middle latitude of the region
+(the conversion depends on <a class="reference internal" href="gmt.conf.html#projection-parameters"><em>PROJ_ELLIPSOID</em></a>). If /<em>y_inc</em> is given
+but set to 0 it will be reset equal to <em>x_inc</em>; otherwise it will be
+converted to degrees latitude. <strong>All coordinates</strong>: If <strong>=</strong> is appended
+then the corresponding max <em>x</em> (<em>east</em>) or <em>y</em> (<em>north</em>) may be slightly
+adjusted to fit exactly the given increment [by default the increment
+may be adjusted slightly to fit the given domain]. Finally, instead of
+giving an increment you may specify the <em>number of nodes</em> desired by
+appending <strong>+</strong> to the supplied integer argument; the increment is then
+recalculated from the number of nodes and the domain. The resulting
+increment value depends on whether you have selected a
+gridline-registered or pixel-registered grid; see <a class="reference internal" href="GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a> for
+details. Note: if <strong>-R</strong><em>grdfile</em> is used then the grid spacing has
+already been initialized; use <strong>-I</strong> to override the values.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-J</strong><em>parameters</em> <a class="reference internal" href="gmt.html#j-full"><em>(more ...)</em></a></dt>
+<dd>Select map projection.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
+<dd>Select verbosity level [c].  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dd>Select binary output.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-o</strong><em>cols</em>[,...] <a class="reference internal" href="gmt.html#ocols-full"><em>(more ...)</em></a></dt>
+<dd>Select output columns.</dd>
+</dl>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line-block">
+<div class="line">This option applies only if no <strong>-G</strong> option has been set.</div>
+</div>
+</div>
+<dl class="docutils">
+<dt><strong>-^</strong></dt>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
+<dt><strong>+</strong></dt>
+<dd>Print an extensive usage (help) message, including the explanation of
+any module-specific option (but not the GMT common options), then exits.</dd>
+<dt><strong>-?</strong></dt>
+<dd>Print a complete usage (help) message, including the explanation of
+options, then exits.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print GMT version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Print full path to GMT share directory and exit.</dd>
+</dl>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>To extract data from raster 1, taking one point every 30 minutes, in an
+area extended beyond 360 degrees to allow later filtering, run</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdraster 1 -R-4/364/-62/62 -I30m -Gdata.nc
+</pre></div>
+</div>
+</div></blockquote>
+<p>To obtain data for an oblique Mercator projection we need to extract
+more data that is actually used. This is necessary because the output of
+<strong>grdraster</strong> has edges defined by parallels and meridians, while the
+oblique map in general does not. Hence, to get all the data from the
+ETOPO2 data needed to make a contour map for the region defined by its
+lower left and upper right corners and the desired projection, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdraster ETOPO2 -R160/20/220/30r -Joc190/25.5/292/69/1 -Gdata.nc
+</pre></div>
+</div>
+</div></blockquote>
+<p>To extract data from the 2 min Geoware relief blend and write it as
+binary double precision xyz-triplets to standard output:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdraster &quot;2 min Geoware&quot; -R20/25/-10/5 -bo &gt; triplets.b
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmtdefaults.html"><em>gmtdefaults</em></a>, <a class="reference internal" href="gmt.html"><em>gmt</em></a>,
+<a class="reference internal" href="grdsample.html"><em>grdsample</em></a>, <a class="reference internal" href="grdfilter.html"><em>grdfilter</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">grdraster</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="grdproject.html"
+                        title="previous chapter">grdproject</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="grdreformat.html"
+                        title="next chapter">grdreformat</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdraster.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="grdreformat.html" title="grdreformat"
+             >next</a> </li>
+        <li class="right" >
+          <a href="grdproject.html" title="grdproject"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" >GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

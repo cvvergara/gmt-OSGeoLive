@@ -1,4 +1,4 @@
-#	$Id: DC85.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: DC85.d 12822 2014-01-31 23:39:56Z remko $
 #
 # Stage poles for the Pacific plate relative to
 # the hotspots.  From Duncan, R.A, & D. Clague, 1985,

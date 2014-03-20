@@ -1,119 +1,158 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtdefaults.c 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: gmtdefaults.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * gmtdefaults will list the users default settings for the GMT-SYSTEM or
- * (by using the -D option), get the GMT-SYSTEM's default settings.
- *
  * Author:	Paul Wessel
- * Date:	12-JUL-2000
- * Version:	4.0
+ * Date:	1-JAN-2010
+ * Version:	5 API
+ *
+ * Brief synopsis: gmtdefaults will list the user's GMT default settings
+ * or (by using the -D option), get the site GMT default settings.
+ *
  */
  
-#define GMT_WITH_NO_PS
-#include "gmt.h"
+#define THIS_MODULE_NAME	"gmtdefaults"
+#define THIS_MODULE_LIB		"core"
+#define THIS_MODULE_PURPOSE	"List current GMT default parameters"
 
-int main (int argc, char **argv)
+#include "gmt_dev.h"
+
+#define GMT_PROG_OPTIONS "-V"
+
+/* Control structure for gmtdefaults */
+
+struct GMTDEFAULTS_CTRL {
+	struct D {	/* -D[s|u] */
+		bool active;
+		char mode;
+	} D;
+};
+
+void *New_gmtdefaults_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct GMTDEFAULTS_CTRL *C;
+
+	C = GMT_memory (GMT, NULL, 1, struct GMTDEFAULTS_CTRL);
+	return (C);
+}
+
+void Free_gmtdefaults_Ctrl (struct GMT_CTRL *GMT, struct GMTDEFAULTS_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	GMT_free (GMT, C);	
+}
+
+int GMT_gmtdefaults_usage (struct GMTAPI_CTRL *API, int level)
 {
-	GMT_LONG i, get = 0;
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: gmtdefaults [-D[s|u]]\n\n");
+	
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	
+	GMT_Message (API, GMT_TIME_NONE, "\t-D Print the GMT default settings.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append s to see the SI version of defaults.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append u to see the US version of defaults.\n");
+	
+	return (EXIT_FAILURE);
+}
 
-	GMT_LONG error = FALSE, get_sys_defaults = FALSE, get_user_defaults = FALSE;
+int GMT_gmtdefaults_parse (struct GMT_CTRL *GMT, struct GMTDEFAULTS_CTRL *Ctrl, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to gmtdefaults and sets parameters in CTRL.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
 
-	char *path = NULL;
+	unsigned int n_errors = 0, n_files = 0;
+	struct GMT_OPTION *opt = NULL;
 
-	/* SPECIAL INITIALIZATION SINCE BMT_begin IS NOT USED HERE !! */
-#ifdef DEBUG
-	GMT_memtrack_init (&GMT_mem_keeper);
-#endif
-	for (i = strlen(argv[0]); i >= 0 && argv[0][i] != '/'; i--);
-	GMT_program = &argv[0][i+1];	/* Name without full path */
-	GMT_set_home ();
-	GMT_init_fonts (&GMT_N_FONTS);
+	for (opt = options; opt; opt = opt->next) {
+		switch (opt->option) {
 
-	GMT_begin_io ();
-
-	for (i = 1; !error && i < argc; i++) {
-		if (argv[i][0] != '-') continue;
-		switch (argv[i][1]) {
-			case '\0':
-				error += GMT_parse_common_options (argv[i], 0, 0, 0, 0);
+			case '<':	/* Count input files */
+				n_files++;
 				break;
-			case 'D':	/* Get GMT defaults settings */
-				get_sys_defaults = TRUE;
-				switch (argv[i][2]) {
-					case 'S':	/* SI version */
-					case 's':
-						get = 1;
-						break;
-					case 'U':	/* US version */
-					case 'u':
-						get = 2;
-						break;
-					default:	/* Version chosen in gmt_setup.conf */
-						get = 0;
-						break;
-				}
+
+			/* Processes program-specific parameters */
+
+			case 'D':	/* Get GMT system-wide defaults settings */
+				Ctrl->D.active = true;
+				Ctrl->D.mode = opt->arg[0];
 				break;
 			case 'L':	/* List the user's current GMT defaults settings */
-				get_user_defaults = TRUE;
+				if (GMT_compat_check (GMT, 4)) {
+					GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Option -L is deprecated; it is now the default behavior.\n");
+				}
+				else
+					n_errors += GMT_default_error (GMT, opt->option);
 				break;
-			default:
-				error = TRUE;
-                                GMT_default_error (argv[i][1]);
-                                exit (EXIT_FAILURE);
+
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	if (argc == 1 || GMT_give_synopsis_and_exit) {
-		fprintf (stderr, "gmtdefaults %s - List GMT default parameters to stdout\n\n", GMT_VERSION);
-		fprintf (stderr, "usage: gmtdefaults [-D[s|u] | -L]\n\n");
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-		fprintf (stderr, "\t-D prints the default settings for the GMT system.\n");
-		fprintf (stderr, "\t   Append s to see the SI version of defaults.\n");
-		fprintf (stderr, "\t   Append u to see the US version of defaults.\n");
-		fprintf (stderr, "\t-L prints the users current GMT default settings.\n");
-		exit (EXIT_FAILURE);
+	n_errors += GMT_check_condition (GMT, n_files, "Syntax error: No input files are expected\n");
+
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
+
+/* Must free allocated memory before returning */
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_gmtdefaults_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+
+int GMT_gmtdefaults (void *V_API, int mode, void *args)
+{
+	int error;
+	
+	char path[GMT_LEN256] = {""};
+	
+	struct GMTDEFAULTS_CTRL *Ctrl = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
+	struct GMT_OPTION *options = NULL;
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_gmtdefaults_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (options) {
+		if (options->option == GMT_OPT_USAGE) bailout (GMT_gmtdefaults_usage (API, GMT_USAGE));		/* Return the usage message */
+		if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_gmtdefaults_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 	}
 
-	if ((get_user_defaults + get_sys_defaults) != 1) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR: Must specify one of -D or -L\n", GMT_program);
-		error++;
+	/* Parse the command-line arguments */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_gmtdefaults_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_gmtdefaults_parse (GMT, Ctrl, options))) Return (error);
+
+	/*---------------------------- This is the gmtdefaults main code ----------------------------*/
+
+	if (Ctrl->D.active) {
+		GMT_getsharepath (GMT, "conf", "gmt", (Ctrl->D.mode == 's') ? "_SI" : (Ctrl->D.mode == 'u') ? "_US" : ".conf", path, R_OK);
+		GMT_loaddefaults (GMT, path);
 	}
 
-	if (error) exit (EXIT_FAILURE);
+	GMT_putdefaults (GMT, "-");
 
-	if (get_user_defaults) {
-		GMT_getdefaults (CNULL);
-	}
-	else {
-		GMT_getdefpath (get, &path);
-		GMT_getdefaults (path);
-#ifdef WIN32
-		/* We have a "race" condition here. Plain free() crashes Windows but *nix doesn't like GMT_free */
-		GMT_free ((void *)path);
-#else
-		free ((void *)path);
-#endif
-	}
-
-	GMT_putdefaults ("-");
-
-	GMT_end (argc, argv);
-
-	exit (EXIT_SUCCESS);
+	Return (GMT_OK);
 }

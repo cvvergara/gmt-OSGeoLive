@@ -1,6 +1,6 @@
 # GMT Time language file for GR (Greece) mode [GR]
 #
-# $Id: gr.d 9545 2011-07-27 19:31:54Z pwessel $
+# $Id: gr.d 12807 2014-01-30 10:31:56Z remko $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Ιανουάριος	Ιαν	Ι

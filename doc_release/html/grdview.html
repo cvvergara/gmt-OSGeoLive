@@ -1,0 +1,465 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>grdview &mdash; GMT 5.1.1 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="up" title="GR" href="GR.html" />
+    <link rel="next" title="grdvolume" href="grdvolume.html" />
+    <link rel="prev" title="grdvector" href="grdvector.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="grdvolume.html" title="grdvolume"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="grdvector.html" title="grdvector"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="grdview">
+<span id="index-0"></span><h1>grdview<a class="headerlink" href="#grdview" title="Permalink to this headline">¶</a></h1>
+<p>grdview - Create 3-D perspective image or surface mesh from a grid</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>grdview</strong> <em>relief_file</em> <strong>-J</strong><em>parameters</em>
+[ <strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> ]
+[ <strong>-C</strong>[<em>cptfile</em>]]
+[ <strong>-G</strong><em>drapefile</em> | <strong>-G</strong><em>grd_r</em>,<em>grd_g</em>,<em>grd_b</em> ]
+[ <strong>-I</strong><em>intensfile</em>|<em>intensity</em> ] [ <strong>-Jz</strong>|<strong>Z</strong><em>parameters</em> ] [ <strong>-K</strong> ]
+[ <strong>-N</strong><em>level</em>[<strong>+g</strong><em>fill</em>] ] [ <strong>-O</strong> ] [ <strong>-P</strong> ]
+[ <strong>-Q</strong><em>args</em>[<strong>+m</strong>] ]
+[ <strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>] ]
+[ <strong>-S</strong><em>smooth</em> ]
+[ <strong>-T</strong>[<strong>s</strong>][<strong>o</strong>[<em>pen</em>]] ]
+[ <strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] ]
+[ <strong>-W</strong><strong>type</strong><em>pen</em> ]
+[ <strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]] ]
+[ <strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] ]
+[ <strong>-c</strong><em>copies</em> ]
+[ <strong>-n</strong>[<strong>b</strong>|<strong>c</strong>|<strong>l</strong>|<strong>n</strong>][<strong>+a</strong>][<strong>+b</strong><em>BC</em>][<strong>+t</strong><em>threshold</em>] ]
+[ <strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] ]
+[ <strong>-t</strong>[<em>transp</em>] ]</p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><strong>grdview</strong> reads a 2-D grid file and produces a 3-D perspective plot by
+drawing a mesh, painting a colored/grayshaded surface made up of
+polygons, or by scanline conversion of these polygons to a raster image.
+Options include draping a data set on top of a surface, plotting of
+contours on top of the surface, and apply artificial illumination based
+on intensities provided in a separate grid file.</p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>relief_file</em></dt>
+<dd>2-D gridded data set to be imaged (the relief of the surface). (See
+GRID FILE FORMAT below.)</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-J</strong><em>parameters</em> <a class="reference internal" href="gmt.html#j-full"><em>(more ...)</em></a></dt>
+<dd>Select map projection.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-Jz</strong>|<strong>Z</strong><em>parameters</em> <a class="reference internal" href="gmt.html#jz-full"><em>(more ...)</em></a></dt>
+<dd>Set z-axis scaling; same syntax as <strong>-Jx</strong>.</dd>
+</dl>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> <a class="reference internal" href="gmt.html#b-full"><em>(more ...)</em></a></dt>
+<dd>Set map boundary intervals.</dd>
+<dt><strong>-C</strong>[<em>cptfile</em>]</dt>
+<dd>name of the color palette file. Must be present if you want
+(1) mesh plot with contours (<strong>-Qm</strong>), or
+(2) shaded/colored perspective image (<strong>-Qs</strong> or
+<strong>-Qi</strong>). For <strong>-Qs</strong>: You can specify that you want to skip a
+z-slice by setting red = -; to use a pattern give red =
+<strong>P|p</strong><em>dpi/pattern</em>[:<strong>F</strong><em>color</em>[<strong>B</strong><em>color</em>]].
+Alternatively, supply the name of a GMT color master CPT [rainbow] and let
+<strong>grdview</strong> automatically determine a 16-level continuous CPT from
+the grid&#8217;s z-range.</dd>
+<dt><strong>-G</strong><em>drapefile</em> | <strong>-G</strong><em>grd_r</em>,<em>grd_g</em>,<em>grd_b</em></dt>
+<dd>Drape the image in <em>drapefile</em> on top of the relief provided by
+<em>relief_file</em>. [Default is <em>relief_file</em>]. Note that <strong>-Jz</strong> and
+<strong>-N</strong> always refers to the <em>relief_file</em>. The <em>drapefile</em> only
+provides the information pertaining to colors, which is looked-up
+via the cpt file (see <strong>-C</strong>). Alternatively, give three grid files
+separated by commas. These files must contain the red, green, and
+blue colors directly (in 0-255 range) and no cpt file is needed. The
+<em>drapefile</em> may be of higher resolution than the <em>relief_file</em>.</dd>
+<dt><strong>-I</strong><em>intensfile</em>|<em>intensity</em></dt>
+<dd>Gives the name of a grid file with intensities in the (-1,+1) range,
+or a constant intensity to apply everywhere.
+[Default is no illumination].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-K</strong> <a class="reference internal" href="gmt.html#k-full"><em>(more ...)</em></a></dt>
+<dd>Do not finalize the PostScript plot.</dd>
+<dt><strong>-N</strong><em>level</em>[<strong>+g</strong><em>fill</em>]</dt>
+<dd>Draws a plane at this z-level. If the optional <em>color</em> is provided
+via the <strong>+g</strong> modifier,
+the frontal facade between the plane and the data perimeter is
+colored. See <strong>-Wf</strong> for setting the pen used for the outline.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-O</strong> <a class="reference internal" href="gmt.html#o-full"><em>(more ...)</em></a></dt>
+<dd>Append to existing PostScript plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-P</strong> <a class="reference internal" href="gmt.html#p-full"><em>(more ...)</em></a></dt>
+<dd>Select &#8220;Portrait&#8221; plot orientation.</dd>
+<dt><strong>-Q</strong><em>args</em>[<strong>+m</strong>]</dt>
+<dd>Select one of four settings: 1. Specify <strong>m</strong> for mesh plot
+[Default], and optionally append <em>color</em> for a different mesh paint
+[white]. 2. Specify <strong>s</strong> for surface plot, and optionally append
+<strong>m</strong> to have mesh lines drawn on top of surface. 3. Specify <strong>i</strong>
+for image plot, and optionally append the effective dpi resolution
+for the rasterization [100]. 4. Specify <strong>c</strong>. Same as <strong>-Qi</strong> but
+will make nodes with z = NaN transparent, using the colormasking
+feature in PostScript Level 3 (the PS device must support PS Level
+3). For any of these choices, you may force a monochrome image by
+appending the modifier <strong>+m</strong>. Colors are then converted to shades
+of gray using the (monochrome television) YIQ transformation.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] <a class="reference internal" href="gmt.html#r-full"><em>(more ...)</em></a></dt>
+<dd>Specify the region of interest.  </dd>
+</dl>
+<p>For perspective view <strong>p</strong>, optionally append /<em>zmin</em>/<em>zmax</em>. <a class="reference internal" href="gmt.html#rz-full"><em>(more ...)</em></a> This option may be used to
+indicate the range used for the 3-D axes [Default is region given by
+the <em>relief_file</em>]. You may ask for a larger <em>w/e/s/n</em> region to
+have more room between the image and the axes. A smaller region than
+specified in the <em>relief_file</em> will result in a subset of the grid.</p>
+<dl class="docutils">
+<dt><strong>-S</strong><em>smooth</em></dt>
+<dd>Smooth the contours before plotting (see <strong>grdcontour</strong>) [Default is
+no smoothing].</dd>
+<dt><strong>-T</strong>[<strong>s</strong>][<strong>o</strong>[<em>pen</em>]]</dt>
+<dd>Plot image without any interpolation. This involves converting each
+node-centered bin into a polygon which is then painted separately.
+Append <strong>s</strong> to skip nodes with z = NaN. This option is useful for
+categorical data where interpolating between values is meaningless.
+Optionally, append <strong>o</strong> to draw the tile outlines, and specify a
+custom pen if the default pen is not to your liking. As this option
+produces a flat surface it cannot be combined with <strong>-JZ</strong> or
+<strong>-Jz</strong>.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] <a class="reference internal" href="gmt.html#u-full"><em>(more ...)</em></a></dt>
+<dd>Draw GMT time stamp logo on plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
+<dd>Select verbosity level [c].  </dd>
+</dl>
+<p><strong>-W</strong><strong>type</strong><em>pen</em></p>
+<blockquote>
+<div><dl class="docutils">
+<dt><strong>-Wc</strong></dt>
+<dd>Draw contour lines on top of surface or mesh (not image). Append pen
+attributes used for the contours. [Default: width = 0.75p, color =
+black, style = solid].</dd>
+<dt><strong>-Wm</strong></dt>
+<dd>Sets the pen attributes used for the mesh. [Default: width = 0.25p,
+color = black, style = solid]. You must also select <strong>-Qm</strong> or
+<strong>-Qsm</strong> for meshlines to be drawn.</dd>
+<dt><strong>-Wf</strong></dt>
+<dd>Sets the pen attributes used for the facade. [Default: width =
+0.25p, color = black, style = solid]. You must also select <strong>-N</strong>
+for the facade outline to be drawn.</dd>
+</dl>
+</div></blockquote>
+<p><strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]]</p>
+<dl class="docutils">
+<dt><strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] <a class="reference internal" href="gmt.html#xy-full"><em>(more ...)</em></a></dt>
+<dd>Shift plot origin.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-c</strong><em>copies</em> <a class="reference internal" href="gmt.html#c-full"><em>(more ...)</em></a></dt>
+<dd>Specify number of plot copies [Default is 1].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-n</strong>[<strong>b</strong>|<strong>c</strong>|<strong>l</strong>|<strong>n</strong>][<strong>+a</strong>][<strong>+b</strong><em>BC</em>][<strong>+c</strong>][<strong>+t</strong><em>threshold</em>] <a class="reference internal" href="gmt.html#n-full"><em>(more ...)</em></a></dt>
+<dd>Select interpolation mode for grids.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] <a class="reference internal" href="gmt.html#perspective-full"><em>(more ...)</em></a></dt>
+<dd>Select perspective view.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-t</strong>[<em>transp</em>] <a class="reference internal" href="gmt.html#t-full"><em>(more ...)</em></a></dt>
+<dd>Set PDF transparency level in percent.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-^</strong></dt>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
+<dt><strong>+</strong></dt>
+<dd>Print an extensive usage (help) message, including the explanation of
+any module-specific option (but not the GMT common options), then exits.</dd>
+<dt><strong>-?</strong></dt>
+<dd>Print a complete usage (help) message, including the explanation of
+options, then exits.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print GMT version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Print full path to GMT share directory and exit.</dd>
+</dl>
+</div>
+<div class="section" id="grid-file-formats">
+<h2>Grid File Formats<a class="headerlink" href="#grid-file-formats" title="Permalink to this headline">¶</a></h2>
+<p>By default GMT writes out grid as single precision floats in a
+COARDS-complaint netCDF file format. However, GMT is able to produce
+grid files in many other commonly used grid file formats and also
+facilitates so called &#8220;packing&#8221; of grids, writing out floating point
+data as 1- or 2-byte integers. To specify the precision, scale and
+offset, the user should add the suffix
+<strong>=</strong><em>id</em>[<strong>/</strong><em>scale</em><strong>/</strong><em>offset</em>[<strong>/</strong><em>nan</em>]], where
+<em>id</em> is a two-letter identifier of the grid type and precision, and
+<em>scale</em> and <em>offset</em> are optional scale factor and offset to be applied
+to all grid values, and <em>nan</em> is the value used to indicate missing
+data. When reading grids, the format is generally automatically
+recognized. If not, the same suffix can be added to input grid file
+names. See <a class="reference internal" href="grdreformat.html"><em>grdreformat</em></a> and Section
+<a class="reference internal" href="GMT_Docs.html#grid-file-format"><em>Grid file format specifications</em></a>
+of the GMT Technical Reference and Cookbook for more information.</p>
+<p>When reading a netCDF file that contains multiple grids, GMT will
+read, by default, the first 2-dimensional grid that can find in that
+file. To coax GMT into reading another multi-dimensional variable in
+the grid file, append <strong>?</strong><em>varname</em> to the file name, where <em>varname</em>
+is the name of the variable. Note that you may need to escape the
+special meaning of <strong>?</strong> in your shell program by putting a backslash in
+front of it, or by placing the filename and suffix between quotes or
+double quotes. The <strong>?</strong><em>varname</em> suffix can also be used for output
+grids to specify a variable name different from the default: &#8220;z&#8221;. See
+<a class="reference internal" href="grdreformat.html"><em>grdreformat</em></a> and Section <a class="reference internal" href="GMT_Docs.html#grid-file-format"><em>Grid file format specifications</em></a> of the GMT
+Technical Reference and Cookbook for more information, particularly on
+how to read splices of 3-, 4-, or 5-dimensional grids.</p>
+</div>
+<div class="section" id="consequences-of-grid-resampling">
+<h2>Consequences of grid resampling<a class="headerlink" href="#consequences-of-grid-resampling" title="Permalink to this headline">¶</a></h2>
+<p>Except for Cartesian cases, we need to resample your geographic grid onto
+an equidistant projected grid. In doing so various algorithms come into play
+that projects data from one lattice to another while avoiding anti-aliasing,
+leading to possible distortions.
+One expected effect of resampling with splines is the tendency for the new
+resampled grid to slightly exceed the global min/max limits of the original
+grid.  If this is coupled with tight CPT file limits you may find that some
+map areas may show up with fore- or background color due to the resampling.
+In that case you have two options: (1) Modify your CPT file to fit the resampled
+extrema (reported with <strong>-V</strong>) or (2) Impose clipping of resampled values
+so they do not exceed the input min/max values (add <strong>+c</strong> to your <strong>-n</strong>
+option).</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>To make a mesh plot from the file hawaii_grav.nc and drawing the
+contours given in the color palette file hawaii.cpt on a Lambert map at
+1.5 cm/degree along the standard parallels 18 and 24, with vertical
+scale 20 mgal/cm, and looking at the surface from SW at 30 degree
+elevation, run</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdview hawaii_grav.nc -Jl18/24/1.5c -Chawaii.cpt \
+            -Jz0.05c -Qm -N-100 -p225/30 -Wc &gt; hawaii_grav_image.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>To create a illuminated color perspective plot of the gridded data set
+image.nc, using the color palette file color.rgb, with linear scaling at
+10 cm/x-unit and tickmarks every 5 units, with intensities provided by
+the file intens.nc, and looking from the SE, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdview image.nc -Jx10.0c -Ccolor.rgb -Qs -p135/30 -Iintens.nc &gt; image3D.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>To make the same plot using the rastering option with dpi = 50, use</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdview image.nc -Jx10.0c -Ccolor.rgb -Qi50 -p135/30 -Iintens.nc &gt; image3D.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>To create a color PostScript perspective plot of the gridded data set
+magnetics.nc, using the color palette file mag_intens.cpt, draped over
+the relief given by the file topography.nc, with Mercator map width of 6
+inch and tickmarks every 1 degree, with intensities provided by the file
+topo_intens.nc, and looking from the SE, run</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdview topography.nc -JM6i -Gmagnetics.nc -Cmag_intens.cpt \
+            -Qs -p140/30 -Itopo_intens.nc &gt; draped3D.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>Given topo.nc and the Landsat image veggies.ras, first run <strong>grd2rgb</strong>
+to get the red, green, and blue grids, and then drape this image over
+the topography and shade the result for good measure. The commands are</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grd2rgb veggies.ras -Glayer_%c.nc
+gmt grdview topo.nc -JM6i -Qi -p140/30 -Itopo_intens.nc \
+           -Glayer_r.nc,layer_g.nc,layer_b.nc &gt; image.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="remarks">
+<h2>Remarks<a class="headerlink" href="#remarks" title="Permalink to this headline">¶</a></h2>
+<p>For the <strong>-Qs</strong> option: PostScript provides no way of smoothly varying
+colors within a polygon, so colors can only vary from polygon to
+polygon. To obtain smooth images this way you may resample the grid
+file(s) using <strong>grdsample</strong> or use a finer grid size when running
+gridding programs like <strong>surface</strong> or <strong>nearneighbor</strong>. Unfortunately,
+this produces huge PostScript files. The alternative is to use the
+<strong>-Qi</strong> option, which computes bilinear or bicubic continuous color
+variations within polygons by using scanline conversion to image the polygons.</p>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="grd2rgb.html"><em>grd2rgb</em></a>,
+<a class="reference internal" href="gmtcolors.html"><em>gmtcolors</em></a>,
+<a class="reference internal" href="grdcontour.html"><em>grdcontour</em></a>,
+<a class="reference internal" href="grdimage.html"><em>grdimage</em></a>,
+<a class="reference internal" href="nearneighbor.html"><em>nearneighbor</em></a>,
+<a class="reference internal" href="psbasemap.html"><em>psbasemap</em></a>,
+<a class="reference internal" href="pscontour.html"><em>pscontour</em></a>, <a class="reference internal" href="pstext.html"><em>pstext</em></a>,
+<a class="reference internal" href="surface.html"><em>surface</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">grdview</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#grid-file-formats">Grid File Formats</a></li>
+<li><a class="reference internal" href="#consequences-of-grid-resampling">Consequences of grid resampling</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#remarks">Remarks</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="grdvector.html"
+                        title="previous chapter">grdvector</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="grdvolume.html"
+                        title="next chapter">grdvolume</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="grdvolume.html" title="grdvolume"
+             >next</a> </li>
+        <li class="right" >
+          <a href="grdvector.html" title="grdvector"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" >GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

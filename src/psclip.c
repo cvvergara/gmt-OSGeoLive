@@ -1,370 +1,305 @@
 /*--------------------------------------------------------------------
- *	$Id: psclip.c 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: psclip.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * psclip reads one or many xy-files and draws polygons just like psxy
+ * Brief synopsis: psclip reads one or many xy-files and draws polygons just like psclip
  * with the exception that these polygons are set up to act as clip
  * paths for subsequent plotting.  psclip uses the even-odd winding
  * rule to decide what's inside and outside the path.
  *
  * Author:	Paul Wessel
- * Date:	6-FEB-1991-2000
- * Version:	4
- *
+ * Date:	1-JAN-2010
+ * Version:	5 API
  */
 
-#include "gmt.h"
-#include "pslib.h"
+#define THIS_MODULE_NAME	"psclip"
+#define THIS_MODULE_LIB		"core"
+#define THIS_MODULE_PURPOSE	"Initialize or terminate polygonal clip paths"
+
+#include "gmt_dev.h"
+
+#define GMT_PROG_OPTIONS "-:>BJKOPRUVXYbcfghipstxy" GMT_OPT("EZMm")
+
+#define CLIP_STEXT	-1	/* Undo one level of textclipping and plot current straight text */
+#define CLIP_CTEXT	-2	/* Undo one level of textclipping and plot current curved text */
 
 struct PSCLIP_CTRL {
 	struct C {	/* -C */
-		GMT_LONG active;
+		bool active;
+		int n;	/* Number of levels to undo [1], or CLIP_STEXT, or CLIP_CTEXT */
 	} C;
-	struct E {	/* -Eazim/elev */
-		GMT_LONG active;
-		double azimuth, elevation;
-	} E;
 	struct N {	/* -N */
-		GMT_LONG active;
+		bool active;
 	} N;
 	struct T {	/* -T */
-		GMT_LONG active;
+		bool active;
 	} T;
-	struct Z {	/* -Z<z_level> */
-		GMT_LONG active;
-		double level;
-	} Z;
 };
 
-int main (int argc, char **argv)
+void *New_psclip_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct PSCLIP_CTRL *C;
+
+	C = GMT_memory (GMT, NULL, 1, struct PSCLIP_CTRL);
+	C->C.n = 1;	/* Default undoes one level of clipping */
+
+	return (C);
+}
+
+void Free_psclip_Ctrl (struct GMT_CTRL *GMT, struct PSCLIP_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	GMT_free (GMT, C);
+}
+
+int GMT_psclip_usage (struct GMTAPI_CTRL *API, int level)
 {
-	GMT_LONG i, n, n_alloc;
-	GMT_LONG fno, n_args, n_files = 0, n_read, n_fields, n_expected_fields = 0;
+	/* This displays the psclip synopsis and optionally full usage information */
 
-	GMT_LONG error = FALSE, nofile, done, first;
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: psclip -C[s|c|a|<n>] [-K] [-O]  OR\n");
+	GMT_Message (API, GMT_TIME_NONE, "\tpsclip <table> %s %s [%s]\n", GMT_J_OPT, GMT_Rgeoz_OPT, GMT_B_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-K] [-N] [-O] [-P] [-T] [%s] [%s]\n", GMT_Jz_OPT, GMT_U_OPT, GMT_V_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n", GMT_X_OPT, GMT_Y_OPT, GMT_bi_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\t[%s]\n\n", GMT_c_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_p_OPT, GMT_t_OPT, GMT_colon_OPT);
 
-	char line[BUFSIZ];
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
-	double west, east, north, south, x0, y0, *in = NULL, *xx = NULL, *yy = NULL;
-
-	FILE *fp = NULL;
-
-	struct PSCLIP_CTRL *Ctrl = NULL;
-
-	void *New_psclip_Ctrl (), Free_psclip_Ctrl (struct PSCLIP_CTRL *C);
+	GMT_Message (API, GMT_TIME_NONE, "\t-C Undo existing clip-path; no file is needed.  -R, -J are not required (unless -B is used).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Terminate polygon clipping; append how many clip levels to restore or a for all [1].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append c to plot text previously used to build a curved clip path set (restores 1 level).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append s to plot text previously used to build a straight-text clip path set (restores 1 level).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t<xy-files> is one or more polygon files.  If none, standard input is read.\n");
+	GMT_Option (API, "J-Z,R");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+	GMT_Option (API, "<,B-,K");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Use the outside of the polygons and the map boundary as clip paths.\n");
+	GMT_Option (API, "O,P");
+	GMT_Message (API, GMT_TIME_NONE, "\t-T Set clip path for the entire map frame.  No input file is required.\n");
+	GMT_Option (API, "U,V,X,bi2,c,f,g,h,i,p,t,:,.");
 	
-	argc = (int)GMT_begin (argc, argv);
+	return (EXIT_FAILURE);
+}
 
-	Ctrl = (struct PSCLIP_CTRL *)New_psclip_Ctrl ();	/* Allocate and initialize a new control structure */
+int GMT_psclip_parse (struct GMT_CTRL *GMT, struct PSCLIP_CTRL *Ctrl, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to psclip and sets parameters in Ctrl.
+	 * Note Ctrl has already been initialized and non-zero default values set.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
 
-	west = east = north = south = 0.0;
+	unsigned int n_errors = 0, n_files = 0;
+	struct GMT_OPTION *opt = NULL;
+	struct GMTAPI_CTRL *API = GMT->parent;
 
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
+	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
 
-				/* Common parameters */
+		switch (opt->option) {
 
-				case 'B':
-				case 'H':
-				case 'J':
-				case 'K':
-				case 'M':
-				case 'O':
-				case 'P':
-				case 'R':
-				case 'U':
-				case 'V':
-				case 'X':
-				case 'x':
-				case 'Y':
-				case 'y':
-				case 'b':
-				case 'c':
-				case 'f':
-				case 'm':
-				case ':':
-				case '\0':
-					error += GMT_parse_common_options (argv[i], &west, &east, &south, &north);
-					break;
+			case '<':	/* Input files */
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				n_files++;
+				break;
 
-				/* Supplemental parameters */
+			/* Processes program-specific parameters */
 
-				case 'S':	/* Undocumented backwards compatible option */
-				case 'C':
-					Ctrl->C.active = TRUE;
-					break;
-				case 'E':
-					Ctrl->E.active = TRUE;
-					sscanf (&argv[i][2], "%lf/%lf", &Ctrl->E.azimuth, &Ctrl->E.elevation);
-					break;
-				case 'N':
-					Ctrl->N.active = TRUE;
-					break;
-				case 'T':
-					Ctrl->T.active = TRUE;
-					break;
-				case 'Z':
-					if (argv[i][2]) {
-						Ctrl->Z.level = atof (&argv[i][2]);
-						Ctrl->Z.active = TRUE;
-					}
-					else {
-						error++;
-						fprintf (stderr, "%s: GMT SYNTAX ERROR -Z:  Must append a new z-value [0]\n", GMT_program);
-					}
-					break;
-				default:
-					error = TRUE;
-					GMT_default_error (argv[i][1]);
-					break;
-			}
+			case 'C':	/* Turn clipping off */
+				Ctrl->C.active = true;
+				Ctrl->C.n = 1;
+				switch (opt->arg[0]) {
+					case 's': Ctrl->C.n = CLIP_STEXT; break;
+					case 'c': Ctrl->C.n = CLIP_CTEXT; break;
+					case 'a': Ctrl->C.n = PSL_ALL_CLIP; break;
+					case '\0': Ctrl->C.n = 1; break;	/* Default anyway */
+					default:
+						if (isdigit ((int)opt->arg[0]))
+							Ctrl->C.n = atoi (&opt->arg[0]);
+						else {
+							GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -C option: Correct syntax is -C[s|c|a|<n>]\n");
+							n_errors++;
+						}
+						break;
+				}
+				break;
+			case 'N':	/* Use the outside of the polygons as clip area */
+				Ctrl->N.active = true;
+				break;
+			case 'T':	/* Select map clip */
+				Ctrl->T.active = true;
+				break;
+
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
+				break;
 		}
-		else
-			n_files++;
-	}
-
-	if (argc == 1 || GMT_give_synopsis_and_exit) {
-		fprintf (stderr,"psclip %s - To set up polygonal clip paths\n\n", GMT_VERSION);
-		fprintf (stderr, "usage: psclip -C [-K] [-O]  OR\n");
-		fprintf (stderr, "\tpsclip <xy-files> %s %s [%s]\n", GMT_J_OPT, GMT_Rgeo_OPT, GMT_B_OPT);
-		fprintf (stderr, "\t[-Eaz/el] [%s] [-K] [-N] [-O] [-P] [-T] [%s] [-V]\n", GMT_H_OPT, GMT_U_OPT);
-		fprintf (stderr, "\t[%s] [%s] [-Z<zlevel>] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_t_OPT, GMT_bi_OPT, GMT_f_OPT, GMT_mo_OPT);
-
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-
-		fprintf (stderr, "\t-C means stop existing clip-path.  -R, -J are not required\n");
-		fprintf (stderr, "\t<xy-files> is one or more polygon files.  If none, standard input is read\n");
-		GMT_explain_option ('j');
-		GMT_explain_option ('R');
-		fprintf (stderr, "\n\tOPTIONS:\n");
-		GMT_explain_option ('b');
-		fprintf (stderr, "\t-E set azimuth and elevation of viewpoint for 3-D perspective [180/90]\n");
-		GMT_explain_option ('H');
-		GMT_explain_option ('K');
-		fprintf (stderr, "\t-N uses the outside of the polygons as clip paths\n");
-		GMT_explain_option ('O');
-		GMT_explain_option ('P');
-		fprintf (stderr, "\t-T Set of clip path for entire map frame.  No input file is required\n");
-		GMT_explain_option ('U');
-		GMT_explain_option ('V');
-		GMT_explain_option ('X');
-		fprintf (stderr, "\t-Z For 3-D plots: Set the z-level of map [0]\n");
-		GMT_explain_option ('c');
-		GMT_explain_option (':');
-		GMT_explain_option ('i');
-		GMT_explain_option ('n');
-		fprintf (stderr, "\t   Default is 2 input columns\n");
-		GMT_explain_option ('f');
-		GMT_explain_option ('m');
-		GMT_explain_option ('.');
-		exit (EXIT_FAILURE);
 	}
 
 	if (!Ctrl->C.active) {
-		if (!project_info.region_supplied) {
-			fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify -R option\n", GMT_program);
-			error++;
-		}
-		if (Ctrl->E.elevation <= 0.0 || Ctrl->E.elevation > 90.0) {
-			fprintf (stderr, "%s: GMT SYNTAX ERROR -E option:  Elevation must be in 0-90 range\n", GMT_program);
-			error++;
-		}
+		n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+		n_errors += GMT_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
 	}
-	if (Ctrl->T.active) Ctrl->N.active = TRUE;	/* -T implies -N */
-	if (Ctrl->T.active && n_files) fprintf (stderr, "%s: Warning:  Option -T ignores all input files\n", GMT_program);
+	if (Ctrl->T.active) Ctrl->N.active = true;	/* -T implies -N */
+	if (Ctrl->T.active && n_files) GMT_Report (API, GMT_MSG_NORMAL, "Warning: Option -T ignores all input files\n");
 
-	if (Ctrl->N.active && frame_info.plot) {
-		fprintf (stderr, "%s: Warning:  Option -B cannot be used in combination with Options -N or -T. -B is ignored.\n", GMT_program);
-		frame_info.plot = FALSE;
+	if (Ctrl->N.active && GMT->current.map.frame.init) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Warning: Option -B cannot be used in combination with Options -N or -T. -B is ignored.\n");
+		GMT->current.map.frame.draw = false;
 	}
 
-	if (GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Binary input data cannot have header -H\n", GMT_program);
-		error++;
+	n_errors += GMT_check_binary_io (GMT, 2);
+
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
+
+void gmt_terminate_clipping (struct GMT_CTRL *C, struct PSL_CTRL *PSL, int n)
+{
+	switch (n) {
+		case CLIP_STEXT:
+			PSL_endclipping (PSL, 1);	/* Undo last text clipping levels */
+			PSL_plottextclip (PSL, NULL, NULL, 0, 0.0, NULL, NULL, 0, NULL, 9);	/* This lays down the straight text */
+			GMT_Report (C->parent, GMT_MSG_VERBOSE, "Restore 1 text clip level and place delayed straight text\n");
+			break;
+		case CLIP_CTEXT:
+			PSL_endclipping (PSL, 1);	/* Undo last text clipping levels */
+			PSL_plottextpath (PSL, NULL, NULL, 0, NULL, 0.0, NULL, 0, NULL, 0, NULL, 8);	/* Lay down the curved text */
+			GMT_Report (C->parent, GMT_MSG_VERBOSE, "Restore 1 text clip level and place delayed curved text\n");
+			break;
+		case PSL_ALL_CLIP:
+			PSL_endclipping (PSL, n);	/* Reduce clipping to none */
+			GMT_Report (C->parent, GMT_MSG_VERBOSE, "Restore ALL polygon clip levels\n");
+			break;
+		default:
+			PSL_endclipping (PSL, n);	/* Reduce clipping by n levels [1] */
+			GMT_Report (C->parent, GMT_MSG_VERBOSE, "Restore %d polygon clip levels\n", n);
+			break;
 	}
-	if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] == 0) GMT_io.ncol[GMT_IN] = 2;
-	if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] < 2) {
-		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Binary input data (-bi) must have at least 2 columns\n", GMT_program);
-		error++;
-	}
+}
 
-	if (error) exit (EXIT_FAILURE);
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_psclip_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-	if (GMT_io.binary[GMT_IN] && gmtdefs.verbose) {
-		char *type[2] = {"double", "single"};
-		fprintf (stderr, "%s: Expects %ld-column %s-precision binary data\n", GMT_program, GMT_io.ncol[GMT_IN], type[GMT_io.single_precision[GMT_IN]]);
-	}
+int GMT_psclip (void *V_API, int mode, void *args)
+{
+	int error = 0;
 
-	z_project.view_azimuth = Ctrl->E.azimuth;
-	z_project.view_elevation = Ctrl->E.elevation;
+	double x0, y0;
 
-	if (!project_info.x_off_supplied && GMT_ps.overlay) GMT_ps.x_origin = 0.0;
-	if (!project_info.y_off_supplied && GMT_ps.overlay) GMT_ps.y_origin = 0.0;
+	struct PSCLIP_CTRL *Ctrl = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_OPTION *options = NULL;
+	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_psclip_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_psclip_usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_psclip_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	/* Parse the command-line arguments; return if errors are encountered */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_psclip_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_psclip_parse (GMT, Ctrl, options))) Return (error);
+
+	/*---------------------------- This is the psclip main code ----------------------------*/
 
 	if (Ctrl->C.active)
-		GMT_ps.clip = -1;	/* Signal that this program terminates clipping that initiated prior to this process */
+		GMT->current.ps.nclip = MIN (-1, -Ctrl->C.n);	/* Program terminates n levels of prior clipping */
 	else
-		GMT_ps.clip = +1;	/* Signal that this program initiates clipping that wil outlive this process */
+		GMT->current.ps.nclip = +1;		/* Program adds one new level of clipping */
 
-	GMT_plotinit (argc, argv);
-
-	if (Ctrl->C.active && !frame_info.plot) {	/* Just undo previous clip-path, no basemap needed */
-		ps_clipoff ();
-		GMT_plotend ();
-
-		if (gmtdefs.verbose) fprintf (stderr, "%s: Done!\n", GMT_program);
-
-		Free_psclip_Ctrl (Ctrl);	/* Deallocate control structure */
-		GMT_end (argc, argv);
-		exit (EXIT_SUCCESS);
+	if (Ctrl->C.active && !GMT->current.map.frame.init) {
+		PSL = GMT_plotinit (GMT, options);
+		gmt_terminate_clipping (GMT, PSL, Ctrl->C.n);	/* Undo previous clip-path(s) */
+		GMT_plotend (GMT);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
+		Return (EXIT_SUCCESS);
 	}
 
-	GMT_err_fail (GMT_map_setup (west, east, south, north), "");
+	/* Here we have -R -J etc to deal with */
+	
+	if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_RUNTIME_ERROR);
 
-	if (project_info.three_D) ps_transrotate (-z_project.xmin, -z_project.ymin, 0.0);
+	PSL = GMT_plotinit (GMT, options);
+	if (Ctrl->C.active) gmt_terminate_clipping (GMT, PSL, Ctrl->C.n);	/* Undo previous clip-path(s) */
+	GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
+	GMT_plotcanvas (GMT);	/* Fill canvas if requested */
+	GMT_map_basemap (GMT);
 
-	if (Ctrl->Z.active) project_info.z_level = Ctrl->Z.level;
+	if (!Ctrl->C.active) {	/* Start new clip_path */
+		unsigned int tbl;
+		bool first = !Ctrl->N.active;
+		uint64_t row, seg;
+		double *x = NULL, *y = NULL;
+		struct GMT_DATASET *D = NULL;
+		struct GMT_DATASEGMENT *S = NULL;
 
-	n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 2;
+		GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
+		if (Ctrl->N.active) GMT_map_clip_on (GMT, GMT->session.no_rgb, 1);	/* Must clip map */
 
-	if (Ctrl->C.active) {	/* Undo previous clip-path and draw basemap */
-		ps_clipoff ();
-		GMT_map_basemap ();
-	}
-
-	else {	/* Start new clip_path */
-
-		GMT_map_basemap ();
-		/* Allocate arrays holding the contour xy values */
-		xx = (double *) GMT_memory (VNULL, (size_t)GMT_CHUNK, sizeof (double), GMT_program);
-		yy = (double *) GMT_memory (VNULL, (size_t)GMT_CHUNK, sizeof (double), GMT_program);
-		n_alloc = GMT_CHUNK;
-
-		if (Ctrl->N.active) GMT_map_clip_on (GMT_no_rgb, 1);	/* Must clip map */
-		first = !Ctrl->N.active;
-		done = Ctrl->T.active;	/* When -T is used, skip all input */
-		n_args = (argc > 1) ? argc : 2;
-		nofile = (n_files == 0);
-
-		for (fno = 1; !done && fno < n_args; fno++) {	/* Loop over all input files */
-			if (!nofile && argv[fno][0] == '-') continue;
-			if (nofile) {
-				fp = GMT_stdin;
-				done = TRUE;
-#ifdef SET_IO_MODE
-				GMT_setmode (GMT_IN);
-#endif
+		if (!Ctrl->T.active) {
+			if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POLY, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {
+				Return (API->error);	/* Register data input */
 			}
-			else if ((fp = GMT_fopen (argv[fno], GMT_io.r_mode)) == NULL) {
-				fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
-				continue;
+			if ((D = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, 0, GMT_READ_NORMAL, NULL, NULL, NULL)) == NULL) {
+				Return (API->error);
 			}
 
-			if (!nofile && gmtdefs.verbose) {
-				fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
-				sprintf (line, "File: %s", argv[fno]);
-				ps_comment (line);
-			}
-			if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) GMT_fgets (line, BUFSIZ, fp);
-			if (GMT_io.multi_segments[GMT_IN]) {
-				GMT_fgets (line, BUFSIZ, fp);
-				if (gmtdefs.verbose) ps_comment (line);
-			}
-			n_fields = GMT_input (fp, &n_expected_fields, &in);
-
-			while (! (GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
-
-				while (GMT_io.status & GMT_IO_SEGMENT_HEADER) {
-					if (gmtdefs.verbose) ps_comment (GMT_io.segment_header);
-					n_fields = GMT_input (fp, &n_expected_fields, &in);
-				}
-				if ((GMT_io.status & GMT_IO_EOF)) continue;	/* At EOF */
-
-				/* Start a new segment path */
-
-				n_read = n = 0;
-
-				while (! (GMT_io.status & (GMT_IO_SEGMENT_HEADER | GMT_IO_EOF))) {	/* Keep going until FALSE */
-					n_read++;
-					if (GMT_io.status & GMT_IO_MISMATCH) {
-						fprintf (stderr, "%s: Mismatch between actual (%ld) and expected (%d) fields near line %ld (skipped)\n", GMT_program, n_fields, 2, n_read);
-						continue;
+			for (tbl = 0; tbl < D->n_tables; tbl++) {
+				for (seg = 0; seg < D->table[tbl]->n_segments; seg++) {	/* For each segment in the table */
+					S = D->table[tbl]->segment[seg];		/* Current segment */
+					if (D->alloc_mode == GMT_ALLOCATED_EXTERNALLY) {	/* Cannot store results in the read-only input array */
+						x = GMT_memory (GMT, NULL, S->n_rows, double);
+						y = GMT_memory (GMT, NULL, S->n_rows, double);
+					}
+					else {	/* Reuse input arrays */
+						x = S->coord[GMT_X];	y = S->coord[GMT_Y];	/* Short hand for x,y columns */
 					}
 
-					xx[n] = in[GMT_X];	yy[n] = in[GMT_Y];
-					n++;
-					if (n == n_alloc) {
-						n_alloc <<= 1;
-						xx = (double *) GMT_memory ((void *)xx, (size_t)n_alloc, sizeof (double), GMT_program);
-						yy = (double *) GMT_memory ((void *)yy, (size_t)n_alloc, sizeof (double), GMT_program);
+					for (row = 0; row < S->n_rows; row++) {
+						GMT_geo_to_xy (GMT, S->coord[GMT_X][row], S->coord[GMT_Y][row], &x0, &y0);
+						x[row] = x0; y[row] = y0;
 					}
-					n_fields = GMT_input (fp, &n_expected_fields, &in);
+					PSL_beginclipping (PSL, x, y, (int)S->n_rows, GMT->session.no_rgb, first);
+					first = 0;
+					if (D->alloc_mode == GMT_ALLOCATED_EXTERNALLY) {	/* Free temp arrays */
+						GMT_free (GMT, x);	GMT_free (GMT, y);
+					}
 				}
-
-				xx = (double *) GMT_memory ((void *)xx, (size_t)n, sizeof (double), GMT_program);
-				yy = (double *) GMT_memory ((void *)yy, (size_t)n, sizeof (double), GMT_program);
-				n_alloc = n;
-
-				for (i = 0; i < n; i++) {
-					GMT_geo_to_xy (xx[i], yy[i], &x0, &y0);
-					xx[i] = x0; yy[i] = y0;
-				}
-
-				if (project_info.three_D) GMT_2D_to_3D (xx, yy, project_info.z_level, n);
-
-				ps_clipon (xx, yy, n, GMT_no_rgb, first);
-				first = FALSE;
 			}
-			if (fp != GMT_stdin) GMT_fclose (fp);
+			if (GMT_Destroy_Data (API, &D) != GMT_OK) {
+				Return (API->error);
+			}
 		}
 
-		/* Finish up the composite clip path */
-		ps_clipon (xx, yy, (GMT_LONG)0, GMT_no_rgb, 2 + first);
-
-		GMT_free ((void *)xx);
-		GMT_free ((void *)yy);
+		/* Finalize the composite polygon clip path */
+		PSL_beginclipping (PSL, NULL, NULL, 0, GMT->session.no_rgb, 2 + first);
 	}
 
-	if (project_info.three_D) ps_rotatetrans (z_project.xmin, z_project.ymin, 0.0);
+	GMT_plane_perspective (GMT, -1, 0.0);
+	GMT_plotend (GMT);
 
-	GMT_plotend ();
+	GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
 
-	if (gmtdefs.verbose) fprintf (stderr, "%s: Done!\n", GMT_program);
-
-	Free_psclip_Ctrl (Ctrl);	/* Deallocate control structure */
-
-	GMT_end (argc, argv);
-
-	exit (EXIT_SUCCESS);
-}
-
-void *New_psclip_Ctrl () {	/* Allocate and initialize a new control structure */
-	struct PSCLIP_CTRL *C;
-	
-	C = (struct PSCLIP_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct PSCLIP_CTRL), "New_psclip_Ctrl");
-	
-	/* Initialize values whose defaults are not 0/FALSE/NULL */
-	C->E.azimuth = 180.0;
-	C->E.elevation = 90.0;
-		
-	return ((void *)C);
-}
-
-void Free_psclip_Ctrl (struct PSCLIP_CTRL *C) {	/* Deallocate control structure */
-	GMT_free ((void *)C);	
+	Return (GMT_OK);
 }

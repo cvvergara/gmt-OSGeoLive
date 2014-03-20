@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_grdio.h 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: gmt_grdio.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; version 2 or any later version.
+ *	it under the terms of the GNU Lesser General Public License as published by
+ *	the Free Software Foundation; version 3 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *	GNU Lesser General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -20,9 +20,8 @@
  * Include file for grd i/o
  *
  * Author:	Paul Wessel
- * Date:	21-AUG-1995
- * Revised:	06-DEC-2001
- * Version:	4
+ * Date:	1-JAN-2010
+ * Version:	5 API
  */
 
 #ifndef GMT_GRDIO_H
@@ -38,91 +37,121 @@
 #define GMT_IMG_MAXLAT_80	+80.7380086280
 #define GMT_IMG_MINLAT_85	-85.0511287798
 #define GMT_IMG_MAXLAT_85	+85.0511287798
-#define GMT_IMG_NLON_1M		21600	/* At 1 min resolution */
-#define GMT_IMG_NLON_2M		10800	/* At 2 min resolution */
-#define GMT_IMG_NLAT_1M_72	12672	/* At 1 min resolution */
-#define GMT_IMG_NLAT_1M_80	17280	/* At 1 min resolution */
-#define GMT_IMG_NLAT_1M_85	21600	/* At 1 min resolution */
-#define GMT_IMG_NLAT_2M_72	6336	/* At 2 min resolution */
-#define GMT_IMG_NLAT_2M_80	8640	/* At 2 min resolution */
-#define GMT_IMG_NLAT_2M_85	10800	/* At 2 min resolution */
-#define GMT_IMG_ITEMSIZE	2	/* Size of 2 byte short ints */
 
-EXTERN_MSC GMT_LONG GMT_grdformats [GMT_N_GRD_FORMATS][2];
+enum GMT_enum_img {
+	GMT_IMG_NLON_1M    = 21600U, /* At 1 min resolution */
+	GMT_IMG_NLON_2M    = 10800U, /* At 2 min resolution */
+	GMT_IMG_NLAT_1M_72 = 12672U, /* At 1 min resolution */
+	GMT_IMG_NLAT_2M_72 = 6336U,  /* At 2 min resolution */
+	GMT_IMG_NLAT_1M_80 = 17280U, /* At 1 min resolution */
+	GMT_IMG_NLAT_2M_80 = 8640U,  /* At 2 min resolution */
+	GMT_IMG_NLAT_1M_85 = 21600U, /* At 1 min resolution */
+	GMT_IMG_NLAT_2M_85 = 10800U, /* At 2 min resolution */
+	GMT_IMG_ITEMSIZE   = 2U      /* Size of 2 byte short ints */
+};
 
-EXTERN_MSC GMT_LONG GMT_read_grd_info (char *file, struct GRD_HEADER *header);
-EXTERN_MSC GMT_LONG GMT_update_grd_info (char *file, struct GRD_HEADER *header);
-EXTERN_MSC GMT_LONG GMT_write_grd_info (char *file, struct GRD_HEADER *header);
-EXTERN_MSC GMT_LONG GMT_read_grd (char *file, struct GRD_HEADER *header, float *grid, double w, double e, double s, double n, GMT_LONG *pad, GMT_LONG complex);
-EXTERN_MSC GMT_LONG GMT_write_grd (char *file, struct GRD_HEADER *header, float *grid, double w, double e, double s, double n, GMT_LONG *pad, GMT_LONG complex);
+/* Special grid format IDs */
 
-EXTERN_MSC GMT_LONG GMT_grd_data_size (GMT_LONG format, double *nan_value);
-EXTERN_MSC GMT_LONG GMT_grd_prep_io (struct GRD_HEADER *header, double *w, double *e, double *s, double *n, GMT_LONG *width, GMT_LONG *height, GMT_LONG *first_col, GMT_LONG *last_col, GMT_LONG *first_row, GMT_LONG *last_row, GMT_LONG **index);
-EXTERN_MSC GMT_LONG GMT_adjust_loose_wesn (double *w, double *e, double *s, double *n, struct GRD_HEADER *header);
-EXTERN_MSC GMT_LONG GMT_grd_setregion (struct GRD_HEADER *h, double *xmin, double *xmax, double *ymin, double *ymax, GMT_LONG interpolant);
-EXTERN_MSC GMT_LONG GMT_grd_format_decoder (const char *code);
-EXTERN_MSC void GMT_grd_init (struct GRD_HEADER *header, int argc, char **argv, GMT_LONG update);
-EXTERN_MSC void GMT_grd_shift (struct GRD_HEADER *header, float *grd, double shift);
-EXTERN_MSC void GMT_decode_grd_h_info (char *input, struct GRD_HEADER *h);
-EXTERN_MSC GMT_LONG GMT_grd_RI_verify (struct GRD_HEADER *h, GMT_LONG mode);
-EXTERN_MSC GMT_LONG GMT_grd_get_format (char *file, struct GRD_HEADER *header, GMT_LONG magic);
-EXTERN_MSC GMT_LONG GMT_grd_is_global (struct GRD_HEADER *h);
+enum Gmt_grid_id {
+	/* DO NOT change the order because id values have grown historically.
+	 * Append newly introduced id's at the end. */
+	k_grd_unknown_fmt = 0, /* if grid format cannot be auto-detected */
+	GMT_GRID_IS_BF,         /* GMT native, C-binary format (32-bit float) */
+	GMT_GRID_IS_BS,         /* GMT native, C-binary format (16-bit integer) */
+	GMT_GRID_IS_RB,         /* SUN rasterfile format (8-bit standard) */
+	GMT_GRID_IS_BB,         /* GMT native, C-binary format (8-bit integer) */
+	GMT_GRID_IS_BM,         /* GMT native, C-binary format (bit-mask) */
+	GMT_GRID_IS_SF,         /* Golden Software Surfer format 6 (32-bit float) */
+	GMT_GRID_IS_CB,         /* GMT netCDF format (8-bit integer) */
+	GMT_GRID_IS_CS,         /* GMT netCDF format (16-bit integer) */
+	GMT_GRID_IS_CI,         /* GMT netCDF format (32-bit integer) */
+	GMT_GRID_IS_CF,         /* GMT netCDF format (32-bit float) */
+	GMT_GRID_IS_CD,         /* GMT netCDF format (64-bit float) */
+	GMT_GRID_IS_RF,         /* GEODAS grid format GRD98 (NGDC) */
+	GMT_GRID_IS_BI,         /* GMT native, C-binary format (32-bit integer) */
+	GMT_GRID_IS_BD,         /* GMT native, C-binary format (64-bit float) */
+	GMT_GRID_IS_NB,         /* GMT netCDF format (8-bit integer) */
+	GMT_GRID_IS_NS,         /* GMT netCDF format (16-bit integer) */
+	GMT_GRID_IS_NI,         /* GMT netCDF format (32-bit integer) */
+	GMT_GRID_IS_NF,         /* GMT netCDF format (32-bit float) */
+	GMT_GRID_IS_ND,         /* GMT netCDF format (64-bit float) */
+	GMT_GRID_IS_SD,         /* Golden Software Surfer format 7 (64-bit float, read-only) */
+	GMT_GRID_IS_AF,         /* Atlantic Geoscience Center format AGC (32-bit float) */
+	GMT_GRID_IS_GD,         /* Import through GDAL */
+	GMT_GRID_IS_EI,         /* ESRI Arc/Info ASCII Grid Interchange format (ASCII integer) */
+	GMT_GRID_IS_EF          /* ESRI Arc/Info ASCII Grid Interchange format (ASCII float, write-only) */
+};
+#define GMT_N_GRD_FORMATS 25 /* Number of formats above plus 1 */
 
-/* These are pointers to the various functions and are set in GMT_grdio_init() */
-
-EXTERN_MSC PFL GMT_io_readinfo[GMT_N_GRD_FORMATS];
-EXTERN_MSC PFL GMT_io_updateinfo[GMT_N_GRD_FORMATS];
-EXTERN_MSC PFL GMT_io_writeinfo[GMT_N_GRD_FORMATS];
-EXTERN_MSC PFL GMT_io_readgrd[GMT_N_GRD_FORMATS];
-EXTERN_MSC PFL GMT_io_writegrd[GMT_N_GRD_FORMATS];
+#define GMT_GRID_IS_GOLDEN7	GMT_GRID_IS_SD
+#define GMT_GRID_IS_GDAL	GMT_GRID_IS_GD
 
 #include "gmt_customio.h"
 
-struct GMT_GRD_INFO {	/* Holds any -R -I -F settings passed indirectly via -R<grdfile> */
-	struct GRD_HEADER grd;	/* Header of grid file passed via -R */
-	GMT_LONG active;		/* TRUE if initialized via -R */
+struct GMT_GRID_INFO {	/* Holds any -R -I -F settings passed indirectly via -R<grdfile> */
+	struct GMT_GRID_HEADER grd;	/* Header of grid file passed via -R */
+	bool active;		/* true if initialized via -R */
 };
 
-struct GMT_GRID {	/* To hold a GMT float grid and its header in one container */
-	struct GRD_HEADER *header;	/* Pointer to full GMT header for the grid */
-	float *data;			/* Pointer to the float grid */
+struct GMT_GRID_ROWBYROW {	/* Holds book-keeping information needed for row-by-row actions */
+	size_t size;		/* Bytes per item [4 for float, 1 for byte, etc] */
+	size_t n_byte;		/* Number of bytes for row */
+	unsigned int row;	/* Current row */
+	bool open;		/* true if we have already opened the file */
+	bool check;		/* true if we must replace NaNs with another representation on i/o */
+	bool auto_advance;	/* true if we want to read file sequentially */
+
+	int fid;		/* NetCDF file number [netcdf files only] */
+	size_t edge[2];		/* Dimension arrays [netcdf files only] */
+	size_t start[2];	/* Position arrays [netcdf files only] */
+
+	FILE *fp;		/* File pointer [for native files] */
+
+	void *v_row;		/* Void Row pointer for any data format */
 };
 
-struct GMT_GRDFILE {
-	GMT_LONG size;		/* Bytes per item */
-	GMT_LONG n_byte;	/* Number of bytes for row */
-	GMT_LONG row;		/* Current row */
-	int fid;		/* NetCDF file number */
-	size_t edge[2];		/* Dimension arrays for netCDF files */
-	size_t start[2];	/* same */
+#ifdef __APPLE__ /* Accelerate framework */
+#include <Accelerate/Accelerate.h>
+#undef I /* because otherwise we are in trouble with, e.g., struct GMT_IMAGE *I */
+#endif
 
-	GMT_LONG check;		/* TRUE if we must replace NaNs with another representation on i/o */
-	GMT_LONG auto_advance;	/* TRUE if we want to read file sequentially */
-	
-	double scale;		/* scale to use for i/o */
-	double offset;		/* offset to use for i/o */
-	
-	FILE *fp;		/* File pointer for native files */
-	
-	void *v_row;		/* Void Row pointer for any format */
-	
-	struct GRD_HEADER header;	/* Full GMT header for the file */
-};
-	
-/* Row i/o functions */
+static inline void scale_and_offset_f (float *data, size_t length, float scale, float offset) {
+	/* Routine that scales and offsets the data in a vector
+	 *  data:   Single-precision real input vector
+	 *  length: The number of elements to process
+	 * This function uses the vDSP portion of the Accelerate framework if possible */
+#ifndef __APPLE__
+	size_t n;
+#endif
+	if (scale == 1.0) /* offset only */
+#ifdef __APPLE__ /* Accelerate framework */
+		vDSP_vsadd (data, 1, &offset, data, 1, length);
+#else
+		for (n = 0; n < length; ++n)
+			data[n] += offset;
+#endif
+	else if (offset == 0.0) /* scale only */
+#ifdef __APPLE__ /* Accelerate framework */
+		vDSP_vsmul (data, 1, &scale, data, 1, length);
+#else
+		for (n = 0; n < length; ++n)
+			data[n] *= scale;
+#endif
+	else /* scale + offset */
+#ifdef __APPLE__ /* Accelerate framework */
+		vDSP_vsmsa (data, 1, &scale, &offset, data, 1, length);
+#else
+		for (n = 0; n < length; ++n)
+			data[n] = data[n] * scale + offset;
+#endif
+}
 
-EXTERN_MSC GMT_LONG GMT_open_grd (char *file, struct GMT_GRDFILE *G, char mode);
-EXTERN_MSC void GMT_close_grd (struct GMT_GRDFILE *G);
-EXTERN_MSC GMT_LONG GMT_read_grd_row (struct GMT_GRDFILE *G, GMT_LONG row_no, float *row);
-EXTERN_MSC GMT_LONG GMT_write_grd_row (struct GMT_GRDFILE *G, GMT_LONG row_no, float *row);
-
-/* IMG read function */
-
-EXTERN_MSC GMT_LONG GMT_read_img (char *imgfile, struct GRD_HEADER *h, float **grid, double w, double e, double s, double n, double scale, GMT_LONG mode, double lat, GMT_LONG init);
-
-/* Grid container allocation/deallocation routines */
-
-EXTERN_MSC struct GMT_GRID *GMT_create_grid (char *arg);
-EXTERN_MSC void GMT_destroy_grid (struct GMT_GRID *G, GMT_LONG free_grid);
+EXTERN_MSC int GMT_grd_format_decoder (struct GMT_CTRL *GMT, const char *code, unsigned int *type_id);
+EXTERN_MSC int GMT_grd_get_format (struct GMT_CTRL *GMT, char *file, struct GMT_GRID_HEADER *header, bool magic);
+EXTERN_MSC int GMT_grd_prep_io (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, double wesn[], unsigned int *width, unsigned int *height, int *first_col, int *last_col, int *first_row, int *last_row, unsigned int **index);
+EXTERN_MSC int GMT_update_grd_info (struct GMT_CTRL *GMT, char *file, struct GMT_GRID_HEADER *header);
+EXTERN_MSC void GMT_scale_and_offset_f (struct GMT_CTRL *GMT, float *data, size_t length, double scale, double offset);
+EXTERN_MSC int gmt_grd_layout (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *h, float *grid, unsigned int complex_mode, unsigned int direction);
+EXTERN_MSC void GMT_grd_mux_demux (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *h, float *data, unsigned int mode);
 
 #endif /* GMT_GRDIO_H */

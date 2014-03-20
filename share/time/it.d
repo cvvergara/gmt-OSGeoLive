@@ -1,6 +1,6 @@
 # GMT Time language file for IT (italian) mode [IT]
 #
-#	$Id: it.d 9545 2011-07-27 19:31:54Z pwessel $
+#	$Id: it.d 12807 2014-01-30 10:31:56Z remko $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	gennaio		gen	g

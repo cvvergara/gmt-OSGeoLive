@@ -1,0 +1,215 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>(14) Gridding of data and trend surfaces &mdash; GMT 5.1.1 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '5.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
+    <link rel="next" title="(15) Gridding, contouring, and masking of unconstrained areas" href="ex15.html" />
+    <link rel="prev" title="(13) Plotting of vector fields" href="ex13.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ex15.html" title="(15) Gridding, contouring, and masking of unconstrained areas"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="ex13.html" title="(13) Plotting of vector fields"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="gridding-of-data-and-trend-surfaces">
+<span id="example-14"></span><h1>(14) Gridding of data and trend surfaces<a class="headerlink" href="#gridding-of-data-and-trend-surfaces" title="Permalink to this headline">¶</a></h1>
+<p>This example shows how one goes from randomly spaced data points to an
+evenly sampled surface. First we plot the distribution and values of our
+raw data set (same as in Section [sec:example<sub>1</sub>2]). We choose an equidistant grid and run
+<a class="reference internal" href="../blockmean.html"><em>blockmean</em></a> which preprocesses the
+data to avoid aliasing. The dashed lines indicate the logical blocks
+used by <a class="reference internal" href="../blockmean.html"><em>blockmean</em></a>; all points inside
+a given bin will be averaged. The logical blocks are drawn from a
+temporary file we make on the fly within the shell script. The processed
+data is then gridded with the <a class="reference internal" href="../surface.html"><em>surface</em></a>
+program and contoured every 25 units. A most important point here is
+that <a class="reference internal" href="../blockmean.html"><em>blockmean</em></a>, <a class="reference internal" href="../blockmedian.html"><em>blockmedian</em></a>, or
+<a class="reference internal" href="../blockmode.html"><em>blockmode</em></a> should always be run prior
+to running <a class="reference internal" href="../surface.html"><em>surface</em></a>, and both of these
+steps must use the same grid interval. We use
+<a class="reference internal" href="../grdtrend.html"><em>grdtrend</em></a> to fit a bicubic trend
+surface to the gridded data, contour it as well, and sample both grid
+files along a diagonal transect using
+<a class="reference internal" href="../grdtrack.html"><em>grdtrack</em></a>. The bottom panel compares
+the gridded (solid line) and bicubic trend (dashed line) along the
+transect using <a class="reference internal" href="../psxy.html"><em>psxy</em></a></p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+<span class="c">#		GMT EXAMPLE 14</span>
+<span class="c">#</span>
+<span class="c"># Purpose:	Showing simple gridding, contouring, and resampling along tracks</span>
+<span class="c"># GMT progs:	blockmean, grdcontour, grdtrack, grdtrend, gmtinfo, project</span>
+<span class="c"># GMT progs:	gmtset, pstext, psbasemap, psxy, surface</span>
+<span class="c"># Unix progs:	rm</span>
+<span class="c">#</span>
+<span class="nv">ps</span><span class="o">=</span>example_14.ps
+
+<span class="c"># First draw network and label the nodes</span>
+
+gmt gmtset MAP_GRID_PEN_PRIMARY thinnest,-
+gmt psxy table_5.11 -R0/7/0/7 -JX3.06i/3.15i -B2f1 -BWSNe -Sc0.05i -Gblack -P -K -Y6.45i &gt; <span class="nv">$ps</span>
+gmt pstext table_5.11 -R -J -D0.1c/0 -F+f6p+jLM -O -K -N &gt;&gt; <span class="nv">$ps</span>
+gmt blockmean table_5.11 -R0/7/0/7 -I1 &gt; mean.xyz
+
+<span class="c"># Then draw gmt blockmean cells</span>
+
+gmt psbasemap -R0.5/7.5/0.5/7.5 -J -O -K -Bg1 -X3.25i &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R0/7/0/7 -J -B2f1 -BeSNw mean.xyz -Ss0.05i -Gblack -O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="c"># Reformat to one decimal for annotation purposes</span>
+gmt gmtconvert mean.xyz --FORMAT_FLOAT_OUT<span class="o">=</span>%.1f | <span class="se">\</span>
+	gmt pstext -R -J -D0.15c/0 -F+f6p+jLM -O -K -Gwhite -W -C0.01i -N &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Then gmt surface and contour the data</span>
+
+gmt surface mean.xyz -R -I1 -Gdata.nc
+gmt grdcontour data.nc -J -B2f1 -BWSne -C25 -A50 -Gd3i -S4 -O -K -X-3.25i -Y-3.55i &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R -J mean.xyz -Ss0.05i -Gblack -O -K &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Fit bicubic trend to data and compare to gridded gmt surface</span>
+
+gmt grdtrend data.nc -N10 -Ttrend.nc
+gmt project -C0/0 -E7/7 -G0.1 -N &gt; track
+gmt grdcontour trend.nc -J -B2f1 -BwSne -C25 -A50 -Glct/cb -S4 -O -K -X3.25i &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R -J track -Wthick,. -O -K &gt;&gt; <span class="nv">$ps</span>
+
+<span class="c"># Sample along diagonal</span>
+
+gmt grdtrack track -Gdata.nc -o2,3 &gt; data.d
+gmt grdtrack track -Gtrend.nc -o2,3 &gt; trend.d
+gmt psxy <span class="sb">`</span>gmt info data.d trend.d -I0.5/25<span class="sb">`</span> -JX6.3i/1.4i data.d -Wthick -O -K -X-3.25i -Y-1.9i <span class="se">\</span>
+	-Bx1 -By50 -BWSne &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R -J trend.d -Wthinner,- -O &gt;&gt; <span class="nv">$ps</span>
+
+rm -f mean.xyz track *.nc *.d gmt.conf
+</pre></div>
+</div>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="../_images/example_14.png"><img alt="../_images/example_14.png" src="../_images/example_14.png" style="width: 500px;" /></a>
+<p class="caption">Gridding of data and trend surfaces.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ex13.html"
+                        title="previous chapter">(13) Plotting of vector fields</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ex15.html"
+                        title="next chapter">(15) Gridding, contouring, and masking of unconstrained areas</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/gallery/ex14.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ex15.html" title="(15) Gridding, contouring, and masking of unconstrained areas"
+             >next</a> </li>
+        <li class="right" >
+          <a href="ex13.html" title="(13) Plotting of vector fields"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

@@ -1,28 +1,27 @@
-#!/bin/bash -f
+#!/bin/bash
 #--------------------------------------------------------------------
-#	$Id: isogmt.in 10173 2014-01-01 09:52:34Z pwessel $
+#	$Id: isogmt.in 12691 2014-01-01 09:41:00Z pwessel $
 #
-#	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
-#	See LICENSE.TXT file for copying and redistribution conditions.
+#  Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+#  See LICENSE.TXT file for copying and redistribution conditions.
 #
-#	This program is free software; you can redistribute it and/or
-#	modify it under the terms of the GNU General Public License as
-#	published by the Free Software Foundation; version 2 of the
-#	License.
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; version 3 or any later version.
 #
-#	This program is distributed in the hope that it will be useful,
-#	but WITHOUT ANY WARRANTY; without even the implied warranty of
-#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#	GNU General Public License for more details.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
 #
-#	Contact info: gmt.soest.hawaii.edu
+#  Contact info: gmt.soest.hawaii.edu
 #--------------------------------------------------------------------
 #
 # isogmt runs a GMT command or script in isolation mode.
 
 if [ $# -eq 0 ]; then
 	cat << END >&2
-isogmt @PACKAGE_VERSION@ - Run GMT command or script in isolation mode
+isogmt @GMT_PACKAGE_VERSION@ - Run GMT command or script in isolation mode
 
 usage: isogmt <command>
 
@@ -32,10 +31,6 @@ END
 fi
 
 export GMT_TMPDIR=`mktemp -d ${TMPDIR:-/tmp}/gmt.XXXXXX`
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-command=@bindir@/${1}
-shift
-$command $*
+gmt "$@"
 rm -rf $GMT_TMPDIR
 unset GMT_TMPDIR

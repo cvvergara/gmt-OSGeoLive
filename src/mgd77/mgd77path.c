@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77path.c 10173 2014-01-01 09:52:34Z pwessel $
+ *	$Id: mgd77path.c 12822 2014-01-31 23:39:56Z remko $
  *
  *    Copyright (c) 2004-2014 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -15,83 +15,186 @@
  *
  */
  
+#define THIS_MODULE_NAME	"mgd77path"
+#define THIS_MODULE_LIB		"mgd77"
+#define THIS_MODULE_PURPOSE	"Return paths to MGD77 cruises and directories"
+
+#include "gmt_dev.h"
 #include "mgd77.h"
 
-int main (int argc, char **argv)
+#define GMT_PROG_OPTIONS "-V"
+
+struct MGD77PATH_CTRL {	/* All control options for this program (except common args) */
+	/* active is true if the option has been activated */
+	struct A {	/* -A */
+		bool active;
+		bool mode;
+	} A;
+	struct D {	/* -D */
+		bool active;
+	} D;
+	struct I {	/* -I */
+		bool active;
+		unsigned int n;
+		char code[3];
+	} I;
+};
+
+void *New_mgd77path_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct MGD77PATH_CTRL *C = NULL;
+	
+	C = GMT_memory (GMT, NULL, 1, struct MGD77PATH_CTRL);
+	
+	/* Initialize values whose defaults are not 0/false/NULL */
+	
+	return (C);
+}
+
+void Free_mgd77path_Ctrl (struct GMT_CTRL *GMT, struct MGD77PATH_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	GMT_free (GMT, C);	
+}
+
+int GMT_mgd77path_usage (struct GMTAPI_CTRL *API, int level)
 {
-	GMT_LONG i, n_cruises = 0, n_paths;
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: mgd77path <cruise(s)> A[-] -D [-I<code>] [%s]\n\n", GMT_V_OPT);
+        
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+             
+	MGD77_Cruise_Explain (API->GMT);
+	GMT_Message (API, GMT_TIME_NONE, "\t-A List full cruise pAths [Default].  Append - to only get cruise names.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-D List all directories with MGD77 files instead.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\tOPTIONS:\n\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-I Ignore certain data file formats from consideration. Append combination of act to ignore\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table files. [Default ignores none].\n");
+	GMT_Option (API, "V,.");
 	
-	GMT_LONG error = FALSE, dirs = FALSE, strip = FALSE;
-	
-	char path[BUFSIZ], **list = NULL;
-	
-	struct MGD77_CONTROL M;
+	return (EXIT_FAILURE);
+}
 
-	argc = (int)GMT_begin (argc, argv);		/* Initialize GMT Machinery */
-	
-	MGD77_Init (&M);			/* Initialize MGD77 Machinery */
+int GMT_mgd77path_parse (struct GMT_CTRL *GMT, struct MGD77PATH_CTRL *Ctrl, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to mgd77path and sets parameters in CTRL.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
 
-	for (i = 1; !error && i < argc; i++) {	/* Process each cruise */
-		if (argv[i][0] != '-') continue;
-		switch (argv[i][1]) {									
-			case 'V':
-			case '\0':
-				error += GMT_parse_common_options (argv[i], NULL, NULL, NULL, NULL);
+	unsigned int n_errors = 0;
+	struct GMT_OPTION *opt = NULL;
+	struct GMTAPI_CTRL *API = GMT->parent;
+
+	for (opt = options; opt; opt = opt->next) {
+		switch (opt->option) {
+
+			case '<':	/* Skip input files */
+			case '#':	/* Skip input files confused as numbers (e.g. 123456) */
 				break;
-		
-			case 'I':
-				MGD77_Process_Ignore (argv[i][1], &argv[i][2]);
+
+			/* Processes program-specific parameters */
+
+			case 'P':
+				if (GMT_compat_check (GMT, 4)) {
+					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -P is deprecated; use -A instead mext time.\n");
+					Ctrl->A.active = true;
+				}
+				else {
+					n_errors += GMT_default_error (GMT, opt->option);
+					break;
+				}
+			case 'A':	/* Show list of paths to MGD77 files */
+				Ctrl->A.active = true;
+				if (opt->arg[0] == '-') Ctrl->A.mode = true;
 				break;
-		
+				
 			case 'D':	/* Show list of directories with MGD77 files */
-				dirs = TRUE;
+				Ctrl->D.active = true;
 				break;
 
-			case 'P':	/* Show list of paths to MGD77 files */
-				dirs = FALSE;
-				if (argv[i][2] == '-') strip = TRUE;
+			case 'I':
+				Ctrl->I.active = true;
+				if (Ctrl->I.n < 3) {
+					if (strchr ("act", (int)opt->arg[0]))
+						Ctrl->I.code[Ctrl->I.n++] = opt->arg[0];
+					else {
+						GMT_Report (API, GMT_MSG_NORMAL, "Option -I Bad modifier (%c). Use -Ia|c|t!\n", opt->arg[0]);
+						n_errors++;
+					}
+				}
+				else {
+					GMT_Report (API, GMT_MSG_NORMAL, "Option -I: Can only be applied 0-2 times\n");
+					n_errors++;
+				}
 				break;
 
-			default:		/* Options not recognized */
-				error = TRUE;
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
 				break;
 		}
 	}
+	n_errors += GMT_check_condition (GMT, Ctrl->A.active && Ctrl->D.active, "Syntax error: Only one of -A -D may be used\n");
 
-	if (GMT_give_synopsis_and_exit || argc == 1) {	/* Display usage */
-		fprintf(stderr,"mgd77path %s - Return paths to MGD77 cruises and directories\n\n", MGD77_VERSION);
-		fprintf(stderr,"usage: mgd77path <cruise(s)> -D|P[-] [-I<code>] [-V]\n\n");
-         
-		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-              
-		MGD77_Cruise_Explain ();
-		fprintf(stderr,"	-D Instead of full cruise paths just list all directories with MGD77 files\n");
-		fprintf(stderr,"	-P List full cruise paths [Default].  Append - to only get cruise names\n");
-		fprintf(stderr,"	OPTIONS:\n\n");
-		fprintf(stderr,"	-I Ignore certain data file formats from consideration. Append combination of act to ignore\n");
-		fprintf(stderr,"	   (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table files. [Default ignores none]\n");
-		fprintf(stderr,"	-V verbose, report number of cruises returned\n");
-		exit (EXIT_FAILURE);
-	}
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
 
-	if (dirs) {	/* Just list the current active MGD77 data directories and exit */
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_mgd77path_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+
+int GMT_mgd77path (void *V_API, int mode, void *args)
+{
+	unsigned int i, n_cruises = 0, n_paths;
+	int error = 0;
+	
+	char path[GMT_BUFSIZ] = {""}, **list = NULL;
+	
+	struct MGD77_CONTROL M;
+	struct MGD77PATH_CTRL *Ctrl = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
+	struct GMT_OPTION *options = NULL;
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_mgd77path_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_mgd77path_usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_mgd77path_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	/* Parse the command-line arguments */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_mgd77path_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_mgd77path_parse (GMT, Ctrl, options))) Return (error);
+	
+	/*---------------------------- This is the mgd77path main code ----------------------------*/
+
+	MGD77_Init (GMT, &M);			/* Initialize MGD77 Machinery */
+
+	if (Ctrl->I.active) MGD77_Process_Ignore (GMT, 'I', Ctrl->I.code);
+
+	if (Ctrl->D.active) {	/* Just list the current active MGD77 data directories and exit */
 		printf ("# Currently, your $MGD77_HOME is set to: %s\n", M.MGD77_HOME);
 		printf ("# $MGD77_HOME/mgd77_paths.txt contains these directories:\n");
 		for (i = 0; i < M.n_MGD77_paths; i++) printf ("%s\n", M.MGD77_datadir[i]);
-		exit (EXIT_SUCCESS);
+		Return (EXIT_SUCCESS);
 	}
 
-	n_paths = MGD77_Path_Expand (&M, argv, argc, &list);	/* Get list of requested IDs */
+	n_paths = MGD77_Path_Expand (GMT, &M, options, &list);	/* Get list of requested IDs */
 
 	if (n_paths == 0) {
-		fprintf (stderr, "%s: No cruises found\n", GMT_program);
-		exit (EXIT_FAILURE);
+		GMT_Report (API, GMT_MSG_NORMAL, "No cruises found\n");
+		Return (EXIT_FAILURE);
 	}
 	
 	for (i = 0; i < n_paths; i++) {		/* Process each ID */
- 		if (MGD77_Get_Path (path, list[i], &M))
-   			fprintf (stderr, "%s : Cannot find cruise %s\n", GMT_program, list[i]);
-		else if (strip) {
+ 		if (MGD77_Get_Path (GMT, path, list[i], &M))
+			GMT_Report (API, GMT_MSG_NORMAL, "Cannot find cruise %s\n", list[i]);
+		else if (Ctrl->A.mode) {
 			printf ("%s\n", list[i]);
 			n_cruises++;
 		}
@@ -101,11 +204,10 @@ int main (int argc, char **argv)
 		}
 	}
 	
-	if (gmtdefs.verbose) fprintf (stderr, "%s: Found %ld cruises\n", GMT_program, n_cruises);
+	GMT_Report (API, GMT_MSG_VERBOSE, "Found %d cruises\n", n_cruises);
 	
-	MGD77_Path_Free ((int)n_paths, list);
-	MGD77_end (&M);
-	GMT_end (argc, argv);
+	MGD77_Path_Free (GMT, n_paths, list);
+	MGD77_end (GMT, &M);
 	
-	exit (EXIT_SUCCESS);
+	Return (GMT_OK);
 }

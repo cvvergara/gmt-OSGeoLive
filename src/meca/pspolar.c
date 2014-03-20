@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------
- *    $Id: pspolar.c 10173 2014-01-01 09:52:34Z pwessel $ 
+ *    $Id: pspolar.c 12822 2014-01-31 23:39:56Z remko $ 
  *
- *    Copyright (c) 1996-2014 by G. Patau
- *    Distributed under the GNU Public Licence
+ *    Copyright (c) 1996-2012 by G. Patau
+ *    Distributed under the Lesser GNU Public Licence
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -12,634 +12,580 @@
  * Only one event may be plotted at a time.
  * PostScript code is written to stdout.
  *
- * Author:         Genevieve Patau
- * Date:           19-OCT-1995 (psprojstations)
- * Version:        4
- * Roots:          heavily based on psxy.c
- * Last modified : 02-APR-2001
+ * Author:	Genevieve Patau
+ * Date:	19-OCT-1995 (psprojstations)
+ * Version:	4
+ * Roots:	heavily based on psxy.c
  *
  */
 
-#include "gmt.h"	/* to have gmt environment */
-#include "pslib.h"	/* to have pslib environment */
-#include <string.h>
+#define THIS_MODULE_NAME	"pspolar"
+#define THIS_MODULE_LIB		"meca"
+#define THIS_MODULE_PURPOSE	"Plot polarities on the inferior focal half-sphere on maps"
 
-#define CROSS       2
-#define POINT       3
-#define CIRCLE      4
-#define SQUARE      5
-#define TRIANGLE    6
-#define DIAMOND     7
-#define STAR        8
-#define HEXAGON     9
-#define ITRIANGLE  10
+#include "gmt_dev.h"
 
-#define POINTSIZE 0.005
+#define GMT_PROG_OPTIONS "-:>BHJKOPRUVXYchixy"
 
-int main (int argc, char **argv)
+#define DEFAULT_FONTSIZE	9.0	/* In points */
+
+/* Control structure for pspolar */
+
+struct PSPOLAR_CTRL {
+	struct C {	/* -C */
+		bool active;
+		double lon, lat, size;
+		struct GMT_PEN pen;
+	} C;
+	struct D {	/* -D */
+		bool active;
+		double lon, lat;
+	} D;
+ 	struct E {	/* -E<fill> */
+		bool active;
+		int outline;
+		struct GMT_FILL fill;
+		struct GMT_PEN pen;
+	} E;
+	struct F {	/* -F<fill> */
+		bool active;
+		struct GMT_FILL fill;
+		struct GMT_PEN pen;
+	} F;
+ 	struct G {	/* -G<fill> */
+		bool active;
+		struct GMT_FILL fill;
+		struct GMT_PEN pen;
+	} G;
+	struct M {	/* -M */
+		bool active;
+		double ech;
+	} M;
+	struct N {	/* -N */
+		bool active;
+	} N;
+	struct Q {	/* Repeatable: -Q<mode>[<args>] for various symbol parameters */
+		bool active;
+	} Q;
+	struct H2 {	/* -Qh for Hypo71 */
+		bool active;
+	} H2;
+	struct S {	/* -r<fill> */
+		bool active;
+		int symbol;
+		char type;
+		double scale, size;
+		struct GMT_FILL fill;
+	} S;
+	struct S2 {	/* -r<fill> */
+		bool active;
+		bool scolor;
+		bool vector;
+		int symbol;
+		int outline;
+		char type;
+		double size;
+		double width, length, head;
+		double vector_shape;
+		struct GMT_FILL fill;
+	} S2;
+	struct T {
+		bool active;
+		double angle, fontsize;
+		int form, justify;
+		struct GMT_PEN pen;
+ 	} T;
+	struct W {	/* -W<pen> */
+		bool active;
+		struct GMT_PEN pen;
+	} W;
+};
+
+void *New_pspolar_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct PSPOLAR_CTRL *C;
+
+	C = GMT_memory (GMT, NULL, 1, struct PSPOLAR_CTRL);
+
+	/* Initialize values whose defaults are not 0/false/NULL */
+
+        C->E.pen = C->F.pen = C->G.pen  = GMT->current.setting.map_default_pen;
+    
+	C->C.size = GMT_DOT_SIZE;
+	GMT_init_fill (GMT, &C->E.fill, 250.0 / 255.0, 250.0 / 255.0, 250.0 / 255.0);
+	GMT_init_fill (GMT, &C->F.fill, -1.0, -1.0, -1.0); 
+	GMT_init_fill (GMT, &C->G.fill, 0.0, 0.0, 0.0);
+	GMT_init_fill (GMT, &C->S2.fill, -1.0, -1.0, -1.0); 
+	C->T.justify = 5;
+	C->T.fontsize = 12.0;
+	return (C);
+}
+
+void Free_pspolar_Ctrl (struct GMT_CTRL *GMT, struct PSPOLAR_CTRL *C) {	/* Deallocate control structure */
+	if (!C) return;
+	GMT_free (GMT, C);
+}
+
+int GMT_pspolar_usage (struct GMTAPI_CTRL *API, int level)
 {
-    GMT_LONG     i, symbol = 0, n, n_files = 0, fno;
-    GMT_LONG     n_args;
-    GMT_LONG     form_s = 0, justify_s = 5;
-    
-    GMT_LONG error = FALSE, nofile = TRUE;
-    GMT_LONG done, greenwich, label_s = FALSE;
-    GMT_LONG change_position = FALSE;
-    GMT_LONG get_position = FALSE, get_size = FALSE, get_symbol = FALSE;
-    GMT_LONG outline_E = FALSE, outline_G = FALSE, outline_F = FALSE;
-    GMT_LONG old_GMT_world_map, skip_if_outside = TRUE;
-    GMT_LONG plot_polS = FALSE, vecS = FALSE, scolor = FALSE, outline_s = FALSE;
-    GMT_LONG def_cpen = FALSE, def_fpen = FALSE, def_tpen = FALSE;
-    GMT_LONG def_gpen = FALSE, def_epen = FALSE, def_spen = FALSE;
-    GMT_LONG hypo = FALSE;
-    
-    double west = 0.0, east = 0.0, south = 0.0, north = 0.0;
-    double plot_x, plot_y, symbol_size = 0.0, symbol_size2;
-    double lon, lat, plot_x0, plot_y0;
-    double new_lon, new_lat, new_plot_x0, new_plot_y0;
-    double radius, ech = 0., azimut, ih, plongement;
-    double c_pointsize = 0.015, fontsize_s = 12.0;
-    double angle_s = 0.0;
-    double azS, sizeS = GMT_d_NaN;
-    double v_width = GMT_d_NaN, h_length = GMT_d_NaN, h_width = GMT_d_NaN, shape;
-    double si, co;
+	/* This displays the pspolar synopsis and optionally full usage information */
 
-    char line[BUFSIZ], symbol_type, col[4][GMT_TEXT_LEN];
-    char pol, *not_used = NULL;
-    char txt_a[GMT_TEXT_LEN],txt_b[GMT_TEXT_LEN],txt_c[GMT_TEXT_LEN], txt_d[GMT_TEXT_LEN];
-    char stacode[GMT_TEXT_LEN];
-    
-    FILE *fp = NULL;
-    
-    struct GMT_PEN pen, cpen, fpen, gpen, epen, spen, tpen;
-    struct GMT_FILL fill, ffill, gfill, efill, sfill;
-    struct GMT_FILL black, nofill;
-    
-    argc = (int)GMT_begin (argc, argv);
-    
-    GMT_init_pen (&pen, GMT_PENWIDTH);
-    GMT_init_fill (&nofill, -1, -1, -1); 
-    GMT_init_fill (&black, 0, 0, 0);     
-    GMT_init_fill (&efill, 250, 250, 250);
-    
-    fill = nofill;
-    ffill = nofill;
-    sfill = nofill;
-    gfill = black;
+	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+	GMT_Message (API, GMT_TIME_NONE, "usage: pspolar [<table>] %s %s -D<longitude>/<latitude>\n", GMT_J_OPT, GMT_Rgeo_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t-M<size>[i/c] -S<symbol><size>[i/c] [-A] [%s]\n", GMT_B_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-C<longitude>/<latitude>[W<pen>][P<pointsize>]] [-E<fill>] [-F<fill>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-G<fill>] [-K] [-N] [-O] [-P] [-Qe[<pen>]] [-Qf[<pen>]] [-Qg[<pen>]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-Qh] [-Qs<half-size>/[V[<v_width>/<h_length>/<h_width>/<shape>]][G<fill>][L] [-Qt<pen>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-T[<labelinfo>]] [%s] [%s] [-W<pen>]\n", GMT_U_OPT, GMT_V_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s]\n", GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_h_OPT, GMT_i_OPT);
 
-    /* Check and interpret the command line arguments */
+	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_Option (API, "J-,R");
+	GMT_Message (API, GMT_TIME_NONE, "\t-D Set longitude/latitude.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-M Set size of beach ball in %s.\n",
+		API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
+	GMT_Message (API, GMT_TIME_NONE, "\t-S Select symbol type and symbol size (in %s).  Choose between:\n",
+		API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
+	GMT_Message (API, GMT_TIME_NONE, "\t   st(a)r, (c)ircle, (d)iamond, (h)exagon, (i)nvtriangle\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   (p)oint, (s)quare, (t)riangle, and (x)cross.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+	GMT_Option (API, "<,B-");
+	GMT_Message (API, GMT_TIME_NONE, "\t-C Set new_longitude/new_latitude[W<pen>][Ppointsize].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   A line will be plotted between both positions.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Default is width = 3, color = current pen and pointsize = 0.015i.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-E Specify color symbol for station in extensive part.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Fill can be either <r/g/b> (each 0-255) for color \n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   or <gray> (0-255) for gray-shade [0].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Default is light gray.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-F Specify background color of beach ball. It can be\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   <r/g/b> (each 0-255) for color or <gray> (0-255) for gray-shade [0].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default is no fill].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-G Specify color symbol for station in compressive part. Fill can be either\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Fill can be either <r/g/b> (each 0-255) for color\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   or <gray> (0-255) for gray-shade [0].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Add L[<pen>] to outline [Default is black].\n");
+	GMT_Option (API, "K");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Do Not skip/clip symbols that fall outside map border\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default will ignore those outside].\n");
+	GMT_Option (API, "O,P");
+	GMT_Message (API, GMT_TIME_NONE, "\t-Q Sets various attributes of symbols depending on <mode>:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   e Outline of station symbol in extensive part [Default is current pen].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   f Outline beach ball.  Add <pen attributes> [Default is current pen].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   g Outline of station symbol in compressive part.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     Add <pen attributes> if not current pen.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   h Use special format derived from HYPO71 output.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   s Plot S polarity azimuth.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     Azimuth of S polarity is in last column.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     It may be a vector (V option) or a segment. Give half-size in cm.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     L option is for outline\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     -s<half-size>/[V[<v_width>/<h_length></h_width>/<shape>]][G<fill>][L]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     Default definition of v is 0.075/0.3/0.25/1\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     Outline is current pen\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   t Set pen attributes to write station codes [default is current pen].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-T[<info about label printing>] to write station code.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   <angle/form/justify/fontsize in points>\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default is 0.0/0/5/12].\n");
+	GMT_Option (API, "U,V");
+	GMT_Message (API, GMT_TIME_NONE,  "\t-W Set pen attributes [%s].\n", GMT_putpen (API->GMT, API->GMT->current.setting.map_default_pen));
+	GMT_Option (API, "X,c,h,i,.");
+
+	return (EXIT_FAILURE);
+}
+
+int GMT_pspolar_parse (struct GMT_CTRL *GMT, struct PSPOLAR_CTRL *Ctrl, struct GMT_OPTION *options)
+{
+	/* This parses the options provided to pspolar and sets parameters in Ctrl.
+	 * Note Ctrl has already been initialized and non-zero default values set.
+	 * Any GMT common options will override values set previously by other commands.
+	 * It also replaces any file names specified as input or output with the data ID
+	 * returned when registering these sources/destinations with the API.
+	 */
+
+	unsigned int n_errors = 0, n;
+	char txt[GMT_LEN64] = {""}, txt_b[GMT_LEN64] = {""}, txt_c[GMT_LEN64] = {""}, txt_d[GMT_LEN64] = {""};
+	struct GMT_OPTION *opt = NULL;
+	struct GMTAPI_CTRL *API = GMT->parent;
+
+	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
+
+		switch (opt->option) {
+
+			case '<':	/* Input files */
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				break;
+
+			/* Processes program-specific parameters */
+
+			case 'C':	/* New coordinates */
+				Ctrl->C.active = true;
+				sscanf(opt->arg, "%lf/%lf", &Ctrl->C.lon, &Ctrl->C.lat);
+				if (strchr (opt->arg, 'W'))  GMT_getpen (GMT, strchr (opt->arg+1, 'W')+1, &Ctrl->C.pen);
+				if (strchr (opt->arg, 'P')) sscanf(strchr (opt->arg+1, 'P')+1, "%lf", &Ctrl->C.size);
+				break;
+			case 'D':	/* Coordinates */
+				Ctrl->D.active = true;
+				sscanf (opt->arg, "%lf/%lf", &Ctrl->D.lon, &Ctrl->D.lat);
+				break;
+			case 'E':	/* Set color for station in extensive part */
+				Ctrl->E.active = true;
+				if (GMT_getfill (GMT, opt->arg, &Ctrl->E.fill)) {
+					GMT_fill_syntax (GMT, 'E', " ");
+					n_errors++;
+				}
+				break;
+			case 'F':	/* Set background color of beach ball */
+				Ctrl->F.active = true;
+				if (GMT_getfill (GMT, opt->arg, &Ctrl->F.fill)) {
+					GMT_fill_syntax (GMT, 'F', " ");
+					n_errors++;
+				}
+				break;
+			case 'G':	/* Set color for station in compressive part */
+				Ctrl->C.active = true;
+				if (GMT_getfill (GMT, opt->arg, &Ctrl->G.fill)) {
+					GMT_fill_syntax (GMT, 'G', " ");
+					n_errors++;
+				}
+				break;
+			case 'Q':	/* Repeatable; Controls various symbol attributes  */
+				Ctrl->Q.active = true;
+				switch (opt->arg[0]) {
+					case 'e':	/* Outline station symbol in extensive part */
+						Ctrl->E.active = true;
+						if (strlen (&opt->arg[1])) GMT_getpen (GMT, &opt->arg[1], &Ctrl->E.pen);
+						break;
+					case 'f':	/* Outline beach ball */
+						Ctrl->F.active = true;
+						if (strlen (&opt->arg[1]))  GMT_getpen (GMT, &opt->arg[1], &Ctrl->F.pen);
+						break;
+					case 'g':	/* Outline station symbol in compressive part */
+						Ctrl->G.active = true;
+						if (strlen (&opt->arg[1])) GMT_getpen (GMT, &opt->arg[1], &Ctrl->G.pen);
+						break;
+					case 'h':	/* Use HYPO71 format */
+						Ctrl->H2.active = true;
+						break;
+					case 's':	/* Get S polarity */
+						Ctrl->S2.active = true;
+						strncpy (txt, &opt->arg[2], GMT_LEN64);
+						n=0; while (txt[n] && txt[n] != '/' && txt[n] != 'V' && txt[n] != 'G' && txt[n] != 'L') n++; txt[n]=0;
+						Ctrl->S2.size = GMT_to_inch (GMT, txt);
+						if (strchr (&opt->arg[1], 'V')) {
+							Ctrl->S2.vector = true;
+							strncpy (txt, strchr (&opt->arg[1], 'V'), GMT_LEN64);
+							if (strncmp (txt,"VG",2U) == 0 || strncmp(txt,"VL",2U) == 0 || strlen (txt) == 1) {
+								Ctrl->S2.width = 0.03; Ctrl->S2.length = 0.12; Ctrl->S2.head = 0.1; Ctrl->S2.vector_shape = GMT->current.setting.map_vector_shape;
+								if (!GMT->current.setting.proj_length_unit) {
+									Ctrl->S2.width = 0.075; Ctrl->S2.length = 0.3; Ctrl->S2.head = 0.25; Ctrl->S2.vector_shape = GMT->current.setting.map_vector_shape;
+								}
+							}
+							else {
+								sscanf (strchr (&opt->arg[1], 'V')+1, "%[^/]/%[^/]/%[^/]/%s", txt, txt_b, txt_c, txt_d);
+								Ctrl->S2.width = GMT_to_inch (GMT, txt);
+								Ctrl->S2.length = GMT_to_inch (GMT, txt_b);
+								Ctrl->S2.head = GMT_to_inch (GMT, txt_c);
+								Ctrl->S2.vector_shape = atof(txt_d);
+							}
+						}
+						if (strchr (opt->arg, 'G')) {
+							if (GMT_getfill (GMT, strchr (opt->arg+2,'G')+1, &Ctrl->S2.fill)) {
+								GMT_fill_syntax (GMT, 's', " ");
+								n_errors++;
+							}
+							Ctrl->S2.scolor = true;
+						}
+						if (strchr (&opt->arg[1], 'L')) Ctrl->S2.outline = true;
+						break;
+					case 't':	/* Set color for station label */
+						GMT_getpen (GMT, &opt->arg[1], &Ctrl->T.pen);
+						break;
+				}
+				break;
+			case 'M':	/* Focal sphere size */
+				Ctrl->M.active = true;
+				Ctrl->M.ech = GMT_to_inch (GMT, opt->arg);
+				break;
+			case 'N':	/* Do not skip points outside border */
+				Ctrl->N.active = true;
+				break;
+			case 'S':	/* Get symbol [and size] */
+				Ctrl->S.type = opt->arg[0];
+				Ctrl->S.size = GMT_to_inch (GMT, &opt->arg[1]);
+				Ctrl->S.active = true;
+				switch (Ctrl->S.type) {
+					case 'a':
+						Ctrl->S.symbol = GMT_SYMBOL_STAR;
+						break;
+					case 'c':
+						Ctrl->S.symbol = GMT_SYMBOL_CIRCLE;
+						break;
+					case 'd':
+						Ctrl->S.symbol = GMT_SYMBOL_DIAMOND;
+						break;
+					case 'h':
+						Ctrl->S.symbol = GMT_SYMBOL_HEXAGON;
+						break;
+					case 'i':
+						Ctrl->S.symbol = GMT_SYMBOL_INVTRIANGLE;
+						break;
+					case 'p':
+						Ctrl->S.symbol = GMT_SYMBOL_DOT;
+						break;
+					case 's':
+						Ctrl->S.symbol = GMT_SYMBOL_SQUARE;
+						break;
+					case 't':
+						Ctrl->S.symbol = GMT_SYMBOL_TRIANGLE;
+						break;
+					case 'x':
+						Ctrl->S.symbol = GMT_SYMBOL_CROSS;
+						break;
+					default:
+						n_errors++;
+						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -S option: Unrecognized symbol type %c\n", Ctrl->S.type);
+						break;
+				}
+				break;
+			case 'T':	/* Information about label printing */
+				Ctrl->T.active = true;
+				if (strlen (opt->arg)) {
+					sscanf (opt->arg, "%lf/%d/%d/%lf/", &Ctrl->T.angle, &Ctrl->T.form, &Ctrl->T.justify, &Ctrl->T.fontsize);
+				}
+				break;
+			case 'W':	/* Set line attributes */
+				Ctrl->W.active = true;
+				if (opt->arg && GMT_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
+					GMT_pen_syntax (GMT, 'W', " ");
+					n_errors++;
+				}
+			default:	/* Report bad options */
+				n_errors += GMT_default_error (GMT, opt->option);
+				break;
+
+		}
+	}
+
+	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->M.ech <= 0.0, "Syntax error: -M must specify a size\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->D.active + Ctrl->M.active + Ctrl->S.active < 3, "Syntax error: -D, -M, -S must be set together\n");
+
+	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
+
+#define bailout(code) {GMT_Free_Options (mode); return (code);}
+#define Return(code) {Free_pspolar_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+
+int GMT_pspolar (void *V_API, int mode, void *args)
+{
+	int k, n = 0, error = 0;
+	bool old_is_world;
+   
+	double plot_x, plot_y, symbol_size2 = 0, plot_x0, plot_y0, azS = 0, si, co;
+	double new_plot_x0, new_plot_y0, radius, azimut = 0, ih = 0, plongement = 0.0;
+
+	char *line = NULL, col[4][GMT_LEN64];
+	char pol, stacode[GMT_LEN64] = {""};
+
+	struct PSPOLAR_CTRL *Ctrl = NULL;
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_OPTION *options = NULL;
+	struct PSL_CTRL *PSL = NULL;				/* General PSL interal parameters */
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+
+	/*----------------------- Standard module initialization and parsing ----------------------*/
+
+	if (API == NULL) return (GMT_NOT_A_SESSION);
+	if (mode == GMT_MODULE_PURPOSE) return (GMT_pspolar_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+
+	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_pspolar_usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_pspolar_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+
+	/* Parse the command-line arguments; return if errors are encountered */
+
+	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	Ctrl = New_pspolar_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = GMT_pspolar_parse (GMT, Ctrl, options))) Return (error);
+  
+	/*---------------------------- This is the pspolar main code ----------------------------*/
+
+	GMT_memset (col, GMT_LEN64*4, char);
+	if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_RUNTIME_ERROR);
+
+	PSL = GMT_plotinit (GMT, options);
+ 	GMT_plotcanvas (GMT);	/* Fill canvas if requested */
+   
+	PSL_setfont (PSL, GMT->current.setting.font_annot[0].id);
+
+	if (!Ctrl->N.active) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
     
-    for (i = 1; !error && i < argc; i++) {
-        if (argv[i][0] == '-') {
-            switch(argv[i][1]) {
+	old_is_world = GMT->current.map.is_world;
+  
+	GMT->current.map.is_world = true;
         
-                /* Common parameters */
+        GMT_geo_to_xy (GMT, Ctrl->D.lon, Ctrl->D.lat, &plot_x0, &plot_y0);
+	if (Ctrl->C.active) {
+		GMT_setpen (GMT, &Ctrl->C.pen);
+		GMT_geo_to_xy (GMT, Ctrl->C.lon, Ctrl->C.lat, &new_plot_x0, &new_plot_y0);
+		PSL_plotsymbol (PSL, plot_x0, plot_y0, &(Ctrl->C.size), GMT_SYMBOL_CIRCLE);
+		PSL_plotsegment (PSL, plot_x0, plot_y0, new_plot_x0, new_plot_y0);
+		plot_x0 = new_plot_x0;
+		plot_y0 = new_plot_y0;
+	}
+	if (Ctrl->N.active) {
+		GMT_map_outside (GMT, Ctrl->D.lon, Ctrl->D.lat);
+		if (abs (GMT->current.map.this_x_status) > 1 || abs (GMT->current.map.this_y_status) > 1) {
+			GMT_Report (API, GMT_MSG_VERBOSE, "Point give by -D is outside map; no plotting occours.");
+			Return (GMT_OK);
+		};
+	}
+
+	GMT_setpen (GMT, &Ctrl->F.pen);
+	GMT_setfill (GMT, &(Ctrl->F.fill), Ctrl->F.active);
+	PSL_plotsymbol (PSL, plot_x0, plot_y0, &(Ctrl->M.ech), GMT_SYMBOL_CIRCLE);
+
+	if (GMT_Init_IO (API, GMT_IS_TEXTSET, GMT_IS_POINT, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Register data input */
+		Return (API->error);
+	}
+	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+		Return (API->error);
+	}
+
+	do {	/* Keep returning records until we reach EOF */
+		if ((line = GMT_Get_Record (API, GMT_READ_TEXT, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+				Return (GMT_RUNTIME_ERROR);
+			if (GMT_REC_IS_ANY_HEADER (GMT)) 	/* Skip all table and segment headers */
+				continue;
+			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+				break;
+		}
+
+		/* Data record to process */
+
+		for (k = 0; k < (int)strlen (line); k++) if (line[k] == ',') line[k] = ' ';	/* Replace commas with spaces */
+		if (Ctrl->H2.active) {
+			if (Ctrl->S2.active) {
+				n = sscanf (line, "%s %s %s %s %lf %lf %c %lf", col[0], col[1], col[2], stacode, &azimut, &ih, col[3], &azS);
+				pol = col[3][2];
+				if (n == 7)
+					azS = -1.0;
+			}
+			else { /* !Ctrl->S2.active */
+				sscanf (line, "%s %s %s %s %lf %lf %c", col[0], col[1], col[2], stacode, &azimut, &ih, col[3]);
+				pol = col[3][2];
+			}
+		}
+		else { /* !Ctrl->H2.active */
+			if (Ctrl->S2.active)
+				n = sscanf (line, "%s %lf %lf %c %lf", stacode, &azimut, &ih, &pol, &azS);
+				if (n == 4)
+					azS = -1.0;
+			else { /* !Ctrl->S2.active */
+				sscanf (line, "%s %lf %lf %c", stacode, &azimut, &ih, &pol);
+			}
+		}
+
+		if (strcmp (col[0], "000000")) {
+			plongement = (ih - 90.0) * D2R;
+			if (plongement  < 0.0) {
+				plongement = -plongement;
+				azimut += 180.0;
+				symbol_size2 = Ctrl->S.size * 0.8;
+			}
+		}
+                else
+			symbol_size2 = Ctrl->S.size;
+		radius = sqrt (1.0 - sin (plongement));
+		if (radius >= 0.97) radius = 0.97;
+		azimut += 180.0;
+		sincosd (azimut, &si, &co);
+		plot_x = radius * si * Ctrl->M.ech / 2.0 + plot_x0;
+		plot_y = radius * co * Ctrl->M.ech / 2.0 + plot_y0;
+		if (Ctrl->S.symbol == GMT_SYMBOL_CROSS || Ctrl->S.symbol == GMT_SYMBOL_DOT) PSL_setcolor (PSL, GMT->session.no_rgb, PSL_IS_STROKE);
             
-                case 'B':
-                case 'H':
-                case 'J':
-                case 'K':
-                case 'O':
-                case 'P':
-                case 'R':
-                case 'U':
-                case 'V':
-                case 'X':
-                case 'x':
-                case 'Y':
-                case 'y':
-                case 'c':
-                case '\0':
-                    error += GMT_parse_common_options (argv[i], &west, &east, &south, &north);
-                    break;
-                
-                /* Supplemental parameters */
-            
-                case 'C':       /* New coordinates */
-                         change_position = TRUE;
-                         sscanf(&argv[i][2], "%lf/%lf", &new_lon, &new_lat);
-                         if(strchr(argv[i], 'W')) {
-                             GMT_getpen (strchr(argv[i]+1, 'W')+1, &cpen);
-                             def_cpen = TRUE;
-                         }
-                         if(strchr(argv[i], 'P')) {
-                             sscanf(strchr(argv[i]+1, 'P')+1, "%lf", &c_pointsize);
-                         }
-                         break;
-                case 'D':       /* Coordinates */
-                         get_position = TRUE;
-                         sscanf(&argv[i][2], "%lf/%lf", &lon, &lat);
-                         break;
-                case 'E':        /* Set color for station in extensive part */
-                         GMT_getfill (&argv[i][2], &efill);
-                         break;
-                case 'e':        /* Outline station symbol in extensive part */
-                         outline_E = TRUE;
-                         if(strlen(argv[i]) > 2) {
-                             GMT_getpen (&argv[i][2], &epen);
-                             def_epen = TRUE;
-                         }
-                         break;
-                case 'F':        /* Set background color of beach ball */
-                         GMT_getfill (&argv[i][2], &ffill);
-                         break;
-                case 'f':        /* Outline beach ball */
-                         outline_F = TRUE;
-                         if(strlen(argv[i]) > 2) {
-                             GMT_getpen (&argv[i][2], &fpen);
-                             def_fpen = TRUE;
-                         }
-                         break;
-                case 'G':        /* Set color for station in compressive part */
-                         GMT_getfill (&argv[i][2], &gfill);
-                         break;
-                case 'g':        /* Outline station symbol in compressive part */
-                         outline_G = TRUE;
-                         if(strlen(argv[i]) > 2) {
-                             GMT_getpen (&argv[i][2], &gpen);
-                             def_gpen = TRUE;
-                         }
-                         break;
-                case 'h':    /* Use HYPO71 format */
-                         hypo = TRUE;
-                         break;
-                case 'M':    /* Focal sphere size */
-                         get_size = TRUE;
-                         sscanf(&argv[i][2], "%s", txt_a);
-                         ech = GMT_convert_units (txt_a, GMT_INCH);
-                         break;
-                case 'N':        /* Do not skip points outside border */
-                         skip_if_outside = FALSE;
-                         break;
-                case 'S':        /* Get symbol [and size] */
-                         symbol_type = argv[i][2];
-                         symbol_size = GMT_convert_units (&argv[i][3], GMT_INCH);
-                         get_symbol = TRUE;
-                         switch (symbol_type) {
-                             case 'a':
-                                 symbol = STAR;
-                                 break;
-                             case 'c':
-                                 symbol = CIRCLE;
-                                 break;
-                             case 'd':
-                                 symbol = DIAMOND;
-                                 break;
-                             case 'h':
-                                 symbol = HEXAGON;
-                                 break;
-                             case 'i':
-                                 symbol = ITRIANGLE;
-                                 break;
-                             case 'p':
-                                 symbol = POINT;
-                                 break;
-                             case 's':
-                                 symbol = SQUARE;
-                                 break;
-                             case 't':
-                                 symbol = TRIANGLE;
-                                 break;
-                             case 'x':
-                                 symbol = CROSS;
-                                 break;
-                             default:
-                                 error = TRUE;
-                                 fprintf (stderr, "%s: GMT SYNTAX ERROR -S option:  Unrecognized symbol type %c\n", argv[0], symbol_type);
-                                 break;
-                         }
-                         break;
-                case 's':        /* Get S polarity */
-                         plot_polS = TRUE;
-                         strcpy(txt_a, &argv[i][3]);
-                         n=0; while (txt_a[n] && txt_a[n] != '/' && txt_a[n] != 'V' && txt_a[n] != 'G' && txt_a[n] != 'L') n++; txt_a[n]=0;
-                         sizeS = GMT_convert_units (txt_a, GMT_INCH);
+		if (Ctrl->T.active) {
+			GMT_setpen (GMT, &Ctrl->T.pen);
+			switch (Ctrl->T.justify) {
+				case PSL_TR:
+					PSL_plottext (PSL, plot_x-symbol_size2-0.1, plot_y-symbol_size2-0.1, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_TR, Ctrl->T.form);
+					break;
+				case PSL_TC:
+					PSL_plottext (PSL, plot_x, plot_y-symbol_size2-0.1, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_TC, Ctrl->T.form);
+					break;
+				case PSL_TL:
+					PSL_plottext (PSL, plot_x+symbol_size2+0.1, plot_y-symbol_size2-0.1, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_TL, Ctrl->T.form);
+					break;
+				case PSL_MR:
+					PSL_plottext (PSL, plot_x-symbol_size2-0.1, plot_y, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_MR, Ctrl->T.form);
+					break;
+				case PSL_MC:
+					PSL_plottext (PSL, plot_x, plot_y, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_MC, Ctrl->T.form);
+					break;
+				case PSL_ML:
+					PSL_plottext (PSL, plot_x+symbol_size2+0.1, plot_y, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_ML, Ctrl->T.form);
+					break;
+				case PSL_BR:
+					PSL_plottext (PSL, plot_x-symbol_size2-0.1, plot_y+symbol_size2+0.1, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_BR, Ctrl->T.form);
+					break;
+				case PSL_BC:
+					PSL_plottext (PSL, plot_x, plot_y+symbol_size2+0.1, Ctrl->T.fontsize, col[3], Ctrl->T.angle, PSL_BC, Ctrl->T.form);
+					break;
+				case PSL_BL:
+					PSL_plottext (PSL, plot_x+symbol_size2+0.1, plot_y+symbol_size2+0.1, Ctrl->T.fontsize, stacode, Ctrl->T.angle, PSL_BL, Ctrl->T.form);
+					break;
+			}
+		}
+		if (Ctrl->S.symbol == GMT_SYMBOL_DOT) symbol_size2 = GMT_DOT_SIZE;
 
-                         if(strchr(argv[i], 'V')) {
-                             vecS = TRUE;
-                             strcpy(txt_a,strchr(argv[i], 'V'));
-                             if(strncmp(txt_a,"VG",(size_t)2) == 0 || strncmp(txt_a,"VL",(size_t)2) == 0 || strlen(txt_a) == 1) {
-                                 v_width = 0.03; h_length = 0.12; h_width = 0.1; shape = gmtdefs.vector_shape;
-                                 if (!gmtdefs.measure_unit) {
-                                     v_width = 0.075; h_length = 0.3; h_width = 0.25; shape = gmtdefs.vector_shape;
-                                 }
-                             }
-                             else {
-                                strcpy(txt_a, strchr(argv[i], 'V')+1);
-                                strcpy(txt_b, strchr(txt_a+1, '/')+1);
-                                strcpy(txt_c, strchr(txt_b+1, '/')+1);
-                                strcpy(txt_d, strchr(txt_c+1, '/')+1);
-                                n=0; while (txt_a[n] && txt_a[n] != '/') n++; txt_a[n]=0;
-                                n=0; while (txt_b[n] && txt_b[n] != '/') n++; txt_b[n]=0;
-                                n=0; while (txt_c[n] && txt_c[n] != '/') n++; txt_c[n]=0;
-                                n=0; while (txt_d[n] && txt_d[n] != '/' && txt_d[n] != 'L' && txt_d[n] != 'G') n++; txt_d[n]=0;
-                                v_width = GMT_convert_units (txt_a, GMT_INCH);
-                                h_length = GMT_convert_units (txt_b, GMT_INCH);
-                                h_width = GMT_convert_units (txt_c, GMT_INCH);
-                                shape = atof(txt_d);
-                             }
-                         }
-                         if(strchr(argv[i], 'G')) {
-                             sscanf (strchr(argv[i]+1,'G')+1,"%d/%d/%d",&sfill.rgb[0],&sfill.rgb[1],&sfill.rgb[2]);
-                             sprintf(txt_a, "%d/%d/%d",sfill.rgb[0],sfill.rgb[1],sfill.rgb[2]);
-                             GMT_getfill (txt_a, &sfill);
-                             scolor = TRUE;
-                         }
-                         if(strchr(argv[i], 'L')) outline_s = TRUE;
-                         break;
-                case 'T':       /* Information about label printing */
-                        label_s = TRUE;
-                        if (strlen(argv[i]) > 2) {
-                             sscanf (&argv[i][2], "%lf/%" GMT_LL "d/%" GMT_LL "d/%lf/", &angle_s,
-                                     &form_s, &justify_s, &fontsize_s);
-                        }
-                        break;
-                case 't':       /* Set color for station label */
-                         GMT_getpen (&argv[i][2], &tpen);
-                         def_tpen = TRUE;
-                         break;
-
-                case 'W':        /* Set line attributes */
-                         GMT_getpen (&argv[i][2], &pen);
-                         break;
-                    
-                /* Illegal options */
-            
-                default:        /* Options not recognized */
-                         error = TRUE;
-                         GMT_default_error (argv[i][1]);
-                         break;
-            }
-        }
-        else
-            n_files++;
-    }
-
-    /* Check that the options selected are consistent */
+		if (pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
+			GMT_setpen (GMT, &Ctrl->G.pen);
+			GMT_setfill (GMT, &(Ctrl->G.fill), Ctrl->G.active);
+			PSL_plotsymbol (PSL, plot_x, plot_y, &symbol_size2, Ctrl->S.symbol);
+		}
+		else if (pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
+			GMT_setpen (GMT, &Ctrl->E.pen);
+			GMT_setfill (GMT, &(Ctrl->E.fill), Ctrl->E.active);
+			PSL_plotsymbol (PSL, plot_x, plot_y, &symbol_size2, Ctrl->S.symbol);
+		}
+		else {
+			GMT_setpen (GMT, &Ctrl->W.pen);
+			PSL_plotsymbol (PSL, plot_x, plot_y, &symbol_size2, Ctrl->S.symbol);
+		}
+		if (Ctrl->S2.active && azS >= 0.0) {
+			GMT_setpen (GMT, &Ctrl->W.pen);
+			sincosd (azS, &si, &co);
+			if (Ctrl->S2.vector) {
+				double dim[7];
+				dim[0] = plot_x + Ctrl->S2.size*si; dim[1] = plot_y + Ctrl->S2.size*co;
+				dim[2] = Ctrl->S2.width; dim[3] = Ctrl->S2.length; dim[4] = Ctrl->S2.head;
+				dim[5] = GMT->current.setting.map_vector_shape; dim[6] = GMT_VEC_END | GMT_VEC_FILL;
+				GMT_setfill (GMT, &(Ctrl->S2.fill), Ctrl->S2.outline);
+				PSL_plotsymbol (PSL, plot_x - Ctrl->S2.size*si, plot_y - Ctrl->S2.size*co, dim, PSL_VECTOR);
+			}
+			else { 
+				if (Ctrl->S2.scolor) PSL_setcolor (PSL, Ctrl->S2.fill.rgb, PSL_IS_STROKE);
+				else PSL_setcolor (PSL, Ctrl->W.pen.rgb, PSL_IS_STROKE);
+				PSL_plotsegment (PSL, plot_x - Ctrl->S2.size*si, plot_y - Ctrl->S2.size*co, plot_x + Ctrl->S2.size*si, plot_y + Ctrl->S2.size*co); 
+			}
+		}
+	} while (true);
+	
+	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+		Return (API->error);
+	}
     
-    if (!project_info.region_supplied) {
-        error++;
-    }
-    if(ech <= 0.) {
-        error++;
-    }
-    if(get_position + get_size + get_symbol < 3) {
-        error++;
-    }
+	GMT->current.map.is_world = old_is_world;
     
-    if (argc == 1 || GMT_give_synopsis_and_exit || error) {    /* Display usage */
-        fprintf (stderr,"%s %s - Plot polarities on the inferior focal half-sphere on maps\n\n",argv[0], GMT_VERSION);
-        fprintf (stderr,"usage: argv[0] <infiles> %s %s\n", GMT_J_OPT, GMT_Rgeo_OPT);
-        fprintf (stderr, " -Dlongitude/latitude -Msize[i/c] -S<symbol><size>[i/c]\n");
-        fprintf (stderr, " [-A] [%s] [-Clongitude/latitude[W<pen>][Ppointsize]] [-E<fill>]\n", GMT_B_OPT);
-        fprintf (stderr, " [-e[<pen>]] [-F<fill>] [-f[<pen>]] [-G<fill>] [-g[<pen>]] [%s] [-K] [-N] [-O] [-P]\n", GMT_Ho_OPT);
-        fprintf (stderr, " [-s<half-size>/[V[<v_width/h_length/h_width/shape]][G<r/g/b>][L]\n");
-        fprintf (stderr, " [-T[<labelinfo>]] [-t<pen>] [%s] [-V] [-W<pen>]\n", GMT_U_OPT);
-        fprintf (stderr, " [%s] [%s] [%s]\n", GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT);
-        
-        if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
-        
-        fprintf (stderr, "    <infiles> is one or more files.  If no, read standard input\n");
-        GMT_explain_option ('j');
-        GMT_explain_option ('R');
-        fprintf (stderr, "        -D Set longitude/latitude\n");
-        fprintf (stderr, "        -M Set size of beach ball in %s\n", GMT_unit_names[gmtdefs.measure_unit]);
-        fprintf (stderr, "        -S to select symbol type and symbol size (in %s).  Choose between\n", GMT_unit_names[gmtdefs.measure_unit]);
-        fprintf (stderr, "           st(a)r, (c)ircle, (d)iamond, (h)exagon, (i)nvtriangle\n");
-        fprintf (stderr, "           (p)oint, (s)quare, (t)riangle, (x)cross\n");
-        fprintf (stderr, "\n\tOPTIONS:\n");
-        GMT_explain_option ('B');
-        GMT_explain_option ('b');
-        fprintf (stderr, "        -C Set new_longitude/new_latitude[W<pen>][Ppointsize]\n");
-        fprintf (stderr, "           A line will be plotted between both positions\n");
-        fprintf (stderr, "           Default is width = 3, color = current pen and pointsize = 0.015\n");
-        fprintf (stderr, "        -E Specify color symbol for station in extensive part.\n");
-        fprintf (stderr, "           Fill can be either <r/g/b> (each 0-255) for color \n");
-        fprintf (stderr, "           or <gray> (0-255) for gray-shade [0].\n");
-        fprintf (stderr, "           Default is light gray.\n");
-        fprintf (stderr, "        -e Outline of station symbol in extensive part.\n");
-        fprintf (stderr, "           Default is current pen.\n");
-        fprintf (stderr, "        -F Specify background color of beach ball. It can be\n");
-        fprintf (stderr, "           <r/g/b> (each 0-255) for color or <gray> (0-255) for gray-shade [0].\n");
-        fprintf (stderr, "           Default is no fill\n");
-        fprintf (stderr, "        -f Outline beach ball\n");
-        fprintf (stderr, "           Add <pen attributes> if not current pen.\n");
-        fprintf (stderr, "        -G Specify color symbol for station in compressive part. Fill can be either\n");
-        fprintf (stderr, "           Fill can be either <r/g/b> (each 0-255) for color\n");
-        fprintf (stderr, "           or <gray> (0-255) for gray-shade [0].\n");
-        fprintf (stderr, "           Add L[<pen>] to outline\n");
-        fprintf (stderr, "           Default is black.\n");
-        fprintf (stderr, "        -g Outline of station symbol in compressive part.\n");
-        fprintf (stderr, "           Add <pen attributes> if not current pen.\n");
-        fprintf (stderr, "        -h Use special format derived from HYPO71 output.\n");
-        GMT_explain_option ('H');
-        GMT_explain_option ('K');
-        fprintf (stderr, "        -N Do Not skip/clip symbols that fall outside map border\n");
-        fprintf (stderr, "           [Default will ignore those outside]\n");
-        GMT_explain_option ('O');
-        GMT_explain_option ('P');
-        fprintf (stderr, "        -s to plot S polarity azimuth.\n");
-        fprintf (stderr, "           Azimuth of S polarity is in last column.\n");
-        fprintf (stderr, "           It may be a vector (V option) or a segment. Give half-size in cm.\n");
-        fprintf (stderr, "           L option is for outline\n");
-        fprintf (stderr, "           -s<half-size>/[V[<v_width/h_length/h_width/shape>]][G<r/g/b>][L]\n");
-        fprintf (stderr, "           Default definition of v is 0.075/0.3/0.25/1\n");
-        fprintf (stderr, "           Outline is current pen\n");
-        fprintf (stderr, "        -T[<info about labal printing>] to write station code.\n");
-        fprintf (stderr, "           <angle/form/justify/fontsize in points>\n");
-        fprintf (stderr, "           Default is 0.0/0/5/12\n");
-        fprintf (stderr, "        -t sets pen attributes to write station codes [default is current pen]\n");
-        GMT_explain_option ('U');
-        GMT_explain_option ('V');
-        fprintf (stderr, "        -W sets current pen attributes [width = %gp, color = (%d/%d/%d), texture = solid line].\n", pen.width, pen.rgb[0], pen.rgb[1], pen.rgb[2]);
-        GMT_explain_option ('X');
-        GMT_explain_option ('c');
-        GMT_explain_option ('.');
-        exit (EXIT_FAILURE);
-    }
-    
-    if(!def_cpen) {
-        cpen = pen; cpen.width = 3;
-    }                                         /* pen for change position */
-    if(!def_fpen) fpen = pen;                 /* outline beach ball */
-    if(!def_gpen) gpen = pen;                 /* outline compressive stations */
-    if(!def_epen) epen = pen;                 /* outline extensive stations */
-    if(!def_spen) spen = pen;                 /* outline S_pol segment */
-    if(!def_tpen) tpen = pen;                 /* pen to print station name */
+	if (!Ctrl->N.active) GMT_map_clip_off (GMT);
 
-    if (n_files > 0)
-        nofile = FALSE;
-    else
-        n_files = 1;
-    n_args = (argc > 1) ? argc : 2;
-    
-    greenwich = (west < 0.0 || east <= 0.0);
-    
-    GMT_err_fail (GMT_map_setup (west, east, south, north), "");
+	if (Ctrl->W.pen.style) PSL_setdash (PSL, NULL, 0);
 
-    GMT_plotinit (argc, argv);
-    
-    if (label_s) ps_setfont (gmtdefs.annot_font[0]);
+	GMT_map_basemap (GMT);
 
-    if (symbol > 0 && skip_if_outside) GMT_map_clip_on (GMT_no_rgb, 3);
-    
-    old_GMT_world_map = GMT_world_map;
-    
-    done = FALSE;
+	GMT_plotend (GMT);
 
-
-    for (fno = 1; !done && fno < n_args; fno++) {    /* Loop over all input files */
-        if (!nofile && argv[fno][0] == '-') continue;
-        if (nofile) {
-            fp = GMT_stdin;
-            done = TRUE;
-        }
-        else if ((fp = GMT_fopen (argv[fno], "r")) == NULL) {
-            fprintf (stderr, "%s: Cannot open file %s\n", argv[0], argv[fno]);
-            continue;
-        }
-
-        if (!nofile && gmtdefs.verbose) {
-            fprintf (stderr, "%s: Working on file %s\n", argv[0], argv[fno]);
-            sprintf (line, "File: %s", argv[fno]);
-            ps_comment (line);
-        }
-        if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, 512, fp);
-        
-        GMT_world_map = TRUE;
-        
-        GMT_geo_to_xy(lon, lat, &plot_x0, &plot_y0);
-        if(change_position) {
-            GMT_setpen (&cpen);
-            GMT_geo_to_xy(new_lon, new_lat, &new_plot_x0, &new_plot_y0);
-            ps_circle(plot_x0, plot_y0, c_pointsize, cpen.rgb, 1);
-            ps_plot(plot_x0, plot_y0, PSL_PEN_MOVE);
-            ps_plot(new_plot_x0, new_plot_y0, PSL_PEN_DRAW_AND_STROKE);
-            plot_x0 = new_plot_x0;
-            plot_y0 = new_plot_y0;
-        }
-        if (skip_if_outside) {
-            GMT_map_outside (lon, lat);
-            if (GMT_abs (GMT_x_status_new) > 1 || GMT_abs (GMT_y_status_new) > 1) continue;
-        }
-
-        GMT_setpen (&fpen);
-        ps_circle (plot_x0, plot_y0, ech, ffill.rgb, outline_F);
-
-        while (GMT_fgets (line, BUFSIZ, fp)) {
-            switch (hypo) {
-                case 0 :
-                    if(!plot_polS) {
-                        sscanf (line, "%s %lf %lf %c", stacode, &azimut, &ih, &pol);
-                    }
-                    else {
-                        n = sscanf (line, "%s %lf %lf %c %lf", stacode, &azimut, &ih, &pol, &azS);
-                        if(n == 4) azS = -1.;
-                    }
-                    break;
-                case 1 :
- 	    	    memset ((void *)col, 0, 4 * GMT_TEXT_LEN * sizeof (char));
-                   if(!plot_polS) {
-                        sscanf (line, "%s %s %s %s %lf %lf %c", col[0], col[1], col[2], stacode, &azimut, &ih, col[3]);
-                        pol = col[3][2];
-                    }
-                    else {
-                        n = sscanf (line, "%s %s %s %s %lf %lf %c %lf", col[0], col[1], col[2], stacode, &azimut, &ih, col[3], &azS);
-                        pol = col[3][2];
-                        if(n == 7) azS = -1.;
-                    }
-                    break;
-            }
-        
-            if(strcmp(col[0],"000000")!=0) {
-                plongement = (ih - 90.) * M_PI / 180.;
-                if(plongement  < 0.) {
-                    plongement = -plongement;
-                    azimut += 180 ;
-                    symbol_size2 = symbol_size * 0.8;
-                }
-                else symbol_size2 = symbol_size;
-                radius = sqrt(1. - sin(plongement));
-                if(radius >= 0.97) radius = 0.97;
-                azimut += 180;
-                azimut *= M_PI / 180.;
-                sincos (azimut, &si, &co);
-                plot_x = radius * si * ech / 2. + plot_x0;
-                plot_y = radius * co * ech / 2. + plot_y0;
-                if (symbol == CROSS || symbol == POINT) ps_setpaint (fill.rgb);
-            
-                if(label_s) {
-                    GMT_setpen (&tpen);
-                    switch (justify_s) {
-                        case 11 :
-                            ps_text(plot_x-symbol_size2-0.1, plot_y-symbol_size2-0.1, fontsize_s, stacode, angle_s, 11, form_s);
-                            break;
-                        case 10 :
-                            ps_text(plot_x, plot_y-symbol_size2-0.1, fontsize_s, stacode, angle_s, 10, form_s);
-                            break;
-                        case 9 :
-                            ps_text(plot_x+symbol_size2+0.1, plot_y-symbol_size2-0.1, fontsize_s, stacode, angle_s, 9, form_s);
-                            break;
-                        case 7:
-                            ps_text(plot_x-symbol_size2-0.1, plot_y, fontsize_s, stacode, angle_s, 7, form_s);
-                            break;
-                        case 6:
-                            ps_text(plot_x, plot_y, fontsize_s, stacode, angle_s, 6, form_s);
-                            break;
-                        case 5:
-                            ps_text(plot_x+symbol_size2+0.1, plot_y, fontsize_s, stacode, angle_s, 5, form_s);
-                            break;
-                        case 3:
-                            ps_text(plot_x-symbol_size2-0.1, plot_y+symbol_size2+0.1, fontsize_s, stacode, angle_s, 3, form_s);
-                            break;
-                        case 2:
-                            ps_text(plot_x, plot_y+symbol_size2+0.1, fontsize_s, col[3], angle_s, 2, form_s);
-                            break;
-                        case 1:
-                            ps_text(plot_x+symbol_size2+0.1, plot_y+symbol_size2+0.1, fontsize_s, stacode, angle_s, 1, form_s);
-                            break;
-                    }
-                }
-    
-                switch (symbol) {
-                    case STAR:
-                              if(pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
-                                  GMT_setpen (&gpen);
-                                  ps_star (plot_x, plot_y, symbol_size2, gfill.rgb, outline_G);
-                              }
-                              else if(pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
-                                  GMT_setpen (&epen);
-                                  ps_star (plot_x, plot_y, symbol_size2, efill.rgb, outline_E);
-                              }
-                              else {
-                                  GMT_setpen (&pen);
-                                  ps_cross (plot_x, plot_y, symbol_size2);
-                              }
-                              break;
-                    case CROSS:
-                              GMT_setpen (&pen);
-                              ps_cross (plot_x, plot_y, symbol_size2);
-                              break;
-                    case POINT:
-                              GMT_setpen (&pen);
-                              ps_cross (plot_x, plot_y, POINTSIZE);
-                              break;
-                    case CIRCLE:
-                              if(pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
-                                  GMT_setpen (&gpen);
-                                  ps_circle (plot_x, plot_y, symbol_size2, gfill.rgb, outline_G);
-                              }
-                              else if(pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
-                                  GMT_setpen (&epen);
-                                  ps_circle (plot_x, plot_y, symbol_size2, efill.rgb, outline_E);
-                              }
-                              else {
-                                  GMT_setpen (&pen);
-                                  ps_cross (plot_x, plot_y, symbol_size2);
-                              }
-                              break;
-                    case SQUARE:
-                              if(pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
-                                  GMT_setpen (&gpen);
-                                  ps_square (plot_x, plot_y, symbol_size2, gfill.rgb, outline_G);
-                              }
-                              else if(pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
-                                  GMT_setpen (&epen);
-                                  ps_square (plot_x, plot_y, symbol_size2, efill.rgb, outline_E);
-                              }
-                              else {
-                                  GMT_setpen (&pen);
-                                  ps_cross (plot_x, plot_y, symbol_size2);
-                              }
-                              break;
-                    case HEXAGON:
-                              if(pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
-                                  GMT_setpen (&gpen);
-                                  ps_hexagon (plot_x, plot_y, symbol_size2, gfill.rgb, outline_G);
-                              }
-                              else if(pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
-                                  GMT_setpen (&epen);
-                                  ps_hexagon (plot_x, plot_y, symbol_size2, efill.rgb, outline_E);
-                              }
-                              else {
-                                  GMT_setpen (&pen);
-                                  ps_cross (plot_x, plot_y, symbol_size2);
-                              }
-                              break;
-                    case TRIANGLE:
-                              if(pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
-                                  GMT_setpen (&gpen);
-                                  ps_triangle (plot_x, plot_y, symbol_size2, gfill.rgb, outline_G);
-                              }
-                              else if(pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
-                                  GMT_setpen (&epen);
-                                  ps_triangle (plot_x, plot_y, symbol_size2, efill.rgb, outline_E);
-                              }
-                              else {
-                                  GMT_setpen (&pen);
-                                  ps_cross (plot_x, plot_y, symbol_size2);
-                              }
-                              break;
-                    case ITRIANGLE:
-                              if(pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
-                                  GMT_setpen (&gpen);
-                                  ps_itriangle (plot_x, plot_y, symbol_size2, gfill.rgb, outline_G);
-                              }
-                              else if(pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
-                                  GMT_setpen (&epen);
-                                  ps_itriangle (plot_x, plot_y, symbol_size2, efill.rgb, outline_E);
-                              }
-                              else {
-                                  GMT_setpen (&pen);
-                                  ps_cross (plot_x, plot_y, symbol_size2);
-                              }
-                              break;
-                    case DIAMOND:
-                              if(pol == 'u' || pol == 'U' || pol == 'c' || pol == 'C' || pol == '+') {
-                                  GMT_setpen (&gpen);
-                                  ps_diamond (plot_x, plot_y, symbol_size2, gfill.rgb, outline_G);
-                              }
-                              else if(pol == 'r' || pol == 'R' || pol == 'd' || pol == 'D' || pol == '-') {
-                                  GMT_setpen (&epen);
-                                  ps_diamond (plot_x, plot_y, symbol_size2, efill.rgb, outline_E);
-                              }
-                              else {
-                                  GMT_setpen (&pen);
-                                  ps_cross (plot_x, plot_y, symbol_size2);
-                              }
-                              break;
-                }
-                if(plot_polS && azS >= 0.) {
-                    GMT_setpen (&spen);
-                    sincos (azS*M_PI/180., &si, &co);
-                    if(vecS) {
-                        ps_vector(plot_x - sizeS*si, plot_y - sizeS*co, 
-                            plot_x + sizeS*si, plot_y + sizeS*co, v_width, 
-                            h_length, h_width, gmtdefs.vector_shape, sfill.rgb, outline_s);
-                    }
-                    else { 
-                        if(scolor) ps_setpaint (sfill.rgb);
-                        else ps_setpaint (pen.rgb);
-                        ps_plot(plot_x - sizeS*si, plot_y - sizeS*co, PSL_PEN_MOVE);
-                        ps_plot(plot_x + sizeS*si, plot_y + sizeS*co, PSL_PEN_DRAW_AND_STROKE); 
-                    }
-                }
-            }
-        }
-        if (fp != stdin) GMT_fclose (fp);
-    }
-    
-    if (skip_if_outside) GMT_map_clip_off ();
-
-    GMT_world_map = old_GMT_world_map;
-    
-    if (pen.texture) ps_setdash (CNULL, 0);
-
-    GMT_map_basemap ();
-
-    GMT_plotend ();
-    
-    GMT_end (argc, argv);
-
-    exit (EXIT_SUCCESS);
+	Return (GMT_OK);
 }

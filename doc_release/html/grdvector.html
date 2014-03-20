@@ -1,0 +1,391 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>grdvector &mdash; GMT 5.1.1 documentation</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
+
+    
+    <link rel="stylesheet" href="_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/searchtools.js"></script>
+    <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="up" title="GR" href="GR.html" />
+    <link rel="next" title="grdview" href="grdview.html" />
+    <link rel="prev" title="grdtrend" href="grdtrend.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="grdview.html" title="grdview"
+             accesskey="N">next</a> </li>
+        <li class="right" >
+          <a href="grdtrend.html" title="grdtrend"
+             accesskey="P">previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="grdvector">
+<span id="index-0"></span><h1>grdvector<a class="headerlink" href="#grdvector" title="Permalink to this headline">¶</a></h1>
+<p>grdvector - Plot vector field from two component grids</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p><strong>grdvector</strong> <em>compx.nc</em> <em>compy.nc</em> <strong>-J</strong><em>parameters</em> [ <strong>-A</strong> ]
+[ <strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> ]
+[ <strong>-G</strong><em>fill</em> ]
+[ <strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]] ]
+[ <strong>-K</strong> ] [ <strong>-N</strong> ] [ <strong>-O</strong> ] [ <strong>-P</strong> ] [ <strong>-Q</strong><em>parameters</em> ]
+[ <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] ]
+[ <strong>-S</strong>[<strong>i</strong>|<strong>l</strong>]<em>scale</em> ] [ <strong>-T</strong> ]
+[ <strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] ]
+[ <strong>-W</strong><em>pen</em> ]
+[ <strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]] ]
+[ <strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] ]
+[ <strong>-Z</strong> ]
+[ <strong>-c</strong><em>copies</em> ]
+[ <strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> ]
+[ <strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] ]
+[ <strong>-t</strong>[<em>transp</em>] ]</p>
+<p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><strong>grdvector</strong> reads two 2-D grid files which represents the x- and
+y-components of a vector field and produces a vector field plot by
+drawing vectors with orientation and length according to the information
+in the files. Alternatively, polar coordinate components may be used (r,
+theta). <strong>grdvector</strong> is basically a short-hand for using 2 calls to
+<a class="reference internal" href="grd2xyz.html"><em>grd2xyz</em></a> and pasting the output through <strong>psxy -SV</strong>.</p>
+</div>
+<div class="section" id="required-arguments">
+<h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>compx.nc</em></dt>
+<dd>Contains the x-component of the vector field.</dd>
+<dt><em>compy.nc</em></dt>
+<dd>Contains the y-component of the vector field. (See GRID FILE FORMATS below.)</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-J</strong><em>parameters</em> <a class="reference internal" href="gmt.html#j-full"><em>(more ...)</em></a></dt>
+<dd>Select map projection.</dd>
+</dl>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>-A</strong></dt>
+<dd>Means grid files have polar (r, theta) components instead of
+Cartesian (x, y).</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> <a class="reference internal" href="gmt.html#b-full"><em>(more ...)</em></a></dt>
+<dd>Set map boundary intervals.</dd>
+<dt><strong>-C</strong>[<em>cptfile</em>]</dt>
+<dd>Use <em>cptfile</em> to assign colors based on vector length.  Alternatively,
+supply the name of a GMT color master CPT [rainbow] and let
+<strong>grdvector</strong> automatically determine a 16-level continuous CPT from
+the grid’s z-range.</dd>
+<dt><strong>-G</strong><em>fill</em></dt>
+<dd>Sets color or shade for vector interiors [Default is no fill].</dd>
+<dt><strong>-I</strong></dt>
+<dd>Only plot vectors at nodes every <em>x_inc</em>, <em>y_inc</em> apart (must be
+multiples of original grid spacing). Append <strong>m</strong> for arc minutes or
+<strong>s</strong> for arc seconds. [Default plots every node].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-K</strong> <a class="reference internal" href="gmt.html#k-full"><em>(more ...)</em></a></dt>
+<dd>Do not finalize the PostScript plot.</dd>
+<dt><strong>-N</strong></dt>
+<dd>Do NOT clip vectors at map boundaries [Default will clip].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-O</strong> <a class="reference internal" href="gmt.html#o-full"><em>(more ...)</em></a></dt>
+<dd>Append to existing PostScript plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-P</strong> <a class="reference internal" href="gmt.html#p-full"><em>(more ...)</em></a></dt>
+<dd>Select &#8220;Portrait&#8221; plot orientation.</dd>
+<dt><strong>-Q</strong><em>parameters</em></dt>
+<dd>Modify vector parameters. For vector heads, append vector head
+<em>size</em> [Default is 0, i.e., stick-plot]. See VECTOR ATTRIBUTES for
+specifying additional attributes.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] <a class="reference internal" href="gmt.html#r-full"><em>(more ...)</em></a></dt>
+<dd>Specify the region of interest. Specify a subset of the grid.</dd>
+<dt><strong>-S</strong>[<strong>i</strong>|<strong>l</strong>]<em>scale</em></dt>
+<dd>Sets scale for Cartesian vector length in data units per distance measurement
+unit [1]. Append <strong>c</strong>, <strong>i</strong>, or <strong>p</strong> to indicate the measurement
+unit (cm, inch,or point). Prepend <strong>l</strong> to indicate a fixed length
+for all vectors.  For Geographic data, give scale in data units per
+km. Use <strong>-Si</strong> if it is simpler to give the reciprocal scale in
+measurement unit per data unit or km per data unit.</dd>
+<dt><strong>-T</strong></dt>
+<dd>Means azimuth of Cartesian data sets should be adjusted for different scales
+in the x- and y-directions [Leave alone].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] <a class="reference internal" href="gmt.html#u-full"><em>(more ...)</em></a></dt>
+<dd>Draw GMT time stamp logo on plot.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
+<dd>Select verbosity level [c].  </dd>
+<dt><strong>-W</strong><em>pen</em></dt>
+<dd>Set pen attributes used for vector outlines [Default: width =
+default, color = black, style = solid].</dd>
+</dl>
+<p><strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]]</p>
+<dl class="docutils">
+<dt><strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] <a class="reference internal" href="gmt.html#xy-full"><em>(more ...)</em></a></dt>
+<dd>Shift plot origin.</dd>
+<dt><strong>-Z</strong></dt>
+<dd>Means the angles provided are azimuths rather than direction
+(requires <strong>-A</strong>).</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-c</strong><em>copies</em> <a class="reference internal" href="gmt.html#c-full"><em>(more ...)</em></a></dt>
+<dd>Specify number of plot copies [Default is 1].</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> <a class="reference internal" href="gmt.html#f-full"><em>(more ...)</em></a></dt>
+<dd>Specify data types of input and/or output columns.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] <a class="reference internal" href="gmt.html#perspective-full"><em>(more ...)</em></a></dt>
+<dd>Select perspective view.  </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-t</strong>[<em>transp</em>] <a class="reference internal" href="gmt.html#t-full"><em>(more ...)</em></a></dt>
+<dd>Set PDF transparency level in percent.</dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-^</strong></dt>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
+<dt><strong>+</strong></dt>
+<dd>Print an extensive usage (help) message, including the explanation of
+any module-specific option (but not the GMT common options), then exits.</dd>
+<dt><strong>-?</strong></dt>
+<dd>Print a complete usage (help) message, including the explanation of
+options, then exits.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print GMT version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Print full path to GMT share directory and exit.</dd>
+</dl>
+</div>
+<div class="section" id="grid-file-formats">
+<h2>Grid File Formats<a class="headerlink" href="#grid-file-formats" title="Permalink to this headline">¶</a></h2>
+<p>By default GMT writes out grid as single precision floats in a
+COARDS-complaint netCDF file format. However, GMT is able to produce
+grid files in many other commonly used grid file formats and also
+facilitates so called &#8220;packing&#8221; of grids, writing out floating point
+data as 1- or 2-byte integers. To specify the precision, scale and
+offset, the user should add the suffix
+<strong>=</strong><em>id</em>[<strong>/</strong><em>scale</em><strong>/</strong><em>offset</em>[<strong>/</strong><em>nan</em>]], where
+<em>id</em> is a two-letter identifier of the grid type and precision, and
+<em>scale</em> and <em>offset</em> are optional scale factor and offset to be applied
+to all grid values, and <em>nan</em> is the value used to indicate missing
+data. When reading grids, the format is generally automatically
+recognized. If not, the same suffix can be added to input grid file
+names. See <a class="reference internal" href="grdreformat.html"><em>grdreformat</em></a> and Section
+<a class="reference internal" href="GMT_Docs.html#grid-file-format"><em>Grid file format specifications</em></a>
+of the GMT Technical Reference and Cookbook for more information.</p>
+<p>When reading a netCDF file that contains multiple grids, GMT will
+read, by default, the first 2-dimensional grid that can find in that
+file. To coax GMT into reading another multi-dimensional variable in
+the grid file, append <strong>?</strong><em>varname</em> to the file name, where <em>varname</em>
+is the name of the variable. Note that you may need to escape the
+special meaning of <strong>?</strong> in your shell program by putting a backslash in
+front of it, or by placing the filename and suffix between quotes or
+double quotes. The <strong>?</strong><em>varname</em> suffix can also be used for output
+grids to specify a variable name different from the default: &#8220;z&#8221;. See
+<a class="reference internal" href="grdreformat.html"><em>grdreformat</em></a> and Section <a class="reference internal" href="GMT_Docs.html#grid-file-format"><em>Grid file format specifications</em></a> of the GMT
+Technical Reference and Cookbook for more information, particularly on
+how to read splices of 3-, 4-, or 5-dimensional grids.</p>
+</div>
+<div class="section" id="id1">
+<h2><a class="reference external" href="#toc15">Vector Attributes</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Several modifiers may be appended to the vector-producing options to
+specify the placement of vector heads, their shapes, and the
+justification of the vector:</p>
+<blockquote>
+<div><p><strong>+a</strong><em>angle</em> sets the angle of the vector head apex [30].</p>
+<p><strong>+b</strong> places a vector head at the beginning of the vector path [none].</p>
+<p><strong>+e</strong> places a vector head at the end of the vector path [none].</p>
+<p><strong>+g</strong>-|<em>fill</em> turns off vector head fill (if -) or sets the vector
+head fill [Default fill is used, which may be no fill].</p>
+<p><strong>+l</strong> draws half-arrows, using only the left side [both].</p>
+<p><strong>+n</strong><em>norm</em> scales down vector attributes (pen thickness, head size)
+with decreasing length, where vectors shorter than <em>norm</em> will have
+their attributes scaled by length/<em>norm</em> [arrow attributes remains
+invariant to length].</p>
+<p><strong>+o</strong><em>plon</em>/<em>plat</em> specifies the oblique pole for the great or
+small circles.  Only needed for great circles if <strong>+q</strong> is given.</p>
+<p><strong>+p</strong>[-][<em>pen</em>] sets the vector pen attributes. If <em>pen</em> has a
+leading - then the head outline is not drawn. [Default pen is used, and
+head outline is drawn]</p>
+<p><strong>+q</strong> means the input <em>angle</em>, <em>length</em> is instead the <em>start</em> and <em>stop</em>
+opening angles of the arc segment relative to the point.</p>
+<p><strong>+r</strong> draws half-arrows, using only the right side [both].</p>
+</div></blockquote>
+<p>In addition, all but circular vectors may take these modifiers:</p>
+<blockquote>
+<div><p><strong>+j</strong><em>just</em> determines how the input <em>x</em>,<em>y</em> point relates to the
+vector. Choose from <strong>b</strong>eginning [default], <strong>e</strong>nd, or <strong>c</strong>enter.</p>
+<p><strong>+s</strong> means the input <em>angle</em>, <em>length</em> is instead the <em>x</em>, <em>y</em>
+coordinates of the vector end point.</p>
+</div></blockquote>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>To draw the vector field given by the files r.nc and theta.nc on a
+linear plot with scale 5 cm per data unit, using vector rather than
+stick plot, scale vector magnitudes so that 10 units equal 1 inch, and
+center vectors on the node locations, run</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdvector r.nc theta.nc -Jx5c -A -Q0.1i+e+jc -S10i &gt; gradient.ps
+</pre></div>
+</div>
+</div></blockquote>
+<p>To plot a geographic data sets given the files com_x.nc and comp_y.nc,
+using a scale of 200 km per data unit, try</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdvector comp_x.nc comp_y.nc -JH0/20c -Q0.1i+e+jc -S200 &gt; globe.ps
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="gmtcolors.html"><em>gmtcolors</em></a>,
+<a class="reference internal" href="grdcontour.html"><em>grdcontour</em></a>, <a class="reference internal" href="psxy.html"><em>psxy</em></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">grdvector</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#grid-file-formats">Grid File Formats</a></li>
+<li><a class="reference internal" href="#id1">Vector Attributes</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="grdtrend.html"
+                        title="previous chapter">grdtrend</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="grdview.html"
+                        title="next chapter">grdview</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdvector.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="grdview.html" title="grdview"
+             >next</a> </li>
+        <li class="right" >
+          <a href="grdtrend.html" title="grdtrend"
+             >previous</a> </li>
+  <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
+  
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+
+          <li><a href="GR.html" >GR</a> &raquo;</li>
+<li class="right">
+<form class="search" accept-charset="UTF-8" action="search.html" method="get">
+  <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="✓"></div>
+  <label for="q">
+    <a class="search" href="search.html" accesskey="s" original-title="">Search:</a>
+  </label>
+  <input accesskey="f" class="small" id="q" name="q" size="20" type="text">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form></li>
+   
+
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+  </body>
+</html>

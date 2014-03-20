@@ -1,6 +1,0 @@
-#	$Id: GMT_polar.cpt 9545 2011-07-27 19:31:54Z pwessel $
-#
-# Simulates the POLAR colormap in Matlab
-# COLOR_MODEL = RGB
--1	0	0	255	0	255	255	255
-0	255	255	255	1	255	0	0
