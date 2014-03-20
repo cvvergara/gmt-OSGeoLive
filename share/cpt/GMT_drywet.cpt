@@ -1,0 +1,11 @@
+#	$Id: GMT_drywet.cpt 9545 2011-07-27 19:31:54Z pwessel $
+#
+# Dry to Wet colorbar
+# Created by Ed Maurer, U Washington
+# COLOR_MODEL = RGB
+0	134	97	42	2	238	199	100
+2	238	199	100	4	180	238	135
+4	180	238	135	6	50	238	235
+6	50	238	235	8	12	120	238
+8	12	120	238	10	38	1	183
+10	38	1	183	12	8	51	113

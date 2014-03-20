@@ -1,0 +1,58 @@
+.TH GRDPASTE 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+grdpaste \- Paste together two \fI.grd\fP files along a common edge.
+.SH SYNOPSIS
+\fBgrdpaste\fP \fIfile_a.grd file_b.grd\fP \fB\-G\fP\fIoutfile.grd\fP [ \fB\-V\fP ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ]
+.SH DESCRIPTION
+\fBgrdpaste\fP will combine \fIfile_a.grd\fP and \fIfile_b.grd\fP into \fIoutfile.grd\fP by pasting
+them together along their common edge.  Files \fIfile_a.grd\fP and \fIfile_b.grd\fP must have the same dx, dy and have one edge
+in common.  If in doubt, check with \fBgrdinfo\fP and use \fBgrdcut\fP and/or \fBgrdsample\fP
+if necessary to prepare the edge joint.  For geographical grids, use \fB\-f\fP to handle periodic longitudes.
+.TP
+\fIfile_a.grd\fP
+One of two files to be pasted together.
+.TP
+\fIfile_b.grd\fP
+The other of two files to be pasted together.
+.TP
+\fB\-G\fP\fIoutfile.grd\fP
+The name for the combined output.
+.SH OPTIONS
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH GRID FILE FORMATS
+By default \fBGMT\fP writes out grid as single precision floats in a COARDS-complaint netCDF file format.
+However, \fBGMT\fP is able to produce grid files in many other commonly used grid file formats and also facilitates so called "packing" of grids,
+writing out floating point data as 2- or 4-byte integers. To specify the precision, scale and offset, the user should add the suffix
+\fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]], where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+When reading grids, the format is generally automatically recognized. If not, the same suffix can be added to input grid file names.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When reading a netCDF file that contains multiple grids, \fBGMT\fP will read, by default, the first 2-dimensional grid that can find in that
+file. To coax \fBGMT\fP into reading another multi-dimensional variable in the grid file, append \fB?\fP\fIvarname\fP to the file name, where
+\fIvarname\fP is the name of the variable. Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+The \fB?\fP\fIvarname\fP suffix can also be used for output grids to specify a variable name different from the default: "z".
+See \fBgrdreformat\fP(1) and Section 4.18 of the GMT Technical Reference and Cookbook for more information,
+particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
+.SH EXAMPLES
+Suppose file_a.grd is 150E - 180E and 0 - 30N, and file_b.grd is 150E - 180E, -30S - 0, then you can
+make outfile.grd which will be 150 - 180 and -30S - 30N by: 
+.sp
+\fBgrdpaste\fP file_a.grd file_b.grd \fB\-G\fP outfile.grd \fB\-V\fP \fB\-fg\fP
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grdcut (1),
+.IR grdinfo (1),
+.IR grdsample (1)

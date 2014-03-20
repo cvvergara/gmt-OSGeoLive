@@ -1,0 +1,221 @@
+.TH PS2RASTER 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+ps2raster \- Converts one or several \fIPostScript\fP file(s) to other formats using GhostScript
+.SH SYNOPSIS
+\fBps2raster\fP \fIpsfile(s)\fP [ \fB\-A\fP[\fBu\fP|-] ] [ \fB\-C\fP\fIgs_option\fP ] [ \fB\-D\fP\fIoutdir\fP ] 
+[ \fB\-E\fP\fIresolution\fP ] [ \fB\-G\fP\fIghost_path\fP ] [ \fB\-L\fP\fIlistfile\fP ] [ \fB\-P\fP ] 
+[ \fB\-Q\fP[\fBg\fP|\fBt\fP][1|2|4] ] [ \fB\-S\fP ]  
+[ \fB\-Tb\fP|\fBe\fP|\fBf\fP|\fBj\fP|\fBg\fP|\fBG\fP|\fBm\fP|\fBt\fP ] [ \fB\-V\fP ] 
+[ \fB\-W\fP[\fB+g\fP][\fB+t\fP\fIdocname\fP][\fB+n\fP\fIlayername\fP][\fB+a\fP\fIaltmode\fP[\fIalt\fP]][\fB+l\fP\fIminLOD/maxLOD\fP][\fB+f\fP\fIminfade/maxfade\fP][\fB+u\fP\fIURL\fP] ]
+.SH DESCRIPTION
+\fBps2raster\fP converts one or more \fIPostScript\fP files to other formats (BMP, EPS, JPEG, PDF, PNG, PPM, TIFF)
+using GhostScript. Input file names are read from the command line or from a file that lists them.
+The size of the resulting images is determined by the BoundingBox (or HiResBoundingBox, if present).
+As an option, a tight (HiRes)BoundingBox may be computed first. As another option, it can compute 
+ESRI type world files used to reference, for instance, tif files and make them be recognized as geotiff.
+.TP
+\fIpsfiles\fP
+Names of \fIPostScript\fP files to be converted. The output files will have the same name (unless \fB\-F\fP is used) but with the
+conventional extension name associated to the raster format (e.g., .jpg for the jpeg format).  Use
+\fB\-D\fP to redirect the output to a different directory.
+.SH OPTIONS
+.TP
+\fB\-A\fP
+Adjust the BoundingBox and HiResBoundingBox to the minimum required by the image content.  Append \fBu\fP to first remove any
+GMT-produced time-stamps.  Use \fB\-A-\fP to override any automatic setting of \fB\-A\fP by \fB\-W\fP.
+.TP
+\fB\-C\fP
+Specify a single, custom option that will be passed on to GhostScript as is.  Repeat to add several options [none].
+.TP
+\fB\-D\fP
+Sets an alternative output directory (which must exist) [Default is the same directory as the PS files].
+Use \fB\-D.\fP to place the output in the current directory instead.
+.TP
+\fB\-E\fP
+Set raster resolution in dpi [default = 720 for PDF, 300 for others].
+.TP
+\fB\-F\fP
+Force the output file name. By default output names are constructed using the
+input names as base, which are appended with an appropriate extension. Use this option
+to provide a different name, but without extension. Extension is still determined automatically.
+.TP
+\fB\-G\fP
+Full path to your GhostScript executable.
+NOTE: For Unix systems this is generally not necessary.
+Under Windows, ghostscript path is now fetch from the registry.
+If this fails you can still add the GS path to system's path or give the full path here.
+(e.g., \fB\-G\fP c:\\programs\\gs\\gs9.02\\bin\\gswin32c). WARNING: because of the poor decision
+of embedding the bits on the gs exe name we cannot satisfy both the 32 and 64 bits ghostscript
+executable names. So in case of 'get from registry' failure the default name (when no \fB\-G\fP is used)
+is the one of the 64 bits version, or gswin32c
+.TP
+\fB\-L\fP
+The \fIlistfile\fP is an ASCII file with the names of the \fIPostScript\fP files to be converted.
+.TP
+\fB\-N\fP
+This option is obsolete.
+Use \fB\-S\fP to print the GhostScript command, if applicable.
+Use \fB\-Te\fP to save the intermediate EPS file.
+.TP
+\fB\-P\fP
+Force Portrait mode. All Landscape mode plots will be rotated back so that they show unrotated in
+Portrait mode. This is practical when converting to image formats or preparing EPS or PDF plots for
+inclusion in documents.
+.TP
+\fB\-Q\fP
+Set the anti-aliasing options for \fBg\fPraphics or \fBt\fPext.  Append the size of the subsample
+box (1, 2, or 4) [4].  Default is no anti-aliasing (same as \fIbits\fP = 1).
+.TP
+\fB\-S\fP
+Print to standard output the GhostScript command after it has been executed.
+.TP
+\fB\-T\fP
+Sets the output format, where \fBb\fP means BMP, \fBe\fP means EPS, \fBf\fP means PDF, \fBj\fP means JPEG, \fBg\fP means PNG,
+\fBG\fP means transparent PNG (untouched regions are transparent), \fBm\fP means PPM, and \fBt\fP means TIFF [default is JPEG].
+For \fBbjgt\fP you can append - to get a grayscale image only.
+The EPS format can be combined with any of the other formats. For example, \fB\-Tef\fP creates both an EPS and
+a PDF file.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Write a ESRI type world file suitable to make (e.g) .tif files be recognized as geotiff by
+softwares that know how to do it. Be aware, however, that different results
+are obtained depending on the image contents and if the \fB\-B\fP option has been used or not.
+The trouble with the \fB\-B\fP option is that it creates a frame and very likely its annotations. 
+That introduces pixels outside the map data extent, and therefore the map extents estimation will be wrong.
+To avoid this problem use --BASEMAP_TYPE=inside option which plots all annotations and ticks
+inside the image and therefore does not compromise the coordinate computations. Pay attention also to 
+the cases when the plot has any of the sides with whites only because than the algorithm will fail 
+miserably as those whites will be eaten by the GhostScript. In that case you really must use \fB\-B\fP
+or use a slightly off-white color.
+.br
+Together with \fB\-V\fP it prints on screen the gdal_translate (gdal_translate is a command line tool from the GDAL package)
+command that reads the raster + world file and creates a true geotiff file. Use \fB\-W+g\fP to do a system call 
+to gdal_translate and create a geoTIFF image right away. The output file will have a .tiff extension.
+.br
+The world file naming follows the convention of jamming a 'w' in the file extension. So, if
+output is tif \fB\-Tt\fP the world file is a .tfw, for jpeg we have a .jgw and so on.
+This option automatically sets \fB\-A\fP \fB\-P\fP.
+.br
+Use \fB\-W+k\fP to create a minimalist KML file that allows loading the image in
+GoogleEarth. Note that for this option the image must be in geographical
+coordinates. If not, a warning is issued but the KML file is created anyway. Several modifier
+options are available to customize the KML file in the form of \fB+\fP\fIopt\fP strings.
+Append \fB+t\fP\fItitle\fP to set the document title [GMT KML Document],
+\fB+n\fP\fIlayername\fP to set the layer name, and \fB+a\fP\fI/altmode\fP[\fIaltitude\fP] to
+select one of 5 altitude modes recognized by Google Earth that determines the altitude (in m) of the
+image: \fBG\fP clamped to the ground, \fBg\fP append altitude relative to ground, \fBa\fP append absolute
+altitude, \fBs\fP append altitude relative to seafloor, and \fBS\fP clamp it to the seafloor.
+Control visibility of the layer with the \fB+l\fP\fIminLOD/maxLOD\fP and \fB+f\fP\fIminfade/maxfade\fP
+options.  FInally, if you plan to leave the image itself on a server and only distribute the KML,
+use \fB+u\fP\fIURL\fP to prepend the URL to the image reference.
+See the KML documentation for further explanation (http://code.google.com/apis/kml/documentation/).
+.br
+Further notes on the creation of georeferenced rasters. \fBps2raster\fP can create a georeferenced raster 
+image with a world file OR uses GDAL to convert the GMT \fIPostScript\fP file to geotiff.
+GDAL uses Proj.4 for it's projection library. To provide with the information it needs to do 
+the georeferencing, GMT 4.5 embeds a comment near the start of the \fIPostScript\fP file defining the projection 
+using Proj.4 syntax. Users with pre-GMT v4.5 \fIPostScript\fP files, or even non-GMT ps files, can provide the 
+information \fBps2raster\fP requires by manually editing a line into the \fIPostScript\fP file, prefixed with %%PROJ. 
+.br
+For example the command \fBpscoast\fP \fB\-JM0/12c\fP \fB\-R\fP-10/-4/37/43 \fB\-W1\fP \fB\-Di\fP \fB\-Bg30m\fP --BASEMAP_TYPE=inside > cara.ps 
+.br
+adds this comment line 
+.br
+%%PROJ: merc -10.0 -4.0 37.0 43.0 -1113194.908 -445277.963 4413389.889 5282821.824 +proj=merc +lon_0=0 +k=-1 +x_0=0 +y_0=0 +a=6378137.0 +b=6356752.314245
+.br
+where 'merc' is the keyword for the coordinate conversion; the 2 to 5th elements contain the map limits, 
+6 to 9th the map limits in projected coordinates and the rest of the line has the regular proj4 string
+for this projection.
+.SH NOTES
+The conversion to raster images (BMP, JPEG, PNG, PPM or TIFF) inherently results in loss of details that are
+available in the original \fIPostScript\fP file. Choose a resolution that is large enough for the application that
+the image will be used for. For web pages, smaller dpi values suffice, for Word documents and PowerPoint presentations
+a higher dpi value is recommended. \fBps2raster\fP uses the loss-less Flate compression technique when
+creating JPEG, PNG and TIFF images.
+.br
+.sp
+EPS is a vector, not a raster format. Therefore, the \fB-E\fP option has no effect on the creation
+of EPS files. Using the option \fB\-Te\fP will remove PageSize commands from the \fIPostScript\fP file and will
+adjust the BoundingBox when the \fB\-A\fP option is used.  Note the original and required BoundingBox is limited
+to integer points, hence Adobe added the optional HiResBoundingBox to add more precision in sizing.  The \fB\-A\fP
+option calculates both and writes both to the EPS file used in the rasterization (and output if \fB\-Te\fP is set).
+.br
+.sp
+Although PDF is also a vector format, the \fB\-E\fP option has an effect on the resolution of pattern fills
+and fonts that are stored as bitmaps in the document. \fBps2raster\fP therefore uses a larger default
+resolution when creating PDF files. In order to obtain high-quality PDF files, the \fI/prepress\fP options
+are in effect, allowing only loss-less Flate compression of raster images embedded in the \fIPostScript\fP file.
+.br
+.sp
+Although \fBps2raster\fP was developed as part of the \fBGMT\fP, it can be used to convert \fIPostScript\fP files created
+by nearly any graphics program. However, \fB\-Au\fP is \fBGMT\fP-specific.
+.br
+.sp
+See Appendix C of the \fBGMT Technical Reference and Cookbook\fP for more information on how
+\fBps2raster\fP is used to produce graphics that can be inserted into other documents (articles, presentations,
+posters, etc.).
+.SH EXAMPLES
+To convert the file psfile.ps to PNG using a tight BoundingBox and rotating it back to normal
+orientation in case it was in Landscape mode:
+.br
+.sp
+\fBps2raster\fP psfile.ps \fB\-A\fP \fB\-P\fP \fB\-Tg\fP
+.br
+.sp
+To create a simple linear map with pscoast and convert it to tif with a .tfw
+the tight BoundingBox computation.
+.br
+.sp
+\fBpscoast\fP \fB\-JX12cd\fP \fB\-R\fP-10/-4/37/43 \fB\-W1\fP \fB\-Di\fP \fB\-Bg30m\fP \fB\-P\fP \fB\-G200\fP --BASEMAP_TYPE=inside > cara.ps
+.br
+.sp
+\fBps2raster\fP cara \fB\-Tt\fP \fB\-W\fP
+.br
+.sp
+To create a Mercator version of the above example and use GDAL to produce a true geotiff file.
+.br
+.sp
+\fBpscoast\fP \fB\-JM0/12c\fP \fB\-R\fP-10/-4/37/43 \fB\-W1\fP \fB\-Di\fP \fB\-Bg30m\fP \fB\-P\fP \fB\-G200\fP --BASEMAP_TYPE=inside > cara.ps
+.br
+.sp
+\fBgdalwarp\fP -s_srs +proj=merc cara.tif carageo.tiff 
+.br
+.sp
+To create a Polar Stereographic geotiff file of Patagonia
+.br
+.sp
+pscoast -JS-55/-60/15c -R-77/-55/-57.5/-48r -Di -Gred -P -Bg2 --BASEMAP_TYPE=inside > patagonia.ps
+.br
+.sp
+ps2raster patagonia.ps -Tt -W+g -V 
+.br
+.sp
+To create a simple KMZ file for use in Google Earth, try
+.br
+.sp
+grdimage lonlatgrid.nc -Jx1 -Ccolors.cpt -P -B0g2 --BASEMAP_TYPE=inside > tile.ps
+.br
+.sp
+ps2raster tile.ps -Tg -W+k+t"my title"+l256/-1 -V 
+.br
+.sp
+(These commands assume that GhostScript can be found in your system's path.)\"'
+.SH BINARY DATA
+\fBGMT\fP programs can produce binary \fIPostScript\fP image data and this is determined by the default setting PS_IMAGE_FORMAT.
+Because \fBps2raster\fP needs to process the input files on a line-by-line basis you need to make sure the
+image format is set to \fIascii\fP and not \fIbin\fP.
+.SH GHOSTSCRIPT OPTIONS
+Most of the conversions done in \fBps2raster\fP are handled by GhostScript. On most Unixes this program
+is available as \fBgs\fP; for Windows there is a version called \fBgswin32c\fP.
+GhostScript accepts a rich selection of command-line options that modify its behavior.  Many of these are
+set indirectly by the options available above.  However, hard-core usage may require some users to add additional
+options to fine-tune the result.  Use \fB\-S\fP to examine the actual command used, and add custom options
+via one or more instances of the \fB\-C\fP option.  For instance, to turn on image interpolation for all images,
+improving image quality for scaled images at the expense of speed, use \fB\-C\fP-dDOINTERPOLATE.
+See www.ghostscript.com for complete documentation.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR gs (1)

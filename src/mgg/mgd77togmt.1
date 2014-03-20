@@ -1,0 +1,90 @@
+.TH MDG77TOGMT 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+mgd77togmt \- Convert an MGD-77 ASCII file to a binary gmt file
+.SH SYNOPSIS
+\fBmgd77togmt\fP [ \fB\-L\fP\fIlist\fP ] [ \fImgd77file\fP ] \fB\-F\fP\fIlegid\fP \fB\-Y\fP\fIstart_year\fP 
+[ \fB\-A\fP\fIinformation\fP ] [ \fB\-I\fP\fItime_increment\fP ] [\fB\-T\fP[\fIoffset\fP]] [\fB\-W\fP[\fIcable_length\fP]] [ \fB\-V\fP ]
+.SH DESCRIPTION
+\fBmgd77togmt\fP reads an ASCII MGD-77 format file [or standard
+input] and creates a binary gmt file.  The 16 header records specified in
+the MGD-77 documentation may or may not be present.  If two-way travel times are
+available, \fBmgd77togmt\fP will convert those to corrected depths using the Carter
+tables.  Both old and new (Y2K-compliant) MGD-77 files are supported.
+.TP
+\fB\-L\fP
+Name of file with several records of the format \fImgd77file legid start_year\fP.  For multiple files, use this option rather
+than the \fB\-F\fP \fB\-Y\fP combination.
+.TP
+\fB\-Y\fP
+The year of the first data point in the file. If not provided and -L option not used, it tries to get 
+it from a header file. The header file must be in the same directory of the
+main file and must have a name equal to the main but with a .h77 extension.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-A\fP
+Set an optional 10 character information string to be stored in the header  [Default is blank].
+.TP
+\fB\-F\fP
+Leg id that will be used in file name (\fIlegid\fP.gmt). If not given, it 
+will be constructed from the mgd77file name plus the .gmt extension.
+.TP
+\fB\-I\fP
+Used for files where time is missing.  The increment is used to calculate
+fake times.
+.TP
+\fB\-T\fP
+Extracts Total field instead of anomaly. Since F does not hold in a 2 byte signed variable
+we subtract a constant [default = 40000] but you can provide another value in \fIoffset\fP.
+.TP
+\fB\-W\fP
+Take into account that the magnetometer is not at ship's position.
+\fIcable_length\fP is magnetometer tow distance [default = 200 meters].
+If \fB\-W\fP only is given (e.g., no \fIcable_length\fP) and like with the \fB\-Y\fP option, we try
+to get the tow distance from the header file. Failing, defaults to 200 meters.
+Note that this option will throw away the first points whose accumulated.
+distance since the start of magnetic acquisition is less than \fIcable_length\fP,
+and likewise for the end of the mag profile.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.SH EXAMPLES
+To create a gmt file from the ASCII file c2104.mgd77, run
+.br
+.sp
+\fBmgd77togmt\fP c2104.mgd77 \fB\-Y\fP 1977
+.br
+.sp
+To create new gmt files from all the mgd77 files listed in \fIlist.d\fP:
+.br
+.sp
+\fBmgd77togmt\fP \fB\-L\fP list.d \fB\-V\fP
+.SH SEE ALSO
+.IR dat2gmt (1),
+.IR GMT (1)
+.SH REFERENCES
+Wessel, P., and W. H. F. Smith, 2014, The Generic Mapping Tools (GMT) version
+4.5.12 Technical Reference & Cookbook, SOEST/NOAA.
+.br
+Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
+Tools Released, EOS Trans., AGU, 79 (47), p. 579.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, EOS Trans., AGU, 76 (33), p. 329.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, http://www.agu.org/eos_elec/95154e.html, Copyright 1995 by the
+American Geophysical Union.
+.br
+Wessel, P., and W. H. F. Smith, 1991, Free Software Helps Map and Display Data,
+EOS Trans., AGU, 72 (41), p. 441.
+.br
+.br
+.sp
+MGD77 Task Group, 1977, The Marine Geophysical Data Exchange Format - MGD77,
+Key to Geophysical Records documentation No. 10, National Geophysical and
+Solar-Terrestrial Data Center, Boulder, CO.
+.br
+.sp
+Carter, D. J. T., \fIEcho Sounding Correction Tables: Formerly Matthews' Tables\fP,\"'
+150 pp, Hydrographic Department, Ministry of Defense, Taunton, Somerset, England, 1980.

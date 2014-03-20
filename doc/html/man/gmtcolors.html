@@ -1,0 +1,815 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Thu Feb 27 18:11:55 2014 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GMTCOLORS</title>
+
+</head>
+<body bgcolor="#ffffff">
+
+<h1 align="center">GMTCOLORS</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#LIST OF COLORS">LIST OF COLORS</a><br>
+<a href="#FURTHER INFORMATION">FURTHER INFORMATION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gmtcolors
+&minus; Explanation of color codes in <b><A HREF="GMT.html">GMT</A></b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Colors can be
+specified in <b><A HREF="GMT.html">GMT</A></b> as arguments to commands, generally
+as part of the <b>&minus;G</b> or <b>&minus;W</b> options to
+select polygon fill or outline pen. Colors are also used in
+color pallette tables (cpt files) that help convert
+numerical values to colors. <b><br>
+GMT</b> allows several ways to represent a color: <b><br>
+Colorname</b></p>
+
+<p style="margin-left:22%;">Specify one of the named colors
+below. All names are case-insensitive.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>R/G/B</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Specify <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue
+levels. Each value is separated by a slash and is in the
+range from 0 (dark) to 255 (light). This representation is
+used to color monitors.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>#RRGGBB</b></p>
+
+<p style="margin-left:22%;">Specify <b>R</b>ed,
+<b>G</b>reen, and <b>B</b>lue levels in the way that it is
+done in HTML. Use two characters for each color channel,
+ranging from 00 (dark) to FF (light). Upper and lower case
+are allowed.</p>
+
+<p style="margin-left:11%;"><b>Graylevel</b></p>
+
+<p style="margin-left:22%;">For shades of gray, R = G = B,
+and only one number needs to be used. This representation is
+popular with black and white printers.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>H-S-V</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Specify <b>H</b>ue in the range 0 to 360 (degrees),
+<b>S</b> saturation between 0 (not saturated) and 1 (fully
+saturated), and value <b>V</b> between 0 (dark) and 1
+(light). Number are separated by hyphens. This
+representation can be helpful when hue varies a lot.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>C/M/Y/K</b></p>
+
+<p style="margin-left:22%;">Specify <b>C</b>yan,
+<b>M</b>agenta, <b>Y</b>ellow, and blac<b>K</b>. Each number
+is in the range from 0 (no paint) to 1 (maximum paint). This
+representation is used by most color printers.</p>
+
+<h2>LIST OF COLORS
+<a name="LIST OF COLORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+list contains the named colors that can be used in
+<b><A HREF="GMT.html">GMT</A></b> and their equivalent color codes.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>R G B
+Name</b> <br>
+255 250 250 snow <br>
+248 248 255 ghostwhite <br>
+255 250 240 floralwhite <br>
+255 245 238 seashell <br>
+253 245 230 oldlace <br>
+250 240 230 linen <br>
+250 235 215 antiquewhite <br>
+255 239 213 papayawhip <br>
+255 235 205 blanchedalmond <br>
+255 228 196 bisque <br>
+255 218 185 peachpuff <br>
+255 222 173 navajowhite <br>
+255 228 181 moccasin <br>
+255 250 205 lemonchiffon <br>
+255 248 220 cornsilk <br>
+255 255 240 ivory <br>
+240 255 240 honeydew <br>
+245 255 250 mintcream <br>
+240 255 255 azure <br>
+240 248 255 aliceblue <br>
+230 230 250 lavender <br>
+255 240 245 lavenderblush <br>
+255 228 225 mistyrose <br>
+25 25 112 midnightblue <br>
+0 0 128 navy <br>
+0 0 128 navyblue <br>
+100 149 237 cornflowerblue <br>
+72 61 139 darkslateblue <br>
+106 90 205 slateblue <br>
+123 104 238 mediumslateblue <br>
+132 112 255 lightslateblue <br>
+0 0 205 mediumblue <br>
+65 105 225 royalblue <br>
+0 0 255 blue <br>
+0 0 139 darkblue <br>
+30 144 255 dodgerblue <br>
+70 130 180 steelblue <br>
+0 191 255 deepskyblue <br>
+135 206 235 skyblue <br>
+135 206 250 lightskyblue <br>
+119 136 153 lightslategray <br>
+119 136 153 lightslategrey <br>
+112 128 144 slategray <br>
+112 128 144 slategrey <br>
+176 196 222 lightsteelblue <br>
+173 216 230 lightblue <br>
+224 255 255 lightcyan <br>
+176 224 230 powderblue <br>
+175 238 238 paleturquoise <br>
+95 158 160 cadetblue <br>
+0 206 209 darkturquoise <br>
+72 209 204 mediumturquoise <br>
+64 224 208 turquoise <br>
+0 255 255 cyan <br>
+0 139 139 darkcyan <br>
+47 79 79 darkslategray <br>
+47 79 79 darkslategrey <br>
+102 205 170 mediumaquamarine <br>
+127 255 212 aquamarine <br>
+0 100 0 darkgreen <br>
+144 238 144 lightgreen <br>
+143 188 143 darkseagreen <br>
+46 139 87 seagreen <br>
+60 179 113 mediumseagreen <br>
+32 178 170 lightseagreen <br>
+152 251 152 palegreen <br>
+0 255 127 springgreen <br>
+124 252 0 lawngreen <br>
+0 255 0 green <br>
+127 255 0 chartreuse <br>
+0 250 154 mediumspringgreen <br>
+173 255 47 greenyellow <br>
+50 205 50 limegreen <br>
+154 205 50 yellowgreen <br>
+34 139 34 forestgreen <br>
+107 142 35 olivedrab <br>
+85 107 47 darkolivegreen <br>
+189 183 107 darkkhaki <br>
+240 230 140 khaki <br>
+238 232 170 palegoldenrod <br>
+238 221 130 lightgoldenrod <br>
+255 255 224 lightyellow <br>
+250 250 210 lightgoldenrodyellow <br>
+255 255 0 yellow <br>
+128 128 0 darkyellow <br>
+255 215 0 gold <br>
+218 165 32 goldenrod <br>
+184 134 11 darkgoldenrod <br>
+188 143 143 rosybrown <br>
+205 92 92 indianred <br>
+139 69 19 saddlebrown <br>
+160 82 45 sienna <br>
+205 133 63 peru <br>
+222 184 135 burlywood <br>
+245 245 220 beige <br>
+245 222 179 wheat <br>
+244 164 96 sandybrown <br>
+210 180 140 tan <br>
+210 105 30 chocolate <br>
+178 34 34 firebrick <br>
+235 190 85 lightbrown <br>
+165 42 42 brown <br>
+120 60 30 darkbrown <br>
+233 150 122 darksalmon <br>
+250 128 114 salmon <br>
+255 160 122 lightsalmon <br>
+255 192 128 lightorange <br>
+255 165 0 orange <br>
+255 140 0 darkorange <br>
+255 127 80 coral <br>
+240 128 128 lightcoral <br>
+255 99 71 tomato <br>
+255 69 0 orangered <br>
+255 0 0 red <br>
+255 128 128 lightred <br>
+139 0 0 darkred <br>
+255 20 147 deeppink <br>
+255 105 180 hotpink <br>
+255 192 203 pink <br>
+255 182 193 lightpink <br>
+219 112 147 palevioletred <br>
+176 48 96 maroon <br>
+199 21 133 mediumvioletred <br>
+208 32 144 violetred <br>
+139 0 139 darkmagenta <br>
+255 0 255 magenta <br>
+255 128 255 lightmagenta <br>
+238 130 238 violet <br>
+218 112 214 orchid <br>
+221 160 221 plum <br>
+186 85 211 mediumorchid <br>
+153 50 204 darkorchid <br>
+148 0 211 darkviolet <br>
+138 43 226 blueviolet <br>
+160 32 240 purple <br>
+147 112 219 mediumpurple <br>
+216 191 216 thistle <br>
+0 0 0 black <br>
+105 105 105 dimgray <br>
+105 105 105 dimgrey <br>
+169 169 169 darkgray <br>
+169 169 169 darkgrey <br>
+190 190 190 gray <br>
+190 190 190 grey <br>
+211 211 211 lightgrey <br>
+211 211 211 lightgray <br>
+220 220 220 gainsboro <br>
+245 245 245 whitesmoke <br>
+255 255 255 white <br>
+255 250 250 snow1 <br>
+238 233 233 snow2 <br>
+205 201 201 snow3 <br>
+139 137 137 snow4 <br>
+255 245 238 seashell1 <br>
+238 229 222 seashell2 <br>
+205 197 191 seashell3 <br>
+139 134 130 seashell4 <br>
+255 239 219 antiquewhite1 <br>
+238 223 204 antiquewhite2 <br>
+205 192 176 antiquewhite3 <br>
+139 131 120 antiquewhite4 <br>
+255 228 196 bisque1 <br>
+238 213 183 bisque2 <br>
+205 183 158 bisque3 <br>
+139 125 107 bisque4 <br>
+255 218 185 peachpuff1 <br>
+238 203 173 peachpuff2 <br>
+205 175 149 peachpuff3 <br>
+139 119 101 peachpuff4 <br>
+255 222 173 navajowhite1 <br>
+238 207 161 navajowhite2 <br>
+205 179 139 navajowhite3 <br>
+139 121 94 navajowhite4 <br>
+255 250 205 lemonchiffon1 <br>
+238 233 191 lemonchiffon2 <br>
+205 201 165 lemonchiffon3 <br>
+139 137 112 lemonchiffon4 <br>
+255 248 220 cornsilk1 <br>
+238 232 205 cornsilk2 <br>
+205 200 177 cornsilk3 <br>
+139 136 120 cornsilk4 <br>
+255 255 240 ivory1 <br>
+238 238 224 ivory2 <br>
+205 205 193 ivory3 <br>
+139 139 131 ivory4 <br>
+240 255 240 honeydew1 <br>
+224 238 224 honeydew2 <br>
+193 205 193 honeydew3 <br>
+131 139 131 honeydew4 <br>
+255 240 245 lavenderblush1 <br>
+238 224 229 lavenderblush2 <br>
+205 193 197 lavenderblush3 <br>
+139 131 134 lavenderblush4 <br>
+255 228 225 mistyrose1 <br>
+238 213 210 mistyrose2 <br>
+205 183 181 mistyrose3 <br>
+139 125 123 mistyrose4 <br>
+240 255 255 azure1 <br>
+224 238 238 azure2 <br>
+193 205 205 azure3 <br>
+131 139 139 azure4 <br>
+131 111 255 slateblue1 <br>
+122 103 238 slateblue2 <br>
+105 89 205 slateblue3 <br>
+71 60 139 slateblue4 <br>
+72 118 255 royalblue1 <br>
+67 110 238 royalblue2 <br>
+58 95 205 royalblue3 <br>
+39 64 139 royalblue4 <br>
+0 0 255 blue1 <br>
+0 0 238 blue2 <br>
+0 0 205 blue3 <br>
+0 0 139 blue4 <br>
+30 144 255 dodgerblue1 <br>
+28 134 238 dodgerblue2 <br>
+24 116 205 dodgerblue3 <br>
+16 78 139 dodgerblue4 <br>
+99 184 255 steelblue1 <br>
+92 172 238 steelblue2 <br>
+79 148 205 steelblue3 <br>
+54 100 139 steelblue4 <br>
+0 191 255 deepskyblue1 <br>
+0 178 238 deepskyblue2 <br>
+0 154 205 deepskyblue3 <br>
+0 104 139 deepskyblue4 <br>
+135 206 255 skyblue1 <br>
+126 192 238 skyblue2 <br>
+108 166 205 skyblue3 <br>
+74 112 139 skyblue4 <br>
+176 226 255 lightskyblue1 <br>
+164 211 238 lightskyblue2 <br>
+141 182 205 lightskyblue3 <br>
+96 123 139 lightskyblue4 <br>
+198 226 255 slategray1 <br>
+185 211 238 slategray2 <br>
+159 182 205 slategray3 <br>
+108 123 139 slategray4 <br>
+202 225 255 lightsteelblue1 <br>
+188 210 238 lightsteelblue2 <br>
+162 181 205 lightsteelblue3 <br>
+110 123 139 lightsteelblue4 <br>
+191 239 255 lightblue1 <br>
+178 223 238 lightblue2 <br>
+154 192 205 lightblue3 <br>
+104 131 139 lightblue4 <br>
+224 255 255 lightcyan1 <br>
+209 238 238 lightcyan2 <br>
+180 205 205 lightcyan3 <br>
+122 139 139 lightcyan4 <br>
+187 255 255 paleturquoise1 <br>
+174 238 238 paleturquoise2 <br>
+150 205 205 paleturquoise3 <br>
+102 139 139 paleturquoise4 <br>
+152 245 255 cadetblue1 <br>
+142 229 238 cadetblue2 <br>
+122 197 205 cadetblue3 <br>
+83 134 139 cadetblue4 <br>
+0 245 255 turquoise1 <br>
+0 229 238 turquoise2 <br>
+0 197 205 turquoise3 <br>
+0 134 139 turquoise4 <br>
+0 255 255 cyan1 <br>
+0 238 238 cyan2 <br>
+0 205 205 cyan3 <br>
+0 139 139 cyan4 <br>
+151 255 255 darkslategray1 <br>
+141 238 238 darkslategray2 <br>
+121 205 205 darkslategray3 <br>
+82 139 139 darkslategray4 <br>
+127 255 212 aquamarine1 <br>
+118 238 198 aquamarine2 <br>
+102 205 170 aquamarine3 <br>
+69 139 116 aquamarine4 <br>
+193 255 193 darkseagreen1 <br>
+180 238 180 darkseagreen2 <br>
+155 205 155 darkseagreen3 <br>
+105 139 105 darkseagreen4 <br>
+84 255 159 seagreen1 <br>
+78 238 148 seagreen2 <br>
+67 205 128 seagreen3 <br>
+46 139 87 seagreen4 <br>
+154 255 154 palegreen1 <br>
+144 238 144 palegreen2 <br>
+124 205 124 palegreen3 <br>
+84 139 84 palegreen4 <br>
+0 255 127 springgreen1 <br>
+0 238 118 springgreen2 <br>
+0 205 102 springgreen3 <br>
+0 139 69 springgreen4 <br>
+0 255 0 green1 <br>
+0 238 0 green2 <br>
+0 205 0 green3 <br>
+0 139 0 green4 <br>
+127 255 0 chartreuse1 <br>
+118 238 0 chartreuse2 <br>
+102 205 0 chartreuse3 <br>
+69 139 0 chartreuse4 <br>
+192 255 62 olivedrab1 <br>
+179 238 58 olivedrab2 <br>
+154 205 50 olivedrab3 <br>
+105 139 34 olivedrab4 <br>
+202 255 112 darkolivegreen1 <br>
+188 238 104 darkolivegreen2 <br>
+162 205 90 darkolivegreen3 <br>
+110 139 61 darkolivegreen4 <br>
+255 246 143 khaki1 <br>
+238 230 133 khaki2 <br>
+205 198 115 khaki3 <br>
+139 134 78 khaki4 <br>
+255 236 139 lightgoldenrod1 <br>
+238 220 130 lightgoldenrod2 <br>
+205 190 112 lightgoldenrod3 <br>
+139 129 76 lightgoldenrod4 <br>
+255 255 224 lightyellow1 <br>
+238 238 209 lightyellow2 <br>
+205 205 180 lightyellow3 <br>
+139 139 122 lightyellow4 <br>
+255 255 0 yellow1 <br>
+238 238 0 yellow2 <br>
+205 205 0 yellow3 <br>
+139 139 0 yellow4 <br>
+255 215 0 gold1 <br>
+238 201 0 gold2 <br>
+205 173 0 gold3 <br>
+139 117 0 gold4 <br>
+255 193 37 goldenrod1 <br>
+238 180 34 goldenrod2 <br>
+205 155 29 goldenrod3 <br>
+139 105 20 goldenrod4 <br>
+255 185 15 darkgoldenrod1 <br>
+238 173 14 darkgoldenrod2 <br>
+205 149 12 darkgoldenrod3 <br>
+139 101 8 darkgoldenrod4 <br>
+255 193 193 rosybrown1 <br>
+238 180 180 rosybrown2 <br>
+205 155 155 rosybrown3 <br>
+139 105 105 rosybrown4 <br>
+255 106 106 indianred1 <br>
+238 99 99 indianred2 <br>
+205 85 85 indianred3 <br>
+139 58 58 indianred4 <br>
+255 130 71 sienna1 <br>
+238 121 66 sienna2 <br>
+205 104 57 sienna3 <br>
+139 71 38 sienna4 <br>
+255 211 155 burlywood1 <br>
+238 197 145 burlywood2 <br>
+205 170 125 burlywood3 <br>
+139 115 85 burlywood4 <br>
+255 231 186 wheat1 <br>
+238 216 174 wheat2 <br>
+205 186 150 wheat3 <br>
+139 126 102 wheat4 <br>
+255 165 79 tan1 <br>
+238 154 73 tan2 <br>
+205 133 63 tan3 <br>
+139 90 43 tan4 <br>
+255 127 36 chocolate1 <br>
+238 118 33 chocolate2 <br>
+205 102 29 chocolate3 <br>
+139 69 19 chocolate4 <br>
+255 48 48 firebrick1 <br>
+238 44 44 firebrick2 <br>
+205 38 38 firebrick3 <br>
+139 26 26 firebrick4 <br>
+255 64 64 brown1 <br>
+238 59 59 brown2 <br>
+205 51 51 brown3 <br>
+139 35 35 brown4 <br>
+255 140 105 salmon1 <br>
+238 130 98 salmon2 <br>
+205 112 84 salmon3 <br>
+139 76 57 salmon4 <br>
+255 160 122 lightsalmon1 <br>
+238 149 114 lightsalmon2 <br>
+205 129 98 lightsalmon3 <br>
+139 87 66 lightsalmon4 <br>
+255 165 0 orange1 <br>
+238 154 0 orange2 <br>
+205 133 0 orange3 <br>
+139 90 0 orange4 <br>
+255 127 0 darkorange1 <br>
+238 118 0 darkorange2 <br>
+205 102 0 darkorange3 <br>
+139 69 0 darkorange4 <br>
+255 114 86 coral1 <br>
+238 106 80 coral2 <br>
+205 91 69 coral3 <br>
+139 62 47 coral4 <br>
+255 99 71 tomato1 <br>
+238 92 66 tomato2 <br>
+205 79 57 tomato3 <br>
+139 54 38 tomato4 <br>
+255 69 0 orangered1 <br>
+238 64 0 orangered2 <br>
+205 55 0 orangered3 <br>
+139 37 0 orangered4 <br>
+255 0 0 red1 <br>
+238 0 0 red2 <br>
+205 0 0 red3 <br>
+139 0 0 red4 <br>
+255 20 147 deeppink1 <br>
+238 18 137 deeppink2 <br>
+205 16 118 deeppink3 <br>
+139 10 80 deeppink4 <br>
+255 110 180 hotpink1 <br>
+238 106 167 hotpink2 <br>
+205 96 144 hotpink3 <br>
+139 58 98 hotpink4 <br>
+255 181 197 pink1 <br>
+238 169 184 pink2 <br>
+205 145 158 pink3 <br>
+139 99 108 pink4 <br>
+255 174 185 lightpink1 <br>
+238 162 173 lightpink2 <br>
+205 140 149 lightpink3 <br>
+139 95 101 lightpink4 <br>
+255 130 171 palevioletred1 <br>
+238 121 159 palevioletred2 <br>
+205 104 137 palevioletred3 <br>
+139 71 93 palevioletred4 <br>
+255 52 179 maroon1 <br>
+238 48 167 maroon2 <br>
+205 41 144 maroon3 <br>
+139 28 98 maroon4 <br>
+255 62 150 violetred1 <br>
+238 58 140 violetred2 <br>
+205 50 120 violetred3 <br>
+139 34 82 violetred4 <br>
+255 0 255 magenta1 <br>
+238 0 238 magenta2 <br>
+205 0 205 magenta3 <br>
+139 0 139 magenta4 <br>
+255 131 250 orchid1 <br>
+238 122 233 orchid2 <br>
+205 105 201 orchid3 <br>
+139 71 137 orchid4 <br>
+255 187 255 plum1 <br>
+238 174 238 plum2 <br>
+205 150 205 plum3 <br>
+139 102 139 plum4 <br>
+224 102 255 mediumorchid1 <br>
+209 95 238 mediumorchid2 <br>
+180 82 205 mediumorchid3 <br>
+122 55 139 mediumorchid4 <br>
+191 62 255 darkorchid1 <br>
+178 58 238 darkorchid2 <br>
+154 50 205 darkorchid3 <br>
+104 34 139 darkorchid4 <br>
+155 48 255 purple1 <br>
+145 44 238 purple2 <br>
+125 38 205 purple3 <br>
+85 26 139 purple4 <br>
+171 130 255 mediumpurple1 <br>
+159 121 238 mediumpurple2 <br>
+137 104 205 mediumpurple3 <br>
+93 71 139 mediumpurple4 <br>
+255 225 255 thistle1 <br>
+238 210 238 thistle2 <br>
+205 181 205 thistle3 <br>
+139 123 139 thistle4 <br>
+0 0 0 gray0 <br>
+0 0 0 grey0 <br>
+3 3 3 gray1 <br>
+3 3 3 grey1 <br>
+5 5 5 gray2 <br>
+5 5 5 grey2 <br>
+8 8 8 gray3 <br>
+8 8 8 grey3 <br>
+10 10 10 gray4 <br>
+10 10 10 grey4 <br>
+13 13 13 gray5 <br>
+13 13 13 grey5 <br>
+15 15 15 gray6 <br>
+15 15 15 grey6 <br>
+18 18 18 gray7 <br>
+18 18 18 grey7 <br>
+20 20 20 gray8 <br>
+20 20 20 grey8 <br>
+23 23 23 gray9 <br>
+23 23 23 grey9 <br>
+26 26 26 gray10 <br>
+26 26 26 grey10 <br>
+28 28 28 gray11 <br>
+28 28 28 grey11 <br>
+31 31 31 gray12 <br>
+31 31 31 grey12 <br>
+33 33 33 gray13 <br>
+33 33 33 grey13 <br>
+36 36 36 gray14 <br>
+36 36 36 grey14 <br>
+38 38 38 gray15 <br>
+38 38 38 grey15 <br>
+41 41 41 gray16 <br>
+41 41 41 grey16 <br>
+43 43 43 gray17 <br>
+43 43 43 grey17 <br>
+46 46 46 gray18 <br>
+46 46 46 grey18 <br>
+48 48 48 gray19 <br>
+48 48 48 grey19 <br>
+51 51 51 gray20 <br>
+51 51 51 grey20 <br>
+54 54 54 gray21 <br>
+54 54 54 grey21 <br>
+56 56 56 gray22 <br>
+56 56 56 grey22 <br>
+59 59 59 gray23 <br>
+59 59 59 grey23 <br>
+61 61 61 gray24 <br>
+61 61 61 grey24 <br>
+64 64 64 gray25 <br>
+64 64 64 grey25 <br>
+66 66 66 gray26 <br>
+66 66 66 grey26 <br>
+69 69 69 gray27 <br>
+69 69 69 grey27 <br>
+71 71 71 gray28 <br>
+71 71 71 grey28 <br>
+74 74 74 gray29 <br>
+74 74 74 grey29 <br>
+77 77 77 gray30 <br>
+77 77 77 grey30 <br>
+79 79 79 gray31 <br>
+79 79 79 grey31 <br>
+82 82 82 gray32 <br>
+82 82 82 grey32 <br>
+84 84 84 gray33 <br>
+84 84 84 grey33 <br>
+87 87 87 gray34 <br>
+87 87 87 grey34 <br>
+89 89 89 gray35 <br>
+89 89 89 grey35 <br>
+92 92 92 gray36 <br>
+92 92 92 grey36 <br>
+94 94 94 gray37 <br>
+94 94 94 grey37 <br>
+97 97 97 gray38 <br>
+97 97 97 grey38 <br>
+99 99 99 gray39 <br>
+99 99 99 grey39 <br>
+102 102 102 gray40 <br>
+102 102 102 grey40 <br>
+105 105 105 gray41 <br>
+105 105 105 grey41 <br>
+107 107 107 gray42 <br>
+107 107 107 grey42 <br>
+110 110 110 gray43 <br>
+110 110 110 grey43 <br>
+112 112 112 gray44 <br>
+112 112 112 grey44 <br>
+115 115 115 gray45 <br>
+115 115 115 grey45 <br>
+117 117 117 gray46 <br>
+117 117 117 grey46 <br>
+120 120 120 gray47 <br>
+120 120 120 grey47 <br>
+122 122 122 gray48 <br>
+122 122 122 grey48 <br>
+125 125 125 gray49 <br>
+125 125 125 grey49 <br>
+127 127 127 gray50 <br>
+127 127 127 grey50 <br>
+130 130 130 gray51 <br>
+130 130 130 grey51 <br>
+133 133 133 gray52 <br>
+133 133 133 grey52 <br>
+135 135 135 gray53 <br>
+135 135 135 grey53 <br>
+138 138 138 gray54 <br>
+138 138 138 grey54 <br>
+140 140 140 gray55 <br>
+140 140 140 grey55 <br>
+143 143 143 gray56 <br>
+143 143 143 grey56 <br>
+145 145 145 gray57 <br>
+145 145 145 grey57 <br>
+148 148 148 gray58 <br>
+148 148 148 grey58 <br>
+150 150 150 gray59 <br>
+150 150 150 grey59 <br>
+153 153 153 gray60 <br>
+153 153 153 grey60 <br>
+156 156 156 gray61 <br>
+156 156 156 grey61 <br>
+158 158 158 gray62 <br>
+158 158 158 grey62 <br>
+161 161 161 gray63 <br>
+161 161 161 grey63 <br>
+163 163 163 gray64 <br>
+163 163 163 grey64 <br>
+166 166 166 gray65 <br>
+166 166 166 grey65 <br>
+168 168 168 gray66 <br>
+168 168 168 grey66 <br>
+171 171 171 gray67 <br>
+171 171 171 grey67 <br>
+173 173 173 gray68 <br>
+173 173 173 grey68 <br>
+176 176 176 gray69 <br>
+176 176 176 grey69 <br>
+179 179 179 gray70 <br>
+179 179 179 grey70 <br>
+181 181 181 gray71 <br>
+181 181 181 grey71 <br>
+184 184 184 gray72 <br>
+184 184 184 grey72 <br>
+186 186 186 gray73 <br>
+186 186 186 grey73 <br>
+189 189 189 gray74 <br>
+189 189 189 grey74 <br>
+191 191 191 gray75 <br>
+191 191 191 grey75 <br>
+194 194 194 gray76 <br>
+194 194 194 grey76 <br>
+196 196 196 gray77 <br>
+196 196 196 grey77 <br>
+199 199 199 gray78 <br>
+199 199 199 grey78 <br>
+201 201 201 gray79 <br>
+201 201 201 grey79 <br>
+204 204 204 gray80 <br>
+204 204 204 grey80 <br>
+207 207 207 gray81 <br>
+207 207 207 grey81 <br>
+209 209 209 gray82 <br>
+209 209 209 grey82 <br>
+212 212 212 gray83 <br>
+212 212 212 grey83 <br>
+214 214 214 gray84 <br>
+214 214 214 grey84 <br>
+217 217 217 gray85 <br>
+217 217 217 grey85 <br>
+219 219 219 gray86 <br>
+219 219 219 grey86 <br>
+222 222 222 gray87 <br>
+222 222 222 grey87 <br>
+224 224 224 gray88 <br>
+224 224 224 grey88 <br>
+227 227 227 gray89 <br>
+227 227 227 grey89 <br>
+229 229 229 gray90 <br>
+229 229 229 grey90 <br>
+232 232 232 gray91 <br>
+232 232 232 grey91 <br>
+235 235 235 gray92 <br>
+235 235 235 grey92 <br>
+237 237 237 gray93 <br>
+237 237 237 grey93 <br>
+240 240 240 gray94 <br>
+240 240 240 grey94 <br>
+242 242 242 gray95 <br>
+242 242 242 grey95 <br>
+245 245 245 gray96 <br>
+245 245 245 grey96 <br>
+247 247 247 gray97 <br>
+247 247 247 grey97 <br>
+250 250 250 gray98 <br>
+250 250 250 grey98 <br>
+252 252 252 gray99 <br>
+252 252 252 grey99 <br>
+255 255 255 gray100 <br>
+255 255 255 grey100</p>
+
+<h2>FURTHER INFORMATION
+<a name="FURTHER INFORMATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">For more
+information on the use of color, read Appendix I of the
+<b>GMT TECHNICAL REFERENCE AND COOKBOOK</b>.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><A HREF="gmtdefaults.html">gmtdefaults</A></i>(1),
+<i><A HREF="gmtlogo.html">gmtlogo</A></i>(1), <i><A HREF="grdcontour.html">grdcontour</A></i>(1),
+<i><A HREF="grdvector.html">grdvector</A></i>(1), <i><A HREF="grdview.html">grdview</A></i>(1), <i><A HREF="psbasemap.html">psbasemap</A></i>(1),
+<i><A HREF="pscoast.html">pscoast</A></i>(1), <i><A HREF="pscontour.html">pscontour</A></i>(1),
+<i><A HREF="pshistogram.html">pshistogram</A></i>(1), <i><A HREF="psimage.html">psimage</A></i>(1),
+<i><A HREF="pslegend.html">pslegend</A></i>(1), <i><A HREF="psmask.html">psmask</A></i>(1), <i><A HREF="psrose.html">psrose</A></i>(1),
+<i><A HREF="pstext.html">pstext</A></i>(1), <i><A HREF="pswiggle.html">pswiggle</A></i>(1), <i><A HREF="psxy.html">psxy</A></i>(1),
+<i><A HREF="psxyz.html">psxyz</A></i>(1)</p>
+<hr>
+</body>
+</html>

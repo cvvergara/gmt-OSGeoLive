@@ -1,0 +1,5 @@
+#	$Id: GMT_cool.cpt 9545 2011-07-27 19:31:54Z pwessel $
+#
+# Simulates the COOL colormap in Matlab
+# COLOR_MODEL = RGB
+0	0	255	255	1	255	0	255

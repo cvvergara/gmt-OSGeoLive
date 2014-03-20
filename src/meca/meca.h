@@ -1,6 +1,6 @@
-/*	$Id: meca.h 11286 2013-04-09 17:08:06Z pwessel $
- *    Copyright (c) 1996-2012 by G. Patau
- *    Distributed under the Lesser GNU Public Licence
+/*	$Id: meca.h 10173 2014-01-01 09:52:34Z pwessel $
+ *    Copyright (c) 1996-2014 by G. Patau
+ *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  */
 
@@ -9,11 +9,11 @@
 
 #define EPSIL 0.0001
 
-#ifndef true
-#define true 1
+#ifndef TRUE
+#define TRUE 1
 #endif
-#ifndef false
-#define false 0
+#ifndef FALSE
+#define FALSE 0
 #endif
 
 #ifndef M_PI_4
@@ -26,36 +26,40 @@
 #define squared(x) ((x) * (x))
 
 struct AXIS {
-	double str;
-	double dip;
-	double val;
-	int e;
+    double str;
+    double dip;
+    double val;
+    GMT_LONG e;
 };
 /* val in 10**e dynes-cm */
 
 struct MOMENT {
-	double mant;
-	int exponent;
+    double mant;
+    GMT_LONG exponent;
 };
 
 struct nodal_plane {
-	double str;
-	double dip;
-	double rake;
+    double str;
+    double dip;
+    double rake;
 }; 
 
 struct MECHANISM {
-	struct nodal_plane NP1;
-	struct nodal_plane NP2;
-	struct MOMENT moment;
-	double magms;
+    struct nodal_plane NP1;
+    struct nodal_plane NP2;
+    struct MOMENT moment;
+    double magms;
 };
 
 struct M_TENSOR {
-	int expo;
-	double f[6];
+    GMT_LONG expo;
+    double f[6];
 };
 /* mrr mtt mff mrt mrf mtf in 10**expo dynes-cm */
 
 typedef struct MOMENT st_mo;
 typedef struct MECHANISM st_me;
+
+double datan2(double y,double x);
+double zero_360(double str);
+void dc_to_axe(st_me meca,struct AXIS *T,struct AXIS *N,struct AXIS *P);

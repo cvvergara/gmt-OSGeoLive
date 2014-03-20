@@ -1,0 +1,26 @@
+/* grdinfo.h	[Created by src/GNUmakefile] */
+#define N_GRD_TYPES 22
+char *GMT_grd_type[N_GRD_TYPES] = {
+"GMT native, C-binary format (float)                     ",
+"GMT native, C-binary format (short)                     ",
+"SUN rasterfile format (8-bit standard)                  ",
+"GMT native, C-binary format (byte)                      ",
+"GMT native, C-binary format (bit-mask)                  ",
+"Golden Software Surfer format 6 (float)                 ",
+"GMT netCDF format (byte) (deprecated)                   ",
+"GMT netCDF format (short) (deprecated)                  ",
+"GMT netCDF format (int) (deprecated)                    ",
+"GMT netCDF format (float) (deprecated)                  ",
+"GMT netCDF format (double) (deprecated)                 ",
+"GEODAS grid format GRD98 (NGDC)                         ",
+"GMT native, C-binary format (int)                       ",
+"GMT native, C-binary format (double)                    ",
+"GMT netCDF format (byte)   (COARDS-compliant)           ",
+"GMT netCDF format (short)  (COARDS-compliant)           ",
+"GMT netCDF format (int)    (COARDS-compliant)           ",
+"GMT netCDF format (float)  (COARDS-compliant) [DEFAULT] ",
+"GMT netCDF format (double) (COARDS-compliant)           ",
+"Golden Software Surfer format 7 (double, read-only)     ",
+"Atlantic Geoscience Center format AGC (float)           ",
+"Import through GDAL (convert to float) -- NON-STANDARD  ",
+};

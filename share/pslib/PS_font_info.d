@@ -1,4 +1,4 @@
-#	$Id: PS_font_info.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: PS_font_info.d 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	Listing of "Standard" 35 PostScript fonts found on most PS printers.
 #	To add additional fonts, create a similar file called CUSTOM_font_info.d

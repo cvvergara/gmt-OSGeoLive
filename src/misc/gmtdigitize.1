@@ -1,0 +1,235 @@
+.TH GMTDIGITIZE 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+gmtdigitize \- Digitizing and Inverse map transformation of map x/y coordinates 
+.SH SYNOPSIS
+\fBgmtdigitize\fP \fB\-J\fP\fIparameters\fP \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] 
+[ \fB\-A\fP ] [ \fB\-C\fP\fIdevice\fP ] [ \fB\-D\fP\fIlimit\fP ] [ \fB\-F\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] 
+[ \fB\-L\fP\fIlpi\fP ] [ \fB\-N\fP\fInamestem\fP ] [ \fB\-S\fP ] 
+[ \fB\-V\fP ] [ \fB\-Zk\fP|\fBv\fP ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-m\fP[\fIflag\fP] ] [ > output.d ]
+.SH DESCRIPTION
+\fBgmtdigitize\fP digitizes points from a digitizer via a serial line connection and
+computes map coordinates using the specified map projection.  The program is interactive
+and will take you through the setup procedure and how you will digitize points.
+The program will determine the actual map scale as well as rotation of the paper that
+is taped to the digitizer table.  By default the output will go to stdout.
+.br
+	No space between the option flag and the associated arguments.  Use upper case for the
+option flags and lower case for modifiers.
+.TP
+\fB\-J\fP
+Selects the map projection. Scale is UNIT/degree, 1:xxxxx, or width in UNIT (upper case modifier).
+UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP setting in \.gmtdefaults4, but this can be
+overridden on the command line by appending \fBc\fP, \fBi\fP, or \fBm\fP to the scale/width value.
+When central meridian is optional, default is center of longitude range on \fB\-R\fP option.
+Default standard parallel is the equator.
+For map height, max dimension, or min dimension, append \fBh\fP, \fB+\fP, or \fB-\fP to the width,
+respectively.
+.br
+More details can be found in the \fBpsbasemap\fP man pages.
+.br
+.sp
+\fBCYLINDRICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jc\fP\fIlon0/lat0/scale\fP (Cassini)
+.br
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Stereographic)
+.br
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP (Miller)
+.br
+\fB\-Jm\fP[\fIlon0\fP/[\fIlat0/\fP]]\fIscale\fP (Mercator)
+.br
+\fB\-Jm\fP\fIlon0/lat0/scale\fP (Mercator - Give meridian and standard parallel)
+.br
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP (Oblique Mercator - point and azimuth)
+.br
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP (Oblique Mercator - two points)
+.br
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP (Oblique Mercator - point and pole)
+.br
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equidistant)
+.br
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP (TM - Transverse Mercator)
+.br
+\fB\-Ju\fP\fIzone/scale\fP (UTM - Universal Transverse Mercator)
+.br
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equal-Area) 
+.br
+.sp
+\fBCONIC PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP (Albers)
+.br
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP (Conic Equidistant)
+.br
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP (Lambert Conic Conformal)
+.br
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP ((American) Polyconic)
+.br
+.sp
+\fBAZIMUTHAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Lambert Azimuthal Equal-Area)
+.br
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Azimuthal Equidistant)
+.br
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Gnomonic)
+.br
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Orthographic)
+.br
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP (General Perspective).
+.br
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (General Stereographic)
+.br
+.sp
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP (Hammer)
+.br
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP (Sinusoidal)
+.br
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP (Eckert IV)
+.br
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP (Eckert VI)
+.br
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP (Robinson)
+.br
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP (Winkel Tripel)
+.br
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP (Van der Grinten)
+.br
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP (Mollweide)
+.br
+.sp
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+.br
+\fB\-Jx\fP\fIx-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP][\fI/y-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP]] (Linear, log, and power scaling)
+.br
+For geographic projections you can give 1 as the scale will be solved for anyway.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.SH OPTIONS
+.TP
+\fB\-A\fP
+Give an audible signal each time the digitizer mouse/puck is clicked [Default is silent].
+.TP
+\fB\-C\fP
+Specify the device (port) to read from [Default is /dev/ttyS0].
+.TP
+\fB\-D\fP
+Only output a point if it is further than \fIlimit\fP units from the previous point.  Append
+\fBc, i, m, p\fP for cm, inch, meter, or point, respectively [Default is no limit].
+.TP
+\fB\-F\fP
+Force the program to ask for 4 arbitrary calibration points [Default is to use the
+4 corners of the map, if possible].
+.TP
+\fB\-H\fP
+This option allows you to write out any number of header records to the beginning of the
+output file.  Each record will automatically start with a #-character to indicate comment.
+Headers are not written if multiple output files are selected with \fB\-N\fP \fB\-m\fP.
+.TP
+\fB\-L\fP
+Set the digitizer table resolution in lines per inch [2540].
+.TP
+\fB\-N\fP
+Set name for output file(s).  If a regular filename is given, then all digitized data will be written to that
+file.  If the file contains a C-format for an integer (i.e., %d) then the file is used as a format statement
+to create unique filenames based on the current segment number (e.g., line_%d.d will yield files line_0.d, line_1.d, etc).
+By default, all output is written to stdout.  Multiple segment files requires specifying the \fB\-m\fP option.
+.TP
+\fB\-S\fP
+Suppress points that fall outside the specified map region [Default outputs all points].
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+The program will also duplicate data output to stderr for monitoring.
+.TP
+\fB\-Z\fP
+Append \fBv\fP to prompt for a \fIz\fP-value and output it as a third data column.
+Append \fBk\fP to output the button key as the final data column.  Both \fB\-Zk\fP and
+\fB\-Zv\fP can be specified. [Default is just 2 column x,y output].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+.TP
+\fB\-m\fP
+Multiple segment file(s).  Segments are separated by a special record.
+For ASCII files the first character must be \fIflag\fP [Default is '>'].
+For binary files all fields must be NaN and \fB\-b\fP must
+set the number of output columns explicitly.  By default the \fB\-m\fP
+setting applies to both input and output.  Use \fB\-mi\fP and \fB\-mo\fP
+to give separate settings to input and output.
+.SH EXAMPLES
+To digitize lines from a mercator map made for a given region, and
+save each line segment in individual files called segment_000.xy, segment_001.xy etc, try
+.br
+.sp
+gmtdigitize \fB\-R\fP 20/50/12/25 \fB\-Jm\fP 1:1 \fB\-m\fP \fB\-N\fP segment_%3.3d.xy
+.br
+.sp
+To digitize seismically defined interfaces from a multichannel seismic section, with horizontal
+distances from 130 to 970, and vertical times from 0 to 10 seconds, write out the button code, and
+save all line segment to a single multisegment file, and beep at each click, try
+.br
+.sp
+gmtdigitize \fB\-R\fP 130/970/0/10 \fB\-Jx\fP 1/-1 \fB\-m\fP \fB\-A\fP \fB\-Z\fP > interfaces.d
+.br
+.SH SYSTEM SETUP
+This applies to the Calcomp DrawingBoard III hooked up to a RedHat Linux workstation.
+We use /dev/ttyS0 as the serial port and change permissions so that it is world read/write-able.
+Then, stty -F /dev/ttyS0 evenp will set the terminal settings, which can be checked with stty -F /dev/ttyS0 -a.
+Setup of digitizer: We use the CalComp 2000 ASCII (Save 3) setup, which has:
+.br
+Mode: Point
+.br
+Baud Rate: 9600
+.br
+Data Bits: 7
+.br
+Parity: Even
+.br
+Data Rate: 125 pps
+.br
+Resolution: 200 lpi
+.br
+Output Format: Format 0
+.br
+Emulation: CalComp 2000 ASCII
+.br
+(A)We need to make a slight modification to the Preset No 3 settings:
+(1) 2450 LPI instead of 200, and (2) None instead of yes for added CR.
+These modifications can be changed and saved to Preset 3 on
+the digitizer but a power outage may reset in back to the factory defaults, necessitating
+a manual reset of those two settings.
+(B) Setup tty port.  stty -F /dev/ttyS0 evenp
+(C) Run gmtdigitize.  Map scale does not matter; it is computed from the region and plot size.
+.SH "SEE ALSO"
+.IR gmtdefaults (l),
+.IR GMT (l),
+.IR gmtstitch (l),
+.IR mapproject (l),
+.IR project (l)

@@ -1,0 +1,8 @@
+#	$Id: agu2013.txt 10112 2013-11-01 16:53:34Z pwessel $
+#	AGU Membership as of Nov 2013. Pr Robert Burman <RBurman@agu.org>
+-100    42      30774	NA	North America
+-60     -20     958	SA	South America
+20      10      144	AF	Africa
+90      30      5922	AS	Asia
+10      50      8292	EU	Europe
+140     -30     1288	AU	Oceania

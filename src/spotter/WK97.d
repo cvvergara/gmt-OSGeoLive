@@ -1,4 +1,4 @@
-#	$Id: WK97.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: WK97.d 9545 2011-07-27 19:31:54Z pwessel $
 #
 # Stage poles for the Pacific plate relative to
 # the hotspots.  From Wessel, P. & L.W. Kroenke (1997),

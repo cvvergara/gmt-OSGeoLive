@@ -1,23 +1,23 @@
 /*--------------------------------------------------------------------
- *	$Id: hotspotter.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: hotspotter.c 10173 2014-01-01 09:52:34Z pwessel $
  *
- *   Copyright (c) 1999-2012 by P. Wessel
+ *   Copyright (c) 1999-2014 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU Lesser General Public License as published by
- *   the Free Software Foundation; version 3 or any later version.
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; version 2 or any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU Lesser General Public License for more details.
+ *   GNU General Public License for more details.
  *
  *   Contact info: www.soest.hawaii.edu/pwessel
  *--------------------------------------------------------------------*/
 /*
  * HOTSPOTTER will (1) read ascii file(s) with records for each seamount
- * (2) read an ascii file with stage or total reconstruction rotations,
- * (3) convolve the flowline of each seamount with its gravimetric shape, and
+ * (2) read an ascii file with stage (Euler) rotations, and (3)
+ * convolve the flowline of each seamount with its gravimetric shape, and
  * (4) build a cumulative volcano amplitude (CVA) grid.  The grid is
  * written out in GMT format and can be processed and plotted with GMT.
  * HOTSPOTTER is part of the SPOTTER supplemental GMT package and should
@@ -28,7 +28,7 @@
  * Version:	1.0
  *
  *-------------------------------------------------------------------------
- * An ASCII stage pole (Euler) file must have following format:
+ * The Euler file must have following format:
  *
  * 1. Any number of comment lines starting with # in first column
  * 2. Any number of blank lines (just carriage return, no spaces)
@@ -48,29 +48,11 @@
  * 253     17	65	42	14.0
  * 285     68	42	0	34.0
  *
- * AN ASCII total reconstruction file must have the following format:
-*
- * 1. Any number of comment lines starting with # in first column
- * 2. Any number of blank lines (just carriage return, no spaces)
- * 2. Any number of finite pole records which each have the format:
- *    lon(deg)  lat(deg)  tstop(Ma)  ccw-angle(deg)
- * 3. total reconstructions rotations must go from youngest to oldest
- *
- * Example: Duncan & Clague [1985] Pacific-Hotspot rotations:
- *
- * # Time in Ma, angles in degrees
- * #longitude	latitude	time(My)	angle(deg)
- * 285.00000	 68.00000	 42.0000	 34.0000
- * 275.66205	 53.05082	 65.0000	 43.5361
- * 276.02501	 48.34232	 74.0000	 50.0405
- * 279.86436	 46.30610	100.0000	 64.7066
- * 265.37800	 55.69932	150.0000	 82.9957
- *
  *
  * Seamount data file(s) must have the following format:
  * 1. Any number of comment lines starting with # in first column
  * 2. Any number of blank lines (just carriage return, no spaces)
- * 3. Any number of seamount records which each have the format:
+ * 3. ANy number of seamount records which each have the format:
  *    lon(deg)  lat(deg)  amplitude radius(km) age(Ma)
  * 4. The amplitude is in user units (m, mGal, km^3, whatever)
  * 5. Age represents the upper possible age for seamount, which
@@ -123,472 +105,462 @@
  *
  */
  
-#define THIS_MODULE_NAME	"hotspotter"
-#define THIS_MODULE_LIB		"spotter"
-#define THIS_MODULE_PURPOSE	"Create CVA image from seamount locations"
-
 #include "spotter.h"
 
-#define GMT_PROG_OPTIONS "-:>RVbghirs" GMT_OPT("FHMm")
-
-struct HOTSPOTTER_CTRL {	/* All control options for this program (except common args) */
-	/* active is true if the option has been activated */
-	struct D {	/* -D<factor> */
-		bool active;
-		double value;	/* Resampling factor */
-	} D;
-	struct E {	/* -E[+]rotfile */
-		bool active;
-		bool mode;
-		char *file;
-	} E;
-	struct G {	/* -Goutfile */
-		bool active;
-		char *file;
-	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
-	struct N {	/* -N */
-		bool active;
-		double t_upper;
-	} N;
-	struct S {	/* -S */
-		bool active;
-		char *file;
-	} S;
-	struct T {	/* -T<tzero> */
-		bool active;
-		double t_zero;	/* Set zero age*/
-	} T;
-};
-
-void *New_hotspotter_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
-	struct HOTSPOTTER_CTRL *C;
-	
-	C = GMT_memory (GMT, NULL, 1, struct HOTSPOTTER_CTRL);
-	
-	/* Initialize values whose defaults are not 0/false/NULL */
-	
-	C->D.value = 0.5;	/* Sets how many points along flowline per node */
-	C->N.t_upper = 180.0;	/* Upper age assigned to seamounts on undated seafloor */
-	return (C);
-}
-
-void Free_hotspotter_Ctrl (struct GMT_CTRL *GMT, struct HOTSPOTTER_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
-	if (C->E.file) free (C->E.file);	
-	if (C->G.file) free (C->G.file);	
-	if (C->S.file) free (C->S.file);	
-	GMT_free (GMT, C);	
-}
-
-int GMT_hotspotter_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: hotspotter [<table>] -E[+]<rottable> -G<CVAgrid> %s\n", GMT_Id_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t%s [-D<factor>] [-N<upper_age>] [-S] [-T] [%s]\n", GMT_Rgeo_OPT, GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
-		GMT_bi_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_colon_OPT);
-
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
-
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Specify the rotation file to be used (see man page for format).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Prepend + if you want to invert the rotations prior to use.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-G Specify file name for output CVA grid.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-I Specify grid interval(s); Append m [or c] to <dx> and/or <dy> for minutes [or seconds].\n");
-	GMT_Option (API, "Rg");
-	GMT_Message (API, GMT_TIME_NONE, "\t<table> (in ASCII, binary, or netCDF) has 5 or more columns.  If no file(s) is given,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   standard input is read.  Expects (x,y,z,r,t) records, with t in Ma.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-D Scale affecting distance between points along flowline [0.5].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Set upper age in m.y. for seamounts whose plate age is NaN [180].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Normalize CVA grid to percentages of the CVA maximum.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-T Truncate all ages to max age in stage pole model [Default extrapolates].\n");
-	GMT_Option (API, "V,bi5,h,i,r,:,.");
-	
-	return (EXIT_FAILURE);
-}
-
-int GMT_hotspotter_parse (struct GMT_CTRL *GMT, struct HOTSPOTTER_CTRL *Ctrl, struct GMT_OPTION *options)
-{
-	/* This parses the options provided to hotspotter and sets parameters in CTRL.
-	 * Any GMT common options will override values set previously by other commands.
-	 * It also replaces any file names specified as input or output with the data ID
-	 * returned when registering these sources/destinations with the API.
-	 */
-
-	unsigned int n_errors = 0, k;
-	struct GMT_OPTION *opt = NULL;
-	struct GMTAPI_CTRL *API = GMT->parent;
-
-	for (opt = options; opt; opt = opt->next) {
-		switch (opt->option) {
-
-			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
-				break;
-
-			/* Supplemental parameters */
-			case 'C':	/* Now done automatically in spotter_init */
-				if (GMT_compat_check (GMT, 4))
-					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -C is no longer needed as total reconstruction vs stage rotation is detected automatically.\n");
-				else
-					n_errors += GMT_default_error (GMT, opt->option);
-				break;
-
-			case 'D':
-				Ctrl->D.active = true;
-				Ctrl->D.value = atof (opt->arg);
-				break;
-			case 'E':
-				Ctrl->E.active = true;	k = 0;
-				if (opt->arg[0] == '+') { Ctrl->E.mode = true; k = 1;}
-				if (GMT_check_filearg (GMT, 'E', &opt->arg[k], GMT_IN))
-					Ctrl->E.file  = strdup (&opt->arg[k]);
-				else
-					n_errors++;
-				break;
-			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
-					Ctrl->G.file = strdup (opt->arg);
-				else
-					n_errors++;
-				break;
-			case 'I':
-				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
-				break;
-			case 'N':
-				Ctrl->N.active = true;
-				Ctrl->N.t_upper = atof (opt->arg);
-				break;
-			case 'S':
-				Ctrl->S.active = true;
-				break;
-			case 'T':
-				Ctrl->T.active = true;
-				break;
-			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
-				break;
-		}
-	}
-
-	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
-
-        if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0) GMT->common.b.ncol[GMT_IN] = 5;
-	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
-	n_errors += GMT_check_condition (GMT, !(Ctrl->G.active || Ctrl->G.file), "Syntax error option: Must specify output file\n");
-	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] < 5, "Syntax error option: Binary input data (-bi) must have at least 5 columns\n");
-
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
-}
-
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_hotspotter_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
-
-int GMT_hotspotter (void *V_API, int mode, void *args)
+int main (int argc, char **argv)
 {
 
-	uint64_t n_smts;		/* Number of seamounts read */
-	uint64_t n_track;		/* Number of points along a single flowline */
-	uint64_t n_read = 0;	/* Number of records read */
-	uint64_t node, node_0;		/* Grid indices */
-	uint64_t n_expected_fields;
-	unsigned int n_stages;	/* Number of stage rotations (poles) */
-	unsigned int row, col, kx, ky, m;
-	int node_x_width;		/* Number of x-nodes covered by the seamount in question (y-dependent) */
-	int node_y_width;		/* Number of y-nodes covered by the seamount */
-	int d_col, d_row, col_0, row_0, nx, ny;
-	int error = 0;			/* nonzero when arguments are wrong */
-	
+	GMT_LONG n_smts;		/* Number of seamounts read */
+	GMT_LONG n_stages;		/* Number of stage rotations (poles) */
+	GMT_LONG n_chunk;		/* Number of path values returned by libspotter functions */
+	GMT_LONG n_track;		/* Number of points along a single flowline */
+	GMT_LONG node_x_width;		/* Number of x-nodes covered by the seamount in question (y-dependent) */
+	GMT_LONG node_y_width;		/* Number of y-nodes covered by the seamount */
+	GMT_LONG n_args;		/* Command line argument counter */
+	GMT_LONG n_files = 0;		/* Number of input files on the command line */
+	GMT_LONG node;			/* The current node index */
+	GMT_LONG one_or_zero;		/* Will be 1 or 0 depending on grid format (-F) */
+	GMT_LONG n_fields, n_expected_fields;
+	GMT_LONG n_read = 0;		/* Number of records read */
+	GMT_LONG n_nodes;		/* Number of nodes in the output CVA grid */
+	GMT_LONG node_offset = 0;
+
+	/* Misc. counters */
+
+	GMT_LONG i, j, kx, ky, m, ii, jj, i0, j0, k0, dummy[4], fno;
+
+	GMT_LONG	error = FALSE;		/* TRUE when arguments are wrong */
+	GMT_LONG nofile = TRUE;		/* TRUE when data are to be read from stdin */
+	GMT_LONG truncate_ages = FALSE;	/* Truncate all seamounts ages > upper_age */
+	GMT_LONG finite = FALSE;		/* TRUE if stage pole file contains finite rotation poles instead */
+	GMT_LONG normalize = FALSE;	/* TRUE if we want CVA in percents */
+	GMT_LONG done;
+
+	float *CVA = NULL;		/* The CVA surface we seek to calculate */
 
 	double sampling_int_in_km;	/* Sampling interval along flowline (in km) */
+	double sampling_factor = 0.5;	/* Sets how many points along flowline per node */
+	double upper_age = 180.0;	/* Upper age assigned to seamounts on undated seafloor */
 	double x_smt;			/* Seamount longitude (input degrees, stored as radians) */
 	double y_smt;			/* Seamount latitude (input degrees, stored as radians) */
 	double z_smt;			/* Seamount amplitude (in user units) */
 	double r_smt;			/* Seamount radius (input km, stored as radians) */
 	double t_smt;			/* Seamount upper age (up to age of seafloor) */
 	double norm;			/* Normalization factor based on r_smt */
-	double *xpos = NULL, *ypos = NULL;		/* Coordinates of the output grid (in radians) */
-	double *c = NULL;			/* Array with one flowline */
+	double *xpos = NULL, *ypos = NULL;	/* Coordinates of the output grid (in radians) */
+	double *c = NULL;		/* Array with one flowline */
 	double dx, dy;			/* x,y distance from projected seamount center to nearest node */
 	double *latfactor = NULL, *ilatfactor = NULL;	/* Arrays of latitudinal-dependent x-scales (cos(lat)-stuff) */
 	double x_part, y_part;		/* Components of radius from projected seamount center to current node */
 	double y_part2;			/* y_part squared */
-	double i_yinc_r;		/* 1/y_inc (in radians) */
 	double r2;			/* Radius squared from projected seamount center to current node */
-	double *in = NULL;		/* GMT read array */
-	double wesn[4];			/* Map region in geocentric coordinates in radians */
-	double yg;			/* Geodetic latitude */
+	double west, east, south, north;	/* Region in radians */
+	double xinc_r, yinc_r;		/* Grid spacing in radians */
+	double i_xinc_r, i_yinc_r;	/* Inverse grid spacing in 1/radians */
+	double offset;			/* 0.0 or 0.5, depending onf -F */
+	double half_dx, half_dy;	/* Half grid sizes or 0.0, depending on -F */
+	double *in = NULL;			/* GMT read array */
+	double south_c, north_c, yg;	/* Same but geocentric */
 
-	char *processed_node = NULL;	/* Pointer to array with true/false values for each grid node */
+	char *CVA_file = CNULL;		/* Output name of CVA grid */
+	char *euler_file = CNULL;	/* Input name of file with stage (Euler) rotations */
+	char line[BUFSIZ];		/* Read buffer */
+	char *processed_node = NULL;	/* Pointer to array with TRUE/FALSE values for each grid node */
+	char *not_used = NULL;
 
-	struct GMT_GRID *G = NULL;	/* Grid structure for output CVA grid */
-	struct GMT_GRID *G_rad = NULL;	/* Same but has radians in header (no grid) */
+	FILE *fp = NULL;		/* Input data file pointer */
+
+	struct GRD_HEADER CVA_map;	/* Header structure for output CVA grid */
 
 	struct EULER *p = NULL;		/* Array of structures with Euler stage rotations */
-	struct GMT_OPTION *ptr = NULL;
-	struct HOTSPOTTER_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
-	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
-	/*----------------------- Standard module initialization and parsing ----------------------*/
+	/* ------------------- END OF DECLARATIONS ------------------------------------------------------------*/
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_hotspotter_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	argc = (int)GMT_begin (argc, argv);			/* Initialize GMT environment */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_hotspotter_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_hotspotter_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	GMT_grd_init (&CVA_map, argc, argv, FALSE);	/* Initialize grid structure */
 
-	/* Parse the command-line arguments */
+	GMT_io.in_col_type[0] = GMT_IS_LON;
+	GMT_io.in_col_type[1] = GMT_IS_LAT;
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_hotspotter_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_hotspotter_parse (GMT, Ctrl, options))) Return (error);
+	/* Check command line arguments */
 
-	/*---------------------------- This is the hotspotter main code ----------------------------*/
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch (argv[i][1]) {
+
+				/* Common parameters */
+
+				case 'V':
+				case 'H':
+				case 'R':
+				case ':':
+				case '\0':
+					error += GMT_parse_common_options (argv[i], &CVA_map.x_min, &CVA_map.x_max, &CVA_map.y_min, &CVA_map.y_max);
+					break;
+
+				/* Supplemental parameters */
+
+				case 'b':
+					error += GMT_parse_b_option (&argv[i][2]);
+					break;
+
+				case 'C':	/* Use finite rotation poles */
+					finite = TRUE;
+					break;
+
+				case 'D':
+					sampling_factor = atof (&argv[i][2]);
+					break;
+				case 'E':
+					euler_file = &argv[i][2];
+					break;
+				case 'F':
+					CVA_map.node_offset = 1;
+					break;
+				case 'G':
+					CVA_file = &argv[i][2];
+					break;
+				case 'I':
+					GMT_getinc (&argv[i][2], &CVA_map.x_inc, &CVA_map.y_inc);
+					break;
+				case 'N':
+					upper_age = atof (&argv[i][2]);
+					break;
+				case 'S':
+					normalize = TRUE;
+					break;
+				case 'T':
+					truncate_ages = TRUE;
+					break;
+				default:
+					error = TRUE;
+					GMT_default_error (argv[i][1]);
+					break;
+			}
+		}
+		else
+			n_files++;
+	}
+
+	if (argc == 1 || GMT_give_synopsis_and_exit) {
+		fprintf (stderr, "%s %s - Create CVA image from seamount locations\n\n", GMT_program, SPOTTER_VERSION);
+		fprintf (stderr, "usage: %s [<files>] -E<stage_file> -G<CVAgrid> %s\n", GMT_program, GMT_Id_OPT);
+		fprintf (stderr, "\t%s [-C] [-D<factor>] [-F] [%s] [-N<upper_age>]\n", GMT_Rgeo_OPT, GMT_H_OPT);
+		fprintf (stderr, "\t[-S] [-T] [-V] [%s] [%s]\n\n", GMT_t_OPT, GMT_bi_OPT);
+
+		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
+
+		fprintf (stderr, "\t<files> is one or more seamount (x,y,z,r,t) files\n");
+		fprintf (stderr, "\t-E specifies the rotations to be used (see man page for format)\n\n");
+		fprintf (stderr, "\t-G Specify file name for output CVA grid.\n");
+		GMT_explain_option ('H');
+		fprintf (stderr, "\t-I specifies grid interval(s); Append m [or c] to <dx> and/or <dy> for minutes [or seconds].\n");
+		GMT_explain_option ('R');
+		fprintf (stderr, "\n\tOPTIONS:\n");
+		fprintf (stderr, "\t-C The file given with -E contains finite rotation poles [Default is stage poles]\n");
+		fprintf (stderr, "\t-D Scale affecting distance between points along flowline [0.5]\n");
+		fprintf (stderr, "\t-F Force pixel-registration [Default is gridline registration]\n");
+		fprintf (stderr, "\t-N sets upper age in m.y. for seamounts whose plate age is NaN [180]\n");
+		fprintf (stderr, "\t-S Normalize CVA grid to percentages of the CVA maximum\n");
+		fprintf (stderr, "\t-T truncate all ages to max age in stage pole model [Default extrapolates]\n");
+		GMT_explain_option ('V');
+		GMT_explain_option (':');
+		GMT_explain_option ('i');
+		GMT_explain_option ('n');
+		fprintf (stderr, "	   Default is 5 input columns\n");
+		exit (EXIT_FAILURE);
+	}
+
+	GMT_check_lattice (&CVA_map.x_inc, &CVA_map.y_inc, &node_offset, NULL);
+	CVA_map.node_offset = (int)node_offset;
+
+	if (!project_info.region_supplied) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify -R option\n", GMT_program);
+		error++;
+	}
+	if (CVA_map.x_inc <= 0.0 || CVA_map.y_inc <= 0.0) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -I option.  Must specify positive increment(s)\n", GMT_program);
+		error = TRUE;
+	}
+	if (!CVA_file) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -G:  Must specify output file\n", GMT_program);
+		error = TRUE;
+	}
+	if (GMT_io.binary[GMT_IN] && GMT_io.io_header[GMT_IN]) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR.  Binary input data cannot have header -H\n", GMT_program);
+		error++;
+	}
+        if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] == 0) GMT_io.ncol[GMT_IN] = 5;
+        if (GMT_io.binary[GMT_IN] && GMT_io.ncol[GMT_IN] < 5) {
+                fprintf (stderr, "%s: GMT SYNTAX ERROR.  Binary input data (-bi) must have at least 5 columns\n", GMT_program);
+		error++;
+	}
+
+	if (error) exit (EXIT_FAILURE);
+
+	/* ------------------- END OF PROCESSING COMMAND LINE ARGUMENTS  --------------------------------------*/
+
+	GMT_lat_swap_init ();	/* Initialize auxiliary latitude machinery */
 
 	/* Load in the Euler stage poles */
 
-	n_stages = spotter_init (GMT, Ctrl->E.file, &p, true, false, Ctrl->E.mode, &Ctrl->N.t_upper);
+	n_stages = spotter_init (euler_file, &p, TRUE, finite, FALSE, &upper_age, gmtdefs.verbose);
 
 	/* Initialize the CVA grid and structure */
 
-	if ((G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
-		GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+	xinc_r = CVA_map.x_inc * D2R;
+	yinc_r = CVA_map.y_inc * D2R;
+
+	if (CVA_map.node_offset) {	/* Pixel grid */
+		one_or_zero = 0;
+		offset = 0.0;
+		half_dx = 0.5 * xinc_r;
+		half_dy = 0.5 * yinc_r;
+	}
+	else {
+		one_or_zero = 1;
+		offset = 0.5;
+		half_dx = half_dy = 0.0;
+	}
+
+	CVA_map.nx = (int)(irint ((CVA_map.x_max - CVA_map.x_min) / CVA_map.x_inc) + one_or_zero);
+	CVA_map.ny = (int)(irint ((CVA_map.y_max - CVA_map.y_min) / CVA_map.y_inc) + one_or_zero);
+	n_nodes = GMT_get_nm (CVA_map.nx, CVA_map.ny);
+	CVA = (float *) GMT_memory (VNULL, (size_t)n_nodes, sizeof(float), GMT_program);
 
 	/* Assign grid-region variables in radians to avoid conversions inside convolution loop */
 
-	if ((G_rad = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_NONE, G)) == NULL) Return (API->error);
-	G_rad->header->inc[GMT_X] = G->header->inc[GMT_X] * D2R;
-	G_rad->header->inc[GMT_Y] = G->header->inc[GMT_Y] * D2R;
-	G_rad->header->wesn[XLO]  = G->header->wesn[XLO] * D2R;
-	G_rad->header->wesn[XHI]  = G->header->wesn[XHI] * D2R;
-	G_rad->header->wesn[YLO]  = G->header->wesn[YLO] * D2R;
-	G_rad->header->wesn[YHI]  = G->header->wesn[YHI] * D2R;
-
-	/* Get geocentric wesn region in radians */
-	GMT_memcpy (wesn, G_rad->header->wesn, 4, double);
-	wesn[YLO] = D2R * GMT_lat_swap (GMT, R2D * wesn[YLO], GMT_LATSWAP_G2O);
-	wesn[YHI] = D2R * GMT_lat_swap (GMT, R2D * wesn[YHI], GMT_LATSWAP_G2O);
-	
-	/* Initialize the CVA grid and structure */
-
-	i_yinc_r = 1.0 / G_rad->header->inc[GMT_Y];
+	west   = CVA_map.x_min * D2R;
+	east   = CVA_map.x_max * D2R;
+	south  = CVA_map.y_min * D2R;
+	north  = CVA_map.y_max * D2R;
+	south_c  = GMT_lat_swap (CVA_map.y_min, GMT_LATSWAP_G2O) * D2R;	/* Convert to geocentric */ 
+	north_c  = GMT_lat_swap (CVA_map.y_max, GMT_LATSWAP_G2O) * D2R;	/* Convert to geocentric */ 
+	i_xinc_r = 1.0 / xinc_r;
+	i_yinc_r = 1.0 / yinc_r;
 
 	/* Precalculate coordinates xpos[], ypos[] and scale factors(lat) on the grid */
 
-	xpos = GMT_grd_coord (GMT, G_rad->header, GMT_X);
-	ypos = GMT_grd_coord (GMT, G_rad->header, GMT_Y);
+	xpos = (double *) GMT_memory (VNULL, (size_t)CVA_map.nx, sizeof(double), GMT_program);
+	ypos = (double *) GMT_memory (VNULL, (size_t)CVA_map.ny, sizeof(double), GMT_program);
+	latfactor  = (double *) GMT_memory (VNULL, (size_t)CVA_map.ny, sizeof(double), GMT_program);
+	ilatfactor = (double *) GMT_memory (VNULL, (size_t)CVA_map.ny, sizeof(double), GMT_program);
 
-	latfactor  = GMT_memory (GMT, NULL, G->header->ny, double);
-	ilatfactor = GMT_memory (GMT, NULL, G->header->ny, double);
-
-	for (row = 0; row < G->header->ny; row++) {
-		latfactor[row] = G_rad->header->inc[GMT_X] * cos (ypos[row]);
-		ilatfactor[row] = 1.0 / latfactor[row];
+	for (i = 0; i < CVA_map.nx; i++) xpos[i] = west + i * xinc_r + half_dx;
+	for (j = 0; j < CVA_map.ny; j++) {
+		ypos[j] = north - j * yinc_r - half_dy;
+		latfactor[j] = xinc_r * cos (ypos[j]);
+		ilatfactor[j] = 1.0 / latfactor[j];
 	}
 
 	/* Allocate T/F array */
 
-	processed_node = GMT_memory (GMT, NULL, G->header->size, char);
+	processed_node = (char *) GMT_memory (VNULL, n_nodes, sizeof (char), GMT_program);
 
 	/* Set flowline sampling interval to 1/2 of the shortest distance between x-nodes */
 
-	sampling_int_in_km = Ctrl->D.value * G_rad->header->inc[GMT_X] * EQ_RAD * ((fabs (G_rad->header->wesn[YHI]) > fabs (G_rad->header->wesn[YLO])) ? cos (G_rad->header->wesn[YHI]) : cos (G_rad->header->wesn[YLO]));
-	GMT_Report (API, GMT_MSG_VERBOSE, "Flowline sampling interval = %.3f km\n", sampling_int_in_km);
+	sampling_int_in_km = sampling_factor * xinc_r * EQ_RAD * ((fabs (north) > fabs (south)) ? cos (north) : cos (south));
+	if (gmtdefs.verbose) fprintf (stderr, "%s: Flowline sampling interval = %.3f km\n", GMT_program, sampling_int_in_km);
 
-	if (Ctrl->T.active) GMT_Report (API, GMT_MSG_VERBOSE, "Seamount ages truncated to %g\n", Ctrl->N.t_upper);
+	if (truncate_ages && gmtdefs.verbose) fprintf (stderr, "%s: Seamount ages truncated to %g\n", GMT_program, upper_age);
 
 	/* Start to read input data */
 
+	if (GMT_io.binary[GMT_IN] && gmtdefs.verbose) {
+		char *type[2] = {"double", "single"};
+		fprintf (stderr, "%s: Expects %ld-column %s-precision binary data\n", GMT_program, GMT_io.ncol[GMT_IN], type[GMT_io.single_precision[GMT_IN]]);
+	}
+
+	if (n_files > 0)
+		nofile = FALSE;
+	else
+		n_files = 1;
+	n_args = (argc > 1) ? argc : 2;
+
+	done = FALSE;
+
 	n_smts = 0;
-	nx = G->header->nx;	ny = G->header->ny;	/* Signed integers */
 
-	n_expected_fields = (GMT->common.b.ncol[GMT_IN]) ? GMT->common.b.ncol[GMT_IN] : 5;
-	if ((error = GMT_set_cols (GMT, GMT_IN, n_expected_fields)) != GMT_OK) {
-		Return (error);
-	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
-		Return (API->error);
-	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
-		Return (API->error);
-	}
+	n_expected_fields = (GMT_io.ncol[GMT_IN]) ? GMT_io.ncol[GMT_IN] : 5;
 
-	do {	/* Keep returning records until we reach EOF */
-		n_read++;
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
-				Return (GMT_RUNTIME_ERROR);
-			if (GMT_REC_IS_ANY_HEADER (GMT)) 	/* Skip all headers */
-				continue;
-			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
-				break;
+	for (fno = 1; !done && fno < n_args; fno++) {	/* Loop over all input files */
+
+		if (!nofile && argv[fno][0] == '-') continue;	/* Skip argument */
+		if (nofile) {
+			fp = stdin;
+			done = TRUE;
+		}
+		else if ((fp = GMT_fopen (argv[fno], "r")) == NULL) {
+			fprintf (stderr, "%s: Cannot open file %s\n", GMT_program, argv[fno]);
+			continue;
 		}
 
-		/* Data record to process */
-	
-		/* STEP 1: Read information about a single seamount from input record */
+		if (gmtdefs.verbose) (nofile) ? fprintf (stderr, "%s: Reading stdin\n", GMT_program) : fprintf (stderr, "%s: Working on file %s\n", GMT_program, argv[fno]);
 
-		if (GMT_is_dnan (in[4]))	/* Age is NaN, assign value */
-			t_smt = Ctrl->N.t_upper;
-		else {			/* Assign given value, truncate if necessary */
-			t_smt = in[4];
-			if (t_smt > Ctrl->N.t_upper) {
-				if (Ctrl->T.active)
-					t_smt = Ctrl->N.t_upper;
-				else {
-					GMT_Report (API, GMT_MSG_VERBOSE, "Seamounts near line %" PRIu64 " has age (%g) > oldest stage (%g) (skipped)\n", n_read, t_smt, Ctrl->N.t_upper);
-					continue;
-				}
+		if (GMT_io.io_header[GMT_IN]) for (i = 0; i < GMT_io.n_header_recs; i++) not_used = GMT_fgets (line, BUFSIZ, fp);
+
+		while ((n_fields = GMT_input (fp, &n_expected_fields, &in)) >= 0 && !(GMT_io.status & GMT_IO_EOF)) {	/* Not yet EOF */
+			n_read++;
+			while ((GMT_io.status & GMT_IO_SEGMENT_HEADER) && !(GMT_io.status & GMT_IO_EOF)) {
+				GMT_write_segmentheader (GMT_stdout, n_expected_fields);
+				n_fields = GMT_input (fp, &n_expected_fields, &in);
+				n_read++;
 			}
-		}
+			if (GMT_io.status & GMT_IO_EOF) continue;
 
-		y_smt = D2R * GMT_lat_swap (GMT, in[GMT_Y], GMT_LATSWAP_G2O);	/* Convert to geocentric, and radians */
-		x_smt = in[GMT_X] * D2R;	/* Seamount positions in RADIANS */
+			if (GMT_io.status & GMT_IO_MISMATCH) {
+				fprintf (stderr, "%s: Mismatch between actual (%ld) and expected (%ld) fields near line %ld (skipped)\n", GMT_program, n_fields, n_expected_fields, n_read);
+				continue;
+			}
 
-		/* STEP 2: Calculate this seamount's flowline */
+			in[GMT_Y] = GMT_lat_swap (in[GMT_Y], GMT_LATSWAP_G2O);	/* Convert to geocentric */
 
-		if (spotter_forthtrack (GMT, &x_smt, &y_smt, &t_smt, 1, p, n_stages, sampling_int_in_km, 0.0, 0, NULL, &c) <= 0) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Nothing returned from spotter_forthtrack - aborting\n");
-			Return (GMT_RUNTIME_ERROR);
-		}
+			/* STEP 1: Read information about a single seamount from input record */
 
-		/* Do some normalizations here to save processing inside convolution later */
-
-		z_smt = in[GMT_Z];
-		r_smt = in[3];
-		r_smt /= EQ_RAD;				/* Converts radius in km to radians */
-		norm = -4.5 / (r_smt * r_smt);			/* Gaussian normalization */
-		node_y_width = irint (ceil (i_yinc_r * r_smt));	/* y-node coverage */
-
-		/* STEP 3: Convolve this flowline with seamount shape and add to CVA grid */
-
-		/* Our convolution is approximate:  We sample the flowline frequently and use
-		 * one of the points on the flowline that are closest to the node.  Ideally we
-		 * want the nearest distance from each node to the flowline. Later versions may
-		 * improve on this situation */
-
-		n_track = lrint (c[0]);				/* Number of point pairs making up this flowline */
-
-		GMT_memset (processed_node, G->header->size, char);	/* Fresh start for this flowline convolution */
-
-		for (m = 0, kx = 1; m < n_track; m++, kx += 2) {		/* For each point along flowline */
-
-			ky = kx + 1;	/* Index for the y-coordinate */
-
-			/* First throw out points outside specified grid region */
-
-			if (c[ky] < wesn[YLO] || c[ky] > wesn[YHI]) continue;	/* Geocentric latitude outside region */
-
-			if (c[kx] > wesn[XHI]) c[kx] -= TWO_PI;
-			while (c[kx] < wesn[XLO]) c[kx] += TWO_PI;
-			if (c[kx] > wesn[XHI]) continue;			/* Longitude outside region */
-
-			/* OK, this point is within our region, get node index */
-
-			col = (unsigned int)GMT_grd_x_to_col (GMT, c[kx], G_rad->header);
-			yg = GMT_lat_swap (GMT, R2D * c[ky], GMT_LATSWAP_O2G);		/* Convert back to geodetic */
-			row = (unsigned int)GMT_grd_y_to_row (GMT, yg, G->header);
-			node = GMT_IJP (G->header, row, col);
-
-			if (!processed_node[node]) {	/* Have not added to the CVA at this node yet */
-
-				/* Shape is z_smt * exp (r^2 * norm) */
-
-				node_x_width = irint (ceil (r_smt * ilatfactor[row]));
-				dx = c[kx] - xpos[col];
-				dy = c[ky] - ypos[row];
-
-				/* Loop over a square that circumscribes this seamount's basal outline */
-
-				for (d_row = -node_y_width, row_0 = row - node_y_width; d_row <= node_y_width; d_row++, row_0++) {
-
-					if (row_0 < 0 || row_0 >= ny) continue;	/* Outside grid */
-
-					y_part = d_row * G_rad->header->inc[GMT_Y] - dy;
-					y_part2 = y_part * y_part;
-					node_0 = GMT_IJP (G->header, row_0, 0);
-
-					for (d_col = -node_x_width, col_0 = col - node_x_width; d_col <= node_x_width; d_col++, col_0++) {
-
-						if (col_0 < 0 || col_0 >= nx) continue;	/* Outside grid */
-
-						x_part = d_col * latfactor[row] - dx;
-						r2 = (x_part * x_part + y_part2) * norm;
-						G->data[node_0+col_0] += (float)(z_smt * exp (r2));
+			x_smt = in[0] * D2R;	/* Seamount positions in RADIANS */
+			y_smt = in[1] * D2R;
+			z_smt = in[2];
+			r_smt = in[3];
+			if (GMT_is_dnan (in[4])) {	/* Age is NaN, assign value */
+				t_smt = upper_age;
+			}
+			else {			/* Assign given value, truncate if necessary */
+				t_smt = in[4];
+				if (t_smt > upper_age) {
+					if (truncate_ages) {
+						t_smt = upper_age;
+					}
+					else {
+						fprintf (stderr, "%s: Seamounts near line %ld has age (%g) > oldest stage (%g) (skipped)\n", GMT_program, n_read, t_smt, upper_age);
+						continue;
 					}
 				}
-				processed_node[node] = 1;	/* Now we have visited this node */
 			}
+
+			/* Do some normalizations here to save processing inside convolution later */
+
+			r_smt /= EQ_RAD;				/* Converts radius in km to radians */
+			norm = -4.5 / (r_smt * r_smt);			/* Gaussian normalization */
+			node_y_width = (GMT_LONG)ceil (i_yinc_r * r_smt);	/* y-node coverage */
+
+			/* STEP 2: Calculate this seamount's flowline */
+
+			n_chunk = spotter_forthtrack (&x_smt, &y_smt, &t_smt, (GMT_LONG)1, p, n_stages, sampling_int_in_km, 0.0, FALSE, NULL, &c);
+
+			/* STEP 3: Convolve this flowline with seamount shape and add to CVA grid */
+
+			/* Our convolution is approximate:  We sample the flowline frequently and use
+			 * one of the points on the flowline that are closest to the node.  Ideally we
+			 * want the nearest distance from each node to the flowline. Later versions may
+			 * improve on this situation */
+
+			n_track = irint (c[0]);				/* Number of point pairs making up this flowline */
+
+			memset ((void *)processed_node, 0, n_nodes);	/* Fresh start for this flowline convolution */
+
+			for (m = 0, kx = 1; m < n_track; m++, kx += 2) {		/* For each point along flowline */
+
+				ky = kx + 1;	/* Index for the y-coordinate */
+
+				/* First throw out points outside specified grid region */
+
+				if (c[ky] < south_c || c[ky] > north_c) continue;	/* Latitude outside region */
+
+				if (c[kx] > east) c[kx] -= TWO_PI;
+				while (c[kx] < west) c[kx] += TWO_PI;
+				if (c[kx] > east) continue;			/* Longitude outside region */
+
+				/* OK, this point is within our region, get node index */
+
+				yg = GMT_lat_swap (c[ky], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+				i = (GMT_LONG) floor (((c[kx] - west)  * i_xinc_r) + offset);
+				j = (GMT_LONG) floor (((north - yg) * i_yinc_r) + offset);
+				node = j * CVA_map.nx + i;
+
+				if (!processed_node[node]) {	/* Have not added to the CVA at this node yet */
+
+					/* Shape is z_smt * exp (r^2 * norm) */
+
+					node_x_width = (GMT_LONG) ceil (r_smt * ilatfactor[j]);
+					dx = c[kx] - xpos[i];
+					dy = c[ky] - ypos[j];
+
+					/* Loop over a square that circumscribes this seamounts basal outline */
+
+					for (jj = -node_y_width, j0 = j - node_y_width; jj <= node_y_width; jj++, j0++) {
+
+						if (j0 < 0 || j0 >= CVA_map.ny) continue;	/* Outside grid */
+
+						y_part = jj * yinc_r - dy;
+						y_part2 = y_part * y_part;
+						k0 = j0 * CVA_map.nx;
+
+						for (ii = -node_x_width, i0 = i - node_x_width; ii <= node_x_width; ii++, i0++) {
+
+							if (i0 < 0 || i0 >= CVA_map.nx) continue;	/* Outside grid */
+
+							x_part = ii * latfactor[j] - dx;
+							r2 = (x_part * x_part + y_part2) * norm;
+							CVA[k0+i0] += (float)(z_smt * exp (r2));
+						}
+					}
+					processed_node[node] = 1;	/* Now we have visited this node */
+				}
+			}
+
+			GMT_free ((void *)c);	/* Free the flowline vector */
+
+			n_smts++;	/* Go to next seamount */
+
+			if (gmtdefs.verbose && !(n_smts%100)) fprintf (stderr, "%s: Processed %5ld seamounts\r", GMT_program, n_smts);
 		}
 
-		GMT_free (GMT, c);	/* Free the flowline vector */
-
-		n_smts++;	/* Go to next seamount */
-
-		if (!(n_smts%100)) GMT_Report (API, GMT_MSG_VERBOSE, "Processed %5ld seamounts\r", n_smts);
-	} while (true);
-	
-	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
-		Return (API->error);
+		if (fp != stdin) GMT_fclose (fp);
 	}
 
 	/* OK, Done processing, time to write out */
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processed %5ld seamounts\n", n_smts);
+	if (gmtdefs.verbose) fprintf (stderr, "%s: Processed %5ld seamounts\n", GMT_program, n_smts);
 
-	if (Ctrl->S.active) {	/* Convert CVA values to percent of CVA maximum */
-		uint64_t node;
+	if (normalize) {	/* Convert CVA values to percent of CVA maximum */
+		size_t k;
 		double scale;
 		
-		GMT_Report (API, GMT_MSG_VERBOSE, "Normalize CVS grid to percentages of max CVA\n");
-		G->header->z_min = +DBL_MAX;
-		G->header->z_max = -DBL_MAX;
-		GMT_grd_loop (GMT, G, row, col, node) {	/* Loop over all output nodes */
-			if (GMT_is_fnan (G->data[node])) continue;
-			if (G->data[node] < G->header->z_min) G->header->z_min = G->data[node];
-			if (G->data[node] > G->header->z_max) G->header->z_max = G->data[node];
+		if (gmtdefs.verbose) fprintf (stderr, "%s: Normalize CVS grid to percentages of max CVA\n", GMT_program);
+		CVA_map.z_min = +DBL_MAX;
+		CVA_map.z_max = -DBL_MAX;
+		for (k = 0; k < (size_t)n_nodes; k++) {
+			if (GMT_is_fnan (CVA[k])) continue;
+			if (CVA[k] < CVA_map.z_min) CVA_map.z_min = CVA[k];
+			if (CVA[k] > CVA_map.z_max) CVA_map.z_max = CVA[k];
 		}
-		GMT_Report (API, GMT_MSG_VERBOSE, "CVA min/max: %g %g -> ", G->header->z_min, G->header->z_max);
-		scale = 100.0 / G->header->z_max;
-		for (node = 0; node < G->header->size; node++) G->data[node] *= (float)scale;
-		G->header->z_min *= scale;	G->header->z_max *= scale;
-		GMT_Report (API, GMT_MSG_VERBOSE, "%g %g\n", G->header->z_min, G->header->z_max);
+		if (gmtdefs.verbose) fprintf (stderr, "%s: CVA min/max: %g %g -> ", GMT_program, CVA_map.z_min, CVA_map.z_max);
+		scale = 100.0 / CVA_map.z_max;
+		for (k = 0; k < (size_t)n_nodes; k++) CVA[k] *= (float)scale;
+		CVA_map.z_min *= scale;
+		CVA_map.z_max *= scale;
+		if (gmtdefs.verbose) fprintf (stderr, "%g %g\n", CVA_map.z_min, CVA_map.z_max);
 	}
-	GMT_Report (API, GMT_MSG_VERBOSE, "Write CVA grid %s\n", Ctrl->G.file);
+	if (gmtdefs.verbose) fprintf (stderr, "%s: Write CVA grid %s\n", GMT_program, CVA_file);
 
-	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, G) != GMT_OK) {
-		Return (API->error);
-	}
+	dummy[0] = dummy[1] = dummy[2] = dummy[3] = 0;	/* No grid boundary padding today */
+
+	GMT_err_fail (GMT_write_grd (CVA_file, &CVA_map, CVA, 0.0, 0.0, 0.0, 0.0, dummy, FALSE), CVA_file);
 
 	/* Clean up memory */
 
-	GMT_free (GMT, processed_node);
-	GMT_free (GMT, latfactor);
-	GMT_free (GMT, ilatfactor);
-	GMT_free (GMT, xpos);
-	GMT_free (GMT, ypos);
-	GMT_free (GMT, p);
-	if (GMT_Destroy_Data (API, &G_rad) != GMT_OK) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Failed to free G_rad\n");
-	}
+	GMT_free ((void *)CVA);
+	GMT_free ((void *)processed_node);
+	GMT_free ((void *)latfactor);
+	GMT_free ((void *)ilatfactor);
+	GMT_free ((void *)xpos);
+	GMT_free ((void *)ypos);
+	GMT_free ((void *)p);
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Done\n");
+	if (gmtdefs.verbose) fprintf (stderr, "%s: Done\n", GMT_program);
 
-	Return (GMT_OK);
+	GMT_end (argc, argv);
+
+	exit (EXIT_SUCCESS);
 }

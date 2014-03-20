@@ -1,0 +1,95 @@
+.TH GMTDP 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+gmtdp \- Line reduction using the Douglas-Peucker algorithm
+.SH SYNOPSIS
+\fBgmtdp\fP \fIinfiles\fP \fB\-T\fP\fItolerance\fP [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] 
+[ \fB\-V\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-b\fP[\fBi\fP|\fBo\fP][\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-m\fP[\fBi\fP|\fBo\fP][\fIflag\fP] ]
+.SH DESCRIPTION
+\fBgmtdp\fP reads one or more data files (which may be multisegment files; see \fB\-m\fP)
+and apply the Douglas-Peucker line simplification algorithm. The method recursively 
+subdivides a polygon until a run of points can be replaced by a straight line segment, 
+with no point in that run deviating from the straight line by more than the tolerance. 
+Have a look at this site to get a visual insight on how the algorithm works
+http://geometryalgorithms.com/Archive/algorithm_0205/algorithm_0205.htm
+WARNING: currently this program should be used only with geographical coordinates.
+.TP
+\fIfile(s)\fP
+One of more data files. If none are supplied then we read standard input.
+.SH OPTIONS
+.TP
+\fB\-T\fP
+Specifies the maximum mismatch tolerance in km.
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 2 input columns].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+[Default is same as input].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.TP
+\fB\-m\fP
+Multiple segment file(s).  Segments are separated by a special record.
+For ASCII files the first character must be \fIflag\fP [Default is '>'].
+For binary files all fields must be NaN and \fB\-b\fP must
+set the number of output columns explicitly.  By default the \fB\-m\fP
+setting applies to both input and output.  Use \fB\-mi\fP and \fB\-mo\fP
+to give separate settings to input and output.
+.SH ASCII FORMAT PRECISION
+The ASCII output formats of numerical data are controlled by parameters in
+your \.gmtdefaults4 file.  Longitude and latitude are formatted according to
+\fBOUTPUT_DEGREE_FORMAT\fP, whereas other values are formatted according
+to \fBD_FORMAT\fP.  Be aware that the format in effect can lead to loss of
+precision in the output, which can lead to various problems downstream.  If
+you find the output is not written with enough precision, consider switching
+to binary output (\fB\-bo\fP if available) or specify more decimals using
+the \fBD_FORMAT\fP setting.
+.SH EXAMPLE
+.sp
+To reduce the line segment.d using a tolerance of 2 km, run 
+.br
+.sp
+\fBgmtdp\fP segment.d \fB\-T\fP 2 > new_segment.d
+.br
+.sp
+.SH REFERENCES
+Douglas, D. H., and T. K. Peucker, Algorithms for the reduction
+of the number of points required to represent a digitized line
+of its caricature, \fICan. Cartogr., 10\fP, 112-122, 1973.
+.br
+This implementation of the algorithm has been kindly provided by
+Dr. Gary J. Robinson, Environmental Systems Science Centre,
+University of Reading, Reading, UK (gazza@mail.nerc-essc.ac.uk); his
+subroutine forms the basis for this program.
+.SH "SEE ALSO"
+.IR GMT (1)

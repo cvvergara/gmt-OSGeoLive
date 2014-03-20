@@ -1,0 +1,57 @@
+.TH X_OVER 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+\fBx_over\fP \- Find and compute Cross-Over Errors
+.SH SYNOPSIS
+\fBx_over\fP \fIleg_1\fP [ \fIleg_2\fP ] [ \fB\-A\fP ] [ \fB\-C\fP ] [ \fB\-L\fP ] [ \fB\-V\fP ] 
+[ \fB\-W\fP\fItimegap\fP ] [ \fB\-G\fP\fIfact\fP ] [ \fB\-M\fP\fIfact\fP ] 
+[ \fB\-T\fP\fIfact\fP ] [ \fB\-N\fP\fInp_int\fP ]
+.SH DESCRIPTION
+\fBx_over\fP is used to inspect two cruises to see if they intersect, and if so report the time, position,
+discrepancies in gravity/magnetics/bathymetry, heading for each track segment, and the average
+values of the geophysical observables at the cross-over point. The names of the legs are passed
+on the command line. If they are identical or only one name is passed, then \fBx_over\fP looks for
+internal cross-overs. The optional parameters are:
+.TP
+\fB\-A\fP
+Use an Akima spline to interpolate the geophysical field at the cross-over point.
+.TP
+\fB\-C\fP
+Use a Natural Cubic spline function instead.
+.TP
+\fB\-L\fP
+Use a linear interpolant [Default].
+.TP
+\fB\-W\fP
+Do not compute cross-overs if the 2 nearest points are more than \fItimegap\fP minutes apart.
+.TP
+\fB\-G\fP
+Scale gravity by \fIfact\fP [Default is 0.1 since gmt-files store gravity in g.u.]
+.TP
+\fB\-M\fP
+Scale magnetic anomaly by \fIfact\fP [1.0].
+.TP
+\fB\-T\fP
+Scale bathymetry by \fIfact\fP [1.0].
+.TP
+\fB\-N\fP
+Specify how many points to use in the interpolation [Default is 6].
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+Report the number of cross-overs for this pair of legs.
+.br
+.SH BEWARE
+The COEs found are printed out to standard output in ASCII format. The first record contains the
+leg names and their start year, whereas subsequent records have the data for each COE
+encountered. The fields written out are lat, lon, time along track #1, time along track #2,
+x_gravity, x_magnetics, x_bathymetry, average gravity, average magnetics, average bathymetry,
+heading along track #1, and heading along track #2. Sign convention: If lega and legb are passed
+on the command line, then the COE value is Value (lega) - Value (legb).  It is recommended that
+the Akima spline is used instead of the natural cubic spline, since it is less sensitive to
+outliers that tend to introduce wild oscillations in the interpolation.
+.SH SEE ALSO
+.IR GMT (1),
+.IR x_system (1)
+.SH REFERENCES
+Wessel, P. XOVER: A Cross-over Error Detector for Track Data,
+\fIComputers & Geosciences, 15\fP, 333-346.

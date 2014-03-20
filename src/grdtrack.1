@@ -1,0 +1,159 @@
+.TH GRDTRACK 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+grdtrack \- Sampling of a 2-D grid file along 1-D trackline (a sequence of x,y points)
+.SH SYNOPSIS
+\fBgrdtrack\fP \fIxyfile\fP \fB\-G\fP\fIgrdfile\fP [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-L\fP\fIflag\fP ] 
+[ \fB\-Q\fP[\fBb\fP|\fBc\fP|\fBl\fP|\fBn\fP][[\fB/\fP]\fIthreshold\fP] ] [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-S\fP ]
+[ \fB\-V\fP ] [ \fB\-Z\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-b\fP[\fBi\fP|\fBo\fP][\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ] [ \fB\-m\fP[\fBi\fP|\fBo\fP][\fIflag\fP] ]
+.SH DESCRIPTION
+\fBgrdtrack\fP reads a grid file (or a Sandwell/Smith IMG file) and a table (from file or standard input) with (x,y) positions 
+in the first two columns (more columns may be present). It interpolates the grid at the positions 
+in the table and writes out the table with the interpolated values added as a new column.  A bicubic 
+[Default], bilinear, B-spline or nearest-neighbor (see \fB\-Q\fP) interpolation is used, requiring boundary conditions at the limits 
+of the region (see \fB\-L\fP).
+.TP
+\fIxyfile\fP
+This is an ASCII (or binary, see \fB\-b\fP) file where the first 2 columns hold the (x,y) positions where the user wants to sample
+the 2-D data set.
+.TP
+\fB\-G\fP
+\fIgrdfile\fP is a 2-D binary grid file with the function f(x,y).
+If the specified grid is in Sandwell/Smith Mercator format you must append a comma-separated list of
+arguments that includes a scale to multiply the data (usually 1 or 0.1), the mode which stand for the following:
+(0) Img files with no constraint code, returns data at all points, (1) Img file with constraints coded,
+return data at all points, (2) Img file with constraints coded, return data only at constrained points
+and NaN elsewhere, and (3) Img file with constraints coded, return 1 at constraints and 0 elsewhere,
+and optionally the max latitude in the IMG file [80.738].
+(See GRID FILE FORMAT below.)
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-L\fP
+Boundary condition \fIflag\fP may be \fIx\fP or \fIy\fP or \fIxy\fP indicating data is periodic in range of 
+x or y or both set by \fB\-R\fP, or \fIflag\fP may be \fIg\fP indicating geographical conditions (x and y are 
+lon and lat).  [Default uses "natural" conditions (second partial derivative normal to edge is zero) unless
+the grid is automatically recognised as periodic.]
+.TP
+\fB\-Q\fP
+Quick mode, use bilinear rather than bicubic interpolation [Default].
+Alternatively, select the interpolation mode by adding \fBb\fP for B-spline smoothing,
+\fBc\fP for bicubic interpolation, \fBl\fP for bilinear interpolation or \fBn\fP for
+nearest-neighbor value.
+Optionally, append \fIthreshold\fP in the range [0,1].
+This parameter controls how close to nodes with NaN values the
+interpolation will go.  E.g., a \fIthreshold\fP of 0.5 will interpolate about half way from a non-NaN to a
+NaN node, whereas 0.1 will go about 90% of the way, etc. [Default is 1, which means none of the (4 or 16) nearby
+nodes may be NaN].  \fB\-Q0\fP will just return the value of the nearest node instead of interpolating.
+This is the same as using \fB\-Qn\fP.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.TP
+\fB\-S\fP
+Suppress the output of interpolated points that result in NaN values.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-Z\fP
+Only write out the sampled z-values [Default writes all columns].
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input/output.  [Default is (longitude,latitude)].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 2 input columns].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+[Default is one more than input].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.TP
+\fB\-m\fP
+Multiple segment file(s).  Segments are separated by a special record.
+For ASCII files the first character must be \fIflag\fP [Default is '>'].
+For binary files all fields must be NaN and \fB\-b\fP must
+set the number of output columns explicitly.  By default the \fB\-m\fP
+setting applies to both input and output.  Use \fB\-mi\fP and \fB\-mo\fP
+to give separate settings to input and output.
+.SH ASCII FORMAT PRECISION
+The ASCII output formats of numerical data are controlled by parameters in
+your \.gmtdefaults4 file.  Longitude and latitude are formatted according to
+\fBOUTPUT_DEGREE_FORMAT\fP, whereas other values are formatted according
+to \fBD_FORMAT\fP.  Be aware that the format in effect can lead to loss of
+precision in the output, which can lead to various problems downstream.  If
+you find the output is not written with enough precision, consider switching
+to binary output (\fB\-bo\fP if available) or specify more decimals using
+the \fBD_FORMAT\fP setting.
+.SH GRID FILE FORMATS
+\fBGMT\fP is able to recognize many of the commonly used grid file formats, as well as the precision, scale and offset of the values
+contained in the grid file. When \fBGMT\fP needs a little help with that, you can add the suffix \fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]],
+where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When reading a netCDF file that contains multiple grids, \fBGMT\fP will read, by default, the first 2-dimensional grid that can find in that
+file. To coax \fBGMT\fP into reading another multi-dimensional variable in the grid file, append \fB?\fP\fIvarname\fP to the file name, where
+\fIvarname\fP is the name of the variable. Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+See \fBgrdreformat\fP(1) and Section 4.18 of the GMT Technical Reference and Cookbook for more information,
+particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
+.SH HINTS
+If an interpolation point is not on a node of the input grid, then a NaN at any node in the neighborhood 
+surrounding the point will yield an interpolated NaN.  Bicubic interpolation [default] yields continuous 
+first derivatives but requires a neighborhood of 4 nodes by 4 nodes.  Bilinear interpolation [\fB\-Q\fP] 
+uses only a 2 by 2 neighborhood, but yields only zeroth-order continuity.  Use bicubic when smoothness is 
+important.  Use bilinear to minimize the propagation of NaNs, or lower \fIthreshold\fP.
+.SH EXAMPLES
+To sample the file hawaii_topo.grd along the SEASAT track track_4.xyg (An ASCII
+table containing longitude, latitude, and SEASAT-derived gravity, preceded by one header record):
+.br
+.sp
+\fBgrdtrack\fP track_4.xyg \fB\-G\fP hawaii_topo.grd \fB\-H\fP > track_4.xygt
+.br
+.sp
+To sample the Sandwell/Smith IMG format file topo.8.2.img (2 minute predicted bathymetry on a Mercator
+grid) along the lon,lat coordinates given in the file cruise_track.xy, try
+.br
+.sp
+\fBgrdtrack\fP cruise_track.xy \fB\-G\fP topo.8.2.img,1,1 > obs_and_predicted.d
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR surface (1),
+.IR sample1d (1)

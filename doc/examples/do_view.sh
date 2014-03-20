@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #
-#	$Id: do_view.sh 9857 2012-03-13 10:55:26Z fwobbe $
+#	$Id: do_view.sh 9545 2011-07-27 19:31:54Z pwessel $
 #
 #	Simple driver to view all examples using ghostview
 #

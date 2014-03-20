@@ -1,0 +1,51 @@
+.TH GMTLOGO 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+gmtlogo \- Adding a GMT graphics logo overlay to an illustration
+.SH SYNOPSIS
+\fBgmtlogo\fP \fIdx\fP \fIdy\fP \fIscale\fP [ \fB\-G\fP\fIfill\fP ] [ \fB\-W\fP[\fIpen\fP] ] >> \fIplot.ps\fP
+.SH DESCRIPTION
+This scrips appends the \fBGMT\fP logo to an "open" PostScript file.
+The logo is 2 times \fIscale\fP wide and \fIscale\fP high and will be positioned with the lower left corner
+at the position (\fIdx\fP,\fIdy\fP) relative to the current plot origin.
+.SH OPTIONS
+.TP 
+\fB\-G\fP
+Select color or pattern for filling the underlying box [Default is no fill].
+(See SPECIFYING FILL below).
+.TP
+\fB\-W\fP
+Set pen attributes for the outline of the box [Default is no outline].
+(See SPECIFYING PENS below).
+.SS SPECIFYING PENS
+.TP
+\fIpen\fP
+The attributes of lines and symbol outlines as defined by \fIpen\fP is a comma delimetered list of
+\fIwidth\fP, \fIcolor\fP and \fItexture\fP, each of which is optional.
+\fIwidth\fP can be indicated as a measure (points, centimeters, inches) or as \fBfaint\fP, \fBthin\fP[\fBner\fP|\fBnest\fP],
+\fBthick\fP[\fBer\fP|\fBest\fP], \fBfat\fP[\fBter\fP|\fBtest\fP], or \fBobese\fP.
+\fIcolor\fP specifies a gray shade or color (see SPECIFYING COLOR below).
+\fItexture\fP is a combination of dashes `-' and dots `.'.
+.SS SPECIFYING FILL
+.TP
+\fIfill\fP
+The attribute \fIfill\fP specifies the solid shade or solid \fIcolor\fP
+(see SPECIFYING COLOR below) or the pattern used for filling polygons.
+Patterns are specified as \fBp\fP\fIdpi/pattern\fP, where \fIpattern\fP gives
+the number of the built-in pattern (1-90) \fIor\fP the name of a Sun 1-, 8-,
+or 24-bit raster file. The \fIdpi\fP sets the resolution of the image. For
+1-bit rasters: use \fBP\fP\fIdpi/pattern\fP for inverse video, or append
+\fB:F\fP\fIcolor\fP[\fBB\fP[\fIcolor\fP]] to specify fore- and background
+colors (use \fIcolor\fP = - for transparency).
+See \fBGMT\fP Cookbook & Technical Reference Appendix E for information
+on individual patterns.
+.SS SPECIFYING COLOR
+.TP
+\fIcolor\fP
+The \fIcolor\fP of lines, areas and patterns can be specified by a valid color name;
+by a gray shade (in the range 0\-255); by a decimal color code (r/g/b, each in range 0\-255; h-s-v, ranges
+0\-360, 0\-1, 0\-1; or c/m/y/k, each in range 0\-1); or by a hexadecimal color code (#rrggbb, as used in HTML).
+See the \fBgmtcolors\fP manpage for more information and a full list of color names.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR gmtcolors (5),
+.IR psimage (1)

@@ -1,0 +1,141 @@
+.TH TREND1D 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+trend1d \- Fit a [weighted] [robust] polynomial [or Fourier] model for y = f(x) to xy[w] data.
+.SH SYNOPSIS
+\fBtrend1d\fP \fB\-F\fP\fBxymrw\fP \fB\-N\fP[\fBf\fP]\fIn_model\fP[\fBr\fP] [ \fIxy[w]file\fP ] 
+[ \fB\-C\fP\fIcondition_number\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] [ \fB\-I\fP[\fIconfidence_level\fP] ] [ \fB\-V\fP ] 
+[ \fB\-W\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-b\fP[\fBi\fP|\fBo\fP][\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ]
+.SH DESCRIPTION
+\fBtrend1d\fP reads x,y [and w] values from the first two [three] columns on standard input 
+[or \fIxy[w]file\fP] and fits a regression model y = f(x) + e by [weighted] least squares.  The
+functional form of f(x) may be chosen as polynomial or Fourier, and the fit may be made robust by 
+iterative reweighting of the data.  The user may also search for the number of terms in f(x) which 
+significantly reduce the variance in y.
+.SH REQUIRED ARGUMENTS
+.TP
+\fB\-F\fP
+Specify up to five letters from the set {x y m r w} in any order to create columns of 
+ASCII [or binary] output.  x = x, y = y, m = model f(x), r = residual y - m, w = weight used in fitting.
+.TP
+\fB\-N\fP
+Specify the number of terms in the model, \fIn_model\fP, whether to fit 
+a Fourier (\fB\-Nf\fP) or polynomial [Default] model, and append \fBr\fP to do a robust fit.  E.g., a robust 
+quadratic model is \fB\-N\fP\fI3\fP\fBr\fP.
+.SH OPTIONS
+.TP
+\fIxy[w]file\fP
+ASCII [or binary, see \fB\-b\fP] file containing x,y [w] values in the first 2 [3] columns.  If no file is specified, \fBtrend1d\fP 
+will read from standard input.
+.TP
+\fB\-C\fP
+Set the maximum allowed condition number for the matrix solution.  \fBtrend1d\fP 
+fits a damped least squares model, retaining only that part of the eigenvalue spectrum such that 
+the ratio of the largest eigenvalue to the smallest eigenvalue is \fIcondition_#\fP.   
+[Default:  \fIcondition_#\fP = 1.0e06. ].
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-I\fP
+Iteratively increase the number of model parameters, starting at one, until 
+\fIn_model\fP is reached or the reduction in variance of the model is not significant at the 
+\fIconfidence_level\fP level.  You may set \fB\-I\fP only, without an attached number; in this 
+case the fit will be iterative with a default confidence level of 0.51.  Or choose your own level 
+between 0 and 1.  See remarks section.
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Weights are supplied in input column 3.  Do a weighted least squares fit [or start with these weights 
+when doing the iterative robust fit].  [Default reads only the first 2 columns.]
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 2 (or 3 if \fB\-W\fP is set) columns].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+[Default is 1-5 columns as given by \fB\-F\fP].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH ASCII FORMAT PRECISION
+The ASCII output formats of numerical data are controlled by parameters in
+your \.gmtdefaults4 file.  Longitude and latitude are formatted according to
+\fBOUTPUT_DEGREE_FORMAT\fP, whereas other values are formatted according
+to \fBD_FORMAT\fP.  Be aware that the format in effect can lead to loss of
+precision in the output, which can lead to various problems downstream.  If
+you find the output is not written with enough precision, consider switching
+to binary output (\fB\-bo\fP if available) or specify more decimals using
+the \fBD_FORMAT\fP setting.
+.SH REMARKS
+If a Fourier model is selected, the domain of x will be shifted and scaled to [-pi, pi] and the basis functions 
+used will be 1, cos(x), sin(x), cos(2x), sin(2x), ...   If a polynomial model is selected, the domain of x 
+will be shifted and scaled to [-1, 1] and the basis functions will be Chebyshev polynomials.  These have a 
+numerical advantage in the form of the matrix which must be inverted and allow more accurate solutions.  
+The Chebyshev polynomial of degree n has n+1 extrema in [-1, 1], at all of which its value is either -1 
+or +1.  Therefore the magnitude of the polynomial model coefficients can be directly compared.  NOTE: 
+The stable model coefficients are Chebyshev coefficients.  The corresponding polynomial coefficients in
+a + bx + cxx + ...  are also given in Verbose mode but users must realize that they are NOT stable beyond
+degree 7 or 8. See Numerical Recipes for more discussion.  For evaluating Chebyshev polynomials,
+see \fBgmtmath\fP.
+.sp
+The \fB\-Nr\fP (robust) and \fB\-I\fP (iterative) options evaluate the significance of the improvement 
+in model misfit Chi-Squared by an F test.  The default confidence limit is set at 0.51; it can be changed 
+with the \fB\-I\fP option.  The user may be surprised to find that in most cases the reduction in variance 
+achieved by increasing the number of terms in a model is not significant at a very high degree of 
+confidence.  For example, with 120 degrees of freedom, Chi-Squared must decrease by 26% or more to be significant 
+at the 95% confidence level.  If you want to keep iterating as long as Chi-Squared is decreasing, set 
+\fIconfidence_level\fP to zero.
+.sp
+A low confidence limit (such as the default value of 0.51) is needed to make the robust method 
+work.  This method iteratively reweights the data to reduce the influence of outliers.  The 
+weight is based on the Median Absolute Deviation and a formula from Huber [1964], and is 95% 
+efficient when the model residuals have an outlier-free normal distribution.  This means that the 
+influence of outliers is reduced only slightly at each iteration; consequently the reduction in 
+Chi-Squared is not very significant.  If the procedure needs a few iterations to successfully 
+attenuate their effect, the significance level of the F test must be kept low.
+.SH EXAMPLES
+To remove a linear trend from data.xy by ordinary least squares, use:  
+.sp
+\fBtrend1d\fP data.xy \fB\-F\fP xr \fB\-N\fP 2 > detrended_data.xy 
+.sp
+To make the above linear trend robust with respect to outliers, use:
+.sp
+\fBtrend1d\fP data.xy \fB\-F\fP xr \fB\-N\fP 2\fBr\fP > detrended_data.xy 
+.sp
+To find out how many terms (up to 20, say) in a robust Fourier interpolant are significant in fitting data.xy, use:
+.sp
+\fBtrend1d\fP data.xy \fB\-Nf\fP 20\fBr\fP \fB\-I\fP \fB\-V\fP
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR gmtmath (1),
+.IR grdtrend (1),
+.IR trend2d (1)
+.SH REFERENCES
+Huber, P. J., 1964, Robust estimation of a location parameter, \fIAnn. Math. Stat., 35,\fP 73-101.
+.br
+.sp
+Menke, W., 1989, Geophysical Data Analysis:  Discrete Inverse Theory, Revised Edition, Academic Press, San Diego.

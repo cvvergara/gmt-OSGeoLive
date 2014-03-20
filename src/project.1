@@ -1,0 +1,209 @@
+.TH PROJECT 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+project \- project data along a line or great circle, generate a profile track, or translate coordinates.
+.SH SYNOPSIS
+\fBproject\fP [ \fIinfile\fP ] \fB\-C\fP\fIcx\fP/\fIcy\fP [ \fB\-A\fP\fIazimuth\fP ] 
+[ \fB\-Dd\fP|\fBg\fP ] [ \fB\-E\fP\fIbx\fP/\fIby\fP ] [ \fB\-F\fP\fIflags\fP ] [ \fB\-G\fP\fIdist\fP ] [ \fB\-H\fP[\fBi\fP][\fInrec\fP] ] 
+[ \fB\-L\fP[\fBw\fP][\fIl_min\fP/\fIl_max\fP] ] [ \fB\-N\fP ] [ \fB\-Q\fP ] [ \fB\-S\fP ] 
+[ \fB\-T\fP\fIpx\fP/\fIpy\fP ] [ \fB\-V\fP ] [ \fB\-W\fP\fIw_min\fP/\fIw_max\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] 
+[ \fB\-b\fP[\fBi\fP|\fBo\fP][\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP[\fBi\fP|\fBo\fP]\fIcolinfo\fP ] [ \fB\-m\fP[\fBi\fP|\fBo\fP][\fIflag\fP] ]
+.SH DESCRIPTION
+\fBproject\fP reads arbitrary (\fIx, y\fP[,\fI z\fP]) data from standard input 
+[or \fIinfile\fP ] and writes to standard output any combination of 
+(\fIx, y, z, p, q, r, s\fP), where (\fIp, q\fP) are the coordinates 
+in the projection, (\fIr, s\fP) is the position in the (\fIx, y\fP) coordinate system of 
+the point on the profile (\fIq\fP = 0 path) closest to (\fIx, y\fP), and \fIz\fP is
+all remaining columns in the input (beyond the required \fIx\fP and \fIy\fP columns).
+Alternatively, \fBproject\fP may be used to generate (\fIr, s, p\fP) triples at equal increments \fIdist\fP 
+along a profile.  In this case ( \fB\-G\fP option), no input is read.
+Projections are defined in any (but only) one of three ways:
+(Definition 1)  By a Center \fB\-C\fP and an Azimuth \fB\-A\fP in degrees clockwise from North.
+(Definition 2)  By a Center \fB\-C\fP and end point E of the projection path \fB\-E\fP.
+(Definition 3)  By a Center \fB\-C\fP and a roTation pole position \fB\-T\fP.
+To spherically project data along a great circle path, an oblique coordinate system 
+is created which has its equator along that path, and the zero meridian through the 
+Center.  Then the oblique longitude (\fIp\fP) corresponds to the distance from the Center 
+along the great circle, and the oblique latitude (\fIq\fP) corresponds to the distance 
+perpendicular to the great circle path.  When moving in the increasing (\fIp\fP) direction, 
+(toward \fIB\fP or in the \fIazimuth\fP direction), the positive (\fIq\fP) direction is to your left.  
+If a Pole has been specified, then the positive (\fIq\fP) direction is toward the pole.
+.br
+To specify an oblique projection, use the \fB\-T\fP option to set the Pole.  Then the 
+equator of the projection is already determined and the \fB\-C\fP option is used to locate 
+the \fIp\fP = 0 meridian.  The Center \fIcx/cy\fP will be taken as a point through which
+the \fIp\fP = 0 meridian passes.  If you do not care to choose a particular point, use the 
+South pole (\fIox\fP = 0, \fIoy\fP = -90).
+.br
+Data can be selectively windowed by using the \fB\-L\fP and \fB\-W\fP options.  If 
+\fB\-W\fP is used, the projection Width is set to use only points with 
+\fIw_min\fP < q < \fIw_max\fP.  If \fB\-L\fP is set, then the Length is set to use 
+only those points with \fIl_min\fP < p < \fIl_max\fP.  If the \fB\-E\fP option 
+has been used to define the projection, then \fB\-Lw\fP may be selected to window 
+the length of the projection to exactly the span from \fBO\fP to \fBB\fP.
+.br
+Flat Earth (Cartesian) coordinate transformations can also be made.  Set \fB\-N\fP  
+and remember that \fIazimuth\fP is clockwise from North (the \fIy\fP axis), NOT 
+the usual cartesian theta, which is counterclockwise from the \fIx\fP axis.  \fIazimuth\fP = 90 - theta. 
+.br
+No assumptions are made regarding the units for \fIx, y, r, s, p, q, dist, l_min, l_max, w_min, w_max\fP.
+If \fB\-Q\fP is selected, map units are assumed and \fIx, y, r, s\fP must be in degrees and
+\fIp, q, dist, l_min, l_max, w_min, w_max\fP will be in km.
+.br
+Calculations of specific great-circle and geodesic distances or for back-azimuths or azimuths are better done using \fBmapproject\fP.
+.br
+\fBproject\fP is CASE SENSITIVE.  Use UPPER CASE for all one-letter designators which begin optional arguments.  Use 
+lower case for the xyzpqrs letters in \fB\-flags\fP. 
+.br
+.sp
+.TP
+\fB\-C\fP
+\fIcx/cy\fP sets the origin of the projection, in Definition 1 or 2.  If Definition 3 is used (\fB\-T\fP), then
+\fIcx/cy\fP are the coordinates of a point through which the oblique zero meridian (\fIp\fP = 0) should pass.
+.SH OPTIONS
+.TP
+\fIinfile\fP
+name of ASCII (or binary, see \fB\-bi\fP) file(s) with 2 or more columns holding (x,y,[z]) data values.
+If no filenames are given, \fBproject\fP will read from standard input.
+If the \fB\-G\fP option is selected, no input data are read.
+.TP
+\fB\-F\fP
+Specify your desired output using any combination of \fIxyzpqrs\fP, in any order.  Do not space between
+the letters.  Use lower case.  The output will be ASCII (or binary, see \fB\-bo\fP) columns of values corresponding 
+to \fIxyzpqrs\fP [Default].  If both input and output are using ASCII format then the \fIz\fP data are treated as
+textstring(s).
+If the \fB\-G\fP option is selected, the output will be \fIrsp\fP.
+.TP
+\fB\-A\fP
+\fIazimuth\fP defines the azimuth of the projection (Definition 1).
+.TP
+\fB\-D\fP
+Set the location of the Discontinuity in longitude (\fIr\fP coordinate).  \fB\-Dd\fP will place the
+discontinuity at the Dateline, (-180 < \fIr\fP < 180); \fB\-Dg\fP will place it at Greenwich, (0 < \fIr\fP < 360).  
+Default usually falls at dateline due to \fIatan2\fP calls.
+.TP
+\fB\-E\fP
+\fIbx/by\fP defines the end point of the projection path (Definition 2).
+.TP
+\fB\-G\fP
+\fIdist\fP Generate mode.  No input is read.  Create (\fIr, s, p\fP) output points every \fIdist\fP units of \fIp\fP.  See 
+\fB\-Q\fP option.
+.TP
+\fB\-H\fP
+Input file(s) has header record(s).  If used, the default number of header records is \fBN_HEADER_RECS\fP.
+Use \fB\-Hi\fP if only input data should have header records [Default will write out header records if the
+input data have them]. Blank lines and lines starting with # are always skipped.
+.TP
+\fB\-L\fP
+Length controls.  Project only those points whose \fIp\fP coordinate is within \fIl_min\fP < \fIp\fP < \fIl_max\fP.  
+If \fB\-E\fP has been set, then you may use \fB\-Lw\fP to stay within the distance from \fBC\fP to \fBE\fP.
+.TP
+\fB\-N\fP
+Flat Earth.  Make a Cartesian coordinate transformation in the plane.  [Default uses spherical trigonometry.]
+.TP
+\fB\-Q\fP
+Map type units, i.e., project assumes \fIx, y, r, s\fP are in degrees while
+\fIp, q, dist, l_min, l_max, w_min, w_max\fP are in km.  If \fB\-Q\fP is not set, then all these are assumed to be in the same units.
+.TP
+\fB\-S\fP
+Sort the output into increasing \fIp\fP order.  Useful when projecting random data into a sequential profile.
+.TP
+\fB\-T\fP
+\fIpx/py\fP sets the position of the roTation pole of the projection.  (Definition 3).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Width controls.  Project only those points whose \fIq\fP coordinate is within \fIw_min\fP < \fIq\fP < \fIw_max\fP.  
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+[Default is 2 input columns].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+[Default is given by \fB\-F\fP or \fB\-G\fP].
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.TP
+\fB\-m\fP
+Multiple segment file(s).  Segments are separated by a special record.
+For ASCII files the first character must be \fIflag\fP [Default is '>'].
+For binary files all fields must be NaN and \fB\-b\fP must
+set the number of output columns explicitly.  By default the \fB\-m\fP
+setting applies to both input and output.  Use \fB\-mi\fP and \fB\-mo\fP
+to give separate settings to input and output.
+.SH ASCII FORMAT PRECISION
+The ASCII output formats of numerical data are controlled by parameters in
+your \.gmtdefaults4 file.  Longitude and latitude are formatted according to
+\fBOUTPUT_DEGREE_FORMAT\fP, whereas other values are formatted according
+to \fBD_FORMAT\fP.  Be aware that the format in effect can lead to loss of
+precision in the output, which can lead to various problems downstream.  If
+you find the output is not written with enough precision, consider switching
+to binary output (\fB\-bo\fP if available) or specify more decimals using
+the \fBD_FORMAT\fP setting.
+.SH EXAMPLES
+To generate points every 10km along a great circle from 10N,50W to 30N,10W:
+.sp
+\fBproject\fP \fB\-C\fP-50/10 \fB\-E\fP-10/30 \fB\-G\fP 10 \fB\-Q\fP > great_circle_points.xyp
+.sp
+(Note that great_circle_points.xyp could now be used as input for \fBgrdtrack\fP, etc. ).
+.sp
+To project the shiptrack gravity, magnetics, and bathymetry in c2610.xygmb along a great circle through an origin at 30S, 30W, the great circle having 
+an azimuth of N20W at the origin, keeping only the data from NE of the profile and within +/- 500 km of the origin, run:
+.sp 
+\fBproject\fP c2610.xygmb \fB\-C\fP-30/-30 \fB\-A\fP-20 \fB\-W\fP-10000/0 \fB\-L\fP-500/500 \fB\-F\fP pz \fB\-Q\fP > c2610_projected.pgmb
+.sp
+(Note in this example that \fB\-W\fP-10000/0 is used to admit any value with a large negative \fIq\fP coordinate.  This 
+will take those points which are on our right as we walk along the great circle path, or to the NE in this example.)
+.sp
+To make a Cartesian coordinate transformation of mydata.xy so that the new origin is at 5,3 and the new \fIx\fP axis (\fIp\fP) 
+makes an angle of 20 degrees with the old \fIx\fP axis, use:
+.sp
+\fBproject\fP mydata.xy \fB\-C\fP 5/3 \fB\-A\fP 70 \fB\-F\fP pq > mydata.pq
+.sp
+To take data in the file pacific.lonlat and transform it into oblique coordinates using a pole from the hotspot reference 
+frame and placing the oblique zero meridian (\fIp\fP = 0 line) through Tahiti, run:
+.sp
+\fBproject\fP pacific.lonlat \fB\-T\fP-75/68 \fB\-C\fP-149:26/-17:37 \fB\-F\fP pq > pacific.pq
+.sp
+Suppose that pacific_topo.grd is a grid file of bathymetry, and you want to make a file of flowlines in the hotspot reference 
+frame.  If you run:
+.sp
+\fBgrd2xyz\fP pacific_topo.grd | \fBproject\fP \fB\-T\fP-75/68 \fB\-C\fP 0/-90 \fB\-F\fP xyq | \fBxyz2grd\fP 
+\fB\-R\fP\fIetc\fP \fB\-I\fP\fIetc\fP \fB\-C\fP flow.grd
+.sp
+then flow.grd is a file in the same area as pacific_topo.grd, but flow contains the latitudes about the pole of the projection.  
+You now can use grdcontour on flow.grd to draw lines of constant oblique latitude, which are flow lines in the hotspot frame.
+.br
+.sp
+If you have an arbitrarily rotation pole \fIpx/py\fP and you would like to draw an oblique small circle on a map, you
+will first need to make a file with the oblique coordinates for the small circle (i.e., lon = 0\-360, lat is constant), then create
+a file with two records: the north pole (0/90) and the origin (0/0), and find what their oblique coordinates are using your
+rotation pole.  Now, use the projected North pole and origin coordinates as the rotation pole and center, respectively,
+and project your file as in the pacific example above.  This gives coordinates for an oblique small circle.
+.SH "SEE ALSO"
+.IR fitcircle (1),
+.IR GMT (1),
+.IR mapproject (1),
+.IR grdproject (1)

@@ -1,6 +1,6 @@
 # GMT Time language file for Norwegian mode [NO]
 #
-#	$Id: no.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: no.d 9545 2011-07-27 19:31:54Z pwessel $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Januar		Jan	J

@@ -1,675 +1,585 @@
 /*--------------------------------------------------------------------
- *	$Id: psscale.c 12237 2013-10-03 02:15:20Z pwessel $
+ *	$Id: psscale.c 10173 2014-01-01 09:52:34Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * Author:	Paul Wessel
- * Date:	1-JAN-2010
- * Version:	5 API
+ * psscale draws a grayscale or colorscale either vertically or
+ * horizontally.  psscale will interpolate colors if the lower
+ * and upper rgb values for an interval are different.  The
+ * resolution for this interpolation can be set on the command line.
+ * If the scale is to be used with illuminated 2-D and 3-D plots
+ * then options for intensities are available.
  *
- * Brief synopsis: psscale draws a grayscale or colorscale either vertically
- * or horizontally, optionally with illumination.
+ * Author:	Paul Wessel
+ * Created:	10-MAY-1991
+ * Modified:	01-AUG-1998
+ *		3.3   13-APR-1999. PW: Fixed bad -X -Y behavior
+ *		3.3.2 15-SEP-1999. PW: Fixed bad loop for -Z
+ *		3.3.4 21-JAN-2000. PW: Now paint rectangles for discrete cpt files
+ *		      08-FEB-2000. PW: Also understand patterns for discrete cpt files
+ *		      10-NOV-2003. PW: Enhanced -E to set back or foreground only
+ *		      08-MAR-2006. PW: Enhanced -I to set low/high intensity
+ *		      23-MAY-2006. PW: Added -Q to handle logarithmic scales
+ *		      04-OCT-2007. PW: Can now handle -B1p for log scales
+ * Version:	4
  *
  */
 
-#define THIS_MODULE_NAME	"psscale"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Plot a gray-scale or color-scale on maps"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcptxy"
-
-void GMT_linearx_grid (struct GMT_CTRL *GMT, struct PSL_CTRL *P, double w, double e, double s, double n, double dval);
-double GMT_get_map_interval (struct GMT_CTRL *GMT, struct GMT_PLOT_AXIS_ITEM *T);
-
-#define H_BORDER 16	/* 16p horizontal border space for -T */
-#define V_BORDER 8	/* 8p vertical border space for -T */
-
-#define N_FAVOR_IMAGE	1
-#define N_FAVOR_POLY	2
-
-#ifdef DEBUG
-bool dump = false;
-double dump_int_val;
-#endif
-
-/* Control structure for psscale */
+#include "gmt.h"
+#include "pslib.h"
 
 struct PSSCALE_CTRL {
 	struct A {	/* -A */
-		bool active;
-		unsigned int mode;
+		GMT_LONG active;
+		GMT_LONG mode;
 	} A;
 	struct C {	/* -C<cptfile> */
-		bool active;
+		GMT_LONG active;
 		char *file;
 	} C;
 	struct D {	/* -D<xpos/ypos/length/width[h]> */
-		bool active;
-		bool horizontal;
+		GMT_LONG active;
+		GMT_LONG horizontal;
 		double x, y, width, length;
 	} D;
-	struct E {	/* -E[b|f][<length>][+n[<text>]] */
-		bool active;
-		unsigned int mode;
+	struct E {	/* -E[b|f][<length>] */
+		GMT_LONG active;
+		GMT_LONG mode;
 		double length;
-		char *text;
 	} E;
-	struct G {	/* -Glow/high for input CPT truncation */
-		bool active;
-		double z_low, z_high;
-	} G;
 	struct I {	/* -I[<intens>|<min_i>/<max_i>] */
-		bool active;
+		GMT_LONG active;
 		double min, max;
 	} I;
 	struct M {	/* -M */
-		bool active;
+		GMT_LONG active;
 	} M;
-	struct N {	/* -N<dpi>|p */
-		bool active;
-		unsigned int mode;
-		double dpi;
+	struct N {	/* -N<dpi> */
+		GMT_LONG active;
+		GMT_LONG dpi;
 	} N;
 	struct L {	/* -L[i][<gap>] */
-		bool active;
-		bool interval;
+		GMT_LONG active;
+		GMT_LONG interval;
 		double spacing;
 	} L;
 	struct Q {	/* -Q */
-		bool active;
+		GMT_LONG active;
 	} Q;
 	struct S {	/* -S */
-		bool active;
+		GMT_LONG active;
 	} S;
-	struct T {	/* -T[+l<off>][+r<off>][+b<off>][+t<off>][+g<fill>][+p<pen>] */
-		bool active, do_pen, do_fill;
-		double off[4];
-		struct GMT_PEN pen;
-		struct GMT_FILL fill;
-	} T;
 	struct Z {	/* -Z<zfile> */
-		bool active;
+		GMT_LONG active;
 		char *file;
 	} Z;
 };
 
-void *New_psscale_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
-	struct PSSCALE_CTRL *C;
-	unsigned int k;
-	
-	C = GMT_memory (GMT, NULL, 1, struct PSSCALE_CTRL);
-	
-	/* Initialize values whose defaults are not 0/false/NULL */
-	C->G.z_low = C->G.z_high = GMT->session.d_NaN;	/* No truncation */
-	C->N.dpi = 600.0;
-	C->I.min = -1.0;
-	C->I.max = +1.0;
-	C->L.spacing = -1.0;
-	for (k = 0; k < 2; k++) C->T.off[k] = H_BORDER * GMT->session.u2u[GMT_PT][GMT_INCH];	/* Default is 8p padding */
-	for (k = 2; k < 4; k++) C->T.off[k] = V_BORDER * GMT->session.u2u[GMT_PT][GMT_INCH];	/* Default is 8p padding */
-	GMT_init_fill (GMT, &C->T.fill, -1.0, -1.0, -1.0);	/* No fill */
-	return (C);
-}
-
-void Free_psscale_Ctrl (struct GMT_CTRL *GMT, struct PSSCALE_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
-	if (C->C.file) free (C->C.file);
-	if (C->E.text) free (C->E.text);
-	if (C->Z.file) free (C->Z.file);
-	GMT_free (GMT, C);	
-}
-
-int GMT_psscale_usage (struct GMTAPI_CTRL *API, int level)
+int main(int argc, char **argv)
 {
-	/* This displays the psscale synopsis and optionally full usage information */
+	GMT_LONG error = FALSE, save_unix_time, must_shift_back = FALSE, B_set = FALSE;
 
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: psscale -D<xpos>/<ypos>/<length>/<width>[h] [-A[a|l|c]] [%s] [-C<cpt>]\n", GMT_B_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-E[b|f][<length>][+n[<txt>]]] [-G<zlo>/<zhi>] [-I[<max_intens>|<low_i>/<high_i>]\n\t[%s] [%s] [-K] [-L[i][<gap>[<unit>]]] [-M] [-N[p|<dpi>]]\n", GMT_J_OPT, GMT_Jz_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-O] [-P] [-Q] [%s] [-S]\n\t[-T[+p<pen>][+g<fill>][+l|r|b|t<off>]] [%s] [%s]\n", GMT_Rgeoz_OPT, GMT_U_OPT, GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-Z<zfile>] [%s]\n\t[%s] [%s]\n\n", GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
+	char flag, line[BUFSIZ], txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT];
+	char txt_c[GMT_LONG_TEXT], txt_d[GMT_LONG_TEXT], text[GMT_LONG_TEXT];
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	GMT_LONG i, j, n;
 
-	GMT_Message (API, GMT_TIME_NONE, "\t-D Set top mid-point position and length/width for scale.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Give negative length to reverse the scalebar.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append h for horizontal scale\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-A Place the desired annotations/labels on the other side of the colorscale instead.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append a or l to move only the annotations or labels to the other side.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append c to plot vertical labels as columns.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-B Set scale annotation interval and label. Use y-label to set unit label.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If no annotation interval is set it is taken from the cpt file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-C Color palette file. If not set, stdin is read.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   By default all color changes are annotated (but see -B).  To use a subset,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   add an extra column to the cpt-file with a L, U, or B\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   to annotate Lower, Upper, or Both color segment boundaries.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If a categorical CPT file is given the -Li is set automatically.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Add sidebar triangles for back- and foreground colors.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Specify b(ackground) or f(oreground) to get one only [Default is both].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally, append triangle height [Default is half the barwidth].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append +n to draw rectangle with NaN color and label with <txt> [NaN].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-G Truncate incoming CPT to be limited to the z-range <zlo>/<zhi>.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   To accept one if the incoming limits, set to other to NaN.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-I Add illumination for +-<max_intens> or <low_i> to <high_i> [-1.0/1.0].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, specify <lower>/<upper> intensity values.\n");
-	GMT_Option (API, "J-Z,K");
-	GMT_Message (API, GMT_TIME_NONE, "\t-L For equal-sized color rectangles. -B interval cannot be used.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append i to annotate the interval range instead of lower/upper.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If <gap> is appended, we separate each rectangle by <gap> units and center each\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   lower (z0) annotation on the rectangle.  Ignored if not a discrete cpt table.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If -I is used then each rectangle will have the illuminated constant color.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-M Force monochrome colorbar using GMT_YIQ transformation.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Control how color-scale is represented by PostScript.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append p to indicate a preference for using polygons, if possible;\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   otherwise it indicates a preference for using colorimage, if possible.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Default uses the method that produces the simplest PostScript code.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append preferred dots-per-inch for rasterization when colorimage is used [600].\n");
-	GMT_Option (API, "O,P");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Q Plot colorbar using logarithmic scale and annotate powers of 10 [Default is linear].\n");
-	GMT_Option (API, "R");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Skip drawing color boundary lines on color scale [Default draws lines].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-T Place a rectangle behind the scale [No background rectangle].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Make at least one seletion of rectangle fill or outline pen.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   You can nudge the extent of the rectangle in all four directions\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   by appending any of +l<off>, +r<off>, +b<off>, +t<off>.\n");
-	GMT_Option (API, "U,V,X");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Z Give file with colorbar-width (in %s) per color entry.\n",
-		API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
-	GMT_Message (API, GMT_TIME_NONE, "\t   By default, width of entry is scaled to color range,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   i.e., z = 0-100 gives twice the width as z = 100-150.\n");
-	GMT_Option (API, "c,p");
-	GMT_Message (API, GMT_TIME_NONE, "\t   (Requires -R and -J for proper functioning).\n");
-	GMT_Option (API, "t,.");
+	double max_intens[2], dz, *z_width = NULL, x_origin = 0.0, y_origin = 0.0;
+	double start_val, stop_val;
+
+	FILE *fp = NULL;
+
+	struct PSSCALE_CTRL *Ctrl = NULL;
+
+	void GMT_draw_colorbar (double length, double width, double *z_width, GMT_LONG bit_dpi, GMT_LONG flip, GMT_LONG B_set, GMT_LONG equi, 
+	   GMT_LONG horizontal, GMT_LONG logscl, GMT_LONG intens, double *max_intens, GMT_LONG skip_lines, GMT_LONG extend, double e_length, double gap, GMT_LONG interval_annot, GMT_LONG monochrome);
+
+	void *New_psscale_Ctrl (), Free_psscale_Ctrl (struct PSSCALE_CTRL *C);
 	
-	return (EXIT_FAILURE);
-}
+	argc = (int)GMT_begin (argc, argv);
 
-int GMT_psscale_parse (struct GMT_CTRL *GMT, struct PSSCALE_CTRL *Ctrl, struct GMT_OPTION *options)
-{
-	/* This parses the options provided to psscale and sets parameters in Ctrl.
-	 * Note Ctrl has already been initialized and non-zero default values set.
-	 * Any GMT common options will override values set previously by other commands.
-	 * It also replaces any file names specified as input or output with the data ID
-	 * returned when registering these sources/destinations with the API.
-	 */
+	Ctrl = (struct PSSCALE_CTRL *)New_psscale_Ctrl ();	/* Allocate and initialize a new control structure */
 
-	unsigned int n, pos, n_errors = 0, n_files = 0;
-	int j;
-	char flag, txt_a[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, *c = NULL;
-	char txt_c[GMT_LEN256] = {""}, txt_d[GMT_LEN256] = {""}, p[GMT_LEN256] = {""};
-	struct GMT_OPTION *opt = NULL;
-	struct GMTAPI_CTRL *API = GMT->parent;
+	/* Check and interpret the command line arguments */
 
-	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch(argv[i][1]) {
 
-		switch (opt->option) {
+				/* Common parameters */
 
-			case '<':	/* Input files (should be 0) */
-				n_files++;
-				break;
+				case 'B':
+					if (! (argv[i][2] == ':' || argv[i][2] == '/')) B_set = TRUE;
+				case 'K':
+				case 'O':
+				case 'P':
+				case 'U':
+				case 'V':
+				case 'X':
+				case 'x':
+				case 'Y':
+				case 'y':
+				case 'c':
+				case '\0':
+					error += GMT_parse_common_options (argv[i], 0, 0, 0, 0);
+					break;
 
-			/* Processes program-specific parameters */
+				/* Supplemental parameters */
 
-			case 'A':
-				Ctrl->A.active = true;
-				if (!opt->arg[0]) Ctrl->A.mode |= 3;
-				for (j = 0; opt->arg[j]; j++) {
-					switch (opt->arg[j]) {
-						case 'a': Ctrl->A.mode |= 1; break;
-						case 'l': Ctrl->A.mode |= 2; break;
-						case 'c': Ctrl->A.mode |= 4; break;
+				case 'A':
+					Ctrl->A.active = TRUE;
+					if (!argv[i][2]) Ctrl->A.mode |= 3;
+					for (j = 2; argv[i][j]; j++) {
+						switch (argv[i][j]) {
+							case 'a': Ctrl->A.mode |= 1; break;
+							case 'l': Ctrl->A.mode |= 2; break;
+							case 'c': Ctrl->A.mode |= 4; break;
+						}
 					}
-				}
-				break;
-			case 'C':
-				Ctrl->C.active = true;
-				if (Ctrl->C.file) free (Ctrl->C.file);
-				Ctrl->C.file = strdup (opt->arg);
-				break;
-			case 'D':
-				Ctrl->D.active = true;
-				n = (unsigned int)strlen (opt->arg) - 1;
-				flag = opt->arg[n];
-				if (flag == 'h' || flag == 'H') {
-					Ctrl->D.horizontal = true;
-					opt->arg[n] = 0;	/* Temporarily remove this for sscanf */
-				}
-				sscanf (opt->arg, "%[^/]/%[^/]/%[^/]/%s", txt_a, txt_b, txt_c, txt_d);
-				if (Ctrl->D.horizontal) opt->arg[n] = flag;	/* Restore the flag */
-				Ctrl->D.x   = GMT_to_inch (GMT, txt_a);
-				Ctrl->D.y   = GMT_to_inch (GMT, txt_b);
-				Ctrl->D.length = GMT_to_inch (GMT, txt_c);
-				Ctrl->D.width  = GMT_to_inch (GMT, txt_d);
-				break;
-			case 'E':
-				Ctrl->E.active = true;
-				if ((c = strchr (opt->arg, 'n'))) {	/* Got +n[<text>] */
-					c--;	*c = 0; c += 2;
-					Ctrl->E.text = (*c) ? strdup (c) : strdup ("NaN");
-					Ctrl->E.mode = 4;
-					c -= 2;
-				}
-				j = 0;
-				if (opt->arg[0] == 'b') {
-					Ctrl->E.mode |= 1;
-					j = 1;
-				}
-				else if (opt->arg[j] == 'f') {
-					Ctrl->E.mode |= 2;
-					j = 1;
-				}
-				if (opt->arg[j] == 'b') {
-					Ctrl->E.mode |= 1;
-					j++;
-				}
-				else if (opt->arg[j] == 'f') {
-					Ctrl->E.mode |= 2;
-					j++;
-				}
-				if (j == 0) Ctrl->E.mode |= 3;	/* No b|f added */
-				if (opt->arg[j]) Ctrl->E.length = GMT_to_inch (GMT, &opt->arg[j]);
-				if (c) *c = '+';	/* Put back the + sign */
-				break;
-			case 'G':	/* truncate incoming CPT */
-				Ctrl->G.active = true;
-				j = sscanf (opt->arg, "%[^/]/%s", txt_a, txt_b);
-				n_errors += GMT_check_condition (GMT, j < 2, "Syntax error -G option: Must specify z_low/z_high\n");
-				if (!(txt_a[0] == 'N' || txt_a[0] == 'n') || !strcmp (txt_a, "-")) Ctrl->G.z_low = atof (txt_a);
-				if (!(txt_b[0] == 'N' || txt_b[0] == 'n') || !strcmp (txt_b, "-")) Ctrl->G.z_high = atof (txt_b);
-				n_errors += GMT_check_condition (GMT, GMT_is_dnan (Ctrl->G.z_low) && GMT_is_dnan (Ctrl->G.z_high), "Syntax error -G option: Both of z_low/z_high cannot be NaN\n");
-				break;
-			case 'I':
-				Ctrl->I.active = true;
-				if (opt->arg[0]) {
-					j = sscanf (opt->arg, "%[^/]/%s", txt_a, txt_b);
-					if (j == 1) {
-						Ctrl->I.max = atof (txt_a);
-						Ctrl->I.min = -Ctrl->I.max;
+					break;
+				case 'C':
+					Ctrl->C.active = TRUE;
+					Ctrl->C.file = strdup (&argv[i][2]);
+					break;
+				case 'D':
+					Ctrl->D.active = TRUE;
+					n = (GMT_LONG)strlen(argv[i]) - 1;
+					flag = argv[i][n];
+					if (flag == 'h' || flag == 'H') {
+						Ctrl->D.horizontal = TRUE;
+						argv[i][n] = 0;	/* Temporarily remove the flag */
 					}
-					else {
-						Ctrl->I.min = atof (txt_a);
-						Ctrl->I.max = atof (txt_b);
+					sscanf (&argv[i][2], "%[^/]/%[^/]/%[^/]/%s", txt_a, txt_b, txt_c, txt_d);
+					Ctrl->D.x   = GMT_convert_units (txt_a, GMT_INCH);
+					Ctrl->D.y   = GMT_convert_units (txt_b, GMT_INCH);
+					Ctrl->D.length = GMT_convert_units (txt_c, GMT_INCH);
+					Ctrl->D.width  = GMT_convert_units (txt_d, GMT_INCH);
+					if (Ctrl->D.horizontal) argv[i][n] = flag;	/* Restore the flag */
+					break;
+				case 'E':
+					Ctrl->E.active = TRUE;
+					j = 2;
+					if (argv[i][2] == 'b') {
+						Ctrl->E.mode = 1;
+						j = 3;
 					}
-				} 
-				break;
-			case 'L':
-				Ctrl->L.active = true;
-				j = 0;
-				if (opt->arg[0] == 'i') Ctrl->L.interval = true, j = 1;
-				if (opt->arg[j]) Ctrl->L.spacing = GMT_to_inch (GMT, &opt->arg[j]);
-				break;
-			case 'M':
-				Ctrl->M.active = true;
-				break;
-			case 'N':
-				Ctrl->N.active = true;
-				/* Default will use image@600 dpi or polygons according to what is simplest */
-				if (opt->arg[0] == 'p')	/* Preferentially use polygon fill if at all possible */
-					Ctrl->N.mode = N_FAVOR_POLY;
-				else {			/* Preferentially use image if at all possible */
-					Ctrl->N.mode = N_FAVOR_IMAGE;
-					if (opt->arg[0]) Ctrl->N.dpi = atof (opt->arg);
-				}
-				break;
-			case 'Q':
-				Ctrl->Q.active = true;
-				break;
-			case 'S':
-				Ctrl->S.active = true;
-				break;
-			case 'T':
-				Ctrl->T.active = true;
-				pos = 0;
-				while (GMT_strtok (opt->arg, "+", &pos, p)) {
-					switch (p[0]) {
-						case 'l':	/* Left nudge */
-							Ctrl->T.off[XLO] = atof (&p[1]);
-							break;
-						case 'r':	/* Right nudge */
-							Ctrl->T.off[XHI] = atof (&p[1]);
-							break;
-						case 'b':	/* Bottom nudge */
-							Ctrl->T.off[YLO] = atof (&p[1]);
-							break;
-						case 't':	/* Top nudge */
-							Ctrl->T.off[YHI] = atof (&p[1]);
-							break;
-						case 'g':	/* Fill */
-							if (GMT_getfill (GMT, &p[1], &Ctrl->T.fill)) {
-								GMT_fill_syntax (GMT, 'T', " ");
-								n_errors++;
-							}
-							Ctrl->T.do_fill = true;
-							break;
-						case 'p':	/* Pen */
-							if (GMT_getpen (GMT, &p[1], &Ctrl->T.pen)) {
-								GMT_pen_syntax (GMT, 'W', " ");
-								n_errors++;
-							}
-							Ctrl->T.do_pen = true;
-							break;
+					else if (argv[i][2] == 'f') {
+						Ctrl->E.mode = 2;
+						j = 3;
 					}
-				}
-				break;
-			case 'Z':
-				Ctrl->Z.active = true;
-				Ctrl->Z.file = strdup (opt->arg);
-				break;
-#ifdef DEBUG
-			case 'd':	/* Dump out interpolated colors for debugging */
-				dump = true;
-				dump_int_val = (opt->arg[0]) ? atof (opt->arg) : 1.0;
-				break;
-#endif
+					else
+						Ctrl->E.mode = 3;
+					if (argv[i][j]) Ctrl->E.length = GMT_convert_units (&argv[i][j], GMT_INCH);
+					break;
+				case 'I':
+					Ctrl->I.active = TRUE;
+					if (argv[i][2]) {
+						j = sscanf (&argv[i][2], "%[^/]/%s", txt_a, txt_b);
+						if (j == 1) {
+							Ctrl->I.max = atof (txt_a);
+							Ctrl->I.min = -Ctrl->I.max;
+						}
+						else {
+							Ctrl->I.min = atof (txt_a);
+							Ctrl->I.max = atof (txt_b);
+						}
+					} 
+					break;
+				case 'M':
+					Ctrl->M.active = TRUE;
+					break;
+				case 'N':
+					Ctrl->N.active = TRUE;
+					if (argv[i][2]) Ctrl->N.dpi = atoi (&argv[i][2]);
+					break;
+				case 'L':
+					Ctrl->L.active = TRUE;
+					j = 2;
+					if (argv[i][2] == 'i') Ctrl->L.interval = TRUE, j = 3;
+					if (argv[i][j]) Ctrl->L.spacing = GMT_convert_units (&argv[i][j], GMT_INCH);
+					break;
+				case 'Q':
+					Ctrl->Q.active = TRUE;
+					break;
+				case 'S':
+					Ctrl->S.active = TRUE;
+					break;
+				case 'Z':
+					Ctrl->Z.active = TRUE;
+					Ctrl->Z.file = strdup (&argv[i][2]);
+					break;
 
-			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
-				break;
+				/* Options not recognized */
+
+				default:
+					error = TRUE;
+					GMT_default_error (argv[i][1]);
+					break;
+			}
 		}
+		else
+			fprintf (stderr, "%s: Warning: Ignoring filename %s\n", GMT_program, argv[i]);
+	}
+
+	if (argc == 1 || GMT_give_synopsis_and_exit) {
+		fprintf (stderr, "%s %s - To create grayscale or colorscale for maps\n\n", GMT_program, GMT_VERSION);
+		fprintf(stderr, "usage: psscale -D<xpos/ypos/length/width>[h] [-A[a|l|c]] [-C<cpt_file>] [-E[b|f][<length>]] [%s] [-I[<max_intens>|<low_i>/<high_i>]\n", GMT_B_OPT);
+		fprintf(stderr, "\t[-K] [-L[i][<gap>]] [-M] [-N<dpi>] [-O] [-P] [-Q] [-S] [%s] [-V] [%s]\n\t[%s] [-Z<zfile>] [%s]\n\n", GMT_U_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT);
+		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
+
+		fprintf (stderr, "\t-D set mid-point position and length/width for scale.\n");
+		fprintf (stderr, "\t   Give negative length to reverse the scalebar.\n");
+		fprintf (stderr, "\t   Append h for horizontal scale.\n");
+		fprintf (stderr, "\n\tOPTIONS:\n");
+		fprintf (stderr, "\t-A Place the desired annotations/labels on the other side of the colorscale instead.\n");
+		fprintf (stderr, "\t   Append a or l to move only the annotations or labels to the other side.\n");
+		fprintf (stderr, "\t   Append c to plot vertical labels as columns.\n");
+		fprintf (stderr, "\t-B Set scale annotation interval and label. Use y-label to set unit label.\n");
+		fprintf (stderr, "\t   If no annotation interval is set it is taken from the cpt file.\n");
+		fprintf (stderr, "\t-C Color palette file. If not set, stdin is read.\n");
+		fprintf (stderr, "\t   By default all color changes are annotated (but see -B).  To use a subset,\n");
+		fprintf (stderr, "\t   add an extra column to the cpt-file with a L, U, or B\n");
+		fprintf (stderr, "\t   to annotate Lower, Upper, or Both color segment boundaries.\n");
+		fprintf (stderr, "\t   If a categorical CPT file is given the -Li is set automatically.\n");
+		fprintf (stderr, "\t-E add sidebar triangles for back- and foreground colors.\n");
+		fprintf (stderr, "\t   Specify b(ackground) or f(oreground) to get one only [Default is both].\n");
+		fprintf (stderr, "\t   Optionally, append triangle height [Default is half the barwidth].\n");
+		fprintf (stderr, "\t-I add illumination for +-<max_intens> or <low_i> to <high_i> [-1.0/1.0].\n");
+		fprintf (stderr, "\t   Alternatively, specify <lower>/<upper> intensity values.\n");
+		GMT_explain_option ('K');
+		fprintf (stderr, "\t-L For equal-sized color rectangles. -B interval cannot be used.\n");
+		fprintf (stderr, "\t   Append i to annotate the interval range instead of lower/upper.\n");
+		fprintf (stderr, "\t   If <gap> is appended, we separate each rectangle by <gap> units and center each\n");
+		fprintf (stderr, "\t   lower (z0) annotation on the rectangle.  Ignored if not a discrete cpt table.\n");
+		fprintf (stderr, "\t   If -I is used then each rectangle will have the illuminated constant color.\n");
+		fprintf (stderr, "\t-M force monochrome colorbar using GMT_YIQ transformation.\n");
+		fprintf (stderr, "\t-N effective dots-per-inch for color scale [300].\n");
+		GMT_explain_option ('O');
+		GMT_explain_option ('P');
+		fprintf (stderr, "\t-Q Plot colorbar using logarithmic scale and annotate powers of 10 [Default is linear].\n");
+		fprintf (stderr, "\t-S Skip drawing color boundary lines on color scale [Default draws lines].\n");
+		GMT_explain_option ('U');
+		GMT_explain_option ('V');
+		GMT_explain_option ('X');
+		fprintf (stderr, "\t-Z give colorbar-width (in %s) per color entry.\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t   By default, width of entry is scaled to color range,\n");
+		fprintf (stderr, "\t   i.e., z = 0-100 gives twice the width as z = 100-150.\n");
+		GMT_explain_option ('c');
+		GMT_explain_option ('.');
+		exit (EXIT_FAILURE);
 	}
 
 	/* Check that the options selected are mutually consistent */
 
 	if (!Ctrl->D.active) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: -D is required and must be specified\n");
-		n_errors++;
+		fprintf (stderr, "%s: GMT SYNTAX ERROR: -D is required and must be specified\n", GMT_program);
+		error++;
 	}
 	else {
-		n_errors += GMT_check_condition (GMT, fabs (Ctrl->D.length) < GMT_SMALL , "Syntax error -D option: scale length must be nonzero\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->D.width <= 0.0, "Syntax error -D option: scale width must be positive\n");
-	}
-	n_errors += GMT_check_condition (GMT, n_files > 0, "Syntax error: No input files are allowed\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->L.active && GMT->current.map.frame.init, "Syntax error -L option: Cannot be used with -B option.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->N.active && Ctrl->N.dpi <= 0.0, "Syntax error -N option: The dpi must be > 0.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && !(Ctrl->T.do_pen || Ctrl->T.do_fill), "Syntax error -T option: Must set pen or fill.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->Z.active && !Ctrl->Z.file, "Syntax error -Z option: No file given\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->Z.active && Ctrl->Z.file && GMT_access (GMT, Ctrl->Z.file, R_OK), "Syntax error -Z option: Cannot access file %s\n", Ctrl->Z.file);
-
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
-}
-
-double get_z (struct GMT_PALETTE *P, double x, double *width, unsigned int n)
-{
-	unsigned int i = 0;
-	double tmp;
-
-	tmp = width[0];
-	while (i < n && x > tmp) tmp += width[++i];
-	if (i == n) return (P->range[P->n_colors-1].z_high);
-	return (P->range[i].z_low + (x - tmp + width[i]) * (P->range[i].z_high - P->range[i].z_low) / width[i]);
-}
-
-void fix_format (char *unit, char *format)
-{
-	unsigned int i, j;
-	char text[GMT_LEN64] = {""}, new_format[GMT_BUFSIZ] = {""};
-
-	/* Check if annotation units should be added */
-
-	if (unit && unit[0]) {	/* Must append the unit string */
-		if (!strchr (unit, '%'))	/* No percent signs */
-			strncpy (text, unit, GMT_LEN64);
-		else {
-			for (i = j = 0; i < strlen (unit); i++) {
-				text[j++] = unit[i];
-				if (unit[i] == '%') text[j++] = unit[i];
-			}
-			text[j] = 0;
+		if (fabs (Ctrl->D.length) < GMT_SMALL ) {
+			fprintf (stderr, "%s: GMT SYNTAX ERROR -D option: scale length must be nonzero\n", GMT_program);
+			error++;
 		}
-		if (text[0] == '-')	/* No space between annotation and unit */
-			sprintf (new_format, "%s%s", format, &text[1]);
-		else		/* 1 space between annotation and unit */
-			sprintf (new_format, "%s %s", format, text);
-		strcpy (format, new_format);
+		if (Ctrl->D.width <= 0.0) {
+			fprintf (stderr, "%s: GMT SYNTAX ERROR -D option: scale width must be positive\n", GMT_program);
+			error++;
+		}
 	}
+	if (Ctrl->N.dpi < 1) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -N option: dpi must be > 0\n", GMT_program);
+		error++;
+	}
+	if (Ctrl->L.active && B_set) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -L option: Cannot be used with -B option.\n", GMT_program);
+		error++;
+	}
+	      
+	if (error) exit (EXIT_FAILURE);
+
+
+	if (gmtdefs.verbose) {
+		if (Ctrl->C.file)
+			fprintf (stderr, "%s: Reading CPT file %s.", GMT_program, Ctrl->C.file);
+		else
+			fprintf (stderr, "%s: Reading standard input.", GMT_program);
+	}
+
+	GMT_read_cpt (Ctrl->C.file);
+
+#ifdef GMT_CPT2	
+	if (GMT_categorical) {
+		Ctrl->L.active = Ctrl->L.interval = TRUE;
+		if (gmtdefs.verbose) fprintf (stderr, "%s: CPT is for categorical data.", GMT_program);
+	}
+#endif
+	
+	if (gmtdefs.verbose) fprintf (stderr, "  CPT range from %g to %g\n",
+		GMT_lut[0].z_low, GMT_lut[GMT_n_colors-1].z_high);
+
+	if (Ctrl->Q.active) {	/* Take log of all z values */
+		for (i = 0; i < GMT_n_colors; i++) {
+			if (GMT_lut[i].z_low <= 0.0 || GMT_lut[i].z_high <= 0.0) {
+				fprintf (stderr, "%s: GMT SYNTAX ERROR -Q option: All z-values must be positive for logarithmic scale\n", GMT_program);
+				exit (EXIT_FAILURE);
+			}
+			GMT_lut[i].z_low = d_log10 (GMT_lut[i].z_low);
+			GMT_lut[i].z_high = d_log10 (GMT_lut[i].z_high);
+			GMT_lut[i].i_dz = 1.0 / (GMT_lut[i].z_high - GMT_lut[i].z_low);
+		}
+	}
+	
+	if (Ctrl->E.mode && Ctrl->E.length == 0.0) Ctrl->E.length = Ctrl->D.width * 0.5;
+	max_intens[0] = Ctrl->I.min;
+	max_intens[1] = Ctrl->I.max;
+
+	z_width = (double *) GMT_memory (VNULL, (size_t)GMT_n_colors, sizeof (double), GMT_program);
+
+	if (Ctrl->Z.file && (fp = GMT_fopen (Ctrl->Z.file, "r")) == NULL) {
+		fprintf (stderr, "%s: Unable to open file %s\n", GMT_program, Ctrl->Z.file);
+		exit (EXIT_FAILURE);
+	}
+	else if (Ctrl->Z.file) {	/* Opened successfully, now read */
+		i = 0;
+		while (GMT_fgets (line, BUFSIZ, fp)) {
+			if (i == GMT_n_colors) {
+				fprintf (stderr, "%s: -Z file %s has more slices than -C file %s!\n", GMT_program, Ctrl->Z.file, Ctrl->C.file);
+				exit (EXIT_FAILURE);
+			}
+			GMT_chop (line);					/* Rid the world of CR/LF */
+			if (line[0] == '#' || line[0] == '\0') continue;	/* Skip comments and blank lines */
+			n = sscanf (line, "%lf", &z_width[i++]);
+			if (n != 1) {
+				fprintf (stderr, "%s: Error reading file %s near line %ld\n", GMT_program, Ctrl->Z.file, i);
+				exit (EXIT_FAILURE);
+			}
+		}
+		GMT_fclose (fp);
+		if (i < GMT_n_colors) {
+			fprintf (stderr, "%s: -Z file %s has fewer slices than -C file %s!\n", GMT_program, Ctrl->Z.file, Ctrl->C.file);
+			exit (EXIT_FAILURE);
+		}
+	}
+	else if (Ctrl->L.active) {
+		dz = fabs (Ctrl->D.length) / GMT_n_colors;
+		for (i = 0; i < GMT_n_colors; i++) z_width[i] = dz;
+	}
+	else {
+		for (i = 0; i < GMT_n_colors; i++) z_width[i] = fabs (Ctrl->D.length) * (GMT_lut[i].z_high - GMT_lut[i].z_low) / (GMT_lut[GMT_n_colors-1].z_high - GMT_lut[0].z_low);
+	}
+
+/*-----------------start of kludge-------------------------------------------*/
+
+	/* Because psscale uses -D to position things we need to make some
+	 * changes so that BoundingBox and others are set ~correctly */
+
+	if (Ctrl->Q.active && B_set) {
+		sprintf (text, "X%gil/%gi", Ctrl->D.length, Ctrl->D.width);
+		start_val = pow (10.0, GMT_lut[0].z_low);
+		stop_val  = pow (10.0, GMT_lut[GMT_n_colors-1].z_high);
+	}
+	else {
+		sprintf (text, "X%gi/%gi", Ctrl->D.length, Ctrl->D.width);
+		start_val = GMT_lut[0].z_low;
+		stop_val  = GMT_lut[GMT_n_colors-1].z_high;
+	}
+	GMT_parse_J_option (text);	/* Fake linear projection */
+	GMT_err_fail (GMT_map_setup (start_val, stop_val, 0.0, Ctrl->D.width), "");
+
+	/* We must do any origin translation manually in psscale */
+
+	if (! (GMT_ps.x_origin == 0.0 && GMT_ps.y_origin == 0.0)) {	/* Must shift */
+		must_shift_back = GMT_ps.absolute;	/* TRUE if absolute */
+		x_origin = GMT_ps.x_origin;
+		y_origin = GMT_ps.y_origin;
+	}
+
+	if (Ctrl->D.horizontal) {
+		GMT_ps.x_origin = Ctrl->D.x - 0.5 * fabs (Ctrl->D.length);
+		GMT_ps.y_origin = Ctrl->D.y - Ctrl->D.width;
+		frame_info.side[1] = frame_info.side[2] = frame_info.side[3] = 0;
+	}
+	else {
+		GMT_ps.x_origin = Ctrl->D.x;
+		GMT_ps.y_origin = Ctrl->D.y - 0.5 * fabs (Ctrl->D.length);
+		frame_info.side[0] = frame_info.side[2] = frame_info.side[3] = 0;
+		d_swap (z_project.xmin, z_project.ymin);
+		d_swap (z_project.xmax, z_project.ymax);
+	}
+	if (frame_info.axis[0].item[0].interval == 0.0) frame_info.plot = TRUE;
+	GMT_ps.absolute = TRUE;	/* Ensure absolute coordinates */
+
+	save_unix_time = GMT_ps.unix_time;
+	GMT_ps.unix_time = FALSE;
+	
+/*-----------------end of kludge-------------------------------------------*/
+
+	GMT_plotinit (argc, argv);
+	GMT_ps.unix_time = save_unix_time;
+
+	ps_transrotate (x_origin, y_origin, 0.0);
+
+	ps_setpaint (gmtdefs.basemap_frame_rgb);
+
+	if (GMT_ps.unix_time) {	/* Extra shift/unshift since psscale does things differently */
+		ps_transrotate (-GMT_ps.x_origin, -GMT_ps.y_origin, 0.0);
+		GMT_timestamp (GMT_ps.unix_time_pos[0], GMT_ps.unix_time_pos[1], GMT_ps.unix_time_just, GMT_ps.unix_time_label);
+		ps_transrotate (GMT_ps.x_origin, GMT_ps.y_origin, 0.0);
+	}
+
+	GMT_draw_colorbar (Ctrl->D.length, Ctrl->D.width, z_width, Ctrl->N.dpi, Ctrl->A.mode, B_set, Ctrl->L.active, Ctrl->D.horizontal, Ctrl->Q.active, Ctrl->I.active, max_intens, Ctrl->S.active, Ctrl->E.mode, Ctrl->E.length, Ctrl->L.spacing, Ctrl->L.interval, Ctrl->M.active);
+
+	if (must_shift_back) ps_transrotate (-x_origin, -y_origin, 0.0);
+
+	GMT_plotend ();
+
+	GMT_ps.absolute = must_shift_back;	/* Restore previous setting */
+
+	GMT_free ((void *)z_width);
+
+	Free_psscale_Ctrl (Ctrl);	/* Deallocate control structure */
+
+	GMT_end (argc, argv);
+
+	exit (EXIT_SUCCESS);
 }
 
-#define FONT_HEIGHT_PRIMARY (GMT->session.font[GMT->current.setting.font_annot[0].id].height)
-
-void gmt_draw_colorbar (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struct GMT_PALETTE *P, double length, double width, double *z_width, \
-	double bit_dpi, unsigned int N_mode, unsigned int flip, bool B_set, bool equi, bool horizontal, bool logscl, bool intens, \
-	double *max_intens, bool skip_lines, unsigned int extend, \
-	double e_length, char *nan_text, double gap, bool interval_annot, bool monochrome, struct T Ctrl_T)
+void GMT_draw_colorbar (double length, double width, double *z_width, GMT_LONG bit_dpi, GMT_LONG flip, GMT_LONG B_set, GMT_LONG equi, GMT_LONG horizontal, GMT_LONG logscl, GMT_LONG intens, double *max_intens, GMT_LONG skip_lines, GMT_LONG extend, double e_length, double gap, GMT_LONG interval_annot, GMT_LONG monochrome)
 {
-	unsigned int i, ii, id, j, nb, ndec = 0, dec, p_val, depth, Label_justify, form;
-	unsigned int cap = PSL->internal.line_cap, join = PSL->internal.line_join;
-	unsigned int nx = 0, ny = 0, nm, barmem, k, justify, l_justify, n_use_labels = 0;
-	int this_just;
-	bool reverse, all = true, use_image, center = false, const_width = true, do_annot, use_labels, cpt_auto_fmt = true;
-	char format[GMT_LEN256] = {""}, text[GMT_LEN256] = {""}, test[GMT_LEN256] = {""}, unit[GMT_LEN256] = {""}, label[GMT_LEN256] = {""};
-	static char *method[2] = {"polygons", "colorimage"};
-	unsigned char *bar = NULL, *tmp = NULL;
-	double off, annot_off, label_off, len, len2, size, x0, x1, dx, xx, dir, y_base, y_annot, y_label, xd = 0.0, yd = 0.0, xt = 0.0;
-	double z = 0.0, xleft, xright, inc_i, inc_j, start_val, stop_val, nan_off = 0.0, rgb[4], rrggbb[4], xp[4], yp[4], prev_del_z, this_del_z = 0.0;
-	struct GMT_FILL *f = NULL;
-	struct GMT_PLOT_AXIS *A;
-#ifdef DEBUG
-	unsigned int dump_k_val, zzz;
-#endif
+	GMT_LONG i, ii, id, j, nb, ndec = -1, dec, p_val, depth;
+	GMT_LONG nx = 0, ny = 0, nm, barmem, k, justify, l_justify, this_just, use_labels = 0, Label_justify;
+	int rgb[3], rrggbb[3];
+	GMT_LONG reverse, all = TRUE, use_image, center = FALSE, const_width = TRUE, do_annot;
+	char format[GMT_LONG_TEXT], text[GMT_LONG_TEXT], test[GMT_LONG_TEXT], unit[GMT_LONG_TEXT], label[GMT_LONG_TEXT];
+	unsigned char *bar = 0, *tmp = 0;
+	double off, annot_off, label_off, len, len2, size, x0, x1, dx, xx, dir, y_base, y_annot, y_label;
+	double z, xleft, xright, inc_i, inc_j, start_val, stop_val;
+	double get_z (double x, double *width, GMT_LONG n);
+	double xp[4], yp[4];
+	struct GMT_FILL *f;
+	void fix_format (char *unit, char *format);
 
-	GMT->current.setting.map_annot_offset[0] = fabs (GMT->current.setting.map_annot_offset[0]);	/* No 'inside' annotations allowed in colorbar */
+	ps_setfont (gmtdefs.annot_font[0]);
 
-	/* Temporarily change to miter join so boxes and end triangles have near corners */
-	PSL_setlinejoin (PSL, PSL_MITER_JOIN);
-
-#ifdef DEBUG
-	if (!intens) dump = false;	/* Must be run with -I */
-	if (dump) {
-		ny = urint (width * bit_dpi);
-		inc_j = (ny > 1) ? (max_intens[1] - max_intens[0]) / (ny - 1) : 0.0;
-		dump_k_val = ny - urint ((dump_int_val - max_intens[0])/inc_j) - 1;
-		fprintf (stderr, "#Produced with dump_int_val = %g, dump_k_val = %u of %u\n", dump_int_val, dump_k_val, ny);
-		fprintf (stderr, "#z\tred\tgreen\tblue\tr_int\tg_int\tb_int\tps_r\tps_g\tps_b\n");
-	}
-#endif
+	gmtdefs.annot_offset[0] = fabs (gmtdefs.annot_offset[0]);	/* No 'inside' annotations allowed in colorbar */
 
 	/* Find max decimals needed */
 
-	start_val = P->range[0].z_low;
-	stop_val  = P->range[P->n_colors-1].z_high;
-	if (B_set) {	/* Let the general -B machinery do the annotation labeling */
+	start_val = GMT_lut[0].z_low;
+	stop_val  = GMT_lut[GMT_n_colors-1].z_high;
+	if (B_set) {
 		if (logscl) {	/* Must set original start/stop values for axis */
-			start_val = pow (10.0, P->range[0].z_low);
-			stop_val  = pow (10.0, P->range[P->n_colors-1].z_high);
+			start_val = pow (10.0, GMT_lut[0].z_low);
+			stop_val  = pow (10.0, GMT_lut[GMT_n_colors-1].z_high);
 		}
-		ndec = GMT_get_format (GMT, GMT->current.map.frame.axis[GMT_X].item[GMT_ANNOT_UPPER].interval, GMT->current.map.frame.axis[GMT_X].unit, GMT->current.map.frame.axis[GMT_X].prefix, format);
+		ndec = GMT_get_format (frame_info.axis[0].item[0].interval, frame_info.axis[0].unit, frame_info.axis[0].prefix, format);
 	}
-	else {	/* Do annotations explicitly, one by one.  Try automatic guessing of decimals if equidistant cpt */
-		bool const_interval = true, exp_notation = false;
-		for (i = 0; i < P->n_colors; i++) {
-			if (P->range[i].label) n_use_labels++;
-			if (P->range[i].annot & 1) {
-				z = P->range[i].z_low;
-				if ((dec = GMT_get_format (GMT, z, NULL, NULL, text)) > ndec) {
-					strncpy (format, text, GMT_LEN256);
+	else {
+		for (i = 0; i < GMT_n_colors; i++) {
+			if (GMT_lut[i].label) use_labels++;
+			if (GMT_lut[i].annot & 1) {
+				if ((dec = GMT_get_format (GMT_lut[i].z_low, CNULL, CNULL, text)) > ndec) {
+					strcpy (format, text);
 					ndec = dec;
 				}
 			}
-			if (P->range[i].annot & 2) {
-				z = P->range[i].z_high;
-				if ((dec = GMT_get_format (GMT, z, NULL, NULL, text)) > ndec) {
-					strncpy (format, text, GMT_LEN256);
+			if (GMT_lut[i].annot & 2) {
+				if ((dec = GMT_get_format (GMT_lut[i].z_high, CNULL, CNULL, text)) > ndec) {
+					strcpy (format, text);
 					ndec = dec;
 				}
 			}
-			if (format[0] && !exp_notation) {
-				sprintf (text, format, z);
-				if (strchr (text, 'e')) exp_notation = true;	/* Got exponential notation in at least one place */
-			}
-			prev_del_z = this_del_z;
-			this_del_z = P->range[i].z_high - P->range[i].z_low;
-			if (i && !doubleAlmostEqualZero (this_del_z, prev_del_z)) const_interval = false;
-			if (P->range[i].annot) all = false;
-		}
-		if (!const_interval) {	/* May have to abandon automatic format guessing */
-			if (exp_notation && !strchr (GMT->current.setting.format_float_map, 'e')) {	/* Unwanted exponential notation: Abandon automatic format detection and use FORMAT_FLOAT_MAP */
-				cpt_auto_fmt = false;
-				ndec = 0;
-			}
+			if (GMT_lut[i].annot) all = FALSE;
 		}
 	}
-	if (equi && n_use_labels == P->n_colors)
-		all = use_labels = true;	/* Only use optional text labels for equal length scales */
+	if (equi && use_labels == GMT_n_colors)
+		all = use_labels = TRUE;	/* Only use optional text labels for equal length scales */
 	else
-		use_labels = false;
+		use_labels = FALSE;
 
 	/* Check if steps in color map have constant width */
-	for (i = 1; i < P->n_colors && const_width; i++)
-		if (fabs (z_width[i] - z_width[0]) > GMT_SMALL) const_width = false;
+	for (i = 1; i < GMT_n_colors && const_width; i++)
+		if (fabs(z_width[i] - z_width[0]) > GMT_SMALL) const_width = FALSE;
 	
 	if (ndec == 0) {	/* Not -B and no decimals are needed */
-		strncpy (format, GMT->current.setting.format_float_map, GMT_LEN256);
-		fix_format (GMT->current.map.frame.axis[GMT_X].unit, format);	/* Add units if needed */
+		strcpy (format, gmtdefs.d_format);
+		fix_format (frame_info.axis[0].unit, format);	/* Add units if needed */
 	}
 
-	len = GMT->current.setting.map_tick_length[GMT_ANNOT_UPPER];	/* +ve means draw on the outside of bar */
-	len2 = GMT->current.setting.map_tick_length[GMT_TICK_UPPER];
+	len = gmtdefs.tick_length;	/* +ve means draw on the outside of bar */
+	len2 = 0.5 * len;
 	xleft = x0 = 0.0;
 
 	reverse = (length < 0.0);
 	length = fabs (length);
 	xright = length;
-	if (N_mode == N_FAVOR_IMAGE)	/* favor image if possible */
-		use_image = (!P->has_pattern && gap <= 0.0);
-	else if (N_mode == N_FAVOR_POLY)	/* favor polygon if possible */
-		use_image = P->is_continuous;
-	else	/* Auto mode */
-		use_image = (!P->has_pattern && gap <= 0.0 && (equi || const_width || P->is_continuous));
-	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Color bar will be plotted using %s\n", method[use_image]);
-	
+	use_image = (!GMT_cpt_pattern && gap <= 0.0 && (equi || const_width || GMT_continuous));
 
-	if ((gap >= 0.0 || interval_annot) && !P->is_continuous) {	/* Want to center annotations for discrete colortable, using lower z0 value */
-		center = (interval_annot || gap >= 0.0);
-		if (gap > 0.0) skip_lines = true;
+	if ((gap >= 0.0 || interval_annot) && !GMT_continuous) {	/* Want to center annotations for discrete colortable, using lower z0 value */
+		center = TRUE;
+		if (gap > 0.0) skip_lines = TRUE;
 		gap *= 0.5;
 		if (interval_annot) {
 			sprintf (text, "%s - %s", format, format);
-			strncpy (format, text, GMT_LEN256);
+			strcpy (format, text);
 		}
 	}
 	if (gap < 0.0) gap = 0.0;
 
 	if (use_image || intens) {	/* Make bitimage for colorbar using bit_dpi */
-		bool resample;
-		if (N_mode == N_FAVOR_IMAGE) {	/* Honor the given image dpi */
-			nx = (!use_image && gap > 0.0) ? P->n_colors : urint (length * bit_dpi);
-			ny = urint (width * bit_dpi);
-			resample = true;
-		}
-		else {	/* Do the smallest possible image */
-			resample = P->is_continuous;
-			nx = (P->is_continuous) ? urint (length * bit_dpi) : P->n_colors;
-			ny = (intens) ? urint (width * bit_dpi) : 1;
-		}
+		nx = (GMT_continuous) ? irint (length * bit_dpi) : GMT_n_colors;
+		ny = (intens) ? irint (width * bit_dpi) : 1;
 		nm = nx * ny;
 		inc_i = length / nx;
 		inc_j = (ny > 1) ? (max_intens[1] - max_intens[0]) / (ny - 1) : 0.0;
-		barmem = (monochrome || P->is_gray) ? nm : 3 * nm;
-		bar = GMT_memory (GMT, NULL, barmem, unsigned char);
+		barmem = (monochrome || GMT_gray) ? nm : 3 * nm;
+		bar = (unsigned char *) GMT_memory (VNULL, (size_t)barmem, sizeof (char), GMT_program);
 
 		/* Load bar image */
 
 		for (i = 0; i < nx; i++) {
-			z = (resample) ? get_z (P, (i+0.5) * inc_i, z_width, P->n_colors) : P->range[i].z_low;
-			GMT_get_rgb_from_z (GMT, P, z, rrggbb);
+			z = (GMT_continuous) ? get_z ((i+0.5) * inc_i, z_width, GMT_n_colors) : GMT_lut[i].z_low;
+			GMT_get_rgb_from_z (z, rrggbb);
 			ii = (reverse) ? nx - i - 1 : i;
 			for (j = 0; j < ny; j++) {
-				GMT_rgb_copy (rgb, rrggbb);
+				for (k = 0; k < 3; k++) rgb[k] = rrggbb[k];
 				k = j * nx + ii;
-#ifdef DEBUG
-				if (dump && z > 2499.2 && z < 2500.25) {
-					zzz = 1;
-				}
-#endif
-				if (intens) GMT_illuminate (GMT, max_intens[1] - j * inc_j, rgb);
-				if (P->is_gray)	/* All gray, pick red */
-					bar[k] = GMT_u255 (rgb[0]);
+				if (intens) GMT_illuminate (max_intens[1] - j * inc_j, rgb);
+				if (GMT_gray)	/* All gray, pick red */
+					bar[k] =  (unsigned char) rgb[0];
 				else if (monochrome)	/* Convert to gray using the GMT_YIQ transformation */
-					bar[k] = GMT_u255 (GMT_YIQ (rgb));
+					bar[k] =  (unsigned char) GMT_YIQ (rgb);
 				else {
 					k *= 3;
-					bar[k++] = GMT_u255 (rgb[0]);
-					bar[k++] = GMT_u255 (rgb[1]);
-					bar[k++] = GMT_u255 (rgb[2]);
-#ifdef DEBUG
-					if (dump && j == dump_k_val) fprintf (stderr, "%g\t%g\t%g\t%g\t%g\t%g\t%g\t%d\t%d\t%d\n",
-						z, rrggbb[0], rrggbb[1], rrggbb[2], rgb[0], rgb[1], rgb[2], bar[k-3], bar[k-2], bar[k-1]);
-#endif
+					bar[k++] = (unsigned char) rgb[0];
+					bar[k++] = (unsigned char) rgb[1];
+					bar[k++] = (unsigned char) rgb[2];
 				}
 			}
 		}
 	}
 
-	if (Ctrl_T.active) {	/* Place rectangle behind the color bar */
-		double x_center, y_center, dim[2] = {1.0,0.0}, u_off = 0.0, v_off = 0.0;
-			
-		GMT_setfill (GMT, &Ctrl_T.fill, Ctrl_T.do_pen);
-		GMT_setpen (GMT, &Ctrl_T.pen);
-		annot_off = MAX (0.0, GMT->current.setting.map_annot_offset[0]);	/* Allow for space between bar and annotations */
-		if (horizontal) {	/* Determine center and dimensions of horizontal background rectangle */
-			x_center = 0.5 * length; y_center = 0.5 * width;
-			/* extend box height by annotation size */
-			annot_off += GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH];
-			/* If a label then add space for offset and label height */
-			if (GMT->current.map.frame.axis[GMT_X].label[0]) annot_off += MAX (0.0, GMT->current.setting.map_label_offset) + GMT->current.setting.font_label.size * GMT->session.u2u[GMT_PT][GMT_INCH];
-			/* If a unit then add space on the right to deal with the unit */
-			if (GMT->current.map.frame.axis[GMT_Y].label[0]) u_off = MAX (0.0, GMT->current.setting.map_annot_offset[0]) + strlen (GMT->current.map.frame.axis[GMT_Y].label) * GMT_DEC_SIZE * GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH];
-			/* Adjust center and dimensions of the modified box */
-			x_center += 0.5 * (u_off + Ctrl_T.off[XHI] - Ctrl_T.off[XLO]);
-			y_center += 0.5 * (Ctrl_T.off[YHI] - Ctrl_T.off[YLO] - annot_off);
-			dim[GMT_X] = length + u_off + Ctrl_T.off[XHI] + Ctrl_T.off[XLO];
-			dim[GMT_Y] = width + annot_off + Ctrl_T.off[YHI] + Ctrl_T.off[YLO];
-		}
-		else {	/* Determine center and dimensions of vertical background rectangle */
-			y_center = 0.5 * length; x_center = 0.5 * width;
-			/* Must guesstimate the width of the largest horizontal annotation */
-			sprintf (text, "%ld", lrint (floor (P->range[0].z_low)));
-			sprintf (test, "%ld", lrint (ceil (center ? P->range[P->n_colors-1].z_low : P->range[P->n_colors-1].z_high)));
-			off = ((MAX ((int)strlen (text), (int)strlen (test)) + ndec) * GMT_DEC_SIZE +
-				((ndec > 0) ? GMT_PER_SIZE : 0.0))
-				* GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH];
-			annot_off += off;
-			/* Increase width if there is a label */
-			if (GMT->current.map.frame.axis[GMT_X].label[0]) annot_off += MAX (0.0, GMT->current.setting.map_label_offset) + GMT->current.setting.font_label.size * GMT->session.u2u[GMT_PT][GMT_INCH];
-			/* If a unit then consider if its width exceeds the bar width; then use half the excess to adjust center and width of box, and its height to adjust the height of box */
-			if (GMT->current.map.frame.axis[GMT_Y].label[0]) {
-				u_off = 0.5 * MAX (0.0, strlen (GMT->current.map.frame.axis[GMT_Y].label) * GMT_DEC_SIZE * GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH] - width);
-				v_off = MAX (0.0, GMT->current.setting.map_annot_offset[0]) + GMT->current.setting.font_annot[0].size * FONT_HEIGHT_PRIMARY * GMT->session.u2u[GMT_PT][GMT_INCH];
-			}
-			/* Adjust center and dimensions of the modified box */
-			x_center += 0.5 * (Ctrl_T.off[XHI] + annot_off - Ctrl_T.off[XLO] - u_off);
-			y_center += 0.5 * (Ctrl_T.off[YHI] + v_off - Ctrl_T.off[YLO]);
-			dim[GMT_Y] = length + v_off + Ctrl_T.off[XHI] + Ctrl_T.off[XLO];
-			dim[GMT_X] = width + u_off + annot_off + Ctrl_T.off[YHI] + Ctrl_T.off[YLO];
-		}
-		PSL_plotsymbol (PSL, x_center, y_center, dim, PSL_RECT);
-	}
-	GMT_setpen (GMT, &GMT->current.setting.map_frame_pen);
+	GMT_setpen (&gmtdefs.frame_pen);
 
 	unit[0] = label[0] = 0;
 	/* Defeat the auto-repeat of axis info */
-	if (!strcmp (GMT->current.map.frame.axis[GMT_X].label, GMT->current.map.frame.axis[GMT_Y].label)) GMT->current.map.frame.axis[GMT_Y].label[0] = 0;
-	/* Save label and unit, because we are going to switch them off in GMT->current.map.frame and do it ourselves */
-	strncpy (label, GMT->current.map.frame.axis[GMT_X].label, GMT_LEN256);
-	strncpy (unit, GMT->current.map.frame.axis[GMT_Y].label, GMT_LEN256);
-	GMT->current.map.frame.axis[GMT_X].label[0] = GMT->current.map.frame.axis[GMT_Y].label[1] = 0;
+	if (!strcmp (frame_info.axis[0].label, frame_info.axis[1].label)) frame_info.axis[1].label[0] = 0;
+	/* Save label and unit, because we are going to switch them off in frame_info and do it ourselves */
+	strcpy (label, frame_info.axis[0].label);
+	strcpy (unit, frame_info.axis[1].label);
+	frame_info.axis[0].label[0] = frame_info.axis[1].label[1] = 0;
 
 	if (flip & 1) {
 		justify = l_justify = (horizontal) ? 2 : 7;
@@ -684,613 +594,434 @@ void gmt_draw_colorbar (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struct GMT_P
 	}
 	if (flip & 2) {
 		Label_justify = 2;
-		y_label = width + GMT->current.setting.map_label_offset;
+		y_label = width + gmtdefs.label_offset;
 	}
 	else {
 		Label_justify = 10;
-		y_label = -GMT->current.setting.map_label_offset;
-	}
-
-	if (extend) {	/* Adjustment to triangle base coordinates so pen abuts perfectly with bar */
-		double theta, s, c, w = GMT->current.setting.map_frame_pen.width * GMT->session.u2u[GMT_PT][GMT_INCH];
-		theta = atan (2.0 * e_length / width);	/* triangle base angle in radians */
-		sincos (theta, &s, &c);
-		xd = 0.5 * w * (c - 1.0);
-		yd = 0.5 * w * (s - 1.0);
-		xt = yd * 2.0 * e_length / width;	/* Shift of triangle peak x-pos to maintain original angle theta */
+		y_label = -gmtdefs.label_offset;
 	}
 
 	/* Current point (0,0) is now at lower left location of bar */
 
-	depth = (monochrome || P->is_gray) ? 8 : 24;
+	depth = (monochrome || GMT_gray) ? 8 : 24;
 	if (horizontal) {
-		form = GMT_setfont (GMT, &GMT->current.setting.font_annot[0]);
-
-		if (use_image)	/* Must plot as image */
-			PSL_plotcolorimage (PSL, 0.0, 0.0, length, width, PSL_BL, bar, nx, ny, depth);
+		if (use_image) {	/* Must plot as image */
+			GMT_color_image (0.0, 0.0, length, width, bar, nx, ny, depth);
+		}
 		else {			/* Plot as rectangles */
 			x0 = x1 = 0.0;
-			for (i = 0; i < P->n_colors; i++) {
-				ii = (reverse) ? P->n_colors - i - 1 : i;
+			yp[0] = yp[1] = 0.0;	yp[2] = yp[3] = width;
+			for (i = 0; i < GMT_n_colors; i++) {
+				ii = (reverse) ? GMT_n_colors - i - 1 : i;
 				x1 += z_width[ii];
-				if ((f = P->range[ii].fill))	/* Using pattern fills */
-					GMT_setfill (GMT, f, center);
+				if ((f = GMT_lut[ii].fill)) {	/* Using pattern fills */
+					xp[0] = xp[3] = x0 + gap;	xp[1] = xp[2] = x1 - gap;
+					GMT_fill (xp, yp, (GMT_LONG)4, f, center);	/* Outline drawn separately below if desired */
+				}
 				else if (intens) {
-					nb = (P->is_gray || monochrome) ? 1 : 3;
-					tmp = GMT_memory (GMT, NULL, ny*nb, unsigned char);
+					nb = (GMT_gray || monochrome) ? 1 : 3;
+					tmp = (unsigned char *) GMT_memory (VNULL, (size_t)ny*nb, sizeof (char), GMT_program);
 					for (j = 0, k = i*nb; j < ny*nb; k+=(nx-1)*nb) {
 						tmp[j++] = bar[k++];
 						tmp[j++] = bar[k++];
 						tmp[j++] = bar[k++];
 					}
-					PSL_plotcolorimage (PSL, x0 + gap, 0.0, z_width[ii] - 2*gap, width, PSL_BL, tmp, 1, ny, depth);
-					GMT_free (GMT, tmp);
-					PSL_setfill (PSL, GMT->session.no_rgb, center);
+					GMT_color_image (x0 + gap, 0.0, z_width[ii] - 2*gap, width, tmp, 1, ny, depth);
+					GMT_free ((void *)tmp);
+					ps_rect (x0+gap, 0.0, x1-gap, width, GMT_no_rgb, center);
 				}
 				else {
-					GMT_rgb_copy (rgb, P->range[ii].rgb_low);
-					if (intens) GMT_illuminate (GMT, max_intens[1], rgb);
+					memcpy ((void *)rgb, (void *)GMT_lut[ii].rgb_low, (size_t)(3 * sizeof (int)));
+					if (intens) GMT_illuminate (max_intens[1], rgb);
 					if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-					PSL_setfill (PSL, rgb, center);
+					ps_rect (x0+gap, 0.0, x1-gap, width, rgb, center);
 				}
-				PSL_plotbox (PSL, x0+gap, 0.0, x1-gap, width);
 				x0 = x1;
 			}
 		}
 
-		annot_off = ((len > 0.0 && !center) ? len : 0.0) + GMT->current.setting.map_annot_offset[0];
-		label_off = annot_off + GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH] + GMT->current.setting.map_label_offset;
+		annot_off = ((len > 0.0 && !center) ? len : 0.0) + gmtdefs.annot_offset[0];
+		label_off = annot_off + gmtdefs.annot_font_size[0] * GMT_u2u[GMT_PT][GMT_INCH] + gmtdefs.label_offset;
 		y_annot = y_base + dir * annot_off;
 		if ((flip & 1) == (flip & 2) / 2) y_label = y_base + dir * label_off;
 
-		PSL_setlinecap (PSL, PSL_BUTT_CAP);	/* Butt cap required for outline of triangle */
-		
 		if (extend & (reverse + 1)) {	/* Add color triangle on left side */
-			xp[0] = xp[2] = xleft - gap;	xp[1] = xleft - gap - e_length;
-			yp[0] = width - yd;	yp[2] = yd;	yp[1] = 0.5 * width;
-			for (i = 0; i < 3; i++) xp[i] += xd;
-			xp[1] += xt;
+			xp[0] = xp[1] = xleft - gap;	xp[2] = xp[0] - e_length;
+			yp[0] = width;	yp[1] = 0.0;	yp[2] = 0.5 * width;
 			id = (reverse) ? GMT_FGD : GMT_BGD;
-			if ((f = P->patch[id].fill))
-				GMT_setfill (GMT, f, false);
+			if ((f = GMT_bfn[id].fill))
+				GMT_fill (xp, yp, (GMT_LONG)3, f, TRUE);
 			else {
-				GMT_rgb_copy (rgb, P->patch[id].rgb);
+				memcpy ((void *)rgb, (void *)GMT_bfn[id].rgb, (size_t)(3 * sizeof (int)));
 				if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-				PSL_setfill (PSL, rgb, false);
+				ps_polygon (xp, yp, (GMT_LONG)3, rgb, TRUE);
 			}
-			PSL_plotpolygon (PSL, xp, yp, 3);
-			PSL_plotline (PSL, xp, yp, 3, PSL_MOVE + PSL_STROKE);
-			nan_off = e_length - xd;	/* Must make space for the triangle */
-		}
-		if (extend & 4) {	/* Add NaN rectangle on left side */
-			nan_off += e_length;
-			xp[0] = xp[1] = xleft - gap;	xp[2] = xp[3] = xp[0] - MAX (width, e_length);
-			for (i = 0; i < 4; i++) xp[i] -= nan_off;
-			yp[0] = yp[3] = width;	yp[1] = yp[2] = 0.0;
-			if ((f = P->patch[GMT_NAN].fill))
-				GMT_setfill (GMT, f, true);
-			else {
-				GMT_rgb_copy (rgb, P->patch[GMT_NAN].rgb);
-				if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-				PSL_setfill (PSL, rgb, true);
-			}
-			PSL_plotpolygon (PSL, xp, yp, 4);
-			PSL_plottext (PSL, xp[2] - fabs (GMT->current.setting.map_annot_offset[0]), 0.5 * width, GMT->current.setting.font_annot[0].size, nan_text, 0.0, 7, form);
 		}
 		if (extend & (2 - reverse)) {	/* Add color triangle on right side */
-			xp[0] = xp[2] = xright + gap;	xp[1] = xp[0] + e_length;
-			yp[0] = width - yd;	yp[2] = yd;	yp[1] = 0.5 * width;
-			for (i = 0; i < 3; i++) xp[i] -= xd;
-			xp[1] -= xt;
+			xp[0] = xp[1] = xright + gap;	xp[2] = xp[0] + e_length;
+			yp[0] = width;	yp[1] = 0.0;	yp[2] = 0.5 * width;
 			id = (reverse) ? GMT_BGD : GMT_FGD;
-			if ((f = P->patch[id].fill))
-				GMT_setfill (GMT, f, false);
+			if ((f = GMT_bfn[id].fill))
+				GMT_fill (xp, yp, (GMT_LONG)3, f, TRUE);
 			else {
-				GMT_rgb_copy (rgb, P->patch[id].rgb);
+				memcpy ((void *)rgb, (void *)GMT_bfn[id].rgb, (size_t)(3 * sizeof (int)));
 				if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-				PSL_setfill (PSL, rgb, false);
+				ps_polygon (xp, yp, (GMT_LONG)3, rgb, TRUE);
 			}
-			PSL_plotpolygon (PSL, xp, yp, 3);
-			PSL_plotline (PSL, xp, yp, 3, PSL_MOVE + PSL_STROKE);
 		}
 
-		PSL_setlinecap (PSL, PSL_SQUARE_CAP);	/* Square cap required for box of scale bar */
-
 		if (gap == 0.0) {
-			if ((flip & 1) || !B_set) PSL_plotsegment (PSL, xleft, 0.0, xleft + length, 0.0);
-			if (!(flip & 1) || !B_set) PSL_plotsegment (PSL, xleft, width, xleft + length, width);
-			PSL_plotsegment (PSL, xleft, 0.0, xleft, width);
-			PSL_plotsegment (PSL, xright, 0.0, xright, width);
+			ps_segment (xleft, 0.0, xleft + length, 0.0);
+			ps_segment (xleft, width, xleft + length, width);
+			ps_segment (xleft, 0.0, xleft, width);
+			ps_segment (xright, 0.0, xright, width);
 		}
 
 		if (B_set) {	/* Used -B */
-			GMT_auto_frame_interval (GMT, GMT_X, GMT_ANNOT_UPPER);
-			A = &GMT->current.map.frame.axis[GMT_X];
-			GMT_xy_axis (GMT, xleft, y_base, length, start_val, stop_val, A, !(flip & 1), GMT->current.map.frame.side[flip & 1 ? N_SIDE : S_SIDE] & 2);
-			if (A->item[GMT_GRID_UPPER].active) {
-				dx = GMT_get_map_interval (GMT, &A->item[GMT_GRID_UPPER]);
-				GMT_setpen (GMT, &GMT->current.setting.map_grid_pen[0]);
-				GMT_linearx_grid (GMT, PSL, P->range[0].z_low, P->range[P->n_colors-1].z_high, 0.0, width, dx);
+			GMT_xy_axis (xleft, y_base, length, start_val, stop_val, &frame_info.axis[0], !(flip & 1), frame_info.side[0]-1);
+			if ((dx = GMT_get_map_interval (0, GMT_GRID_UPPER)) > 0.0) {
+				GMT_setpen (&gmtdefs.grid_pen[0]);
+				GMT_linearx_grid (GMT_lut[0].z_low, GMT_lut[GMT_n_colors-1].z_high, 0.0, width, dx);
 			}
 		}
 		else {
-			/* First draw gridlines, unless skip_lines is true */
+			/* First draw gridlines, unless skip_lines is TRUE */
 
 			if (!skip_lines) {
-				GMT_setpen (GMT, &GMT->current.setting.map_grid_pen[0]);
+				GMT_setpen (&gmtdefs.grid_pen[0]);
 				x1 = xleft;
-				for (i = 0; i < P->n_colors; i++) {
+				for (i = 0; i < GMT_n_colors; i++) {
 					xx = (reverse) ? xright - x1 : x1;
-					PSL_plotsegment (PSL, xx, 0.0, xx, width);
+					ps_segment (xx, 0.0, xx, width);
 					x1 += z_width[i];
 				}
 				xx = (reverse) ? xleft : xright;
-				PSL_plotsegment (PSL, xx, 0.0, xx, width);
+				ps_segment (xx, 0.0, xx, width);
 			}
 
 			/* Then annotate and draw tickmarks */
 
-			GMT_setpen (GMT, &GMT->current.setting.map_tick_pen[0]);
+			GMT_setpen (&gmtdefs.tick_pen);
 			x1 = xleft;
 			if (center) x1 += 0.5 * z_width[0];
-			for (i = 0; i < P->n_colors; i++) {
+			for (i = 0; i < GMT_n_colors; i++) {
 				xx = (reverse) ? xright - x1 : x1;
-				if (!center) PSL_plotpoint (PSL, xx, y_base, PSL_MOVE);
-				if (all || (P->range[i].annot & 1)) {	/* Annotate this */
-					if (!center) PSL_plotpoint (PSL, 0.0, dir * len, PSL_DRAW + PSL_STROKE + PSL_REL);
+				if (!center) ps_plot (xx, y_base, PSL_PEN_MOVE);
+				if (all || (GMT_lut[i].annot & 1)) {	/* Annotate this */
+					if (!center) ps_plotr (0.0, dir * len, PSL_PEN_DRAW_AND_STROKE);
 					this_just = justify;
-					do_annot = true;
-					if (use_labels && P->range[i].label) {
-						strncpy (text, P->range[i].label, GMT_LEN256);
+					do_annot = TRUE;
+					if (use_labels && GMT_lut[i].label) {
+						strcpy (text, GMT_lut[i].label);
 						this_just = l_justify;
 					}
 					else if (center && interval_annot)
-						sprintf (text, format, P->range[i].z_low, P->range[i].z_high);
+						sprintf (text, format, GMT_lut[i].z_low, GMT_lut[i].z_high);
 					else if (logscl) {
-						p_val = urint (P->range[i].z_low);
-						if (doubleAlmostEqualZero (P->range[i].z_low, (double)p_val))
-							sprintf (text, "10@+%ld@+", lrint (P->range[i].z_low));
+						p_val = irint (GMT_lut[i].z_low);
+						if (GMT_IS_ZERO (GMT_lut[i].z_low - (double)p_val))
+							sprintf (text, "10@+%ld@+", (GMT_LONG)irint (GMT_lut[i].z_low));
 						else
-							do_annot = false;
+							do_annot = FALSE;
 					}
 					else
-						sprintf (text, format, P->range[i].z_low);
-					if (do_annot) PSL_plottext (PSL, xx, y_annot, GMT->current.setting.font_annot[0].size, text, 0.0, -this_just, form);
+						sprintf (text, format, GMT_lut[i].z_low);
+					if (do_annot) ps_text (xx, y_annot, gmtdefs.annot_font_size[0], text, 0.0, -this_just, 0);
 				}
 				else
-					if (!center) PSL_plotpoint (PSL, 0.0, dir * len2, PSL_DRAW + PSL_STROKE + PSL_REL);
+					if (!center) ps_plotr (0.0, dir * len2, PSL_PEN_DRAW_AND_STROKE);
 				x1 += z_width[i];
 			}
 			if (!center && !use_labels) {
 				xx = (reverse) ? xleft : xright;
-				PSL_plotpoint (PSL, xx, y_base, PSL_MOVE);
-				i = P->n_colors-1;
-				if (all || (P->range[i].annot & 2)) {
-					PSL_plotpoint (PSL, 0.0, dir * len, PSL_DRAW + PSL_STROKE + PSL_REL);
+				ps_plot (xx, y_base, PSL_PEN_MOVE);
+				i = GMT_n_colors-1;
+				if (all || (GMT_lut[i].annot & 2)) {
+					ps_plotr (0.0, dir * len, PSL_PEN_DRAW_AND_STROKE);
 					this_just = justify;
-					do_annot = true;
+					do_annot = TRUE;
 					if (logscl) {
-						p_val = urint (P->range[i].z_high);
-						if (doubleAlmostEqualZero (P->range[i].z_high, (double)p_val))
-							sprintf (text, "10@+%d@+", p_val);
+						p_val = irint (GMT_lut[i].z_high);
+						if (GMT_IS_ZERO (GMT_lut[i].z_high - (double)p_val))
+							sprintf (text, "10@+%ld@+", p_val);
 						else
-							do_annot = false;
+							do_annot = FALSE;
 					}
 					else
-						sprintf (text, format, P->range[i].z_high);
-					if (do_annot) PSL_plottext (PSL, xx, y_annot, GMT->current.setting.font_annot[0].size, text, 0.0, -this_just, form);
+						sprintf (text, format, GMT_lut[i].z_high);
+					if (do_annot) ps_text (xx, y_annot, gmtdefs.annot_font_size[0], text, 0.0, -this_just, 0);
 				}
 				else
-					PSL_plotpoint (PSL, 0.0, dir * len2, PSL_DRAW + PSL_STROKE + PSL_REL);
+					ps_plotr (0.0, dir * len2, PSL_PEN_DRAW_AND_STROKE);
 			}
 		}
 		if (label[0]) {	/* Add label */
-			form = GMT_setfont (GMT, &GMT->current.setting.font_label);
-			PSL_plottext (PSL, xleft + 0.5 * length, y_label, GMT->current.setting.font_label.size, label, 0.0, Label_justify, form);
+			ps_setfont (gmtdefs.label_font);
+			ps_text (xleft + 0.5 * length, y_label, gmtdefs.label_font_size, label, 0.0, Label_justify, 0);
 		}
 		if (unit[0]) {	/* Add unit label */
-			form = GMT_setfont (GMT, &GMT->current.setting.font_annot[0]);
-			PSL_plottext (PSL, xright + e_length + GMT->current.setting.map_annot_offset[0], 0.5 * width, GMT->current.setting.font_annot[0].size, unit, 0.0, 5, form);
+			ps_setfont (gmtdefs.annot_font[0]);
+			ps_text (xright + e_length + gmtdefs.annot_offset[0], 0.5 * width, gmtdefs.annot_font_size[0], unit, 0.0, 5, 0);
 		}
 	}
 	else {	/* Vertical scale */
-		form = GMT_setfont (GMT, &GMT->current.setting.font_annot[0]);
-
-		PSL_setorigin (PSL, width, 0.0, 90.0, PSL_FWD);
-		if (use_image)	/* Must plot with image */
-			PSL_plotcolorimage (PSL, 0.0, 0.0, length, width, PSL_BL, bar, nx, ny, depth);
+		ps_transrotate (width, 0.0, 90.0);
+		if (use_image) {	/* Must plot with image */
+			GMT_color_image (0.0, 0.0, length, width, bar, nx, ny, depth);
+		}
 		else {			/* Plot as rectangles */
 			x0 = x1 = 0.0;
-			for (i = 0; i < P->n_colors; i++) {
-				ii = (reverse) ? P->n_colors - i - 1 : i;
+			yp[0] = yp[1] = 0.0;	yp[2] = yp[3] = width;
+			for (i = 0; i < GMT_n_colors; i++) {
+				ii = (reverse) ? GMT_n_colors - i - 1 : i;
 				x1 += z_width[ii];
-				if ((f = P->range[ii].fill))	/* Using pattern fills */
-					GMT_setfill (GMT, f, center);
+				if ((f = GMT_lut[ii].fill)) {	/* Using pattern fills */
+					ps_transrotate (x0 + gap, 0.0, -90.0);
+
+					xp[0] = xp[3] = -width;	xp[1] = xp[2] = 0.0;
+					yp[0] = yp[1] = 0.0;	yp[2] = yp[3] = x1 - x0 - 2.0 * gap;
+					GMT_fill (xp, yp, (GMT_LONG)4, f, center);	/* Outline drawn separately below if desired */
+					ps_rotatetrans (-(x0 + gap), 0.0, 90.0);
+				}
 				else if (intens) {
-					nb = (P->is_gray || monochrome) ? 1 : 3;
-					tmp = GMT_memory (GMT, NULL, ny*nb, unsigned char);
+					nb = (GMT_gray || monochrome) ? 1 : 3;
+					tmp = (unsigned char *) GMT_memory (VNULL, (size_t)ny*nb, sizeof (char), GMT_program);
 					for (j = 0, k = i*nb; j < ny*nb; k+=(nx-1)*nb) {
 						tmp[j++] = bar[k++];
 						tmp[j++] = bar[k++];
 						tmp[j++] = bar[k++];
 					}
-					PSL_plotcolorimage (PSL, x0 + gap, 0.0, z_width[ii] - 2*gap, width, PSL_BL, tmp, 1, ny, depth);
-					GMT_free (GMT, tmp);
-					PSL_setfill (PSL, GMT->session.no_rgb, center);
+					GMT_color_image (x0 + gap, 0.0, z_width[ii] - 2*gap, width, tmp, 1, ny, depth);
+					GMT_free ((void *)tmp);
+					ps_rect (x0 + gap, 0.0, x1 - gap, width, GMT_no_rgb, center);
 				}
 				else {
-					GMT_rgb_copy (rgb, P->range[ii].rgb_low);
-					if (intens) GMT_illuminate (GMT, max_intens[1], rgb);
+					memcpy ((void *)rgb, (void *)GMT_lut[ii].rgb_low, (size_t)(3 * sizeof (int)));
+					if (intens) GMT_illuminate (max_intens[1], rgb);
 					if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-					PSL_setfill (PSL, rgb, center);
+					ps_rect (x0 + gap, 0.0, x1 - gap, width, rgb, center);
 				}
-				if (P->range[ii].fill) {	/* Must undo rotation so patterns remain aligned with original setup */
-					PSL_setorigin (PSL, x0 + gap, 0.0, -90.0, PSL_FWD);
-					PSL_plotbox (PSL, -width, 0.0, 0.0, x1 - x0 - 2.0 * gap);
-					PSL_setorigin (PSL, -(x0 + gap), 0.0, 90.0, PSL_INV);
-				}
-				else
-					PSL_plotbox (PSL, x0 + gap, 0.0, x1 - gap, width);
 				x0 = x1;
 			}
 		}
 
 		if (center && interval_annot) {
-			sprintf (text, "%ld - %ld", lrint (floor (P->range[0].z_low)), lrint (ceil (P->range[0].z_high)));
-			sprintf (test, "%ld - %ld", lrint (floor (P->range[P->n_colors-1].z_low)), lrint (ceil (P->range[P->n_colors-1].z_high)));
-			off = ((MAX ((int)strlen (text), (int)strlen (test)) + 2*ndec) * GMT_DEC_SIZE - 0.4 + 
+			sprintf (text, "%ld - %ld", (GMT_LONG) (floor (GMT_lut[0].z_low)), (GMT_LONG) (ceil (GMT_lut[0].z_high)));
+			sprintf (test, "%ld - %ld", (GMT_LONG) (floor (GMT_lut[GMT_n_colors-1].z_low)), (GMT_LONG) (ceil (GMT_lut[GMT_n_colors-1].z_high)));
+			off = ((MAX ((GMT_LONG)strlen (text), (GMT_LONG)strlen (test)) + 2*ndec) * GMT_DEC_SIZE - 0.4 + 
 				((ndec > 0) ? 2*GMT_PER_SIZE : 0.0))
-				* GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH];
+				* gmtdefs.annot_font_size[0] * GMT_u2u[GMT_PT][GMT_INCH];
 		}
 		else {
-			sprintf (text, "%ld", lrint (floor (P->range[0].z_low)));
-			sprintf (test, "%ld", lrint (ceil (center ? P->range[P->n_colors-1].z_low : P->range[P->n_colors-1].z_high)));
-			off = ((MAX ((int)strlen (text), (int)strlen (test)) + ndec) * GMT_DEC_SIZE +
+			sprintf (text, "%ld", (GMT_LONG) (floor (GMT_lut[0].z_low)));
+			sprintf (test, "%ld", (GMT_LONG) (ceil (center ? GMT_lut[GMT_n_colors-1].z_low : GMT_lut[GMT_n_colors-1].z_high)));
+			off = ((MAX ((GMT_LONG)strlen (text), (GMT_LONG)strlen (test)) + ndec) * GMT_DEC_SIZE +
 				((ndec > 0) ? GMT_PER_SIZE : 0.0))
-				* GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH];
+				* gmtdefs.annot_font_size[0] * GMT_u2u[GMT_PT][GMT_INCH];
 		}
 
-		annot_off = ((len > 0.0 && !center) ? len : 0.0) + GMT->current.setting.map_annot_offset[0] + off;
-		label_off = annot_off + GMT->current.setting.map_label_offset;
+		annot_off = ((len > 0.0 && !center) ? len : 0.0) + gmtdefs.annot_offset[0] + off;
+		label_off = annot_off + gmtdefs.label_offset;
 		if (use_labels || (flip & 1) || logscl) annot_off -= off;
 		y_annot = y_base + dir * annot_off;
 		if ((flip & 1) == (flip & 2) / 2) y_label = y_base + dir * label_off;
 
-		PSL_setlinecap (PSL, PSL_BUTT_CAP);	/* Butt cap required for outline of triangle */
-
 		if (extend & (reverse + 1)) {	/* Add color triangle at bottom */
-			xp[0] = xp[2] = xleft - gap;	xp[1] = xleft - gap - e_length;
-			yp[0] = width - yd;	yp[2] = yd;	yp[1] = 0.5 * width;
-			for (i = 0; i < 3; i++) xp[i] += xd;
-			xp[1] += xt;
+			xp[0] = xp[1] = xleft - gap;	xp[2] = xp[0] - e_length;
+			yp[0] = width;	yp[1] = 0.0;	yp[2] = 0.5 * width;
 			id = (reverse) ? GMT_FGD : GMT_BGD;
-			if ((f = P->patch[id].fill))
-				GMT_setfill (GMT, f, false);
+			if ((f = GMT_bfn[id].fill))
+				GMT_fill (xp, yp, (GMT_LONG)3, f, TRUE);
 			else {
-				GMT_rgb_copy (rgb, P->patch[id].rgb);
+				memcpy ((void *)rgb, (void *)GMT_bfn[id].rgb, (size_t)(3 * sizeof (int)));
 				if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-				PSL_setfill (PSL, rgb, false);
+				ps_polygon (xp, yp, (GMT_LONG)3, rgb, TRUE);
 			}
-			PSL_plotpolygon (PSL, xp, yp, 3);
-			PSL_plotline (PSL, xp, yp, 3, PSL_MOVE + PSL_STROKE);
-			nan_off = e_length - xd;	/* Must make space for the triangle */
-		}
-		if (extend & 4) {	/* Add NaN rectangle on left side */
-			nan_off += e_length;
-			xp[0] = xp[1] = xleft - gap;	xp[2] = xp[3] = xp[0] - MAX (width, e_length);
-			for (i = 0; i < 4; i++) xp[i] -= nan_off;
-			yp[0] = yp[3] = width;	yp[1] = yp[2] = 0.0;
-			if ((f = P->patch[GMT_NAN].fill))
-				GMT_setfill (GMT, f, true);
-			else {
-				GMT_rgb_copy (rgb, P->patch[GMT_NAN].rgb);
-				if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-				PSL_setfill (PSL, rgb, true);
-			}
-			PSL_plotpolygon (PSL, xp, yp, 4);
-			PSL_plottext (PSL, xp[2] - fabs (GMT->current.setting.map_annot_offset[0]), 0.5 * width, GMT->current.setting.font_annot[0].size, nan_text, -90.0, 10, form);
 		}
 		if (extend & (2 - reverse)) {	/* Add color triangle at top */
-			xp[0] = xp[2] = xright + gap;	xp[1] = xp[0] + e_length;
-			yp[0] = width - yd;	yp[2] = yd;	yp[1] = 0.5 * width;
-			for (i = 0; i < 3; i++) xp[i] -= xd;
-			xp[1] -= xt;
+			xp[0] = xp[1] = xright + gap;	xp[2] = xp[0] + e_length;
+			yp[0] = width;	yp[1] = 0.0;	yp[2] = 0.5 * width;
 			id = (reverse) ? GMT_BGD : GMT_FGD;
-			if ((f = P->patch[id].fill))
-				GMT_setfill (GMT, f, false);
+			if ((f = GMT_bfn[id].fill))
+				GMT_fill (xp, yp, (GMT_LONG)3, f, TRUE);
 			else {
-				GMT_rgb_copy (rgb, P->patch[id].rgb);
+				memcpy ((void *)rgb, (void *)GMT_bfn[id].rgb, (size_t)(3 * sizeof (int)));
 				if (monochrome) rgb[0] = rgb[1] = rgb[2] = GMT_YIQ (rgb);
-				PSL_setfill (PSL, rgb, false);
+				ps_polygon (xp, yp, (GMT_LONG)3, rgb, TRUE);
 			}
-			PSL_plotpolygon (PSL, xp, yp, 3);
-			PSL_plotline (PSL, xp, yp, 3, PSL_MOVE + PSL_STROKE);
 		}
-
-		PSL_setlinecap (PSL, PSL_SQUARE_CAP);	/* Square cap required for box of scale bar */
-
 		if (gap == 0.0) {
-			if ((flip & 1) || !B_set) PSL_plotsegment (PSL, xleft, 0.0, xleft + length, 0.0);
-			if (!(flip & 1) || !B_set) PSL_plotsegment (PSL, xleft, width, xleft + length, width);
-			PSL_plotsegment (PSL, xleft, 0.0, xleft, width);
-			PSL_plotsegment (PSL, xright, 0.0, xright, width);
+			ps_segment (xleft, 0.0, xleft + length, 0.0);
+			ps_segment (xleft, width, xleft + length, width);
+			ps_segment (xleft, 0.0, xleft, width);
+			ps_segment (xright, 0.0, xright, width);
 		}
-		if (B_set) {	/* Used -B. Must kludge by copying x-axis and scaling to y since we must use GMT_xy_axis to draw a y-axis based on x parameters. */
-			void (*tmp) (struct GMT_CTRL *, double, double *) = NULL;
-			
-			A = &GMT->current.map.frame.axis[GMT_X];
-			GMT_auto_frame_interval (GMT, GMT_X, GMT_ANNOT_UPPER);
-			if (A->item[GMT_GRID_UPPER].active) {	/* Gridlines work fine without kludging since no annotations involved */
-				dx = GMT_get_map_interval (GMT, &A->item[GMT_GRID_UPPER]);
-				GMT_setpen (GMT, &GMT->current.setting.map_grid_pen[0]);
-				GMT_linearx_grid (GMT, PSL, P->range[0].z_low, P->range[P->n_colors-1].z_high, 0.0, width, dx);
+		if (B_set) {	/* Used -B. Must kludge by copying x-axis and scaling to y since we must use GMT_xy_axis to draw a rotated x-axis... */
+			PFL tmp;
+			if ((dx = GMT_get_map_interval (0, GMT_GRID_UPPER)) > 0.0) {
+				GMT_setpen (&gmtdefs.grid_pen[0]);
+				GMT_linearx_grid (GMT_lut[0].z_low, GMT_lut[GMT_n_colors-1].z_high, 0.0, width, dx);
 			}
-			PSL_setorigin (PSL, 0.0, 0.0, -90.0, PSL_FWD);	/* Rotate back so we can plot y-axis */
-			/* Copy x-axis annotation and scale info to y-axis.  We dont need to undo this since GMT_end_module will restore it for us */
-			GMT_memcpy (&GMT->current.map.frame.axis[GMT_Y], &GMT->current.map.frame.axis[GMT_X], 1, struct GMT_PLOT_AXIS);
-			double_swap (GMT->current.proj.scale[GMT_X], GMT->current.proj.scale[GMT_Y]);
-			double_swap (GMT->current.proj.origin[GMT_X], GMT->current.proj.origin[GMT_Y]);
-			uint_swap (GMT->current.proj.xyz_projection[GMT_X], GMT->current.proj.xyz_projection[GMT_Y]);
-			tmp = GMT->current.proj.fwd_x; GMT->current.proj.fwd_y = GMT->current.proj.fwd_x; GMT->current.proj.fwd_x = tmp;
-			GMT->current.map.frame.axis[GMT_Y].id = GMT_Y;
-			for (i = 0; i < 5; i++) GMT->current.map.frame.axis[GMT_Y].item[i].parent = GMT_Y;
-			GMT_xy_axis (GMT, -y_base, 0.0, length, start_val, stop_val, &GMT->current.map.frame.axis[GMT_Y], flip & 1, GMT->current.map.frame.side[flip & 1 ? W_SIDE : E_SIDE] & 2);
-			PSL_setorigin (PSL, 0.0, 0.0, 90.0, PSL_INV);	/* Rotate back to where we started in this branch */
+			ps_transrotate (0.0, 0.0, -90.0);
+			memcpy ((void *)&frame_info.axis[1], (void *)&frame_info.axis[0], sizeof (struct GMT_PLOT_AXIS));
+			d_swap (project_info.x_scale, project_info.y_scale);
+			d_swap (project_info.x0, project_info.y0);
+			l_swap (project_info.xyz_projection[0], project_info.xyz_projection[1]);
+			tmp = GMT_x_forward; GMT_y_forward = GMT_x_forward; GMT_x_forward = tmp;
+			for (i = 0; i < 5; i++) frame_info.axis[1].item[i].parent = 1;
+			GMT_xy_axis (-y_base, 0.0, length, start_val, stop_val, &frame_info.axis[1], (flip & 1), frame_info.side[0]-1);
+			ps_rotatetrans (0.0, 0.0, 90.0);
 		}
 		else {
 			if (!skip_lines) {	/* First draw gridlines */
-				GMT_setpen (GMT, &GMT->current.setting.map_grid_pen[0]);
+				GMT_setpen (&gmtdefs.grid_pen[0]);
 				x1 = xleft;
-				for (i = 0; i < P->n_colors; i++) {
+				for (i = 0; i < GMT_n_colors; i++) {
 					xx = (reverse) ? xright - x1 : x1;
-					PSL_plotsegment (PSL, xx, 0.0, xx, width);
+					ps_segment (xx, 0.0, xx, width);
 					x1 += z_width[i];
 				}
 				xx = (reverse) ? xleft : xright;
-				PSL_plotsegment (PSL, xx, 0.0, xx, width);
+				ps_segment (xx, 0.0, xx, width);
 			}
 
 			/* Then annotate and draw tickmarks */
 
-			GMT_setpen (GMT, &GMT->current.setting.map_tick_pen[0]);
+			GMT_setpen (&gmtdefs.tick_pen);
 			x1 = xleft;
 			if (center) x1 += 0.5 * z_width[0];
-			for (i = 0; i < P->n_colors; i++) {
+			for (i = 0; i < GMT_n_colors; i++) {
 				xx = (reverse) ? xright - x1 : x1;
-				if (!center) PSL_plotpoint (PSL, xx, y_base, PSL_MOVE);
-				if (all || (P->range[i].annot & 1)) {
-					if (!center) PSL_plotpoint (PSL, 0.0, dir * len, PSL_DRAW + PSL_STROKE + PSL_REL);
+				if (!center) ps_plot (xx, y_base, PSL_PEN_MOVE);
+				if (all || (GMT_lut[i].annot & 1)) {
+					if (!center) ps_plotr (0.0, dir * len, PSL_PEN_DRAW_AND_STROKE);
 					this_just = justify;
-					do_annot = true;
-					if (use_labels && P->range[i].label) {
-						strncpy (text, P->range[i].label, GMT_LEN256);
+					do_annot = TRUE;
+					if (use_labels && GMT_lut[i].label) {
+						strcpy (text, GMT_lut[i].label);
 						this_just = l_justify;
 					}
 					else if (center && interval_annot)
-						sprintf (text, format, P->range[i].z_low, P->range[i].z_high);
+						sprintf (text, format, GMT_lut[i].z_low, GMT_lut[i].z_high);
 					else if (logscl) {
-						p_val = urint (P->range[i].z_low);
-						if (doubleAlmostEqualZero (P->range[i].z_low, (double)p_val))
-							sprintf (text, "10@+%d@+", p_val);
+						p_val = irint (GMT_lut[i].z_low);
+						if (GMT_IS_ZERO (GMT_lut[i].z_low - (double)p_val))
+							sprintf (text, "10@+%ld@+", p_val);
 						else
-							do_annot = false;
+							do_annot = FALSE;
 						this_just = l_justify;
 					}
 					else
-						sprintf (text, format, P->range[i].z_low);
-					if (!cpt_auto_fmt) this_just = l_justify;
-					if (do_annot) PSL_plottext (PSL, xx, y_annot, GMT->current.setting.font_annot[0].size, text, -90.0, -this_just, form);
+						sprintf (text, format, GMT_lut[i].z_low);
+					if (do_annot) ps_text (xx, y_annot, gmtdefs.annot_font_size[0], text, -90.0, -this_just, 0);
 				}
 				else
-					if (!center) PSL_plotpoint (PSL, 0.0, dir * len2, PSL_DRAW + PSL_STROKE + PSL_REL);
+					if (!center) ps_plotr (0.0, dir * len2, PSL_PEN_DRAW_AND_STROKE);
 				x1 += z_width[i];
 			}
 			if (!center && !use_labels) {
 				xx = (reverse) ? xleft : xright;
-				PSL_plotpoint (PSL, xx, y_base, PSL_MOVE);
-				i = P->n_colors-1;
-				if (all || (P->range[i].annot & 2)) {
-					PSL_plotpoint (PSL, 0.0, dir * len, PSL_DRAW + PSL_STROKE + PSL_REL);
+				ps_plot (xx, y_base, PSL_PEN_MOVE);
+				i = GMT_n_colors-1;
+				if (all || (GMT_lut[i].annot & 2)) {
+					ps_plotr (0.0, dir * len, PSL_PEN_DRAW_AND_STROKE);
 					this_just = justify;
-					do_annot = true;
+					do_annot = TRUE;
 					if (logscl) {
-						p_val = urint (P->range[i].z_high);
-						if (doubleAlmostEqualZero (P->range[i].z_high, (double)p_val))
-							sprintf (text, "10@+%d@+", p_val);
+						p_val = irint (GMT_lut[i].z_high);
+						if (GMT_IS_ZERO (GMT_lut[i].z_high - (double)p_val))
+							sprintf (text, "10@+%ld@+", p_val);
 						else
-							do_annot = false;
+							do_annot = FALSE;
 						this_just = l_justify;
 					}
 					else
-						sprintf (text, format, P->range[i].z_high);
-					if (!cpt_auto_fmt) this_just = l_justify;
-					if (do_annot) PSL_plottext (PSL, xx, y_annot, GMT->current.setting.font_annot[0].size, text, -90.0, -this_just, form);
+						sprintf (text, format, GMT_lut[i].z_high);
+					if (do_annot) ps_text (xx, y_annot, gmtdefs.annot_font_size[0], text, -90.0, -this_just, 0);
 				}
 				else
-					PSL_plotpoint (PSL, 0.0, dir * len2, PSL_DRAW + PSL_STROKE + PSL_REL);
+					ps_plotr (0.0, dir * len2, PSL_PEN_DRAW_AND_STROKE);
 			}
 		}
 
 		if (label[0]) {	/* Add label */
-			form = GMT_setfont (GMT, &GMT->current.setting.font_label);
+			ps_setfont (gmtdefs.label_font);
 			if (strchr (label, '@') || strchr (label, '(') || !(flip & 4)) { /* Must set text along-side color bar */
-				PSL_plottext (PSL, xleft + 0.5 * length, y_label, GMT->current.setting.font_label.size, label, 0.0, Label_justify, form);
+				ps_text (xleft + 0.5 * length, y_label, gmtdefs.label_font_size, label, 0.0, Label_justify, 0);
 			}
 			else {	/* Set label text as column (AARRGGHH) */
-				int dir = (flip & 2) - 1;
-				y_label += 0.5 * dir * GMT->current.setting.font_label.size * GMT->session.u2u[GMT_PT][GMT_INCH];
-				size = 0.9 * GMT->current.setting.font_label.size * GMT->session.u2u[GMT_PT][GMT_INCH];
-				x0 = 0.5 * (length + ((int)strlen (label) -1) * size);
+				y_label += 0.5 * ((flip & 2) - 1) * gmtdefs.label_font_size * GMT_u2u[GMT_PT][GMT_INCH];
+				size = 0.9 * gmtdefs.label_font_size * GMT_u2u[GMT_PT][GMT_INCH];
+				x0 = 0.5 * (length + ((GMT_LONG)strlen (label) -1) * size);
 				text[1] = 0;
-				for (i = 0; i < strlen (label); i++) {
+				for (i = 0; i < (GMT_LONG)strlen (label); i++) {
 					x1 = x0 - i * size;
 					text[0] = label[i];
-					PSL_plottext (PSL, x1, y_label, GMT->current.setting.font_label.size, text, -90.0, 6, form);
+					ps_text (x1, y_label, gmtdefs.label_font_size, text, -90.0, 6, 0);
 				}
 			}
 		}
 		if (unit[0]) {	/* Add unit label */
-			form = GMT_setfont (GMT, &GMT->current.setting.font_annot[0]);
-			PSL_plottext (PSL, xright + GMT->current.setting.map_annot_offset[0] + e_length, 0.5 * width, GMT->current.setting.font_annot[0].size, unit, -90.0, 2, form);
+			ps_setfont (gmtdefs.annot_font[0]);
+			ps_text (xright + gmtdefs.annot_offset[0] + e_length, 0.5 * width, gmtdefs.annot_font_size[0], unit, -90.0, 2, 0);
 		}
-		PSL_setorigin (PSL, -width, 0.0, -90.0, PSL_INV);
+		ps_rotatetrans (-width, 0.0, -90.0);
+
 	}
-	if (use_image || intens) GMT_free (GMT, bar);
-	/* Reset back to original line cap and join */
-	PSL_setlinecap (PSL, cap);
-	PSL_setlinejoin (PSL, join);
+	if (use_image || intens) GMT_free ((void *)bar);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_psscale_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+double get_z (double x, double *width, GMT_LONG n)
+{
+	GMT_LONG i = 0;
+	double tmp;
 
-int GMT_psscale (void *V_API, int mode, void *args)
-{	/* High-level function that implements the psscale task */
-	int error = 0;
-	unsigned int i;
+	tmp = width[0];
+	while (i < n && x > tmp) tmp += width[++i];
+	if (i == n) return (GMT_lut[GMT_n_colors-1].z_high);
+	return (GMT_lut[i].z_low + (x - tmp + width[i]) * (GMT_lut[i].z_high - GMT_lut[i].z_low) / width[i]);
+}
 
-	char text[GMT_LEN256] = {""};
+void fix_format (char *unit, char *format)
+{
+	GMT_LONG i, j;
+	char text[GMT_TEXT_LEN], new_format[BUFSIZ];
 
-	double max_intens[2], dz, *z_width = NULL;
-	double start_val, stop_val, wesn[4];
+	/* Check if annotation units should be added */
 
-	struct PSSCALE_CTRL *Ctrl = NULL;
-	struct GMT_PALETTE *P = NULL;
-	struct GMT_DATASET *D = NULL;
-
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
-	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-
-	/*----------------------- Standard module initialization and parsing ----------------------*/
-
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_psscale_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
-
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_psscale_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_psscale_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
-
-	/* Parse the command-line arguments; return if errors are encountered */
-
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	/* Overrule GMT settings of MAP_FRAME_AXES. Use WESN */
-	GMT->current.map.frame.side[S_SIDE] = GMT->current.map.frame.side[E_SIDE] = GMT->current.map.frame.side[N_SIDE] = GMT->current.map.frame.side[W_SIDE] = 3;
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_psscale_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_psscale_parse (GMT, Ctrl, options))) Return (error);
-
-	/*---------------------------- This is the psscale main code ----------------------------*/
-
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input CPT table\n");
-	if ((P = GMT_Read_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->C.file, NULL)) == NULL) {
-		Return (API->error);
-	}
-	if (Ctrl->G.active) P = GMT_truncate_cpt (GMT, P, Ctrl->G.z_low, Ctrl->G.z_high);	/* Possibly truncate the CPT */
-
-	if (P->categorical) {
-		Ctrl->L.active = Ctrl->L.interval = true;
-		GMT_Report (API, GMT_MSG_VERBOSE, "CPT is for categorical data.\n");
-	}
-	
-	GMT_Report (API, GMT_MSG_VERBOSE, "  CPT range from %g to %g\n", P->range[0].z_low, P->range[P->n_colors-1].z_high);
-
-	if (Ctrl->Q.active) {	/* Take log of all z values */
-		for (i = 0; i < P->n_colors; i++) {
-			if (P->range[i].z_low <= 0.0 || P->range[i].z_high <= 0.0) {
-				GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -Q option: All z-values must be positive for logarithmic scale\n");
-				Return (EXIT_FAILURE);
+	if (unit && unit[0]) {	/* Must append the unit string */
+		if (!strchr (unit, '%'))	/* No percent signs */
+			strncpy (text, unit, (size_t)GMT_TEXT_LEN);
+		else {
+			for (i = j = 0; i < (GMT_LONG)strlen (unit); i++) {
+				text[j++] = unit[i];
+				if (unit[i] == '%') text[j++] = unit[i];
 			}
-			P->range[i].z_low = d_log10 (GMT, P->range[i].z_low);
-			P->range[i].z_high = d_log10 (GMT, P->range[i].z_high);
-			P->range[i].i_dz = 1.0 / (P->range[i].z_high - P->range[i].z_low);
+			text[j] = 0;
 		}
+		if (text[0] == '-')	/* No space between annotation and unit */
+			sprintf (new_format, "%s%s", format, &text[1]);
+		else		/* 1 space between annotation and unit */
+			sprintf (new_format, "%s %s", format, text);
+		strcpy (format, new_format);
 	}
+}
+
+void *New_psscale_Ctrl () {	/* Allocate and initialize a new control structure */
+	struct PSSCALE_CTRL *C;
 	
-	if (Ctrl->E.mode && Ctrl->E.length == 0.0) Ctrl->E.length = Ctrl->D.width * 0.5;
-	max_intens[0] = Ctrl->I.min;
-	max_intens[1] = Ctrl->I.max;
-
-	if (Ctrl->Z.active) {
-		if (GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->Z.file, &D)) {
-			Return (API->error);
-		}
-		z_width = D->table[0]->segment[0]->coord[GMT_X];
-		if (D->table[0]->segment[0]->n_rows < (uint64_t)P->n_colors) {
-			GMT_Report (API, GMT_MSG_NORMAL, "-Z file %s has fewer slices than -C file %s!\n", Ctrl->Z.file, Ctrl->C.file);
-			Return (EXIT_FAILURE);
-		}
-	}
-	else if (Ctrl->L.active) {
-		z_width = GMT_memory (GMT, NULL, P->n_colors, double);
-		dz = fabs (Ctrl->D.length) / P->n_colors;
-		for (i = 0; i < P->n_colors; i++) z_width[i] = dz;
-	}
-	else {
-		z_width = GMT_memory (GMT, NULL, P->n_colors, double);
-		for (i = 0; i < P->n_colors; i++) z_width[i] = fabs (Ctrl->D.length) * (P->range[i].z_high - P->range[i].z_low) / (P->range[P->n_colors-1].z_high - P->range[0].z_low);
-	}
-
-	/* Because psscale uses -D to position things we need to make some
-	 * changes so that BoundingBox and others are set ~correctly */
-
-	if (Ctrl->Q.active && GMT->current.map.frame.draw) {
-		sprintf (text, "X%gil/%gi", Ctrl->D.length, Ctrl->D.width);
-		start_val = pow (10.0, P->range[0].z_low);
-		stop_val  = pow (10.0, P->range[P->n_colors-1].z_high);
-	}
-	else {
-		sprintf (text, "X%gi/%gi", Ctrl->D.length, Ctrl->D.width);
-		start_val = P->range[0].z_low;
-		stop_val  = P->range[P->n_colors-1].z_high;
-	}
-
-	GMT_memset (wesn, 4, double);
-	if (!(GMT->common.R.active && GMT->common.J.active)) {	/* When no projection specified, use fake linear projection */
-		GMT->common.R.active = true;
-		GMT->common.J.active = false;
-		GMT_parse_common_options (GMT, "J", 'J', text);
-		wesn[XLO] = start_val;	wesn[XHI] = stop_val;	wesn[YHI] = Ctrl->D.width;
-		GMT_err_fail (GMT, GMT_map_setup (GMT, wesn), "");
-		PSL = GMT_plotinit (GMT, options);
-		GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
-	}
-	else {	/* First use current projection, project, then use fake projection */
-		if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_RUNTIME_ERROR);
-		PSL = GMT_plotinit (GMT, options);
-		GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
-		GMT->common.J.active = false;
-		GMT_parse_common_options (GMT, "J", 'J', text);
-		wesn[XLO] = start_val;	wesn[XHI] = stop_val;	wesn[YHI] = Ctrl->D.width;
-		GMT_err_fail (GMT, GMT_map_setup (GMT, wesn), "");
-	}
-
-	/* We must do any origin translation manually in psscale */
-
-	if (Ctrl->D.horizontal) {
-		Ctrl->D.x -= 0.5 * fabs (Ctrl->D.length);
-		Ctrl->D.y -= Ctrl->D.width;
-		GMT->current.map.frame.side[E_SIDE] = GMT->current.map.frame.side[W_SIDE] = 0;
-	}
-	else {
-		Ctrl->D.y -= 0.5 * fabs (Ctrl->D.length);
-		GMT->current.map.frame.side[S_SIDE] = GMT->current.map.frame.side[N_SIDE] = 0;
-		double_swap (GMT->current.proj.z_project.xmin, GMT->current.proj.z_project.ymin);
-		double_swap (GMT->current.proj.z_project.xmax, GMT->current.proj.z_project.ymax);
-	}
-	PSL_setorigin (PSL, Ctrl->D.x, Ctrl->D.y, 0.0, PSL_FWD);
+	C = (struct PSSCALE_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct PSSCALE_CTRL), "New_psscale_Ctrl");
 	
-	gmt_draw_colorbar (GMT, PSL, P, Ctrl->D.length, Ctrl->D.width, z_width, Ctrl->N.dpi, Ctrl->N.mode, Ctrl->A.mode, 
-		GMT->current.map.frame.draw, Ctrl->L.active, Ctrl->D.horizontal, Ctrl->Q.active, Ctrl->I.active,
-		max_intens, Ctrl->S.active, Ctrl->E.mode, Ctrl->E.length, Ctrl->E.text, Ctrl->L.spacing,
-		Ctrl->L.interval, Ctrl->M.active, Ctrl->T);
-	PSL_setorigin (PSL, -Ctrl->D.x, -Ctrl->D.y, 0.0, PSL_FWD);
-	GMT_plane_perspective (GMT, -1, 0.0);
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
+	C->N.dpi = 300;
+	C->I.min = -1.0;
+	C->I.max = +1.0;
+	C->L.spacing = -1.0;
+	return ((void *)C);
+}
 
-	GMT_plotend (GMT);
-
-	if (!Ctrl->Z.active) GMT_free (GMT, z_width);
-
-	Return (EXIT_SUCCESS);
+void Free_psscale_Ctrl (struct PSSCALE_CTRL *C) {	/* Deallocate control structure */
+	if (C->C.file) free ((void *)C->C.file);
+	if (C->Z.file) free ((void *)C->Z.file);
+	GMT_free ((void *)C);	
 }

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------
- *	$Id: mgd77_init.h 10188 2012-05-30 00:52:15Z pwessel $
+ *	$Id: mgd77_init.h 10173 2014-01-01 09:52:34Z pwessel $
  *
- *    Copyright (c) 2005-2012 by P. Wessel
+ *    Copyright (c) 2005-2014 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *
  *  File:	mgd77_init.h
@@ -19,6 +19,6 @@
  * 
  *-------------------------------------------------------------------------*/
 
-bool MGD77_format_allowed[MGD77_N_FORMATS] = {true, true, true, true};	/* By default we allow opening of files in any format.  See MGD77_Ignore_Format() */
+GMT_LONG MGD77_format_allowed[MGD77_N_FORMATS] = {TRUE, TRUE, TRUE, TRUE};	/* By default we allow opening of files in any format.  See MGD77_Ignore_Format() */
 
 char *MGD77_suffix[MGD77_N_FORMATS] = {"mgd77", "nc", "dat", "m77t"};

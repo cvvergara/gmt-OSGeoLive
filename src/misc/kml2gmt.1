@@ -1,0 +1,42 @@
+.TH KML2GMT 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+kml2gmt \- Extract GMT table data from Google Earth KML files 
+.SH SYNOPSIS
+\fBkml2gmt\fP [ \fIinfile\fP ] [ \fB\-V\fP ] [ \fB\-Z\fP ] [ \fB\-:\fP[\fBi\fP|\fBo\fP] ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] 
+.SH DESCRIPTION
+\fBkml2gmt\fP reads a  Google Earth KML file and outputs a GMT table file.
+Only KML files that contain points, lines, or polygons can be processed.
+This is a bare-bones operation that aims to extract coordinates and possibly the
+name and description tags of each feature.  The main use intended is to capture coordinates modified
+in Google Earth and then reinsert the modified data into the original
+GMT data file.  For a more complete reformatting, consider using \fBogr2ogr \-f\fP
+"GMT" somefile.gmt somefile.kml.
+.TP
+\fIinfile\fP
+Name of the KML file to work on.  If not given, standard input is read.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-Z\fP
+Output the altitude coordinates as GMT z coordinates [Default will output just
+longitude and latitude].
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-:\fP
+Toggles between (longitude,latitude) and (latitude,longitude) input and/or output.  [Default is (longitude,latitude)].
+Append \fBi\fP to select input only or \fBo\fP to select output only.  [Default affects both].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+.SH EXAMPLES
+.SH "SEE ALSO"
+.IR gmtdefaults (1),
+.IR GMT (1),
+.IR img2google (1),
+.IR ps2raster (1)
+.IR gmt2kml (1)

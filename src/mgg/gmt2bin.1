@@ -1,0 +1,41 @@
+.TH GMT2BIN 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+gmt2bin \- Create bin-index files from gmt files
+.SH SYNOPSIS
+\fBgmt2bin\fP \fIlistfile\fP [ \fB\-P\fP\fIpath\fP ] [ \fB\-V\fP ]
+.SH DESCRIPTION
+\fBgmt2bin\fP reads a file with a list of leg ids, opens each gmt file, and creates
+a bin-index file for each leg called <legid>.bix.  These are used by
+\fBbinlegs\fP to update the system files read by \fBgmtlegs\fP.  Normally, only
+the data archivist will need to be concerned with these operations.
+.TP
+\fIlistfile\fP
+This is a one column ASCII file with one leg id pr line.
+.SH OPTIONS
+.TP
+\fB\-P\fP
+Sets full path to directory with gmtfiles.  [Default is current directory].
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.SH "SEE ALSO"
+.IR binlegs (1),
+.IR dat2gmt (1),
+.IR GMT (1)
+.SH REFERENCES
+Wessel, P., and W. H. F. Smith, 2014, The Generic Mapping Tools (GMT) version
+4.5.12 Technical Reference & Cookbook, SOEST/NOAA.
+.br
+Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
+Tools Released, EOS Trans., AGU, 79 (47), p. 579.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, EOS Trans., AGU, 76 (33), p. 329.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, http://www.agu.org/eos_elec/95154e.html, Copyright 1995 by the
+American Geophysical Union.
+.br
+Wessel, P., and W. H. F. Smith, 1991, Free Software Helps Map and Display Data,
+EOS Trans., AGU, 72 (41), p. 441.
+.br

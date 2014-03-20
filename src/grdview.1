@@ -1,0 +1,337 @@
+.TH GRDVIEW 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+grdview \- Create 3-D perspective grayshaded/colored image or mesh from a 2-D grid file
+.SH SYNOPSIS
+\fBgrdview\fP \fIrelief_file\fP \fB\-J\fP\fIparameters\fP 
+[ \fB\-B\fP[\fBp\fP|\fBs\fP]\fIparameters\fP ] [ \fB\-C\fP\fIcptfile\fP ] [ \fB\-E\fP\fIazim\fP/\fIelev\fP[\fB+w\fP\fIlon\fP/\fIlat\fP[/\fIz\fP]][\fB+v\fP\fIx0\fP/\fIy0\fP] ] 
+[ \fB\-G\fP\fIdrapefile\fP | \fB\-G\fP\fIgrd_r\fP,\fIgrd_g\fP,\fIgrd_b\fP ] [ \fB\-I\fP\fIintensfile\fP ] [ \fB\-Jz\fP|\fBZ\fP\fIparameters\fP ] [ \fB\-K\fP ] 
+[ \fB\-L\fP[\fIflags\fP] ] [ \fB\-N\fP\fIlevel\fP[/\fIcolor\fP] ] [ \fB\-O\fP ] [ \fB\-P\fP ] 
+[ \fB\-Q\fP\fItype\fP[\fBg\fP] ] [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[/\fIzmin\fP/\fIzmax\fP][\fBr\fP] ] [ \fB\-S\fP\fIsmooth\fP ] 
+[ \fB\-T\fP[\fBs\fP][\fBo\fP[\fIpen\fP]] ] [ \fB\-U\fP[\fIjust\fP/\fIdx\fP/\fIdy\fP/][\fBc\fP|\fIlabel\fP] ] [ \fB\-V\fP ] [ \fB\-W\fP\fItype/pen\fP ] [ \fB\-X\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIx-shift\fP[\fBu\fP]] ]
+[ \fB\-Y\fP[\fBa\fP|\fBc\fP|\fBr\fP][\fIy-shift\fP[\fBu\fP]] ] [ \fB\-Z\fP\fIzlevel\fP ] [ \fB\-c\fP\fIcopies\fP ]
+.SH DESCRIPTION
+\fBgrdview\fP reads a 2-D grid file and produces a 3-D perspective plot by 
+drawing a mesh, painting a colored/grayshaded surface made up of polygons, or by scanline conversion of these polygons
+to a rasterimage.  Options include draping a data set on top of a surface, plotting of contours on top of the
+surface, and apply artificial illumination based on intensities provided in a separate grid file.
+.TP
+\fIrelief_file\fP
+2-D gridded data set to be imaged (the relief of the surface).
+(See GRID FILE FORMAT below.)
+.TP
+\fB\-J\fP
+Selects the map projection. Scale is UNIT/degree, 1:xxxxx, or width in UNIT (upper case modifier).
+UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP setting in \.gmtdefaults4, but this can be
+overridden on the command line by appending \fBc\fP, \fBi\fP, or \fBm\fP to the scale/width value.
+When central meridian is optional, default is center of longitude range on \fB\-R\fP option.
+Default standard parallel is the equator.
+For map height, max dimension, or min dimension, append \fBh\fP, \fB+\fP, or \fB-\fP to the width,
+respectively.
+.br
+More details can be found in the \fBpsbasemap\fP man pages.
+.br
+.sp
+\fBCYLINDRICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jc\fP\fIlon0/lat0/scale\fP (Cassini)
+.br
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Stereographic)
+.br
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP (Miller)
+.br
+\fB\-Jm\fP[\fIlon0\fP/[\fIlat0/\fP]]\fIscale\fP (Mercator)
+.br
+\fB\-Jm\fP\fIlon0/lat0/scale\fP (Mercator - Give meridian and standard parallel)
+.br
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP (Oblique Mercator - point and azimuth)
+.br
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP (Oblique Mercator - two points)
+.br
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP (Oblique Mercator - point and pole)
+.br
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equidistant)
+.br
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP (TM - Transverse Mercator)
+.br
+\fB\-Ju\fP\fIzone/scale\fP (UTM - Universal Transverse Mercator)
+.br
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equal-Area) 
+.br
+.sp
+\fBCONIC PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP (Albers)
+.br
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP (Conic Equidistant)
+.br
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP (Lambert Conic Conformal)
+.br
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP ((American) Polyconic)
+.br
+.sp
+\fBAZIMUTHAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Lambert Azimuthal Equal-Area)
+.br
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Azimuthal Equidistant)
+.br
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Gnomonic)
+.br
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Orthographic)
+.br
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP (General Perspective).
+.br
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (General Stereographic)
+.br
+.sp
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP (Hammer)
+.br
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP (Sinusoidal)
+.br
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP (Eckert IV)
+.br
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP (Eckert VI)
+.br
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP (Robinson)
+.br
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP (Winkel Tripel)
+.br
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP (Van der Grinten)
+.br
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP (Mollweide)
+.br
+.sp
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+.br
+\fB\-Jx\fP\fIx-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP][\fI/y-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP]] (Linear, log, and power scaling)
+.br
+.TP
+\fB\-Jz\fP
+Sets the vertical scaling (for 3-D maps).  Same syntax as \fB\-Jx\fP.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-B\fP
+Sets map boundary annotation and tickmark intervals; see the
+\fBpsbasemap\fP man page for all the details.
+.TP
+\fB\-C\fP
+name of the color palette file.  Must be present if you want (1) mesh plot with
+contours (\fB\-Qm\fP), or (2) shaded/colored perspective image (\fB\-Qs\fP or \fB\-Qi\fP).
+For \fB\-Qs\fP: You can specify that you want to skip a z-slice by setting red = -; to
+use a pattern give red = \fBP|p\fP\fIdpi/pattern\fP[:\fBF\fP\fIr/g/b\fP[\fBB\fP\fIr/g/b\fP]].
+.TP
+\fB\-E\fP
+Sets the viewpoint's azimuth and elevation (for perspective view) [180/90].\"'
+For frames used for animation, you may want to append \fB+\fP to fix the center
+of your data domain (or specify a particular world coordinate point with \fB+w\fP\fIlon0\fP/\fIlat\fP[/\fIz\fP])
+which will project to the center of your page size (or specify the coordinates
+of the projected view point with \fB+v\fP\fIx0\fP/\fIy0).
+.TP
+\fB\-G\fP
+Drape the image in \fIdrapefile\fP on top of the relief provided by \fIrelief_file\fP. [Default is \fIrelief_file\fP].
+Note that \fB\-Jz\fP and \fB\-N\fP always refers to the \fIrelief_file\fP.  The \fIdrapefile\fP only provides
+the information pertaining to colors, which is looked-up via the cpt file (see \fB\-C\fP).  Alternatively, give
+three grid files separated by commas.  These files must contain the red, green, and blue colors directly (in 0-255 range)
+and no cpt file is needed.  The \fIdrapefile\fP may be of higher resolution than the \fIrelief_file\fP.
+.TP
+\fB\-I\fP
+Gives the name of a grid file with intensities in the (-1,+1) range. [Default is no illumination].
+.TP
+\fB\-K\fP
+More \fIPostScript\fP code will be appended later [Default terminates the plot system].
+.TP
+\fB\-L\fP
+Boundary condition \fIflags\fP may be \fIx\fP or \fIy\fP or \fIxy\fP indicating data is periodic in range of
+x or y or both, or \fIflags\fP may be \fIg\fP indicating geographical conditions (x and y are
+lon and lat).  [Default uses "natural" conditions (second partial derivative normal to edge is zero).]
+If no \fIflags\fP are set, use bilinear rather than the default bicubic resampling when draping is required.
+.TP
+\fB\-N\fP
+Draws a plane at this z-level.  If the optional \fIcolor\fP is provided, the frontal facade between
+the plane and the data perimeter is colored.  See \fB\-Wf\fP for setting the pen used for the outline.
+(See SPECIFYING COLOR below).
+.TP
+\fB\-O\fP
+Selects Overlay plot mode [Default initializes a new plot system].
+.TP
+\fB\-P\fP
+Selects Portrait plotting mode [Default is Landscape, see \fBgmtdefaults\fP to change this].
+.TP
+\fB\-Q\fP
+Select one of four settings: 1. Specify \fBm\fP for mesh plot [Default], and optionally append /\fIcolor\fP for a different mesh paint [white].
+2. Specify \fBs\fP for surface plot, and optionally append \fBm\fP to have mesh lines drawn on top of surface.
+3. Specify \fBi\fP for image plot, and optionally append the effective dpi resolution for the rasterization [100].
+4. Specify \fBc\fP.  Same as \fB\-Qi\fP but will make nodes with z = NaN transparent,
+using the colormasking feature in \fIPostScript\fP Level 3 (the PS device must support PS Level 3).
+For any of these choices, you may force a monochrome image by appending \fBg\fP.  Colors are then
+converted to shades of gray using the (television) YIQ transformation.
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+This option may be used to indicate the range used for the 3-D axes [Default is
+region given by the \fIrelief_file\fP].  You may ask for a larger
+\fIw/e/s/n\fP region to have more room between the image and the axes.  A smaller region
+than specified in the \fIrelief_file\fP will result in a subset of the grid.
+.TP
+\fB\-S\fP
+Smooth the contours before plotting (see \fBgrdcontour\fP) [Default is no smoothing].
+.TP
+\fB\-T\fP
+Plot image without any interpolation.  This involves converting each node-centered
+bin into a polygon which is then painted separately.  Append \fBs\fP to skip
+nodes with z = NaN.  This option is useful for categorical data where
+interpolating between values is meaningless.  Optionally, append \fBo\fP to
+draw the tile outlines, and specify a custom pen if the default pen is not to
+your liking.  As this option produces a flat surface it cannot be combined with \fB\-JZ\fP or \fB\-Jz\fP.
+(See SPECIFYING PENS below).
+.TP
+\fB\-U\fP
+Draw Unix System time stamp on plot.
+By adding \fIjust/dx/dy/\fP, the user may specify the justification of the stamp and
+where the stamp should fall on the page relative to lower left corner of the plot.
+For example, BL/0/0 will align the lower left corner of the time stamp with the lower left corner of the plot.
+Optionally, append a \fIlabel\fP, or \fBc\fP (which will plot the command string.).
+The \fBGMT\fP parameters \fBUNIX_TIME\fP, \fBUNIX_TIME_POS\fP, and \fBUNIX_TIME_FORMAT\fP can affect the appearance;
+see the \fBgmtdefaults\fP man page for details.
+The time string will be in the locale set by the environment variable \fBTZ\fP (generally local time).
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-Wc\fP
+Draw contour lines on top of surface or mesh (not image).  Append pen attributes used for the contours.
+[Default: width = 0.75p, color = black, texture = solid].
+(See SPECIFYING PENS below).
+.TP
+\fB\-Wm\fP
+Sets the pen attributes used for the mesh. [Default: width = 0.25p, color = black, texture = solid].
+You must also select \fB\-Qm\fP or \fB\-Qsm\fP for meshlines to be drawn.
+.TP
+\fB\-Wf\fP
+Sets the pen attributes used for the facade. [Default: width = 0.25p, color = black, texture = solid].
+You must also select \fB\-N\fP for the facade outline to be drawn.
+(See SPECIFYING PENS below).
+.TP
+\fB\-X\fP \fB\-Y\fP
+Shift plot origin relative to the current origin by (\fIx-shift,y-shift\fP) and
+optionally append the length unit (\fBc\fP, \fBi\fP, \fBm\fP, \fBp\fP).
+You can prepend \fBa\fP to shift the origin back to the original position after plotting,
+or prepend  \fBr\fP [Default] to reset the current origin to the new location.
+If \fB\-O\fP is used then the default (\fIx-shift,y-shift\fP) is (0,0), otherwise it is
+(r1i, r1i) or (r2.5c, r2.5c).
+Alternatively, give \fBc\fP to align the center coordinate (x or y) of the plot with the center of the page
+based on current page size.
+.TP
+\fB\-Z\fP
+Sets the z-level of the basemap [Default is the bottom of the z-axis].
+.TP
+\fB\-c\fP
+Specifies the number of plot copies. [Default is 1].
+.SS SPECIFYING PENS
+.TP
+\fIpen\fP
+The attributes of lines and symbol outlines as defined by \fIpen\fP is a comma delimetered list of
+\fIwidth\fP, \fIcolor\fP and \fItexture\fP, each of which is optional.
+\fIwidth\fP can be indicated as a measure (points, centimeters, inches) or as \fBfaint\fP, \fBthin\fP[\fBner\fP|\fBnest\fP],
+\fBthick\fP[\fBer\fP|\fBest\fP], \fBfat\fP[\fBter\fP|\fBtest\fP], or \fBobese\fP.
+\fIcolor\fP specifies a gray shade or color (see SPECIFYING COLOR below).
+\fItexture\fP is a combination of dashes `-' and dots `.'.
+.SS SPECIFYING COLOR
+.TP
+\fIcolor\fP
+The \fIcolor\fP of lines, areas and patterns can be specified by a valid color name;
+by a gray shade (in the range 0\-255); by a decimal color code (r/g/b, each in range 0\-255; h-s-v, ranges
+0\-360, 0\-1, 0\-1; or c/m/y/k, each in range 0\-1); or by a hexadecimal color code (#rrggbb, as used in HTML).
+See the \fBgmtcolors\fP manpage for more information and a full list of color names.
+.SH GRID FILE FORMATS
+\fBGMT\fP is able to recognize many of the commonly used grid file formats, as well as the precision, scale and offset of the values
+contained in the grid file. When \fBGMT\fP needs a little help with that, you can add the suffix \fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]],
+where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When reading a netCDF file that contains multiple grids, \fBGMT\fP will read, by default, the first 2-dimensional grid that can find in that
+file. To coax \fBGMT\fP into reading another multi-dimensional variable in the grid file, append \fB?\fP\fIvarname\fP to the file name, where
+\fIvarname\fP is the name of the variable. Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+See \fBgrdreformat\fP(1) and Section 4.18 of the GMT Technical Reference and Cookbook for more information,
+particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
+.SH EXAMPLES
+To make a mesh plot from the file hawaii_grav.grd and drawing the contours
+given in the color palette file hawaii.cpt on a Lambert map
+at 1.5 cm/degree along the standard parallels 18 and 24, with vertical scale 20 mgal/cm, and
+looking at the surface from SW at 30 degree elevation, run 
+.br
+.sp
+\fBgrdview\fP hawaii_grav.grd \fB\-Jl\fP 18/24/1.5\fBc\fP \fB\-C\fP hawaii.cpt \fB\-Jz\fP 0.05\fBc\fP \fB\-Qm\fP \fB\-N\fP-100 \fB\-E\fP 225/30 \fB\-Wc\fP > hawaii_grav_image.ps
+.br
+.sp
+To create a illuminated color perspective plot of the gridded data set image.grd, using the color
+palette file color.rgb, with linear scaling at 10 cm/x-unit
+and tickmarks every 5 units, with intensities provided by the file intens.grd, and looking from the SE, use
+.br
+.sp
+\fBgrdview\fP image.grd \fB\-Jx\fP 10.0\fBc\fP \fB\-C\fP color.rgb \fB\-Qs\fP \fB\-E\fP 135/30 \fB\-I\fP intens.grd  > image3D.ps
+.br
+.sp
+To make the same plot using the rastering option with dpi = 50, use
+.br
+.sp
+\fBgrdview\fP image.grd \fB\-Jx\fP 10.0\fBc\fP \fB\-C\fP color.rgb \fB\-Qi\fP 50 \fB\-E\fP 135/30 \fB\-I\fP intens.grd  > image3D.ps
+.br
+.sp
+To create a color \fIPostScript\fP perspective plot of the gridded data set magnetics.grd, using the color
+palette file mag_intens.cpt, draped over the relief given by the file topography.grd, with Mercator map width of 6 inch
+and tickmarks every 1 degree, with intensities provided by the file topo_intens.grd, and looking from the SE, run
+.br
+.sp
+\fBgrdview\fP topography.grd \fB\-JM\fP 6\fBi\fP \fB\-G\fP magnetics.grd \fB\-C\fP mag_intens.cpt \fB\-Qs\fP \fB\-E\fP 140/30 \fB\-I\fP topo_intens.grd  > draped3D.ps
+.br
+.sp
+Given topo.grd and the Landsat image veggies.ras, first run \fBgmt2rgb\fP to get the red, green, and blue grids, and then drape
+this image over the topography and shade the result for good measure.  The commands are
+.br
+.sp
+\fBgmt2rgb\fP veggies.ras \fB\-G\fP layer_%c.grd
+.br
+\fBgrdview\fP topo.grd \fB\-JM\fP 6\fBi\fP \fB\-Qi\fP \fB\-E\fP 140/30 \fB\-I\fP topo_intens.grd \fB\-G\fP layer_r.grd,layer_g.grd,layer_b.grd > image.ps
+.SH REMARKS
+For the \fB\-Qs\fP option:  \fIPostScript\fP provides no way of smoothly varying colors within a polygon, so colors can only
+vary from polygon to polygon.  To obtain smooth images this way you may resample the grid file(s) using \fBgrdsample\fP or
+use a finer grid size when running gridding programs like \fBsurface\fP or \fBnearneighbor\fP.  Unfortunately,
+this produces huge \fIPostScript\fP files.  The alternative is to use the \fB\-Qi\fP option, which
+computes bilinear or bicubic continuous color variations within polygons by using scanline conversion to image the polygons.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR gmt2rgb (1),
+.IR gmtcolors (5),
+.IR grdcontour (1),
+.IR grdimage (1),
+.IR nearneighbor (1),
+.IR psbasemap (1),
+.IR pscontour (1),
+.IR pstext (1),
+.IR surface (1)

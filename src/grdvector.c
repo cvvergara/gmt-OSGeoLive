@@ -1,570 +1,530 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvector.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: grdvector.c 10216 2014-02-27 19:24:21Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * Brief synopsis: grdvector reads 2 grid files that contains the 2 components of a vector
- * field (cartesian or polar) and plots vectors at the grid positions.
- * This is basically a short-hand for using grd2xyz | psxy -SV and is
- * more convenient for such plots on a grid.
- *
- * Author:	Paul Wessel
- * Date:	1-JAN-2010
- * Version:	5 API
+   grdvector reads 2 grid files that contains the 2 components of a vector
+   field (cartesian or polar) and plots vectors at the grid positions.
+   This is basically a short-hand for using grd2xyz | psxy -SV and is
+   more convenient for such plots on a grid.
+
+   Author:	Paul Wessel
+   Date:	12-JUN-1995
+   Revised:	15-FEB-2000
+   Version:	4
+ 
  */
 
-#define THIS_MODULE_NAME	"grdvector"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Plot vector field from two component grids"
 
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcfptxy"
+#include "gmt.h"
+#include "pslib.h"
 
 struct GRDVECTOR_CTRL {
-	struct In {
-		bool active;
-		char *file[2];
-	} In;
 	struct A {	/* -A */
-		bool active;
+		GMT_LONG active;
 	} A;
 	struct C {	/* -C<cpt> */
-		bool active;
+		GMT_LONG active;
 		char *file;
 	} C;
+	struct E {	/* -E */
+		GMT_LONG active;
+	} E;
 	struct G {	/* -G<fill> */
-		bool active;
+		GMT_LONG active;
 		struct GMT_FILL fill;
 	} G;
 	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
+		GMT_LONG active;
+		double xinc, yinc;
 	} I;
 	struct N {	/* -N */
-		bool active;
+		GMT_LONG active;
 	} N;
-	struct Q {	/* -Q<size>[+<mods>] */
-		bool active;
-		struct GMT_SYMBOL S;
+	struct Q {	/* -Q<params> */
+		GMT_LONG active;
+		double width, length, thickness, norm;
 	} Q;
-	struct S {	/* -S[l]<scale>[<unit>] */
-		bool active;
-		bool constant;
+	struct S {	/* -S[l]<scale>][<unit>] */
+		GMT_LONG active;
+		GMT_LONG constant;
 		char unit;
 		double factor;
 	} S;
 	struct T {	/* -T */
-		bool active;
+		GMT_LONG active;
 	} T;
 	struct W {	/* -W<pen> */
-		bool active;
+		GMT_LONG active;
 		struct GMT_PEN pen;
 	} W;
 	struct Z {	/* -Z */
-		bool active;
+		GMT_LONG active;
 	} Z;
 };
 
-void *New_grdvector_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
-	struct GRDVECTOR_CTRL *C = NULL;
-	
-	C = GMT_memory (GMT, NULL, 1, struct GRDVECTOR_CTRL);
-	
-	/* Initialize values whose defaults are not 0/false/NULL */
-	GMT_init_fill (GMT, &C->G.fill, -1.0, -1.0, -1.0);
-	C->W.pen = GMT->current.setting.map_default_pen;
-	C->S.factor = 1.0;
-	return (C);
-}
-
-void Free_grdvector_Ctrl (struct GMT_CTRL *GMT, struct GRDVECTOR_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
-	if (C->In.file[0]) free (C->In.file[0]);	
-	if (C->In.file[1]) free (C->In.file[1]);	
-	if (C->C.file) free (C->C.file);	
-	GMT_free (GMT, C);	
-}
-
-int GMT_grdvector_usage (struct GMTAPI_CTRL *API, int level)
+int main (int argc, char **argv)
 {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: grdvector <gridx> <gridy> %s %s [-A] [%s]\n", GMT_J_OPT, GMT_Rgeo_OPT, GMT_B_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-C[<cpt>]] [-G<fill>] [-I<dx>/<dy>] [-K] [-N] [-O] [-P] [-Q<params>] [-S[i|l]<scale>[<unit>]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-T] [%s] [%s] [-W<pen>] [%s]\n\t[%s] [-Z] [%s] [%s]\n\t[%s] [%s]\n\n", 
-		GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_f_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_LONG	i, j, n = 0, nx, ny, i0, j0, di, dj;
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
-
-	GMT_Message (API, GMT_TIME_NONE, "\t<gridx> <gridy> are grid files with the two vector components.\n");
-	GMT_Option (API, "J-");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-A Grids have polar (r, theta) components [Default is Cartesian (x, y) components].\n");
-	GMT_Option (API, "B-");
-	GMT_Message (API, GMT_TIME_NONE, "\t-C Use cpt-file to assign colors based on vector length.  Optionally, instead give name\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   of a master cpt to automatically assign 16 continuous colors over the data range [rainbow].\n");
-	GMT_fill_syntax (API->GMT, 'G', "Select vector fill [Default is outlines only].");
-	GMT_Message (API, GMT_TIME_NONE, "\t-I Plot only those nodes that are <dx>/<dy> apart [Default is all nodes].\n");
-	GMT_Option (API, "K");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Do Not clip vectors that exceed the map boundaries [Default will clip].\n");
-	GMT_Option (API, "O,P");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Q Modify vector attributes [Default gives stick-plot].\n");
-	GMT_vector_syntax (API->GMT, 15);
-	GMT_Option (API, "R");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Set scale for Cartesian vector lengths in data units per %s [1].\n", API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append c, i, or p to indicate cm, inch, or points as the distance unit.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, prepend l to indicate a fixed length for all vectors.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   For Geographic vectors, set scale in data units per km.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Si<scale> to give the reciprocal scale, i.e., %s/ unit or km/unit\n", API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
-	GMT_Message (API, GMT_TIME_NONE, "\t-T Transform angles for Cartesian grids when x- and y-scles differ [Leave alone].\n");
-	GMT_Option (API, "U,V");
-	GMT_pen_syntax (API->GMT, 'W', "Set pen attributes.");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Default pen attributes [%s].\n", GMT_putpen(API->GMT, API->GMT->current.setting.map_default_pen));
-	GMT_Option (API, "X");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Z The angles provided are azimuths rather than direction.\n");
-	GMT_Option (API, "c,f,p,t,.");
+	GMT_LONG ij, nm;
 	
-	return (EXIT_FAILURE);
-}
+	GMT_LONG shrink_properties = FALSE, error = FALSE;
 
-int GMT_grdvector_parse (struct GMT_CTRL *GMT, struct GRDVECTOR_CTRL *Ctrl, struct GMT_OPTION *options)
-{
-	/* This parses the options provided to grdvector and sets parameters in Ctrl.
-	 * Note Ctrl has already been initialized and non-zero default values set.
-	 * Any GMT common options will override values set previously by other commands.
-	 * It also replaces any file names specified as input or output with the data ID
-	 * returned when registering these sources/destinations with the API.
-	 */
+	char *file[2], txt_a[GMT_LONG_TEXT], txt_b[GMT_LONG_TEXT], txt_c[GMT_LONG_TEXT];
 
-	unsigned int n_errors = 0, n_files = 0;
-	int j;
-	size_t len;
-	char txt_a[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, txt_c[GMT_LEN256] = {""};
-	struct GMT_OPTION *opt = NULL;
-	struct GMTAPI_CTRL *API = GMT->parent;
+	float *r = NULL, *theta = NULL;
 
-	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
+	double v_w, h_l, h_w, v_shrink = 1.0, tmp, x, y, plot_x, plot_y, x_off, y_off;
+	double west, east, south, north, x2, y2;
+	double data_west, data_east, data_south, data_north, value, c, s;
 
-		switch (opt->option) {
-			case '<':	/* Input file (only one is accepted) */
-				Ctrl->In.active = true;
-				if (n_files >= 2) break;
-				if (GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
-					Ctrl->In.file[n_files++] = strdup (opt->arg);
-				else
-					n_errors++;
-				break;
-
-			/* Processes program-specific parameters */
-
-			case 'A':	/* Polar data grids */
-				Ctrl->A.active = true;
-				break;
-			case 'C':	/* Vary symbol color with z */
-				Ctrl->C.active = true;
-				if (Ctrl->C.file) free (Ctrl->C.file);
-				Ctrl->C.file = strdup (opt->arg);
-				break;
-			case 'E':	/* Center vectors [OBSOLETE; use modifier +jc in -Q ] */
-				if (GMT_compat_check (GMT, 4)) {
-					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -E is deprecated; use modifier +jc in -Q instead.\n");
-					Ctrl->Q.S.v.status |= GMT_VEC_JUST_C;
-				}
-				else
-					n_errors += GMT_default_error (GMT, opt->option);
-				break;
-			case 'G':	/* Set fill for vectors */
-				Ctrl->G.active = true;
-				if (GMT_getfill (GMT, opt->arg, &Ctrl->G.fill)) {
-					GMT_fill_syntax (GMT, 'G', " ");
-					n_errors++;
-				}
-				break;
-			case 'I':	/* Only use gridnodes Ctrl->I.inc[GMT_X],Ctrl->I.inc[GMT_Y] apart */
-				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
-				break;
-			case 'N':	/* Do not clip at border */
-				Ctrl->N.active = true;
-				break;
-			case 'Q':	/* Vector plots, with parameters */
-				Ctrl->Q.active = true;
-				if (GMT_compat_check (GMT, 4) && (strchr (opt->arg, '/') && !strchr (opt->arg, '+'))) {	/* Old-style args */
-					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Vector arrowwidth/headlength/headwidth is deprecated; see -Q documentation.\n");
-					for (j = 0; opt->arg[j] && opt->arg[j] != 'n'; j++);
-					if (opt->arg[j]) {	/* Normalize option used */
-						Ctrl->Q.S.v.v_norm = (float)GMT_to_inch (GMT, &opt->arg[j+1]);
-						n_errors += GMT_check_condition (GMT, Ctrl->Q.S.v.v_norm <= 0.0, "Syntax error -Qn option: No reference length given\n");
-						opt->arg[j] = '\0';	/* Temporarily chop of the n<norm> string */
-					}
-					if (opt->arg[0] && opt->arg[1] != 'n') {	/* We specified the three parameters */
-						if (sscanf (opt->arg, "%[^/]/%[^/]/%s", txt_a, txt_b, txt_c) != 3) {
-							GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -Q option: Could not decode arrowwidth/headlength/headwidth\n");
-							n_errors++;
-						}
-						else {	/* Turn the old args into new +a<angle> and pen width */
-							Ctrl->Q.S.v.pen.width = GMT_to_points (GMT, txt_a);
-							Ctrl->Q.S.v.h_length = (float)GMT_to_inch (GMT, txt_b);
-							Ctrl->Q.S.v.h_width = (float)GMT_to_inch (GMT, txt_c);
-							Ctrl->Q.S.v.v_angle = (float)atand (0.5 * Ctrl->Q.S.v.h_width / Ctrl->Q.S.v.h_length);
-						}
-					}
-					if (Ctrl->Q.S.v.v_norm > 0.0) opt->arg[j] = 'n';	/* Restore the n<norm> string */
-					Ctrl->Q.S.v.status |= (GMT_VEC_JUST_B + GMT_VEC_FILL);	/* Start filled vector at node location */
-				}
-				else {
-					if (opt->arg[0] == '+') {	/* No size (use default), just attributes */
-						Ctrl->Q.S.size_x = VECTOR_HEAD_LENGTH * GMT->session.u2u[GMT_PT][GMT_INCH];	/* 9p */
-						n_errors += GMT_parse_vector (GMT, opt->arg, &Ctrl->Q.S);
-					}
-					else {	/* Size, plus possible attributes */
-						j = sscanf (opt->arg, "%[^+]%s", txt_a, txt_b);	/* txt_a should be symbols size with any +<modifiers> in txt_b */
-						if (j == 1) txt_b[0] = 0;	/* No modifiers present, set txt_b to empty */
-						Ctrl->Q.S.size_x = GMT_to_inch (GMT, txt_a);	/* Length of vector */
-						n_errors += GMT_parse_vector (GMT, txt_b, &Ctrl->Q.S);
-					}
-				}
-				break;
-			case 'S':	/* Scale */
-				Ctrl->S.active = true;
-				len = strlen (opt->arg) - 1;
-				j = (opt->arg[0] == 'i') ? 1 : 0;
-				if (strchr (GMT_DIM_UNITS, (int)opt->arg[len]))	/* Recognized unit character */
-					Ctrl->S.unit = opt->arg[len];
-				else if (! (opt->arg[len] == '.' || isdigit ((int)opt->arg[len]))) {	/* Not decimal point or digit means trouble */
-					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -S option: Unrecognized unit %c\n", opt->arg[len]);
-					n_errors++;
-				}
-				if (opt->arg[0] == 'l' || opt->arg[0] == 'L') {
-					Ctrl->S.constant = true;
-					Ctrl->S.factor = atof (&opt->arg[1]);
-				}
-				else
-					Ctrl->S.factor = atof (&opt->arg[j]);
-				if (j == 1) Ctrl->S.factor = 1.0 / Ctrl->S.factor;	/* Got the inverse value */
-				break;
-			case 'T':	/* Rescale Cartesian angles */
-				Ctrl->T.active = true;
-				break;
-			case 'W':	/* Set line attributes */
-				Ctrl->W.active = true;
-				if (GMT_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
-					GMT_pen_syntax (GMT, 'W', " ");
-					n_errors++;
-				}
-				break;
-			case 'Z':	/* Azimuths given */
-				Ctrl->Z.active = true;
-				break;
-
-			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
-				break;
-		}
-	}
-
-	GMT_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
-
-	n_errors += GMT_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increments\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.factor == 0.0 && !Ctrl->S.constant, "Syntax error -S option: Scale must be nonzero\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.factor <= 0.0 && Ctrl->S.constant, "Syntax error -Sl option: Length must be positive\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.constant && Ctrl->Q.S.v.v_norm > 0.0, "Syntax error -Sl, -Q options: Cannot use -Q..n<size> with -Sl\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->Z.active && !Ctrl->A.active, "Syntax error -Z option: Azimuths not valid input for Cartesian data\n");
-	n_errors += GMT_check_condition (GMT, !(Ctrl->G.active || Ctrl->W.active || Ctrl->C.active), "Syntax error: Must specify at least one of -G, -W, -C\n");
-	n_errors += GMT_check_condition (GMT, n_files != 2, "Syntax error: Must specify two input grid files\n");
-
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
-}
-
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_grdvector_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
-
-int GMT_grdvector (void *V_API, int mode, void *args)
-{
-	unsigned int row, col, col_0, row_0, d_col, d_row, k;
-	int error = 0;
-	bool justify, Geographic;
-	
-	uint64_t ij;
-
-	double tmp, x, y, plot_x, plot_y, x_off, y_off, f, h_length = 0.0, h_width = 0.0, v_width = 0.0;
-	double x2, y2, wesn[4], vec_length, vec_azim, scaled_vec_length, c, s, dim[PSL_MAX_DIMS];
-
-	struct GMT_GRID *Grid[2] = {NULL, NULL};
-	struct GMT_PALETTE *P = NULL;
+	struct GRD_HEADER h[2];
 	struct GRDVECTOR_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;	/* General GMT interal parameters */
-	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;	/* General PSL interal parameters */
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
-	/*----------------------- Standard module initialization and parsing ----------------------*/
+	void *New_grdvector_Ctrl (), Free_grdvector_Ctrl (struct GRDVECTOR_CTRL *C);
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdvector_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	argc = (int)GMT_begin (argc, argv);
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdvector_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdvector_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
-
-	/* Parse the command-line arguments */
-
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_grdvector_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_grdvector_parse (GMT, Ctrl, options))) Return (error);
+	Ctrl = (struct GRDVECTOR_CTRL *)New_grdvector_Ctrl ();	/* Allocate and initialize a new control structure */
 	
-	/*---------------------------- This is the grdvector main code ----------------------------*/
+	west = east = south = north = 0.0;
+	di = dj = 1;
+	i0 = j0 = 0;
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grids\n");
-	d_col = d_row = 1;
-	col_0 = row_0 = 0;
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch (argv[i][1]) {
+				/* Common parameters */
 
-	if (!(strcmp (Ctrl->In.file[0], "=") || strcmp (Ctrl->In.file[1], "="))) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Piping of grid files not supported!\n");
-		Return (EXIT_FAILURE);
-	}
+				case 'B':
+				case 'J':
+				case 'K':
+				case 'O':
+				case 'P':
+				case 'R':
+				case 'U':
+				case 'V':
+				case 'X':
+				case 'x':
+				case 'Y':
+				case 'y':
+				case 'c':
+				case 'f':
+				case '\0':
+					error += GMT_parse_common_options (argv[i], &west, &east, &south, &north);
+					break;
 
-	for (k = 0; k < 2; k++) {
-		if ((Grid[k] = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file[k], NULL)) == NULL) {	/* Get header only */
-			Return (API->error);
+				/* Supplemental parameters */
+
+				case 'A':
+					Ctrl->A.active = TRUE;
+					break;
+				case 'C':	/* Vary symbol color with z */
+					Ctrl->C.active = TRUE;
+					Ctrl->C.file = strdup (&argv[i][2]);
+					break;
+				case 'E':
+					Ctrl->E.active = TRUE;
+					break;
+				case 'G':		/* Set Gray shade for polygon */
+					Ctrl->G.active = TRUE;
+					if (GMT_getfill (&argv[i][2], &Ctrl->G.fill)) {
+						GMT_fill_syntax ('G', " ");
+						error++;
+					}
+					break;
+				case 'I':	/* Only use gridnodes Ctrl->I.xinc,Ctrl->I.yinc apart */
+					Ctrl->I.active = TRUE;
+					if (GMT_getinc (&argv[i][2], &Ctrl->I.xinc, &Ctrl->I.yinc)) {
+						GMT_inc_syntax ('I', 1);
+						error = TRUE;
+					}
+					break;
+				case 'N':	/* Do not clip at border */
+					Ctrl->N.active = TRUE;
+					break;
+				case 'Q':
+					Ctrl->Q.active = TRUE;
+					for (j = 2; argv[i][j] && argv[i][j] != 'n'; j++);
+					if (argv[i][j]) {	/* Normalize option used */
+						Ctrl->Q.norm = GMT_convert_units (&argv[i][j+1], GMT_INCH);
+						if (Ctrl->Q.norm <= 0.0) {
+							fprintf (stderr, "%s: GMT SYNTAX ERROR -Qn option:  No reference length given\n", GMT_program);
+							error++;
+						}
+						argv[i][j] = '\0';	/* Temporarily chop of the n<norm> string */
+					}
+					if (argv[i][2] && argv[i][3] != 'n') {	/* We specified the three parameters */
+						if (sscanf (&argv[i][2], "%[^/]/%[^/]/%s", txt_a, txt_b, txt_c) != 3) {
+							fprintf (stderr, "%s: GMT SYNTAX ERROR -Q option:  Could not decode arrowwidth/headlength/headwidth\n", GMT_program);
+							error++;
+						}
+						else {
+							Ctrl->Q.thickness  = GMT_convert_units (txt_a, GMT_INCH);
+							Ctrl->Q.length = GMT_convert_units (txt_b, GMT_INCH);
+							Ctrl->Q.width  = GMT_convert_units (txt_c, GMT_INCH);
+						}
+					}
+					if (Ctrl->Q.norm > 0.0) argv[i][j] = 'n';	/* Restore the n<norm> string */
+					break;
+				case 'S':
+					Ctrl->S.active = TRUE;
+					j = (int)strlen (argv[i]) - 1;
+					if (strchr ("cimpCIMP", (int)argv[i][j]))	/* Recognized unit character */
+						Ctrl->S.unit = argv[i][j];
+					else if (! (argv[i][j] == '.' || isdigit ((int)argv[i][j]))) {	/* Not decimal point or digit means trouble */
+						fprintf (stderr, "%s: GMT SYNTAX ERROR -S option:  Unrecognized unit %c\n", GMT_program, argv[i][j]);
+						error++;
+					}
+					if (argv[i][2] == 'l' || argv[i][2] == 'L') {
+						Ctrl->S.constant = TRUE;
+						Ctrl->S.factor = atof (&argv[i][3]);
+					}
+					else
+						Ctrl->S.factor = atof (&argv[i][2]);
+					break;
+				case 'T':
+					Ctrl->T.active = TRUE;
+					break;
+				case 'W':		/* Set line attributes */
+					Ctrl->W.active = TRUE;
+					if (argv[i][2] && GMT_getpen (&argv[i][2], &Ctrl->W.pen)) {
+						GMT_pen_syntax ('W', " ");
+						error++;
+					}
+					break;
+				case 'Z':
+					Ctrl->Z.active = TRUE;
+					break;
+				default:
+					error = TRUE;
+					GMT_default_error (argv[i][1]);
+					break;
+			}
 		}
-		GMT_grd_init (GMT, Grid[k]->header, options, true);
+		else if (n < 2)
+			file[n++] = argv[i];
+		else
+			n++;
 	}
 
-	if (!(GMT_grd_same_shape (GMT, Grid[0], Grid[1]) && GMT_grd_same_region (GMT, Grid[0], Grid[1]) && GMT_grd_same_inc (GMT, Grid[0], Grid[1]))) {
-		GMT_Report (API, GMT_MSG_NORMAL, "files %s and %s does not match!\n", Ctrl->In.file[0], Ctrl->In.file[1]);
-		Return (EXIT_FAILURE);
+	if (argc == 1 || GMT_give_synopsis_and_exit) {
+		fprintf (stderr, "grdvector %s - Plot vector fields from grid files\n\n", GMT_VERSION);
+		fprintf (stderr, "usage: grdvector compx.grd compy.grd %s %s [-A]\n", GMT_J_OPT, GMT_Rgeo_OPT);
+		fprintf (stderr, "\t[%s] [-C<cpt>] [-E] [-G<fill>] [-I<dx/dy>] [-K] [-N] [-O] [-P] [-Q<params>] [-S[l]<scale>[<unit>]]\n", GMT_B_OPT);
+		fprintf (stderr, "\t[-T] [%s] [-V] [-W<pen>] [%s] [%s] [-Z] [%s]\n\n", GMT_U_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT);
+
+		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
+
+		fprintf (stderr, "\tcompx & compy are grid files with the 2 vector components.\n");
+		GMT_explain_option ('j');
+		fprintf (stderr, "\n\tOPTIONS:\n");
+		fprintf (stderr, "\t-A means grids have polar (r, theta) components [Default is Cartesian].\n");
+		GMT_explain_option ('b');
+		fprintf (stderr, "\t-C Use cpt-file to assign colors based on vector length.\n");
+		fprintf (stderr, "\t-E cEnter vectors on grid nodes [Default draws from grid node].\n");
+		GMT_fill_syntax ('G', "Select vector fill [Default is outlines only].");
+		fprintf (stderr, "\t-I plots only those nodes that are <dx/dy> apart [Default is all nodes].\n");
+		GMT_explain_option ('K');
+		fprintf (stderr, "\t-N Do Not clip vectors that exceed the map boundaries [Default will clip].\n");
+		GMT_explain_option ('O');
+		GMT_explain_option ('P');
+		fprintf (stderr, "\t-Q Select vector plot [Default is stick-plot].\n");
+		fprintf (stderr, "\t   Optionally, specify vector parameters\n");
+		fprintf (stderr, "\t   <params> are arrowwidth/headlength/headwidth [Default is 0.03i/0.12i/0.09i].\n");
+		fprintf (stderr, "\t   Append n<size>[unit] which will cause vectors shorter than <size> to be\n");
+		fprintf (stderr, "\t     scaled down.\n");
+		GMT_explain_option ('R');
+		fprintf (stderr, "\t-S sets scale for vector length in data units per %s [1].\n", GMT_unit_names[gmtdefs.measure_unit]);
+		fprintf (stderr, "\t   Append c, i, m, or p to indicate cm, inch, m, or points as the distance unit.\n");
+		fprintf (stderr, "\t   Alternatively, prepend l to indicate a fixed length for all vectors.\n");
+		fprintf (stderr, "\t-T means azimuth should be converted to angles based on map projection.\n");
+		GMT_explain_option ('U');
+		GMT_explain_option ('V');
+		GMT_pen_syntax ('W', "sets pen attributes.");
+		fprintf (stderr, "\t   Default pen attributes [width = %gp, color = (%d/%d/%d), solid line].\n", 
+			Ctrl->W.pen.width, Ctrl->W.pen.rgb[0], Ctrl->W.pen.rgb[1], Ctrl->W.pen.rgb[2]);
+		GMT_explain_option ('X');
+		fprintf (stderr, "\t-Z means the angles provided are azimuths rather than direction.\n");
+		GMT_explain_option ('c');
+		GMT_explain_option ('f');
+		GMT_explain_option ('.');
+		exit (EXIT_FAILURE);
+	}
+
+	GMT_check_lattice (&Ctrl->I.xinc, &Ctrl->I.yinc, NULL, &Ctrl->I.active);
+
+	if (Ctrl->I.active && (Ctrl->I.xinc <= 0.0 || Ctrl->I.yinc <= 0.0)) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -I option:  Must specify positive increments\n", GMT_program);
+		error++;
+	}
+	if (Ctrl->S.factor == 0.0 && !Ctrl->S.constant) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -S option:  Scale must be nonzero\n", GMT_program);
+		error++;
+	}
+	if (Ctrl->S.factor <= 0.0 && Ctrl->S.constant) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -Sl option:  Length must be positive\n", GMT_program);
+		error++;
+	}
+	if (Ctrl->Q.active && Ctrl->Q.norm > 0.0) {
+		v_shrink = 1.0 / Ctrl->Q.norm;
+		shrink_properties = TRUE;
+	}
+	if (Ctrl->S.constant && shrink_properties) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -Sl, -Q options:  Cannot use -Q..n<size> with -Sl\n", GMT_program);
+		error++;
+	}
+	if (Ctrl->Z.active && !Ctrl->A.active) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -Z option:  Azimuths not valid input for Cartesian data\n", GMT_program);
+		error++;
+	}
+	if (Ctrl->C.active && !Ctrl->C.file) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -C option:  Must specify a color palette table\n", GMT_program);
+		error++;
+	}
+	if (!(Ctrl->G.active || Ctrl->W.active || Ctrl->C.active)) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify at least one of -G, -W, -C\n", GMT_program);
+		error++;
+	}
+	if (n != 2) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR:  Must specify two input grid files\n", GMT_program);
+		error++;
+	}
+
+	if (error) exit (EXIT_FAILURE);
+
+	if (Ctrl->C.active) GMT_read_cpt (Ctrl->C.file);
+
+	if (!(strcmp (file[0], "=") || strcmp (file[1], "="))) {
+		fprintf (stderr, "%s: Piping of grid files not supported!\n", GMT_program);
+		exit (EXIT_FAILURE);
+	}
+
+	for (i = 0; i < 2; i++) {
+		GMT_grd_init (&h[i], argc, argv, FALSE);
+		GMT_err_fail (GMT_read_grd_info (file[i], &h[i]), file[i]);
+	}
+
+	if (!(h[0].nx == h[1].nx && h[0].ny == h[1].ny && h[0].x_min == h[1].x_min && h[0].y_min == h[1].y_min 
+		&& h[0].x_inc == h[1].x_inc && h[0].y_inc == h[1].y_inc)) {
+		fprintf (stderr, "%s: files %s and %s does not match!\n", GMT_program, file[0], file[1]);
+		exit (EXIT_FAILURE);
 	}
 
 	/* Determine what wesn to pass to map_setup */
 
-	if (!GMT->common.R.active) GMT_memcpy (GMT->common.R.wesn, Grid[0]->header->wesn, 4, double);
+	if (!project_info.region_supplied) {
+		west = h[0].x_min;
+		east = h[0].x_max;
+		south = h[0].y_min;
+		north = h[0].y_max;
+	}
 
-	if (GMT_map_setup (GMT, GMT->common.R.wesn)) Return (GMT_RUNTIME_ERROR);
+	GMT_err_fail (GMT_map_setup (west, east, south, north), "");
 
 	/* Determine the wesn to be used to read the grid file */
 
-	if (!GMT_grd_setregion (GMT, Grid[0]->header, wesn, BCR_BILINEAR) || !GMT_grd_setregion (GMT, Grid[1]->header, wesn, BCR_BILINEAR)) {
-		/* No grid to plot; just do empty map and return */
-		if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
-			Return (API->error);
-		}
-		GMT_Report (API, GMT_MSG_VERBOSE, "Warning: No data within specified region\n");
-		PSL = GMT_plotinit (GMT, options);
-		GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
-		GMT_plotcanvas (GMT);	/* Fill canvas if requested */
-		GMT_map_basemap (GMT);
-		GMT_plane_perspective (GMT, -1, 0.0);
-		GMT_plotend (GMT);
-		Return (GMT_OK);
+	if (GMT_grd_setregion (&h[0], &data_west, &data_east, &data_south, &data_north, BCR_BILINEAR)) {
+		/* No grid to plot; just do empty map and exit */
+		GMT_plotinit (argc, argv);
+		GMT_map_basemap ();
+		GMT_plotend ();
+		GMT_end (argc, argv);
+		exit (EXIT_SUCCESS);
 	}
 
 	/* Read data */
 
-	for (k = 0; k < 2; k++) if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->In.file[k], Grid[k]) == NULL) {	/* Get data */
-		Return (API->error);
-	}
+	nx = GMT_get_n (data_west, data_east, h[0].x_inc, h[0].node_offset);
+	ny = GMT_get_n (data_south, data_north, h[0].y_inc, h[0].node_offset);
+	nm = GMT_get_nm (nx, ny);
+	r = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
+	theta = (float *) GMT_memory (VNULL, (size_t)nm, sizeof (float), GMT_program);
+	GMT_err_fail (GMT_read_grd (file[0], &h[0], r, data_west, data_east, data_south, data_north, GMT_pad, FALSE), file[0]);
+	GMT_err_fail (GMT_read_grd (file[1], &h[1], theta, data_west, data_east, data_south, data_north, GMT_pad, FALSE), file[1]);
 
-	if (Ctrl->C.active) {
-		double v_min, v_max;
-		if (Ctrl->A.active) {	/* Polar grid, just mins min/max of r */
-			v_min = Grid[0]->header->z_min;
-			v_max = Grid[0]->header->z_max;
-		}
-		else {	/* Find min/max vector lengths from components */
-			v_min = DBL_MAX;	v_max = 0.0;
-			GMT_grd_loop (GMT, Grid[GMT_X], row, col, ij) {
-				vec_length = hypot (Grid[GMT_X]->data[ij], Grid[GMT_Y]->data[ij]);
-				if (vec_length < v_min) v_min = vec_length;
-				if (vec_length > v_max) v_max = vec_length;
-			}
-		}
-		if ((P = GMT_Get_CPT (GMT, Ctrl->C.file, GMT_CPT_OPTIONAL, v_min, v_max)) == NULL) {
-			Return (API->error);
-		}
-	}
-
-	Geographic = (GMT_is_geographic (GMT, GMT_IN));
 	if (!Ctrl->S.constant) Ctrl->S.factor = 1.0 / Ctrl->S.factor;
 
-	if (!Geographic) {
-		switch (Ctrl->S.unit) {	/* Adjust for possible unit selection */
-			case 'c':
-				Ctrl->S.factor *= GMT->session.u2u[GMT_CM][GMT_INCH];
-				break;
-			case 'i':
-				Ctrl->S.factor *= GMT->session.u2u[GMT_INCH][GMT_INCH];
-				break;
-			case 'p':
-				Ctrl->S.factor *= GMT->session.u2u[GMT_PT][GMT_INCH];
-				break;
-			default:
-				Ctrl->S.factor *= GMT->session.u2u[GMT->current.setting.proj_length_unit][GMT_INCH];
-				break;
+	switch (Ctrl->S.unit) {	/* Adjust for possible unit selection */
+		case 'C':
+		case 'c':
+			Ctrl->S.factor *= GMT_u2u[GMT_CM][GMT_INCH];
+			break;
+		case 'I':
+		case 'i':
+			Ctrl->S.factor *= GMT_u2u[GMT_INCH][GMT_INCH];
+			break;
+		case 'M':
+		case 'm':
+			Ctrl->S.factor *= GMT_u2u[GMT_M][GMT_INCH];
+			break;
+		case 'P':
+		case 'p':
+			Ctrl->S.factor *= GMT_u2u[GMT_PT][GMT_INCH];
+			break;
+		default:
+			Ctrl->S.factor *= GMT_u2u[gmtdefs.measure_unit][GMT_INCH];
+			break;
+	}
+
+	GMT_plotinit (argc, argv);
+
+	GMT_setpen (&Ctrl->W.pen);
+
+        if (!Ctrl->N.active) GMT_map_clip_on (GMT_no_rgb, 3);
+
+	if (Ctrl->I.xinc != 0.0 && Ctrl->I.yinc != 0.0) {	/* Gave a coarser grid spacing, we hope */
+		double val = Ctrl->I.yinc / h[0].y_inc;
+		dj = irint (val);
+		if (dj == 0 || fabs (val - dj) > GMT_CONV_LIMIT) {
+			fprintf (stderr, "%s: Error: New y grid increment (%g) is not a multiple of actual grid increment (%g).\n", GMT_program, Ctrl->I.xinc, h[0].x_inc);
+			exit (EXIT_FAILURE);
 		}
-	}
-
-	Ctrl->Q.S.v.v_width = (float)(Ctrl->W.pen.width * GMT->session.u2u[GMT_PT][GMT_INCH]);
-	if (Ctrl->Q.active) {	/* Prepare vector parameters */
-		GMT_init_vector_param (GMT, &Ctrl->Q.S, true, Ctrl->W.active, &Ctrl->W.pen, Ctrl->G.active, &Ctrl->G.fill);
-	}
-	dim[6] = 0.0;
-	PSL = GMT_plotinit (GMT, options);
-	GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
-	GMT_plotcanvas (GMT);	/* Fill canvas if requested */
-
-	GMT_setpen (GMT, &Ctrl->W.pen);
-	if (!Ctrl->C.active) GMT_setfill (GMT, &Ctrl->G.fill, Ctrl->W.active);
-	
-
-	if (!Ctrl->N.active) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
-
-	if (Ctrl->I.inc[GMT_X] != 0.0 && Ctrl->I.inc[GMT_Y] != 0.0) {	/* Coarsen the output interval */
-		struct GMT_GRID_HEADER tmp_h;
-		double val;
-		GMT_memcpy (&tmp_h, Grid[0]->header, 1, struct GMT_GRID_HEADER);
-		GMT_memcpy (tmp_h.inc, Ctrl->I.inc, 2, double);
-		GMT_RI_prepare (GMT, &tmp_h);	/* Convert to make sure we have correct increments */
-		GMT_memcpy (Ctrl->I.inc, tmp_h.inc, 2, double);
-		val = Ctrl->I.inc[GMT_Y] * Grid[0]->header->r_inc[GMT_Y];
-		d_row = urint (val);
-		if (d_row == 0 || !doubleAlmostEqualZero (d_row, val)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: New y grid spacing (%g) is not a multiple of actual grid spacing (%g)\n", Ctrl->I.inc[GMT_Y], Grid[0]->header->inc[GMT_Y]);
-			Return (EXIT_FAILURE);
+		val = Ctrl->I.xinc / h[0].x_inc;
+		di = irint (val);
+		if (di == 0 || fabs (val - di) > GMT_CONV_LIMIT) {
+			fprintf (stderr, "%s: Error: New x grid increment (%g) is not a multiple of actual grid increment (%g).\n", GMT_program, Ctrl->I.xinc, h[0].x_inc);
+			exit (EXIT_FAILURE);
 		}
-		val = Ctrl->I.inc[GMT_X] * Grid[0]->header->r_inc[GMT_X];
-		d_col = urint (val);
-		if (d_col == 0 || !doubleAlmostEqualZero (d_col, val)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: New x grid spacing (%g) is not a multiple of actual grid spacing (%g)\n", Ctrl->I.inc[GMT_X], Grid[0]->header->inc[GMT_X]);
-			Return (EXIT_FAILURE);
-		}
-		tmp = ceil (Grid[0]->header->wesn[YHI] / Ctrl->I.inc[GMT_Y]) * Ctrl->I.inc[GMT_Y];
-		if (tmp > Grid[0]->header->wesn[YHI]) tmp -= Ctrl->I.inc[GMT_Y];
-		row_0 = urint ((Grid[0]->header->wesn[YHI] - tmp) * Grid[0]->header->r_inc[GMT_Y]);
-		tmp = floor (Grid[0]->header->wesn[XLO] / Ctrl->I.inc[GMT_X]) * Ctrl->I.inc[GMT_X];
-		if (tmp < Grid[0]->header->wesn[XLO]) tmp += Ctrl->I.inc[GMT_X];
-		col_0 = urint ((tmp - Grid[0]->header->wesn[XLO]) * Grid[0]->header->r_inc[GMT_X]);
+		/* Determine starting point for straddled access */
+		tmp = ceil (h[0].y_max / Ctrl->I.yinc) * Ctrl->I.yinc;
+		if (tmp > h[0].y_max) tmp -= Ctrl->I.yinc;
+		j0 = irint ((h[0].y_max - tmp) / h[0].y_inc);
+		tmp = floor (h[0].x_min / Ctrl->I.xinc) * Ctrl->I.xinc;
+		if (tmp < h[0].x_min) tmp += Ctrl->I.xinc;
+		i0 = irint ((tmp - h[0].x_min) / h[0].x_inc);
 	}
 
-	dim[5] = GMT->current.setting.map_vector_shape;	/* These do not change inside the loop */
-	dim[6] = (double)Ctrl->Q.S.v.status;
-	if (Geographic) {
-		v_width = Ctrl->Q.S.v.v_width;	h_length = Ctrl->Q.S.v.h_length;	h_width = Ctrl->Q.S.v.h_width;	
-	}
-	PSL_command (GMT->PSL, "V\n");
-	for (row = row_0; row < Grid[1]->header->ny; row += d_row) {
-		y = GMT_grd_row_to_y (GMT, row, Grid[0]->header);
-		for (col = col_0; col < Grid[1]->header->nx; col += d_col) {
+	for (j = j0; j < h[1].ny; j += dj) {
+		y = GMT_j_to_y (j, h[0].y_min, h[0].y_max, h[0].y_inc, h[0].xy_off, h[0].ny);
+		for (i = i0; i < h[1].nx; i += di) {
 
-			ij = GMT_IJP (Grid[0]->header, row, col);
-			if (GMT_is_fnan (Grid[0]->data[ij]) || GMT_is_fnan (Grid[1]->data[ij])) continue;	/* Cannot plot NaN-vectors */
+			ij = GMT_IJ (j, i, h[0].nx);
+			if (GMT_is_fnan (r[ij]) || GMT_is_fnan (theta[ij])) continue;	/* Cannot plot NaN-vectors */
 
-			if (Ctrl->A.active) {	/* Got polar grids */
-				vec_length = Grid[0]->data[ij];
-				vec_azim = Grid[1]->data[ij];
-				if (vec_length < 0.0) {	/* Flip negative lengths as 180-degrees off */
-					vec_length = -vec_length;
-					vec_azim += 180.0;
-				}
-				else if (vec_length == 0.0) continue;	/* No length = no plotting */
+			value = r[ij];
+
+			if (!Ctrl->A.active) {
+				value = hypot (theta[ij], r[ij]);
+				if (value == 0.0) continue;
+				theta[ij] = (float)(atan2d (theta[ij], r[ij]));
+				r[ij] = (float)value;
 			}
-			else {	/* Cartesian grids: Compute length and direction */
-				vec_length = hypot (Grid[GMT_X]->data[ij], Grid[GMT_Y]->data[ij]);
-				if (vec_length == 0.0) continue;
-				vec_azim = atan2d (Grid[GMT_Y]->data[ij], Grid[GMT_X]->data[ij]);
+			else if (r[ij] < 0.0) {
+				r[ij] = -r[ij];
+				theta[ij] += 180.0;
 			}
+			else if (r[ij] == 0.0) continue;
 
-			x = GMT_grd_col_to_x (GMT, col, Grid[0]->header);
+			if (Ctrl->C.active) GMT_get_rgb_from_z (value, Ctrl->G.fill.rgb);
+
+			x = GMT_i_to_x (i, h[0].x_min, h[0].x_max, h[0].x_inc, h[0].xy_off, h[0].nx);
 			if (!Ctrl->N.active) {
-				GMT_map_outside (GMT, x, y);
-				if (abs (GMT->current.map.this_x_status) > 1 || abs (GMT->current.map.this_y_status) > 1) continue;
+				GMT_map_outside (x, y);
+				if (GMT_abs (GMT_x_status_new) > 1 || GMT_abs (GMT_y_status_new) > 1) continue;
 			}
-			
-			if (Ctrl->C.active) {	/* Update pen and fill color based on the vector length */
-				GMT_get_rgb_from_z (GMT, P, vec_length, Ctrl->G.fill.rgb);
-				GMT_rgb_copy (Ctrl->W.pen.rgb, Ctrl->G.fill.rgb);
-				GMT_setpen (GMT, &Ctrl->W.pen);
-				if (Ctrl->Q.active) GMT_setfill (GMT, &Ctrl->G.fill, Ctrl->W.active);
-				GMT_init_vector_param (GMT, &Ctrl->Q.S, true, Ctrl->W.active, &Ctrl->W.pen, true, &Ctrl->G.fill);
-			}
-			scaled_vec_length = (Ctrl->S.constant) ? Ctrl->S.factor : vec_length * Ctrl->S.factor;
-			/* scaled_vec_length is now in inches (Cartesian) or km (Geographic) */
-			
-			if (Geographic) {	/* Draw great-circle geo-vectors */
-				if (scaled_vec_length < Ctrl->Q.S.v.v_norm) {	/* Scale arrow attributes down with length */
-					f = scaled_vec_length / Ctrl->Q.S.v.v_norm;
-					Ctrl->Q.S.v.v_width *= (float)f;	Ctrl->Q.S.v.h_length *= (float)f;
-					Ctrl->Q.S.v.h_width *= (float)f;
-				}
-				GMT_geo_vector (GMT, x, y, vec_azim, scaled_vec_length, &Ctrl->W.pen, &Ctrl->Q.S);
-				if (scaled_vec_length < Ctrl->Q.S.v.v_norm) {	/* Reset arrow attributes */
-					Ctrl->Q.S.v.v_width = (float)v_width;	Ctrl->Q.S.v.h_length = (float)h_length;
-					Ctrl->Q.S.v.h_width = (float)h_width;
-				}
-			}
-			else {	/* Draw straight Cartesian vectors */
-				GMT_geo_to_xy (GMT, x, y, &plot_x, &plot_y);
-				if (Ctrl->T.active) {	/* Transform azimuths to plot angle */
-					if (!Ctrl->Z.active) vec_azim = 90.0 - vec_azim;
-					vec_azim = GMT_azim_to_angle (GMT, x, y, 0.1, vec_azim);
-				}
-				vec_azim *= D2R;
-				/* vec_azim is now in radians */
-				sincos (vec_azim, &s, &c);
-				x2 = plot_x + scaled_vec_length * c;
-				y2 = plot_y + scaled_vec_length * s;
+			GMT_geo_to_xy (x, y, &plot_x, &plot_y);
 
-				justify = GMT_vec_justify (Ctrl->Q.S.v.status);	/* Return justification as 0-2 */
-				if (justify) {	/* Justify vector at center, or tip [beginning] */
-					x_off = justify * 0.5 * (x2 - plot_x);	y_off = justify * 0.5 * (y2 - plot_y);
-					plot_x -= x_off;	plot_y -= y_off;
-					x2 -= x_off;		y2 -= y_off;
-				}
-
-				if (!Ctrl->Q.active) {	/* Just a line segment */
-					PSL_plotsegment (PSL, plot_x, plot_y, x2, y2);
-					continue;
-				}
-				/* Must plot a vector */
-				dim[0] = x2; dim[1] = y2;
-				dim[2] = Ctrl->Q.S.v.v_width;	dim[3] = Ctrl->Q.S.v.h_length;	dim[4] = Ctrl->Q.S.v.h_width;
-				if (scaled_vec_length < Ctrl->Q.S.v.v_norm) {	/* Scale arrow attributes down with length */
-					f = scaled_vec_length / Ctrl->Q.S.v.v_norm;
-					for (k = 2; k <= 4; k++) dim[k] *= f;
-				}
-				PSL_plotsymbol (PSL, plot_x, plot_y, dim, PSL_VECTOR);
+			if (Ctrl->T.active) {
+				if (!Ctrl->Z.active) theta[ij] = (float)90.0 - theta[ij];
+				GMT_azim_to_angle (x, y, 0.1, (double)theta[ij], &tmp);
+				theta[ij] = (float)(tmp * D2R);
 			}
+			else
+				theta[ij] *= (float)D2R;
+
+			if (Ctrl->S.constant)
+				r[ij] = (float)Ctrl->S.factor;
+			else
+				r[ij] *= (float)Ctrl->S.factor;
+
+			if (project_info.projection == GMT_LINEAR) {	/* Must check if negative scales were used */
+				if (!project_info.xyz_pos[0]) {	/* Negative x scale */
+					if (!project_info.xyz_pos[1])	/* Negative y-scale too */
+						theta[ij] += 180.0f;
+					else
+						theta[ij] = 180.0f - theta[ij];
+				}
+				else if (!project_info.xyz_pos[1])	/* Negative y-scale only */
+					theta[ij] = - theta[ij];
+			}
+			GMT_flip_angle_f (&theta[ij]);
+			sincos (theta[ij], &s, &c);
+			x2 = plot_x + r[ij] * c;
+			y2 = plot_y + r[ij] * s;
+
+			if (Ctrl->E.active) {
+				x_off = 0.5 * (x2 - plot_x);
+				y_off = 0.5 * (y2 - plot_y);
+				plot_x -= x_off;
+				plot_y -= y_off;
+				x2 -= x_off;
+				y2 -= y_off;
+			}
+
+			if (!Ctrl->Q.active) {
+				if (Ctrl->C.active) ps_setpaint (Ctrl->G.fill.rgb);
+				ps_segment (plot_x, plot_y, x2, y2);
+				continue;
+			}
+
+			if (shrink_properties && r[ij] < Ctrl->Q.norm) {	/* Scale arrow attributes down with length */
+				v_w = Ctrl->Q.thickness * r[ij] * v_shrink;
+				h_l = Ctrl->Q.length * r[ij] * v_shrink;
+				h_w = Ctrl->Q.width * r[ij] * v_shrink;
+				ps_vector (plot_x, plot_y, x2, y2, v_w, h_l, h_w, gmtdefs.vector_shape, Ctrl->G.fill.rgb, Ctrl->W.active);
+			}
+			else	/* Leave as specified */
+				ps_vector (plot_x, plot_y, x2, y2, Ctrl->Q.thickness, Ctrl->Q.length, Ctrl->Q.width, gmtdefs.vector_shape, Ctrl->G.fill.rgb, Ctrl->W.active);
 		}
 	}
-	PSL_command (GMT->PSL, "U\n");
-	PSL->current.linewidth = 0.0;	/* Since we changed things under clip; this will force it to be set next */
 
-	if (!Ctrl->N.active) GMT_map_clip_off (GMT);
+        if (!Ctrl->N.active) GMT_map_clip_off ();
 
-	GMT_map_basemap (GMT);
+	GMT_map_basemap ();
 
-	GMT_plane_perspective (GMT, -1, 0.0);
+	GMT_plotend ();
 
-	GMT_plotend (GMT);
+	GMT_free ((void *)r);
+	GMT_free ((void *)theta);
 
-	Return (EXIT_SUCCESS);
+	Free_grdvector_Ctrl (Ctrl);	/* Deallocate control structure */
+
+	GMT_end (argc, argv);
+
+	exit (EXIT_SUCCESS);
+}
+
+void *New_grdvector_Ctrl () {	/* Allocate and initialize a new control structure */
+	struct GRDVECTOR_CTRL *C;
+	
+	C = (struct GRDVECTOR_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct GRDVECTOR_CTRL), "New_grdvector_Ctrl");
+	
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
+	GMT_init_fill (&C->G.fill, -1, -1, -1);
+	GMT_init_pen (&C->W.pen, GMT_PENWIDTH);
+	C->Q.thickness = 0.03;
+	C->Q.length = 0.12;
+	C->Q.width = 0.1;
+	C->S.factor = 1.0;
+	return ((void *)C);
+}
+
+void Free_grdvector_Ctrl (struct GRDVECTOR_CTRL *C) {	/* Deallocate control structure */
+	if (C->C.file) free ((void *)C->C.file);	
+	GMT_free ((void *)C);	
 }

@@ -1,0 +1,154 @@
+.TH GRDSPOTTER 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+grdspotter \- Create CVA image directly from gravity or bathymetry grids 
+.SH SYNOPSIS
+\fBgrdspotter\fP [\fIgrdfile\fP] \fB\-E\fP\fIrotations_file\fP 
+\fB\-G\fP\fICVAgrid\fP \fB\-I\fP\fIxinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP][/\fIyinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP]] 
+\fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] [ \fB\-A\fP\fIagegrid\fP ] [ \fB\-B\fP\fIn_try\fP ] [ \fB\-C\fP ] [ \fB\-D\fP\fIDIgrid\fP ] [ \fB\-F\fP ] 
+[ \fB\-L\fP IT(IDgrid) ] [ \fB\-M\fP ] [ \fB\-N\fP\fIupper_age\fP ] [ \fB\-P\fP\fIPAgrid\fP ] [ \fB\-Q\fP\fIIDinfo\fP ] [ \fB\-S\fP ] 
+[ \fB\-T\fP ] [ \fB\-U\fP\fIfixed_val\fP ] [ \fB\-V\fP ] [ \fB\-Z\fP\fIz_min\fP[/\fIz_max\fP[/\fIz_inc\fP]] ]
+.SH DESCRIPTION
+\fBgrdspotter\fP reads a grid file with residual bathymetry or gravity
+and calculates flowlines from each node that exceeds a minimum value
+using the specified rotations file.
+These flowlines are then convolved with the volume of the prism represented by
+each grid node and added up to give a Cumulative Volcano Amplitude grid (CVA).
+.br
+	No space between the option flag and the associated arguments.  Use upper case for the
+option flags and lower case for modifiers.
+.TP
+\fIgrdfile\fP
+Data grid to be processed, typically residual bathymetry or free-air anomalies.
+.TP
+\fB\-E\fP
+Give file with rotation parameters.  This file must contain
+one record for each rotation; each record must be of the following format:
+.br
+.sp
+	\fIlon lat tstart [tstop] angle\fP [ \fIkhat a b c d e f g df\fP ]
+.br
+.sp
+where \fItstart\fP and \fItstop\fP are in Myr and \fIlon lat angle\fP are in degrees.
+\fItstart\fP and \fItstop\fP are the ages of the old and young ends of a stage.  If \fB\-C\fP is set then a total
+reconstruction rotation is expected and \fItstop\fP is implicitly set to 0 and
+should not be specified in the file.  If a covariance matrix \fBC\fP for the rotation is available
+it must be specified in a format using the nine optional terms listed in brackets.
+Here, \fBC\fP = (\fIg\fP/\fIkhat\fP)*[ \fIa b d; b c e; d e f\fP ] which shows \fBC\fP
+made up of three row vectors.
+If the degrees of freedom (\fIdf\fP) in fitting the rotation is 0 or not given it is set to 10000.
+Blank lines and records whose first column contains # will be ignored.
+.TP
+\fB\-G\fP
+Specify name for output CVA grid file.
+.TP
+\fB\-I\fP
+\fIx_inc\fP [and optionally \fIy_inc\fP] is the grid spacing. Optionally, append a suffix
+modifier.  \fBGeographical (degrees) coordinates\fP: Append \fBm\fP to
+indicate arc minutes or \fBc\fP to indicate arc seconds.  If one of the units \fBe\fP, \fBk\fP, \fBi\fP,
+or \fBn\fP is appended instead, the increment is assumed to be given in meter, km, miles, or
+nautical miles, respectively, and will be converted to the equivalent degrees longitude at
+the middle latitude of the region (the conversion depends on \fBELLIPSOID\fP).  If /\fIy_inc\fP is given but set to 0 it will be reset equal to
+\fIx_inc\fP; otherwise it will be converted to degrees latitude.  
+\fBAll coordinates\fP: If \fB=\fP is appended then
+the corresponding max \fIx\fP (\fIeast\fP) or \fIy\fP (\fInorth\fP) may be slightly adjusted to fit exactly the given increment
+[by default the increment may be adjusted slightly to fit the given domain].  Finally, instead
+of giving an increment you may specify the \fInumber of nodes\fP desired by appending \fB+\fP to
+the supplied integer argument; the increment is then recalculated from the number of nodes and the domain.
+The resulting increment value depends on whether you have selected a gridline-registered
+or pixel-registered grid; see Appendix B for details.  Note: if \fB\-R\fP\fIgrdfile\fP is used then
+grid spacing has already been initialized; use \fB\-I\fP to override the values.
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+.SH OPTIONS
+.TP
+\fB\-A\fP
+Supply a crustal age grid that is co-registered with the input data grid.  These ages
+become the upper ages to use when constructing flowlines [Default extend flowlines back
+to oldest age found in the rotation file; but see \fB\-N\fP].
+.TP
+\fB\-B\fP
+Get \fIn_try\fP bootstrap estimates of the maximum CVA location; the longitude and latitude
+results are written to stdout [Default is no bootstrapping].  Cannot be used with \fB\-M\fP.
+.TP
+\fB\-C\fP
+Expect Total Reconstruction Rotations rather than Forward Stage Rotations [Default].
+File format is similar to the stage pole format except that the \fItstart\fP column
+is not present (assumed to be 0 Ma).
+.TP
+\fB\-D\fP
+Use flowlines to determine the maximum CVA encountered along each flowline and create a Data
+Importance (DI) grid with these values at the originating nodes.
+.TP
+\fB\-F\fP
+Force pixel registration [Default is grid registration].
+.TP
+\fB\-L\fP
+Supply a co-registered grid with seamount chain IDs for each node.  This option requires that
+you also use \fB\-Q\fP.
+.TP
+\fB\-M\fP
+Do not attempt to keep all flowlines in memory when using \fB\-D\fP and/or \fB\-P\fP.  Should you run out of memory you can
+use this option to compute flowlines on-the-fly.  It will be slower as we no longer
+can reuse the flowlines calculated for the CVA step.  Cannot be used with \fB\-B\fP or the
+multi-slice mode in \fB\-Z\fP.
+.TP
+\fB\-N\fP
+Set the upper age to assign to nodes whose crustal age is unknown (i.e., NaN) [no upper age].
+Also see \fB\-A\fP.
+.TP
+\fB\-P\fP
+Use flowlines to determine the flowline age at the CVA maximum for each node and create a Predicted
+Age (PA) grid with these values at the originating nodes.
+.TP
+\fB\-Q\fP
+Either give (1) a single ID to use or (2) the name of a file with a list of IDs to use [Default uses all IDs].
+Each line would be TAG ID [w e s n].  The \fIw/e/s/n\fP zoom box is optional; if specified it means
+we only trace the flowline if inside this region [Default uses region set by \fB\-R\fP].  Requires \fB\-L\fP.
+.TP
+\fB\-S\fP
+Normalize the resulting CVA grid to percentages of the CVA maximum.  This also normalizes the DI grid (if requested).
+.TP
+\fB\-T\fP
+Truncate crustal ages given via the \fB\-A\fP option that exceed the upper age set with \fB\-N\fP [no truncation].
+.TP
+\fB\-U\fP
+After a node passes the test implied by \fB\-Z\fP, use this \fIfixed_val\fP instead in the calculations.
+[Default uses individual node values].
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-Z\fP
+Ignore nodes with z-values lower than \fIz_min\fP [0] and optionally larger than \fIz_max\fP [Inf].
+Give \fIz_min/z_max/z_inc\fP to make separate CVA grids for each \fIz\fP-slice [Default makes one CVA grid].
+Multi-slicing cannot be used with \fB\-M\fP.
+.SH EXAMPLES
+To create a CVA image from the Pacific topography grid Pac_res_topo.grd,
+using the DC85.d Euler poles, and only output a grid for the specified domain, run
+.br
+.sp
+\fBgrdspotter\fP Pac_res_topo.grd \fB\-E\fP DC85.d \fB\-G\fP CVA.grd \fB\-R\fP 190/220/15/25 \fB\-I\fP 2\fBm\fP \fB\-N\fP 145 \fB\-T\fP \fB\-V\fP
+.br
+.sp
+This file can then be plotted with \fBgrdimage\fP.
+.SH COORDINATES
+Data coordinates are assumed to be geodetic and will automatically be converted to geocentric
+before spherical rotations are performed.  We convert back to geodetic coordinates for output.
+Note: If your data already are geocentric, you can avoid the conversion by using --ELLIPSOID=sphere.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR grdimage (1),
+.IR grdrotater (1),
+.IR project (1),
+.IR mapproject (1),
+.IR backtracker (1),
+.IR hotspotter (1),
+.IR originator (1)
+.SH REFERENCES
+Wessel, P., 1999, "Hotspotting" tools released, EOS Trans. AGU, 80 (29), p. 319.
+.br

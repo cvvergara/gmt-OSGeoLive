@@ -1,4 +1,4 @@
-#	$Id: carter.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: carter.d 9545 2011-07-27 19:31:54Z pwessel $
 # ASCII Carter correction table (see mgd77togmt.c for format)
 # Based on the tree files carter_*.b in GMT prior to 3.2.
 # 

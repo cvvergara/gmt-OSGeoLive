@@ -1,5 +1,0 @@
-#
-# $Id: coastline.conf.in 9988 2012-04-16 18:40:42Z fwobbe $
-# GSHHG shoreline search path for in-build-dir tests
-#
-@GSHHG_PATH@

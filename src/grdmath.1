@@ -1,0 +1,568 @@
+.TH GRDMATH 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+grdmath \- Reverse Polish Notation calculator for grid files
+.SH SYNOPSIS
+\fBgrdmath\fP [ \fB\-F\fP ] [ \fB\-I\fP\fIxinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP][/\fIyinc\fP[\fIunit\fP][\fB=\fP|\fB+\fP]] ] [ \fB\-M\fP ] [ \fB\-N\fP ] [ \fB\-R\fP\fIwest\fP/\fIeast\fP/\fIsouth\fP/\fInorth\fP[\fBr\fP] ] [ \fB\-V\fP ] [ \fB\-bi\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ] [ \fB\-f\fP\fIcolinfo\fP ] 
+\fIoperand\fP [ \fIoperand\fP ] \fBOPERATOR\fP [ \fIoperand\fP ] \fBOPERATOR\fP ... \fB=\fP \fIoutgrdfile\fP
+.SH DESCRIPTION
+\fBgrdmath\fP will perform operations like add, subtract, multiply, and divide
+on one or more grid files or constants using Reverse Polish Notation (RPN)
+syntax (e.g., Hewlett-Packard calculator-style).  Arbitrarily complicated expressions
+may therefore be evaluated; the final result is written to an output grid file.
+When two grids are on the stack, each element in file A is modified by the corresponding element in file B.
+However, some operators only require one operand (see below).  If no grid files are used in the
+expression then options \fB\-R\fP, \fB\-I\fP must be set (and optionally \fB\-F\fP).  The expression
+\fB=\fP \fIoutgrdfile\fP can occur as many times as the depth of the stack allows.
+.TP
+\fIoperand\fP
+If \fIoperand\fP can be opened as a file it will be read as a grid file.  If not a file, it is interpreted
+as a numerical constant or a special symbol (see below).
+.TP
+\fIoutgrdfile\fP
+The name of a 2-D grid file that will hold the final result.
+(See GRID FILE FORMATS below).
+.TP
+.B OPERATORS
+Choose among the following 147 operators. "args" are the number of input and output arguments.
+.br
+.sp
+Operator	args	Returns
+.br
+.sp
+\fBABS      \fP	1 1	abs (A).
+.br
+\fBACOS     \fP	1 1	acos (A).
+.br
+\fBACOSH    \fP	1 1	acosh (A).
+.br
+\fBACOT     \fP	1 1	acot (A).
+.br
+\fBACSC     \fP	1 1	acsc (A).
+.br
+\fBADD      \fP	2 1	A + B.
+.br
+\fBAND      \fP	2 1	NaN if A and B == NaN, B if A == NaN, else A.
+.br
+\fBASEC     \fP	1 1	asec (A).
+.br
+\fBASIN     \fP	1 1	asin (A).
+.br
+\fBASINH    \fP	1 1	asinh (A).
+.br
+\fBATAN     \fP	1 1	atan (A).
+.br
+\fBATAN2    \fP	2 1	atan2 (A, B).
+.br
+\fBATANH    \fP	1 1	atanh (A).
+.br
+\fBBEI      \fP	1 1	bei (A).
+.br
+\fBBER      \fP	1 1	ber (A).
+.br
+\fBCAZ      \fP	2 1	Cartesian azimuth from grid nodes to stack x,y.
+.br
+\fBCBAZ     \fP	2 1	Cartesian backazimuth from grid nodes to stack x,y.
+.br
+\fBCDIST    \fP	2 1	Cartesian distance between grid nodes and stack x,y.
+.br
+\fBCEIL     \fP	1 1	ceil (A) (smallest integer >= A).
+.br
+\fBCHICRIT  \fP	2 1	Critical value for chi-squared-distribution, with alpha = A and n = B.
+.br
+\fBCHIDIST  \fP	2 1	chi-squared-distribution P(chi2,n), with chi2 = A and n = B.
+.br
+\fBCORRCOEFF\fP	2 1	Correlation coefficient r(A, B).
+.br
+\fBCOS      \fP	1 1	cos (A) (A in radians).
+.br
+\fBCOSD     \fP	1 1	cos (A) (A in degrees).
+.br
+\fBCOSH     \fP	1 1	cosh (A).
+.br
+\fBCOT      \fP	1 1	cot (A) (A in radians).
+.br
+\fBCOTD     \fP	1 1	cot (A) (A in degrees).
+.br
+\fBCPOISS   \fP	2 1	Cumulative Poisson distribution F(x,lambda), with x = A and lambda = B.
+.br
+\fBCSC      \fP	1 1	csc (A) (A in radians).
+.br
+\fBCSCD     \fP	1 1	csc (A) (A in degrees).
+.br
+\fBCURV     \fP	1 1	Curvature of A (Laplacian).
+.br
+\fBD2DX2    \fP	1 1	d^2(A)/dx^2 2nd derivative.
+.br
+\fBD2DXY    \fP	1 1	d^2(A)/dxdy 2nd derivative.
+.br
+\fBD2DY2    \fP	1 1	d^2(A)/dy^2 2nd derivative.
+.br
+\fBD2R      \fP	1 1	Converts Degrees to Radians.
+.br
+\fBDDX      \fP	1 1	d(A)/dx Central 1st derivative.
+.br
+\fBDDY      \fP	1 1	d(A)/dy Central 1st derivative.
+.br
+\fBDEG2KM   \fP	1 1	Converts Spherical Degrees to Kilometers.
+.br
+\fBDILOG    \fP	1 1	dilog (A).
+.br
+\fBDIV      \fP	2 1	A / B.
+.br
+\fBDUP      \fP	1 2	Places duplicate of A on the stack.
+.br
+\fBEQ       \fP	2 1	1 if A == B, else 0.
+.br
+\fBERF      \fP	1 1	Error function erf (A).
+.br
+\fBERFC     \fP	1 1	Complementary Error function erfc (A).
+.br
+\fBERFINV   \fP	1 1	Inverse error function of A.
+.br
+\fBEXCH     \fP	2 2	Exchanges A and B on the stack.
+.br
+\fBEXP      \fP	1 1	exp (A).
+.br
+\fBEXTREMA  \fP	1 1	Local Extrema: +2/-2 is max/min, +1/-1 is saddle with max/min in x, 0 elsewhere.
+.br
+\fBFACT     \fP	1 1	A! (A factorial).
+.br
+\fBFCRIT    \fP	3 1	Critical value for F-distribution, with alpha = A, n1 = B, and n2 = C.
+.br
+\fBFDIST    \fP	3 1	F-distribution Q(F,n1,n2), with F = A, n1 = B, and n2 = C.
+.br
+\fBFLIPLR   \fP	1 1	Reverse order of values in each row.
+.br
+\fBFLIPUD   \fP	1 1	Reverse order of values in each column.
+.br
+\fBFLOOR    \fP	1 1	floor (A) (greatest integer <= A).
+.br
+\fBFMOD     \fP	2 1	A % B (remainder after truncated division).
+.br
+\fBGE       \fP	2 1	1 if A >= B, else 0.
+.br
+\fBGT       \fP	2 1	1 if A > B, else 0.
+.br
+\fBHYPOT    \fP	2 1	hypot (A, B) = sqrt (A*A + B*B).
+.br
+\fBI0       \fP	1 1	Modified Bessel function of A (1st kind, order 0).
+.br
+\fBI1       \fP	1 1	Modified Bessel function of A (1st kind, order 1).
+.br
+\fBIN       \fP	2 1	Modified Bessel function of A (1st kind, order B).
+.br
+\fBINRANGE  \fP	3 1	1 if B <= A <= C, else 0.
+.br
+\fBINSIDE   \fP	1 1	1 when inside or on polygon(s) in A, else 0.
+.br
+\fBINV      \fP	1 1	1 / A.
+.br
+\fBISNAN    \fP	1 1	1 if A == NaN, else 0.
+.br
+\fBJ0       \fP	1 1	Bessel function of A (1st kind, order 0).
+.br
+\fBJ1       \fP	1 1	Bessel function of A (1st kind, order 1).
+.br
+\fBJN       \fP	2 1	Bessel function of A (1st kind, order B).
+.br
+\fBK0       \fP	1 1	Modified Kelvin function of A (2nd kind, order 0).
+.br
+\fBK1       \fP	1 1	Modified Bessel function of A (2nd kind, order 1).
+.br
+\fBKEI      \fP	1 1	kei (A).
+.br
+\fBKER      \fP	1 1	ker (A).
+.br
+\fBKM2DEG   \fP	1 1	Converts Kilometers to Spherical Degrees.
+.br
+\fBKN       \fP	2 1	Modified Bessel function of A (2nd kind, order B).
+.br
+\fBKURT     \fP	1 1	Kurtosis of A.
+.br
+\fBLDIST    \fP	1 1	Compute distance from lines in multi-segment ASCII file A.
+.br
+\fBLE       \fP	2 1	1 if A <= B, else 0.
+.br
+\fBLMSSCL   \fP	1 1	LMS scale estimate (LMS STD) of A.
+.br
+\fBLOG      \fP	1 1	log (A) (natural log).
+.br
+\fBLOG10    \fP	1 1	log10 (A) (base 10).
+.br
+\fBLOG1P    \fP	1 1	log (1+A) (accurate for small A).
+.br
+\fBLOG2     \fP	1 1	log2 (A) (base 2).
+.br
+\fBLOWER    \fP	1 1	The lowest (minimum) value of A.
+.br
+\fBLRAND    \fP	2 1	Laplace random noise with mean A and std. deviation B.
+.br
+\fBLT       \fP	2 1	1 if A < B, else 0.
+.br
+\fBMAD      \fP	1 1	Median Absolute Deviation (L1 STD) of A.
+.br
+\fBMAX      \fP	2 1	Maximum of A and B.
+.br
+\fBMEAN     \fP	1 1	Mean value of A.
+.br
+\fBMED      \fP	1 1	Median value of A.
+.br
+\fBMIN      \fP	2 1	Minimum of A and B.
+.br
+\fBMOD      \fP	2 1	A mod B (remainder after floored division).
+.br
+\fBMODE     \fP	1 1	Mode value (Least Median of Squares) of A.
+.br
+\fBMUL      \fP	2 1	A * B.
+.br
+\fBNAN      \fP	2 1	NaN if A == B, else A.
+.br
+\fBNEG      \fP	1 1	-A.
+.br
+\fBNEQ      \fP	2 1	1 if A != B, else 0.
+.br
+\fBNOT      \fP	1 1	NaN if A == NaN, 1 if A == 0, else 0.
+.br
+\fBNRAND    \fP	2 1	Normal, random values with mean A and std. deviation B.
+.br
+\fBOR       \fP	2 1	NaN if A or B == NaN, else A.
+.br
+\fBPDIST    \fP	1 1	Compute distance from points in ASCII file A.
+.br
+\fBPLM      \fP	3 1	Associated Legendre polynomial P(A) degree B order C.
+.br
+\fBPLMg     \fP	3 1	Normalized associated Legendre polynomial P(A) degree B order C (geophysical convention).
+.br
+\fBPOP      \fP	1 0	Delete top element from the stack.
+.br
+\fBPOW      \fP	2 1	A ^ B.
+.br
+\fBPQUANT   \fP	2 1	The B'th Quantile (0-100%) of A.\"'
+.br
+\fBPSI      \fP	1 1	Psi (or Digamma) of A.
+.br
+\fBPV       \fP	3 1	Legendre function Pv(A) of degree v = real(B) + imag(C).
+.br
+\fBQV       \fP	3 1	Legendre function Qv(A) of degree v = real(B) + imag(C).
+.br
+\fBR2       \fP	2 1	R2 = A^2 + B^2.
+.br
+\fBR2D      \fP	1 1	Convert Radians to Degrees.
+.br
+\fBRAND     \fP	2 1	Uniform random values between A and B.
+.br
+\fBRINT     \fP	1 1	rint (A) (nearest integer).
+.br
+\fBROTX     \fP	2 1	Rotate A by the (constant) shift B in x-direction.
+.br
+\fBROTY     \fP	2 1	Rotate A by the (constant) shift B in y-direction.
+.br
+\fBSAZ      \fP	2 1	Spherical azimuth from grid nodes to stack x,y.
+.br
+\fBSBAZ     \fP	2 1	Spherical backazimuth from grid nodes to stack x,y.
+.br
+\fBSDIST    \fP	2 1	Spherical (Great circle|geodesic) distance (in km) between grid nodes and stack lon,lat (A, B).
+.br
+\fBSEC      \fP	1 1	sec (A) (A in radians).
+.br
+\fBSECD     \fP	1 1	sec (A) (A in degrees).
+.br
+\fBSIGN     \fP	1 1	sign (+1 or -1) of A.
+.br
+\fBSIN      \fP	1 1	sin (A) (A in radians).
+.br
+\fBSINC     \fP	1 1	sinc (A) (sin (pi*A)/(pi*A)).
+.br
+\fBSIND     \fP	1 1	sin (A) (A in degrees).
+.br
+\fBSINH     \fP	1 1	sinh (A).
+.br
+\fBSKEW     \fP	1 1	Skewness of A.
+.br
+\fBSQR      \fP	1 1	A^2.
+.br
+\fBSQRT     \fP	1 1	sqrt (A).
+.br
+\fBSTD      \fP	1 1	Standard deviation of A.
+.br
+\fBSTEP     \fP	1 1	Heaviside step function: H(A).
+.br
+\fBSTEPX    \fP	1 1	Heaviside step function in x: H(x-A).
+.br
+\fBSTEPY    \fP	1 1	Heaviside step function in y: H(y-A).
+.br
+\fBSUB      \fP	2 1	A - B.
+.br
+\fBTAN      \fP	1 1	tan (A) (A in radians).
+.br
+\fBTAND     \fP	1 1	tan (A) (A in degrees).
+.br
+\fBTANH     \fP	1 1	tanh (A).
+.br
+\fBTCRIT    \fP	2 1	Critical value for Student's t-distribution, with alpha = A and n = B.\"'
+.br
+\fBTDIST    \fP	2 1	Student's t-distribution A(t,n), with t = A, and n = B.\"'
+.br
+\fBTN       \fP	2 1	Chebyshev polynomial Tn(-1<t<+1,n), with t = A, and n = B.
+.br
+\fBUPPER    \fP	1 1	The highest (maximum) value of A.
+.br
+\fBXOR      \fP	2 1	0 if A == NaN and B == NaN, NaN if B == NaN, else A.
+.br
+\fBY0       \fP	1 1	Bessel function of A (2nd kind, order 0).
+.br
+\fBY1       \fP	1 1	Bessel function of A (2nd kind, order 1).
+.br
+\fBYLM      \fP	2 2	Re and Im orthonormalized spherical harmonics degree A order B.
+.br
+\fBYLMg     \fP	2 2	Cos and Sin normalized spherical harmonics degree A order B (geophysical convention).
+.br
+\fBYN       \fP	2 1	Bessel function of A (2nd kind, order B).
+.br
+\fBZCRIT    \fP	1 1	Critical value for the normal-distribution, with alpha = A.
+.br
+\fBZDIST    \fP	1 1	Cumulative normal-distribution C(x), with x = A.
+.br
+.TP
+.B SYMBOLS
+The following symbols have special meaning:
+.br
+.sp
+\fBPI\fP	3.1415926...
+.br
+\fBE \fP	2.7182818...
+.br
+\fBEULER \fP	0.5772156...
+.br
+\fBXMIN \fP	Minimum x value
+.br
+\fBXMAX \fP	Maximum x value
+.br
+\fBXINC \fP	x increment
+.br
+\fBNX \fP	The number of x nodes
+.br
+\fBYMIN \fP	Minimum y value
+.br
+\fBYMAX \fP	Maximum y value
+.br
+\fBYINC \fP	y increment
+.br
+\fBNY \fP	The number of y nodes
+.br
+\fBX \fP	Grid with x-coordinates
+.br
+\fBY \fP	Grid with y-coordinates
+.br
+\fBXn \fP	Grid with normalized [-1 to +1] x-coordinates
+.br
+\fBYn \fP	Grid with normalized [-1 to +1] y-coordinates
+.SH OPTIONS
+.TP
+\fB\-F\fP
+Force pixel node registration [Default is gridline registration].
+(Node registrations are defined in \fBGMT\fP Cookbook Appendix B on grid file formats.)
+Only used with \fB\-R\fP \fB\-I\fP.
+.TP
+\fB\-I\fP
+\fIx_inc\fP [and optionally \fIy_inc\fP] is the grid spacing. Optionally, append a suffix
+modifier.  \fBGeographical (degrees) coordinates\fP: Append \fBm\fP to
+indicate arc minutes or \fBc\fP to indicate arc seconds.  If one of the units \fBe\fP, \fBk\fP, \fBi\fP,
+or \fBn\fP is appended instead, the increment is assumed to be given in meter, km, miles, or
+nautical miles, respectively, and will be converted to the equivalent degrees longitude at
+the middle latitude of the region (the conversion depends on \fBELLIPSOID\fP).  If /\fIy_inc\fP is given but set to 0 it will be reset equal to
+\fIx_inc\fP; otherwise it will be converted to degrees latitude.  
+\fBAll coordinates\fP: If \fB=\fP is appended then
+the corresponding max \fIx\fP (\fIeast\fP) or \fIy\fP (\fInorth\fP) may be slightly adjusted to fit exactly the given increment
+[by default the increment may be adjusted slightly to fit the given domain].  Finally, instead
+of giving an increment you may specify the \fInumber of nodes\fP desired by appending \fB+\fP to
+the supplied integer argument; the increment is then recalculated from the number of nodes and the domain.
+The resulting increment value depends on whether you have selected a gridline-registered
+or pixel-registered grid; see Appendix B for details.  Note: if \fB\-R\fP\fIgrdfile\fP is used then
+grid spacing has already been initialized; use \fB\-I\fP to override the values.
+.TP
+\fB\-M\fP
+By default any derivatives calculated are in z_units/ x(or y)_units.
+However, the user may choose this option to convert dx,dy in degrees of
+longitude,latitude into meters using a flat Earth approximation, so that
+gradients are in z_units/meter.
+.TP
+\fB\-N\fP
+Turn off strict domain match checking when multiple grids are manipulated [Default will insist
+that each grid domain is within 1e-4 * grid_spacing of the domain of the first grid listed].
+.TP
+\fB\-R\fP
+\fIxmin\fP, \fIxmax\fP, \fIymin\fP, and \fIymax\fP specify the Region of interest.  For geographic
+regions, these limits correspond to \fIwest, east, south,\fP and \fInorth\fP and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude).  Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For calendar time coordinates you may either give (a) relative
+time (relative to the selected \fBTIME_EPOCH\fP and in the selected \fBTIME_UNIT\fP; append \fBt\fP to
+\fB\-JX\fP|\fBx\fP), or (b) absolute time of the form [\fIdate\fP]\fBT\fP[\fIclock\fP]
+(append \fBT\fP to \fB\-JX\fP|\fBx\fP).  At least one of \fIdate\fP and \fIclock\fP
+must be present; the \fBT\fP is always required.  The \fIdate\fP string must be of the form [-]yyyy[-mm[-dd]]
+(Gregorian calendar) or yyyy[-Www[-d]] (ISO week calendar), while the \fIclock\fP string must be of
+the form hh:mm:ss[.xxx].  The use of delimiters and their type and positions must be exactly as indicated
+(however, input, output and plot formats are customizable; see \fBgmtdefaults\fP). 
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-bi\fP
+Selects binary input.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of columns in your binary input file
+if it exceeds the columns needed by the program.
+Or append \fBc\fP if the input file is netCDF. Optionally, append \fIvar1\fP\fB/\fP\fIvar2\fP\fB/\fP\fI...\fP to
+specify the variables to be read.
+The binary input option only applies to the data files needed by operators \fBLDIST\fP, \fPPDIST\fP,
+and \fBINSIDE\fP.
+.TP
+\fB\-f\fP
+Special formatting of input and/or output columns (time or geographical data).
+Specify \fBi\fP or \fBo\fP to make this apply only to input or output [Default applies to both].
+Give one or more columns (or column ranges) separated by commas.
+Append \fBT\fP (absolute calendar time), \fBt\fP (relative time in chosen \fBTIME_UNIT\fP since \fBTIME_EPOCH\fP),
+\fBx\fP (longitude), \fBy\fP (latitude), or \fBf\fP (floating point) to each column
+or column range item.  Shorthand \fB\-f\fP[\fBi\fP|\fBo\fP]\fBg\fP means \fB\-f\fP[\fBi\fP|\fBo\fP]0\fBx\fP,1\fBy\fP
+(geographic coordinates).
+.SH NOTES ON OPERATORS
+(1) The operator \fBSDIST\fP calculates spherical distances in km between the (lon, lat)
+point on the stack and all node positions in the grid.  The grid domain
+and the (lon, lat) point are expected to be in degrees.  Similarly, the \fBSAZ\fP and \fBSBAZ\fP
+operators calculate spherical azimuth and back-azimuths in degrees, respectively.
+A few operators (\fBPDIST\fP, \fBLDIST\fP, and \fBINSIDE\fP) expects their argument to be
+a single file with points, lines, or polygons, respectively. These distances will be in km (for
+geographical data, i.e, \fB\-fg\fP and Cartesian otherwise. Be aware that \fBLDIST\fP in particular
+can be slow for large grids and numerous line segments.
+Note: If the current \fBELLIPSOID\fP is not spherical then geodesics are used in the calculations.
+.br
+.sp
+(2) The operator \fBPLM\fP calculates the associated Legendre polynomial
+of degree L and order M (0 <= M <= L), and its argument is the sine of the latitude.
+\fBPLM\fP is not normalized and includes the Condon-Shortley phase (-1)^M.
+\fBPLMg\fP is normalized in the way that is most commonly used in geophysics.
+The C-S phase can be added by using -M as argument.
+\fBPLM\fP will overflow at higher degrees, whereas \fBPLMg\fP is stable until ultra high degrees (at
+least 3000).
+.br
+.sp
+(3) The operators \fBYLM\fP and \fBYLMg\fP calculate normalized spherical harmonics for degree L and
+order M (0 <= M <= L) for all positions in the grid, which is assumed to be in degrees.
+\fBYLM\fP and \fBYLMg\fP return two grids, the real (cosine) and imaginary (sine) component
+of the complex spherical harmonic.  Use the \fBPOP\fP operator (and \fBEXCH\fP) to
+get rid of one of them, or save both by giving two consecutive = file.grd calls.
+.br
+The orthonormalized complex harmonics \fBYLM\fP are most commonly used in physics and seismology.
+The square of \fBYLM\fP integrates to 1 over a sphere.
+In geophysics, \fBYLMg\fP is normalized to produce unit power when averaging the cosine and sine terms
+(separately!) over a sphere (i.e., their squares each integrate to 4 pi).
+The Condon-Shortley phase (-1)^M is not included in \fBYLM\fP or \fBYLMg\fP, but it can be added by using -M
+as argument.
+.br
+.sp
+(4) All the derivatives are based on central finite differences, with natural boundary conditions.
+.br
+.sp
+(5) Files that have the same names as some operators, e.g., \fBADD\fP, \fBSIGN\fP, \fB=\fP, etc. should be
+identified by prepending the current directory (i.e., ./LOG).
+.br
+.sp
+(6) Piping of files is not allowed.
+.br
+.sp
+(7) The stack depth limit is hard-wired to 100.
+.br
+.sp
+(8) All functions expecting a positive radius (e.g., \fBLOG\fP, \fBKEI\fP, etc.) are passed the
+absolute value of their argument.
+.SH GRID VALUES PRECISION
+Regardless of the precision of the input data, GMT programs that create
+grid files will internally hold the grids in 4-byte floating point
+arrays.  This is done to conserve memory and furthermore most if not all
+real data can be stored using 4-byte floating point values.  Data with
+higher precision (i.e., double precision values) will lose that precision
+once GMT operates on the grid or writes out new grids.  To limit loss
+of precision when processing data you should always consider normalizing
+the data prior to processing.
+.SH GRID FILE FORMATS
+By default \fBGMT\fP writes out grid as single precision floats in a COARDS-complaint netCDF file format.
+However, \fBGMT\fP is able to produce grid files in many other commonly used grid file formats and also facilitates so called "packing" of grids,
+writing out floating point data as 2- or 4-byte integers. To specify the precision, scale and offset, the user should add the suffix
+\fB=\fP\fIid\fP[\fB/\fP\fIscale\fP\fB/\fP\fIoffset\fP[\fB/\fP\fInan\fP]], where \fIid\fP is a two-letter identifier of the grid type and precision, and \fIscale\fP and \fIoffset\fP are optional scale factor
+and offset to be applied to all grid values, and \fInan\fP is the value used to indicate missing data.
+When reading grids, the format is generally automatically recognized. If not, the same suffix can be added to input grid file names.
+See \fBgrdreformat\fP(1) and Section 4.17 of the GMT Technical Reference and Cookbook for more information.
+.P
+When reading a netCDF file that contains multiple grids, \fBGMT\fP will read, by default, the first 2-dimensional grid that can find in that
+file. To coax \fBGMT\fP into reading another multi-dimensional variable in the grid file, append \fB?\fP\fIvarname\fP to the file name, where
+\fIvarname\fP is the name of the variable. Note that you may need to escape the special meaning of \fB?\fP in your shell program
+by putting a backslash in front of it, or by placing the filename and suffix between quotes or double quotes.
+The \fB?\fP\fIvarname\fP suffix can also be used for output grids to specify a variable name different from the default: "z".
+See \fBgrdreformat\fP(1) and Section 4.18 of the GMT Technical Reference and Cookbook for more information,
+particularly on how to read splices of 3-, 4-, or 5-dimensional grids.
+.SH GEOGRAPHICAL AND TIME COORDINATES
+When the output grid type is netCDF, the coordinates will be labeled "longitude", "latitude", or "time" based on the
+attributes of the input data or grid (if any) or on the
+\fB\-f\fP or \fB\-R\fP options. For example, both \fB\-f0x\fP \fB\-f1t\fP and \fB\-R\fP 90w/90e/0t/3t will result in a longitude/time
+grid. When the x, y, or z coordinate is time, it will be stored in the grid as relative time since epoch as 
+specified by \fBTIME_UNIT\fP and \fBTIME_EPOCH\fP in the \.gmtdefaults file or on the command line.
+In addition, the \fBunit\fP attribute of the time variable will indicate both this unit and epoch.
+.SH EXAMPLES
+To take log10 of the average of 2 files, use
+.br
+.sp
+\fBgrdmath\fP file1.grd file2.grd \fBADD\fP 0.5 \fBMUL LOG10 =\fP file3.grd
+.br
+.sp
+Given the file ages.grd, which holds seafloor ages in m.y., use the relation
+depth(in m) = 2500 + 350 * sqrt (age) to estimate normal seafloor depths:
+.br
+.sp
+\fBgrdmath\fP ages.grd \fBSQRT\fP 350 \fBMUL \fP2500 \fBADD =\fP depths.grd
+.br
+.sp
+To find the angle a (in degrees) of the largest principal stress from the stress tensor given by the
+three files s_xx.grd s_yy.grd, and s_xy.grd from the relation tan (2*a) = 2 * s_xy / (s_xx - s_yy), use
+.br
+.sp
+\fBgrdmath\fP 2 s_xy.grd \fBMUL\fP s_xx.grd s_yy.grd \fBSUB DIV ATAN\fP 2 \fBDIV =\fP direction.grd
+.br
+.sp
+To calculate the fully normalized spherical harmonic of degree 8 and order
+4 on a 1 by 1 degree world map, using the real amplitude 0.4 and the
+imaginary amplitude 1.1:
+.br
+.sp
+\fBgrdmath\fP \fB\-R\fP 0/360/-90/90 \fB\-I\fP 1 8 4 \fBYML\fP 1.1 \fBMUL EXCH\fP 0.4 \fBMUL ADD\fP = harm.grd
+.br
+.sp
+To extract the locations of local maxima that exceed 100 mGal in the file faa.grd:
+.br
+.sp
+\fBgrdmath\fP faa.grd \fBDUP EXTREMA\fP 2 \fBEQ MUL DUP\fP 100 \fBGT MUL\fP 0 \fBNAN\fP = z.grd
+.br
+\fBgrd2xyz\fP z.grd \fB\-S\fP > max.xyz
+.SH REFERENCES
+Abramowitz, M., and I. A. Stegun, 1964, \fIHandbook of Mathematical
+Functions\fP, Applied Mathematics Series, vol. 55, Dover, New York.
+.br
+Holmes, S. A., and W. E. Featherstone, 2002, A unified approach to the Clenshaw summation and the
+recursive computation of very high degree and order normalised associated Legendre functions.
+\fIJournal of Geodesy\fP, 76, 279-299.
+.br
+Press, W. H.,  S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery, 1992, 
+\fINumerical Recipes\fP, 2nd edition, Cambridge Univ., New York.
+.br
+Spanier, J., and K. B. Oldman, 1987,
+\fIAn Atlas of Functions\fP, Hemisphere Publishing Corp.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR gmtmath (1),
+.IR grd2xyz (1),
+.IR grdedit (1),
+.IR grdinfo (1),
+.IR xyz2grd (1)

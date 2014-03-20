@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77_e77.h 10084 2012-05-12 21:04:53Z fwobbe $	
+ *	$Id: mgd77_e77.h 10173 2014-01-01 09:52:34Z pwessel $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2004-2012 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2004-2014 by P. Wessel and M. T. Chandler
  *	File:	mgd77_e77.h
  *
  *	Include file for mgd77 programs

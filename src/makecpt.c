@@ -1,403 +1,282 @@
 /*--------------------------------------------------------------------
- *	$Id: makecpt.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: makecpt.c 10173 2014-01-01 09:52:34Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
  *
- * Authors:	Walter H.F. Smith & P. Wessel
- * Date:	1-JAN-2010
- * Version:	5 API
+ * Read an existing cpt table and desired z grid and produce
+ * a GMT cpt file.  Can be inverted [-I] or made continuous [-Z].
+ * Discrete color jumps in cpt tables are handled correctly.
+ * Default color table is still rainbow.
  *
- * Brief synopsis: Reads an existing cpt table and desired output grid
- * and produces a GMT cpt file.  Can be inverted [-I] or made to be
- * continuous [-Z].  Discrete color jumps in cpt tables are handled
- * correctly.  Default color table is "rainbow".
- *
+ * Author:	Walter H.f. Smith & P. Wessel
+ * Date:	22-SEP-2000
+ * Version:	4
  */
 
-#define THIS_MODULE_NAME	"makecpt"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Make GMT color palette tables"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->Vh"
-
-unsigned int GMT_log_array (struct GMT_CTRL *GMT, double min, double max, double delta, double **array);
-
-/* Control structure for makecpt */
+#include "gmt.h"
 
 struct MAKECPT_CTRL {
-	struct Out {	/* -> */
-		bool active;
-		char *file;
-	} Out;
-	struct A {	/* -A+ */
-		bool active;
-		unsigned int mode;
-		double value;
-	} A;
 	struct C {	/* -C<cpt> */
-		bool active;
+		GMT_LONG active;
 		char *file;
 	} C;
-	struct D {	/* -D[i|o] */
-		bool active;
-		unsigned int mode;
+	struct D {	/* -D */
+		GMT_LONG active;
 	} D;
-	struct F {	/* -F[r|R|h|c] */
-		bool active;
-		unsigned int model;
-	} F;
-	struct G {	/* -Glow/high for input CPT truncation */
-		bool active;
-		double z_low, z_high;
-	} G;
 	struct I {	/* -I */
-		bool active;
+		GMT_LONG active;
 	} I;
 	struct M {	/* -M */
-		bool active;
+		GMT_LONG active;
 	} M;
 	struct N {	/* -N */
-		bool active;
+		GMT_LONG active;
 	} N;
-	struct T {	/* -T<z_min/z_max/z_inc> */
-		bool active;
+	struct T {	/* -T<z0/z1/dz> */
+		GMT_LONG active;
+		GMT_LONG cpt;
 		double low, high, inc;
 		char *file;
 	} T;
-	struct Q {	/* -Q[i|o] */
-		bool active;
-		unsigned int mode;
+	struct Q {	/* -Q[i|o */
+		GMT_LONG active;
+		GMT_LONG mode;
 	} Q;
-	struct W {	/* -W */
-		bool active;
-	} W;
 	struct Z {	/* -Z */
-		bool active;
+		GMT_LONG active;
 	} Z;
 };
 
-void *New_makecpt_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
-	struct MAKECPT_CTRL *C;
-
-	C = GMT_memory (GMT, NULL, 1, struct MAKECPT_CTRL);
-
-	/* Initialize values whose defaults are not 0/false/NULL */
-	C->G.z_low = C->G.z_high = GMT->session.d_NaN;	/* No truncation */
-	return (C);
-}
-
-void Free_makecpt_Ctrl (struct GMT_CTRL *GMT, struct MAKECPT_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
-	if (C->Out.file) free (C->Out.file);
-	if (C->C.file) free (C->C.file);
-	if (C->T.file) free (C->T.file);
-	GMT_free (GMT, C);
-}
-
-int GMT_makecpt_usage (struct GMTAPI_CTRL *API, int level)
+int main(int argc, char **argv)
 {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: makecpt [-A[+]<transparency>] [-C<cpt>] [-D[i|o]] [-F[R|r|h|c] [-G<zlo>/<zhi>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "	[-I] [-M] [-N] [-Q[i|o]] [-T<z_min>/<z_max>[/<z_inc>[+]] | -T<table>]\n\t[%s] [-Z] [%s]\n", GMT_V_OPT, GMT_ho_OPT);
+	GMT_LONG	i, nz;
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	GMT_LONG	error = FALSE;
 
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-A Set constant transparency for all colors; prepend + to also include back-, for-, and nan-colors [0]\n");
-	if (GMT_list_cpt (API->GMT, 'C')) return (EXIT_FAILURE);	/* Display list of available color tables */
-	GMT_Message (API, GMT_TIME_NONE, "\t-D Set back- and foreground color to match the bottom/top limits\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   in the output cpt file [Default uses color table]. Append i to match the\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   bottom/top values in the input cpt file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-F Select the color model for output (R for r/g/b or grayscale or colorname,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   r for r/g/b only, h for h-s-v, c for c/m/y/k).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-G Truncate incoming CPT to be limited to the z-range <zlo>/<zhi>.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   To accept one if the incoming limits, set to other to NaN.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-I Reverse sense of color table as well as back- and foreground color.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-M Use GMT defaults to set back-, foreground, and NaN colors\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   [Default uses the settings in the color table].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Do not write back-, foreground, and NaN colors [Default will].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Q Assign a logarithmic colortable [Default is linear].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   -Qi: z-values are log10(z). Assign colors and write z [Default].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   -Qo: z-values are z; take log10(z), assign colors and write z.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t        If -T<z_min/z_max/z_inc> is given, then z_inc must be 1, 2, or 3\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t        (as in logarithmic annotations; see -B in psbasemap).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-T Give <z_min>, <z_max>, and <z_inc> for colorscale in z-units,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   or filename with custom z-values.  If no -T option is given,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   then the range in the master cptfile will be used.  If no increment\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   is given we match the number of entries in the master CPT file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append + to <z_inc> to indicate number of z-values to produce instead.\n");
-	GMT_Option (API, "V");
-	GMT_Message (API, GMT_TIME_NONE, "\t-W Do not interpolate color palette.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Z Create a continuous color palette [Default is discontinuous,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   i.e., constant color intervals].\n");
-	GMT_Option (API, "h,.");
+	double	*z = NULL;
 
-	return (EXIT_FAILURE);
-}
+	FILE	*fpc = NULL, *fpl = NULL;
 
-int GMT_makecpt_parse (struct GMT_CTRL *GMT, struct MAKECPT_CTRL *Ctrl, struct GMT_OPTION *options)
-{
-	/* This parses the options provided to makecpt and sets parameters in CTRL.
-	 * Any GMT common options will override values set previously by other commands.
-	 * It also replaces any file names specified as input or output with the data ID
-	 * returned when registering these sources/destinations with the API.
-	 */
-
-	int n;
-	unsigned int n_errors = 0, n_files[2] = {0, 0};
-	char txt_a[GMT_LEN32] = {""}, txt_b[GMT_LEN32] = {""};
-	struct GMT_OPTION *opt = NULL;
-
-	for (opt = options; opt; opt = opt->next) {
-		switch (opt->option) {
-
-			case '<':	/* Input files (none expected so throw error ) */
-				n_files[GMT_IN]++;
-				break;
-			case '>':	/* Got named output file */
-				if (n_files[GMT_OUT]++ == 0) Ctrl->Out.file = strdup (opt->arg);
-				break;
-
-			/* Processes program-specific parameters */
-
-			case 'A':	/* Sets transparency */
-				Ctrl->A.active = true;
-				if (opt->arg[0] == '+') Ctrl->A.mode = 1;
-				Ctrl->A.value = 0.01 * atof (&opt->arg[Ctrl->A.mode]);
-				break;
-			case 'C':	/* CTP table */
-				Ctrl->C.active = true;
-				Ctrl->C.file = strdup (opt->arg);
-				break;
-			case 'D':	/* Set BNF to match cpt ends */
-				Ctrl->D.active = true;
-				Ctrl->D.mode = 1;
-				if (opt->arg[0] == 'i') Ctrl->D.mode = 2;
-				break;
-			case 'F':	/* Sets format for color reporting */
-				Ctrl->F.active = true;
-				switch (opt->arg[0]) {
-					case 'r': Ctrl->F.model = GMT_RGB + GMT_NO_COLORNAMES; break;
-					case 'h': Ctrl->F.model = GMT_HSV; break;
-					case 'c': Ctrl->F.model = GMT_CMYK; break;
-					default: Ctrl->F.model = GMT_RGB; break;
-				}
-				break;
-			case 'G':	/* truncate incoming CPT */
-				Ctrl->G.active = true;
-				n = sscanf (opt->arg, "%[^/]/%s", txt_a, txt_b);
-				n_errors += GMT_check_condition (GMT, n < 2, "Syntax error -G option: Must specify z_low/z_high\n");
-				if (!(txt_a[0] == 'N' || txt_a[0] == 'n') || !strcmp (txt_a, "-")) Ctrl->G.z_low = atof (txt_a);
-				if (!(txt_b[0] == 'N' || txt_b[0] == 'n') || !strcmp (txt_b, "-")) Ctrl->G.z_high = atof (txt_b);
-				n_errors += GMT_check_condition (GMT, GMT_is_dnan (Ctrl->G.z_low) && GMT_is_dnan (Ctrl->G.z_high), "Syntax error -G option: Both of z_low/z_high cannot be NaN\n");
-				break;
-			case 'I':	/* Invert table */
-				Ctrl->I.active = true;
-				break;
-			case 'M':	/* Use GMT defaults for BNF colors */
-				Ctrl->M.active = true;
-				break;
-			case 'N':	/* Do not output BNF colors */
-				Ctrl->N.active = true;
-				break;
-			case 'T':	/* Sets up color z values */
-				Ctrl->T.active = true;
-				if (!access (opt->arg, R_OK))
-					Ctrl->T.file = strdup (opt->arg);
-				else {
-					Ctrl->T.inc = 0.0;
-					n = sscanf (opt->arg, "%lf/%lf/%lf", &Ctrl->T.low, &Ctrl->T.high, &Ctrl->T.inc);
-					n_errors += GMT_check_condition (GMT, n < 2, "Syntax error -T option: Must specify start/stop[/inc[+]]\n");
-					if (n == 3 && opt->arg[strlen(opt->arg)-1] == '+') {	/* Gave number of levels instead; calculate inc */
-						Ctrl->T.inc = (Ctrl->T.high - Ctrl->T.low) / (Ctrl->T.inc - 1.0);
-					}
-				}
-				break;
-			case 'Q':	/* Logarithmic scale */
-				Ctrl->Q.active = true;
-				if (opt->arg[0] == 'o')	/* Input data is z, but take log10(z) before interpolation colors */
-					Ctrl->Q.mode = 2;
-				else			/* Input is log10(z) */
-					Ctrl->Q.mode = 1;
-				break;
-			case 'W':	/* Do not interpolate colors */
-				Ctrl->W.active = true;
-				break;
-			case 'Z':	/* Continuous colors */
-				Ctrl->Z.active = true;
-				break;
-
-			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
-				break;
-		}
-	}
-
-	n_errors += GMT_check_condition (GMT, n_files[GMT_IN] > 0, "Syntax error: No input files expected\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->W.active && Ctrl->Z.active, "Syntax error: -W and -Z cannot be used simultaneously\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && !Ctrl->T.file && (Ctrl->T.low >= Ctrl->T.high || Ctrl->T.inc < 0.0), "Syntax error -T option: Give start < stop and inc > 0\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.file && GMT_access (GMT, Ctrl->T.file, R_OK), "Syntax error -T option: Cannot access file %s\n", Ctrl->T.file);
-	n_errors += GMT_check_condition (GMT, n_files[GMT_OUT] > 1, "Syntax error: Only one output destination can be specified\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->A.active && (Ctrl->A.value < 0.0 || Ctrl->A.value > 1.0), "Syntax error -A: Transparency must be n 0-100 range [0 or opaque]\n");
-
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
-}
-
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_makecpt_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
-
-int GMT_makecpt (void *V_API, int mode, void *args)
-{
-	int i, nz, error = 0;
-	unsigned int cpt_flags = 0;
-
-	double *z = NULL;
-
-	char CPT_file[GMT_BUFSIZ] = {""}, *file = NULL, *l = NULL;
+	char	buffer[BUFSIZ], CPT_lis[BUFSIZ], CPT_file[BUFSIZ];
 
 	struct MAKECPT_CTRL *Ctrl = NULL;
-	struct GMT_PALETTE *Pin = NULL, *Pout = NULL;
-	struct GMT_DATASET *T = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
-	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
-	/*----------------------- Standard module initialization and parsing ----------------------*/
+	void *New_makecpt_Ctrl (), Free_makecpt_Ctrl (struct MAKECPT_CTRL *C);
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_makecpt_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	argc = (int)GMT_begin(argc, argv);
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_makecpt_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_makecpt_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	Ctrl = (struct MAKECPT_CTRL *)New_makecpt_Ctrl ();	/* Allocate and initialize a new control structure */
+	
+	/* Get list of available color tables in $GMT_SHAREDIR */
 
-	/* Parse the command-line arguments */
-
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_makecpt_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_makecpt_parse (GMT, Ctrl, options))) Return (error);
-
-	/*---------------------------- This is the makecpt main code ----------------------------*/
-
-	if (Ctrl->C.active) {
-		if ((l = strstr (Ctrl->C.file, ".cpt"))) *l = 0;	/* Strip off .cpt if used */
+	GMT_getsharepath ("conf", "gmt_cpt", ".conf", CPT_lis);
+	if ((fpc = fopen (CPT_lis, "r")) == NULL) {
+		fprintf (stderr, "%s: ERROR: Cannot open file %s\n", GMT_program, CPT_lis);
+		exit (EXIT_FAILURE);
 	}
-	else {	/* No table specified; set default rainbow table */
-		Ctrl->C.active = true;
+
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch(argv[i][1]) {
+				case 'V':
+				case '\0':
+					error += GMT_parse_common_options(argv[i], 0, 0, 0, 0);
+					break;
+				case 'C':
+					Ctrl->C.active = TRUE;
+					Ctrl->C.file = strdup (&argv[i][2]);
+					break;
+				case 'D':
+					Ctrl->D.active = TRUE;
+					break;
+				case 'I':
+					Ctrl->I.active = TRUE;
+					break;
+				case 'M':
+					Ctrl->M.active = TRUE;
+					break;
+				case 'N':
+					Ctrl->N.active = TRUE;
+					break;
+				case 'T':
+					Ctrl->T.active = TRUE;
+					if (!access (&argv[i][2], R_OK))
+						Ctrl->T.file = strdup (&argv[i][2]);
+					else
+						sscanf (&argv[i][2], "%lf/%lf/%lf", &Ctrl->T.low, &Ctrl->T.high, &Ctrl->T.inc);
+					break;
+				case 'Q':
+					Ctrl->Q.active = TRUE;
+					if (argv[i][2] == 'o')	/* Input data is z, but take log10(z) before interpolation colors */
+						Ctrl->Q.mode = 2;
+					else			/* Input is log10(z) */
+						Ctrl->Q.mode = 1;
+					break;
+				case 'Z':
+					Ctrl->Z.active = TRUE;
+					break;
+				default:
+					error = TRUE;
+					GMT_default_error (argv[i][1]);
+					break;
+			}
+		}
+		else
+			fprintf (stderr, "%s: Warning: Ignoring filename %s\n", GMT_program, argv[i]);
+	}
+
+	if (argc == 1 || GMT_give_synopsis_and_exit) {
+		fprintf (stderr, "makecpt %s - Make GMT color palette tables\n\n", GMT_VERSION);
+		fprintf (stderr, "usage:  makecpt [-C<table>] [-D] [-I] [-M] [-N] [-Q[i|o]] [-T<z0/z1/dz> | -T<file>] [-V] [-Z]\n");
+		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
+		fprintf (stderr, "\n\tOPTIONS:\n");
+		fprintf (stderr, "\t-C Specify a colortable [Default is rainbow]:\n");
+		fprintf (stderr, "\t   [Default min/max values for -T are given in brackets].\n");
+		fprintf (stderr, "\t   ---------------------------------\n");
+		while (fgets (buffer, BUFSIZ, fpc)) if (!(buffer[0] == '#' || buffer[0] == 0)) fprintf (stderr, "\t   %s", buffer);
+		fclose (fpc);
+		fprintf (stderr, "\t   ---------------------------------\n");
+		fprintf (stderr, "\t-D Set back- and foreground color to match the bottom/top limits in the cpt file [Default uses color table].\n");
+		fprintf (stderr, "\t-I Reverses the sense of the color table as well as back- and foreground color.\n");
+		fprintf (stderr, "\t-M Use GMT defaults to set back-, foreground, and NaN colors [Default uses color table].\n");
+		fprintf (stderr, "\t-N Do not write back-, foreground, and NaN colors [Default will].\n");
+		fprintf (stderr, "\t-Q Assign a logarithmic colortable [Default is linear].\n");
+		fprintf (stderr, "\t   -Qi: z-values are actually log10(z). Assign colors and write z [Default].\n");
+		fprintf (stderr, "\t   -Qo: z-values are z, but take log10(z), assign colors and write z.\n");
+		fprintf (stderr, "\t        If -T<z0/z1/dz> is given, dz is 1, 2, or 3 (as in logarithmic annotations).\n");
+		fprintf (stderr, "\t-T Give start, stop, and increment for colorscale in z-units, or filename with custom z-values.\n");
+		fprintf (stderr, "\t   If not given, the range in the master cptfile is used.\n");
+		GMT_explain_option ('V');
+		fprintf (stderr, "\t-Z Create a continuous color palette [Default is discontinuous, i.e., constant color intervals].\n");
+		exit (EXIT_FAILURE);
+	}
+
+	fclose (fpc);
+
+	if (Ctrl->T.active && !Ctrl->T.file && (Ctrl->T.low >= Ctrl->T.high || Ctrl->T.inc <= 0.0)) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR -T option:  Give start < stop and inc > 0.0\n", GMT_program);
+		error++;
+	}
+	if (!Ctrl->C.active) {	/* Set default table */
+		Ctrl->C.active = TRUE;
 		Ctrl->C.file = strdup ("rainbow");
+	}	
+	error += GMT_set_cpt_path (CPT_file, Ctrl->C.file);
+
+	if (Ctrl->T.file && (fpl = GMT_fopen (Ctrl->T.file, "r")) == NULL) {
+		fprintf (stderr, "%s: Error: Could not open file %s\n", GMT_program, Ctrl->T.file);
+		error++;
 	}
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Prepare CPT file via the master file %s\n", Ctrl->C.file);
-	error += GMT_check_condition (GMT, !GMT_getsharepath (GMT, "cpt", Ctrl->C.file, ".cpt", CPT_file, R_OK), "Error: Cannot find colortable %s\n", Ctrl->C.file);
-	if (error) Return (GMT_RUNTIME_ERROR);	/* Bail on run-time errors */
+	if (error) exit (EXIT_FAILURE);
 
 	/* OK, we can now do the resampling */
 
-	if (Ctrl->M.active) cpt_flags |= GMT_CPT_NO_BNF;	/* bit 0 controls if BFN is determined by parameters */
-	if (Ctrl->D.mode == 1) cpt_flags |= GMT_CPT_EXTEND_BNF;	/* bit 1 controls if BF will be set to equal bottom/top rgb value */
+	if (Ctrl->N.active) GMT_cpt_flags += 1;	/* bit 0 controls if BFN will be written out */
+	if (Ctrl->D.active) GMT_cpt_flags += 2;	/* bit 1 controls if BF will be set to equal bottom/top rgb value */
+	if (Ctrl->M.active) GMT_cpt_flags += 4;	/* bit 2 controls if BFN is determined by parameters */
 
-	file = CPT_file;
-
-	if ((Pin = GMT_Read_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, file, NULL)) == NULL) {
-		Return (API->error);
-	}
-	if (Ctrl->G.active) Pin = GMT_truncate_cpt (GMT, Pin, Ctrl->G.z_low, Ctrl->G.z_high);	/* Possibly truncate the CPT */
-	
-	if (Pin->categorical) Ctrl->W.active = true;	/* Do not want to sample a categorical table */
+	GMT_read_cpt (CPT_file);
 
 	/* Set up arrays */
 
-	if (Ctrl->T.file) {	/* Array passed as a data file */
-		if ((T = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->T.file, NULL)) == NULL) {
-			Return (API->error);
+	if (Ctrl->T.file) {
+		int n_alloc = GMT_SMALL_CHUNK;
+		z = (double *) GMT_memory (VNULL, (size_t)n_alloc, sizeof(double), GMT_program);
+		nz = 0;
+		while (GMT_fgets (buffer, BUFSIZ, fpl)) {
+			if (GMT_is_a_blank_line (buffer)) continue;	/* Skip blank lines or # comments */
+			GMT_chop (buffer);
+			z[nz] = atof (buffer);
+			nz++;
+			if (nz == n_alloc) {
+				n_alloc <<= 1;
+				z = (double *) GMT_memory ((void *)z, (size_t)n_alloc, sizeof(double), GMT_program);
+			}
 		}
-		if (T->n_tables != 1 || T->table[0]->n_segments != 1) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: More than one table or segment in file %s\n", Ctrl->T.file);
-			Return (GMT_RUNTIME_ERROR);
+		GMT_fclose (fpl);
+		if (nz == 0) {
+			fprintf (stderr, "%s: Error: No intervals in file %s\n", GMT_program, Ctrl->T.file);
+			exit (EXIT_FAILURE);
 		}
-		if (T->table[0]->segment[0]->n_rows == 0) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: No intervals in file %s\n", Ctrl->T.file);
-			Return (GMT_RUNTIME_ERROR);
-		}
-		z = T->table[0]->segment[0]->coord[GMT_X];
-		nz = (int)T->table[0]->segment[0]->n_rows;
+		z = (double *) GMT_memory ((void *)z, (size_t)nz, sizeof(double), GMT_program);
 	}
 	else if (Ctrl->T.active && Ctrl->Q.mode == 2) {	/* Establish a log10 grid */
 		if (!(Ctrl->T.inc == 1.0 || Ctrl->T.inc == 2.0 || Ctrl->T.inc == 3.0)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: For -Qo logarithmic spacing, z_inc must be 1, 2, or 3\n");
-			Return (GMT_RUNTIME_ERROR);
+			fprintf (stderr, "%s: Error: For -Qo logarithmic spacing, dz must be 1, 2, or 3\n", GMT_program);
+			exit (EXIT_FAILURE);
 		}
 		if (Ctrl->T.low <= 0.0) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: For -Qo logarithmic spacing, z_start must be > 0\n");
-			Return (GMT_RUNTIME_ERROR);
+			fprintf (stderr, "%s: Error: For -Qo logarithmic spacing, z_start must be > 0\n", GMT_program);
+			exit (EXIT_FAILURE);
 		}
-		nz = GMT_log_array (GMT, Ctrl->T.low, Ctrl->T.high, Ctrl->T.inc, &z);
+		nz = GMT_log_array (Ctrl->T.low, Ctrl->T.high, Ctrl->T.inc, &z);
 	}
 	else if (Ctrl->T.active) {	/* Establish linear grid */
-		if (Ctrl->T.inc == 0 && Ctrl->C.active) {	/* Compute interval from number of colors in palette */
-			nz = Pin->n_colors + 1;
-			Ctrl->T.inc = (Ctrl->T.high - Ctrl->T.low) / Pin->n_colors;
-		}
-		else if (Ctrl->T.inc <= 0) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: Interval must be > 0\n");
-			Return (GMT_RUNTIME_ERROR);
-		}
-		else
-			nz = irint ((Ctrl->T.high - Ctrl->T.low) / Ctrl->T.inc) + 1;
+		nz = irint ((Ctrl->T.high - Ctrl->T.low) / Ctrl->T.inc) + 1;
+		z = (double *) GMT_memory (VNULL, (size_t)nz, sizeof(double), GMT_program);
 
-		z = GMT_memory (GMT, NULL, nz, double);
 		for (i = 0; i < nz; i++) z[i] = Ctrl->T.low + i * Ctrl->T.inc;	/* Desired z values */
 	}
 	else {	/* Just copy what was in the cpt file */
-		nz = Pin->n_colors + 1;
-		z = GMT_memory (GMT, NULL, nz, double);
+		nz = GMT_n_colors + 1;
+		z = (double *) GMT_memory (VNULL, (size_t)nz, sizeof(double), GMT_program);
 		if (Ctrl->I.active) {
 			/* Reverse the intervals (only relavant for non-equidistant color maps) */
-			for (i = 0; i < nz-1; i++) z[i] = Pin->range[0].z_low + Pin->range[Pin->n_colors-1].z_high - Pin->range[Pin->n_colors-1-i].z_high;
+			for (i = 0; i < nz-1; i++) z[i] = GMT_lut[0].z_low + GMT_lut[GMT_n_colors-1].z_high - GMT_lut[GMT_n_colors-1-i].z_high;
 		}
 		else {
-			for (i = 0; i < nz-1; i++) z[i] = Pin->range[i].z_low;
+			for (i = 0; i < nz-1; i++) z[i] = GMT_lut[i].z_low;
 		}
-		z[i] = Pin->range[i-1].z_high;
+		z[i] = GMT_lut[i-1].z_high;
 	}
 
-	if (Ctrl->Q.mode == 2) for (i = 0; i < nz; i++) z[i] = d_log10 (GMT, z[i]);	/* Make log10(z) values for interpolation step */
+	if (Ctrl->Q.mode == 2) for (i = 0; i < nz; i++) z[i] = d_log10 (z[i]);	/* Make log10(z) values for interpolation step */
 
-	/* Now we can resample the cpt table and write out the result */
+	/* Write to GMT_stdout.  */
 
-	Pout = GMT_sample_cpt (GMT, Pin, z, nz, Ctrl->Z.active, Ctrl->I.active, Ctrl->Q.mode, Ctrl->W.active);
+	fprintf (stdout, "#\tcpt file created by: %s", GMT_program);
+	for (i = 1; i < argc; i++) fprintf (stdout, " %s", argv[i]);
+	fprintf (stdout, "\n");
+#ifdef WIN32
+	fflush(stdout);	/* For some crazy reason if we don't do this, on Windows the comment line is written at the end of file */
+#endif
+	GMT_sample_cpt (z, nz, Ctrl->Z.active, Ctrl->I.active, Ctrl->Q.mode);
 
-	if (!Ctrl->T.file) GMT_free (GMT, z);
+	GMT_free ((void *)z);
 
-	if (Ctrl->A.active) GMT_cpt_transparency (GMT, Pout, Ctrl->A.value, Ctrl->A.mode);	/* Set transparency */
+	Free_makecpt_Ctrl (Ctrl);	/* Deallocate control structure */
 
-	/* Determine mode flags for output */
-	cpt_flags = 0;
-	if (Ctrl->N.active) cpt_flags |= GMT_CPT_NO_BNF;	/* bit 0 controls if BFN will be written out */
-	if (Ctrl->D.mode == 1) cpt_flags |= GMT_CPT_EXTEND_BNF;	/* bit 1 controls if BF will be set to equal bottom/top rgb value */
-	if (Ctrl->F.active) Pout->model = Ctrl->F.model;
+	GMT_end (argc, argv);
 
-	if (GMT_Write_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->Out.file, Pout) != GMT_OK) {
-		Return (API->error);
-	}
+	exit (EXIT_SUCCESS);
+}
 
-	Return (GMT_OK);
+void *New_makecpt_Ctrl () {	/* Allocate and initialize a new control structure */
+	struct MAKECPT_CTRL *C;
+	
+	C = (struct MAKECPT_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct MAKECPT_CTRL), "New_makecpt_Ctrl");
+	
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
+	return ((void *)C);
+}
+
+void Free_makecpt_Ctrl (struct MAKECPT_CTRL *C) {	/* Deallocate control structure */
+	if (C->C.file) free ((void *)C->C.file);	
+	if (C->T.file) free ((void *)C->T.file);	
+	GMT_free ((void *)C);	
 }

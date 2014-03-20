@@ -1,234 +1,195 @@
 /*--------------------------------------------------------------------
- *	$Id: grdreformat.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: grdreformat.c 10173 2014-01-01 09:52:34Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel and W. H. F. Smith
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * Brief synopsis: grdreformat.c reads a grid file in one format and outputs it in another
+ * grdreformat.c reads a grid file in one format and outputs it in another
  *
  * Author:	Paul Wessel
- * Date:	1-JAN-2010
- * Version:	5 API
+ * Date:	3-JAN-1991-2011
+ * Version:	4
  */
 
-#define THIS_MODULE_NAME	"grdreformat"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Convert between different grid formats"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-RVf"
+#include "gmt.h"
 
 struct GRDREFORMAT_CTRL {
-	struct IO {
-		bool active;
-		char *file[2];
-	} IO;
 	struct N {	/* -N */
-		bool active;
+		GMT_LONG active;
 	} N;
 };
 
-void *New_grdreformat_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+int main (int argc, char **argv)
+{
+#include "grdreformat.h"	/* Defines N_GRDTXT_LINES and char *grd_formats[N_GRDTXT_LINES] array used in usage message */
+	GMT_LONG error = FALSE, global = FALSE, no_header;
+
+	GMT_LONG i, nfiles = 0, nx, ny, type[2];
+
+	size_t nm;
+	
+	double w, e, s, n;
+
+	float *z = NULL;
+
+	char *file[2], fname[2][BUFSIZ];
+
+	struct GRD_HEADER grd;
+	struct GRDREFORMAT_CTRL *Ctrl = NULL;
+
+	void *New_grdreformat_Ctrl (), Free_grdreformat_Ctrl (struct GRDREFORMAT_CTRL *C);
+
+	argc = (int)GMT_begin (argc, argv);
+
+	Ctrl = (struct GRDREFORMAT_CTRL *)New_grdreformat_Ctrl ();	/* Allocate and initialize a new control structure */
+	
+	file[0] = file[1] = CNULL;
+	w = e = s = n = 0.0;
+
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch (argv[i][1]) {
+				/* Common parameters */
+
+				case 'R':
+				case 'V':
+				case 'f':
+				case '\0':
+					error += GMT_parse_common_options (argv[i], &w, &e, &s, &n);
+					break;
+
+				case 'N':
+					Ctrl->N.active = TRUE;
+					break;
+				default:
+					error = TRUE;
+					GMT_default_error (argv[i][1]);
+					break;
+			}
+		}
+		else if (nfiles < 2) {
+			file[nfiles] = argv[i];
+			nfiles++;
+		}
+		else
+			nfiles++;
+	}
+
+	if (argc == 1 || GMT_give_synopsis_and_exit) {	/* Display usage */
+		fprintf (stderr, "grdreformat %s - Converting between different grid file formats\n\n", GMT_VERSION);
+		fprintf( stderr, "usage: grdreformat ingrdfile[=id[/scale/offset]] outgrdfile[=id[/scale/offset]] [-N]\n\t[%s] [%s] [-V]\n", GMT_Rgeo_OPT, GMT_f_OPT);
+
+		if (GMT_give_synopsis_and_exit) exit (EXIT_FAILURE);
+
+		fprintf (stderr, "\tingrdfile is the grid file to convert.\n");
+		fprintf (stderr, "\toutgrdfile is the new converted grid file.\n");
+		fprintf( stderr, "\tscale and offset, if given, will multiply data by scale and add offset.\n");
+		fprintf (stderr, "\n\tOPTIONS:\n");
+		fprintf (stderr, "\t-N  Do NOT write the header (native grids only - ignored otherwise).\n");
+		fprintf (stderr, "\t\t  Useful when creating files to be used by grdraster.\n");
+		GMT_explain_option ('r');
+		GMT_explain_option ('f');
+		GMT_explain_option ('V');
+
+		fprintf (stderr, "\n	The following grid file formats are supported:\n\n");
+#ifdef USE_GDAL
+		for (i = 0; i < N_GRDTXT_LINES; i++) fprintf (stderr, "\t%s\n", grd_formats[i]);
+#else
+		for (i = 0; i < N_GRDTXT_LINES; i++) if (i != 33) fprintf (stderr, "\t%s\n", grd_formats[i]);
+#endif
+		exit (EXIT_FAILURE);
+	}
+
+	if (nfiles != 2) {
+		fprintf (stderr, "%s: GMT SYNTAX ERROR: Must specify both input and output file names.\n", GMT_program);
+		error++;
+	}
+
+	if (error) exit (EXIT_FAILURE);
+
+	GMT_grd_init (&grd, argc, argv, FALSE);
+	no_header = (Ctrl->N.active) ? 64 : 0;
+	GMT_err_fail (GMT_grd_get_format (file[0], &grd, TRUE), file[0]);
+	type[0] = grd.type;
+	strcpy (fname[0], grd.name);
+	GMT_err_fail (GMT_grd_get_format (file[1], &grd, FALSE), file[1]);
+	type[1] = grd.type;
+	strcpy (fname[1], grd.name);
+
+	if (type[1] == 20) {	/* Golden Surfer format 7 (double) is read-only */
+		fprintf (stderr, "%s: Grid format sd (Golden Software Surfer format 7 (double)) is read-only!\n", GMT_program);
+		exit (EXIT_FAILURE);
+	}
+#ifdef USE_GDAL
+	if (type[1] == 22) {	/* GDAL format is read-only */
+		fprintf (stderr, "%s: Grid format gd (GDAL) is read-only!\n", GMT_program);
+		exit (EXIT_FAILURE);
+	}
+#endif	
+	if (gmtdefs.verbose) {
+		if (file[0][0] == '=') strcpy (fname[0], "<stdin>");
+		if (file[1][0] == '=') strcpy (fname[1], "<stdout>");
+		fprintf (stderr, "%s: Translating file %s (format = %ld) to file %s (format = %ld)\n", GMT_program, fname[0], type[0], fname[1], type[1]);
+		if (no_header && GMT_grdformats[type[1]][0] != 'c' && GMT_grdformats[type[1]][0] != 'n') fprintf (stderr, "%s: No grd header will be written\n", GMT_program);
+	}
+
+	GMT_err_fail (GMT_read_grd_info (file[0], &grd), fname[0]);
+
+	if (e > w && n > s) {
+		global = GMT_grd_is_global (&grd);
+		if (!global && (w < grd.x_min || e > grd.x_max)) error = TRUE;
+		if (s < grd.y_min || n > grd.y_max) error = TRUE;
+		if (error) {
+			fprintf (stderr, "%s: Subset exceeds data domain!\n", GMT_program);
+			exit (EXIT_FAILURE);
+		}
+		nx = GMT_get_n (w, e, grd.x_inc, grd.node_offset);
+		ny = GMT_get_n (s, n, grd.y_inc, grd.node_offset);
+		nm = GMT_get_nm (nx, ny);
+	}
+	else
+		nm = GMT_get_nm (grd.nx, grd.ny);
+
+	z = (float *) GMT_memory (VNULL, nm, sizeof (float), GMT_program);
+	GMT_err_fail (GMT_read_grd (file[0], &grd, z, w, e, s, n, GMT_pad, FALSE), fname[0]);
+
+	grd.type = type[1];
+
+	GMT_grd_init (&grd, argc, argv, TRUE);
+
+	GMT_err_fail (GMT_write_grd (file[1], &grd, z, 0.0, 0.0, 0.0, 0.0, GMT_pad, no_header), fname[1]);
+
+	GMT_free ((void *)z);
+
+	Free_grdreformat_Ctrl (Ctrl);	/* Deallocate control structure */
+
+	GMT_end (argc, argv);
+
+	exit (EXIT_SUCCESS);
+}
+
+void *New_grdreformat_Ctrl () {	/* Allocate and initialize a new control structure */
 	struct GRDREFORMAT_CTRL *C;
 	
-	C = GMT_memory (GMT, NULL, 1, struct GRDREFORMAT_CTRL);
+	C = (struct GRDREFORMAT_CTRL *) GMT_memory (VNULL, (size_t)1, sizeof (struct GRDREFORMAT_CTRL), "New_grdreformat_Ctrl");
 	
-	/* Initialize values whose defaults are not 0/false/NULL */
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
 	
-	return (C);
+	return ((void *)C);
 }
 
-void Free_grdreformat_Ctrl (struct GMT_CTRL *GMT, struct GRDREFORMAT_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
-	if (C->IO.file[0]) free (C->IO.file[0]);	
-	if (C->IO.file[1]) free (C->IO.file[1]);	
-	GMT_free (GMT, C);	
-}
-
-int GMT_grdreformat_usage (struct GMTAPI_CTRL *API, int level)
-{
-	int i;
-	char **grdformats = GMT_grdformats_sorted (API->GMT);
-
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: grdreformat <ingrid>[=<id>[/<scale>/<offset>[/<nan>]]]\n\t<outgrid>[=<id>[/<scale>/<offset>[/<nan>]][:<driver>[/<dataType>]]] [-N]\n\t[%s] [%s] [%s]\n",
-		GMT_Rgeo_OPT, GMT_V_OPT, GMT_f_OPT);
-
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
-
-	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is the grid file to convert.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t<outgrid> is the new converted grid file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\tscale and offset, if given, will multiply data by scale and add offset.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Do NOT write the header (for native grids only - ignored otherwise).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Useful when creating files to be used by grdraster.\n");
-	GMT_Option (API, "R,V,f,.");
-
-	GMT_Message (API, GMT_TIME_NONE, "\nThe following grid file formats are supported:\n");
-	for (i = 1; i < GMT_N_GRD_FORMATS; ++i) {
-		if (!strstr (grdformats[i], "not supported"))
-			GMT_Message (API, GMT_TIME_NONE, "\t%s\n", grdformats[i]);
-	}
-#ifdef HAVE_GDAL
-	GMT_Message (API, GMT_TIME_NONE, "\n	When <id>=gd on output, the grid will be saved using the GDAL library.\n");
-	GMT_Message (API, GMT_TIME_NONE, "	Specify <driver> and optionally <dataType>. Driver names are as in GDAL\n		(e.g., netCDF, GTiFF, etc.)\n");
-	GMT_Message (API, GMT_TIME_NONE, "	<dataType> is u8|u16|i16|u32|i32|float32; i|u denote signed|unsigned\n		integer.  Default type is float32.\n");
-	GMT_Message (API, GMT_TIME_NONE, "	Both driver names and data types are case insensitive.\n");
-#endif
-	return (EXIT_FAILURE);
-}
-
-int GMT_grdreformat_parse (struct GMT_CTRL *GMT, struct GRDREFORMAT_CTRL *Ctrl, struct GMT_OPTION *options)
-{
-	/* This parses the options provided to grdreformat and sets parameters in CTRL.
-	 * Any GMT common options will override values set previously by other commands.
-	 * It also replaces any file names specified as input or output with the data ID
-	 * returned when registering these sources/destinations with the API.
-	 */
-
-	unsigned int n_errors = 0, n_in = 0;
-	struct GMT_OPTION *opt = NULL;
-	struct GMTAPI_CTRL *API = GMT->parent;
-
-	for (opt = options; opt; opt = opt->next) {
-		switch (opt->option) {
-
-			case '<':	/* Input and Output files */
-				if (n_in == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
-					Ctrl->IO.file[n_in++] = strdup (opt->arg);
-				else if (n_in == 1 && GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT))
-					Ctrl->IO.file[n_in++] = strdup (opt->arg);
-				else {
-					n_in++;
-					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Specify only one input and one output file\n");
-				}
-				break;
-			case '>':	/* Output file */
-				if (GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT))
-					Ctrl->IO.file[GMT_OUT] = strdup (opt->arg);
-				else
-					n_errors++;
-				n_in++;
-				break;
-
-			/* Processes program-specific parameters */
-
-			case 'N':
-				Ctrl->N.active = true;
-				break;
-
-			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
-				break;
-		}
-	}
-
-	n_errors += GMT_check_condition (GMT, n_in != 2, "Syntax error: Must specify both input and output file names\n");
-
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
-}
-
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_grdreformat_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
-
-int GMT_grdreformat (void *V_API, int mode, void *args)
-{
-	int error = 0;
-	unsigned int hmode, type[2];
-
-	char fname[2][GMT_BUFSIZ];
-
-	struct GMT_GRID *Grid = NULL;
-	struct GRDREFORMAT_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
-	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-
-	/*----------------------- Standard module initialization and parsing ----------------------*/
-
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdreformat_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
-
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdreformat_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdreformat_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
-
-	/* Parse the command-line arguments */
-
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_grdreformat_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_grdreformat_parse (GMT, Ctrl, options))) Return (error);
-
-	/*---------------------------- This is the grdreformat main code ----------------------------*/
-
-	if ((Grid = GMT_create_grid (API->GMT)) == NULL) Return (API->error);	/* Tmp grid only, no i/o is used */
-	GMT_grd_init (GMT, Grid->header, options, false);
-	hmode = (Ctrl->N.active) ? GMT_GRID_NO_HEADER : 0;
-	GMT_err_fail (GMT, GMT_grd_get_format (GMT, Ctrl->IO.file[0], Grid->header, true), Ctrl->IO.file[0]);
-	type[0] = Grid->header->type;
-	strncpy (fname[0], Grid->header->name, GMT_BUFSIZ);
-	GMT_err_fail (GMT, GMT_grd_get_format (GMT, Ctrl->IO.file[1], Grid->header, false), Ctrl->IO.file[1]);
-	type[1] = Grid->header->type;
-	strncpy (fname[1], Grid->header->name, GMT_BUFSIZ);
-	GMT_free_grid (GMT, &Grid, true);	/* Free temp grid, Grid is now NULL */
-
-	if (type[1] == GMT_GRID_IS_SD) {
-		/* Golden Surfer format 7 is read-only */
-		GMT_Report (API, GMT_MSG_NORMAL, "Writing unsupported: %s\n", GMT->session.grdformat[GMT_GRID_IS_SD]);
-		Return (EXIT_FAILURE);
-	}
-
-	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
-		if (Ctrl->IO.file[0][0] == '=') strcpy (fname[0], "<stdin>");
-		if (Ctrl->IO.file[1][0] == '=') strcpy (fname[1], "<stdout>");
-		GMT_Report (API, GMT_MSG_VERBOSE, "Translating file %s (format %s)\nto file %s (format %s)\n", fname[0], GMT->session.grdformat[type[0]], fname[1], GMT->session.grdformat[type[1]]);
-		if (hmode && GMT->session.grdformat[type[1]][0] != 'c' && GMT->session.grdformat[type[1]][0] != 'n') GMT_Report (API, GMT_MSG_NORMAL, "No grd header will be written\n");
-	}
-
-	if ((Grid = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->IO.file[0], NULL)) == NULL) {	/* Get header only */
-		Return (API->error);
-	}
-
-	if (GMT->common.R.active) {	/* Specified a subset */
-		bool global = false;
-		global = GMT_grd_is_global (GMT, Grid->header);
-		if (!global && (GMT->common.R.wesn[XLO] < Grid->header->wesn[XLO] || GMT->common.R.wesn[XHI] > Grid->header->wesn[XHI])) error++;
-		if (GMT->common.R.wesn[YLO] < Grid->header->wesn[YLO] || GMT->common.R.wesn[YHI] > Grid->header->wesn[YHI]) error++;
-		if (error) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Subset exceeds data domain!\n");
-			Return (EXIT_FAILURE);
-		}
-		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, GMT->common.R.wesn, Ctrl->IO.file[0], Grid) == NULL) {
-			Return (API->error);	/* Get subset */
-		}
-	}
-	else if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->IO.file[0], Grid) == NULL) {
-		Return (API->error);	/* Get all */
-	}
-
-	Grid->header->type = type[1];
-
-	GMT_grd_init (GMT, Grid->header, options, true);
-
-	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, hmode, NULL, Ctrl->IO.file[1], Grid) != GMT_OK) {
-		Return (API->error);
-	}
-
-	Return (GMT_OK);
+void Free_grdreformat_Ctrl (struct GRDREFORMAT_CTRL *C) {	/* Deallocate control structure */
+	GMT_free ((void *)C);	
 }

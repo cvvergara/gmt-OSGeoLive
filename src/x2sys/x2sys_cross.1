@@ -1,0 +1,245 @@
+.TH X2SYS_CROSS 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+\fBx2sys_cross\fP \- Find and compute crossover errors
+.SH SYNOPSIS
+\fBx2sys_cross\fP \fItrack(s)\fP \fB\-T\fP\fITAG\fP 
+[ \fB\-Il\fP|\fBa\fP|\fBc\fP ] 
+[ \fB\-J\fP\fIparameters\fP ] [ \fB\-K\fP\fIcombi.lis\fP ] [ \fB\-L\fP ] 
+[ \fB\-Qe\fP|\fBi\fP ] [ \fB\-Sl\fP|\fBu\fP|\fBh\fP\fIspeed\fP ] 
+[ \fB\-V\fP ] [ \fB\-W\fP\fIsize\fP ] [ \fB\-2\fP ] [ \fB\-bo\fP[\fBs\fP|\fBS\fP|\fBd\fP|\fBD\fP[\fIncol\fP]|\fBc\fP[\fIvar1\fP\fB/\fP\fI...\fP]] ]
+.SH DESCRIPTION
+\fBx2sys_cross\fP is used to determine all intersections between ("external cross-overs") or within
+("internal cross-overs") tracks (Cartesian or geographic), and report the time, position, distance along track,
+heading and speed along each track segment, and the crossover error (COE) and mean values for all observables.
+The names of the tracks are passed on the command line.
+By default, \fBx2sys_cross\fP will look for both external and internal COEs.  As an option,
+you may choose to project all data using one of the map-projections prior to calculating the COE.
+.TP
+\fItracks\fP
+Can be one or more ASCII, native binary, or COARDS netCDF 1-D data files.
+To supply the data files via a text file with a list of tracks (one per record),
+specify the name of the track list after a leading equal-sign
+(e.g., =tracks.lis).  If the names are missing their file extension we will
+append the suffix specified for this \fITAG\fP.  Track files will be searched
+for first in the current directory and second in all directories listed in
+\fB$X2SYS_HOME\fP/\fITAG\fP/\fITAG\fP_paths.txt (if it exists). [If \fB$X2SYS_HOME\fP
+is not set it will default to \fB$GMT_SHAREDIR\fP/x2sys]. (Note: MGD77 files will
+also be looked for via \fBMGD77_HOME\fP/mgd77_paths.txt and *.gmt files will be
+searched for via \fB$GMT_SHAREDIR\fP/mgg/gmtfile_paths).
+.TP
+\fB\-T\fP
+Specify the x2sys \fITAG\fP which tracks the attributes of this data type.
+.SH OPTIONS
+No space between the option flag and the associated arguments.
+.TP
+\fB\-I\fP
+Sets the interpolation mode for estimating values at the crossover. Choose among:
+.br
+\fBl\fP Linear interpolation [Default].
+.br
+\fBa\fP Akima spline interpolation.
+.br
+\fBc\fP Cubic spline interpolation.
+.br
+.TP
+\fB\-J\fP
+Selects the map projection. Scale is UNIT/degree, 1:xxxxx, or width in UNIT (upper case modifier).
+UNIT is cm, inch, or m, depending on the \fBMEASURE_UNIT\fP setting in \.gmtdefaults4, but this can be
+overridden on the command line by appending \fBc\fP, \fBi\fP, or \fBm\fP to the scale/width value.
+When central meridian is optional, default is center of longitude range on \fB\-R\fP option.
+Default standard parallel is the equator.
+For map height, max dimension, or min dimension, append \fBh\fP, \fB+\fP, or \fB-\fP to the width,
+respectively.
+.br
+More details can be found in the \fBpsbasemap\fP man pages.
+.br
+.sp
+\fBCYLINDRICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jc\fP\fIlon0/lat0/scale\fP (Cassini)
+.br
+\fB\-Jcyl_stere\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Stereographic)
+.br
+\fB\-Jj\fP[\fIlon0/\fP]\fIscale\fP (Miller)
+.br
+\fB\-Jm\fP[\fIlon0\fP/[\fIlat0/\fP]]\fIscale\fP (Mercator)
+.br
+\fB\-Jm\fP\fIlon0/lat0/scale\fP (Mercator - Give meridian and standard parallel)
+.br
+\fB\-Jo\fP[\fBa\fP]\fIlon0/lat0/azimuth/scale\fP (Oblique Mercator - point and azimuth)
+.br
+\fB\-Jo\fP[\fBb\fP]\fIlon0/lat0/lon1/lat1/scale\fP (Oblique Mercator - two points)
+.br
+\fB\-Joc\fP\fIlon0/lat0/lonp/latp/scale\fP (Oblique Mercator - point and pole)
+.br
+\fB\-Jq\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equidistant)
+.br
+\fB\-Jt\fP\fIlon0/\fP[\fIlat0/\fP]\fIscale\fP (TM - Transverse Mercator)
+.br
+\fB\-Ju\fP\fIzone/scale\fP (UTM - Universal Transverse Mercator)
+.br
+\fB\-Jy\fP[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP (Cylindrical Equal-Area) 
+.br
+.sp
+\fBCONIC PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jb\fP\fIlon0/lat0/lat1/lat2/scale\fP (Albers)
+.br
+\fB\-Jd\fP\fIlon0/lat0/lat1/lat2/scale\fP (Conic Equidistant)
+.br
+\fB\-Jl\fP\fIlon0/lat0/lat1/lat2/scale\fP (Lambert Conic Conformal)
+.br
+\fB\-Jpoly\fP/[\fIlon0/\fP[\fIlat0/\fP]]\fIscale\fP ((American) Polyconic)
+.br
+.sp
+\fBAZIMUTHAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Ja\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Lambert Azimuthal Equal-Area)
+.br
+\fB\-Je\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Azimuthal Equidistant)
+.br
+\fB\-Jf\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Gnomonic)
+.br
+\fB\-Jg\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (Orthographic)
+.br
+\fB\-Jg\fP\fIlon0/lat0/altitude/azimuth/tilt/twist/Width/Height/scale\fP (General Perspective).
+.br
+\fB\-Js\fP\fIlon0/lat0\fP[\fI/horizon\fP]\fI/scale\fP (General Stereographic)
+.br
+.sp
+\fBMISCELLANEOUS PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jh\fP[\fIlon0/\fP]\fIscale\fP (Hammer)
+.br
+\fB\-Ji\fP[\fIlon0/\fP]\fIscale\fP (Sinusoidal)
+.br
+\fB\-Jkf\fP[\fIlon0/\fP]\fIscale\fP (Eckert IV)
+.br
+\fB\-Jk\fP[\fBs\fP][\fIlon0/\fP]\fIscale\fP (Eckert VI)
+.br
+\fB\-Jn\fP[\fIlon0/\fP]\fIscale\fP (Robinson)
+.br
+\fB\-Jr\fP[\fIlon0/\fP]\fIscale\fP (Winkel Tripel)
+.br
+\fB\-Jv\fP[\fIlon0/\fP]\fIscale\fP (Van der Grinten)
+.br
+\fB\-Jw\fP[\fIlon0/\fP]\fIscale\fP (Mollweide)
+.br
+.sp
+\fBNON-GEOGRAPHICAL PROJECTIONS:\fP
+.br
+.sp
+\fB\-Jp\fP[\fBa\fP]\fIscale\fP[\fI/origin\fP][\fBr\fP|\fBz\fP] (Polar coordinates (theta,r))
+.br
+\fB\-Jx\fP\fIx-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP][\fI/y-scale\fP[\fBd\fP|\fBl\fP|\fBp\fP\fIpow\fP|\fBt\fP|\fBT\fP]] (Linear, log, and power scaling)
+.br
+.TP
+\fB\-K\fP
+Only process the pair-combinations found in the file \fIcombi.lis\fP
+[Default process all possible combinations among the specified files].
+.TP
+\fB\-L\fP
+Output results using the old XOVER format [Default is x2sys format].
+This option should only be used with *.gmt-formatted MGD77 files.  See
+the GMT mgg supplement for file description; see \fIWessel\fP [1989] for
+details on the XOVER format.
+.TP
+\fB\-Q\fP
+Append \fBe\fP for external COEs only, and \fBi\fP for internal
+COEs only [Default is all COEs].
+.TP
+\fB\-R\fP
+\fIwest, east, south,\fP and \fInorth\fP specify the Region of interest, and you may specify them
+in decimal degrees or in [+-]dd:mm[:ss.xxx][W|E|S|N] format.  Append \fBr\fP if lower left and upper right
+map coordinates are given instead of w/e/s/n.  The two shorthands \fB\-Rg\fP and \fB\-Rd\fP stand for global domain
+(0/360 and -180/+180 in longitude respectively, with -90/+90 in latitude). Alternatively, specify the name
+of an existing grid file and the \fB\-R\fP settings (and grid spacing, if applicable) are copied from the grid.
+For Cartesian data just give \fIxmin/xmax/ymin/ymax\fP.  This option limits
+the COEs to those that fall inside the specified domain.
+.TP
+\fB\-S\fP
+Defines window of track speeds.  If speeds are outside this window we do not
+calculate a COE. Specify
+.br
+	\fB\-Sl\fP sets lower speed [Default is 0].
+.br
+	\fB\-Su\fP sets upper speed [Default is Infinity].
+.br
+	\fB\-Sh\fP does not limit the speed but sets a lower speed below which headings
+will not be computed (i.e., set to NaN) [Default calculates headings regardless of speed].
+.br
+.TP
+\fB\-V\fP
+Selects verbose mode, which will send progress reports to stderr [Default runs "silently"].
+.TP
+\fB\-W\fP
+Give the maximum number of data points on
+either side of the crossover to use in the spline interpolation [3].
+.TP
+\fB\-2\fP
+Report the values of each track at the crossover [Default reports the crossover value and the mean value].
+.TP
+\fB\-bo\fP
+Selects binary output.
+Append \fBs\fP for single precision [Default is \fBd\fP (double)].
+Uppercase \fBS\fP or \fBD\fP will force byte-swapping.
+Optionally, append \fIncol\fP, the number of desired columns in your binary output file.
+.SH REMARKS
+The COEs found are printed out to standard output in ASCII format (unless
+\fB\-bo\fP is set).  When ASCII is chosen, the output format depends on
+whether or not old-style XOVER output (\fB\-L\fP) has been selected [See
+the \fBx_over\fP man page for more details].
+If ASCII, then the first record contains the name of the tag used, the second
+records specifies the exact command line used for this run, and the third
+record contains the names of each column.  For each track pair, there will be
+a multisegment header record containing the two file names and their start/stop/dist
+information (start/stop is absolute time or NaN if unavailable while dist is the
+total track length),
+whereas subsequent records have the data for each COE encountered.  The fields
+written out are x, y, time along track #1 and #2, distance along track #1 and #2,
+heading along track #1 and #2, velocity along track #1 and #2, and then pairs
+of columns for each selected observable. These are either
+pairs of (COE, average value) for each data type (or track-values #1 and #2; see \fB\-2\fP).
+It is recommended that the Akima spline is used
+instead of the natural cubic spline, since it is less sensitive to outliers
+that tend to introduce wild oscillations in the interpolation.
+.SH SIGN CONVENTION
+If track_a and track_b are passed on the command line, then the COE value is Value
+(track_a) - Value (track_b).
+.SH PRECISION AND FORMAT
+The output format of individual columns are controlled by \fBD_FORMAT\fP except for
+geographic coordinates (\fBOUTPUT_DEGREE_FORMAT\fP) and absolute calendar time
+(\fBOUTPUT_DATE_FORMAT\fP, \fBOUTPUT_CLOCK_FORMAT\fP).  Make sure these are set to
+give you enough significant digits to achieve the desired precision.
+.SH EXAMPLES
+To compute all internal crossovers in the gmt-formatted file c2104.gmt, and
+output in the old XOVER format, using the tag GMT, try
+.br
+.sp
+\fBx2sys_cross\fP c2104.gmt \fB\-L\fP \fB\-T\fP GMT > c2104.d
+.br
+.sp
+To find the crossover locations with bathymetry between the two MGD77
+files A13232.mgd77 and A99938.mgd77, using the MGD77 tag, try
+.br
+.sp
+\fBx2sys_cross\fP A13232.mgd77 A99938.mgd77 \fB\-Qe\fP \fB\-T\fP MGD77 > crossovers.d
+.SH REFERENCES
+Wessel, P. (2010), Tools for analyzing intersecting tracks: the x2sys package. IT(Computers and Geosciences), BD(36), 348-354.
+.br
+Wessel, P. (1989), XOVER: A cross-over error detector for track data, \fIComputers and Geosciences, 15\fP(3), 333-346.
+.SH "SEE ALSO"
+.IR GMT (1),
+.IR x2sys_binlist (1),
+.IR x2sys_init (1),
+.IR x2sys_datalist (1),
+.IR x2sys_get (1),
+.IR x2sys_list (1),
+.IR x2sys_put (1),
+.IR x2sys_report (1),
+.IR x2sys_solve (1),
+.IR x_over (1)

@@ -1,0 +1,34 @@
+.TH GMT2DAT 1 "Feb 27 2014" "GMT 4.5.13 (SVN)" "Generic Mapping Tools"
+.SH NAME
+gmt2dat \- Convert a binary gmt file to an ASCII file
+.SH SYNOPSIS
+\fBgmt2dat\fP \fIgmtfile\fP
+.SH DESCRIPTION
+\fBgmt2dat\fP reads a <legid>.gmt file and converts it to a regular ASCII text file that can be edited
+using the text editor. The ASCII text is sent to standard output and can be redirected to a
+file/program/printer, etc.
+.SH EXAMPLES
+To convert c2104.gmt to ASCII:
+.br
+.sp
+\fBgmt2dat\fP c2104.gmt > c2104.ascii
+.SH "SEE ALSO"
+.IR dat2gmt (1),
+.IR GMT (1)
+.SH REFERENCES
+Wessel, P., and W. H. F. Smith, 2014, The Generic Mapping Tools (GMT) version
+4.5.12 Technical Reference & Cookbook, SOEST/NOAA.
+.br
+Wessel, P., and W. H. F. Smith, 1998, New, Improved Version of Generic Mapping
+Tools Released, EOS Trans., AGU, 79 (47), p. 579.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, EOS Trans., AGU, 76 (33), p. 329.
+.br
+Wessel, P., and W. H. F. Smith, 1995, New Version of the Generic Mapping Tools
+Released, http://www.agu.org/eos_elec/95154e.html, Copyright 1995 by the
+American Geophysical Union.
+.br
+Wessel, P., and W. H. F. Smith, 1991, Free Software Helps Map and Display Data,
+EOS Trans., AGU, 72 (41), p. 441.
+.br
