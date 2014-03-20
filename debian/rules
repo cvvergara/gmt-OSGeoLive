@@ -1,6 +1,6 @@
 #! /usr/bin/make -f
 
-CFLAGS := -fPIC -ansi -pedantic
+#CFLAGS := -fPIC -ansi
 
 # Some special build options
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
@@ -19,81 +19,74 @@ build:		build-stamp
 install:	install-stamp
 binary:		binary-arch binary-indep
 
-PATHCONFIG	:= --prefix=/usr/lib/gmt
-DESTDIR		:= $(CURDIR)/debian/tmp
-PATHVARS	:= prefix=$(DESTDIR)/usr/lib/gmt
+BUILDDIR	:= $(CURDIR)/debian/build
+DESTDIR		:= $(BUILDDIR)/debian/tmp
 
 build-stamp: 
 	dh_testdir
 	dh_prep
-	
-	# Use current autotools helpers
-	-test -r /usr/share/misc/config.sub && \
-		mv config.sub config.sub.original && \
-		cp -f /usr/share/misc/config.sub config.sub
-	-test -r /usr/share/misc/config.guess && \
-		mv config.guess config.guess.original && \
-		cp -f /usr/share/misc/config.guess config.guess
-	
-	$(CURDIR)/configure \
-		--enable-shared $(PATHCONFIG) --disable-mex --enable-netcdf=/usr \
-		--enable-octave \
-	    --enable-mex-mdir=$(shell octave-config --m-site-dir) \
-		--enable-mex-xdir=$(shell octave-config --oct-site-dir) 
-	$(MAKE) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" all suppl 
-	touch $@
+#		--enable-shared $(PATHCONFIG) --disable-mex --enable-netcdf=/usr \
+#		--enable-octave \
+#	    --enable-mex-mdir=$(shell octave-config --m-site-dir) \
+#		--enable-mex-xdir=$(shell octave-config --oct-site-dir) 
+	mkdir debian/build || true 
+	cd debian/build && cmake ../..
+	$(MAKE) -C debian/build CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 
 
 install-stamp: build-stamp
 	dh_testdir
 	dh_testroot
 	
-	# Very tricky: GMT does not conform to FHS. As it proved to be very
-	# time consuming to bend this beast I'll create a fake GMT tree
-	# which links to the Debian accepted locations and install into
-	# that tree.
-	mkdir -p  $(DESTDIR)/usr/lib/gmt $(DESTDIR)/usr/share/gmt \
-		$(DESTDIR)/usr/share/man $(DESTDIR)/usr/include/gmt \
-		$(DESTDIR)/usr/share/doc $(DESTDIR)/etc/gmt $(DESTDIR)/usr/bin
-	ln -fs ../../share/man $(DESTDIR)/usr/lib/gmt/man
-	ln -fs ../../include/gmt $(DESTDIR)/usr/lib/gmt/include
-	ln -fs ../../share/gmt $(DESTDIR)/usr/lib/gmt/share
-	
-	$(MAKE) $(PATHVARS) install-all
-	$(MAKE) -C src/mex DESTDIR=$(DESTDIR) install
-	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
+	DESTDIR=$(DESTDIR) $(MAKE) -C debian/build install
+	# remove duplicated stuff
+	rm -rf debian/tmp/usr/share/conf \
+		debian/tmp/usr/share/cpt \
+		debian/tmp/usr/share/custom \
+		debian/tmp/usr/share/dbase \
+		debian/tmp/usr/share/mgd77 \
+		debian/tmp/usr/share/mgg \
+		debian/tmp/usr/share/pattern \
+		debian/tmp/usr/share/pslib \
+		debian/tmp/usr/share/time \
+		debian/tmp/usr/share/tools \
+		debian/tmp/usr/share/VERSION \
+		debian/tmp/usr/share/x2sys
+
+#	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
+#	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
 	
 	# Okay, we still have to move the documentation (the trick above does
 	# not work because the Makefile would try to overwrite the link with
 	# a directory). So move the docs and link them to where GMT will look
 	# for them. 
-	mv $(DESTDIR)/usr/lib/gmt/share/doc/gmt $(DESTDIR)/usr/share/doc/
-	ln -fs ../../../share/doc/gmt $(DESTDIR)/usr/lib/gmt/share/doc/gmt
+#	mv $(DESTDIR)/usr/lib/gmt/share/doc/gmt $(DESTDIR)/usr/share/doc/
+#	ln -fs ../../../share/doc/gmt $(DESTDIR)/usr/lib/gmt/share/doc/gmt
 	
 	# Configuration files are still at the wrong place, let's fix this
-	mv $(DESTDIR)/usr/share/gmt/conf/*.conf $(DESTDIR)/etc/gmt/
-	install -m644 debian/coastline.conf $(DESTDIR)/etc/gmt/
-	for file in $(DESTDIR)/etc/gmt/*.conf; do \
-		ln -fs /etc/gmt/`basename $$file` $(DESTDIR)/usr/share/gmt/`basename $$file`; \
-	done
+#	mv $(DESTDIR)/usr/share/gmt/conf/*.conf $(DESTDIR)/etc/gmt/
+#	install -m644 debian/coastline.conf $(DESTDIR)/etc/gmt/
+#	for file in $(DESTDIR)/etc/gmt/*.conf; do \
+#		ln -fs /etc/gmt/`basename $$file` $(DESTDIR)/usr/share/gmt/`basename $$file`; \
+#	done
 	
 	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
 	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var.
 	# Also use 'pager' instead of more as default pager in the script.
-	sed -e 's/^exec /PATH=\$$PATH:\$${exec_prefix}\/bin exec /' \
-	    -e 's/:-more/:-pager/' \
-	    	$(DESTDIR)/usr/lib/gmt/bin/GMT >$(DESTDIR)/usr/bin/GMT
-	rm -f $(DESTDIR)/usr/lib/gmt/bin/GMT
+#	sed -e 's/^exec /PATH=\$$PATH:\$${exec_prefix}\/bin exec /' \
+#	    -e 's/:-more/:-pager/' \
+#	    	$(DESTDIR)/usr/lib/gmt/bin/GMT >$(DESTDIR)/usr/bin/GMT
+#	rm -f $(DESTDIR)/usr/lib/gmt/bin/GMT
 	
 	# Move the manpages directory into the right place...
-	for section in 1 3 5; do \
-		mkdir -p $(DESTDIR)/usr/share/man/man$${section}; \
-		for manpage in $(DESTDIR)/usr/lib/gmt/share/man/man$${section}/*.$${section}; do \
-			sed -e "s/^\.TH \(.*\) $${section}/\.TH \1 $${section}gmt/" $${manpage}|gzip \
-			       >$(DESTDIR)/usr/share/man/man$${section}/`basename $${manpage}`gmt.gz; \
-			rm -f $${manpage}; \
-		done; \
-	done
-	rm -rf $(DESTDIR)/usr/share/gmt/man
+#	for section in 1 3 5; do \
+#		mkdir -p $(DESTDIR)/usr/share/man/man$${section}; \
+#		for manpage in $(DESTDIR)/usr/lib/gmt/share/man/man$${section}/*.$${section}; do \
+#			sed -e "s/^\.TH \(.*\) $${section}/\.TH \1 $${section}gmt/" $${manpage}|gzip \
+#			       >$(DESTDIR)/usr/share/man/man$${section}/`basename $${manpage}`gmt.gz; \
+#			rm -f $${manpage}; \
+#		done; \
+#	done
+#	rm -rf $(DESTDIR)/usr/share/gmt/man
 	
 	touch $@
 
@@ -112,7 +105,7 @@ binary-arch: install-stamp
 	dh_compress -a -X.pdf
 	dh_fixperms -a
 	dh_makeshlibs -a
-	dh_shlibdeps -a -l$(DESTDIR)/usr/lib/gmt/lib
+	dh_shlibdeps -a 
 	dh_installdeb -a
 	dh_gencontrol -a
 	dh_md5sums -a
@@ -145,13 +138,5 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f install-stamp build-stamp
-	# Reset upstream autotools helpers
-	[ ! -f config.sub.original ] || mv -f config.sub.original config.sub 
-	[ ! -f config.guess.original ] || mv -f config.guess.original config.guess
-	[ ! -f Makefile ] || $(MAKE) distclean || true
-	# Remove a few files still around after upstream cleaning
-	rm -f src/mgg/libgmt_mgg.a \
-		  share/conf/gmt.conf \
-		  share/conf/gmtdefaults_SI \
-		  share/conf/gmtdefaults_US src/isogmt
+	rm -rf $(BUILDDIR) $(DESTDIR)
 	dh_clean

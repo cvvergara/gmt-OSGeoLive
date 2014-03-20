@@ -1,8 +1,1 @@
-# no current patches
-gmt_io.c
-gmt_proj.c
-kfreebsd
-bashism
-eglibc-2.17.patch
-c++comments
-mgd77header.c
+cmake

@@ -1,3 +1,13 @@
+gmt (5.1.0-0~1) experimental; urgency=low
+
+  * New upstream major release: build system moved to cmake.
+  * Added a new cmake patch with Debian changes to CMake configurations.
+  * Removed autotools b-dep and rules.
+  * Removed all (obsolete) patches.
+  * Moved to current full dh_* auto support.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 27 Nov 2013 13:27:48 +0100
+
 gmt (4.5.11-1) unstable; urgency=low
 
   * New upstream release for the 4.x series.
@@ -6,7 +16,6 @@ gmt (4.5.11-1) unstable; urgency=low
   * Added patch c++comments to remove C++ style comments in pure C code. This
     is currently deprecated and should be avoided when strict option 
     like -pedantic are used.
-  *  
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Mon, 25 Nov 2013 15:57:54 +0100
 
