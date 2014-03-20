@@ -1,4 +1,4 @@
-# $Id: Datums.txt 10084 2012-05-12 21:04:53Z fwobbe $
+# $Id: Datums.txt 12822 2014-01-31 23:39:56Z remko $
 #
 # List of Datums available in GMT
 # The (Dx,Dy,Dz) values are in meters relative to WGS-84

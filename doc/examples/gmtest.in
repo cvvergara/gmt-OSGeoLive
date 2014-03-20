@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# $Id: gmtest.in 12370 2013-10-21 11:11:12Z fwobbe $
+# $Id: gmtest.in 12688 2013-12-29 18:55:29Z pwessel $
 #
 # Bash script inclusion to test all GMT examples.
 # It sets the environment such that the examples are created as in the manual.
@@ -42,6 +42,7 @@ export GS_FONTPATH="@CMAKE_CURRENT_SOURCE_DIR@/ex31/fonts"
 unset GMT5_SHAREDIR
 export GMT_SHAREDIR="@GMT_SOURCE_DIR@/share"
 export GMT_USERDIR="@GMT_BINARY_DIR@/share"
+export PATH="@GMT_SOURCE_DIR@/src:$PATH" # for gmt_shell_functions.sh
 
 # Reset error count
 ERROR=0
@@ -65,6 +66,9 @@ function gmtlogo()
 
 # export function definitions to subshells
 export -f gmt gmtlogo
+
+# invalidate module calls without "gmt" prefix, which would bypass gmt from build dir
+. @GMT_SOURCE_DIR@/test/invalidate_modules.sh
 
 # Convert PS to PDF
 function make_pdf()
@@ -168,7 +172,7 @@ done
 unset GLOBIGNORE
 
 # Start with proper GMT defaults
-gmt gmtset -Du FORMAT_TIME_STAMP "Version 5"
+gmt set -Du FORMAT_TIME_STAMP "Version 5"
 
 # Now run the original script
 . "${script}"

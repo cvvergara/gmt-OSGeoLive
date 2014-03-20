@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 15
 REM
-REM		$Id: example_15.bat 12380 2013-10-23 19:20:13Z pwessel $
+REM		$Id: example_15.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Gridding and clipping when data are missing
 REM GMT progs:	blockmedian, gmtconvert, grdclip, grdcontour, grdinfo

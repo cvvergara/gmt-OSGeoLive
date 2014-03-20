@@ -1,4 +1,4 @@
-#	$Id: CUSTOM_font_info.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: CUSTOM_font_info.d 12822 2014-01-31 23:39:56Z remko $
 #
 #	Listing of additional PostScript fonts than those found on most PS printers.
 #	Add your extra font information there.  This is the only required change as

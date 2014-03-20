@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: testgmt5.c 11801 2013-06-24 21:19:31Z pwessel $
+ *	$Id: testgmt5.c 12822 2014-01-31 23:39:56Z remko $
  *
  *	Copyright (c) 1991-$year by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.

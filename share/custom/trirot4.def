@@ -1,4 +1,4 @@
-#	$Id: trirot4.def 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: trirot4.def 12822 2014-01-31 23:39:56Z remko $
 #
 #	Definition file for 90-degree triangle symbol (4th quadrant).  Use in psxy
 #	as -Sktrirot4/size.  Can be circumscribed by the square.

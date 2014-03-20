@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdreformat &mdash; GMT 5.1.0 documentation</title>
+    <title>grdreformat &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdsample" href="grdsample.html" />
     <link rel="prev" title="grdraster" href="grdraster.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -161,10 +160,10 @@ only applies to native grids and is ignored for netCDF output.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -278,7 +277,7 @@ numerous third-party programs and are platform-independent. Some
 disk-space can be saved by storing the data as bytes or shorts in stead
 of integers. Use the <em>scale</em> and <em>offset</em> parameters to make this work
 without loss of data range or significance. For more details, see
-Appendix B.</p>
+<a class="reference internal" href="GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a>.</p>
 <p><strong>Multi-variable grid files</strong></p>
 <p>By default, GMT programs will read the first 2-dimensional grid
 contained in a COARDS-compliant netCDF file. Alternatively, use
@@ -316,7 +315,7 @@ note that it is not possible for GMT to determine uniquely if a
 4-byte grid is float or int; in such cases it is best to use the <em>=ID</em>
 mechanism to specify the file format. In all cases a native grid is
 considered to be signed (i.e., there are no provision for unsigned short
-ints or unsigned bytes). For header and grid details, see Appendix B.</p>
+ints or unsigned bytes). For header and grid details, see <a class="reference internal" href="GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a>.</p>
 </div>
 <div class="section" id="grid-values-precision">
 <h2>Grid Values Precision<a class="headerlink" href="#grid-values-precision" title="Permalink to this headline">¶</a></h2>
@@ -334,35 +333,41 @@ normalizing the data prior to processing.</p>
 <p>To extract the second layer from a 3-dimensional grid named temp from a
 COARDS-compliant netCDF file climate.nc:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdreformat climate.nc?temp[1] temp.nc -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdreformat climate.nc?temp[1] temp.nc -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To create a 4-byte native floating point grid from the COARDS-compliant
 netCDF file data.nc:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdreformat data.nc ras_data.b4=bf -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdreformat data.nc ras_data.b4=bf -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To make a 2-byte short integer file, scale it by 10, subtract 32000,
 setting NaNs to -9999, do</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdreformat values.nc shorts.i2=bs/10/-32000/-9999 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdreformat values.nc shorts.i2=bs/10/-32000/-9999 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To create a Sun standard 8-bit rasterfile for a subset of the data file
 image.nc, assuming the range in image.nc is 0-1 and we need 0-255, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdreformat image.nc -R-60/-40/-40/-30 image.ras8=rb/255/0 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdreformat image.nc -R-60/-40/-40/-30 image.ras8=rb/255/0 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To convert etopo2.nc to etopo2.i2 that can be used by <strong>grdraster</strong>, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdreformat etopo2.nc etopo2.i2=bs -N -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdreformat etopo2.nc etopo2.i2=bs -N -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To creat a dumb file saved as a 32 bits float GeoTiff using GDAL, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdmath -Rd -I10 X Y MUL = lixo.tiff=gd:GTiff</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdmath -Rd -I10 X Y MUL = lixo.tiff=gd:GTiff
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -401,6 +406,11 @@ image.nc, assuming the range in image.nc is 0-1 and we need 0-255, run</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdsample.html"
                         title="next chapter">grdsample</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdreformat.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -419,7 +429,7 @@ image.nc, assuming the range in image.nc is 0-1 and we need 0-255, run</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -437,9 +447,9 @@ image.nc, assuming the range in image.nc is 0-1 and we need 0-255, run</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

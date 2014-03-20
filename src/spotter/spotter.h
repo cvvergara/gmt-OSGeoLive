@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: spotter.h 12022 2013-08-04 10:29:09Z fwobbe $
+ *	$Id: spotter.h 12822 2014-01-31 23:39:56Z remko $
  *
- *   Copyright (c) 1999-2012 by P. Wessel
+ *   Copyright (c) 1999-2014 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -75,6 +75,7 @@ struct HOTSPOT {	/* Structure holding all the information about a hotspot */
 /* ANSI-C Function prototypes (see libspotter.c for details): */
 
 EXTERN_MSC int spotter_stage (struct GMT_CTRL *GMT, double t, struct EULER p[], unsigned int ns);
+EXTERN_MSC void spotter_rot_usage (struct GMTAPI_CTRL *API, char option);
 EXTERN_MSC bool spotter_GPlates_pair (char *file);
 EXTERN_MSC unsigned int spotter_init (struct GMT_CTRL *GMT, char *file, struct EULER **p, bool flowline, bool total_out, bool invert, double *t_max);
 EXTERN_MSC unsigned int spotter_hotspot_init (struct GMT_CTRL *GMT, char *file, bool geocentric, struct HOTSPOT **p);

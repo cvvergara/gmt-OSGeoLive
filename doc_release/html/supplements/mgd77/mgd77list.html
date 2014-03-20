@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>mgd77list &mdash; GMT 5.1.0 documentation</title>
+    <title>mgd77list &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="MGD77" href="../../SUP_MGD77.html" />
     <link rel="next" title="mgd77magref" href="mgd77magref.html" />
     <link rel="prev" title="mgd77info" href="mgd77info.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" accesskey="U">MGD77</a> &raquo;</li>
 <li class="right">
@@ -523,10 +522,10 @@ not supported.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -542,21 +541,24 @@ options, then exits.</dd>
 01010047.mgd77, starting at June 3 1971 20:45 and ending at distance =
 5000 km, use the following command:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt mgd77list 01010047 -Da1971-06-03T20:45 -Sb5000 -Fdist,azim,faa,depth &gt; myfile.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77list 01010047 -Da1971-06-03T20:45 -Sb5000 -Fdist,azim,faa,depth &gt; myfile.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To make input for <strong>blockmean</strong> and <strong>surface</strong> using free-air anomalies
 from all the cruises listed in the file cruises.lis, but only the data
 that are inside the specified area, and make the output binary:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt mgd77list `cat cruises.lis` -Flon,lat,faa -R-40/-30/25/35 -bo &gt; allgrav.b</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77list `cat cruises.lis` -Flon,lat,faa -R-40/-30/25/35 -bo &gt; allgrav.b
+</pre></div>
 </div>
 </div></blockquote>
 <p>To extract the locations of depths exceeding 9000 meter that were not
 interpolated (<strong>btc</strong> != 1) from all the cruises listed in the file
 cruises.lis:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt mgd77list ‘cat cruises.lis‘ -F"depth,DEPTH&gt;9000,BTC!=1" &gt; really_deep.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77list ‘cat cruises.lis‘ -F&quot;depth,DEPTH&gt;9000,BTC!=1&quot; &gt; really_deep.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To extract dist, faa, and grav12_2 from records whose depths are
@@ -564,22 +566,25 @@ shallower than 3 km and where none of the requested fields are NaN, from
 all the MGD77+ netCDF files whose cruise ids are listed in the file
 cruises.lis, we try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt mgd77list ‘cat cruises.lis‘ -E -Ia -F"dist,faa,grav12_2,depth&lt;3000" &gt; \
-    shallow_grav.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77list ‘cat cruises.lis‘ -E -Ia -F&quot;dist,faa,grav12_2,depth&lt;3000&quot; &gt; \
+    shallow_grav.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To extract dist, faa, and grav12_2 from all the MGD77+ netCDF files
 whose cruise ids are listed in the file cruises.lis, but only retrieve
 records whose bitflag for faa indicates BAD values, we try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt mgd77list ‘cat cruises.lis‘ -E -Ia -F"dist,faa,grav12_2:+faa" &gt; bad_grav.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77list ‘cat cruises.lis‘ -E -Ia -F&quot;dist,faa,grav12_2:+faa&quot; &gt; bad_grav.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To output lon, lat, mag, and faa from all the cruises listed in the file
 cruises.lis, but recalculate the two residuals based on the latest
 reference fields, try:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt mgd77list ‘cat cruises.lis‘ -Flon,lat,mag,faa -Af2,4 -Am2 &gt; data.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77list ‘cat cruises.lis‘ -Flon,lat,mag,faa -Af2,4 -Am2 &gt; data.d
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -690,6 +695,11 @@ corrected by a strange dependency on ship heading and latitude, and
   <h4>Next topic</h4>
   <p class="topless"><a href="mgd77magref.html"
                         title="next chapter">mgd77magref</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/mgd77/mgd77list.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -708,7 +718,7 @@ corrected by a strange dependency on ship heading and latitude, and
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" >MGD77</a> &raquo;</li>
 <li class="right">
@@ -726,9 +736,9 @@ corrected by a strange dependency on ship heading and latitude, and
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmt &mdash; GMT 5.1.0 documentation</title>
+    <title>gmt &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmt2kml" href="gmt2kml.html" />
     <link rel="prev" title="gmt.conf" href="gmt.conf.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -698,7 +697,7 @@ can be any value):</p>
 <blockquote>
 <div>Give the central meridian <em>lon0</em> (optional) and <em>scale</em>
 (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</div></blockquote>
-<p><strong>-Jm</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or <strong>-JM</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em></p>
+<p><strong>-Jm</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or <strong>-JM</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> (Mercator <strong>[C]</strong>)</p>
 <blockquote>
 <div>Give central meridian <em>lon0</em> (optional), standard parallel <em>lat0</em>
 (optional), and <em>scale</em> along parallel (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</div></blockquote>
@@ -735,7 +734,7 @@ standard parallel is typically one of these (but can be any value):</p>
 </div></blockquote>
 </div></blockquote>
 <p><strong>-Jt</strong><em>lon0/</em>[<em>lat0/</em>]<em>scale</em> or
-<strong>-JT</strong><em>lon0/</em>[<em>lat0/</em>]<em>width</em></p>
+<strong>-JT</strong><em>lon0/</em>[<em>lat0/</em>]<em>width</em> (Transverse Mercator <strong>[C]</strong>)</p>
 <blockquote>
 <div>Give the central meridian <em>lon0</em>, central parallel <em>lat0</em>
 (optional), and <em>scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</div></blockquote>
@@ -1201,10 +1200,10 @@ is 0, i.e., opaque].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -1404,6 +1403,11 @@ GMT home page <a class="reference external" href="http://gmt.soest.hawaii.edu/">
   <h4>Next topic</h4>
   <p class="topless"><a href="gmt2kml.html"
                         title="next chapter">gmt2kml</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/gmt.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -1422,7 +1426,7 @@ GMT home page <a class="reference external" href="http://gmt.soest.hawaii.edu/">
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -1440,9 +1444,9 @@ GMT home page <a class="reference external" href="http://gmt.soest.hawaii.edu/">
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: libspotter.c 12251 2013-10-04 18:56:13Z pwessel $
+ *	$Id: libspotter.c 12822 2014-01-31 23:39:56Z remko $
  *
- *   Copyright (c) 1999-2012 by P. Wessel
+ *   Copyright (c) 1999-2014 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -58,6 +58,14 @@ void GMT_get_point_from_r_az (struct GMT_CTRL *GMT, double lon0, double lat0, do
 #define SPOTTER_N_FINE_STEPS	36000
 #define SPOTTER_N_GRID		100
 #define SPOTTER_D_CUT		1.0e-6
+
+void spotter_rot_usage (struct GMTAPI_CTRL *API, char option)
+{
+	GMT_Message (API, GMT_TIME_NONE, "\t-%c Specify file with the rotations to be used (see man page for format).\n", option);
+	GMT_Message (API, GMT_TIME_NONE, "\t   Prepend + if you want to invert the finite rotations prior to use.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, give two plate IDs separated by a hyphen (e.g., PAC-MBL)\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   to extract that rotation from the GPlates rotation database (if installed)\n");
+}
 
 /* Sort functions used to order the rotations */
 

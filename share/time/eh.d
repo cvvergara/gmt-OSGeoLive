@@ -1,6 +1,6 @@
 # GMT Time language file for EH (Basque) mode (EH)
 #
-#	$Id: eh.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: eh.d 12807 2014-01-30 10:31:56Z remko $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Urtarrila       Urt     U

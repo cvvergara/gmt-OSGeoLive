@@ -1,7 +1,7 @@
 REM
 REM		GMT EXAMPLE 03
 REM
-REM		$Id: example_03.bat 11641 2013-06-07 00:06:36Z pwessel $
+REM		$Id: example_03.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 echo GMT EXAMPLE 03
 set ps=example_03.ps

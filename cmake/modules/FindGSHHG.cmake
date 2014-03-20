@@ -1,5 +1,5 @@
 #
-# $Id: FindGSHHG.cmake 12183 2013-09-22 14:58:38Z fwobbe $
+# $Id: FindGSHHG.cmake 12871 2014-02-07 17:38:13Z pwessel $
 #
 # Locate GSHHG shorelines
 #
@@ -21,12 +21,12 @@ find_path (GSHHG_PATH
 	NAMES binned_GSHHS_c.nc binned_GSHHS_c.cdf
 	HINTS ${GSHHG_ROOT} $ENV{GSHHG_ROOT}
 	PATH_SUFFIXES
+	gmt-gshhg
 	gshhg-gmt-nc4
+	share/gmt/gshhg
+	share/gmt-gshhg
+	share/gshhg
 	share/gshhg-gmt-nc4
-	share/gshhs
-	coast
-	share/coast
-	share/gmt/coast
 	PATHS
 	${CMAKE_SOURCE_DIR}
 	/sw # Fink
@@ -77,6 +77,11 @@ if (_GSHHG_FILE AND NOT GSHHG_FOUND)
 		endif (_EXIT_GSHHG_VERSION EQUAL 0)
 	endif (_COMPILED_GSHHG_VERSION)
 endif (_GSHHG_FILE AND NOT GSHHG_FOUND)
+
+if (GSHHG_EXT STREQUAL "")
+	message(FATAL_ERROR "unexpected: the string literal 'GSHHG_EXT' is empty - reset to .nc")
+	set (GSHHG_EXT ${GSHHG_EXT} CACHE INTERNAL ".nc")
+endif()
 
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (GSHHG DEFAULT_MSG

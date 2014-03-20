@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_project.h 12298 2013-10-08 23:04:58Z pwessel $
+ *	$Id: gmt_project.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -136,7 +136,7 @@ enum GMT_enum_units {GMT_IS_METER = 0,
 #define GMT_is_grdmapproject(C) (!strncmp (C->init.module_name, "grdproject", 10U) || !strncmp (C->init.module_name, "mapproject", 10U))
 
 /* Return 0 for Flat Earth, 1 for Great-circles, 2 for geodesics, and 3 for loxodromes */
-#define GMT_sph_mode(C) (GMT_IS_FLATEARTH (C) ? 0 : (GMT_IS_SPHERICAL (C) ? 1 : (C->current.map.loxodrome ? 3 : 2)))
+#define GMT_sph_mode(C) (GMT_IS_FLATEARTH (C) ? GMT_FLATEARTH : (GMT_IS_SPHERICAL (C) ? GMT_GREATCIRCLE : (C->current.map.loxodrome ? GMT_LOXODROME : GMT_GEODESIC)))
 
 #define GMT_360_RANGE(w,e) (doubleAlmostEqual (fabs((e) - (w)), 360.0))
 #define GMT_180_RANGE(s,n) (doubleAlmostEqual (fabs((n) - (s)), 180.0))
@@ -268,7 +268,7 @@ struct GMT_PROJ {
 
 	uint64_t n_geodesic_calls;	/* Number of calls for geodesics in this session */
 	uint64_t n_geodesic_approx;	/* Number of calls for geodesics in this session that exceeded iteration limit */
-	
+
 	double f_horizon, rho_max;	/* Azimuthal horizon (deg) and in plot coordinates */
 
 	/* Linear plot parameters */

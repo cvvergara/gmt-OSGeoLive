@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 18
-#		$Id: example_18.sh 11916 2013-07-06 22:45:25Z pwessel $
+#		$Id: example_18.sh 12743 2014-01-10 23:02:33Z pwessel $
 #
 # Purpose:	Illustrates volumes of grids inside contours and spatial
 #		selection of data
@@ -56,7 +56,7 @@ gmt psxy -R -J -O -K -ST0.1i -Gyellow -Wthinnest pratt.d >> $ps
 # by masking out data outside the 200 km-radius circle
 # and then evaluate area/volume for the 50 mGal contour
 
-gmt grdmath -R `cat pratt.d` SDIST = mask.nc
+gmt grdmath -R `$AWK '{print $1, $2}' pratt.d` SDIST = mask.nc
 gmt grdclip mask.nc -Sa200/NaN -Sb200/1 -Gmask.nc
 gmt grdmath AK_gulf_grav.nc mask.nc MUL = tmp.nc
 area=`gmt grdvolume tmp.nc -C50 -Sk | cut -f2`
@@ -64,8 +64,8 @@ volume=`gmt grdvolume tmp.nc -C50 -Sk | cut -f3`
 
 gmt psxy -R -J -A -O -K -L -Wthin -Gwhite >> $ps << END
 -148.5	52.75
--140.5	52.75
--140.5	53.75
+-141	52.75
+-141	53.75
 -148.5	53.75
 END
 gmt pstext -R -J -O -F+f14p,Helvetica-Bold+jLM >> $ps << END

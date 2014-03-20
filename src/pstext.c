@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pstext.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: pstext.c 12850 2014-02-04 00:45:41Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -209,43 +209,44 @@ void load_parameters_pstext (struct PSTEXT_INFO *T, struct PSTEXT_CTRL *C)
 	T->block_justify = C->F.justify;
 }
 
-bool get_input_format_version (struct GMT_CTRL *GMT, char *buffer, int mode)
+int get_input_format_version (struct GMT_CTRL *GMT, char *buffer, int mode)
 {
 	/* Try to determine if input is the old GMT4-style format.
-	 * mode = 0 means normal textrec, mode = 1 means paragraph mode. */
+	 * mode = 0 means normal textrec, mode = 1 means paragraph mode.
+	 * Return 4 if GMT 4, 5 if GMT 5, -1 if nothing can be done */
 	
 	int n, k;
 	char size[GMT_LEN256] = {""}, angle[GMT_LEN256] = {""}, font[GMT_LEN256] = {""}, just[GMT_LEN256] = {""}, txt[GMT_BUFSIZ] = {""};
 	char spacing[GMT_LEN256] = {""}, width[GMT_LEN256] = {""}, pjust[GMT_LEN256] = {""};
 	
-	if (!buffer || !buffer[0]) return (false);	/* Nothing to work with */
+	if (!buffer || !buffer[0]) return (-1);	/* Nothing to work with */
 	
 	if (mode) {	/* Paragraph control record */
 		n = sscanf (buffer, "%s %s %s %s %s %s %s\n", size, angle, font, just, spacing, width, pjust);
-		if (n < 7) return (false);	/* Clearly not the old format since missing items */
+		if (n < 7) return (5);	/* Clearly not the old format since missing items */
 	}
 	else {		/* Regular text record */
 		n = sscanf (buffer, "%s %s %s %s %[^\n]", size, angle, font, just, txt);
-		if (n < 5) return (false);	/* Clearly not the old format since missing items */
+		if (n < 5) return (5);	/* Clearly not the old format since missing items */
 	}
-	if (GMT_not_numeric (GMT, angle)) return (false);	/* Since angle is not a number */
+	if (GMT_not_numeric (GMT, angle)) return (5);	/* Since angle is not a number */
 	k = (int)strlen (size) - 1;
 	if (size[k] == 'c' || size[k] == 'i' || size[k] == 'm' || size[k] == 'p') size[k] = '\0';	/* Chop of unit */
-	if (GMT_not_numeric (GMT, size)) return (false);	/* Since size is not a number */
-	if (GMT_just_decode (GMT, just, 12) == -99) return (false);	/* Since justify not in correct format */
+	if (GMT_not_numeric (GMT, size)) return (5);	/* Since size is not a number */
+	if (GMT_just_decode (GMT, just, 12) == -99) return (5);	/* Since justify not in correct format */
 	if (mode) {	/* A few more checks for paragraph mode */
 		k = (int)strlen (spacing) - 1;
 		if (spacing[k] == 'c' || spacing[k] == 'i' || spacing[k] == 'm' || spacing[k] == 'p') spacing[k] = '\0';	/* Chop of unit */
-		if (GMT_not_numeric (GMT, spacing)) return (false);	/* Since spacing is not a number */
+		if (GMT_not_numeric (GMT, spacing)) return (5);	/* Since spacing is not a number */
 		k = (int)strlen (width) - 1;
 		if (width[k] == 'c' || width[k] == 'i' || width[k] == 'm' || width[k] == 'p') width[k] = '\0';	/* Chop of unit */
-		if (GMT_not_numeric (GMT, width)) return (false);		/* Since width is not a number */
-		if (!(pjust[0] == 'j' && pjust[1] == '\0') && GMT_just_decode (GMT, pjust, 0) == -99) return (false);
+		if (GMT_not_numeric (GMT, width)) return (5);		/* Since width is not a number */
+		if (!(pjust[0] == 'j' && pjust[1] == '\0') && GMT_just_decode (GMT, pjust, 0) == -99) return (5);
 	}
 
 	/* Well, seems like the old format so far */
 	GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: use of old style pstext input is deprecated.\n");
-	return (true);
+	return (4);
 }
 
 int GMT_pstext_usage (struct GMTAPI_CTRL *API, int level, int show_fonts)
@@ -256,8 +257,8 @@ int GMT_pstext_usage (struct GMTAPI_CTRL *API, int level, int show_fonts)
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: pstext [<table>] %s %s [-A] [%s]\n", GMT_J_OPT, GMT_Rgeoz_OPT, GMT_B_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-C<dx>/<dy>] [-D[j|J]<dx>[/<dy>][v[<pen>]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-F[a+<angle>][+c<justify>][+f<font>][+h|l][+j<justify>]] [-G<color>] [%s] [-K] [-L] [-M]\n", GMT_Jz_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-N] [-O] [-P] [-Q<case>] [-To|O|c|C] [%s] [%s]\n", GMT_U_OPT, GMT_V_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-F[+a[<angle>]][+c[<justify>]][+f[<font>]][+h|l][+j[<justify>]]] [-G<color>] [%s] [-K]\n", GMT_Jz_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-M] [-N] [-O] [-P] [-Q<case>] [-To|O|c|C] [%s] [%s]\n", GMT_U_OPT, GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-W[<pen>] [%s] [%s] [-Z[<zlevel>|+]]\n", GMT_X_OPT, GMT_Y_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s]\n", GMT_a_OPT, GMT_c_OPT, GMT_f_OPT, GMT_h_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s]\n\n", GMT_p_OPT, GMT_t_OPT, GMT_colon_OPT);
@@ -301,16 +302,16 @@ int GMT_pstext_usage (struct GMTAPI_CTRL *API, int level, int show_fonts)
 	GMT_Message (API, GMT_TIME_NONE, "\t   Upper case -DJ will shorten diagonal shifts at corners by sqrt(2).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append v[<pen>] to draw line from text to original point.  If <add_y> is not given it equal <add_x>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Specify values for text attributes that apply to all text records:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   +a<angle> specifies the baseline angle for all text [0].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   +a[<angle>] specifies the baseline angle for all text [0].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +c<justify> get the corresponding coordinate from the -R string instead of a given (x,y).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   +f<fontinfo> sets the size, font, and optionally the text color [%s].\n",
+	GMT_Message (API, GMT_TIME_NONE, "\t   +f[<fontinfo>] sets the size, font, and optionally the text color [%s].\n",
 		GMT_putfont (API->GMT, API->GMT->current.setting.font_annot[0]));
-	GMT_Message (API, GMT_TIME_NONE, "\t   +j<justify> sets text justification relative to given (x,y) coordinate.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   +j[<justify>] sets text justification relative to given (x,y) coordinate.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     Give a 2-char combo from [T|M|B][L|C|R] (top/middle/bottom/left/center/right) [CM].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +h will use as text the most recent segment header.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +l will use as text the label specified via -L<label> in the most recent segment header.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If an attribute +f|+a|+j is not followed by a value we read the information from the\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   data file in the order given on the -F option.  Only one of +h or +l can be specified.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   data file in the order given by the -F option.  Only one of +h or +l can be specified.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Note: +h|l modifiers cannot be used in paragraph mode (-M).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Paint the box underneath the text with specified color [Default is no paint].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, append c to set these boxes as clip paths based on text (and -C).  No text is plotted.\n");
@@ -325,8 +326,8 @@ int GMT_pstext_usage (struct GMTAPI_CTRL *API, int level, int show_fonts)
 	GMT_Option (API, "O,P");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q For all text to be (l)lower or (u)pper-case [Default leaves text as is].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Set shape of textbox when using -G and/or -W.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Add o for rectangle [Default], O for rectangle with rounded corners,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   c for concave rectangle, C for convex rectangle.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Add o for rectangle [Default] or O for rectangle with rounded corners,\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   When -M is used you can also set c for concave and C for convex rectangle.\n");
 	GMT_Option (API, "U,V");
 	GMT_pen_syntax (API->GMT, 'W', "Draw a box around the text with the specified pen [Default pen is %s].");
 	GMT_Option (API, "X");
@@ -535,14 +536,19 @@ int GMT_pstext_parse (struct GMT_CTRL *GMT, struct PSTEXT_CTRL *Ctrl, struct GMT
 
 int validate_coord_and_text (struct GMT_CTRL *GMT, struct PSTEXT_CTRL *Ctrl, int rec_no, char *record, char buffer[])
 {	/* Parse x,y [and z], check for validity, and return the rest of the text in buffer */
-	int ix, iy, nscan;
+	int ix, iy, nscan = 0;
+	unsigned int pos = 0;
 	char txt_x[GMT_LEN256] = {""}, txt_y[GMT_LEN256] = {""}, txt_z[GMT_LEN256] = {""};
 
 	ix = (GMT->current.setting.io_lonlat_toggle[GMT_IN]);	iy = 1 - ix;
 	buffer[0] = '\0';	/* Initialize buffer to NULL */
 
 	if (Ctrl->Z.active) {	/* Expect z in 3rd column */
-		nscan = sscanf (record, "%s %s %s %[^\n]\n", txt_x, txt_y, txt_z, buffer);
+		if (GMT_strtok (record, " \t,", &pos, txt_x)) nscan++;	/* Returns xcol and update pos */
+		if (GMT_strtok (record, " \t,", &pos, txt_y)) nscan++;	/* Returns ycol and update pos */
+		if (GMT_strtok (record, " \t,", &pos, txt_z)) nscan++;	/* Returns zcol and update pos */
+		strcpy (buffer, &record[pos]);
+		sscanf (&record[pos], "%[^\n]\n", buffer);	nscan++;	/* Since sscanf could return -1 if nothing we increment nscan always */
 		if ((GMT_scanf (GMT, txt_z, GMT->current.io.col_type[GMT_IN][GMT_Z], &GMT->current.io.curr_rec[GMT_Z]) == GMT_IS_NAN)) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Record %d had bad z coordinate, skipped)\n", rec_no);
 			return (-1);
@@ -567,12 +573,14 @@ int validate_coord_and_text (struct GMT_CTRL *GMT, struct PSTEXT_CTRL *Ctrl, int
 		else
 			GMT->current.io.curr_rec[iy] = GMT->common.R.wesn[YHI];
 
-		nscan = 2;
+		nscan = 2;	/* Since x,y are implicit */
 		nscan += sscanf (record, "%[^\n]\n", buffer);
 		GMT->current.io.curr_rec[GMT_Z] = GMT->current.proj.z_level;
 	}
 	else {
-		nscan = sscanf (record, "%s %s %[^\n]\n", txt_x, txt_y, buffer);
+		if (GMT_strtok (record, " \t,", &pos, txt_x)) nscan++;	/* Returns xcol and update pos */
+		if (GMT_strtok (record, " \t,", &pos, txt_y)) nscan++;	/* Returns ycol and update pos */
+		sscanf (&record[pos], "%[^\n]\n", buffer);	nscan++;	/* Since sscanf could return -1 if nothing we increment nscan always */
 		GMT->current.io.curr_rec[GMT_Z] = GMT->current.proj.z_level;
 	}
 

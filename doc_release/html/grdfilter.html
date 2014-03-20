@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdfilter &mdash; GMT 5.1.0 documentation</title>
+    <title>grdfilter &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdgradient" href="grdgradient.html" />
     <link rel="prev" title="grdfft" href="grdfft.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -198,10 +197,10 @@ the input grid].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -263,8 +262,9 @@ which you choose to be from 150E to 250E and 10N to 40N, and you want
 the output values every 0.5 degree. Using spherical distance
 calculations, you need:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfilter north_pacific_etopo5.nc -Gfiltered_pacific.nc -Fm600 \
-              -D4 -R150/250/10/40 -I0.5 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfilter north_pacific_etopo5.nc -Gfiltered_pacific.nc -Fm600 \
+              -D4 -R150/250/10/40 -I0.5 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>If we instead wanted a high-pass result then one can perform the
@@ -272,8 +272,9 @@ corresponding low-pass filter using a coarse grid interval as grdfilter
 will resample the result to the same resolution as the input grid so we
 can compute the residuals, e.g.,</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfilter north_pacific_etopo5.nc -Gresidual_pacific.nc -Fm-600 \
-              -D4 -R150/250/10/40 -I0.5 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfilter north_pacific_etopo5.nc -Gresidual_pacific.nc -Fm-600 \
+              -D4 -R150/250/10/40 -I0.5 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>Here, the residual_pacific.nc grid will have the same 5 minute
@@ -283,9 +284,10 @@ filter exp (-0.5*r^2) whose distances r from the center is given by
 (2x^2 + y^2 -2xy)/6, with major axis at an angle of 63 degrees with the
 horizontal, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdmath -R-10/10/-10/10 -I1 X 2 POW 2 MUL Y 2 POW ADD X Y MUL 2 MUL \
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdmath -R-10/10/-10/10 -I1 X 2 POW 2 MUL Y 2 POW ADD X Y MUL 2 MUL \
             SUB 6 DIV NEG 2 DIV EXP DUP SUM DIV = gfilter.nc
-gmt grdfilter ripples.nc -Ffgfilter.nc -D0 -Gsmooth.nc -V</pre>
+gmt grdfilter ripples.nc -Ffgfilter.nc -D0 -Gsmooth.nc -V
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -329,6 +331,11 @@ Equator (i.e., x = y = 0 correspond to lon = lat = 0).</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdgradient.html"
                         title="next chapter">grdgradient</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdfilter.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -347,7 +354,7 @@ Equator (i.e., x = y = 0 correspond to lon = lat = 0).</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -365,9 +372,9 @@ Equator (i.e., x = y = 0 correspond to lon = lat = 0).</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

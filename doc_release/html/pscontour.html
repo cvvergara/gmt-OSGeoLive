@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pscontour &mdash; GMT 5.1.0 documentation</title>
+    <title>pscontour &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pshistogram" href="pshistogram.html" />
     <link rel="prev" title="pscoast" href="pscoast.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -442,10 +441,10 @@ annotations.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -461,7 +460,8 @@ options, then exits.</dd>
 contours (pen = 2) given in the color palette file topo.cpt on a Lambert
 map at 0.5 inch/degree along the standard parallels 18 and 24, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pscontour topo.xyz -R320/330/20/30 -Jl18/24/0.5i -Ctopo.cpt -W0.5p &gt; topo.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscontour topo.xyz -R320/330/20/30 -Jl18/24/0.5i -Ctopo.cpt -W0.5p &gt; topo.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To create a color PostScript plot of the numerical temperature
@@ -469,19 +469,15 @@ solution obtained on a triangular mesh whose node coordinates and
 temperatures are stored in temp.xyz and mesh arrangement is given by the
 file mesh.ijk, using the colors in temp.cpt, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pscontour temp.xyz -R0/150/0/100 -Jx0.1i -Ctemp.cpt -G -W0.25p &gt; temp.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscontour temp.xyz -R0/150/0/100 -Jx0.1i -Ctemp.cpt -G -W0.25p &gt; temp.ps
+</pre></div>
 </div>
 </div></blockquote>
-</div>
-<div class="section" id="bugs">
-<h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this headline">¶</a></h2>
-<p>Sometimes there will appear to be thin lines of the wrong color in the
-image. This is a round-off problem which may be remedied by using a
-higher value of <strong>PS_DPI</strong> in the <a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a> file.</p>
 <p>To save the triangulated 100-m contour lines in topo.txt and separate
 them into multisegment files (one for each contour level), try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pscontour topo.txt -C100 -Dcontours_%.0f.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscontour topo.txt -C100 -Dcontours_%.0f.txt
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -521,7 +517,6 @@ Geometry (Philadelphia, PA), 124-133, ACM, May 1996.</p>
 <li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
 <li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
-<li><a class="reference internal" href="#bugs">Bugs</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
 <li><a class="reference internal" href="#references">References</a></li>
 </ul>
@@ -534,6 +529,11 @@ Geometry (Philadelphia, PA), 124-133, ACM, May 1996.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="pshistogram.html"
                         title="next chapter">pshistogram</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pscontour.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -552,7 +552,7 @@ Geometry (Philadelphia, PA), 124-133, ACM, May 1996.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -570,9 +570,9 @@ Geometry (Philadelphia, PA), 124-133, ACM, May 1996.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

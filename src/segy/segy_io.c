@@ -1,5 +1,5 @@
 /*
- * $Id: segy_io.c 10094 2012-05-14 17:13:02Z fwobbe $
+ * $Id: segy_io.c 12822 2014-01-31 23:39:56Z remko $
  * segy_io.c:  A suite of functions to cover reading SEGY header variables.
  *
  * modified by T. Henstock from the PASSCAL software suite.

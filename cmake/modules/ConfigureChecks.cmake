@@ -1,5 +1,5 @@
 #
-# $Id: ConfigureChecks.cmake 12149 2013-09-10 23:24:43Z fwobbe $
+# $Id: ConfigureChecks.cmake 12907 2014-02-17 21:01:46Z fwobbe $
 #
 
 if(NOT DEFINED _INCLUDED_CHECK_MACROS_)
@@ -112,11 +112,16 @@ check_include_file (dirent.h            HAVE_DIRENT_H_)
 check_include_file (errno.h             HAVE_ERRNO_H_)
 check_include_file (execinfo.h          HAVE_EXECINFO_H_)
 check_include_file (fcntl.h             HAVE_FCNTL_H_)
+check_include_file (signal.h            HAVE_SIGNAL_H_)
 check_include_file (stdbool.h           HAVE_STDBOOL_H_)
 check_include_file (sys/dir.h           HAVE_SYS_DIR_H_)
-check_include_file (sys/stat.h          HAVE_STAT_H_)
+check_include_file (sys/resource.h      HAVE_SYS_RESOURCE_H_)
+check_include_file (sys/stat.h          HAVE_SYS_STAT_H_)
+check_include_file (sys/time.h          HAVE_SYS_TIME_H_)
+check_include_file (sys/ucontext.h      HAVE_SYS_UCONTEXT_H_)
 check_include_file (unistd.h            HAVE_UNISTD_H_)
 
+check_function_exists (fcntl            HAVE_FCNTL)
 check_function_exists (fopen64          HAVE_FOPEN64)
 check_function_exists (fseeko           HAVE_FSEEKO)
 check_function_exists (ftello           HAVE_FTELLO)
@@ -421,7 +426,6 @@ cmake_pop_check_state()
 #check_function_exists (dcgettext HAVE_DCGETTEXT)
 #check_function_exists (dladdr HAVE_DLADDR)
 #check_function_exists (dlerror HAVE_DLERROR)
-#check_function_exists (fcntl HAVE_FCNTL)
 #check_function_exists (getcwd HAVE_GETCWD)
 #check_function_exists (getegid HAVE_GETEGID)
 #check_function_exists (getgid HAVE_GETGID)

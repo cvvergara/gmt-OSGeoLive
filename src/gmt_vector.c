@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_vector.c 12096 2013-09-02 01:34:46Z pwessel $
+ *	$Id: gmt_vector.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -1034,6 +1034,9 @@ uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 
 	unsigned int k = 1;
 	bool meridian;
+#ifdef DEBUG
+	bool dump = false;
+#endif
 	uint64_t i, j, n_new, n_step = 0;
 	double a[3], b[3], x[3], *lon = NULL, *lat = NULL;
 	double c, d, fraction, theta, minlon, maxlon;
@@ -1130,9 +1133,17 @@ uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 	/* Destroy old allocated memory and put the new one in place */
 	GMT_free (GMT, lon);
 	GMT_free (GMT, lat);
+	GMT_eliminate_lon_jumps (GMT, GMT->hidden.mem_coord[GMT_X], n_new);
 	*a_lon = GMT_assign_vector (GMT, n_new, GMT_X);
 	*a_lat = GMT_assign_vector (GMT, n_new, GMT_Y);
-	
+
+#ifdef DEBUG
+	if (dump) {
+		FILE *fp = fopen ("fixup.txt", "w");
+		for (j = 0; j < n_new; j++) fprintf (fp, "%g\t%g\n", GMT->hidden.mem_coord[GMT_X][j], GMT->hidden.mem_coord[GMT_Y][j]);
+		fclose (fp);
+	}
+#endif
 	return (n_new);
 }
 

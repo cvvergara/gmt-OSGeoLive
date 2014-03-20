@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: splitxyz.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: splitxyz.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -584,7 +584,7 @@ int GMT_splitxyz (void *V_API, int mode, void *args)
 
 	/* Must set coord pointers to NULL since they were not allocated */
 	for (seg = 0; seg < seg2; seg++) for (j = 0; j < n_outputs; j++) D[GMT_OUT]->table[0]->segment[seg]->coord[j] = NULL;
-	GMT_free_segment (GMT, S_out);
+	GMT_free_segment (GMT, &S_out, GMT_ALLOCATED_BY_GMT);
 	if (Ctrl->F.active) GMT_free (GMT, fwork);
 	GMT_free (GMT, rec);
 

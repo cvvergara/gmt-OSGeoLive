@@ -1,5 +1,5 @@
 #
-# $Id: ManageString.cmake 10318 2012-06-28 22:14:48Z remko $
+# $Id: ManageString.cmake 12822 2014-01-31 23:39:56Z remko $
 #
 # - Collection of String utility macros.
 # Defines the following macros:

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_sph.c 12251 2013-10-04 18:56:13Z pwessel $
+ *	$Id: gmt_sph.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 2008-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2008-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
  * Renka, R, J,, 1997, Algorithm 773: SSRFPACK: Interpolation of
  *    Scattered Data on the Surface of a Sphere with a Surface under Tension,
  *    AMC Trans. Math. Software, 23 (3), 435-442.
- * We translated both to C using f2c and link with -lf2c
+ * We translated both to C using f2c and removed/rewrite statements that needed -lf2c
  *
  * Author:      Paul Wessel
  * Date:        1-AUG-2011

@@ -1,5 +1,5 @@
 #
-# $Id: FindDCW.cmake 11547 2013-05-23 08:37:01Z fwobbe $
+# $Id: FindDCW.cmake 12822 2014-01-31 23:39:56Z remko $
 #
 # Locate DCW Digital Chart of the World for GMT
 #
@@ -16,9 +16,11 @@
 find_path (DCW_PATH dcw-gmt.nc
 	HINTS ${DCW_ROOT} $ENV{DCW_ROOT}
 	PATH_SUFFIXES
+	gmt-dcw
 	dcw-gmt
+	share/gmt/dcw
+	share/gmt-dcw
 	share/dcw-gmt
-	share/gmt/dcw-gmt
 	PATHS
 	${CMAKE_SOURCE_DIR}
 	/sw # Fink

@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: x2sys.c 12944 2014-02-25 18:14:38Z pwessel $
  *
- *      Copyright (c) 1999-2012 by P. Wessel
+ *      Copyright (c) 1999-2014 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -192,6 +192,11 @@ int get_first_year (struct GMT_CTRL *GMT, double t)
 void x2sys_set_home (struct GMT_CTRL *GMT)
 {
 	char *this = NULL;
+#ifdef WIN32
+	static char *par = "%X2SYS_HOME%";
+#else
+	static char *par = "$X2SYS_HOME";
+#endif
 
 	if (X2SYS_HOME) return;	/* Already set elsewhere */
 
@@ -199,9 +204,9 @@ void x2sys_set_home (struct GMT_CTRL *GMT)
 		X2SYS_HOME = GMT_memory (GMT, NULL, strlen (this) + 1, char);
 		strcpy (X2SYS_HOME, this);
 	}
-	else {	/* Default to the x2sys dir under GMT->session.SHAREDIR */
-		X2SYS_HOME = GMT_memory (GMT, NULL, strlen (GMT->session.SHAREDIR) + 7, char);
-		sprintf (X2SYS_HOME, "%s/x2sys", GMT->session.SHAREDIR);
+	else {	/* Require user to set this parameters since subdirs will be created and it would be messy to just use . */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: %s has not been set but is a required parameter\n", par);
+		exit (EXIT_FAILURE);
 	}
 #ifdef WIN32
 		DOS_path_fix (X2SYS_HOME);
@@ -377,6 +382,14 @@ int x2sys_initialize (struct GMT_CTRL *GMT, char *TAG, char *fname, struct GMT_I
 		X->in_order[i] = X->out_order[i] = i;
 		X->use_column[i] = 1;
 		G->col_type[GMT_IN][i] = G->col_type[GMT_OUT][i] = (X->x_col == is) ? GMT_IS_LON : ((X->y_col == is) ? GMT_IS_LAT : GMT_IS_UNKNOWN);
+		if (X->x_col == is) 
+			G->col_type[GMT_IN][i] = G->col_type[GMT_OUT][i] = GMT_IS_LON;
+		else if (X->y_col == is)
+			G->col_type[GMT_IN][i] = G->col_type[GMT_OUT][i] = GMT_IS_LAT;
+		else if (X->t_col == is)
+			G->col_type[GMT_IN][i] = G->col_type[GMT_OUT][i] = GMT_IS_ABSTIME;
+		else
+			G->col_type[GMT_IN][i] = G->col_type[GMT_OUT][i] = GMT_IS_UNKNOWN;
 	}
 	X->n_data_cols = x2sys_n_data_cols (GMT, X);
 	X->rec_size = (8 + X->n_data_cols) * sizeof (double);
@@ -629,6 +642,7 @@ int x2sys_read_file (struct GMT_CTRL *GMT, char *fname, double ***data, struct X
 
 	uint64_t j;
  	unsigned int i;
+	bool first = true;
 	size_t n_alloc;
 	FILE *fp = NULL;
 	double **z = NULL, *rec = NULL;
@@ -655,6 +669,7 @@ int x2sys_read_file (struct GMT_CTRL *GMT, char *fname, double ***data, struct X
 
 	j = 0;
 	while (!x2sys_read_record (GMT, fp, rec, s, G)) {	/* Gets the next data record */
+		if (s->multi_segment && s->ms_next && !first) p->n_segments++;
 		for (i = 0; i < s->n_fields; i++) z[i][j] = rec[i];
 		p->ms_rec[j] = p->n_segments;
 		j++;
@@ -663,9 +678,11 @@ int x2sys_read_file (struct GMT_CTRL *GMT, char *fname, double ***data, struct X
 			for (i = 0; i < s->n_fields; i++) z[i] = GMT_memory (GMT, z[i], n_alloc, double);
 			p->ms_rec = GMT_memory (GMT, p->ms_rec, n_alloc, uint64_t);
 		}
-		if (s->multi_segment && s->ms_next) p->n_segments++;
+		first = false;
 	}
-
+	p->n_segments++;	/* To get the total number of segments 0-(n_segments-1) */
+	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "x2sys_read_file : File %s contained %" PRIu64 " segments\n", path, p->n_segments);
+	
 	fclose (fp);
 	GMT_free (GMT, rec);
 	for (i = 0; i < s->n_fields; i++) z[i] = GMT_memory (GMT, z[i], j, double);

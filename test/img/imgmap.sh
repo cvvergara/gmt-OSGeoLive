@@ -1,10 +1,11 @@
 #!/bin/bash
 #
-#	$Id: imgmap.sh 12298 2013-10-08 23:04:58Z pwessel $
+#	$Id: imgmap.sh 12713 2014-01-06 17:15:37Z pwessel $
 
 ps=imgmap.ps
 IMG=topo.15.1.img
 if [ -f /tmp/gmt/$IMG ]; then # use one placed/linked from /tmp
+	# PW: Run (cd /tmp/gmt; ln -s /Volumes/MacNutHD3/UH/RESOURCES/DATA/img/topo.15.1.img topo.15.1.img) before make check
 	IMG=/tmp/gmt/topo.15.1.img
 else
 	OK=`gmt gmtwhich -C $IMG`

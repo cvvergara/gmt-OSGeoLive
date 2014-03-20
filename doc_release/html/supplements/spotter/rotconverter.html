@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>rotconverter &mdash; GMT 5.1.0 documentation</title>
+    <title>rotconverter &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="SPOTTER" href="../../SUP_SPOTTER.html" />
     <link rel="next" title="X2SYS" href="../../SUP_X2SYS.html" />
     <link rel="prev" title="originator" href="originator.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" accesskey="U">SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -146,10 +145,10 @@ reconstruction rotations)].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -164,7 +163,8 @@ options, then exits.</dd>
 <p>To convert the total reconstruction rotations in the file
 model_total_reconstruction.APM to stage poles, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt rotconverter model_total_reconstruction.APM -Fs &gt; model_stages.APM</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt rotconverter model_total_reconstruction.APM -Fs &gt; model_stages.APM
+</pre></div>
 </div>
 </div></blockquote>
 <p>To obtain Nazca motion relative to Pacific hotspots by adding the motion
@@ -172,13 +172,15 @@ of Nazca relative to a fixed Pacific to the Pacific-Hotspot reference
 model DC85_stages.d, and report the result as total reconstruction
 reconstruction poles in the northern hemisphere, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt rotconverter DC85_stages.APM + Pac_Naz_stages.RPM -N -Ft &gt; \
-                 Naz_HS_total reconstruction.APM</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt rotconverter DC85_stages.APM + Pac_Naz_stages.RPM -N -Ft &gt; \
+                 Naz_HS_total reconstruction.APM
+</pre></div>
 </div>
 </div></blockquote>
 <p>To add the final rotations ROT(150.1, 70.5, -20.3) and ROT (145.0, 40.0, 11.4), try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt rotconverter 150.1/70.5/-20.3 + 145/40/11.4</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt rotconverter 150.1/70.5/-20.3 + 145/40/11.4
+</pre></div>
 </div>
 </div></blockquote>
 <p>which prints out 157.32, -80.44, 11.97.</p>
@@ -186,15 +188,17 @@ reconstruction poles in the northern hemisphere, try</p>
 zones) from a model of relative plate motions PL1-PL2.RPM, assuming
 symmetric spreading, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt rotconverter PL1-PL2.RPM -E -Fs &gt; PL1-PL2_half.RPM
-gmt rotconverter - PL1-PL2.RPM -E -Fs &gt; PL2-PL1_half.RPM</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt rotconverter PL1-PL2.RPM -E -Fs &gt; PL1-PL2_half.RPM
+gmt rotconverter - PL1-PL2.RPM -E -Fs &gt; PL2-PL1_half.RPM
+</pre></div>
 </div>
 </div></blockquote>
 <p>To compute rotations for India relative to a fixed Africa using the
 plate circuit India-Central Indian Basin-Antarctica-Africa, based on the
 GPlates rotations database, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt rotconverter IND-CIB CIB-ANT ANT-AFR &gt; India_AFrica.RPM</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt rotconverter IND-CIB CIB-ANT ANT-AFR &gt; India_AFrica.RPM
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -233,6 +237,11 @@ GPlates rotations database, try</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../../SUP_X2SYS.html"
                         title="next chapter">X2SYS</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/spotter/rotconverter.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -251,7 +260,7 @@ GPlates rotations database, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" >SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -269,9 +278,9 @@ GPlates rotations database, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

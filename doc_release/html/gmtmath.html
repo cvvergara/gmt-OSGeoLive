@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmtmath &mdash; GMT 5.1.0 documentation</title>
+    <title>gmtmath &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmtselect" href="gmtselect.html" />
     <link rel="prev" title="gmtlogo" href="gmtlogo.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -214,10 +213,10 @@ column contains the desired t-coordinates which may be irregular.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -939,44 +938,51 @@ a timestamp belongs to:</p>
 <p>To take the square root of the content of the second data column being
 piped through <strong>gmtmath</strong> by process1 and pipe it through a 3rd process, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>process1 | gmt gmtmath STDIN SQRT = | process3</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>process1 | gmt gmtmath STDIN SQRT = | process3
+</pre></div>
 </div>
 </div></blockquote>
 <p>To take log10 of the average of 2 data files, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath file1.d file2.d ADD 0.5 MUL LOG10 = file3.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath file1.d file2.d ADD 0.5 MUL LOG10 = file3.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>Given the file samples.d, which holds seafloor ages in m.y. and seafloor
 depth in m, use the relation depth(in m) = 2500 + 350 * sqrt (age) to
 print the depth anomalies:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath samples.d T SQRT 350 MUL 2500 ADD SUB = | lpr</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath samples.d T SQRT 350 MUL 2500 ADD SUB = | lpr
+</pre></div>
 </div>
 </div></blockquote>
 <p>To take the average of columns 1 and 4-6 in the three data sets sizes.1,
 sizes.2, and sizes.3, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath -C1,4-6 sizes.1 sizes.2 ADD sizes.3 ADD 3 DIV = ave.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath -C1,4-6 sizes.1 sizes.2 ADD sizes.3 ADD 3 DIV = ave.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To take the 1-column data set ages.d and calculate the modal value and
 assign it to a variable, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt set mode_age = `gmt gmtmath -S -T ages.d MODE =`</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt set mode_age = `gmt gmtmath -S -T ages.d MODE =`
+</pre></div>
 </div>
 </div></blockquote>
 <p>To evaluate the dilog(x) function for coordinates given in the file t.d:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath -Tt.d T DILOG = dilog.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath -Tt.d T DILOG = dilog.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To demonstrate the use of stored variables, consider this sum of the
 first 3 cosine harmonics where we store and repeatedly recall the
 trigonometric argument (2*pi*T/360):</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath -T0/360/1 2 PI MUL 360 DIV T MUL STO@kT COS @kT 2 MUL COS ADD \
-            @kT 3 MUL COS ADD = harmonics.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath -T0/360/1 2 PI MUL 360 DIV T MUL STO@kT COS @kT 2 MUL COS ADD \
+            @kT 3 MUL COS ADD = harmonics.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To use gmtmath as a RPN Hewlett-Packard calculator on scalars (i.e., no
@@ -984,7 +990,8 @@ input files) and calculate arbitrary expressions, use the <strong>-Q</strong> op
 As an example, we will calculate the value of Kei (((1 + 1.75)/2.2) +
 cos (60)) and store the result in the shell variable z:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>set z = `gmt gmtmath -Q 1 1.75 ADD 2.2 DIV 60 COSD ADD KEI =`</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>set z = `gmt gmtmath -Q 1 1.75 ADD 2.2 DIV 60 COSD ADD KEI =`
+</pre></div>
 </div>
 </div></blockquote>
 <p>To use <strong>gmtmath</strong> as a general least squares equation solver, imagine
@@ -998,7 +1005,8 @@ function for a given t0 = 1.55. Then, you need a 4-column augmented
 table loaded with t in column 1 and your observed y(t) in column 3. The
 calculation becomes</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath -N4/1 -Aty.d -C0 1 ADD -C2 1.55 STEPT ADD -Ca LSQFIT = solution.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath -N4/1 -Aty.d -C0 1 ADD -C2 1.55 STEPT ADD -Ca LSQFIT = solution.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>Note we use the <strong>-C</strong> option to select which columns we are working on,
@@ -1009,7 +1017,8 @@ columns are zero. If you already have a pre-calculated table with the
 augmented matrix [ A | b ] in a file (say lsqsys.d), the least squares
 solution is simply</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath -T lsqsys.d LSQFIT = solution.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath -T lsqsys.d LSQFIT = solution.d
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -1065,6 +1074,11 @@ Publishing Corp.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="gmtselect.html"
                         title="next chapter">gmtselect</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/gmtmath.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -1083,7 +1097,7 @@ Publishing Corp.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -1101,9 +1115,9 @@ Publishing Corp.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

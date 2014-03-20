@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmtvector &mdash; GMT 5.1.0 documentation</title>
+    <title>gmtvector &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmtwhich" href="gmtwhich.html" />
     <link rel="prev" title="gmtswitch" href="gmtswitch.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -196,10 +195,10 @@ output is determined by other options such as <strong>-A</strong>, <strong>-C</s
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -226,47 +225,55 @@ specify more decimals using the <a class="reference internal" href="gmt.conf.htm
 compute the spherical angle between each of these points and the
 location 133/34. Try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector points.txt -S133/34 -TD -fg &gt; angles.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector points.txt -S133/34 -TD -fg &gt; angles.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To rotate the same points 35 degrees around a pole at 133/34, and output
 Cartesian 3-D vectors, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector points.txt -Tr133/34 -Co -fg &gt; reconstructed.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector points.txt -Tr133/34 -Co -fg &gt; reconstructed.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To rotate the point 65/33 by all rotations given in file rots.txt, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector rots.txt -TR -S64/33 -fg &gt; reconstructed.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector rots.txt -TR -S64/33 -fg &gt; reconstructed.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To compute the cross-product between the two Cartesian vectors 0.5/1/2
 and 1/0/0.4, and normalizing the result, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector -A0.5/1/2 -Tx -S1/0/0.4 -N -C &gt; cross.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector -A0.5/1/2 -Tx -S1/0/0.4 -N -C &gt; cross.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To rotate the 2-D vector, given in polar form as r = 2 and theta = 35,
 by an angle of 120, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector -A2/35 -Tr120 &gt; rotated.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector -A2/35 -Tr120 &gt; rotated.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find the mid-point along the great circle connecting the points 123/35 and -155/-30, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector -A123/35 -S-155/-30 -Ta -fg &gt; midpoint.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector -A123/35 -S-155/-30 -Ta -fg &gt; midpoint.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find the mean location of the geographical points listed in
 points.txt, with its 99% confidence ellipse, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector points.txt -Am99 -fg &gt; centroid.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector points.txt -Am99 -fg &gt; centroid.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find the pole corresponding to the great circle that goes through
 the point -30/60 at an azimuth of 105 degrees, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtvector -A-30/60 -Tp105 -fg &gt; pole.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtvector -A-30/60 -Tp105 -fg &gt; pole.txt
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -308,6 +315,11 @@ reconstructions, see the GMT &#8220;spotter&#8221; supplement.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="gmtwhich.html"
                         title="next chapter">gmtwhich</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/gmtvector.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -326,7 +338,7 @@ reconstructions, see the GMT &#8220;spotter&#8221; supplement.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -344,9 +356,9 @@ reconstructions, see the GMT &#8220;spotter&#8221; supplement.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

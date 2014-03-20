@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dev.h 12177 2013-09-21 03:12:51Z pwessel $
+ *	$Id: gmt_dev.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -45,6 +45,20 @@
 #ifdef __cplusplus	/* Basic C++ support */
 extern "C" {
 #endif
+
+/* Note: GMT functions will sometimes have arguments that are unused by design, i.e., to ensure that
+ * a family of functions have the same number and type of arguments so that pointers to these functions
+ * can be passed, even though in some cases not all arguments are used.  These will result in compiler
+ * warnings [-Wunused-variable]. To suppress those (and only those), we can define GMT_UNUSED as this:
+ */
+#ifdef __GNUC__
+#define GMT_UNUSED __attribute__ ((unused))
+#else
+#define GMT_UNUSED
+#endif
+/* and then add UNUSED after all such variables.  For GNU compilers the warning is then suppressed.
+ * Other compilers will not see anything and give whatever harmless warnings they normally do.
+ */
 
 /* CMake definitions: This must be first! */
 #include "gmt_config.h"
@@ -97,7 +111,6 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 #include "gmt_error.h"          /* Only contains error codes */
 #include "gmt_synopsis.h"       /* Only contains macros for synopsis lines */
 #include "gmt_version.h"        /* Only contains the current GMT version number */
-#include "gmt_sharedlibs.h" 	/* Common shared libs structures */
 #include "gmt_core_module.h" 	/* Core module modes and properties */
 #include "gmt_supplements_module.h" 	/* Suppl module modes and properties */
 #include "gmt_project.h"        /* Define GMT->current.proj and GMT->current.map.frame structures */
@@ -114,7 +127,6 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 #include "gmt_plot.h"           /* extern functions defined in gmt_plot.c */
 #include "gmt_memory.h"         /* extern functions defined in gmt_memory.c */
 #include "gmt_support.h"        /* extern functions defined in gmt_support.c */
-#include "gmt_vector.h"         /* extern functions defined in gmt_vector.c */
 #include "gmt_types.h"          /* GMT type declarations */
 
 #ifdef _OPENMP                  /* Using open MP parallelization */

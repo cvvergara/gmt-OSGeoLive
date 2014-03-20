@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 18
 REM
-REM		$Id: example_18.bat 11916 2013-07-06 22:45:25Z pwessel $
+REM		$Id: example_18.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Illustrates volumes of grids inside contours and spatial
 REM		selection of data

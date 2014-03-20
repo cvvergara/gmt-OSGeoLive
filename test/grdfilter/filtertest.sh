@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: filtertest.sh 12188 2013-09-22 18:06:19Z fwobbe $
+#	$Id: filtertest.sh 12874 2014-02-08 02:29:35Z pwessel $
 # Testing gmt grdfilter's weights at a given point for a given
 # filter diameter.  Specify which output you want (a|c|r|w).
 # Change args below to pick another filter.
@@ -14,7 +14,7 @@ lat=-80
 D=5000
 mode=c
 no_U=1
-
+gmt set PROJ_ELLIPSOID Sphere
 # Set contour limits so we just draw the filter radius
 lo=`gmt gmtmath -Q $D 2 DIV 0.5 SUB =`
 hi=`gmt gmtmath -Q $D 2 DIV 0.5 ADD =`
@@ -39,7 +39,7 @@ else	# Just normalize the output to 0-1 and make a cpt to fit
 fi
 echo "N white" >> t.cpt	# White is NaN
 # Compute radial distances from our point
-gmt grdmath -fg -R0/360/-90/90 -I1 $lon $lat SDIST DEG2KM = r.nc
+gmt grdmath -fg -R0/360/-90/90 -I1 $lon $lat SDIST = r.nc
 # Plot polar map of result
 if [ $no_U -eq 1 ]; then
 	gmt grdimage  t.nc -JA0/$plat/7i -P -B30g10 -Ct.cpt -R0/360/$range -K -X0.75i -Y0.5i > $ps
@@ -51,8 +51,8 @@ echo ${lon} $lat | gmt psxy -R -J -O -K -Sx0.1 -W1p >> $ps
 # Draw filter boundary
 gmt grdcontour r.nc -J -O -K -C1 -L$lo/$hi -W1p -R0/360/$range >> $ps
 # Repeat plots in rectangular gmt projection
-gmt grdimage t.nc -JQ00/7i -B30g10 -BWsNe+t"$D km Gaussian at ($lon, $lat)" -Ct.cpt -O -K -Y7.8i -R0/360/$range --FONT_TITLE=18p >> $ps
+gmt grdimage t.nc -JQ0/7i -B30g10 -BWsNe+t"$D km Gaussian at ($lon, $lat)" -Ct.cpt -O -K -Y7.8i -R-180/180/$range --FONT_TITLE=18p >> $ps
 echo ${lon} $lat | gmt psxy -R -J -O -K -Sx0.1 -W1p >> $ps
-gmt grdcontour  -R0/360/$range r.nc -J -O -K -C1 -L$lo/$hi -W1p >> $ps
+gmt grdcontour -R r.nc -J -O -K -C1 -L$lo/$hi -W1p >> $ps
 gmt psscale -Ct.cpt -D3.5i/-0.15i/6i/0.05ih -O -K -Bx$t -By+l"${mode} [$n_conv]" >> $ps
 gmt psxy -R -J -O -T >> $ps

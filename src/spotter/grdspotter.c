@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdspotter.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: grdspotter.c 12822 2014-01-31 23:39:56Z remko $
  *
- *   Copyright (c) 1999-2012 by P. Wessel
+ *   Copyright (c) 1999-2014 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -221,8 +221,7 @@ int GMT_grdspotter_usage (struct GMTAPI_CTRL *API, int level)
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 	
 	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is the grid with topo or gravity\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Specify the rotations table to be used (see man page for format).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Prepend + if you want to invert the finite rotations prior to use.\n");
+	spotter_rot_usage (API, 'E');
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Specify file name for output CVA convolution grid.\n");
 	GMT_Option (API, "I,Rg");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");

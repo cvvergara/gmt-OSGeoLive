@@ -1,4 +1,4 @@
-/* $Id: today.c 10119 2012-05-19 08:08:25Z fwobbe $
+/* $Id: today.c 12822 2014-01-31 23:39:56Z remko $
  *
  * called by cmake to obtain date at build time
  */

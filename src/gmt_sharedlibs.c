@@ -1,6 +1,6 @@
-/* $Id: gmt_sharedlibs.c 11884 2013-07-02 22:29:41Z pwessel $
+/* $Id: gmt_sharedlibs.c 12822 2014-01-31 23:39:56Z remko $
  *
- * Copyright (c) 2012-2013
+ * Copyright (c) 2012-2014
  * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
@@ -12,6 +12,7 @@
  */
 
 #include "gmt_dev.h"
+#include "gmt_sharedlibs.h" 	/* Common shared libs structures */
 
 #if defined(_WIN32)
 void *dlopen (const char *module_name, int mode)

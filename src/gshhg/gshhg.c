@@ -1,6 +1,6 @@
-/*	$Id: gshhg.c 12407 2013-10-30 16:46:27Z pwessel $
+/*	$Id: gshhg.c 12892 2014-02-13 20:29:14Z fwobbe $
  *
- *	Copyright (c) 1996-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1996-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  * PROGRAM:	gshhg.c
@@ -26,13 +26,15 @@
  *				Updated to deal with latest GSHHG database (2.0)
  *		1.12 24-MAY-2010: Deal with 2.1 format.
  *		1.13 15-JUL-2011: Now contains improved area information (2.2.0),
- *				 and revised greenwhich flags (now 2-bit; see gshhg.h).
+ *				 and revised greenwich flags (now 2-bit; see gshhg.h).
  *				 Also added -A and -G as suggested by José Luis García Pallero,
  *				 as well as -Qe|i to control river-lake output, and -N to
  *				 get a particular level.
-*		1.14 15-APR-2012:  	Data version is now 2.2.1. [no change to format]
-*		1.15 1-JAN-2013:   	Data version is now 2.2.2. [no change to format]
-*		1.16 1-JUL-2013:   	Data version is now 2.2.3. [no change to format]
+ *		1.14 15-APR-2012:  	Data version is now 2.2.1. [no change to format]
+ *		1.15 1-JAN-2013:   	Data version is now 2.2.2. [no change to format]
+ *		1.16 1-JUL-2013:   	Data version is now 2.2.3. [no change to format]
+ *		1.17 1-NOV-2013.	Data version is now 2.2.4. [no change to format]
+ *		1.18 1-FEB-2014:   	Data version is now 2.3.0. [no change to format but levels 5,6 added for Antarctica]
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -111,15 +113,17 @@ int GMT_gshhg_usage (struct GMTAPI_CTRL *API, int level)
 
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
-        GMT_Message (API, GMT_TIME_NONE, "-A Extract polygons whose area is greater than or equal to <area> (in km^2) [all].\n");
-	GMT_Message (API, GMT_TIME_NONE, "-G Write '%%' at start of each segment header [P or L] (overwrites -M)\n");
-	GMT_Message (API, GMT_TIME_NONE, "   and write 'NaN NaN' after each segment to enable import by GNU Octave or Matlab.\n");
-	GMT_Message (API, GMT_TIME_NONE, "-L List header records only (no data records will be written).\n");
-	GMT_Message (API, GMT_TIME_NONE, "-I Output data for polygon number <id> only.  Use -Ic to get all continent polygons\n");
-	GMT_Message (API, GMT_TIME_NONE, "   [Default is all polygons].\n");
-	GMT_Message (API, GMT_TIME_NONE, "-N Output features whose level matches <level> [Default outputs all levels].\n");
-	GMT_Message (API, GMT_TIME_NONE, "-Q Control river-lakes: Use -Qe to exclude river-lakes, and -Qi to ONLY get river-lakes\n");
-	GMT_Message (API, GMT_TIME_NONE, "   [Default outputs all polygons].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\tgshhs|wdb_rivers|wdb_borders_[f|h|i|l|c].b is a GSHHG polygon or line file.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
+        GMT_Message (API, GMT_TIME_NONE, "\t-A Extract polygons whose area is greater than or equal to <area> (in km^2) [all].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-G Write '%%' at start of each segment header [P or L] (overwrites -M)\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   and write 'NaN NaN' after each segment to enable import by GNU Octave or Matlab.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-L List header records only (no data records will be written).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-I Output data for polygon number <id> only.  Use -Ic to get all continent polygons\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default is all polygons].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Output features whose level matches <level> [Default outputs all levels].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-Q Control river-lakes: Use -Qe to exclude river-lakes, and -Qi to ONLY get river-lakes\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default outputs all polygons].\n");
 	GMT_Option (API, "V,bo2,o,:,.");
 	
 	return (EXIT_FAILURE);
@@ -211,7 +215,12 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 	int error, gmode, version, greenwich, is_river, src;
 	int32_t max_east = 270000000;
 	size_t n_read;
-	bool must_swab, OK, first = true;
+	bool OK, first = true;
+#ifdef WORDS_BIGENDIAN
+	static const bool must_swab = false;
+#else
+	static const bool must_swab = true;
+#endif
 
 	uint64_t dim[4] = {1, 0, 0, 2};
 
@@ -299,8 +308,6 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 		T = D->table[0]->segment;	/* There is only one output table with one or many segments */
 	}
 	n_read = fread (&h, sizeof (struct GSHHG), 1U, fp);
-	version = (h.flag >> 8) & 255;
-	must_swab = (version != GSHHG_DATA_RELEASE);	/* Take as sign that byte-swabbing is needed */
 
 	while (n_read == 1) {
 		n_seg++;
@@ -309,8 +316,8 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 
 		/* OK, we want to return info for this feature */
 
-		level = h.flag & 255;				/* Level is 1-4 */
-		version = (h.flag >> 8) & 255;			/* Version is 1-7 */
+		level = h.flag & 255;				/* Level is 1-4 [5-6 for Antarctica] */
+		version = (h.flag >> 8) & 255;			/* Version is 1-255 */
 		if (first) GMT_Report (API, GMT_MSG_VERBOSE, "Found GSHHG/WDBII version %d in file %s\n", version, Ctrl->In.file);
 		first = false;
 		greenwich = (h.flag >> 16) & 3;			/* Greenwich is 0-3 */
@@ -321,7 +328,7 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 		e = h.east  * GSHHG_SCL;
 		s = h.south * GSHHG_SCL;
 		n = h.north * GSHHG_SCL;
-		source = (src == 1) ? 'W' : 'C';		/* Either WVS or CIA (WDBII) pedigree */
+		source = (level > 4) ? 'A' : ((src == 1) ? 'W' : 'C');		/* Either Antarctica, WVS or CIA (WDBII) pedigree */
 		if (is_river) source = (char)tolower ((int)source);	/* Lower case c means river-lake */
 		is_line = (h.area) ? 0 : 1;			/* Either Polygon (0) or Line (1) (if no area) */
 		if (is_line && D->geometry == GMT_IS_POLY) D->geometry = GMT_IS_LINE;	/* Change from polygon to line geometry */

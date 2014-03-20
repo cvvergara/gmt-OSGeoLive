@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- * $Id: gmt_notposix.h 12023 2013-08-04 12:20:57Z fwobbe $
+ * $Id: gmt_notposix.h 12901 2014-02-17 14:56:20Z fwobbe $
  *
- * Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+ * Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -79,7 +79,7 @@
 #	include <fcntl.h>
 #endif
 
-#ifdef HAVE_STAT_H_
+#ifdef HAVE_SYS_STAT_H_
 #	include <sys/stat.h>
 #endif
 
@@ -174,12 +174,6 @@
 
 #	define PATH_SEPARATOR ';' /* Win uses ; while Unix uses : */
 
-	/* FLOCK is a pain. If cannot be used under Windows.
-	 * Also, users have problems with file locking because their
-	 * NFS does not support it. Only those who are really sure should
-	 * activate -DFLOCK. For these reasons, FLOCK is off by default.
-	 */
-#	undef FLOCK          /* Do not support file locking */
 #	define SET_IO_MODE   /* Need to force binary i/o upon request */
 
 #	if defined(USE_VLD) && defined(DEBUG)

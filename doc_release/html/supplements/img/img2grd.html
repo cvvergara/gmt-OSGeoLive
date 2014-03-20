@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>img2grd &mdash; GMT 5.1.0 documentation</title>
+    <title>img2grd &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="IMGSRC" href="../../SUP_IMGSRC.html" />
     <link rel="next" title="img2google" href="img2google.html" />
     <link rel="prev" title="IMGSRC" href="../../SUP_IMGSRC.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_IMGSRC.html" accesskey="U">IMGSRC</a> &raquo;</li>
 <li class="right">
@@ -208,10 +207,10 @@ earlier files had <em>maxlon</em> = 390.0. [Default is 360.0].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -228,7 +227,8 @@ in geographic coordinates. To extract data in the region
 <strong>-R</strong>-40/40/-70/-30 from <em>world_grav.img.7.2</em> and reproject to yield
 geographic coordinates, you can try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>img2grd world_grav.img.16.1 -Gmerc_grav.nc -R-40/40/-70/-30 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>img2grd world_grav.img.16.1 -Gmerc_grav.nc -R-40/40/-70/-30 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>Because the latitude spacing in the img file is equidistant in Mercator
@@ -237,7 +237,8 @@ and the latitude spacing will not equal the longitude spacing. If you
 need an exact match with your <strong>-R</strong> and the same spacing in longitude
 and latitude, use the <strong>-E</strong> option:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>img2grd world_grav.img.16.1 -Gmerc_grav.nc -R-40/40/-70/-30 -E -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>img2grd world_grav.img.16.1 -Gmerc_grav.nc -R-40/40/-70/-30 -E -V
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -252,50 +253,54 @@ linear projection with the same scale as the desired Mercator projection
 To extract data in the region <strong>-R</strong>-40/40/-70/-30 from
 <em>world_grav.img.7.2</em>, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt img2grd -M world_grav.img.7.2 -Gmerc_grav.nc -R-40/40/-70/-30 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt img2grd -M world_grav.img.7.2 -Gmerc_grav.nc -R-40/40/-70/-30 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>Note that the <strong>-V</strong> option tells us that the range was adjusted to
-<strong>-R</strong>-40/40/-70.0004681551/-29.9945810754. We can also use <strong>grdinfo</strong>
+<strong>-R</strong>-40/40/-70.0004681551/-29.9945810754. We can also use <a class="reference internal" href="../../grdinfo.html"><em>grdinfo</em></a>
 to find that the grid file header shows its region to be
 <strong>-R</strong>0/80/0/67.9666667 This is the range of x,y we will get from a
 Spherical Mercator projection using
 <strong>-R</strong>-40/40/-70.0004681551/-29.9945810754 and <strong>-Jm</strong>1. Thus, to take
 ship.lonlatgrav and use it to sample the merc_grav.nc, we can do this:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmtset PROJ_ ELLIPSOID Sphere
+<div><div class="highlight-python"><div class="highlight"><pre>gmt set PROJ_ELLIPSOID Sphere
 
 gmt mapproject -R-40/40/-70.0004681551/-29.9945810754 -Jm1i ship.lonlatgrav | \
           gmt grdtrack -Gmerc_grav.nc | gmt mapproject \
-          -R-40/40/-70.0004681551/-29.9945810754 -Jm1i -I &gt; ship.lonlatgravsat</pre>
+          -R-40/40/-70.0004681551/-29.9945810754 -Jm1i -I &gt; ship.lonlatgravsat
+</pre></div>
 </div>
 </div></blockquote>
 <p>It is recommended to use the above method of projecting and unprojecting
 the data in such an application, because then there is only one
-interpolation step (in <strong>grdtrack</strong>). If one first tries to convert the
+interpolation step (in <a class="reference internal" href="../../grdtrack.html"><em>grdtrack</em></a>). If one first tries to convert the
 grid file to lon,lat and then sample it, there are two interpolation
 steps (in conversion and in sampling).</p>
 <p>To make a lon,lat grid from the above grid we can use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdproject merc_grav.nc -R-40/40/-70.0004681551/-29.9945810754 -Jm1i -I -D2m -Ggrav.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdproject merc_grav.nc -R-40/40/-70.0004681551/-29.9945810754 -Jm1i -I -D2m -Ggrav.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>In some cases this will not be easy as the <strong>-R</strong> in the two coordinate
 systems may not align well. When this happens, we can also use (in fact,
 it may be always better to use)</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grd2xyz merc_grav.nc | gmt mapproject \
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grd2xyz merc_grav.nc | gmt mapproject \
     -R-40/40/-70.0004681551/-29.994581075 -Jm1i -I | \
-    gmt surface -R-40/40/-70/70 -I2m -Ggrav.nc</pre>
+    gmt surface -R-40/40/-70/70 -I2m -Ggrav.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>To make a Mercator map of the above region, suppose our gmt.conf value
-for <strong>PROJ_LENGTH_UNIT</strong> is inch. Then since the above merc_grav.nc
+for <a class="reference internal" href="../../gmt.conf.html#proj-length-unit"><em>PROJ_LENGTH_UNIT</em></a> is inch. Then since the above merc_grav.nc
 file is projected with <strong>-Jm</strong>1i it is 80 inches wide. We can make a
 map 8 inches wide by using <strong>-Jx</strong>0.1i on any map programs applied to
 this grid (e.g., <a class="reference internal" href="../../grdcontour.html"><em>grdcontour</em></a>,
 <a class="reference internal" href="../../grdimage.html"><em>grdimage</em></a>, <a class="reference internal" href="../../grdview.html"><em>grdview</em></a>), and then
-for overlays which work in lon,lat (e.g., <strong>psxy</strong>, <strong>pscoast</strong>) we can
+for overlays which work in lon,lat (e.g., <a class="reference internal" href="../../psxy.html"><em>psxy</em></a>, <a class="reference internal" href="../../pscoast.html"><em>pscoast</em></a>) we can
 use the above adjusted <strong>-R</strong> and <strong>-Jm</strong>0.1 to get the two systems to
 match up.</p>
 <p>However, we can be smarter than this. Realizing that the input img file
@@ -308,7 +313,8 @@ satisfied with 100 pixels per inch, so we want to average the data into
 average the data much more (e.g., 6 by 6) to get smooth contours.) Since
 2039 isn&#8217;t divisible by 3 we will get a different adjusted <strong>-R</strong> this time:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt img2grd -M world_grav.img.7.2 -Gmerc_grav_2.nc -R-40/40/-70/-30 -N3 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt img2grd -M world_grav.img.7.2 -Gmerc_grav_2.nc -R-40/40/-70/-30 -N3 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>This time we find the adjusted region is
@@ -316,14 +322,16 @@ average the data much more (e.g., 6 by 6) to get smooth contours.) Since
 pixels, a better size for us. Now we can create an artificial
 illumination file for this using <a class="reference internal" href="../../grdgradient.html"><em>grdgradient</em></a>:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdgradient merc_grav_2.nc -Gillum.nc -A0/270 -Ne0.6</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdgradient merc_grav_2.nc -Gillum.nc -A0/270 -Ne0.6
+</pre></div>
 </div>
 </div></blockquote>
 <p>and if we also have a cpt file called &#8220;grav.cpt&#8221; we can create a color
 shaded relief map like this:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdimage merc_grav_2.nc -Iillum.nc -Cgrav.cpt -Jx0.1i -K &gt; map.ps
-gmt psbasemap -R-40/40/-70.023256525/-29.9368261101 -Jm0.1i -Ba10 -O &gt;&gt; map.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdimage merc_grav_2.nc -Iillum.nc -Cgrav.cpt -Jx0.1i -K &gt; map.ps
+gmt psbasemap -R-40/40/-70.023256525/-29.9368261101 -Jm0.1i -Ba10 -O &gt;&gt; map.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>Suppose you want to obtain only the constrained data values from an img
@@ -363,6 +371,11 @@ eliminate NaNs, and pipe through <a class="reference internal" href="../../mappr
   <h4>Next topic</h4>
   <p class="topless"><a href="img2google.html"
                         title="next chapter">img2google</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/img/img2grd.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -381,7 +394,7 @@ eliminate NaNs, and pipe through <a class="reference internal" href="../../mappr
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_IMGSRC.html" >IMGSRC</a> &raquo;</li>
 <li class="right">
@@ -399,9 +412,9 @@ eliminate NaNs, and pipe through <a class="reference internal" href="../../mappr
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

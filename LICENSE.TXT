@@ -1,4 +1,5 @@
-$Id: LICENSE.TXT 12343 2013-10-16 18:17:26Z fwobbe $
+$LastChangedDate: 2014-02-13 21:29:14 +0100 (Thu, 13 Feb 2014) $
+$Revision: 12892 $
 
 As of GMT 5.0.0, GMT is distributed under the GNU Lesser General Public
 License (LGPL) version 3 or later. Copies of the The GNU General Public

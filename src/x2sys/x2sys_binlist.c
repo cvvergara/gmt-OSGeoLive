@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_binlist.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: x2sys_binlist.c 12822 2014-01-31 23:39:56Z remko $
  *
- *      Copyright (c) 1999-2012 by P. Wessel
+ *      Copyright (c) 1999-2014 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify

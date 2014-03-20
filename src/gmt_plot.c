@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.c 12267 2013-10-05 02:51:21Z pwessel $
+ *	$Id: gmt_plot.c 12937 2014-02-22 05:11:02Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -1572,7 +1572,9 @@ void gmt_map_symbol (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double *xx, dou
 
 	len = GMT_get_annot_offset (GMT, &flip, level);	/* Get annotation offset, and flip justification if "inside" */
 	annot_type = 2 << type;		/* 2 = NS, 4 = EW */
+	
 	for (i = 0; i < nx; i++) {
+		if (!(GMT->current.setting.map_annot_oblique & 1) && ((type == 0 && (sides[i] % 2)) || (type == 1 && !(sides[i] % 2)))) continue;
 
 		if (GMT_prepare_label (GMT, line_angles[i], sides[i], xx[i], yy[i], type, &line_angle, &text_angle, &justify)) continue;
 
@@ -1629,14 +1631,14 @@ void gmt_map_symbol_ns (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double lon, 
 	if (nc) GMT_free (GMT, xings);
 }
 
-void gmt_z_gridlines (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double zmin, double zmax, int xz_or_yz)
+void gmt_z_gridlines (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double zmin, double zmax, int plane)
 {
 	unsigned int k, i, nz, item[2] = {GMT_GRID_UPPER, GMT_GRID_LOWER};
 	double dz, zz, min, max, *z = NULL;
-	char *plane[2] = {"x-z", "y-z"};
+	char *plane_name[2] = {"y-z", "x-z"};
 
-	min = (xz_or_yz == GMT_X) ? GMT->current.proj.rect[XLO] : GMT->current.proj.rect[YLO];
-	max = (xz_or_yz == GMT_X) ? GMT->current.proj.rect[XHI] : GMT->current.proj.rect[YHI];
+	min = (plane == GMT_Y) ? GMT->current.proj.rect[XLO] : GMT->current.proj.rect[YLO];
+	max = (plane == GMT_Y) ? GMT->current.proj.rect[XHI] : GMT->current.proj.rect[YHI];
 
 	for (k = 0; k < 2; k++) {
 		if (GMT->current.setting.map_grid_cross_size[k] > 0.0) continue;
@@ -1645,7 +1647,7 @@ void gmt_z_gridlines (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double zmin, d
 
 		if (!GMT->current.map.frame.axis[GMT_Z].item[item[k]].active || fabs(dz) == 0.0) continue;
 
-		PSL_comment (PSL, "%s gridlines %s\n", plane[xz_or_yz], k ? "(secondary)" : "(primary)");
+		PSL_comment (PSL, "%s gridlines %s\n", plane_name[plane], k ? "(secondary)" : "(primary)");
 
 		GMT_setpen (GMT, &GMT->current.setting.map_grid_pen[k]);
 
@@ -1764,18 +1766,6 @@ void gmt_map_gridcross (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, do
 						xa = x0 - L, xb = x0 + L;
 						ya = yb = y0;
 					}
-
-					/* Clip to map */
-
-					if (xa < 0.0) xa = 0.0;
-					if (xb < 0.0) xb = 0.0;
-					if (ya < 0.0) ya = 0.0;
-					if (yb < 0.0) yb = 0.0;
-					if (xa > GMT->current.map.width) xa = GMT->current.map.width;
-					if (xb > GMT->current.map.width) xb = GMT->current.map.width;
-					if (ya > GMT->current.map.height) ya = GMT->current.map.height;
-					if (yb > GMT->current.map.height) yb = GMT->current.map.height;
-
 					PSL_plotsegment (PSL, xa, ya, xb, yb);
 
 					if (GMT_is_geographic (GMT, GMT_IN)) {
@@ -1791,18 +1781,6 @@ void gmt_map_gridcross (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, do
 						xa = xb = x0;
 						ya = y0 - L, yb = y0 + L;
 					}
-
-					/* Clip to map */
-
-					if (xa < 0.0) xa = 0.0;
-					if (xb < 0.0) xb = 0.0;
-					if (ya < 0.0) ya = 0.0;
-					if (yb < 0.0) yb = 0.0;
-					if (xa > GMT->current.map.width) xa = GMT->current.map.width;
-					if (xb > GMT->current.map.width) xb = GMT->current.map.width;
-					if (ya > GMT->current.map.height) ya = GMT->current.map.height;
-					if (yb > GMT->current.map.height) yb = GMT->current.map.height;
-
 					PSL_plotsegment (PSL, xa, ya, xb, yb);
 				}
 			}
@@ -2276,12 +2254,11 @@ void GMT_map_basemap (struct GMT_CTRL *GMT)
 
 void gmt_vertical_wall (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, int quadrant, double *nesw, bool back)
 {
-	GMT_plane_perspective (GMT, (quadrant + 1) % 2, nesw[quadrant % 4]);
+	int plane = (quadrant + 1) % 2;
+	GMT_plane_perspective (GMT, plane, nesw[quadrant % 4]);
 	PSL_plotbox (PSL, nesw[(quadrant+1)%4], GMT->current.proj.zmin, nesw[(quadrant+3)%4], GMT->current.proj.zmax);
-	if (back) {
-		gmt_z_gridlines (GMT, PSL, GMT->common.R.wesn[ZLO], GMT->common.R.wesn[ZHI], 0);
-		gmt_z_gridlines (GMT, PSL, GMT->common.R.wesn[ZLO], GMT->common.R.wesn[ZHI], 1);
-	}
+	if (back)
+		gmt_z_gridlines (GMT, PSL, GMT->common.R.wesn[ZLO], GMT->common.R.wesn[ZHI], plane);
 }
 
 void GMT_vertical_axis (struct GMT_CTRL *GMT, unsigned int mode)
@@ -2673,7 +2650,7 @@ void GMT_draw_map_insert (struct GMT_CTRL *GMT, struct GMT_MAP_INSERT *B)
 	if (B->boxfill) GMT_setfill (GMT, &B->fill, B->boxdraw);
 	if (B->boxdraw) GMT_setpen (GMT, &B->pen);
 	GMT_geo_polygons (GMT, S);
-	GMT_free_segment (GMT, S);
+	GMT_free_segment (GMT, &S, GMT_ALLOCATED_BY_GMT);
 }
 
 int GMT_draw_map_scale (struct GMT_CTRL *GMT, struct GMT_MAP_SCALE *ms)
@@ -3472,7 +3449,7 @@ int GMT_draw_custom_symbol (struct GMT_CTRL *GMT, double x0, double y0, double s
 
 /* Plotting functions related to contours */
 
-void GMT_write_label_record (struct GMT_CTRL *GMT, double x, double y, double angle, char *label, bool save_angle)
+void GMT_write_label_record (struct GMT_CTRL *GMT, FILE *fp, double x, double y, double angle, char *label, bool save_angle)
 {
 	char word[GMT_LEN64] = {""}, record[GMT_BUFSIZ] = {""};
 	double geo[2];
@@ -3488,46 +3465,41 @@ void GMT_write_label_record (struct GMT_CTRL *GMT, double x, double y, double an
 		GMT_ascii_format_col (GMT, word, angle, GMT_OUT, GMT_Z);
 		strcat (record, word);
 		strcat (record, GMT->current.setting.io_col_separator);
-}
+	}
 	strcat (record, label);
-	GMT_Put_Record (GMT->parent, GMT_WRITE_TEXT, record);	/* Write this to label output file */
+	fprintf (fp, "%s\n", record);	/* Write the data record */
+	return;	
 }
 
 int GMT_contlabel_save_begin (struct GMT_CTRL *GMT, struct GMT_CONTOUR *G)
 {
-	int error, kind, object_ID;
+	int error, kind;
 	uint64_t k, seg;
 	bool write_angle = (G->save_labels == 2);
-	char record[GMT_BUFSIZ] = {""}, *name = strdup (G->label_file);
+	char record[GMT_BUFSIZ] = {""};
 	char *xname[2] = {"x", "lon"}, *yname[2] = {"y", "lat"};
 	double angle = 0.0;
 	struct GMT_CONTOUR_LINE *L = NULL;
 
 	/* Save the lon, lat, angle, text for each annotation to specified file*/
 
-	if ((object_ID = GMT_Register_IO (GMT->parent, GMT_IS_TEXTSET, GMT_IS_FILE, GMT_IS_NONE, GMT_OUT, NULL, name)) == GMT_NOTSET) {
-		return (EXIT_FAILURE);
-	}
-	if ((error = GMT_set_cols (GMT, GMT_OUT, 1)) != GMT_OK) {
-		return (error);
-	}
-	if (GMT_Begin_IO (GMT->parent, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
-		return (GMT->parent->error);
-	}
-	free (name);
 	kind = GMT_is_geographic (GMT, GMT_IN);
-	if (G->save_labels == 2)
+	if (G->save_labels == 2)	/* Write lon, lat, angle, label record */
 		sprintf (record, "# %s%s%s%sangle%slabel", xname[kind], GMT->current.setting.io_col_separator, yname[kind],
 			GMT->current.setting.io_col_separator, GMT->current.setting.io_col_separator);
-	else
+	else				/* Write lon, lat, label record */
 		sprintf (record, "# %s%s%s%slabel", xname[kind], GMT->current.setting.io_col_separator, yname[kind], GMT->current.setting.io_col_separator);
-	GMT_Put_Record (GMT->parent, GMT_WRITE_TEXT, record);	/* Write this to output */
+	if ((G->fp = GMT_fopen (GMT, G->label_file, GMT->current.io.w_mode)) == NULL) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Unable to create/open file %s\n", G->label_file);
+		return (GMT_ERROR_ON_FOPEN);	/* Establishes data ouput */
+	}
+	fprintf (G->fp, "%s\n", record);	/* Write hte header record */
 	for (seg = 0; seg < G->n_segments; seg++) {
 		L = G->segment[seg];	/* Pointer to current segment */
 		if (!L->annot || L->n_labels == 0) continue;
 		for (k = 0; k < L->n_labels; k++) {
 			if (write_angle) angle = fmod (2.0 * (L->L[k].angle + 360.0), 360.0) / 2.0;		/* Get text line in 0-180 range */
-			GMT_write_label_record (GMT, L->L[k].x, L->L[k].y, angle, L->L[k].label, write_angle);	/* Dump to ascii table */
+			GMT_write_label_record (GMT, G->fp, L->L[k].x, L->L[k].y, angle, L->L[k].label, write_angle);	/* write text record */
 		}
 	}
 	return (GMT_NOERROR);
@@ -3536,9 +3508,8 @@ int GMT_contlabel_save_begin (struct GMT_CTRL *GMT, struct GMT_CONTOUR *G)
 
 int GMT_contlabel_save_end (struct GMT_CTRL *GMT, struct GMT_CONTOUR *G)
 {
-	if (GMT_End_IO (GMT->parent, GMT_OUT, 0) != GMT_OK) {	/* Disables further contour label output */
-		return (GMT->parent->error);
-	}
+	GMT_fclose (GMT, G->fp);
+	G->fp = NULL;
 	return (GMT_NOERROR);
 }
 
@@ -4129,7 +4100,9 @@ void gmt_geo_polygon (struct GMT_CTRL *GMT, double *lon, double *lat, uint64_t n
 
 		/* Check if there are any boundary jumps in the data as evidenced by pen up [PSL_MOVE] */
 
-		for (first = 1, jump = false; first < n && !jump; first++) jump = (GMT->current.plot.pen[first] != PSL_DRAW);
+		//for (first = 1, jump = false; first < n && !jump; first++) jump = (GMT->current.plot.pen[first] != PSL_DRAW);
+		jump = (*GMT->current.map.will_it_wrap) (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.n, &first);	/* Polygon does indeed wrap */
+		
 		if (!jump) {	/* We happened to avoid the periodic boundary - just paint and return */
 			PSL_plotpolygon (PSL, GMT->current.plot.x, GMT->current.plot.y, (unsigned int)GMT->current.plot.n);
 			return;
@@ -4327,7 +4300,7 @@ void GMT_geo_ellipse (struct GMT_CTRL *GMT, double lon, double lat, double major
 	px[GMT_ELLIPSE_APPROX] = px[0], py[GMT_ELLIPSE_APPROX] = py[0];
 	GMT_geo_polygons (GMT, S);
 
-	GMT_free_segment (GMT, S);
+	GMT_free_segment (GMT, &S, GMT_ALLOCATED_BY_GMT);
 }
 
 float gmt_inch_to_degree_scale (struct GMT_CTRL *GMT)
@@ -4407,13 +4380,13 @@ double gmt_get_local_scale (struct GMT_CTRL *GMT, double lon0, double lat0, doub
 	 * This is approximate only. */
 
 	double tlon, tlat, x0, y0, x1, y1;
-	GMT_get_point_from_r_az (GMT, lon0, lat0, length, azimuth, &tlon, &tlat);	/* Arbitrary 2nd point near (lon0,lat0) */
+	GMT_get_point_from_r_az (GMT, lon0, lat0, length, azimuth, &tlon, &tlat);	/* Arbitrary 2nd point near (lon0,lat0) in the azimuth direction */
 	GMT_geo_to_xy (GMT, lon0, lat0, &x0, &y0);	/* Get map position in inches for (lon0,lat0) */
 	GMT_geo_to_xy (GMT, tlon, tlat, &x1, &y1);	/* Get map position in inches for close point */
 	return (length / hypot (x1 - x0, y1 - y0));	/* This scales a length in inches to degrees, approximately */
 }
 
-void gmt_circle_pen_poly (struct GMT_CTRL *GMT, double *A, double *B, bool longway, double rot, struct GMT_PEN *pen, struct GMT_SYMBOL *S, struct GMT_CIRCLE *C)
+void gmt_circle_pen_poly (struct GMT_CTRL *GMT, double *A, double *B, bool longway, double rot, struct GMT_PEN *pen, struct GMT_SYMBOL *S, struct GMT_CIRCLE *C, double scale)
 {	/* Given vectors A and B, return a small circle polygon path sampled every step that approximates a pen of given width
  	 * drawn on the map.  Use small circle pole and its opening rot */
 	uint64_t k, n, n2;
@@ -4423,7 +4396,7 @@ void gmt_circle_pen_poly (struct GMT_CTRL *GMT, double *A, double *B, bool longw
 	GMT_cross3v (GMT, A, C->P, Px);	/* Px is Pole to plane through A and P  */
 	GMT_normalize3v (GMT, Px);			/* Rotation pole unit vector */
 	/* Rotate A back/fore by rotation angle of +/- pen halfwidth about Px */
-	w = 0.5 * pen->width * GMT->session.u2u[GMT_PT][GMT_INCH] * S->v.scale;		/* Half-width of pen in degrees */
+	w = 0.5 * scale * pen->width * GMT->session.u2u[GMT_PT][GMT_INCH] * S->v.scale;		/* Half-width of pen in degrees */
 	GMT_make_rot_matrix2 (GMT, Px, +w, R);		/* Rotation of rot_v degrees about pole P */
 	GMT_matrix_vect_mult (GMT, 3U, R, A, Ai);	/* Get Ai = R * A */
 	GMT_make_rot_matrix2 (GMT, Px, -w, R);		/* Rotation of rot_v degrees about pole P */
@@ -4455,7 +4428,7 @@ void gmt_circle_pen_poly (struct GMT_CTRL *GMT, double *A, double *B, bool longw
 	GMT_geo_polygons (GMT, L);	/* "Draw" the line */
 	PSL_command (GMT->PSL, "U\n");
 	
-	GMT_free_segment (GMT, L);
+	GMT_free_segment (GMT, &L, GMT_ALLOCATED_BY_GMT);
 }
 
 void gmt_gcircle_sub (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_SYMBOL *S, struct GMT_CIRCLE *C)
@@ -4587,18 +4560,91 @@ double GMT_smallcircle_az (struct GMT_CTRL *GMT, double lon0, double lat0, doubl
 	return (az);
 }
 
-void gmt_geo_vector_smallcircle (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_PEN *ppen, struct GMT_SYMBOL *S)
+void gmt_plot_vector_head (struct GMT_CTRL *GMT, double *xp, double *yp, uint64_t n, struct GMT_SYMBOL *S)
+{	/* PW: Plots the polygon that makes up a vector head.  Because sometimes these head stick
+	 * across a periodic boundary we must check if that is the case and plot the two parts separately.
+	 * When that is the case we cannot draw the outline of the two new polygons since we wish to show
+	 * the heads as "clipped" by the boundary; hence all the rigamorole below. */
+	uint64_t start = 0, nin;
+	unsigned int n_use, *pin = NULL;	/* Copy of the pen moves */
+	unsigned int cap = GMT->PSL->internal.line_cap;
+	double *xin = NULL, *yin = NULL;	/* Temp vector with possibly clipped x,y line returned by GMT_geo_to_xy_line */
+	if ((GMT->current.plot.n = GMT_geo_to_xy_line (GMT, xp, yp, n)) == 0) return;	/* All outside, or use plot.x|y array */
+	PSL_setlinecap (GMT->PSL, PSL_SQUARE_CAP);	/* In case there are clipped heads and we want to do the best we can with the lines */
+	n = GMT->current.plot.n;	/* Possibly fewer points */
+	if (GMT_vec_outline (S->v.status)) {
+		bool close = GMT_polygon_is_open (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.n);
+		nin = n;
+		PSL_command (GMT->PSL, "O0\n");	/* Temporary turn off outline; must draw outline separately when head is split */
+		if (close) nin++;
+		xin = GMT_memory (GMT, NULL, nin, double);
+		yin = GMT_memory (GMT, NULL, nin, double);
+		pin = GMT_memory (GMT, NULL, nin, unsigned int);
+		GMT_memcpy (xin, GMT->current.plot.x, n, double);
+		GMT_memcpy (yin, GMT->current.plot.y, n, double);
+		GMT_memcpy (pin, GMT->current.plot.pen, n, unsigned int);
+		if (close) {	/* Explicitly close the polygon outline */
+			xin[n] = xin[0];
+			yin[n] = yin[0];
+		}
+	}
+	
+	if ((*GMT->current.map.will_it_wrap) (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.n, &start)) {	/* Polygon does indeed wrap */
+		double *xtmp = NULL, *ytmp = NULL;	/* Temp vector for map truncating */
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Vector head polygon will wrap at periodic boundary and will be split into two sections\n");
+		xtmp = GMT_memory (GMT, NULL, n, double);
+		ytmp = GMT_memory (GMT, NULL, n, double);
+		GMT_memcpy (xtmp, GMT->current.plot.x, n, double);
+		GMT_memcpy (ytmp, GMT->current.plot.y, n, double);
+		/* First truncate against left border */
+		GMT->current.plot.n = GMT_map_truncate (GMT, xtmp, ytmp, n, start, -1);
+		n_use = (unsigned int)GMT_compact_line (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.n, false, 0);
+		PSL_beginclipping (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)n_use, GMT->session.no_rgb, 3);
+		PSL_plotpolygon (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)n_use);
+		if (GMT_vec_outline (S->v.status)) GMT_plot_line (GMT, xin, yin, pin, nin);
+		PSL_endclipping (GMT->PSL, 1);
+		/* Then truncate against right border */
+		GMT->current.plot.n = GMT_map_truncate (GMT, xtmp, ytmp, n, start, +1);
+		n_use = (unsigned int)GMT_compact_line (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.n, false, 0);
+		PSL_beginclipping (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)n_use, GMT->session.no_rgb, 3);
+		PSL_plotpolygon (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)n_use);
+		if (GMT_vec_outline (S->v.status)) GMT_plot_line (GMT, xin, yin, pin, nin);
+		PSL_endclipping (GMT->PSL, 1);
+		GMT_free (GMT, xtmp);		GMT_free (GMT, ytmp);
+	}
+	else {	/* No wrapping but may be clipped */
+		PSL_beginclipping (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n, GMT->session.no_rgb, 3);
+		PSL_plotpolygon (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n);
+		if (GMT_vec_outline (S->v.status)) GMT_plot_line (GMT, xin, yin, pin, nin);
+		PSL_endclipping (GMT->PSL, 1);
+	}
+	PSL_setlinecap (GMT->PSL, cap);
+	if (GMT_vec_outline (S->v.status)) {	/* Turn on outline again and free temp memory */
+		PSL_command (GMT->PSL, "O1\n");
+		GMT_free (GMT, xin);
+		GMT_free (GMT, yin);
+		GMT_free (GMT, pin);
+	}
+}
+
+unsigned int  gmt_geo_vector_smallcircle (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_PEN *ppen, struct GMT_SYMBOL *S)
 {
-	/* Draws a small-circle vector with our without heads etc. */
+	/* Draws a small-circle vector with our without heads etc. There are some complications to consider:
+	 * When there are no heads it is simple.  If +n is on we may shrink the line thickness.
+	 * With heads tehre are these cases:
+	 * Head length is longer than 90% of the vector length.  We then skip the head and return 1
+	 * +n<norm> is in effect.  We shrink vector pen and head length.  Still, the shrunk head
+	 * may be longer than 90% of the vector length.  We then shrink head (not pen) further and return 2
+	*/
 
 	uint64_t n1, n2, n, add;
-	int heads, side;
-	int outline = 0;
+	int heads, side, outline = 0;
+	unsigned int warn = 0;
 	size_t n_alloc;
-	bool perspective;
-	double P[3], Pa[3], Ax[3], Bx[3], Ax2[3], Bx2[3], R[3][3];
+	bool perspective, pure;
+	double P[3], Pa[3], Ax[3], Bx[3], Ax2[3], Bx2[3], R[3][3], h_length_limit, max_length;
 	double dr[2] = {0.0, 0.0}, az[2] = {0.0, 0.0}, oaz[2] = {0.0, 0.0}, scl[2];
-	double da = 0.0, dshift, s, olon[2], olat[2], head_length, arc_width, n_az, arc;
+	double da = 0.0, dshift, s = 1.0, s1 = 1.0, s2 = 1.0, olon[2], olat[2], head_length, arc_width, n_az, arc;
 	double rot[2] = {0.0, 0.0}, rot_v[2] = {0.0, 0.0};
 	double *xp = NULL, *yp = NULL, *xp2 = NULL, *yp2 = NULL;
 	double *rgb = S->v.fill.rgb;
@@ -4608,38 +4654,70 @@ void gmt_geo_vector_smallcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 	//justify = GMT_vec_justify (S->v.status);	/* Return justification as 0-3 */
 	
 	gmt_scircle_sub (GMT, lon0, lat0, azimuth, length, S, &C);
+	perspective = GMT_IS_PERSPECTIVE (GMT);
 	
 	/* Here we have the endpoints A and B of the great (or small) circle arc */
 	
 	/* If shrink-option (+n) is active we may have to scale down head attributes and pen width */
+	/* If shrink-option (+n) is active we may have to scale down head attributes and pen width */
+	heads = GMT_vec_head (S->v.status);	/* Return head selection as 0-3 */
+	pure = (S->v.v_norm == -1.0f);	/* True if no shrinking has been specified */
+	h_length_limit = (1.0 - S->v.v_stem) * C.r0;	/* Max length of arrow in degrees to ensure the stem is still showing */
+	if (heads == 3) h_length_limit *= 0.5;		/* Split this length between the two heads */
+	if (heads && !pure) {	/* Need to determine head length in degrees */
+		az[0] = GMT_smallcircle_az (GMT, C.lon[0], C.lat[0], C.A, S);	/* Compute the azimuth from A to B at A along small circle */
+		scl[0] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[0], C.lat[0], 0.001 * C.r, az[0]);	/* Get local deg/inch scale at A in az[0] direction */
+		dr[0] = scl[0] * S->size_x;	/* This is arrow head length in degrees, approximately */
+		az[1] = -GMT_smallcircle_az (GMT, C.lon[1], C.lat[1], C.B, S);	/* Compute the azimuth from B to A at B along small circle */
+		scl[1] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[1], C.lat[1], 0.01 * C.r, az[1]);	/* Get local deg/inch scale */
+		dr[1] = scl[1] * S->size_x;	/* This is arrow head length in degrees, approximately, adjusted for ~pen thickness to ensure no gap between head and line */
+		max_length = MAX (dr[0], dr[1]);
+		if (max_length > h_length_limit) {
+			s2 = h_length_limit / max_length;
+			warn = 2;
+		}
+	}
 	
 	/* Might have to shrink things */
-	s = (C.r0 < S->v.v_norm) ? C.r0 / S->v.v_norm : 1.0;
+	if (C.r0 < S->v.v_norm)
+		s1 = C.r0 / S->v.v_norm;
+	if (s1 < s2) {	/* Pick the smallest scale required for head shrinking */
+		s = s1;
+		warn = 0;	/* When requesting +n there is no warning unless s2 is the smaller scale */
+	}
+	else
+		s = s2;
 	head_length = s * S->size_x;
-	arc_width   = s * S->v.v_width;
+	arc_width   = s1 * S->v.v_width;	/* Use scale s1 for pen shrinking */
+	
 	GMT_memcpy (olon, C.lon, 2, double);	GMT_memcpy (olat, C.lat, 2, double);	/* Keep copy of original coordinates */
 	
 	/* When only one side of a vector head is requested (side = -1/+1) there are complications that leads to some
 	 * extra work: Since we are clipping the head polygon, the head outline pen is effectively half that of the
 	 * vector.  Thus, there will be an offset of 1/2 penwidth at the end of the vector line and the start of the
-	 * back-end of the half vector head.  We adjust this changing the colatitude form the pole by the equivalent
+	 * back-end of the half vector head.  We adjust this changing the colatitude from the pole by the equivalent
 	 * distance of 1/2 pen width away from the side with the half arrowhead.  This makes the outline of the head
 	 * align with the vector line. */
-	perspective = GMT_IS_PERSPECTIVE (GMT);
-	heads = GMT_vec_head (S->v.status);	/* Return head selection as 0-3 */
 	side  = GMT_vec_side (S->v.status);	/* Return side selection as 0,-1,+1 */
 	dshift = (side) ? 0.5 * arc_width : 0.0;	/* Half-width of arc thickness if side != 0 */
 	if (heads & 1) {	/* Placing head at A means we must shorten the arc and use Ax instead of A */
 		az[0] = GMT_smallcircle_az (GMT, C.lon[0], C.lat[0], C.A, S);	/* Compute the azimuth from A to B at A along small circle */
 		scl[0] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[0], C.lat[0], 0.001 * C.r, az[0]);	/* Get local deg/inch scale at A in az[0] direction */
 		dr[0] = scl[0] * (head_length - 1.1*dshift);	/* This is arrow head length in degrees, approximately, adjusted for ~pen thickness to ensure no gap between head and line (the 1.1 slop) */
-		dr[0] /= sind (C.colat);	/* Scale dr[0] to opening angle degrees given colatitude */
-		/* Determine mid-back point of arrow head by rotating A back by chosen fraction rot of dr[0] */
-		rot_v[0] = 0.5 * dr[0] * (2.0 - GMT->current.setting.map_vector_shape);
-		GMT_make_rot_matrix2 (GMT, C.P, rot_v[0], R);	/* Rotation of rot_v[0] degrees about pole P */
-		GMT_matrix_vect_mult (GMT, 3U, R, C.A, Ax);	/* Get Ax = R * A*/
-		C.rot -= rot_v[0];	/* Shorten full arc by the same amount */
-		dr[0] = scl[0] * head_length;	/* This is arrow head length in great-circle degrees, approximately, without any pen-width compensation */
+		if (pure && dr[0] > h_length_limit) {	/* Head length too long, refuse to plot it */
+			GMT_memcpy (Ax, C.A, 3, double);	/* No need to shorten arc at beginning */
+			heads -= 1;	/* Not purse this head any further */
+			warn = 1;
+		}
+		else {
+			dr[0] /= sind (C.colat);	/* Scale dr[0] to opening angle degrees given colatitude */
+			/* Determine mid-back point of arrow head by rotating A back by chosen fraction rot of dr[0] */
+			rot_v[0] = 0.5 * dr[0] * (1.95 - GMT->current.setting.map_vector_shape);	/* 1.95 instead of 2 to allow for slop */
+			GMT_make_rot_matrix2 (GMT, C.P, rot_v[0], R);	/* Rotation of rot_v[0] degrees about pole P */
+			GMT_matrix_vect_mult (GMT, 3U, R, C.A, Ax);	/* Get Ax = R * A*/
+			C.rot -= rot_v[0];	/* Shorten full arc by the same amount */
+			dr[0] = scl[0] * head_length;	/* This is arrow head length in great-circle degrees, approximately, without any pen-width compensation */
+		}
 	}
 	else
 		GMT_memcpy (Ax, C.A, 3, double);	/* No need to shorten arc at beginning */
@@ -4648,13 +4726,20 @@ void gmt_geo_vector_smallcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 		az[1] = -GMT_smallcircle_az (GMT, C.lon[1], C.lat[1], C.B, S);	/* Compute the azimuth from B to A at B along small circle */
 		scl[1] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[1], C.lat[1], 0.01 * C.r, az[1]);	/* Get local deg/inch scale */
 		dr[1] = S->v.scale * (head_length - 1.1*dshift);	/* This is arrow head length in degrees, approximately, adjusted for ~pen thickness to ensure no gap between head and line */
-		dr[1] /= sind (C.colat);	/* Scale dr[1] to opening angle degrees given colatitude */
-		/* Determine mid-back point of arrow head by rotating B back by chosen fraction rot of dr[1] */
-		rot_v[1] = 0.5 * dr[1] * (2.0 - GMT->current.setting.map_vector_shape);
-		GMT_make_rot_matrix2 (GMT, C.P, -rot_v[1], R);	/* Rotation of -rot_v[1] degrees about pole P */
-		GMT_matrix_vect_mult (GMT, 3U, R, C.B, Bx);	/* Get Bx = R * B*/
-		C.rot -= rot_v[1];	/* Shorten full arc by the same amount */
-		dr[1] = scl[1] * head_length;	/* This is arrow head length in great-circle degrees, approximately, without any pen-width compensation */
+		if (pure && dr[1] > h_length_limit) {	/* Head length too long, refuse to plot it */
+			GMT_memcpy (Bx, C.B, 3, double);	/* No need to shorten arc at end */
+			heads -= 1;	/* Not purse this head any further */
+			warn = 1;
+		}
+		else {
+			dr[1] /= sind (C.colat);	/* Scale dr[1] to opening angle degrees given colatitude */
+			/* Determine mid-back point of arrow head by rotating B back by chosen fraction rot of dr[1] */
+			rot_v[1] = 0.5 * dr[1] * (1.95 - GMT->current.setting.map_vector_shape);	/* 1.95 instead of 2 to allow for slop */
+			GMT_make_rot_matrix2 (GMT, C.P, -rot_v[1], R);	/* Rotation of -rot_v[1] degrees about pole P */
+			GMT_matrix_vect_mult (GMT, 3U, R, C.B, Bx);	/* Get Bx = R * B*/
+			C.rot -= rot_v[1];	/* Shorten full arc by the same amount */
+			dr[1] = scl[1] * head_length;	/* This is arrow head length in great-circle degrees, approximately, without any pen-width compensation */
+		}
 	}
 	else
 		GMT_memcpy (Bx, C.B, 3, double);	/* No need to shorten arc at end */
@@ -4680,9 +4765,9 @@ void gmt_geo_vector_smallcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 		GMT_memcpy (Bx2, Bx, 3, double);	/* No need to shorten arc at end */
 	}
 	
-	gmt_circle_pen_poly (GMT, Ax2, Bx2, false, C.rot, ppen, S, &C);
+	gmt_circle_pen_poly (GMT, Ax2, Bx2, false, C.rot, ppen, S, &C, s1);
 	
-	if (!heads) return;	/* All done */
+	if (!heads) return (warn);	/* All done */
 
 	PSL_command (GMT->PSL, "V\n");
 	/* Get half-angle at head and possibly change pen */
@@ -4735,11 +4820,7 @@ void gmt_geo_vector_smallcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 		if (add) {	/* Mid point of arrow */
 			GMT_cart_to_geo (GMT, &yp[n-1], &xp[n-1], Ax, true);	/* Add geo coordinates of this new back mid point for arc */
 		}
-		if ((GMT->current.plot.n = GMT_geo_to_xy_line (GMT, xp, yp, n))) {
-			PSL_beginclipping (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n, GMT->session.no_rgb, 3);
-			PSL_plotpolygon (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n);
-			PSL_endclipping (GMT->PSL, 1);
-		}
+		gmt_plot_vector_head (GMT, xp, yp, n, S);
 		GMT_free (GMT, xp);	GMT_free (GMT, yp);
 		GMT_free (GMT, xp2);	GMT_free (GMT, yp2);
 	}
@@ -4780,46 +4861,72 @@ void gmt_geo_vector_smallcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 		if (add) {	/* Mid point of arrow */
 			GMT_cart_to_geo (GMT, &yp[n-1], &xp[n-1], Bx, true);	/* Add geo coordinates of this new back-mid point for arc */
 		}
-		if ((GMT->current.plot.n = GMT_geo_to_xy_line (GMT, xp, yp, n))) {
-			PSL_beginclipping (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n, GMT->session.no_rgb, 3);
-			PSL_plotpolygon (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n);
-			PSL_endclipping (GMT->PSL, 1);
-		}
+		gmt_plot_vector_head (GMT, xp, yp, n, S);
 		GMT_free (GMT, xp);	GMT_free (GMT, yp);
 		GMT_free (GMT, xp2);	GMT_free (GMT, yp2);
 	}
 	PSL_command (GMT->PSL, "U\n");
+	return (warn);
 }
 
-void gmt_geo_vector_greatcircle (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_PEN *ppen, struct GMT_SYMBOL *S)
+unsigned int gmt_geo_vector_greatcircle (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_PEN *ppen, struct GMT_SYMBOL *S)
 {
-	/* Draws a great-circle vector with our without heads, etc. */
+	/* Draws a great-circle vector with our without heads, etc. There are some complications to consider:
+	 * When there are no heads it is simple.  If +n is on we may shrink the line thickness.
+	 * With heads tehre are these cases:
+	 * Head length is longer than 90% of the vector length.  We then skip the head and return 1
+	 * +n<norm> is in effect.  We shrink vector pen and head length.  Still, the shrunk head
+	 * may be longer than 90% of the vector length.  We then shrink head (not pen) further and return 2
+	*/
 
 	uint64_t n1, n2, n, add;
-	int heads, side;
-	int outline = 0;
+	int heads, side, outline = 0;
+	unsigned int warn = 0;
 	size_t n_alloc;
-	bool perspective;
-	double tlon, tlat, mlon, mlat, P[3], Ax[3], Bx[3];
+	bool perspective, pure;
+	double tlon, tlat, mlon, mlat, P[3], Ax[3], Bx[3], h_length_limit, max_length;
 	double dr[2] = {0.0, 0.0}, az[2] = {0.0, 0.0}, oaz[2] = {0.0, 0.0}, off[2] = {0.0, 0.0};
-	double da = 0.0, dshift, s, olon[2], olat[2], head_length, arc_width, rot, scl[2];
+	double da = 0.0, dshift, s = 1.0, s1 = 1.0, s2 = 1.0, olon[2], olat[2], head_length, arc_width, rot, scl[2];
 	double *xp = NULL, *yp = NULL, *xp2 = NULL, *yp2 = NULL;
 	double *rgb = S->v.fill.rgb;
 	struct GMT_CIRCLE C;
 
 	/* We must determine points A and B, whose great-circle connector is the arc we seek to draw */
-	//justify = GMT_vec_justify (S->v.status);	/* Return justification as 0-3 */
 	gmt_gcircle_sub (GMT, lon0, lat0, azimuth, length, S, &C);
 	perspective = GMT_IS_PERSPECTIVE (GMT);
 	
 	/* Here we have the endpoints A and B of the great (or small) circle arc */
 	
 	/* If shrink-option (+n) is active we may have to scale down head attributes and pen width */
+	pure = (S->v.v_norm == -1.0f);	/* True if no shrinking has been specified */
+	heads = GMT_vec_head (S->v.status);	/* Return head selection as 0-3 */
+	h_length_limit = (1.0 - S->v.v_stem) * C.r0;	/* Max length of arrow in degrees to ensure the stem is still showing */
+	if (heads == 3) h_length_limit *= 0.5;		/* Split this length between the two heads */
+	if (heads && !pure) {	/* Need to determine head length in degrees */
+		az[0]  = GMT_az_backaz (GMT, C.lon[0], C.lat[0], C.lon[1], C.lat[1], false);	/* Compute the azimuth from A to B at A along great circle */
+		scl[0] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[0], C.lat[0], 0.001 * C.r, az[0]);	/* Get local deg/inch scale at A in az[0] direction */
+		dr[0] = scl[0] * S->size_x;	/* This is arrow head length in degrees, approximately */
+		az[1]  = GMT_az_backaz (GMT, C.lon[1], C.lat[1], C.lon[0], C.lat[0], false);	/* Compute the azimuth from B to A at B along great circle */
+		scl[1] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[1], C.lat[1], 0.01 * C.r, az[1]);	/* Get local deg/inch scale */
+		dr[1] = scl[1] * S->size_x;	/* This is arrow head length in degrees, approximately, adjusted for ~pen thickness to ensure no gap between head and line */
+		max_length = MAX (dr[0], dr[1]);
+		if (max_length > h_length_limit) {
+			s2 = h_length_limit / max_length;
+			warn = 2;
+		}
+	}
 	
 	/* Might have to shrink things */
-	s = (C.r0 < S->v.v_norm) ? C.r0 / S->v.v_norm : 1.0;
+	if (C.r0 < S->v.v_norm)
+		s1 = C.r0 / S->v.v_norm;
+	if (s1 < s2) {	/* Pick the smallest scale required for head shrinking */
+		s = s1;
+		warn = 0;	/* When requesting +n there is no warning unless s2 is the smaller scale */
+	}
+	else
+		s = s2;
 	head_length = s * S->size_x;
-	arc_width   = s * S->v.v_width;
+	arc_width   = s1 * S->v.v_width;	/* Use scale s1 for pen shrinking */
 	GMT_memcpy (olon, C.lon, 2, double);	GMT_memcpy (olat, C.lat, 2, double);	/* Keep copy of original coordinates */
 	
 	/* When only one side of a vector head is requested (side = -1/+1) there are complications that leads to some
@@ -4829,16 +4936,22 @@ void gmt_geo_vector_greatcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 	 * the vector tip and the mid-vector back point the equivalent distance of 1/2 pen width away from the side with
 	 * the half arrowhead.  This makes the outline of the head align with the vector line. */
 	
-	heads = GMT_vec_head (S->v.status);	/* Return head selection as 0-3 */
 	side  = GMT_vec_side (S->v.status);	/* Return side selection as 0,-1,+1 */
 	dshift = (side) ? 0.5 * arc_width : 0.0;	/* Half-width of arc thickness if side != 0 */
 	if (heads & 1) {	/* Placing head at A means we must shorten the arc and use Ax instead of A */
 		az[0] = GMT_az_backaz (GMT, C.lon[0], C.lat[0], C.lon[1], C.lat[1], false);	/* Compute the azimuth from A to B at A along great circle */
 		scl[0] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[0], C.lat[0], 0.001 * C.r, az[0]);	/* Get local deg/inch scale at A in az[0] direction */
 		dr[0] = scl[0] * (head_length - 1.1*dshift);	/* This is arrow head length in degrees, approximately, adjusted for ~pen thickness to ensure no gap between head and line */
-		GMT_get_point_from_r_az (GMT, C.lon[0], C.lat[0], 0.5*dr[0]*(2.0 - GMT->current.setting.map_vector_shape), az[0], &tlon, &tlat);	/* Back mid-point of arrow */
-		GMT_geo_to_cart (GMT, tlat, tlon, Ax, true);	/* Get Cartesian coordinates of this new start point for arc */
-		dr[0] = scl[0] * head_length;	/* This is arrow head length in degrees, approximately, without any pen-width compensation */
+		if (pure && dr[0] > h_length_limit) {	/* Head length too long, refuse to plot it */
+			GMT_memcpy (Ax, C.A, 3, double);	/* No need to shorten arc at beginning */
+			heads -= 1;	/* Not purse this head any further */
+			warn = 1;
+		}
+		else {
+			GMT_get_point_from_r_az (GMT, C.lon[0], C.lat[0], 0.5*dr[0]*(1.95 - GMT->current.setting.map_vector_shape), az[0], &tlon, &tlat);	/* Back mid-point of arrow */
+			GMT_geo_to_cart (GMT, tlat, tlon, Ax, true);	/* Get Cartesian coordinates of this new start point for arc */
+			dr[0] = scl[0] * head_length;	/* This is arrow head length in degrees, approximately, without any pen-width compensation */
+		}
 	}
 	else
 		GMT_memcpy (Ax, C.A, 3, double);	/* No need to shorten arc at beginning */
@@ -4847,9 +4960,16 @@ void gmt_geo_vector_greatcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 		az[1] = GMT_az_backaz (GMT, C.lon[1], C.lat[1], C.lon[0], C.lat[0], false);	/* Compute the azimuth from B to A at B along great circle */
 		scl[1] = (perspective) ? S->v.scale : gmt_get_local_scale (GMT, C.lon[1], C.lat[1], 0.01 * C.r, az[1]);	/* Get local deg/inch scale */
 		dr[1] = scl[1] * (head_length - 1.1*dshift);	/* This is arrow head length in degrees, approximately, adjusted for ~pen thickness to ensure no gap between head and line */
-		GMT_get_point_from_r_az (GMT, C.lon[1], C.lat[1], 0.5*dr[1]*(2.0 - GMT->current.setting.map_vector_shape), az[1], &tlon, &tlat);	/* Back mid-point of arrow */
-		GMT_geo_to_cart (GMT, tlat, tlon, Bx, true);	/* Get Cartesian coordinates of this new end point for arc */
-		dr[1] = scl[1] * head_length;	/* This is arrow head length in degrees, approximately, without any pen-width compensation */
+		if (pure && dr[1] > h_length_limit) {	/* Head length too long, refuse to plot it */
+			GMT_memcpy (Bx, C.B, 3, double);	/* No need to shorten arc at end */
+			heads -= 2;	/* Not purse this head any further */
+			warn = 1;
+		}
+		else {
+			GMT_get_point_from_r_az (GMT, C.lon[1], C.lat[1], 0.5*dr[1]*(1.95 - GMT->current.setting.map_vector_shape), az[1], &tlon, &tlat);	/* Back mid-point of arrow */
+			GMT_geo_to_cart (GMT, tlat, tlon, Bx, true);	/* Get Cartesian coordinates of this new end point for arc */
+			dr[1] = scl[1] * head_length;	/* This is arrow head length in degrees, approximately, without any pen-width compensation */
+		}
 	}
 	else
 		GMT_memcpy (Bx, C.B, 3, double);	/* No need to shorten arc at end */
@@ -4857,9 +4977,9 @@ void gmt_geo_vector_greatcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 	GMT_memcpy (oaz, az, 2, double);	/* Keep copy of original azimuths */
 
 	rot = d_acosd (GMT_dot3v (GMT, Ax, Bx));	/* opening angle in degrees */
-	gmt_circle_pen_poly (GMT, Ax, Bx, C.longway, rot, ppen, S, &C);
+	gmt_circle_pen_poly (GMT, Ax, Bx, C.longway, rot, ppen, S, &C, s1);
 	
-	if (!heads) return;	/* All done */
+	if (!heads) return (warn);	/* All done */
 	
 	/* Get half-angle at head and possibly change pen */
 	da = 0.5 * S->v.v_angle;	/* Half-opening angle at arrow head */
@@ -4910,11 +5030,7 @@ void gmt_geo_vector_greatcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 		if (add) {	/* Mid point of arrow */
 			xp[n-1] = mlon;	yp[n-1] = mlat;
 		}
-		if ((GMT->current.plot.n = GMT_geo_to_xy_line (GMT, xp, yp, n))) {
-			PSL_beginclipping (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n, GMT->session.no_rgb, 3);
-			PSL_plotpolygon (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n);
-			PSL_endclipping (GMT->PSL, 1);
-		}
+		gmt_plot_vector_head (GMT, xp, yp, n, S);
 		GMT_free (GMT, xp);	GMT_free (GMT, yp);
 		GMT_free (GMT, xp2);	GMT_free (GMT, yp2);
 	}
@@ -4953,18 +5069,15 @@ void gmt_geo_vector_greatcircle (struct GMT_CTRL *GMT, double lon0, double lat0,
 		if (add) {	/* Mid point of arrow */
 			xp[n-1] = mlon;	yp[n-1] = mlat;
 		}
-		if ((GMT->current.plot.n = GMT_geo_to_xy_line (GMT, xp, yp, n))) {
-			PSL_beginclipping (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n, GMT->session.no_rgb, 3);
-			PSL_plotpolygon (GMT->PSL, GMT->current.plot.x, GMT->current.plot.y, (int)GMT->current.plot.n);
-			PSL_endclipping (GMT->PSL, 1);
-		}
+		gmt_plot_vector_head (GMT, xp, yp, n, S);
 		GMT_free (GMT, xp);	GMT_free (GMT, yp);
 		GMT_free (GMT, xp2);	GMT_free (GMT, yp2);
 	}
 	PSL_command (GMT->PSL, "U\n");
+	return (warn);
 }
 
-void GMT_geo_vector (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_PEN *pen, struct GMT_SYMBOL *S)
+unsigned int GMT_geo_vector (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_PEN *pen, struct GMT_SYMBOL *S)
 {
 	/* GMT_geo_vector takes the location lon0, lat0, azimuth of the vector at that point, and the
 	   length (in km), and and draws the vector using the chosen map projection.  If arrow heads
@@ -4972,16 +5085,17 @@ void GMT_geo_vector (struct GMT_CTRL *GMT, double lon0, double lat0, double azim
 	   symbol size.  With arrow heads we also shorten the vector arc so that unfilled vector heads
 	   are possible. If a small-circle vector is chosen then azimuth, length may be opening angles
 	   1 and 2 if GMT_VEC_ANGLES is set as well. */
-
+	unsigned int warn;
 	if ((S->v.status & GMT_VEC_SCALE) == 0) {	/* Must determine the best inch to degree scale for this map */
 		S->v.scale = gmt_inch_to_degree_scale (GMT);
 		S->v.status |= GMT_VEC_SCALE;
 	}
 		
 	if (S->v.status & GMT_VEC_POLE)
-		gmt_geo_vector_smallcircle (GMT, lon0, lat0, azimuth, length, pen, S);
+		warn = gmt_geo_vector_smallcircle (GMT, lon0, lat0, azimuth, length, pen, S);
 	else
-		gmt_geo_vector_greatcircle (GMT, lon0, lat0, azimuth, length, pen, S);
+		warn = gmt_geo_vector_greatcircle (GMT, lon0, lat0, azimuth, length, pen, S);
+	return (warn);
 }
 
 void GMT_geo_rectangle (struct GMT_CTRL *GMT, double lon, double lat, double width, double height, double azimuth)

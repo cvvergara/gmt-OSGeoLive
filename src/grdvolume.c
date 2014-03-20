@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvolume.c 12441 2013-11-04 15:50:03Z pwessel $
+ *	$Id: grdvolume.c 12925 2014-02-20 22:02:24Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -504,10 +504,12 @@ int GMT_grdvolume (void *V_API, int mode, void *args)
 
 	if (!(Ctrl->Z.scale == 1.0 && Ctrl->Z.offset == 0.0)) {
 		GMT_Report (API, GMT_MSG_VERBOSE, "Subtracting %g and multiplying by %g\n", Ctrl->Z.offset, Ctrl->Z.scale);
-		GMT_scale_and_offset_f (GMT, Work->data, Work->header->size, Ctrl->Z.scale, Ctrl->Z.offset);
 		Work->header->z_min = (Work->header->z_min - Ctrl->Z.offset) * Ctrl->Z.scale;
 		Work->header->z_max = (Work->header->z_max - Ctrl->Z.offset) * Ctrl->Z.scale;
 		if (Ctrl->Z.scale < 0.0) double_swap (Work->header->z_min, Work->header->z_max);
+		/* Since GMT_scale_and_offset_f applies z' = z * scale + offset we must adjust Z.offset first: */
+		Ctrl->Z.offset *= Ctrl->Z.scale;
+		GMT_scale_and_offset_f (GMT, Work->data, Work->header->size, Ctrl->Z.scale, Ctrl->Z.offset);
 	}
 
 	this_base = (Ctrl->L.active) ? Ctrl->L.value : 0.0;

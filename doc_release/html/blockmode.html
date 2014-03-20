@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>blockmode &mdash; GMT 5.1.0 documentation</title>
+    <title>blockmode &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="B" href="B.html" />
     <link rel="next" title="F" href="F.html" />
     <link rel="prev" title="blockmedian" href="blockmedian.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="B.html" accesskey="U">B</a> &raquo;</li>
 <li class="right">
@@ -132,7 +131,7 @@ giving an increment you may specify the <em>number of nodes</em> desired by
 appending <strong>+</strong> to the supplied integer argument; the increment is then
 recalculated from the number of nodes and the domain. The resulting
 increment value depends on whether you have selected a
-gridline-registered or pixel-registered grid; see Appendix B for
+gridline-registered or pixel-registered grid; see <a class="reference internal" href="GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a> for
 details. Note: if <strong>-R</strong><em>grdfile</em> is used then the grid spacing has
 already been initialized; use <strong>-I</strong> to override the values.</dd>
 </dl>
@@ -230,10 +229,10 @@ unweighted i/o].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -259,13 +258,15 @@ specify more decimals using the <a class="reference internal" href="gmt.conf.htm
 <p>To find 5 by 5 minute block mode estimates from the double precision
 binary data in hawaii_b.xyg and output an ASCII table, run:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt blockmode hawaii_b.xyg -R198/208/18/25 -I5m -bi3d &gt; hawaii_5x5.xyg</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt blockmode hawaii_b.xyg -R198/208/18/25 -I5m -bi3d &gt; hawaii_5x5.xyg
+</pre></div>
 </div>
 </div></blockquote>
 <p>To determine the most frequently occurring values per 5x5 block using histogram binning, with
 data representing integer counts, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt blockmode data.txt -R0/100/0/100 -I5 -r -C -D</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt blockmode data.txt -R0/100/0/100 -I5 -r -C -D
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -308,6 +309,11 @@ data representing integer counts, try</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="F.html"
                         title="next chapter">F</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/blockmode.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -326,7 +332,7 @@ data representing integer counts, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="B.html" >B</a> &raquo;</li>
 <li class="right">
@@ -344,9 +350,9 @@ data representing integer counts, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

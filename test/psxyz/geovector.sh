@@ -1,5 +1,5 @@
 #!/bin/bash
-#       $Id: geovector.sh 12114 2013-09-03 19:19:00Z fwobbe $
+#       $Id: geovector.sh 12520 2013-11-15 22:57:57Z pwessel $
 #
 # Check geovector symbols
 
@@ -15,7 +15,7 @@ gmt psxyz -R -J -O -K -Sc0.05i -Gred t.txt -p155/35 >> $ps
 # Centered double-head vector
 cat << EOF > t.txt
 -120 0 0 45 10000
-60 -50 0 20 5000
+60 -50 0 20 6000
 EOF
 gmt psxyz -R -J -W0.5p,blue -S=0.4i+jc+b+e -Gblue --MAP_VECTOR_SHAPE=1 t.txt -O -K -p155/35 >> $ps
 gmt psxyz -R -J -Sc0.05i -Gblue t.txt -O -K -p155/35 >> $ps

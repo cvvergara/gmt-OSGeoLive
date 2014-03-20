@@ -1,4 +1,4 @@
-# $Id: languages.txt 12415 2013-10-31 19:41:54Z remko $
+# $Id: languages.txt 12822 2014-01-31 23:39:56Z remko $
 # Number of languages per continent
 # Source: ethnologue.com
 #

@@ -1,4 +1,4 @@
-/* $Id: segyreel.h 10084 2012-05-12 21:04:53Z fwobbe $
+/* $Id: segyreel.h 12822 2014-01-31 23:39:56Z remko $
  *
  * From PASSCAL code base which is in the public domain
  * http://www.passcal.nmt.edu/

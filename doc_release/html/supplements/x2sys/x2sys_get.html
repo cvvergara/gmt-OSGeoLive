@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>x2sys_get &mdash; GMT 5.1.0 documentation</title>
+    <title>x2sys_get &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="X2SYS" href="../../SUP_X2SYS.html" />
     <link rel="next" title="x2sys_init" href="x2sys_init.html" />
     <link rel="prev" title="x2sys_datalist" href="x2sys_datalist.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_X2SYS.html" accesskey="U">X2SYS</a> &raquo;</li>
 <li class="right">
@@ -158,10 +157,10 @@ to those that fall at least partly inside the specified domain.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -177,20 +176,23 @@ options, then exits.</dd>
 occupy a certain region in the south Pacific, and have at least free air
 anomalies and bathymetry, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt x2sys_get -V -TMGD77 -R180/240/-60/-30 -Ffaa,depth</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt x2sys_get -V -TMGD77 -R180/240/-60/-30 -Ffaa,depth
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find all the tracks associated with the tag MGD77 that have depth but
 not twt, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt x2sys_get -V -TMGD77 -Fdepth -Nwt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt x2sys_get -V -TMGD77 -Fdepth -Nwt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find all the pairs associated with the tag MGD77 that might intersect
 each other, but only those pairs which involves tracks in your list
 new.lis, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt x2sys_get -V -TMGD77 -Lnew.lis &gt; xpairs.lis</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt x2sys_get -V -TMGD77 -Lnew.lis &gt; xpairs.lis
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -240,6 +242,11 @@ the selected region, unless <strong>-G</strong> is set.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="x2sys_init.html"
                         title="next chapter">x2sys_init</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/x2sys/x2sys_get.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -258,7 +265,7 @@ the selected region, unless <strong>-G</strong> is set.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_X2SYS.html" >X2SYS</a> &raquo;</li>
 <li class="right">
@@ -276,9 +283,9 @@ the selected region, unless <strong>-G</strong> is set.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

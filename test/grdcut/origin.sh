@@ -1,11 +1,12 @@
 #!/bin/bash
-#	$Id: origin.sh 12115 2013-09-03 23:22:48Z fwobbe $
+#	$Id: origin.sh 12743 2014-01-10 23:02:33Z pwessel $
 # Testing gmt grdcut -S for 3 different points
 
 ps=origin.ps
 
 # Create global grid by evaluating distances to 0,0
-gmt grdmath -Rd -I1 0 0 SDIST = tmp.nc
+gmt set PROJ_ELLIPSOID Sphere
+gmt grdmath -Rd -I1 0 0 SDIST KM2DEG = tmp.nc
 gmt grdcontour tmp.nc -JQ0/7i -P -K -A10 -C5 -Baf -Y6.5i -Xc > $ps
 # Plot three origins and circles
 gmt psxy -R -J -O -K -SE << EOF >> $ps

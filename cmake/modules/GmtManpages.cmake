@@ -1,5 +1,5 @@
 #
-# $Id: GmtManpages.cmake 12183 2013-09-22 14:58:38Z fwobbe $
+# $Id: GmtManpages.cmake 12822 2014-01-31 23:39:56Z remko $
 #
 # - Generates manpages from txt-files and creates installation targets
 # GMT_CREATE_MANPAGES ("${MAN_FILES}" [DEPENDS [DEPENDS2] ...]])

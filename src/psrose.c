@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psrose.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: psrose.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -258,13 +258,13 @@ int GMT_psrose_parse (struct GMT_CTRL *GMT, struct PSROSE_CTRL *Ctrl, struct GMT
 				}
 				else {
 					if (opt->arg[0] == '+') {	/* No size (use default), just attributes */
-						n_errors += GMT_parse_vector (GMT, opt->arg, &Ctrl->M.S);
+						n_errors += GMT_parse_vector (GMT, 'v', opt->arg, &Ctrl->M.S);
 					}
 					else {	/* Size, plus possible attributes */
 						n = sscanf (opt->arg, "%[^+]%s", txt_a, txt_b);	/* txt_a should be symbols size with any +<modifiers> in txt_b */
 						if (n == 1) txt_b[0] = 0;	/* No modifiers present, set txt_b to empty */
 						Ctrl->M.S.size_x = GMT_to_inch (GMT, txt_a);	/* Length of vector */
-						n_errors += GMT_parse_vector (GMT, txt_b, &Ctrl->M.S);
+						n_errors += GMT_parse_vector (GMT, 'v', txt_b, &Ctrl->M.S);
 					}
 					Ctrl->M.S.v.status |= GMT_VEC_OUTLINE;
 				}

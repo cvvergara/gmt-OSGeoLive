@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pslib_f77.c 12164 2013-09-14 21:32:00Z pwessel $
+ *	$Id: pslib_f77.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 2009-2013 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2014 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by

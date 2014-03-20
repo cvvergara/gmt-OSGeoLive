@@ -1,7 +1,7 @@
 @echo off
 REM		GMT EXAMPLE 17
 REM
-REM		$Id: example_17.bat 11641 2013-06-07 00:06:36Z pwessel $
+REM		$Id: example_17.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Illustrates clipping of images using coastlines
 REM GMT progs:	grd2cpt, grdgradient, grdimage, pscoast, pstext

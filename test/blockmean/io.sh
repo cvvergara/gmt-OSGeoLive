@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: io.sh 12350 2013-10-17 13:38:22Z fwobbe $
+#	$Id: io.sh 12526 2013-11-16 20:38:52Z pwessel $
 #
 # Test that the -i, -o, -bi and bo works OK.
 
@@ -39,4 +39,4 @@ gmt blockmean -R0/5/0/5 -I1 -r bin_i.b -bi8d -i3-5 -o2,0 -bo2d | gmt gmtconvert 
 gmt gmtmath -T -Sl ascii_o.txt bin_o.txt SUB SUM = >> io_answer.txt
 
 diff io_answer.txt  "${src:-.}"/io_answer.txt --strip-trailing-cr > fail
-rm -f ascii_i.txt ascii_o.txt bin_o.txt bin_i.b
+#rm -f ascii_i.txt ascii_o.txt bin_o.txt bin_i.b

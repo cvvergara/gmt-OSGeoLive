@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmtconvert &mdash; GMT 5.1.0 documentation</title>
+    <title>gmtconvert &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmtdefaults" href="gmtdefaults.html" />
     <link rel="prev" title="gmtconnect" href="gmtconnect.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -229,10 +228,10 @@ To give a single pattern starting with +f, escape it with a backslash.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -257,53 +256,62 @@ specify more decimals using the <a class="reference internal" href="gmt.conf.htm
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>To convert the binary file test.b (single precision) with 4 columns to ASCII:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert test.b -bi4f &gt; test.dat</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert test.b -bi4f &gt; test.dat
+</pre></div>
 </div>
 </div></blockquote>
 <p>To convert the multiple segment ASCII table test.d to a double precision binary file:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert test.d -bo &gt; test.b</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert test.d -bo &gt; test.b
+</pre></div>
 </div>
 </div></blockquote>
 <p>You have an ASCII table with 6 columns and you want to plot column 5 versus column 0. Try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert table.d -o5,0 | psxy ...</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert table.d -o5,0 | psxy ...
+</pre></div>
 </div>
 </div></blockquote>
 <p>If the file instead is the binary file results.b which has 9
 single-precision values per record, we extract the last column and
 columns 4-6 and write ASCII with the command</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert results.b -o8,4-6 -bi9s | psxy ...</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert results.b -o8,4-6 -bi9s | psxy ...
+</pre></div>
 </div>
 </div></blockquote>
 <p>You want to plot the 2nd column of a 2-column file left.d versus the
 first column of a file right.d:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert left.d right.d -A -o1,2 | psxy ...</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert left.d right.d -A -o1,2 | psxy ...
+</pre></div>
 </div>
 </div></blockquote>
 <p>To extract all segments in the file big_file.d whose headers contain
 the string &#8220;RIDGE AXIS&#8221;, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert big_file.d -S"RIDGE AXIS" &gt; subset.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert big_file.d -S&quot;RIDGE AXIS&quot; &gt; subset.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To invert the selection of segments whose headers begin with &#8220;profile &#8221;
 followed by an integer number and any letter between &#8220;g&#8221; and &#8220;l&#8221;, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert -S~"/^profile [0-9]+[g-l]$/"</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert -S~&quot;/^profile [0-9]+[g-l]$/&quot;
+</pre></div>
 </div>
 </div></blockquote>
 <p>To reverse the order of segments in a file without reversing the order
 of records within each segment, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert lots_of_segments.txt -Is &gt; last_segment_first.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert lots_of_segments.txt -Is &gt; last_segment_first.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To extract segments 20 to 40 in steps of 2, plus segment 0 in a file, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtconvert lots_of_segments.txt -Q0,20:2:40 &gt; my_segments.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtconvert lots_of_segments.txt -Q0,20:2:40 &gt; my_segments.txt
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -341,6 +349,11 @@ of records within each segment, try</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="gmtdefaults.html"
                         title="next chapter">gmtdefaults</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/gmtconvert.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -359,7 +372,7 @@ of records within each segment, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -377,9 +390,9 @@ of records within each segment, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

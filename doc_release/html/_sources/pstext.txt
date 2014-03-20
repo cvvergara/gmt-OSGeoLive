@@ -8,8 +8,8 @@ pstext
 
     pstext - Plot or typeset text on maps
 
-`Synopsis <#toc1>`_
--------------------
+Synopsis
+--------
 
 .. include:: common_SYN_OPTs.rst_
 
@@ -17,7 +17,7 @@ pstext
 |SYN_OPT-Rz|
 [ **-A** ]
 |SYN_OPT-B|
-[ **-D**\ [**j**\ \|\ **J**]\ *dx*\ [/*dy*][\ **v**\ [*pen*\ ]] ]
+[ **-D**\ [**j**\ \|\ **J**]\ *dx*\ [/*dy*][\ **v**\ [*pen*]] ]
 [ **-F**\ [**+a**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+h**][\ **+j**\ [*justify*]][\ **+l**] ] 
 [ **-G**\ *color* ] [ **-Jz**\ \|\ **Z**\ *parameters* ] [ **-K** ]
 [ **-L** ] [ **-M** ] [ **-N** ] [ **-O** ] [ **-P** ] [
@@ -58,7 +58,7 @@ Composite characters (overstrike) may be indicated with the
 each other. To learn the octal codes for symbols not available on the
 keyboard and some accented European characters, see Section 4.16 and
 Appendix F in the GMT Technical Reference and Cookbook. Note that
-**PS\_CHAR\_ENCODING** must be set to an extended character set in your
+:ref:`PS_CHAR_ENCODING <PS_CHAR_ENCODING>` must be set to an extended character set in your
 :doc:`gmt.conf` file in order to use the accented characters. Using the
 **-G** or **-W** options, a rectangle underlying the text may be plotted
 (does not work for strings with sub/super scripts, symbols, or composite
@@ -104,7 +104,7 @@ Optional Arguments
     Sets the clearance between the text and the surrounding box [15%].
     Only used if **-W** or **-G** are specified. Append the unit you
     want (**c**\ m, **i**\ nch, or **p**\ oint; if not given we consult
-    **PROJ\_LENGTH\_UNIT**) or % for a percentage of the font size.
+    :ref:`PROJ_LENGTH_UNIT <PROJ_LENGTH_UNIT>`) or % for a percentage of the font size.
 
 **-D**\ [**j**\ \|\ **J**]\ *dx*\ [/*dy*][\ **v**\ [*pen*\ ]]
     Offsets the text from the projected (*x*,\ *y*) point by *dx*,\ *dy*
@@ -116,9 +116,9 @@ Optional Arguments
     a line from the original point to the shifted point; append a *pen*
     to change the attributes for this line.
 
-**-F**\ [**+a**\ [*angle*\ ]][\ **+c**\ [*justify*]][\ **+f**\ [*font*\ ]][\ **+h**][\ **+j**\ [*justify*\ ]][\ **+l**] 
+**-F**\ [**+a**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+h**][\ **+j**\ [*justify*]][\ **+l**] 
     By default, text will be placed horizontally, using the primary
-    annotation font attributes (**FONT_ANNOT_PRIMARY**), and centered
+    annotation font attributes (:ref:`FONT_ANNOT_PRIMARY <FONT_ANNOT_PRIMARY>`), and centered
     on the data point. Use this option to override these defaults by
     specifying up to three text attributes (font, angle, and
     justification) directly on the command line. Use **+f** to set the
@@ -132,11 +132,11 @@ Optional Arguments
     **-F**\ **+f**\ 12p,Helvetica-Bold,red\ **+j+a** selects a 12p red
     Helvetica-Bold font and expects to read the justification and angle
     from the file, in that order, after *x*, *y* and before *text*.
-    The **+c** justification lets us use x,y coordinates extracted from the
-    **-R** string instead of providing them from file. For example **-F+c**\ TL
+    In addition, the **+c** justification lets us use x,y coordinates extracted from the
+    **-R** string instead of providing them in the input file. For example **-F+c**\ TL
     gets the *x_min*, *y_max* from the **-R** string and plots the text
     at the Upper Left corner of the map.  Normally, the text to be plotted
-    comes from the data record.  Use **+h** or **+l** to instead select the
+    comes from the data record.  Instead, use **+h** or **+l** to select the
     text as the most recent segment header or segment label, respectively.
 
 **-G**\ *color*
@@ -180,10 +180,9 @@ Optional Arguments
 **-T**
     Specify the shape of the textbox when using **-G** and/or **-W**.
     Choose lower case **o** to get a straight rectangle [Default].
-    Choose upper case **O** to get a rounded rectangle. Choose lower
-    case **c** to get a concave rectangle (only in paragraph mode).
-    Choose upper case **C** to get a convex rectangle (only in paragraph
-    mode). 
+    Choose upper case **O** to get a rounded rectangle. In paragraph
+    mode (**-M**) you can also choose lower case **c** to get a concave
+    rectangle or upper case **C** to get a convex rectangle. 
 
 .. include:: explain_-U.rst_
 
@@ -269,6 +268,8 @@ Limitations
 In paragraph mode, the presence of composite characters and other escape
 sequences may lead to unfortunate word splitting. Also, if a font is
 requested with an outline pen it will not be used in paragraph mode.
+Note if any single word is wider than your chosen paragraph width then
+the paragraph width is automatically enlarged to fit the widest word.
 
 The **-N** option does not adjust the BoundingBox information so you may
 have to post-process the PostScript output with ps2raster to obtain a

@@ -1,5 +1,5 @@
-#!/bin/sh
-#	$Id: shelltest.sh 9857 2012-03-13 10:55:26Z fwobbe $
+#!/bin/bash
+#	$Id: shelltest.sh 12464 2013-11-06 15:58:22Z fwobbe $
 #
 # Testing gmt_shell_functions
 
@@ -37,7 +37,7 @@ done < $GMT_TMPDIR/crap.txt
 R=`gmt_get_region $GMT_TMPDIR/crap.txt -I2`
 gmt_message "Found the table region to be $R"
 
-grdmath -R0/50/10/90 -I10 X Y MUL = $GMT_TMPDIR/crap.nc
+gmt grdmath -R0/50/10/90 -I10 X Y MUL = $GMT_TMPDIR/crap.nc
 
 R=`gmt_get_gridregion $GMT_TMPDIR/crap.nc`
 gmt_message "Found the grid region to be $R"

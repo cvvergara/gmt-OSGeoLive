@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcontour.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: grdcontour.c 12937 2014-02-22 05:11:02Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -290,7 +290,13 @@ int GMT_grdcontour_parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, st
 				break;
 			case 'C':	/* Contour interval/cpt */
 				Ctrl->C.active = true;
-				if (!GMT_access (GMT, opt->arg, R_OK)) {	/* Gave a readable file */
+				if (GMT_File_Is_Memory (opt->arg)) {	/* Passed a memory reference from a module */
+					Ctrl->C.interval = 1.0;
+					Ctrl->C.cpt = true;
+					if (Ctrl->C.file) free (Ctrl->C.file);
+					Ctrl->C.file = strdup (opt->arg);
+				}
+				else if (!GMT_access (GMT, opt->arg, R_OK)) {	/* Gave a readable file */
 					Ctrl->C.interval = 1.0;
 					Ctrl->C.cpt = (!strncmp (&opt->arg[strlen(opt->arg)-4], ".cpt", 4U)) ? true : false;
 					if (Ctrl->C.file) free (Ctrl->C.file);
@@ -447,7 +453,7 @@ int GMT_grdcontour_parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, st
 
 /* Three sub functions used by GMT_grdcontour */
 
-void grd_sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struct SAVE *save, size_t n, struct GMT_GRID *G, double tick_gap, double tick_length, bool tick_low, bool tick_high, bool tick_label, char *lbl[], unsigned int mode)
+void grd_sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struct SAVE *save, size_t n, struct GMT_GRID *G, double tick_gap, double tick_length, bool tick_low, bool tick_high, bool tick_label, char *lbl[], unsigned int mode, FILE *fp)
 {	/* Labeling and ticking of inner-most contours cannot happen until all contours are found and we can determine
 	   which are the innermost ones. Here, all the n candidate contours are passed via the save array.
 	   We need to do several types of testing here:
@@ -639,14 +645,14 @@ void grd_sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struct
 				PSL_plottext (PSL, x_lbl, y_lbl, GMT->current.setting.font_annot[0].size, lbl[save[pol].high], 0.0, 6, form);
 			}
 			save[k].do_it = false;
-			if (mode & 2) GMT_write_label_record (GMT, x_lbl, y_lbl, 0.0, lbl[save[pol].high], mode & 4);
+			if (mode & 2) GMT_write_label_record (GMT, fp, x_lbl, y_lbl, 0.0, lbl[save[pol].high], mode & 4);
 		}
 		else {
 			if (mode & 1) {
 				GMT_setpen (GMT, &save[pol].pen);
 				PSL_plottext (PSL, save[pol].xlabel, save[pol].ylabel, GMT->current.setting.font_annot[0].size, lbl[save[pol].high], 0.0, 6, form);
 			}
-			if (mode & 2) GMT_write_label_record (GMT, save[pol].xlabel, save[pol].ylabel, 0.0, lbl[save[pol].high], mode & 4);
+			if (mode & 2) GMT_write_label_record (GMT, fp, save[pol].xlabel, save[pol].ylabel, 0.0, lbl[save[pol].high], mode & 4);
 		}
 	}
 }
@@ -856,10 +862,12 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 	}
 	if (!(Ctrl->Z.scale == 1.0 && Ctrl->Z.offset == 0.0)) {	/* Must transform z grid */
 		GMT_Report (API, GMT_MSG_VERBOSE, "Subtracting %g and multiplying grid by %g\n", Ctrl->Z.offset, Ctrl->Z.scale);
-		GMT_scale_and_offset_f (GMT, G->data, G->header->size, Ctrl->Z.scale, -Ctrl->Z.offset);
 		G->header->z_min = (G->header->z_min - Ctrl->Z.offset) * Ctrl->Z.scale;
 		G->header->z_max = (G->header->z_max - Ctrl->Z.offset) * Ctrl->Z.scale;
 		if (Ctrl->Z.scale < 0.0) double_swap (G->header->z_min, G->header->z_max);
+		/* Since GMT_scale_and_offset_f applies z' = z * scale + offset we must adjust Z.offset first: */
+		Ctrl->Z.offset *= Ctrl->Z.scale;
+		GMT_scale_and_offset_f (GMT, G->data, G->header->size, Ctrl->Z.scale, -Ctrl->Z.offset);
 	}
 	if (Ctrl->L.low > G->header->z_min) G->header->z_min = Ctrl->L.low;	/* Possibly clip the z range */
 	if (Ctrl->L.high < G->header->z_max) G->header->z_max = Ctrl->L.high;
@@ -1014,10 +1022,10 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 			GMT_plane_perspective (GMT, -1, 0.0);
 			GMT_plotend (GMT);
 		}
-		GMT_free (GMT, contour);
-		GMT_free (GMT, cont_type);
-		GMT_free (GMT, cont_angle);
-		GMT_free (GMT, cont_do_tick);
+		if (contour) GMT_free (GMT, contour);
+		if (cont_type) GMT_free (GMT, cont_type);
+		if (cont_angle) GMT_free (GMT, cont_angle);
+		if (cont_do_tick) GMT_free (GMT, cont_do_tick);
 		if (GMT_Destroy_Data (API, &G) != GMT_OK) {
 			Return (API->error);
 		}
@@ -1134,7 +1142,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 
 			if (closed == cont_is_not_closed || n >= Ctrl->Q.min) {	/* Passed our minimum point criteria for closed contours */
 				if (Ctrl->D.active && n > 2) {	/* Save the contour as output data */
-					S = GMT_dump_contour (GMT, x, y, n, cval);
+					S = GMT_prepare_contour (GMT, x, y, n, cval);
 					/* Select which table this segment should be added to */
 					tbl = (io_mode == GMT_WRITE_TABLE) ? ((two_only) ? is_closed : tbl_scl * c) : 0;
 					if (n_seg[tbl] == n_seg_alloc[tbl]) {
@@ -1229,7 +1237,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 	if (Ctrl->T.active && n_save) {	/* Finally sort and plot ticked innermost contours and plot/save L|H labels */
 		save = GMT_memory (GMT, save, n_save, struct SAVE);
 
-		grd_sort_and_plot_ticks (GMT, PSL, save, n_save, G_orig, Ctrl->T.spacing, Ctrl->T.length, Ctrl->T.low, Ctrl->T.high, Ctrl->T.label, Ctrl->T.txt, label_mode);
+		grd_sort_and_plot_ticks (GMT, PSL, save, n_save, G_orig, Ctrl->T.spacing, Ctrl->T.length, Ctrl->T.low, Ctrl->T.high, Ctrl->T.label, Ctrl->T.txt, label_mode, Ctrl->contour.fp);
 		for (i = 0; i < n_save; i++) {
 			GMT_free (GMT, save[i].x);
 			GMT_free (GMT, save[i].y);

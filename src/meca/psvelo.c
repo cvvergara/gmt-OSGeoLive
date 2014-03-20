@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: psvelo.c 12407 2013-10-30 16:46:27Z pwessel $
+ *    $Id: psvelo.c 12942 2014-02-24 20:59:24Z pwessel $
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence
@@ -171,8 +171,10 @@ int GMT_psvelo_parse (struct GMT_CTRL *GMT, struct PSVELO_CTRL *Ctrl, struct GMT
 	unsigned int n_errors = 0;
 	int n;
 	bool no_size_needed, n_set, got_A = false;
-	char txt[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, txt_c[GMT_LEN256] = {""};
+	char txt[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, txt_c[GMT_LEN256] = {""}, symbol;
 	struct GMT_OPTION *opt = NULL;
+
+	symbol = (GMT_is_geographic (GMT, GMT_IN)) ? '=' : 'v';	/* Type of vector */
 
 	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
 
@@ -197,13 +199,13 @@ int GMT_psvelo_parse (struct GMT_CTRL *GMT, struct PSVELO_CTRL *Ctrl, struct GMT
 				}
 				else {
 					if (opt->arg[0] == '+') {	/* No size (use default), just attributes */
-						n_errors += GMT_parse_vector (GMT, opt->arg, &Ctrl->A.S);
+						n_errors += GMT_parse_vector (GMT, symbol, opt->arg, &Ctrl->A.S);
 					}
 					else {	/* Size, plus possible attributes */
 						n = sscanf (opt->arg, "%[^+]%s", txt, txt_b);	/* txt_a should be symbols size with any +<modifiers> in txt_b */
 						if (n == 1) txt_b[0] = 0;	/* No modifiers present, set txt_b to empty */
 						Ctrl->A.S.size_x = GMT_to_inch (GMT, txt);	/* Length of vector */
-						n_errors += GMT_parse_vector (GMT, txt_b, &Ctrl->A.S);
+						n_errors += GMT_parse_vector (GMT, symbol, txt_b, &Ctrl->A.S);
 					}
 				}
 				break;
@@ -352,7 +354,7 @@ int GMT_psvelo (void *V_API, int mode, void *args)
 	if (Ctrl->E.active) Ctrl->L.active = true;
 
 	if (!Ctrl->N.active) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
-	GMT_init_vector_param (GMT, &Ctrl->A.S, true, Ctrl->W.active, &Ctrl->W.pen, true, &Ctrl->G.fill);
+	GMT_init_vector_param (GMT, &Ctrl->A.S, true, Ctrl->W.active, &Ctrl->W.pen, Ctrl->G.active, &Ctrl->G.fill);
 
 	station_name = GMT_memory (GMT, NULL, 64, char);
 
@@ -481,7 +483,10 @@ int GMT_psvelo (void *V_API, int mode, void *args)
 					dim[2] = vw, dim[3] = hl, dim[4] = hw;
 					dim[5] = GMT->current.setting.map_vector_shape;
 					dim[6] = (double)Ctrl->A.S.v.status;
-					GMT_setfill (GMT, &Ctrl->G.fill, Ctrl->L.active);
+					if (Ctrl->A.S.v.status & GMT_VEC_FILL2)
+						GMT_setfill (GMT, &Ctrl->A.S.v.fill, Ctrl->L.active);
+					else if (&Ctrl->G.active)
+						GMT_setfill (GMT, &Ctrl->G.fill, Ctrl->L.active);
 					if (Ctrl->A.S.v.status & GMT_VEC_OUTLINE2) GMT_setpen (GMT, &Ctrl->A.S.v.pen);
 					PSL_plotsymbol (PSL, plot_x, plot_y, dim, PSL_VECTOR);
 					if (Ctrl->A.S.v.status & GMT_VEC_OUTLINE2) GMT_setpen (GMT, &Ctrl->W.pen);

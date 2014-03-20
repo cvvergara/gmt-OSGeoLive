@@ -1,5 +1,5 @@
 /*
- * $Id: getopt.h 9819 2012-03-03 16:48:23Z fwobbe $
+ * $Id: getopt.h 12822 2014-01-31 23:39:56Z remko $
  *
  * Copyright (c) 1987, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.

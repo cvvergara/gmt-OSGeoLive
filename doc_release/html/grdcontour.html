@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdcontour &mdash; GMT 5.1.0 documentation</title>
+    <title>grdcontour &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdcut" href="grdcut.html" />
     <link rel="prev" title="grdclip" href="grdclip.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -419,10 +418,10 @@ and that special precautions must be taken when determining
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -479,7 +478,8 @@ how to read splices of 3-, 4-, or 5-dimensional grids.</p>
 0.5 inch/degree, annotate every 50 mGal (using fontsize = 10p), using 1
 degree tickmarks, and draw 30 minute gridlines:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdcontour hawaii_grav.nc -Jm0.5i -C25 -A50+f10p -B1g30m &gt; hawaii_grav.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdcontour hawaii_grav.nc -Jm0.5i -C25 -A50+f10p -B1g30m &gt; hawaii_grav.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To contour the file image.nc using the levels in the file cont.d on a
@@ -488,8 +488,9 @@ linear projection at 0.1 cm/x-unit and 50 cm/y-unit, using 20 (x) and
 plot-title, use a thick red pen for annotated contours, and a thin,
 dashed, blue pen for the rest, and send the output to the default printer:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdcontour image.nc -Jx0.1c/50.0c -Ccont.d -S4 -B20/0.1:."RMS \
-               Misfit":-Wathick,red -Wcthinnest,blue,- | lp</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdcontour image.nc -Jx0.1c/50.0c -Ccont.d -S4 -B20/0.1:.&quot;RMS \
+               Misfit&quot;:-Wathick,red -Wcthinnest,blue,- | lp
+</pre></div>
 </div>
 </div></blockquote>
 <p>The labeling of local highs and lows may plot outside the innermost
@@ -499,7 +500,8 @@ position the label.</p>
 into two multisegment files: contours_C.txt for closed and
 contours_O.txt for open contours, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdcontour topo.nc -C100 -S4 -Dcontours_%c.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdcontour topo.nc -C100 -S4 -Dcontours_%c.txt
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -540,6 +542,11 @@ contours_O.txt for open contours, try</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdcut.html"
                         title="next chapter">grdcut</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdcontour.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -558,7 +565,7 @@ contours_O.txt for open contours, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -576,9 +583,9 @@ contours_O.txt for open contours, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

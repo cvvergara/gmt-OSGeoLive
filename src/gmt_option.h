@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_option.h 12380 2013-10-23 19:20:13Z pwessel $
+ *	$Id: gmt_option.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013
+ *	Copyright (c) 1991-2014
  *	P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
@@ -62,21 +62,27 @@
 
 #define GMT_FFT_OPT "[f|q|s|<nx>/<ny>][+a|d|l][+e|m|n][+t<width>][+w<suffix>][+z[p]]"
 
+/* Macros for printing a tic/toc elapsed time message*/
+
+#define GMT_tic(C) {if (C->current.setting.verbose >= GMT_MSG_TICTOC) GMT_Message(C->parent,GMT_TIME_RESET,"");}
+#define GMT_toc(C,...) {if (C->current.setting.verbose >= GMT_MSG_TICTOC) GMT_Message(C->parent,GMT_TIME_ELAPSED, \
+		"(%s) | %s\n", C->init.module_name, __VA_ARGS__);}
+
 /* These are the 5 named option codes */
 enum GMT_enum_opt {
-	GMT_OPT_USAGE =		'?',	/* Command-line option for full usage */
-	GMT_OPT_SYNOPSIS = 	'^',	/* Command-line option for synopsis */
-	GMT_OPT_PARAMETER = 	'-',	/* Command-line option for GMT defaults parameter */
-	GMT_OPT_INFILE = 	'<',	/* Command-line option for input file */
-	GMT_OPT_OUTFILE = 	'>'};	/* Command-line option for output file */
+	GMT_OPT_USAGE =     '?',	/* Command-line option for full usage */
+	GMT_OPT_SYNOPSIS =  '^',	/* Command-line option for synopsis */
+	GMT_OPT_PARAMETER = '-',	/* Command-line option for GMT defaults parameter */
+	GMT_OPT_INFILE =    '<',	/* Command-line option for input file */
+	GMT_OPT_OUTFILE =   '>'};	/* Command-line option for output file */
 
 /* This struct is used to pass program options in/out of GMT modules */
 
-struct GMT_OPTION {	/* Structure for a single GMT command option */
-	char option;			/* 1-char command line -<option> (e.g. D in -D) identifying the option (* if file) */
-	char *arg;			/* If not NULL, contains the argument for this option */
-	struct GMT_OPTION *next;	/* Pointer to next option in a linked list */
-	struct GMT_OPTION *previous;	/* Pointer to previous option in a linked list */
+struct GMT_OPTION {              /* Structure for a single GMT command option */
+	char option;                 /* 1-char command line -<option> (e.g. D in -D) identifying the option (* if file) */
+	char *arg;                   /* If not NULL, contains the argument for this option */
+	struct GMT_OPTION *next;     /* Pointer to next option in a linked list */
+	struct GMT_OPTION *previous; /* Pointer to previous option in a linked list */
 };
 
 #endif /* _GMT_OPTION_H */

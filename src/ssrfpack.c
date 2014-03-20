@@ -1,4 +1,4 @@
-/* $Id: ssrfpack.c 12023 2013-08-04 12:20:57Z fwobbe $
+/* $Id: ssrfpack.c 12822 2014-01-31 23:39:56Z remko $
  * ssrfpack.c: Translated via f2c then massaged so that f2c include and lib
  * are not required to compile and link the sph supplement.
  */

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- * $Id: gmt_grdio.c 12407 2013-10-30 16:46:27Z pwessel $
+ * $Id: gmt_grdio.c 12822 2014-01-31 23:39:56Z remko $
  *
- * Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ * Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -88,7 +88,7 @@ EXTERN_MSC void gmt_close_grd (struct GMT_CTRL *GMT, struct GMT_GRID *G);
 
 /* GENERIC I/O FUNCTIONS FOR GRIDDED DATA FILES */
 //#define GMT_DUMPING
-void grd_dump (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, float *grid, bool is_complex, char *txt)
+void grd_dump (struct GMT_GRID_HEADER *header, float *grid, bool is_complex, char *txt)
 {
 #ifdef GMT_DUMPING
 	unsigned int row, col;
@@ -583,6 +583,7 @@ int GMT_grd_get_format (struct GMT_CTRL *GMT, char *file, struct GMT_GRID_HEADER
 			strncpy (header->name, tmp, GMT_LEN256);
 	} /* if (header->name[i]) */
 	else if (magic) {	/* Reading: determine file format automatically based on grid content */
+		int choice = 0;
 		sscanf (header->name, "%[^?]?%s", tmp, header->varname);    /* Strip off variable name */
 #ifdef HAVE_GDAL
 		/* Check if file is an URL */
@@ -601,8 +602,10 @@ int GMT_grd_get_format (struct GMT_CTRL *GMT, char *file, struct GMT_GRID_HEADER
 		if (val != GMT_GRDIO_NC_NO_PIPE && val != GMT_GRDIO_OPEN_FAILED)
 			return (val);
 		/* Then check for native binary GMT grid */
-		if (GMT_is_native_grid (GMT, header) == GMT_NOERROR)
+		if ((choice = GMT_is_native_grid (GMT, header)) == GMT_NOERROR)
 			return (GMT_NOERROR);
+		else if (choice == GMT_GRDIO_NONUNIQUE_FORMAT)
+			return (GMT_GRDIO_NONUNIQUE_FORMAT);
 		/* Next check for Sun raster grid */
 		if (GMT_is_ras_grid (GMT, header) == GMT_NOERROR)
 			return (GMT_NOERROR);
@@ -1018,7 +1021,9 @@ int GMT_write_grd (struct GMT_CTRL *GMT, char *file, struct GMT_GRID_HEADER *hea
 	gmt_grd_xy_scale (GMT, header, GMT_OUT);	/* Possibly scale wesn,inc */
 
 	gmt_grd_layout (GMT, header, grid, complex_mode, GMT_OUT);	/* Deal with complex layout */
-	return ((*GMT->session.writegrd[header->type]) (GMT, header, grid, wesn, pad, complex_mode));
+	err = (*GMT->session.writegrd[header->type]) (GMT, header, grid, wesn, pad, complex_mode);
+	if (GMT->parent->leave_grid_scaled == 0) GMT_pack_grid (GMT, header, grid, k_grd_unpack); /* revert scale and offset to leave grid as it was before writing unless session originated from gm*/
+	return (err);
 }
 
 size_t GMT_grd_data_size (struct GMT_CTRL *GMT, unsigned int format, float *nan_value)
@@ -1360,7 +1365,7 @@ void GMT_grd_init (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, struct 
 		len = strlen (header->command);
 		for (i = 0; len < GMT_GRID_COMMAND_LEN320 && i < argc; i++) {
 			len += strlen (argv[i]) + 1;
-			if (len > GMT_GRID_COMMAND_LEN320) continue;
+			if (len >= GMT_GRID_COMMAND_LEN320) continue;
 			strcat (header->command, " ");
 			strcat (header->command, argv[i]);
 		}
@@ -1607,20 +1612,20 @@ int GMT_adjust_loose_wesn (struct GMT_CTRL *GMT, double wesn[], struct GMT_GRID_
 		dx = fabs (wesn[XLO] - val);
 		if (GMT_x_is_lon (GMT, GMT_IN)) dx = fmod (dx, 360.0);
 		if (dx > small) {
-			wesn[XLO] = val;
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: (w - x_min) must equal (NX + eps) * x_inc), where NX is an integer and |eps| <= %g.\n", GMT_SMALL);
-			sprintf (format, "Warning: w reset to %s\n", GMT->current.setting.format_float_out);
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[XLO]);
+			sprintf (format, "Warning: w reset from %s to %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[XLO], val);
+			wesn[XLO] = val;
 		}
 
 		val = header->wesn[XLO] + lrint ((wesn[XHI] - header->wesn[XLO]) * header->r_inc[GMT_X]) * header->inc[GMT_X];
 		dx = fabs (wesn[XHI] - val);
 		if (GMT_x_is_lon (GMT, GMT_IN)) dx = fmod (dx, 360.0);
 		if (dx > small) {
-			wesn[XHI] = val;
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: (e - x_min) must equal (NX + eps) * x_inc), where NX is an integer and |eps| <= %g.\n", GMT_SMALL);
-			sprintf (format, "Warning: e reset to %s\n", GMT->current.setting.format_float_out);
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[XHI]);
+			sprintf (format, "Warning: e reset from %s to %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[XHI], val);
+			wesn[XHI] = val;
 		}
 	}
 
@@ -1629,18 +1634,18 @@ int GMT_adjust_loose_wesn (struct GMT_CTRL *GMT, double wesn[], struct GMT_GRID_
 
 	val = header->wesn[YLO] + lrint ((wesn[YLO] - header->wesn[YLO]) * header->r_inc[GMT_Y]) * header->inc[GMT_Y];
 	if (fabs (wesn[YLO] - val) > small) {
-		wesn[YLO] = val;
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: (s - y_min) must equal (NY + eps) * y_inc), where NY is an integer and |eps| <= %g.\n", GMT_SMALL);
-		sprintf (format, "Warning: s reset to %s\n", GMT->current.setting.format_float_out);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[YLO]);
+		sprintf (format, "Warning: s reset from %s to %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[YLO], val);
+		wesn[YLO] = val;
 	}
 
 	val = header->wesn[YLO] + lrint ((wesn[YHI] - header->wesn[YLO]) * header->r_inc[GMT_Y]) * header->inc[GMT_Y];
 	if (fabs (wesn[YHI] - val) > small) {
-		wesn[YHI] = val;
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: (n - y_min) must equal (NY + eps) * y_inc), where NY is an integer and |eps| <= %g.\n", GMT_SMALL);
-		sprintf (format, "Warning: n reset to %s\n", GMT->current.setting.format_float_out);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[YHI]);
+		sprintf (format, "Warning: n reset from %s to %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, format, wesn[YHI], val);
+		wesn[YHI] = val;
 	}
 	return (GMT_NOERROR);
 }
@@ -2019,7 +2024,10 @@ unsigned int GMT_free_grid_ptr (struct GMT_CTRL *GMT, struct GMT_GRID *G, bool f
 	}
 	if (G->extra) gmt_close_grd (GMT, G);	/* Close input file used for row-by-row i/o */
 	//if (G->header && G->alloc_mode == GMT_ALLOCATED_BY_GMT) GMT_free (GMT, G->header);
-	if (G->header) GMT_free (GMT, G->header);
+	if (G->header) {	/* Free the header structure and anything allocated by it */
+		if (G->header->pocket) free (G->header->pocket);
+		GMT_free (GMT, G->header);
+	}
 	return (G->alloc_mode);
 }
 
@@ -2080,7 +2088,7 @@ int gmt_init_grdheader (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, st
 	/* registration may contain complex mode information */
 	if (registration & GMT_GRID_DEFAULT_REG) registration |= GMT->common.r.registration;	/* Set the default registration */
 	header->registration = (registration & 1);
-	header->complex_mode = (mode & GMT_GRID_IS_COMPLEX_MASK);
+	header->complex_mode = (registration & GMT_GRID_IS_COMPLEX_MASK);
 	header->grdtype = gmt_get_grdtype (GMT, header);
 	GMT_RI_prepare (GMT, header);	/* Ensure -R -I consistency and set nx, ny in case of meter units etc. */
 	GMT_err_pass (GMT, GMT_grd_RI_verify (GMT, header, 1), "");
@@ -2176,7 +2184,7 @@ void GMT_grd_minmax (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, double xyz[2][
 
 void GMT_grd_detrend (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, unsigned mode, double *coeff)
 {
-	/* mode = 0 (GMT_FFT_LEAVE_TREND):  Do nothing.
+	/* mode = 0 (GMT_FFT_REMOVE_NOTHING):  Do nothing.
 	 * mode = 1 (GMT_FFT_REMOVE_MEAN):  Remove the mean value (returned via a[0])
 	 * mode = 2 (GMT_FFT_REMOVE_MID):   Remove the mid value value (returned via a[0])
 	 * mode = 3 (GMT_FFT_REMOVE_TREND): Remove the best-fitting plane by least squares (returned via a[0-2])
@@ -2195,11 +2203,15 @@ void GMT_grd_detrend (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, unsigned mode
 	
 	GMT_memset (coeff, 3, double);
 	
-	if (mode == GMT_FFT_LEAVE_TREND) {	/* Do nothing */
+	if (Grid->header->trendmode != GMT_FFT_REMOVE_NOTHING) {	/* Already removed the trend */
+		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning: Grid has already been detrending - no action taken\n");
+		return;
+	}
+	if (mode == GMT_FFT_REMOVE_NOTHING) {	/* Do nothing */
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "No detrending selected\n");
 		return;
 	}
-	
+	Grid->header->trendmode = mode;	/* Update grid header */	
 	if (Grid->header->arrangement == GMT_GRID_IS_INTERLEAVED) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Demultiplexing complex grid before detrending can take place.\n");
 		GMT_grd_mux_demux (GMT, Grid->header, Grid->data, GMT_GRID_IS_SERIAL);

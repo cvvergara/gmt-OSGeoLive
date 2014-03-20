@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_fft.h 12106 2013-09-02 21:55:56Z pwessel $
+ *	$Id: gmt_fft.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -37,7 +37,8 @@ enum GMT_FFT_EXTEND {
 	GMT_FFT_EXTEND_NOT_SET};
 	
 enum GMT_FFT_TREND {
-	GMT_FFT_LEAVE_TREND = 0,
+	GMT_FFT_REMOVE_NOT_SET = -1,
+	GMT_FFT_REMOVE_NOTHING = 0,
 	GMT_FFT_REMOVE_MEAN,
 	GMT_FFT_REMOVE_MID,
 	GMT_FFT_REMOVE_TREND};
@@ -74,7 +75,7 @@ struct GMT_FFT_INFO {
 	unsigned int ny;		/* Desired hard FFT ny dimensionl or 0 if free to adjust */
 	unsigned int taper_mode;	/* One of the GMT_FFT_EXTEND for extension/mirroring */
 	unsigned int info_mode;		/* One of the GMT_FFT_INFO for setting nx/ny or inquire */
-	unsigned int trend_mode;	/* One of the GMT_FFT_TREND for handling detrending */
+	int trend_mode;			/* One of the GMT_FFT_TREND for handling detrending */
 	double taper_width;		/* Amount of tapering in percent */
 	struct GMT_FFT_WAVENUMBER *K;	/* Pointer to wavenumber structure */
 };

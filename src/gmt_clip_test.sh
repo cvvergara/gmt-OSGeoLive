@@ -1,5 +1,5 @@
-#!/bin/sh
-#	$Id: gmt_clip_test.sh 9857 2012-03-13 10:55:26Z fwobbe $
+#!/bin/bash
+#	$Id: gmt_clip_test.sh 12464 2013-11-06 15:58:22Z fwobbe $
 # Test program for new rectangular clipping.  We create N random points
 # in the x/y plane with mean 0 and sigma = 3.  Then, sort these points
 # according to the angle they make with (0,0) so we get a non-intersecting
@@ -34,7 +34,7 @@ int main (int argc, char **argv) {
 	int n = N, m, j, i, nx = 0;
 	double xin[N], yin[N], x, y, *xout, *yout;
 	FILE *fp;
-	
+
 	argc = GMT_begin (argc, argv);
 	for (i = 0; i < N; i++) {	/* Create N random points */
 		P[i].x = 3.0 * GMT_nrand ();

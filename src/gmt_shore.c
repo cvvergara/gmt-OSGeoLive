@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_shore.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: gmt_shore.c 12864 2014-02-06 17:32:36Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  *
  */
 
-#define GSHHG_SITE "ftp://ftp.soest.hawaii.edu/pwessel/gshhs/"
+#define GSHHG_SITE "ftp://ftp.soest.hawaii.edu/pwessel/gshhg/"
 
 #define RIVERLAKE	5				/* Fill array id for riverlakes */
 #define get_level(arg) (((arg) >> 6) & 7)		/* Extract level from bit mask */
@@ -242,13 +242,17 @@ char *gmt_shore_getpathname (struct GMT_CTRL *GMT, char *stem, char *path) {
 
 	if (GMT->session.GSHHGDIR) {
 		sprintf (path, "%s/%s%s", GMT->session.GSHHGDIR, stem, GSHHG_EXT);
-		if ( access (path, R_OK) == 0 && gshhg_require_min_version (path, version) )
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "1. GSHHG: GSHHGDIR set, trying %s\n", path);
+		if ( access (path, R_OK) == 0 && gshhg_require_min_version (path, version) ) {
+			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "1. GSHHG: OK, could access %s\n", path);
 			return (path);
+		}
 		else {
 			/* remove reference to invalid GMT->session.GSHHGDIR but don't free
 			 * the pointer. this is no leak because the reference still exists
 			 * in the previous copy of the current GMT_CTRL struct. */
 			GMT->session.GSHHGDIR = NULL;
+			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "1. GSHHG: Failure, could not access %s\n", path);
 		}
 	}
 
@@ -258,34 +262,45 @@ char *gmt_shore_getpathname (struct GMT_CTRL *GMT, char *stem, char *path) {
 
 		/* We get here if coastline.conf exists - search among its directories for the named file */
 
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: coastline.conf found at %s\n", path);
 		fp = fopen (path, "r");
 		while (fgets (dir, GMT_BUFSIZ, fp)) {	/* Loop over all input lines until found or done */
 			if (dir[0] == '#' || dir[0] == '\n') continue;	/* Comment or blank */
 			GMT_chop (dir);		/* Chop off LF or CR/LF */
 			sprintf (path, "%s/%s%s", dir, stem, GSHHG_EXT);
+			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: Trying %s\n", path);
 			if ( gshhg_require_min_version (path, version) ) {
 				fclose (fp);
 				/* update invalid GMT->session.GSHHGDIR */
 				if (GMT->session.GSHHGDIR) free ((void *)GMT->session.GSHHGDIR);
 				GMT->session.GSHHGDIR = strdup (dir);
+				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: OK, could access %s\n", path);
 				return (path);
 			}
+			else
+				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: Failure, could not access %s\n", path);
 		}
 		fclose (fp);
 	}
 
 	/* 3. Then check for the named file itself */
 
+	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: Trying via sharepath\n");
 	if (GMT_getsharepath (GMT, "coast", stem, GSHHG_EXT, path, R_OK)) {
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: Trying %s\n", path);
 		if ( gshhg_require_min_version (path, version) ) {
 			/* update invalid GMT->session.GSHHGDIR */
 			sprintf (dir, "%s/%s", GMT->session.SHAREDIR, "coast");
 			if (GMT->session.GSHHGDIR) free ((void *)GMT->session.GSHHGDIR);
 			GMT->session.GSHHGDIR = strdup (dir);
+			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: OK, could access %s\n", path);
 			return (path);
 		}
+		else
+			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: Failure, could not access %s\n", path);
 	}
 
+	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "4. GSHHG: Failure, could not access any GSHHG files\n");
 	if (warn_once) {
 		warn_once = false;
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "GSHHG version %d.%d.%d or newer is "
@@ -333,7 +348,7 @@ int GMT_set_levels (struct GMT_CTRL *GMT, char *info, struct GMT_SHORE_SELECT *I
 {	/* Decode GMT's -A option for coastline levels */
 	int n;
 	char *p = NULL;
-	if (strstr (info, "+a"))  I->antarctica_mode = GSHHS_ANTARCTICA_SKIP;	/* Skip Antarctica data south of 60S */
+	if (strstr (info, "+as"))  I->antarctica_mode = GSHHS_ANTARCTICA_SKIP;	/* Skip Antarctica data south of 60S */
 	if (strstr (info, "+l"))  I->flag = GSHHS_NO_RIVERLAKES;
 	if (strstr (info, "+r"))  I->flag = GSHHS_NO_LAKES;
 	if ((p = strstr (info, "+p"))) {	/* Requested percentage limit on small features */

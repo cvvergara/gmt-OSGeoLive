@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>psmeca &mdash; GMT 5.1.0 documentation</title>
+    <title>psmeca &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="MECA" href="../../SUP_MECA.html" />
     <link rel="next" title="pspolar" href="pspolar.html" />
     <link rel="prev" title="pscoupe" href="pscoupe.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MECA.html" accesskey="U">MECA</a> &raquo;</li>
 <li class="right">
@@ -412,10 +411,10 @@ determined by the z-value in the third column.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -429,10 +428,11 @@ options, then exits.</dd>
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>The following file should give a normal-faulting CMT mechanism:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt psmeca -R239/240/34/35.2 -Jm4c -Sc0.4 -h1 &lt;&lt; END &gt; test.ps
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psmeca -R239/240/34/35.2 -Jm4c -Sc0.4 -h1 &lt;&lt; END &gt; test.ps
 lon lat depth str dip slip st dip slip mant exp plon plat
 239.384 34.556 12. 180 18 -88 0 72 -90 5.5 0 0 0
-END</pre>
+END
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -489,6 +489,11 @@ Institut de Physique du Globe de Paris, Departement de Sismologie, Paris, France
   <h4>Next topic</h4>
   <p class="topless"><a href="pspolar.html"
                         title="next chapter">pspolar</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/meca/psmeca.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -507,7 +512,7 @@ Institut de Physique du Globe de Paris, Departement de Sismologie, Paris, France
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MECA.html" >MECA</a> &raquo;</li>
 <li class="right">
@@ -525,9 +530,9 @@ Institut de Physique du Globe de Paris, Departement de Sismologie, Paris, France
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

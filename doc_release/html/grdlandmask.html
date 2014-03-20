@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdlandmask &mdash; GMT 5.1.0 documentation</title>
+    <title>grdlandmask &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdmask" href="grdmask.html" />
     <link rel="prev" title="grdinfo" href="grdinfo.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -82,7 +81,7 @@
 <p><strong>grdlandmask</strong> <strong>-G</strong><em>mask_grd_file</em>]
 <strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]]
 <strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[<strong>r</strong>] [
-<strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>]
+<strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+as</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>]
 ] [ <strong>-D</strong><em>resolution</em>[<strong>+</strong>] ] [ <strong>-N</strong><em>maskvalues</em>[<strong>o</strong>]
 ] [ <strong>-V</strong>[<em>level</em>] ] [ <strong>-r</strong> ]</p>
 <p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
@@ -122,7 +121,7 @@ giving an increment you may specify the <em>number of nodes</em> desired by
 appending <strong>+</strong> to the supplied integer argument; the increment is then
 recalculated from the number of nodes and the domain. The resulting
 increment value depends on whether you have selected a
-gridline-registered or pixel-registered grid; see Appendix B for
+gridline-registered or pixel-registered grid; see <a class="reference internal" href="GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a> for
 details. Note: if <strong>-R</strong><em>grdfile</em> is used then the grid spacing has
 already been initialized; use <strong>-I</strong> to override the values.</dd>
 </dl>
@@ -150,15 +149,13 @@ plotted, with no third dimension.  </dd>
 <div class="section" id="optional-arguments">
 <h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+ag</strong>|<strong>i</strong>|<strong>s</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>]</dt>
+<dt><strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+as</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>+p</strong><em>percent</em>]</dt>
 <dd>Features with an area smaller than <em>min_area</em> in km^2 or of
 hierarchical level that is lower than <em>min_level</em> or higher than
 <em>max_level</em> will not be plotted [Default is 0/0/4 (all features)].
 Level 2 (lakes) contains regular lakes and wide river bodies which
 we normally include as lakes; append <strong>+r</strong> to just get river-lakes
-or <strong>+l</strong> to just get regular lakes. By default we select the grounding
-line as coastline for Antarctica; append <strong>ai</strong> to instead select the
-hydrostatic (ic) line.  For expert users who wish to
+or <strong>+l</strong> to just get regular lakes. For expert users who wish to
 print their own Antarctica coastline and islands via <cite>psxy</cite> you can
 use <strong>+as</strong> to skip all GSHHG features below 60S.  Finally, append
 <strong>+p</strong><em>percent</em> to exclude polygons whose percentage area of the
@@ -193,10 +190,10 @@ inside]. Specify this information using 1 of 2 formats:</p>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -294,6 +291,11 @@ further details.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdmask.html"
                         title="next chapter">grdmask</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdlandmask.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -312,7 +314,7 @@ further details.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -330,9 +332,9 @@ further details.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

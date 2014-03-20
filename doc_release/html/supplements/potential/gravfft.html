@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gravfft &mdash; GMT 5.1.0 documentation</title>
+    <title>gravfft &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="POTENTIAL" href="../../SUP_POTENTIAL.html" />
     <link rel="next" title="grdgravmag3d" href="grdgravmag3d.html" />
     <link rel="prev" title="gmtgravmag3d" href="gmtgravmag3d.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" accesskey="U">POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -136,24 +135,20 @@ specify <em>w</em> to write wavelength instead of frequency.</dd>
 <dd>Sets density contrast across surface. Used, for example, to compute
 the gravity attraction of the water layer that can later be combined
 with the free-air anomaly to get the Bouguer anomaly. In this case
-do not use <strong>-T</strong>. It also implicitly sets <strong>-N+a</strong></dd>
+do not use <strong>-T</strong>. It also implicitly sets <strong>-N+h</strong></dd>
 <dt><strong>-E</strong><em>n_terms</em></dt>
 <dd>Number of terms used in Parker expansion (limit is 10, otherwise
-terms depending on n will blow out the program) [Default = 1]</dd>
+terms depending on n will blow out the program) [Default = 3]</dd>
 <dt><strong>-F</strong>[<strong>f</strong>|<strong>g</strong>|<strong>v</strong>|<strong>n</strong>|<strong>e</strong>]</dt>
-<dd>Specify desired geopotential field: compute geoid rather than gravity</dd>
-</dl>
-<div class="line-block">
-<div class="line"><br /></div>
-<div class="line-block">
-<div class="line"><strong>f</strong> = Free-air anomalies (mGal) [Default].</div>
-<div class="line"><strong>g</strong> = Geoid anomalies (m).</div>
-<div class="line"><strong>v</strong> = Vertical Gravity Gradient (VGG; 1 Eovtos = 0.1 mGal/km).</div>
-<div class="line"><strong>e</strong> = East deflections of the vertical (micro-radian).</div>
-<div class="line"><strong>n</strong> = North deflections of the vertical (micro-radian).</div>
-</div>
-</div>
-<dl class="docutils">
+<dd><p class="first">Specify desired geopotential field: compute geoid rather than gravity</p>
+<blockquote class="last">
+<div><p><strong>f</strong> = Free-air anomalies (mGal) [Default].</p>
+<p><strong>g</strong> = Geoid anomalies (m).</p>
+<p><strong>v</strong> = Vertical Gravity Gradient (VGG; 1 Eovtos = 0.1 mGal/km).</p>
+<p><strong>e</strong> = East deflections of the vertical (micro-radian).</p>
+<p><strong>n</strong> = North deflections of the vertical (micro-radian).</p>
+</div></blockquote>
+</dd>
 <dt><strong>-I</strong><em>&lt;wbctk&gt;</em></dt>
 <dd>Use &lt;ingrid2&gt; and &lt;topo_grd&gt; to estimate admittance|coherence and
 write it to stdout (-G ignored if set). This grid should contain
@@ -182,7 +177,7 @@ dimensions &gt; grid file dimensions, data are extended and tapered to zero.</p>
 <p>Control detrending of data: Append modifiers for removing a linear trend:</p>
 <blockquote>
 <div><p><strong>+d</strong>: Detrend data, i.e. remove best-fitting linear trend [Default].</p>
-<p><strong>+a</strong>: Only remove mean value, i.e. 0.5 * (max + min).</p>
+<p><strong>+a</strong>: Only remove mean value.</p>
 <p><strong>+h</strong>: Only remove mid value, i.e. 0.5 * (max + min).</p>
 <p><strong>+l</strong>: Leave data alone.</p>
 </div></blockquote>
@@ -213,12 +208,12 @@ default we write the real and imaginary components to
 <dd>Writes out a grid with the flexural topography (with z positive up)
 whose average was set by <strong>-Z</strong><em>zm</em> and model parameters by <strong>-T</strong>
 (and output by <strong>-G</strong>). That is the &#8220;gravimetric Moho&#8221;. <strong>-Q</strong>
-implicitly sets <strong>-N+a</strong></dd>
+implicitly sets <strong>-N+h</strong></dd>
 <dt><strong>-S</strong></dt>
 <dd>Computes predicted gravity or geoid grid due to a subplate load
 produced by the current bathymetry and the theoretical model. The
 necessary parameters are set within <strong>-T</strong> and <strong>-Z</strong> options. The
-number of powers in Parker expansion is restricted to 1 (default&#8217;s).
+number of powers in Parker expansion is restricted to 1.
 See an example further down.</dd>
 <dt><strong>-T</strong><em>&lt;te/rl/rm/rw&gt;[+m]</em></dt>
 <dd>Compute the isostatic compensation from the topography load (input grid file) on
@@ -227,7 +222,7 @@ water in SI units. Give average mantle depth via <strong>-Z</strong>. If the ela
 is &gt; 1e10 it will be interpreted as the flexural rigidity (by default it is
 computed from <em>te</em> and Young modulus). Optionaly, append <em>+m</em> to write a grid
 with the Moho&#8217;s geopotential effect (see <strong>-F</strong>) from model selected by <strong>-T</strong>.
-If <em>te</em> = 0 then the Airy response is returned. <strong>-T</strong> implicitly sets <strong>-N+a</strong></dd>
+If <em>te</em> = 0 then the Airy response is returned. <strong>-T+m</strong> implicitly sets <strong>-N+h</strong></dd>
 <dt><strong>-Z</strong><em>&lt;zm&gt;[/&lt;zl&gt;]</em></dt>
 <dd>Moho [and swell] average compensation depths. For the “load from
 top” model you only have to provide <em>zm</em>, but for the “loading from
@@ -242,10 +237,10 @@ meters via a &#8220;Flat Earth&#8221; approximation using the current ellipsoid 
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -297,7 +292,7 @@ grid is geographic, convert distances to meters by supplying <strong>-fg</strong
 other grids geographical grids were you want to convert degrees into
 meters, select <strong>-fg</strong>. If the data are close to either pole, you should
 consider projecting the grid file onto a rectangular coordinate system
-using <strong>grdproject</strong>.</p>
+using <a class="reference internal" href="../../grdproject.html"><em>grdproject</em></a>.</p>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
@@ -306,7 +301,8 @@ using 2700 and 1035 for the densities of crust and water and writing the
 result on water_g.grd (computing up to the fourth power of bathymetry
 in Parker expansion):</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft bat.grd -D1665 -Gwater_g.grd -E4</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft bat.grd -D1665 -Gwater_g.grd -E4
+</pre></div>
 </div>
 </div></blockquote>
 <p>Now subtract it to your free-air anomaly faa.grd and you’ll get the
@@ -317,7 +313,8 @@ dense than the rocks below. The answer relyies on the way gravity
 effects are computed by the Parker&#8217;s method and practical aspects of
 using the FFT.</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdmath faa.grd water_g.grd SUB = bouguer.grd</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdmath faa.grd water_g.grd SUB = bouguer.grd
+</pre></div>
 </div>
 </div></blockquote>
 <p>Want an MBA anomaly? Well compute the crust mantle contribution and add
@@ -330,45 +327,51 @@ didn&#8217;t need to do that before because mean water depth was computed
 directly from data. (notice also the negative sign of the argument to
 <strong>-A</strong>, remember z positive up):</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft bat.grd -D600 -Gmoho_g.grd -A-6000</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft bat.grd -D600 -Gmoho_g.grd -A-6000
+</pre></div>
 </div>
 </div></blockquote>
-<p>Now, add it to the sea-bottom anomaly to obtain the MBA anomaly. That is:</p>
+<p>Now, subtract it to the sea-bottom anomaly to obtain the MBA anomaly. That is:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdmath water_g.grd moho_g.grd ADD = mba.grd</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdmath water_g.grd moho_g.grd SUB = mba.grd
+</pre></div>
 </div>
 </div></blockquote>
 <p>To compute the Moho gravity effect of an elastic plate bat.grd with Te =
 7 km, density of 2700, over a mantle of density 3300, at an averge depth
 of 9 km</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft bat.grd -Gelastic.grd -T7000/2700/3300/1035+m -Z9000</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft bat.grd -Gelastic.grd -T7000/2700/3300/1035+m -Z9000
+</pre></div>
 </div>
 </div></blockquote>
 <p>If you add now the sea-bottom and Moho’s effects, you’ll get the full
 gravity response of your isostatic model. We will use here only the
-first term in Parker expansion (default).</p>
+first term in Parker expansion.</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft bat.grd -D1665 -Gwater_g.grd
-gmt gravfft bat.grd -Gelastic.grd -T7000/2700/3300/1035+m -Z9000
-gmt grdmath water_g.grd elastic.grd ADD = model.grd</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft bat.grd -D1665 -Gwater_g.grd -E1
+gmt gravfft bat.grd -Gelastic.grd -T7000/2700/3300/1035+m -Z9000 -E1
+gmt grdmath water_g.grd elastic.grd ADD = model.grd
+</pre></div>
 </div>
 </div></blockquote>
 <p>The same result can be obtained directly by the next command. However,
 PAY ATTENTION to the following. I don&#8217;t yet know if it&#8217;s because of a
 bug or due to some limitation, but the fact is that the following and
-the previous commands only give the same result if <strong>-E</strong>1 (the
-default) is used. For higher powers of bathymetry in Parker expansion,
+the previous commands only give the same result if <strong>-E</strong>1 is used.
+For higher powers of bathymetry in Parker expansion,
 only the above example seams to give the correct result.</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft bat.grd -Gmodel.grd -T7000/2700/3300/1035 -Z9000</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft bat.grd -Gmodel.grd -T7000/2700/3300/1035 -Z9000 -E1
+</pre></div>
 </div>
 </div></blockquote>
 <p>And what would be the geoid anomaly produced by a load at 50 km depth,
 below the a region whose bathymetry is given by bat.grd, a Moho at 9 km
 depth and the same densities as before?</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft topo.grd -Gswell_geoid.grd -T7000/2700/3300/1035 -Fg -Z9000/50000 -S</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft topo.grd -Gswell_geoid.grd -T7000/2700/3300/1035 -Fg -Z9000/50000 -S -E1
+</pre></div>
 </div>
 </div></blockquote>
 <p>To compute the admittance between the topo.grd bathymetry and faa.grd
@@ -376,7 +379,8 @@ free-air anomaly grid using the elastic plate model of a crust of 6 km
 mean thickness with 10 km efective elastic thickness in a region of 3 km
 mean water depth:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft topo.grd faa.grd -It -T10000/2700/3300/1035 -Z9000</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft topo.grd faa.grd -It -T10000/2700/3300/1035 -Z9000
+</pre></div>
 </div>
 </div></blockquote>
 <p>To compute the admittance between the topo.grd bathymetry and geoid.grd
@@ -384,13 +388,15 @@ geoid grid with the &#8220;loading from below&#8221; (LFB) model with the same a
 above and sub-surface load at 40 km, but assuming now the grids are in
 geographic and we want wavelengths instead of frequency:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft topo.grd geoid.grd -Ibw -T10000/2700/3300/1035 -Z9000/40000 -fg</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft topo.grd geoid.grd -Ibw -T10000/2700/3300/1035 -Z9000/40000 -fg
+</pre></div>
 </div>
 </div></blockquote>
 <p>To compute the gravity theoretical admittance of a LFB along a 1000 km
 long profile using the same parameters as above</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gravfft -C400/5000/3000/b -T10000/2700/3300/1035 -Z9000/40000</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft -C400/5000/3000/b -T10000/2700/3300/1035 -Z9000/40000
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -437,6 +443,11 @@ Vulc. Res. Volume 156, Issues 1-2, Pages 10-22,
   <h4>Next topic</h4>
   <p class="topless"><a href="grdgravmag3d.html"
                         title="next chapter">grdgravmag3d</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/potential/gravfft.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -455,7 +466,7 @@ Vulc. Res. Volume 156, Issues 1-2, Pages 10-22,
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" >POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -473,9 +484,9 @@ Vulc. Res. Volume 156, Issues 1-2, Pages 10-22,
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

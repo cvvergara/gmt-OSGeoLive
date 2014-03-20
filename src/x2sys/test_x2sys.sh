@@ -1,5 +1,5 @@
-#!/bin/sh
-#	$Id: test_x2sys.sh 11490 2013-05-16 06:26:21Z pwessel $
+#!/bin/bash
+#	$Id: test_x2sys.sh 12464 2013-11-06 15:58:22Z fwobbe $
 #
 # Test script that exercise the various options in x2sys.
 # We generate a grid and some fake tracks and sample the

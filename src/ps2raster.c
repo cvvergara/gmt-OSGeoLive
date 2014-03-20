@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: ps2raster.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: ps2raster.c 12956 2014-02-27 15:15:21Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -325,9 +325,9 @@ void *New_ps2raster_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a n
 
 void Free_ps2raster_Ctrl (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->D.dir) free (C->D.dir);
+	free (C->D.dir);
 	if (C->F.file) free (C->F.file);
-	if (C->G.file) free (C->G.file);
+	free (C->G.file);
 	if (C->L.file) free (C->L.file);
 	free (C->W.doctitle);
 	free (C->W.overlayname);
@@ -342,7 +342,7 @@ int GMT_ps2raster_usage (struct GMTAPI_CTRL *API, int level)
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: ps2raster <psfile1> <psfile2> <...> -A[u][<margins>][-][+r][+s|S<width[u]>[/<height>[u]]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-C<gs_command>] [-D<dir>] [-E<resolution>] [-F<out_name>] [-G<gs_path>] [-L<listfile>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-N] [-P] [-Q[g|t]1|2|4] [-S] [-Tb|e|f|F|g|G|j|m|p|t] [%s]\n", GMT_V_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-N] [-P] [-Q[g|t]1|2|4] [-S] [-Tb|e|E|f|F|g|G|j|m|t] [%s]\n", GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-W[+a<mode>[<alt]][+f<minfade>/<maxfade>][+g][+k][+l<lodmin>/<lodmax>][+n<name>][+o<folder>][+t<title>][+u<URL>]]\n\n");
 
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
@@ -382,7 +382,7 @@ int GMT_ps2raster_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   (e.g., -Gc:\\programs\\gs\\gs9.02\\bin\\gswin64c).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Ghostscript versions >= 9.00 change gray-shades by using ICC profiles.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   GS 9.05 and above provide the '-dUseFastColor=true' option to prevent that\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   and that is what ps2raster do by default, unless option -I is set.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   and that is what ps2raster does by default, unless option -I is set.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Note that for GS >= 9.00 and < 9.05 the gray-shade shifting is applied\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   to all but PDF format. We have no solution to offer other than ... upgrade GS\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L The <listfile> is an ASCII file with names of files to be converted.\n");
@@ -394,7 +394,7 @@ int GMT_ps2raster_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   of sub-sampling box.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default is no anti-aliasing, which is the same as specifying size 1.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Apart from executing it, also writes the ghostscript command to\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   standard error.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   standard error and keeps all intermediate files.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Set output format [default is jpeg]:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   b means BMP.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   e means EPS.\n");
@@ -486,8 +486,10 @@ int GMT_ps2raster_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 				add_to_list (Ctrl->C.arg, opt->arg);	/* Append to list of extra GS options */
 				break;
 			case 'D':	/* Change output directory */
-				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_OUT)))
+				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_OUT))) {
+					free (Ctrl->D.dir);
 					Ctrl->D.dir = strdup (opt->arg);
+				}
 				else
 					n_errors++;
 				break;
@@ -615,6 +617,29 @@ int GMT_ps2raster_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
 
+int64_t line_reader (struct GMT_CTRL *GMT, char **L, size_t *size, FILE *fp)
+{
+	int c;
+	int64_t in = 0;
+	char *line = *L;
+	while ((c = fgetc (fp)) != EOF) {
+		if (c == '\r' || c == '\n') {	/* Got logical end of record */
+			line[in] = '\0';
+			while (c == '\n' || c == '\r') c = fgetc (fp);	/* Skip past any repeating \r \n */
+			if (c != EOF) ungetc (c, fp);	/* Put back the next char unless we got to EOF */
+			return in;	/* How many characters we return */
+		}
+		if ((size_t)in == (*size-1)) {	/* Need to extend our buffer; the -1 makes room for an \0 as needed */
+			(*size) <<= 1;	/* Double the current buffer space */
+			line = *L = GMT_memory (GMT, *L, *size, char);
+		}
+		line[in++] = c;	/* Add this char to our buffer */
+	}
+	if (c == EOF) return EOF;
+	if (in) line[in] = '\0';
+	return in;
+}
+
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
 #define Return(code) {Free_ps2raster_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
@@ -640,12 +665,12 @@ static inline char * alpha_bits (struct PS2RASTER_CTRL *Ctrl) {
 
 int GMT_ps2raster (void *V_API, int mode, void *args)
 {
-	unsigned int i, j, k, pix_w = 0, pix_h = 0;
+	unsigned int i, j, k, pix_w = 0, pix_h = 0, got_BBatend;
 	int sys_retval = 0, r, pos_file, pos_ext, error = 0;
-	size_t len;
-	bool got_BB, got_HRBB, got_BBatend, file_has_HRBB, got_end, landscape, landscape_orig;
-	bool excessK, setup, found_proj = false, isGMT_PS = false, BeginPageSetup_here = false;
-	bool transparency = false, look_for_transparency;
+	size_t len, line_size = 0U;
+	bool got_BB, got_HRBB, file_has_HRBB, got_end, landscape, landscape_orig;
+	bool excessK, setup, found_proj = false, isGMT_PS = false;
+	bool transparency = false, look_for_transparency, BeginPageSetup_here = false;
 
 	double xt, yt, xt_bak, yt_bak, w, h, x0 = 0.0, x1 = 612.0, y0 = 0.0, y1 = 828.0;
 	double west = 0.0, east = 0.0, south = 0.0, north = 0.0;
@@ -657,7 +682,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 	char ps_file[GMT_BUFSIZ] = "", no_U_file[GMT_BUFSIZ] = "",
 			clean_PS_file[GMT_BUFSIZ] = "", tmp_file[GMT_BUFSIZ] = "",
 			out_file[GMT_BUFSIZ] = "", BB_file[GMT_BUFSIZ] = "";
-	char line[GMT_BUFSIZ] = {""}, c1[20] = {""}, c2[20] = {""}, c3[20] = {""}, c4[20] = {""},
+	char *line = NULL, c1[20] = {""}, c2[20] = {""}, c3[20] = {""}, c4[20] = {""},
 			cmd[GMT_BUFSIZ] = {""}, proj4_name[20] = {""}, *quiet = NULL;
 	char *gs_params = NULL, *gs_BB = NULL, *proj4_cmd = NULL;
 	char *device[N_GS_DEVICES] = {"", "pdfwrite", "jpeg", "png16m", "ppmraw", "tiff24nc", "bmp16m", "pngalpha", "jpeggray", "pnggray", "tiffgray", "bmpgray"};
@@ -695,6 +720,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
 	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct { int major, minor; } gsVersion = {0, 0};
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
@@ -713,6 +739,24 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 	if ((error = GMT_ps2raster_parse (GMT, Ctrl, options))) Return (error);
 
 	/*---------------------------- This is the ps2raster main code ----------------------------*/
+
+	/* Test if GhostScript can be executed (version query) */
+	sprintf(cmd, "%s --version", Ctrl->G.file);
+	if ((fp = popen(cmd, "r")) != NULL) {
+		int n;
+		n = fscanf(fp, "%d.%d", &gsVersion.major, &gsVersion.minor);
+		if (pclose(fp) == -1)
+			GMT_Report (API, GMT_MSG_NORMAL, "Error closing GhostScript version query.\n");
+		if (n != 2) {
+			/* command execution failed or cannot parse response */
+			GMT_Report (API, GMT_MSG_NORMAL, "Failed to parse response to GhostScript version query.\n");
+			Return (EXIT_FAILURE);
+		}
+	}
+	else { /* failed to open pipe */
+		GMT_Report (API, GMT_MSG_NORMAL, "Cannot execute GhostScript (%s).\n", Ctrl->G.file);
+		Return (EXIT_FAILURE);
+	}
 
 	if (Ctrl->F.active && (Ctrl->L.active || Ctrl->D.active)) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Warning: Option -F and options -L OR -D are mutually exclusive. Ignoring option -F.\n");
@@ -746,6 +790,9 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 	/* Use default DPI if not already set */
 	if (Ctrl->E.dpi <= 0) Ctrl->E.dpi = (Ctrl->T.device == GS_DEV_PDF) ? 720 : 300;
 
+	line_size = GMT_BUFSIZ;
+	line = GMT_memory (GMT, NULL, line_size, char);	/* Initial buffer size */
+
 	/* Multiple files in a file with their names */
 	if (Ctrl->L.active) {
 		if ((fpl = fopen (Ctrl->L.file, "r")) == NULL) {
@@ -753,7 +800,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			Return (EXIT_FAILURE);
 		}
 		ps_names = GMT_memory (GMT, NULL, n_alloc, char *);
-		while (GMT_fgets_chop (GMT, line, GMT_BUFSIZ, fpl) != NULL) {
+		while (line_reader (GMT, &line, &line_size, fpl) != EOF) {
 			if (!*line || *line == '#') /* Empty line or comment */
 				continue;
 			ps_names[Ctrl->In.n_files++] = strdup (line);
@@ -777,27 +824,9 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 	}
 
 	/* Let gray 50 be rasterized as 50/50/50. See http://gmtrac.soest.hawaii.edu/issues/50 */
-	if (!Ctrl->I.active) {
-		struct { int major, minor; } gsVersion;
-		int n;
-		char str[GMT_BUFSIZ];
-		FILE *fpp;
-
-		sprintf(str, "%s --version", Ctrl->G.file);
-		if ((fpp = popen(str, "r")) != NULL) {
-			n = fscanf(fpp, "%d.%d", &gsVersion.major, &gsVersion.minor);
-			if (pclose(fpp) == -1)
-				GMT_Report (API, GMT_MSG_NORMAL, "Error closing GS version query.\n");
-			if (n != 2)
-				GMT_Report (API, GMT_MSG_NORMAL, "Failed to parse response to GS version query.\n");
-		}
-		else {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error GS version query.\n");
-		}
-
-		if ((gsVersion.major == 9 && gsVersion.minor >= 5) || gsVersion.major > 9)
-			add_to_list (Ctrl->C.arg, "-dUseFastColor=true");
-	}
+	if (!Ctrl->I.active &&
+			((gsVersion.major == 9 && gsVersion.minor >= 5) || gsVersion.major > 9))
+		add_to_list (Ctrl->C.arg, "-dUseFastColor=true");
 
 
 	/* --------------------------------------------------------------------------------------------- */
@@ -854,7 +883,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a temporary file\n");
 				Return (EXIT_FAILURE);
 			}
-			while (GMT_fgets_chop (GMT, line, GMT_BUFSIZ, fp) != NULL) {
+			while (line_reader (GMT, &line, &line_size, fp) != EOF) {
 				if (dump && !strncmp (line, "% Begin GMT time-stamp", 22))
 					dump = false;
 				if (dump)
@@ -869,7 +898,8 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			fp = fp2;	/* Set original file pointer to this file instead */
 		}
 
-		got_BB = got_HRBB = file_has_HRBB = got_BBatend = got_end = landscape = landscape_orig = setup = false;
+		got_BB = got_HRBB = file_has_HRBB = got_end = landscape = landscape_orig = setup = false;
+		got_BBatend = 0;
 
 		len = strlen (ps_file);
 		j = (unsigned int)len - 1;
@@ -899,7 +929,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to open file %s\n", BB_file);
 				Return (EXIT_FAILURE);
 			}
-			while (GMT_fgets (GMT, line, GMT_BUFSIZ, fpb) != NULL && !got_BB) {
+			while ((line_reader (GMT, &line, &line_size, fpb) != EOF) && !got_BB) {
 				/* We only use the High resolution BB */
 				if ((strstr (line,"%%HiResBoundingBox:"))) {
 					sscanf (&line[19], "%s %s %s %s", c1, c2, c3, c4);
@@ -911,7 +941,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 						GMT_Report (API, GMT_MSG_NORMAL, "Unable to decode BoundingBox file %s\n", BB_file);
 						fclose (fpb);
 						fpb = NULL;                      /* so we don't accidentally close twice */
-						remove (BB_file);                /* Remove the file */
+						if (!Ctrl->S.active) remove (BB_file);                /* Remove the file */
 						if (Ctrl->D.active)
 							sprintf (tmp_file, "%s/", Ctrl->D.dir);
 						strncat (tmp_file, &ps_file[pos_file], (size_t)(pos_ext - pos_file));
@@ -927,8 +957,8 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 							GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
 							Return (EXIT_FAILURE);
 						}
-						/* must leave loop because fpb has been closed and GMT_fgets would
-						 * read from cosed file: */
+						/* must leave loop because fpb has been closed and line_reader would
+						 * read from closed file: */
 						break;
 					}
 					got_BB = got_HRBB = true;
@@ -936,7 +966,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			}
 			if (fpb != NULL) /* don't close twice */
 				fclose (fpb);
-			remove (BB_file);	/* Remove the file with BB info */
+			if (!Ctrl->S.active) remove (BB_file);	/* Remove the file with BB info */
 			if (got_BB) GMT_Report (API, GMT_MSG_LONG_VERBOSE, "[%g %g %g %g]...", x0, y0, x1, y1);
 		}
 
@@ -968,7 +998,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 		 * Since we prefer the HiResBB over BB we must continue to read until both are found or 20 lines have past */
 
 		i = 0;
-		while ((GMT_fgets (GMT, line, GMT_BUFSIZ, fp) != NULL) && i < 20 && !(got_BB && got_HRBB && got_end)) {
+		while ((line_reader (GMT, &line, &line_size, fp) != EOF) && i < 20 && !(got_BB && got_HRBB && got_end)) {
 			i++;
 			if (!line[0] || line[0] != '%')
 				{ /* Skip empty and non-comment lines */ }
@@ -1036,7 +1066,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 		/* To produce non-PDF output from PS with transparency we must determine if transparency is requested in the PS */
 		look_for_transparency = Ctrl->T.device != GS_DEV_PDF && Ctrl->T.device != -GS_DEV_PDF;
 		transparency = false;
-		while (GMT_fgets_chop (GMT, line, GMT_BUFSIZ, fp) != NULL) {
+		while (line_reader (GMT, &line, &line_size, fp) != EOF) {
 			if (line[0] != '%') {	/* Copy any non-comment line, except one containing /PageSize in the Setup block */
 				if (look_for_transparency && line[0] == '{' && strstr (line, " PSL_transp")) {
 					transparency = true;		/* Yes, found transparency */
@@ -1118,7 +1148,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				setup = true;
 			else if (!strncmp (line, "%%EndSetup", 10)) {
 				setup = false;
-				if (Ctrl->T.eps != 1)	/* Write out /PageSize command */
+				if (Ctrl->T.eps == -1)	/* Write out /PageSize command */
 					fprintf (fpo, "<< /PageSize [%g %g] >> setpagedevice\n", w, h);
 				if (r != 0)
 					fprintf (fpo, "%d rotate\n", r);
@@ -1135,15 +1165,18 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				double new_scale_x, new_scale_y, new_off_x, new_off_y, r_x, r_y;
 				char t1[8], t2[8];	/* To hold the translate part when landscape */
 				if (!strncmp (line, "%%BeginPageSetup", 16)) {
-					char line_[128], dumb1[8], dumb2[8], dumb3[8];
+					size_t Lsize = 128U;
+					char dumb1[8], dumb2[8], dumb3[8];
+					char *line_ = GMT_memory (GMT, NULL, Lsize, char);
 					BeginPageSetup_here = true;             /* Signal that on next line the job must be done */
-					GMT_fgets_chop (GMT, line_, 128, fp);   /* Read also next line which is to overwrite */
+					line_reader (GMT, &line_, &Lsize, fp);   /* Read also next line which is to be overwritten */
 					/* The trouble is that we can have things like "V 612 0 T 90 R 0.06 0.06 scale" or "V 0.06 0.06 scale" */
 					if (landscape_orig)
 						sscanf(line_, "%s %s %s %s %s %s %s %s",c1, t1, t2, dumb1, dumb2, dumb3, c2, c3);
 					else
 						sscanf(line_, "%s %s %s",c1, c2,c3);
 					old_scale_x = atof (c2);		old_scale_y = atof (c3);
+					GMT_free (GMT, line_);
 				}
 				else if (BeginPageSetup_here) {
 					BeginPageSetup_here = false;
@@ -1186,7 +1219,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			}
 #ifdef HAVE_GDAL
 			else if (found_proj && !strncmp (line, "%%PageTrailer", 13)) {
-				GMT_fgets_chop (GMT, line, GMT_BUFSIZ, fp);
+				line_reader (GMT, &line, &line_size, fp);
 				fprintf (fpo, "%%%%PageTrailer\n");
 				fprintf (fpo, "%s\n", line);
 
@@ -1253,8 +1286,8 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 		/* Recede a bit to test the contents of last line. -7 for when PS has CRLF endings */
 		fseek (fp, (off_t)-7, SEEK_END);
 		/* Read until last line is encountered */
-		while ( GMT_fgets (GMT, line, BUFSIZ, fp) );
-		if ( strncmp (line, "%%EOF", 5U) )
+		while (line_reader (GMT, &line, &line_size, fp) != EOF);
+		if (strncmp (line, "%%EOF", 5U))
 			/* Possibly a non-closed GMT PS file. To be confirmed later */
 			excessK = true;
 
@@ -1355,18 +1388,20 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 					GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
 					Return (EXIT_FAILURE);
 				}
-				remove (pdf_file);	/* The temporary PDF file is no longer needed */
+				if (!Ctrl->S.active) remove (pdf_file);	/* The temporary PDF file is no longer needed */
 			}
 
 		}
 		GMT_Report (API, GMT_MSG_VERBOSE, " Done.\n");
 
-		if (!Ctrl->T.eps)
-			remove (tmp_file);
-		if ( strlen (no_U_file) > 0 ) /* empty string == file was not created */
-			remove (no_U_file);
-		if ( strlen (clean_PS_file) > 0 )
-			remove (clean_PS_file);
+		if (!Ctrl->S.active) {
+			if (!Ctrl->T.eps)
+				remove (tmp_file);
+			if ( strlen (no_U_file) > 0 ) /* empty string == file was not created */
+				remove (no_U_file);
+			if ( strlen (clean_PS_file) > 0 )
+				remove (clean_PS_file);
+		}
 
 		if (Ctrl->W.active && found_proj && !Ctrl->W.kml) {	/* Write a world file */
 			double x_inc, y_inc;
@@ -1486,7 +1521,13 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				fprintf (fpw, "\t\t<Icon>\n");
 				fprintf (fpw, "\t\t\t<href>");
 				if (Ctrl->W.URL) fprintf (fpw, "%s/", Ctrl->W.URL);
-				fprintf (fpw, "%s</href>\n", out_file);
+				if (Ctrl->D.active) {		/* Do not write the directory name */
+					char *p;
+					p = strrchr (out_file, '/');
+					(p == NULL) ? fprintf (fpw, "%s</href>\n", out_file) : fprintf (fpw, "%s</href>\n", ++p);
+				}
+				else
+					fprintf (fpw, "%s</href>\n", out_file);
 				fprintf (fpw, "\t\t</Icon>\n");
 				fprintf (fpw, "\t\t<altitudeMode>%s</altitudeMode>\n", RefLevel[Ctrl->W.mode]);
 				if (Ctrl->W.mode > KML_GROUND_ABS && Ctrl->W.mode < KML_SEAFLOOR_ABS)
@@ -1533,6 +1574,8 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 
 	for (k = 0; k < Ctrl->In.n_files; k++) free (ps_names[k]);
 	GMT_free (GMT, ps_names);
+	GMT_free (GMT, line);
+	GMT_Report (API, GMT_MSG_DEBUG, "Final input buffer length was % "PRIuS "\n", line_size);
 
 	Return (GMT_OK);
 }

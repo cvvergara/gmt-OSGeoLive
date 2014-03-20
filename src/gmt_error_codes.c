@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error_codes.c 11898 2013-07-04 04:59:55Z pwessel $
+ *	$Id: gmt_error_codes.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -94,5 +94,6 @@ const char *g_api_error_string[] = {
 	/* GMT_SIZE_IS_ZERO */			"GMT_SIZE_IS_ZERO",
 	/* GMT_STREAM_NOT_ALLOWED */		"GMT_STREAM_NOT_ALLOWED",
 	/* GMT_SUBSET_NOT_ALLOWED */		"GMT_SUBSET_NOT_ALLOWED",
+	/* GMT_VALUE_NOT_SET */			"GMT_VALUE_NOT_SET",
 	/* GMT_WRITTEN_ONCE */			"GMT_WRITTEN_ONCE"
 };

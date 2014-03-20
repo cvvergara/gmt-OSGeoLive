@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdtrack &mdash; GMT 5.1.0 documentation</title>
+    <title>grdtrack &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdtrend" href="grdtrend.html" />
     <link rel="prev" title="grdsample" href="grdsample.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -82,7 +81,7 @@
 <p><strong>grdtrack</strong> [ <em>xyfile</em> ] <strong>-G</strong><em>grd1</em> <strong>-G</strong><em>grd2</em> ...
 [ <strong>-A</strong><strong>f</strong>|<strong>p</strong>|<strong>m</strong>|<strong>r</strong>|<strong>R</strong>[<strong>+l</strong>] ]
 [ <strong>-C</strong><em>length</em>[<strong>u</strong>]/<em>ds</em>[<em>spacing</em>][<strong>+a</strong>] ] [<strong>-D</strong><em>dfile</em> ]
-[ <strong>-E</strong><em>line</em>[,<em>line</em>,...][<strong>+a</strong><em>az</em>][<strong>+i</strong><em>inc</em>[<strong>u</strong>]][<strong>+l</strong><em>length</em>[<strong>u</strong>]][<strong>+n</strong><em>np</em>][<strong>+r</strong><em>radius</em>[<strong>u</strong>] ]
+[ <strong>-E</strong><em>line</em>[,<em>line</em>,...][<strong>+a</strong><em>az</em>][<strong>+d</strong>][<strong>+i</strong><em>inc</em>[<strong>u</strong>]][<strong>+l</strong><em>length</em>[<strong>u</strong>]][<strong>+n</strong><em>np</em>][<strong>+r</strong><em>radius</em>[<strong>u</strong>] ]
 [ <strong>-N</strong> ]
 [ <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] ]
 [ <strong>-S</strong><em>method</em>/<em>modifiers</em> ] [ <strong>-T</strong>[<em>radius</em>[<strong>u</strong>]][<strong>+e</strong>|<strong>p</strong>]]
@@ -169,7 +168,7 @@ UNITS below). The output columns will be <em>lon</em>, <em>lat</em>, <em>dist</e
 lines to the file <em>dfile</em> [Default only saves the cross-profiles].
 The columns will be <em>lon</em>, <em>lat</em>, <em>dist</em>, <em>azimuth</em>, <em>z1</em>, <em>z2</em>, ...
 (sampled value for each grid)</dd>
-<dt><strong>-E</strong><em>line</em>[,<em>line</em>,...][<strong>+a</strong><em>az</em>][<strong>+i</strong><em>inc</em>[<strong>u</strong>]][<strong>+l</strong><em>length</em>[<strong>u</strong>]][<strong>+n</strong><em>np</em>][<strong>+r</strong><em>radius</em>[<strong>u</strong>]</dt>
+<dt><strong>-E</strong><em>line</em>[,<em>line</em>,...][<strong>+a</strong><em>az</em>][<strong>+d</strong>][<strong>+i</strong><em>inc</em>[<strong>u</strong>]][<strong>+l</strong><em>length</em>[<strong>u</strong>]][<strong>+n</strong><em>np</em>][<strong>+r</strong><em>radius</em>[<strong>u</strong>]</dt>
 <dd>Instead of reading input track coordinates, specify profiles via
 coordinates and modifiers. The format of each <em>line</em> is
 <em>start</em>/<em>stop</em>, where <em>start</em> or <em>stop</em> are either <em>lon</em>/<em>lat</em> (<em>x</em>/<em>y</em> for
@@ -179,7 +178,7 @@ justification format format to specify a point on the map as
 minimum and maximum locations in the grid (only available if only
 one grid is given). Instead of two coordinates you can specify an
 origin and one of <strong>+a</strong>, <strong>+o</strong>, or <strong>+r</strong>. You may append
-<strong>+i</strong><em>inc*[**u*</em>] to set the sampling interval (append appropriate
+<strong>+i</strong><em>inc</em>[<strong>u</strong>] to set the sampling interval (append appropriate
 unit); if not given then we default to half the minimum grid interval,
 and if geographic we select great circle distances in km as the default
 unit and method. The <strong>+a</strong> sets the azimuth of a profile of given
@@ -188,7 +187,8 @@ on the origin; both require <strong>+l</strong>. For circular sampling specify
 <strong>+r</strong> to define a circle of given radius centered on the origin;
 this option requires either <strong>+n</strong> or <strong>+i</strong>.  The <strong>+n</strong><em>np</em> sets
 the desired number of points, while <strong>+l</strong><em>length</em> gives the
-total length of the profile.  Note: No track file will be read.</dd>
+total length of the profile. Use <strong>+d</strong> to output the along-track
+distances after the coordinates.  Note: No track file will be read.</dd>
 <dt><strong>-N</strong></dt>
 <dd>Do <em>not</em> skip points that fall outside the domain of the grid(s)
 [Default only output points within grid domain].</dd>
@@ -278,10 +278,10 @@ input/output. [Default is (longitude,latitude)].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -370,7 +370,8 @@ important. Use bilinear to minimize the propagation of NaNs, or lower
 (An ASCII table containing longitude, latitude, and SEASAT-derived
 gravity, preceded by one header record):</p>
 <blockquote>
-<div><div class="highlight-python"><pre>grdtrack track_4.xyg -Ghawaii_topo.nc -h &gt; track_4.xygt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>grdtrack track_4.xyg -Ghawaii_topo.nc -h &gt; track_4.xygt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To sample the Sandwell/Smith IMG format file topo.8.2.img (2 minute
@@ -378,7 +379,8 @@ predicted bathymetry on a Mercator grid) and the Muller et al age grid
 age.3.2.nc along the lon,lat coordinates given in the file
 cruise_track.xy, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>grdtrack cruise_track.xy -Gtopo.8.2.img,1,1 -Gage.3.2.nc &gt; depths-age.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>grdtrack cruise_track.xy -Gtopo.8.2.img,1,1 -Gage.3.2.nc &gt; depths-age.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To sample the Sandwell/Smith IMG format file grav.18.1.img (1 minute
@@ -386,7 +388,8 @@ free-air anomalies on a Mercator grid) along 100-km-long cross-profiles
 that are orthogonal to the line segment given in the file track.xy,
 erecting cross-profiles every 25 km and sampling the grid every 3 km, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>grdtrack track.xy -Ggrav.18.1.img,0.1,1 -C100k/3/25 -Ar &gt; xprofiles.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>grdtrack track.xy -Ggrav.18.1.img,0.1,1 -C100k/3/25 -Ar &gt; xprofiles.d
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -429,6 +432,11 @@ erecting cross-profiles every 25 km and sampling the grid every 3 km, try</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdtrend.html"
                         title="next chapter">grdtrend</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdtrack.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -447,7 +455,7 @@ erecting cross-profiles every 25 km and sampling the grid every 3 km, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -465,9 +473,9 @@ erecting cross-profiles every 25 km and sampling the grid every 3 km, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

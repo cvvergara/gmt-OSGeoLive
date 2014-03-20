@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(13) Plotting of vector fields &mdash; GMT 5.1.0 documentation</title>
+    <title>(13) Plotting of vector fields &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(14) Gridding of data and trend surfaces" href="ex14.html" />
     <link rel="prev" title="(12) Optimal triangulation of data" href="ex12.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -83,8 +82,8 @@ plot vector fields of various kinds. GMT provides a way to illustrate
 components of the field (Cartesian or polar components) are stored in
 separate grid files. In this example we use
 <a class="reference internal" href="../grdmath.html"><em>grdmath</em></a> to generate a surface
-<img class="math" src="../_images/math/6cc4446e80f602715a68e70a2854e0492cd102a6.png" alt="z(x, y) = x \cdot \exp(-x^2 -y^2)"/> and to calculate
-<img class="math" src="../_images/math/f19ff2d73060a6cd300f89f2a3f65ac24361ba86.png" alt="\nabla z"/> by returning the <em>x</em>- and <em>y</em>-derivatives separately.
+<img class="math" src="../_images/math/7dc674e394ba36a90b8ddf5fcc87dbe1c092c1a8.png" alt="z(x, y) = x \cdot \exp(-x^2 -y^2)"/> and to calculate
+<img class="math" src="../_images/math/ba965e654c5ec9abe8bf921fd41e7e3b43dde4b0.png" alt="\nabla z"/> by returning the <em>x</em>- and <em>y</em>-derivatives separately.
 We superpose the gradient vector field and the surface <em>z</em> and also plot
 the components of the gradient in separate windows. A
 <a class="reference internal" href="../pstext.html"><em>pstext</em></a> call to place a header finishes the plot</p>
@@ -111,7 +110,7 @@ rm -f z.nc dzdx.nc dzdy.nc
 </pre></div>
 </div>
 <div class="figure align-center">
-<img alt="../_images/example_13.png" src="../_images/example_13.png" style="width: 500px;" />
+<a class="reference internal image-reference" href="../_images/example_13.png"><img alt="../_images/example_13.png" src="../_images/example_13.png" style="width: 500px;" /></a>
 <p class="caption">Display of vector fields in GMT.</p>
 </div>
 </div>
@@ -128,6 +127,11 @@ rm -f z.nc dzdx.nc dzdy.nc
   <h4>Next topic</h4>
   <p class="topless"><a href="ex14.html"
                         title="next chapter">(14) Gridding of data and trend surfaces</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/gallery/ex13.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -146,7 +150,7 @@ rm -f z.nc dzdx.nc dzdy.nc
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -164,9 +168,9 @@ rm -f z.nc dzdx.nc dzdy.nc
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

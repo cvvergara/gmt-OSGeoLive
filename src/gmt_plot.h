@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.h 12321 2013-10-13 23:26:34Z pwessel $
+ *	$Id: gmt_plot.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -118,6 +118,8 @@ enum GMT_enum_vecattr {GMT_VEC_LEFT = 1,	/* Only draw left half of vector head *
 #define GMT_vec_justify(status) ((status>>4)&3)			/* Return justification as 0-3 */
 #define GMT_vec_head(status) ((status>>2)&3)			/* Return head selection as 0-3 */
 #define GMT_vec_side(status) ((status&3) ? 2*(status&3)-3 : 0)	/* Return side selection as 0,-1,+1 */
+#define GMT_vec_outline(status) ((status&GMT_VEC_OUTLINE) || (status&GMT_VEC_OUTLINE2))	/* Return true if outline is currently selected */
+#define GMT_vec_fill(status) ((status&GMT_VEC_FILL) || (status&GMT_VEC_FILL2))		/* Return true if fill is currently selected */
 
 struct GMT_VECT_ATTR {
 	/* Container for common attributes for plot attributes of vectors */
@@ -125,6 +127,7 @@ struct GMT_VECT_ATTR {
 	bool parsed_v4;		/* true if we parsed old-style <vectorwidth/headlength/headwidth> attribute */
 	float v_angle;		/* Head angle */
 	float v_norm;		/* shrink when lengths are smaller than this */
+	float v_stem;		/* Min length in % of visible vector when head is large [10%] */
 	float v_width;		/* Width of vector stem in inches */
 	float h_length;		/* Length of vector head in inches */
 	float h_width;		/* Width of vector head in inches */

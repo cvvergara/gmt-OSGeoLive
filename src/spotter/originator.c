@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: originator.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: originator.c 12822 2014-01-31 23:39:56Z remko $
  *
- *   Copyright (c) 2000-2012 by P. Wessel
+ *   Copyright (c) 2000-2014 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -215,8 +215,7 @@ int GMT_originator_usage (struct GMTAPI_CTRL *API, int level)
 
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Specify the rotation file to be used (see man page for format).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Prepend + if you want to invert the rotations prior to use.\n");
+	spotter_rot_usage (API, 'E');
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Specify file name for hotspot locations.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Prepend + if we should look for hotspot drift tables.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If found then we interpolate to get hotspot location as a function of time [fixed].\n");

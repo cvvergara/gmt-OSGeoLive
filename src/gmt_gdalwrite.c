@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalwrite.c 11982 2013-07-31 12:13:36Z fwobbe $
+ *	$Id: gmt_gdalwrite.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -160,6 +160,7 @@ int GMT_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GDALWRITE_CTRL *prh
 				GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "  %s: %s\n", 
 					GDALGetDriverShortName( hDriver ), GDALGetDriverLongName( hDriver ) );
 		}
+		GDALDestroyDriverManager();
 		return(-1);
 	}
 
@@ -176,6 +177,8 @@ int GMT_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GDALWRITE_CTRL *prh
 
 	if (hDstDS == NULL) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "GDALOpen failed - %d\n%s\n", CPLGetLastErrorNo(), CPLGetLastErrorMsg());
+		GDALDestroyDriverManager();
+		if (papszOptions != NULL) CSLDestroy (papszOptions);
 		return(-1);
 	}
 	GDALSetGeoTransform( hDstDS, adfGeoTransform ); 
@@ -249,7 +252,9 @@ int GMT_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GDALWRITE_CTRL *prh
 	if ( hOutDS != NULL ) GDALClose( hOutDS );
 
 	GDALClose( hDstDS );
+	GDALDestroyDriverManager();
 	if (outByte) GMT_free(GMT, outByte);
+	if (papszOptions != NULL) CSLDestroy (papszOptions);
 
 	if (GMT_strlcmp(pszFormat,"netCDF")) {
 		/* Change some attributes written by GDAL (not finished) */

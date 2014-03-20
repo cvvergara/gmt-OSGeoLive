@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_constants.h 12093 2013-09-01 13:29:01Z fwobbe $
+ *	$Id: gmt_constants.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -70,6 +70,7 @@ enum GMT_enum_length {
 	GMT_TINY_CHUNK  = 8U,
 	GMT_SMALL_CHUNK = 64U,
 	GMT_CHUNK       = 2048U,
+	GMT_BIG_CHUNK   = 65536U,
 	GMT_LEN16	= 16U,		/* All strings used to format date/clock output must be this length */
 	GMT_LEN32  = 32U,          /* Small length of texts */
 	GMT_LEN64  = 64U,          /* Intermediate length of texts */

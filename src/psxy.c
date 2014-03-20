@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psxy.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: psxy.c 12922 2014-02-20 01:38:37Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -84,6 +84,10 @@ struct PSXY_CTRL {
 };
 
 #define CAP_WIDTH		7.0	/* Error bar cap width */
+#define EBAR_NORMAL		1
+#define EBAR_ASYMMETRICAL	2
+#define EBAR_WHISKER		3
+#define EBAR_NOTCHED_WHISKER	4
 
 void *New_psxy_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct PSXY_CTRL *C;
@@ -412,16 +416,16 @@ int GMT_psxy_parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OPT
 				while (opt->arg[j] && opt->arg[j] != '/') {
 					switch (opt->arg[j]) {
 					case 'x':	/* Error bar for x */
-						Ctrl->E.xbar = 1; break;
+						Ctrl->E.xbar = EBAR_NORMAL; break;
 					case 'X':	/* Box-whisker instead */
-						Ctrl->E.xbar = 2;
-						if (opt->arg[j+1] == 'n') {Ctrl->E.xbar++; j++;}
+						Ctrl->E.xbar = EBAR_WHISKER;
+						if (opt->arg[j+1] == 'n') {Ctrl->E.xbar = EBAR_NOTCHED_WHISKER; j++;}
 						break;
 					case 'y':	/* Error bar for y */
-						Ctrl->E.ybar = 1; break;
+						Ctrl->E.ybar = EBAR_NORMAL; break;
 					case 'Y':	/* Box-whisker instead */
-						Ctrl->E.ybar = 2;
-						if (opt->arg[j+1] == 'n') {Ctrl->E.ybar++; j++;}
+						Ctrl->E.ybar = EBAR_WHISKER;
+						if (opt->arg[j+1] == 'n') {Ctrl->E.ybar = EBAR_NOTCHED_WHISKER; j++;}
 						break;
 					default:	/* Get error 'cap' width */
 						strncpy (txt_a, &opt->arg[j], GMT_LEN256);
@@ -570,27 +574,27 @@ int GMT_psxy (void *V_API, int mode, void *args)
 
 	if (Ctrl->E.active) {	/* Set error bar parameters */
 		j = 2;	/* Normally, error bar related columns start in position 2 */
-		if (Ctrl->E.xbar == 1) {
+		if (Ctrl->E.xbar == EBAR_NORMAL) {
 			xy_errors[GMT_X] = j++;
 			error_type[GMT_X] = 0;
 		}
-		else if (Ctrl->E.xbar == 2) {	/* Box-whisker instead */
+		else if (Ctrl->E.xbar == EBAR_WHISKER) {	/* Box-whisker instead */
 			xy_errors[GMT_X] = j++;
 			error_type[GMT_X] = 1;
 		}
-		else if (Ctrl->E.xbar == 3) {	/* Notched Box-whisker instead */
+		else if (Ctrl->E.xbar == EBAR_NOTCHED_WHISKER) {	/* Notched Box-whisker instead */
 			xy_errors[GMT_X] = j++;
 			error_type[GMT_X] = 2;
 		}
-		if (Ctrl->E.ybar == 1) {
+		if (Ctrl->E.ybar == EBAR_NORMAL) {
 			xy_errors[GMT_Y] = j++;
 			error_type[GMT_Y] = 0;
 		}
-		else if (Ctrl->E.ybar == 2) {	/* Box-whisker instead */
+		else if (Ctrl->E.ybar == EBAR_WHISKER) {	/* Box-whisker instead */
 			xy_errors[GMT_Y] = j++;
 			error_type[GMT_Y] = 1;
 		}
-		else if (Ctrl->E.ybar == 3) {	/* Notched Box-whisker instead */
+		else if (Ctrl->E.ybar == EBAR_NOTCHED_WHISKER) {	/* Notched Box-whisker instead */
 			xy_errors[GMT_Y] = j++;
 			error_type[GMT_Y] = 2;
 		}
@@ -740,6 +744,7 @@ int GMT_psxy (void *V_API, int mode, void *args)
 	}
 
 	if (not_line) {	/* Symbol part (not counting GMT_SYMBOL_FRONT and GMT_SYMBOL_QUOTED_LINE) */
+		unsigned int n_warn[3] = {0, 0, 0}, warn;
 		double in2[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, *p_in = GMT->current.io.curr_rec;
 		if (GMT_Init_IO (API, set_type, geometry, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Register data input */
 			Return (API->error);
@@ -940,12 +945,14 @@ int GMT_psxy (void *V_API, int mode, void *args)
 				case GMT_SYMBOL_ELLIPSE:
 					if (!S.convert_angles) {	/* Got axes in current plot units, change to inches */
 						dim[0] = p_in[ex1];
+						GMT_flip_angle_d (GMT, &dim[0]);
 						dim[1] = p_in[ex2];
 						dim[2] = p_in[ex3];
 						PSL_plotsymbol (PSL, plot_x, plot_y, dim, S.symbol);
 					}
 					else if (!GMT_is_geographic (GMT, GMT_IN)) {	/* Got axes in user units, change to inches */
 						dim[0] = 90.0 - p_in[ex1];	/* Cartesian azimuth */
+						GMT_flip_angle_d (GMT, &dim[0]);
 						dim[1] = p_in[ex2] * GMT->current.proj.scale[GMT_X];
 						dim[2] = p_in[ex3] * GMT->current.proj.scale[GMT_X];
 						PSL_plotsymbol (PSL, plot_x, plot_y, dim, S.symbol);
@@ -981,6 +988,7 @@ int GMT_psxy (void *V_API, int mode, void *args)
 						length = hypot (plot_x - x_2, plot_y - y_2);	/* Compute vector length in case of shrinking */
 					}
 					else {	/* Compute tip coordinates from tail and length */
+						GMT_flip_angle_d (GMT, &direction);
 						sincosd (direction, &s, &c);
 						x_2 = plot_x + length * c;
 						y_2 = plot_y + length * s;
@@ -1012,7 +1020,8 @@ int GMT_psxy (void *V_API, int mode, void *args)
 						S.v.v_width = (float)(S.v.pen.width * GMT->session.u2u[GMT_PT][GMT_INCH]);
 					else
 						S.v.v_width = (float)(current_pen.width * GMT->session.u2u[GMT_PT][GMT_INCH]);
-					GMT_geo_vector (GMT, in[GMT_X], in[GMT_Y], in[ex1+S.read_size], in[ex2+S.read_size], &current_pen, &S);
+					warn = GMT_geo_vector (GMT, in[GMT_X], in[GMT_Y], in[ex1+S.read_size], in[ex2+S.read_size], &current_pen, &S);
+					n_warn[warn]++;
 					break;
 				case GMT_SYMBOL_MARC:
 					GMT_init_vector_param (GMT, &S, false, false, NULL, false, NULL);	/* Update vector head parameters */
@@ -1054,6 +1063,8 @@ int GMT_psxy (void *V_API, int mode, void *args)
 			}
 		} while (true);
 		PSL_command (GMT->PSL, "U\n");
+		if (n_warn[1]) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: %d vector heads had length exceeding the vector length and were skipped. Consider the +n<norm> modifier to -S\n", n_warn[1]);
+		if (n_warn[2]) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: %d vector heads had to be scaled more than implied by +n<norm> since they were still too long. Consider changing the +n<norm> modifier to -S\n", n_warn[2]);
 		
 		if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 			Return (API->error);
@@ -1061,6 +1072,7 @@ int GMT_psxy (void *V_API, int mode, void *args)
 	}
 	else {	/* Line/polygon part */
 		uint64_t seg;
+		bool duplicate;
 		struct GMT_DATASET *D = NULL;	/* Pointer to GMT multisegment table(s) */
 
 		if (GMT_Init_IO (API, GMT_IS_DATASET, geometry, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Register data input */
@@ -1071,7 +1083,7 @@ int GMT_psxy (void *V_API, int mode, void *args)
 		}
 
 		for (tbl = 0; tbl < D->n_tables; tbl++) {
-			if (D->table[tbl]->n_headers && S.G.label_type == 2)	/* Get potential label from first header */
+			if (D->table[tbl]->n_headers && S.G.label_type == GMT_LABEL_IS_HEADER)	/* Get potential label from first header */
 				GMT_extract_label (GMT, D->table[tbl]->header[0], S.G.label, NULL);
 
 			for (seg = 0; seg < D->table[tbl]->n_segments; seg++) {	/* For each segment in the table */
@@ -1079,6 +1091,8 @@ int GMT_psxy (void *V_API, int mode, void *args)
 				L = D->table[tbl]->segment[seg];	/* Set shortcut to current segment */
 				if (polygon && GMT_polygon_is_hole (L)) continue;	/* Holes are handled together with perimeters */
 
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Plotting table %" PRIu64 " segment %" PRIu64 "\n", tbl, seg);
+				
 				/* We had here things like:	x = D->table[tbl]->segment[seg]->coord[GMT_X];
 				 * but reallocating x below lead to disasters.  */
 
@@ -1087,6 +1101,10 @@ int GMT_psxy (void *V_API, int mode, void *args)
 
 				if (P && P->skip) continue;	/* Chosen cpt file indicates skip for this z */
 
+				duplicate = (D->alloc_mode == GMT_ALLOCATED_EXTERNALLY && ((polygon && GMT_polygon_is_open (GMT, L->coord[GMT_X], L->coord[GMT_Y], L->n_rows)) || GMT->current.map.path_mode == GMT_RESAMPLE_PATH));
+				if (duplicate)	/* Must duplicate externally allocated segment since it needs to be resampled below */
+					L = GMT_duplicate_segment (GMT, D->table[tbl]->segment[seg]);
+				
 				if (L->header && L->header[0]) {
 					PSL_comment (PSL, "Segment header: %s\n", L->header);
 					if (GMT_parse_segment_item (GMT, L->header, "-S", s_args)) {	/* Found -S, which only can apply to front or quoted line */
@@ -1111,7 +1129,7 @@ int GMT_psxy (void *V_API, int mode, void *args)
 					polygon = false;
 					PSL_setcolor (PSL, current_fill.rgb, PSL_IS_STROKE);
 				}
-				if (S.G.label_type == 2)	/* Get potential label from segment header */
+				if (S.G.label_type == GMT_LABEL_IS_HEADER)	/* Get potential label from segment header */
 					GMT_extract_label (GMT, L->header, S.G.label, L->ogr);
 
 				if (polygon && GMT_polygon_is_open (GMT, L->coord[GMT_X], L->coord[GMT_Y], L->n_rows)) {
@@ -1145,6 +1163,8 @@ int GMT_psxy (void *V_API, int mode, void *args)
 					GMT_setfill (GMT, &current_fill, outline_active);
 					GMT_draw_front (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.n, &S.f);
 				}
+				if (duplicate)	/* Free duplicate segment */
+					GMT_free_segment (GMT, &L, GMT_ALLOCATED_BY_GMT);
 			}
 		}
 		if (GMT_Destroy_Data (API, &D) != GMT_OK) {

@@ -1,5 +1,119 @@
 -----------------------------------------------------------------------------------------
-	$Id: ChangeLog 12423 2013-11-01 04:22:53Z pwessel $
+	$Id: ChangeLog 12925 2014-02-20 22:02:24Z pwessel $
+-----------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------
+201x-yy-zz	pwessel
+	GMT 5.1.1 finalized and released.
+-----------------------------------------------------------------------------------------
+2014-02-20	pwessel
+	* grdcontour.c:		The -Zscale/offset option was applied incorrectly due to a
+				change in the underlying scaling function.
+	* grdvolume.c:		---"---
+2014-02-10	pwessel
+	*gmt2kml.c:		Make sure the default style IDs are unique for each process.
+
+2014-02-03	pwessel
+	* pslib.c:		Auto-widen paragraph width to at least fit widest word.
+
+2014-01-26	pwessel
+	* gmt_grdio.c:		Building the grid command string could exceed its length if
+				the argument became exactly the max length of the array; then
+				a final extra character \0 would be added and exceed array length.
+				Thanks to Joachim Saul for pointing it out.
+
+2014-01-22	pwessel
+	* pscoast.c:		The processing of -I -N levels and pens could get out of sync
+				so that the wrong pen was used for the specified feature.
+2014-01-16	remko
+	* pslib.c:		Take superscripts and subscripts into account when determining
+				dimensions of text box.
+
+2014-01-10	pwessel
+	* grdmath.c:		We consider the change in SDIST, PDIST to return degrees instead
+				of km to be a bug as it makes it difficult to handle geodesics
+				for which degrees make no sense.  Thus we have consolidated all
+				the ?DIST operators to give km if geographic data are involved.
+				Example 23 has been adjusted accordingly, as has several test
+				scripts.  Please check your own scripts for SDIST.
+
+2014-01-09	pwessel
+	* gmt_vector.c:		Add protection against introduced longitude-jumps produced
+				by resampling in GMT_fix_up_path.
+2014-01-09	remko
+	* gmt_vector.c:		Add protection against introduced longitude-jumps produced
+				by resampling in GMT_fix_up_path.
+	* grdmath.c:		LDIST and PDIST will again produce km when using geodesics.
+
+2014-01-01	pwessel
+	* x2sys/x2sys.c:	Mishandled the assignment of segment number for each record.
+	* gmt_support.c:	Allow GMT_crossover to deal with global wrapped data.
+
+2013-12-31	pwessel
+	* gmt2kml.c:		Now using GMT_Put_Record instead of old stdout printing.
+				This addresses issue #473.
+
+2013-12-10	pwessel
+	* grdvector.c:		Vector direction did not adjust when negative scales were
+				used in -JX or -Jx.
+	* psxy[z].c		---"---
+
+2013-12-08	remko
+	* psimage.c:		Now properly plots transparent images and makes -Gt work.
+
+2013-11-26	pwessel
+	* gmt_io.c:		GMT would crash on a blank line with no newline at end at all.
+	* pstext.c:		pstext did not process GMT4-style input properly.
+
+2013-11-26	jluis
+	* potential/gravfft.c:	Let -E options default to 3.
+				Let users select the -N+l (leave trend alone). That is, do not overwrite with default mode.
+				Let the default detrend be remove MID point.
+				Explicitly set -N+a in gravfft command to avoid failures due to coming changes in gravfft.
+2013-11-25	pwessel
+	* grdlandmask.c:	Failed to fill partial bins with no coastlines when the region
+				crossed Greenwich [issue #451].
+
+2013-11-21	pwessel
+	* pscontour.c:		Let pscontour output contours to file [issue #448].
+	* pscoast.c:		Prevent users from not giving proper projection [issue #449].
+
+2013-11-19	jluis
+	* mgd77/mgd77magref.c:	Needed to reset the t_col variable when constant altitude [issue #446].
+
+2013-11-19	pwessel
+	* gmt_sph.c:		Fix invalid read in ssrfpack_grid due to par array being of length 2 rather than 3.
+
+2013-11-18	pwessel
+	* gmt_grdio.c:		Place the old auto-detect of 4-byte binary float vs int under compatibility mode for backwardness.
+
+2013-11-16	pwessel
+	* grdvector.c:		Address shortcomings of geovectors when wrapped and clipped.
+
+2013-11-15	pwessel
+	* geovectors.c:		Fix geovector when shrinking is selected.
+
+2013-11-13	pwessel
+	* gmt_api.c:		Fix API issues pointed out by Ian.
+
+2013-11-13	fwobbe
+	* GMT.app:		Inherit user shell in GMT.app.
+
+2013-11-12	pwessel
+	* gmt_init.c:		grdmath could corrupt the gmt.history file [issue # 438].
+ 	
+2013-11-10	pwessel
+	* gmt_support.c:	Fix symbol-size issue in psxy -Sc [issue #435].
+	
+2013-11-09	pwessel
+	* grdvector.c:		Did not convert direction to azimuths for geo vectors.
+
+2013-11-08	pwessel
+	* grdvector.c:		Fix grdvector -I problem [issue #434].
+	* ps2raster.c:		Under Mavericks, strcpy would exit if the to and from pointers
+-----------------------------------------------------------------------------------------
+2013-11-05	pwessel
+	GMT 5.1.0 finalized and released.
 -----------------------------------------------------------------------------------------
 
 2013-11-01	remko

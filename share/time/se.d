@@ -1,6 +1,6 @@
 # GMT Time language file for SE (Swedish) mode [SE]
 #
-#	$Id: se.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: se.d 12807 2014-01-30 10:31:56Z remko $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Januari		Jan	J
@@ -19,10 +19,10 @@ M	12	December	Dec	D
 U	1	Vecka		Vec	V
 # Weeknames, with 3-char and 1-char abbreviations
 # (List starts on Sunday regardless of TIME_WEEK_START)
-W	1	SÃ¶ndag		SÃ¶n	S
-W	2	MÃ¥ndag		MÃ¥n	M
+W	1	Söndag		Sön	S
+W	2	Måndag		Mån	M
 W	3	Tisdag		Tis	T
 W	4	Onsdag		Ons	O
 W	5	Torsdag		Tor	T
 W	6	Fredag		Fre	F
-W	7	LÃ¶rdag		LÃ¶r	S
+W	7	Lördag		Lör	S

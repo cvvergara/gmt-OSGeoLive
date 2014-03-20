@@ -1,7 +1,7 @@
 #
-# $Id: ConfigDefault.cmake 12452 2013-11-05 00:05:25Z fwobbe $
+# $Id: ConfigDefault.cmake 12968 2014-02-28 22:54:15Z fwobbe $
 #
-# Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -35,23 +35,31 @@ set (GMT_PACKAGE_NAME "GMT")
 # a short description of the gmt project (only a few words).
 set (GMT_PACKAGE_DESCRIPTION_SUMMARY "The Generic Mapping Tools")
 
+# GMT_VERSION_YEAR is set to current date in
+# cmake/modules/ConfigCMake.cmake if not specified here:
+set (GMT_VERSION_YEAR "2014")
+
 # The GMT package version.
-set (GMT_PACKAGE_VERSION_MAJOR "5")
-set (GMT_PACKAGE_VERSION_MINOR "1")
-set (GMT_PACKAGE_VERSION_PATCH "0")
+set (GMT_PACKAGE_VERSION_MAJOR 5)
+set (GMT_PACKAGE_VERSION_MINOR 1)
+set (GMT_PACKAGE_VERSION_PATCH 1)
 
 # The subversion revision of the GMT source code.
 # This is manually set when making GMT *public* releases.
 # However, when making internal releases or just an ordinary developer build, leave it
 # empty; if it is empty, the revision number is automatically populated for you on build.
-set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "12452")
+set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "12968")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION "${GMT_PACKAGE_VERSION_MAJOR}.${GMT_PACKAGE_VERSION_MINOR}.${GMT_PACKAGE_VERSION_PATCH}")
 
-# GMT_VERSION_YEAR set to current date in cmake/modules/ConfigCMake.cmake
-# if not specified here:
-set (GMT_VERSION_YEAR "2013")
+# The API version (SOVERSION) of the GMT libraries.
+# Increment this when more or fewer functions are included in the
+# library, the function prototype changes, or data type changes.
+set (GMT_LIB_SOVERSION 5)
+
+# The build version (VERSION) of the GMT libraries.
+set (GMT_LIB_VERSION "${GMT_LIB_SOVERSION}.${GMT_PACKAGE_VERSION_MINOR}.${GMT_PACKAGE_VERSION_PATCH}")
 
 # The GMT wiki location
 set (GMT_TRAC_WIKI "http://gmt.soest.hawaii.edu/")

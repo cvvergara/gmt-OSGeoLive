@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_customio.c 12448 2013-11-04 21:15:08Z fwobbe $
+ *	$Id: gmt_customio.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -541,10 +541,20 @@ int GMT_is_native_grid (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
 			break;
 		case 4:	/* 4-byte elements - could be int or float */
 			/* See if we can decide it is a float grid */
-			if ((t_head.z_scale_factor == 1.0 && t_head.z_add_offset == 0.0) || fabs((t_head.z_min/t_head.z_scale_factor) - rint(t_head.z_min/t_head.z_scale_factor)) > GMT_CONV_LIMIT || fabs((t_head.z_max/t_head.z_scale_factor) - rint(t_head.z_max/t_head.z_scale_factor)) > GMT_CONV_LIMIT)
-				header->type = GMT_GRID_IS_BF;
-			else
-				header->type = GMT_GRID_IS_BI;
+			if (GMT_compat_check (GMT, 4)) {
+				GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Will try to determine if a native 4-byte grid is float or int but may be wrong.\n");
+				GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Please append =bf (float) or =bi (integer) to avoid this situation.\n");
+				/* Naive test to see if we can decide it is a float grid */
+				if ((t_head.z_scale_factor == 1.0 && t_head.z_add_offset == 0.0) || fabs((t_head.z_min/t_head.z_scale_factor) - rint(t_head.z_min/t_head.z_scale_factor)) > GMT_CONV_LIMIT || fabs((t_head.z_max/t_head.z_scale_factor) - rint(t_head.z_max/t_head.z_scale_factor)) > GMT_CONV_LIMIT)
+					header->type = GMT_GRID_IS_BF;
+				else
+					header->type = GMT_GRID_IS_BI;
+			}
+			else {
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: Cannot determine if a native 4-byte grid is float or int without more information.\n");
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: You must append =bf (float) or =bi (integer) to avoid this situation.\n");
+				return (GMT_GRDIO_NONUNIQUE_FORMAT);
+			}
 			break;
 		case 8:	/* 8-byte elements */
 			header->type = GMT_GRID_IS_BD;
@@ -1602,6 +1612,8 @@ int GMT_gdal_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 		to_gdalread->registration.x_inc = header->inc[GMT_X];
 		to_gdalread->registration.y_inc = header->inc[GMT_Y];
 	}
+
+	/* This code chunk fixed #173 (r10638) grdpaste of via-GDAL grids but later caused #403 */
 	if (pad[XLO] > 0 || pad[XHI] > 0 || pad[YLO] > 0 || pad[YHI] > 0) {
 		to_gdalread->mini_hdr.active = true;
 		if (pad[XLO] >= header->nx - 1) {	/* With -1 we account for both grid & pixel registration cases */
@@ -1627,6 +1639,14 @@ int GMT_gdal_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 		else {
 			/* Here we assume that all pad[0] ... pad[3] are equal. Otherwise ... */
 			to_gdalread->mini_hdr.active = false;	/* Undo above setting */
+			to_gdalread->p.active = true;
+			to_gdalread->p.pad = (int)pad[XLO];
+		}
+
+		/* OK, now test if we are under the condition of #403 (very small grids).
+		   If yes, undo the mini_hdr solution ... and hope no more troubles arise. */
+		if (to_gdalread->mini_hdr.active && (header->nx <= 4 || header->ny <= 4)) {
+			to_gdalread->mini_hdr.active = false;
 			to_gdalread->p.active = true;
 			to_gdalread->p.pad = (int)pad[XLO];
 		}
@@ -1779,6 +1799,8 @@ int GMT_gdal_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, fl
 		to_GDALW->data = &grid[2 * header->mx + (header->pad[XLO] + first_col)+imag_offset];
 		to_GDALW->type = strdup("float32");
 		GMT_gdalwrite(GMT, header->name, to_GDALW);
+		free (to_GDALW->driver);
+		free (to_GDALW->type);
 		GMT_free (GMT, to_GDALW);
 		GMT_free (GMT, k);
 		return (GMT_NOERROR);
@@ -1837,8 +1859,8 @@ int GMT_gdal_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, fl
 
 	GMT_free (GMT, k);
 	GMT_free (GMT, to_GDALW->data);
-	free(to_GDALW->driver);
-	free(to_GDALW->type);
+	free (to_GDALW->driver);
+	free (to_GDALW->type);
 	GMT_free (GMT, to_GDALW);
 	return (GMT_NOERROR);
 }

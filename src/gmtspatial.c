@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
-*    $Id: gmtspatial.c 12407 2013-10-30 16:46:27Z pwessel $
+*    $Id: gmtspatial.c 12841 2014-02-03 16:10:34Z pwessel $
 *
-*	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+*	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 *	See LICENSE.TXT file for copying and redistribution conditions.
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU Lesser General Public License as published by
@@ -893,7 +893,6 @@ int GMT_gmtspatial_parse (struct GMT_CTRL *GMT, struct GMTSPATIAL_CTRL *Ctrl, st
  	if (Ctrl->E.active) Ctrl->Q.active = true;
 	
 	if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0) GMT->common.b.ncol[GMT_IN] = 2;
-	n_errors += GMT_check_condition (GMT, n_files[GMT_IN] == 0, "Syntax error: No input file specified\n");
 	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] < 2, "Syntax error: Binary input data (-bi) must have at least %d columns\n", 2);
 	n_errors += GMT_check_condition (GMT, Ctrl->S.mode == POL_CLIP && !Ctrl->T.file && !GMT->common.R.active, "Syntax error: -T without a polygon requires -R\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->C.active && !Ctrl->T.active && !GMT->common.R.active, "Syntax error: -C requires -R\n");
@@ -1096,7 +1095,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 				S->coord[GMT_Y][0] = S->coord[GMT_Y][1] = S->coord[GMT_Y][4] = GMT->common.R.wesn[YLO];
 				S->coord[GMT_Y][2] = S->coord[GMT_Y][3] = GMT->common.R.wesn[YHI];
 				(void)area_size (GMT, S->coord[GMT_X], S->coord[GMT_Y], S->n_rows, info, &geo);
-				GMT_free_segment (GMT, S);
+				GMT_free_segment (GMT, &S, GMT_ALLOCATED_BY_GMT);
 				d_expect = 0.5 * sqrt (info[GMT_Z]/n_points);
 				R_index = d_bar / d_expect;
 				GMT_Report (API, GMT_MSG_NORMAL, "NNA Found %" PRIu64 " points, D_bar = %g, D_expect = %g, Spatial index = %g\n", n_points, d_bar, d_expect, R_index);
@@ -1183,6 +1182,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 
 		if (Ctrl->Q.header) {	/* Add line length or polygon area stuff to segment header */
 			mode = GMT_IS_LINE;	/* Dont know if line or polygon but passing GMT_IS_POLY would close any open polygon, which is not good for lines */
+			GMT->current.io.multi_segments[GMT_OUT] = true;	/* To ensure we can write headers */
 		}
 		else {
 			mode = GMT_IS_POINT;
@@ -1250,7 +1250,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 	}
 	
 	if (Ctrl->I.active || external) {	/* Crossovers between polygons */
-		bool same_feature;
+		bool same_feature, wrap;
 		unsigned int in;
 		uint64_t tbl1, tbl2, col, nx, row, seg1, seg2;
 		struct GMT_XSEGMENT *ylist1 = NULL, *ylist2 = NULL;
@@ -1287,6 +1287,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
+		wrap = (GMT_is_geographic (GMT, GMT_IN) && GMT->common.R.active && GMT_360_RANGE (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]));
 
 		sprintf (fmt, "%s%s%s%s%s%s%s%s%%s%s%%s\n", GMT->current.setting.format_float_out, GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out, \
 			GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out, GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out, \
@@ -1307,7 +1308,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 							if (!external && !same_feature) continue;	/* Do not do external crossings */
 						}
 						GMT_init_track (GMT, S2->coord[GMT_Y], S2->n_rows, &ylist2);
-						nx = GMT_crossover (GMT, S1->coord[GMT_X], S1->coord[GMT_Y], NULL, ylist1, S1->n_rows, S2->coord[GMT_X], S2->coord[GMT_Y], NULL, ylist2, S2->n_rows, false, &XC);
+						nx = GMT_crossover (GMT, S1->coord[GMT_X], S1->coord[GMT_Y], NULL, ylist1, S1->n_rows, S2->coord[GMT_X], S2->coord[GMT_Y], NULL, ylist2, S2->n_rows, false, wrap, &XC);
 						if (nx) {	/* Polygon pair generated crossings */
 							uint64_t px;
 							if (Ctrl->S.active) {	/* Do the spatial clip operation */
@@ -1512,7 +1513,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 		}
 		if (same_feature) {
 			for (col = 0; col < S2->n_columns; col++) S2->coord[col] = NULL;	/* Since they were not allocated */
-			GMT_free_segment (GMT, S2);
+			GMT_free_segment (GMT, &S2, GMT_ALLOCATED_BY_GMT);
 		}
 		for (tbl = 0; tbl < C->n_tables; tbl++) GMT_free (GMT, Info[tbl]);
 		GMT_free (GMT, Info);
@@ -1692,7 +1693,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 				if (crossing) {
 					n_split_tot++; 
 					for (kseg = 0; kseg < n_split; kseg++) {
-						//GMT_free_segment (GMT, T->segment[seg_out]);
+						//GMT_free_segment (GMT, &(T->segment[seg_out]), Dout->alloc_mode);
 						T->segment[seg_out++] = L[kseg];	/* Add the remaining segments to the end */
 					}
 					GMT_free (GMT, L);

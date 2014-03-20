@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 23
-#		$Id: example_23.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_23.sh 12743 2014-01-10 23:02:33Z pwessel $
 #
 # Purpose:	Plot distances from Rome and draw shortest paths
 # GMT progs:	grdmath, grdcontour, pscoast, psxy, pstext, grdtrack
@@ -16,7 +16,7 @@ name="Rome"
 
 # Calculate distances (km) to all points on a global 1x1 grid
 
-gmt grdmath -Rg -I1 $lon $lat SDIST 111.13 MUL = dist.nc
+gmt grdmath -Rg -I1 $lon $lat SDIST = dist.nc
 
 # Location info for 5 other cities + label justification
 

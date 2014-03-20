@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_solve.c 12229 2013-09-30 18:48:50Z pwessel $
+ *	$Id: x2sys_solve.c 12822 2014-01-31 23:39:56Z remko $
  *
- *      Copyright (c) 1999-2012 by P. Wessel
+ *      Copyright (c) 1999-2014 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify

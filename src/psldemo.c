@@ -1,4 +1,4 @@
-/* $Id: psldemo.c 12098 2013-09-02 12:36:44Z fwobbe $
+/* $Id: psldemo.c 12822 2014-01-31 23:39:56Z remko $
  *
  * psldemo.c: Test all PSL functions at least once
  */

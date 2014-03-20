@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77sniffer.c 12419 2013-10-31 22:00:31Z pwessel $
+ *	$Id: mgd77sniffer.c 12822 2014-01-31 23:39:56Z remko $
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2004-2012 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2004-2014 by P. Wessel and M. T. Chandler
  *	File:	mgd77sniffer.c
  *
  *	mgd77sniffer scans MGD77 files for errors in three ways: one, point-

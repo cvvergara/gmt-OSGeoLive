@@ -1,8 +1,8 @@
-/*	$Id: gshhg.h 11721 2013-06-17 04:40:51Z pwessel $
+/*	$Id: gshhg.h 12892 2014-02-13 20:29:14Z fwobbe $
  *
  * Include file defining structures used in gshhg.c
  *
- *	Copyright (c) 1996-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1996-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,7 @@
  *	15-APR-2012.  PW: Data version is now 2.2.1. [no change to format]
  *	1-JAN-2013.   PW: Data version is now 2.2.2. [no change to format]
  *	1-JUL-2013.   PW: Data version is now 2.2.3. [no change to format]
+ *	1-NOV-2013.   PW: Data version is now 2.2.4. [no change to format]
  */
 
 #ifndef _GSHHG
@@ -59,9 +60,6 @@
 #ifndef SEEK_CUR	/* For really ancient systems */
 #define SEEK_CUR 1
 #endif
-
-#define GSHHG_DATA_RELEASE	12		/* For v2.2.3 data set */
-#define GSHHG_PROG_VERSION	"1.16"
 
 #define GSHHG_MAXPOL	200000	/* Should never need to allocate more than this many polygons */
 #define GSHHG_SCL	1.0e-6	/* Convert micro-degrees to degrees */

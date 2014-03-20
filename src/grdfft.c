@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdfft.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: grdfft.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -798,7 +798,7 @@ int GMT_grdfft_parse (struct GMT_CTRL *GMT, struct GRDFFT_CTRL *Ctrl, struct F_I
 		return (GMT_PARSE_ERROR);	/* So that we exit the program */
 	}
 
-	if (GMT_compat_check (GMT, 4) && Ctrl->T.active) Ctrl->N.info->trend_mode = GMT_FFT_LEAVE_TREND;
+	if (GMT_compat_check (GMT, 4) && Ctrl->T.active) Ctrl->N.info->trend_mode = GMT_FFT_REMOVE_NOTHING;
 
 	n_errors += GMT_check_condition (GMT, !(Ctrl->n_op_count), "Syntax error: Must specify at least one operation\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->S.scale == 0.0, "Syntax error -S option: scale must be nonzero\n");
@@ -946,7 +946,7 @@ int GMT_grdfft (void *V_API, int mode, void *args)
 
 		if (GMT_FFT (API, Grid[0], GMT_FFT_INV, GMT_FFT_COMPLEX, K))
 			Return (EXIT_FAILURE);
-		grd_dump (GMT, Grid[0]->header, Grid[0]->data, false, "After Inv FFT");
+		grd_dump (Grid[0]->header, Grid[0]->data, false, "After Inv FFT");
 
 		if (!doubleAlmostEqual (Ctrl->S.scale, 1.0)) GMT_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, Ctrl->S.scale, 0);
 

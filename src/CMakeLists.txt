@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 12440 2013-11-04 14:31:37Z jluis $
+# $Id: CMakeLists.txt 12822 2014-01-31 23:39:56Z remko $
 #
-# Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -174,7 +174,7 @@ set (GMT_LIB_SRCS block_subs.h common_byteswap.h common_math.h
 	gmt_core_module.h gmt_nan.h gmt_notposix.h gmt_option.h gmt_pennames.h
 	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h gmt_stat.h
 	gmt_support.h gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
-	gmt_types.h gmt_unique.h gmt_vector.h gmt_version.h gshhg_version.h pslib.h
+	gmt_types.h gmt_unique.h gmt_version.h gshhg_version.h pslib.h
 	s_rint.h triangle.h gmt.h gmt_resources.h gmt_define.h gmt_private.h
 	gmt_error_codes.h gmt_api.c gmt_bcr.c gmt_calclock.c gmt_cdf.c gmt_compat.c
 	gmt_customio.c gmt_dcw.c gmt_error.c gmt_fft.c gmt_grdio.c gmt_io.c
@@ -315,8 +315,8 @@ set_target_properties (pslib
 	OUTPUT_NAME psl
 	PREFIX "${LIB_PREFIX}"
 	IMPORT_PREFIX "${LIB_PREFIX}"
-	VERSION ${GMT_PACKAGE_VERSION}
-	SOVERSION ${GMT_PACKAGE_VERSION_MAJOR}
+	VERSION ${GMT_LIB_VERSION}
+	SOVERSION ${GMT_LIB_SOVERSION}
 	INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
 	DEFINE_SYMBOL "LIBRARY_EXPORTS")
 
@@ -438,8 +438,8 @@ set_target_properties (gmtlib
 	OUTPUT_NAME gmt
 	PREFIX "${LIB_PREFIX}"
 	IMPORT_PREFIX "${LIB_PREFIX}"
-	VERSION ${GMT_PACKAGE_VERSION}
-	SOVERSION ${GMT_PACKAGE_VERSION_MAJOR}
+	VERSION ${GMT_LIB_VERSION}
+	SOVERSION ${GMT_LIB_SOVERSION}
 	INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
 	LINK_FLAGS "${USER_GMTLIB_LINK_FLAGS}"
 	DEFINE_SYMBOL "LIBRARY_EXPORTS")

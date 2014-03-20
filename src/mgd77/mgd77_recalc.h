@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77_recalc.h 10188 2012-05-30 00:52:15Z pwessel $
+ *	$Id: mgd77_recalc.h 12822 2014-01-31 23:39:56Z remko $
  *
- *    Copyright (c) 2004-2012 by P. Wessel
+ *    Copyright (c) 2004-2014 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* Here lies some defines and a structure of items that are used when we

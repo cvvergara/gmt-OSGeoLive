@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_init.h 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: gmt_init.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -86,7 +86,7 @@ EXTERN_MSC char * GMT_putparameter (struct GMT_CTRL *GMT, char *keyword);
 EXTERN_MSC void GMT_set_pad (struct GMT_CTRL *GMT, unsigned int npad);
 EXTERN_MSC int GMT_get_ellipsoid (struct GMT_CTRL *GMT, char *name);
 EXTERN_MSC int GMT_init_vector_param (struct GMT_CTRL *GMT, struct GMT_SYMBOL *S, bool set, bool outline, struct GMT_PEN *pen, bool do_fill, struct GMT_FILL *fill);
-EXTERN_MSC int GMT_parse_vector (struct GMT_CTRL *GMT, char *text, struct GMT_SYMBOL *S);
+EXTERN_MSC int GMT_parse_vector (struct GMT_CTRL *GMT, char symbol, char *text, struct GMT_SYMBOL *S);
 EXTERN_MSC bool GMT_check_region (struct GMT_CTRL *GMT, double wesn[]);
 EXTERN_MSC int GMT_pickdefaults (struct GMT_CTRL *GMT, bool lines, struct GMT_OPTION *options);
 EXTERN_MSC unsigned int GMT_setdefaults (struct GMT_CTRL *GMT, struct GMT_OPTION *options);
@@ -99,11 +99,6 @@ EXTERN_MSC int GMT_rectR_to_geoR (struct GMT_CTRL *GMT, char unit, double rect[]
 
 #ifdef WIN32
 EXTERN_MSC void GMT_setmode (struct GMT_CTRL *GMT, int direction);
-#endif
-
-#ifdef MIRONE
-EXTERN_MSC struct GMT_CTRL * GMT_short_begin (int argc, char **argv);
-EXTERN_MSC void GMT_end_for_mex (struct GMT_CTRL *GMT);
 #endif
 
 /* Inline functions */

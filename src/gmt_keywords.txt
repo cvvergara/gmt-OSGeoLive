@@ -1,4 +1,4 @@
-#	$Id: gmt_keywords.txt 12265 2013-10-04 23:03:21Z pwessel $
+#	$Id: gmt_keywords.txt 12822 2014-01-31 23:39:56Z remko $
 #
 # List of all GMT 5 defaults parameters.
 #

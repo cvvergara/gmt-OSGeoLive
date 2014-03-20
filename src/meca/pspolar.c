@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: pspolar.c 12407 2013-10-30 16:46:27Z pwessel $ 
+ *    $Id: pspolar.c 12822 2014-01-31 23:39:56Z remko $ 
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence

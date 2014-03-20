@@ -1,4 +1,5 @@
 #!/bin/bash
+#	$Id: gaps.sh 12479 2013-11-09 04:24:07Z pwessel $
 # Test gmt sample1d interpolation with NaNs
 
 makeps () {

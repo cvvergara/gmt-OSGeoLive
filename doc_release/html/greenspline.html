@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>greenspline &mdash; GMT 5.1.0 documentation</title>
+    <title>greenspline &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grd2cpt" href="grd2cpt.html" />
     <link rel="prev" title="GR" href="GR.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -85,7 +84,7 @@
 [ <strong>-I</strong><em>xinc</em>[/<em>yinc</em>[/<em>zinc</em>]] ] [ <strong>-L</strong> ] [ <strong>-N</strong><em>nodefile</em> ]
 [ <strong>-Q</strong><em>az</em>|<em>x/y/z</em> ]
 [ <strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>] ]
-[ <strong>-S</strong><strong>c|l|t|g|p|q</strong>[<em>pars</em>] ] [ <strong>-T</strong><em>maskgrid</em> ]
+[ <strong>-S</strong><strong>c|t|l|r|p|q</strong>[<em>pars</em>] ] [ <strong>-T</strong><em>maskgrid</em> ]
 [ <strong>-V</strong>[<em>level</em>] ]
 [ <strong>-W</strong> ]
 [ <strong>-b</strong>[<strong>i</strong>|<strong>o</strong>][<em>ncol</em>][<strong>type</strong>][w][<strong>+L</strong>|<strong>+B</strong>] ]
@@ -226,7 +225,7 @@ longitude respectively, with -90/+90 in latitude).</p>
 coordinates are geographical; note the shorthands <strong>-Rg</strong> and
 <strong>-Rd</strong> cannot be used if a 3-D domain is specified.</p>
 </dd>
-<dt><strong>-S</strong><strong>c|l|t|g|p|q</strong>[<em>pars</em>]</dt>
+<dt><strong>-S</strong><strong>c|t|l|r|p|q</strong>[<em>pars</em>]</dt>
 <dd>Select one of six different splines. The first two are used for
 1-D, 2-D, or 3-D Cartesian splines (see <strong>-D</strong> for discussion). Note
 that all tension values are expected to be normalized tension in the
@@ -292,10 +291,10 @@ columns (<strong>x</strong>,<em>w</em>); the number depends on the chosen dimens
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -311,15 +310,17 @@ options, then exits.</dd>
 and stored in 1D.txt, requesting output every 0.1 step from 0 to 10, and
 using a minimum cubic spline, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtmath -T0/10/1 0 1 NRAND = 1D.txt
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtmath -T0/10/1 0 1 NRAND = 1D.txt
 gmt psxy -R0/10/-5/5 -JX6i/3i -B2f1/1 -Sc0.1 -Gblack 1D.txt -K &gt; 1D.ps
-gmt greenspline 1D.txt -R0/10 -I0.1 -Sc -V | psxy -R -J -O -Wthin &gt;&gt; 1D.ps</pre>
+gmt greenspline 1D.txt -R0/10 -I0.1 -Sc -V | psxy -R -J -O -Wthin &gt;&gt; 1D.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To apply a spline in tension instead, using a tension of 0.7, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt psxy -R0/10/-5/5 -JX6i/3i -B2f1/1 -Sc0.1 -Gblack 1D.txt -K &gt; 1Dt.ps
-gmt greenspline 1D.txt -R0/10 -I0.1 -St0.7 -V | psxy -R -J -O -Wthin &gt;&gt; 1Dt.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psxy -R0/10/-5/5 -JX6i/3i -B2f1/1 -Sc0.1 -Gblack 1D.txt -K &gt; 1Dt.ps
+gmt greenspline 1D.txt -R0/10 -I0.1 -St0.7 -V | psxy -R -J -O -Wthin &gt;&gt; 1Dt.ps
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -329,21 +330,24 @@ gmt greenspline 1D.txt -R0/10 -I0.1 -St0.7 -V | psxy -R -J -O -Wthin &gt;&gt; 1D
 Cartesian data set from Davis (1986) that is used in the GMT Technical
 Reference and Cookbook example 16, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt greenspline table_5.11 -R0/6.5/-0.2/6.5 -I0.1 -Sc -V -D1 -GS1987.nc
+<div><div class="highlight-python"><div class="highlight"><pre>gmt greenspline table_5.11 -R0/6.5/-0.2/6.5 -I0.1 -Sc -V -D1 -GS1987.nc
 gmt psxy -R0/6.5/-0.2/6.5 -JX6i -B2f1 -Sc0.1 -Gblack table_5.11 -K &gt; 2D.ps
-gmt grdcontour -JX6i -B2f1 -O -C25 -A50 S1987.nc &gt;&gt; 2D.ps</pre>
+gmt grdcontour -JX6i -B2f1 -O -C25 -A50 S1987.nc &gt;&gt; 2D.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To use Cartesian splines in tension but only evaluate the solution where
 the input mask grid is not NaN, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt greenspline table_5.11 -Tmask.nc -St0.5 -V -D1 -GWB1998.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt greenspline table_5.11 -Tmask.nc -St0.5 -V -D1 -GWB1998.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>To use Cartesian generalized splines in tension and return the magnitude
 of the surface slope in the NW direction, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt greenspline table_5.11 -R0/6.5/-0.2/6.5 -I0.1 -Sr0.95 -V -D1 -Q-45 -Gslopes.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt greenspline table_5.11 -R0/6.5/-0.2/6.5 -I0.1 -Sr0.95 -V -D1 -Q-45 -Gslopes.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>Finally, to use Cartesian minimum curvature splines in recovering a
@@ -351,7 +355,8 @@ surface where the input data is a single surface value (pt.d) and the
 remaining constraints specify only the surface slope and direction
 (slopes.d), use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt greenspline pt.d -R-3.2/3.2/-3.2/3.2 -I0.1 -Sc -V -D1 -A1,slopes.d -Gslopes.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt greenspline pt.d -R-3.2/3.2/-3.2/3.2 -I0.1 -Sc -V -D1 -A1,slopes.d -Gslopes.nc
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -361,7 +366,8 @@ remaining constraints specify only the surface slope and direction
 table_5.23 in Davis (1986) that contains <em>x</em>,<em>y</em>,<em>z</em> locations and
 a measure of uranium oxide concentrations (in percent), try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt greenspline table_5.23 -R5/40/-5/10/5/16 -I0.25 -Sr0.85 -V -D5 -G3D_UO2.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt greenspline table_5.23 -R5/40/-5/10/5/16 -I0.25 -Sr0.85 -V -D5 -G3D_UO2.txt
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -370,12 +376,14 @@ a measure of uranium oxide concentrations (in percent), try</p>
 <p>To recreate Parker’s [1994] example on a global 1x1 degree grid,
 assuming the data are in file mag_obs_1990.d, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>greenspline -V -Rg -Sp -D3 -I1 -GP1994.nc mag_obs_1990.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>greenspline -V -Rg -Sp -D3 -I1 -GP1994.nc mag_obs_1990.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To do the same problem but applying tension of 0.85, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>greenspline -V -Rg -Sq0.85 -D3 -I1 -GWB2008.nc mag_obs_1990.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>greenspline -V -Rg -Sq0.85 -D3 -I1 -GWB2008.nc mag_obs_1990.d
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -482,6 +490,11 @@ Int</em>, <strong>174</strong>, 21-28.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grd2cpt.html"
                         title="next chapter">grd2cpt</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/greenspline.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -500,7 +513,7 @@ Int</em>, <strong>174</strong>, 21-28.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -518,9 +531,9 @@ Int</em>, <strong>174</strong>, 21-28.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

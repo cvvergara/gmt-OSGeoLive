@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtmath.c 12380 2013-10-23 19:20:13Z pwessel $
+ *	$Id: gmtmath.c 12896 2014-02-16 06:54:43Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -136,7 +136,7 @@ struct GMTMATH_STACK {
 	struct GMT_DATASET *D;		/* The dataset */
 	bool constant;			/* true if a constant (see factor) and S == NULL */
 	double factor;			/* The value if constant is true */
-	unsigned int alloc_mode;	/* 0 is not allocated, 1 is allocated in this program, 2 = allocated elsewhere */
+	unsigned int alloc_mode;	/* 0 is not allocated yet, 1 is allocated locally in this program, 2 = allocated via API */
 };
 
 struct GMTMATH_STORED {
@@ -2485,7 +2485,7 @@ void table_PQUANT (struct GMT_CTRL *GMT, struct GMTMATH_INFO *info, struct GMTMA
 	uint64_t s, row, k;
 	unsigned int prev = last - 1;
 	double p, *z = NULL;
-	struct GMT_DATATABLE *T = (S[last]->constant) ? NULL : S[last]->D->table[0], *T_prev = S[prev]->D->table[0];
+	struct GMT_DATATABLE *T_prev = S[prev]->D->table[0];
 
 	/* last holds the selected quantile (0-100), prev the data % */
 	if (!S[last]->constant) {
@@ -2512,7 +2512,7 @@ void table_PQUANT (struct GMT_CTRL *GMT, struct GMTMATH_INFO *info, struct GMTMA
 			for (row = 0; row < info->T->segment[s]->n_rows; row++) T_prev->segment[s]->coord[col][row] = p;
 		}
 		else {	/* Just accumulate the total table */
-			GMT_memcpy (&z[k], T->segment[s]->coord[col], info->T->segment[s]->n_rows, double);
+			GMT_memcpy (&z[k], T_prev->segment[s]->coord[col], info->T->segment[s]->n_rows, double);
 			k += info->T->segment[s]->n_rows;
 		}
 	}
@@ -3241,12 +3241,30 @@ void table_ROOTS (struct GMT_CTRL *GMT, struct GMTMATH_INFO *info, struct GMTMAT
 
 #include "gmtmath.h"
 
-#define Free_Stack { for (i = 0; i < GMTMATH_STACK_SIZE; i++) { if (stack[i]->alloc_mode == 2) GMT_Destroy_Data (API, &stack[i]->D); else if (stack[i]->alloc_mode == 1) GMT_free_dataset (GMT, &stack[i]->D); GMT_free (GMT, stack[i]); } }
-#define Free_Store { for (i = 0; i < GMTMATH_STORE_SIZE; i++) { if (recall[i] && !recall[i]->stored.constant) { GMT_free_dataset (GMT, &recall[i]->stored.D); GMT_free (GMT, recall[i]); } } }
+void Free_Stack (struct GMTAPI_CTRL *API, struct GMTMATH_STACK **stack)
+{	unsigned int i;
+	for (i = 0; i < GMTMATH_STACK_SIZE; i++) {
+		if (stack[i]->alloc_mode == 2)
+			GMT_Destroy_Data (API, &stack[i]->D);
+		else if (stack[i]->alloc_mode == 1)
+			GMT_free_dataset (API->GMT, &stack[i]->D); GMT_free (API->GMT, stack[i]);
+	}
+}
+
+void Free_Store (struct GMTAPI_CTRL *API, struct GMTMATH_STORED **recall)
+{	unsigned int i;
+	for (i = 0; i < GMTMATH_STORE_SIZE; i++) {
+		if (recall[i] && !recall[i]->stored.constant) {
+			GMT_free_dataset (API->GMT, &recall[i]->stored.D);
+			GMT_free (API->GMT, recall[i]);
+		}
+	}
+}
+
 #define Free_Misc {if (T_in) GMT_Destroy_Data (API, &T_in); GMT_Destroy_Data (API, &Template); GMT_Destroy_Data (API, &Time); if (read_stdin) GMT_Destroy_Data (API, &D_stdin); }
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
 #define Return1(code) {GMT_Destroy_Options (API, &list); Free_gmtmath_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code); }
-#define Return(code) {GMT_Destroy_Options (API, &list); Free_gmtmath_Ctrl (GMT, Ctrl); Free_Stack; Free_Store; Free_Misc;  GMT_end_module (GMT, GMT_cpy); bailout (code); }
+#define Return(code) {GMT_Destroy_Options (API, &list); Free_gmtmath_Ctrl (GMT, Ctrl); Free_Stack(API,stack); Free_Store(API,recall); Free_Misc;  GMT_end_module (GMT, GMT_cpy); bailout (code); }
 
 int decode_gmt_argument (struct GMT_CTRL *GMT, char *txt, double *value, struct GMT_HASH *H) {
 	unsigned int expect;
@@ -3526,13 +3544,13 @@ int GMT_gmtmath (void *V_API, int mode, void *args)
 		free_time = true;
 		info.T = Time->table[0];	D = D_in->table[0];
 		for (seg = 0, done = false; seg < D->n_segments; seg++) {
-			GMT_memcpy (info.T->segment[seg]->coord[0], D->segment[seg]->coord[use_t_col], D->segment[seg]->n_rows, double);
+			GMT_memcpy (info.T->segment[seg]->coord[COL_T], D->segment[seg]->coord[use_t_col], D->segment[seg]->n_rows, double);
 			if (!done) {
-				for (row = 1; row < info.T->segment[seg]->n_rows && (GMT_is_dnan (info.T->segment[seg]->coord[0][row-1]) || GMT_is_dnan (info.T->segment[seg]->coord[0][row])); row++);	/* Find the first real two records in a row */
-				Ctrl->T.inc = (row == info.T->segment[seg]->n_rows) ? GMT->session.d_NaN : info.T->segment[seg]->coord[0][row] - info.T->segment[seg]->coord[0][row-1];
+				for (row = 1; row < info.T->segment[seg]->n_rows && (GMT_is_dnan (info.T->segment[seg]->coord[COL_T][row-1]) || GMT_is_dnan (info.T->segment[seg]->coord[COL_T][row])); row++);	/* Find the first real two records in a row */
+				Ctrl->T.inc = (row == info.T->segment[seg]->n_rows) ? GMT->session.d_NaN : info.T->segment[seg]->coord[COL_T][row] - info.T->segment[seg]->coord[COL_T][row-1];
 				t_noise = fabs (GMT_SMALL * Ctrl->T.inc);
 			}
-			for (row = 1; row < info.T->segment[seg]->n_rows && !info.irregular; row++) if (fabs (fabs (info.T->segment[seg]->coord[0][row] - info.T->segment[seg]->coord[0][row-1]) - fabs (Ctrl->T.inc)) > t_noise) info.irregular = true;
+			for (row = 1; row < info.T->segment[seg]->n_rows && !info.irregular; row++) if (fabs (fabs (info.T->segment[seg]->coord[COL_T][row] - info.T->segment[seg]->coord[COL_T][row-1]) - fabs (Ctrl->T.inc)) > t_noise) info.irregular = true;
 		}
 		if (!read_stdin && GMT_Destroy_Data (API, &D_in) != GMT_OK) {
 			Return (API->error);
@@ -3542,15 +3560,15 @@ int GMT_gmtmath (void *V_API, int mode, void *args)
 		dim[GMT_COL] = 2;	dim[GMT_ROW] = n_rows;
 		if ((Time = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (GMT_MEMORY_ERROR);
 		info.T = Time->table[0];
-		for (row = 0; row < info.T->segment[0]->n_rows; row++) info.T->segment[0]->coord[0][row] = (row == (info.T->segment[0]->n_rows-1)) ? Ctrl->T.max: Ctrl->T.min + row * Ctrl->T.inc;
+		for (row = 0; row < info.T->segment[0]->n_rows; row++) info.T->segment[0]->coord[COL_T][row] = (row == (info.T->segment[0]->n_rows-1)) ? Ctrl->T.max: Ctrl->T.min + row * Ctrl->T.inc;
 		t_noise = fabs (GMT_SMALL * Ctrl->T.inc);
 	}
 
 	for (seg = n_records = 0; seg < info.T->n_segments; seg++) {	/* Create normalized times and possibly reverse time (-I) */
-		off = 0.5 * (info.T->segment[seg]->coord[0][info.T->segment[seg]->n_rows-1] + info.T->segment[seg]->coord[0][0]);
-		scale = 2.0 / (info.T->segment[seg]->coord[0][info.T->segment[seg]->n_rows-1] - info.T->segment[seg]->coord[0][0]);
-		if (Ctrl->I.active) for (row = 0; row < info.T->segment[seg]->n_rows/2; row++) double_swap (info.T->segment[seg]->coord[0][row], info.T->segment[seg]->coord[0][info.T->segment[seg]->n_rows-1-row]);	/* Reverse time-series */
-		for (row = 0; row < info.T->segment[seg]->n_rows; row++) info.T->segment[seg]->coord[1][row] = (info.T->segment[seg]->coord[0][row] - off) * scale;
+		off = 0.5 * (info.T->segment[seg]->coord[COL_T][info.T->segment[seg]->n_rows-1] + info.T->segment[seg]->coord[COL_T][0]);
+		scale = 2.0 / (info.T->segment[seg]->coord[COL_T][info.T->segment[seg]->n_rows-1] - info.T->segment[seg]->coord[COL_T][0]);
+		if (Ctrl->I.active) for (row = 0; row < info.T->segment[seg]->n_rows/2; row++) double_swap (info.T->segment[seg]->coord[COL_T][row], info.T->segment[seg]->coord[COL_T][info.T->segment[seg]->n_rows-1-row]);	/* Reverse time-series */
+		for (row = 0; row < info.T->segment[seg]->n_rows; row++) info.T->segment[seg]->coord[COL_TN][row] = (info.T->segment[seg]->coord[COL_T][row] - off) * scale;
 		n_records += info.T->segment[seg]->n_rows;
 	}
 	info.t_min = Ctrl->T.min;	info.t_max = Ctrl->T.max;	info.t_inc = Ctrl->T.inc;
@@ -3633,7 +3651,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args)
 					if (!stack[last]->constant) for (j = 0; j < n_columns; j++) load_column (recall[k]->stored.D, j, stack[last]->D->table[0], j);
 					GMT_Report (API, GMT_MSG_DEBUG, "Stored memory cell %d named %s is overwritten with new information\n", k, label);
 				}
-				else {	/* Need new named storage place */
+				else {	/* Need new named storage place; use GMT_duplicate_dataset/GMT_free_dataset since no point adding to registered resources since internal use only */
 					k = n_stored;
 					recall[k] = GMT_memory (GMT, NULL, 1, struct GMTMATH_STORED);
 					recall[k]->label = strdup (label);
@@ -3857,6 +3875,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args)
 			uint64_t nr, c;
 			struct GMT_DATASET *N = NULL;
 			nr = (Ctrl->S.active) ? 1 : 0;
+			if ((N = GMT_Create_Data (GMT->parent, GMT_IS_DATASET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) return (GMT->parent->error);
 			N = GMT_alloc_dataset (GMT, R, nr, n_columns, GMT_ALLOC_NORMAL);
 			for (seg = 0; seg < R->table[0]->n_segments; seg++) {
 				for (r = 0; r < N->table[0]->segment[seg]->n_rows; r++) {
@@ -3868,12 +3887,9 @@ int GMT_gmtmath (void *V_API, int mode, void *args)
 			if (GMT_Write_Data (API, GMT_IS_DATASET, (Ctrl->Out.file ? GMT_IS_FILE : GMT_IS_STREAM), GMT_IS_NONE, N->io_mode, NULL, Ctrl->Out.file, N) != GMT_OK) {
 				Return (API->error);
 			}
-			if (GMT_Destroy_Data (API, &N) != GMT_OK) {
-				Return (API->error);
-			}
+			GMT_free_dataset (API->GMT, &N);
 		}
 		else {	/* Write the whole enchilada */
-			if (R != Template) stack[0]->alloc_mode = 2;	/* Since GMT_Write_Data will register it */
 			GMT_Set_Comment (API, GMT_IS_DATASET, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, R);
 			if (GMT_Write_Data (API, GMT_IS_DATASET, (Ctrl->Out.file ? GMT_IS_FILE : GMT_IS_STREAM), GMT_IS_NONE, R->io_mode, NULL, Ctrl->Out.file, R) != GMT_OK) {
 				Return (API->error);

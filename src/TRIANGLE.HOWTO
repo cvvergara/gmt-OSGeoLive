@@ -1,4 +1,4 @@
-	$Id: TRIANGLE.HOWTO 10084 2012-05-12 21:04:53Z fwobbe $
+	$Id: TRIANGLE.HOWTO 12822 2014-01-31 23:39:56Z remko $
 
 GMT contains two programs (triangulate and pscontour) that
 directly or indirectly will do a Delaunay optimal triangulation

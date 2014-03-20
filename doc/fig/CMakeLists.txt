@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 11984 2013-07-31 22:01:48Z fwobbe $
+# $Id: CMakeLists.txt 12822 2014-01-31 23:39:56Z remko $
 #
-# Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -18,13 +18,14 @@
 
 # Figure files
 set (_fig_fig GMT4_mode.png GMT5_Summit_2011.jpg GMT5_mode.png
-	GMT_Environment.pdf gimp-panel.png gimp-sliders.png hsv-cone.png
+	GMT_Environment.pdf gimp-sliders+panel.png hsv-cone.png
 	formatpicture.png formatting.png highres.png
 	noantialias.png rendering.png withantialias.png)
 
 # Copy figures without converting
 set (_fig_fig_out)
 foreach (_fig ${_fig_fig})
+	FILE(MAKE_DIRECTORY ${RST_BINARY_DIR}/_images)
 	add_custom_command (OUTPUT ${RST_BINARY_DIR}/_images/${_fig}
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${CMAKE_CURRENT_SOURCE_DIR}/${_fig} ${RST_BINARY_DIR}/_images/${_fig}

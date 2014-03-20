@@ -3,7 +3,7 @@
 # NB Octal codes used for accented characters require
 # ISOLatin1+ CHAR_ENCODING (see gmtdefaults)
 #
-#	$Id: sg.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: sg.d 12807 2014-01-30 10:31:56Z remko $
 #----------------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Faoilleach	Fao	F

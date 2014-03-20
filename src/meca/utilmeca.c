@@ -1,4 +1,4 @@
-/*	$Id: utilmeca.c 12022 2013-08-04 10:29:09Z fwobbe $
+/*	$Id: utilmeca.c 12822 2014-01-31 23:39:56Z remko $
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence
  *    See README file for copying and redistribution conditions.

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error.h 12079 2013-08-27 16:47:52Z fwobbe $
+ *	$Id: gmt_error.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ EXTERN_MSC const char* g_error_string[];
 
 enum Gmt_error_code {
 	GMT_NOERROR_UNUSED=0,	/* The real GMT_NOERROR is declared in gmt_resources.h and is part of API */
+	GMT_GRDIO_NONUNIQUE_FORMAT,
 	GMT_GRDIO_UNKNOWN_FORMAT,
 	GMT_GRDIO_UNKNOWN_TYPE,
 	GMT_GRDIO_UNKNOWN_ID,

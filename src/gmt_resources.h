@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_resources.h 12307 2013-10-09 20:23:10Z jluis $
+ *	$Id: gmt_resources.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013
+ *	Copyright (c) 1991-2014
  *	P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
@@ -138,8 +138,8 @@ enum GMT_enum_header {
 	GMT_HEADER_ON};			/* Enable header blocks out as default */
 
 enum GMT_enum_dest {
-	GMT_WRITE_OGR = -1,		/* Output OGR/GMT format [Requires proper -a setting] */
-	GMT_WRITE_SET,			/* Write all output tables and all their segments to one destination [Default] */
+	GMT_WRITE_SET = 0,		/* Write all output tables and all their segments to one destination [Default] */
+	GMT_WRITE_OGR,			/* Output OGR/GMT format [Requires proper -a setting] */
 	GMT_WRITE_TABLE,		/* Write each output table and all their segments to separate destinations */
 	GMT_WRITE_SEGMENT,		/* Write all output tables' segments to separate destinations */
 	GMT_WRITE_TABLE_SEGMENT};	/* Same as 2 but if no filenames we use both tbl and seg with format */
@@ -148,15 +148,15 @@ enum GMT_enum_alloc {
 	GMT_ALLOCATED_EXTERNALLY = 0,	/* Allocated outside of GMT: We cannot reallocate or free this memory */
 	GMT_ALLOCATED_BY_GMT = 1};	/* Allocated by GMT: We may reallocate as needed and free when no longer needed */
 
-enum GMT_enum_shape {
-	GMT_ALLOC_NORMAL = 0,		/* Normal allocation of new dataset based on shape of input dataset */
-	GMT_ALLOC_VERTICAL,		/* Allocate a single table for data set to hold all input tables by vertical concatenation */
-	GMT_ALLOC_HORIZONTAL};		/* Alocate a single table for data set to hold all input tables by horizontal (paste) concatenations */
-
 enum GMT_enum_duplicate {
 	GMT_DUPLICATE_NONE = 0,		/* Duplicate data set structure but no allocate&copy of data records|grid|image */
 	GMT_DUPLICATE_ALLOC,		/* Duplicate data set structure and allocate space for data records|grid|image, but no copy */
 	GMT_DUPLICATE_DATA};		/* Duplicate data set structure, allocate space for data records|grid|image, and copy */
+
+enum GMT_enum_shape {
+	GMT_ALLOC_NORMAL = 0,		/* Normal allocation of new dataset based on shape of input dataset */
+	GMT_ALLOC_VERTICAL = 4,		/* Allocate a single table for data set to hold all input tables by vertical concatenation */
+	GMT_ALLOC_HORIZONTAL = 8};	/* Alocate a single table for data set to hold all input tables by horizontal (paste) concatenations */
 
 enum GMT_enum_out {
 	GMT_WRITE_NORMAL = 0,		/* Write header and contents of this entity (table or segment) */
@@ -178,12 +178,13 @@ enum GMT_time_mode {
 	GMT_TIME_RESET   = 4U};		/* Reset time mark */
 
 /* Verbosity levels */
-enum GMT_enum_verbose {GMT_MSG_QUIET = 0,	/* No messages whatsoever */
-	GMT_MSG_NORMAL,			/* Default output, e.g., warnings and errors only */
-	GMT_MSG_COMPAT,			/* Compatibility warnings */
-	GMT_MSG_VERBOSE,		/* Verbose level */
-	GMT_MSG_LONG_VERBOSE,		/* Longer verbose */
-	GMT_MSG_DEBUG};			/* Debug messages for developers mostly */
+enum GMT_enum_verbose {GMT_MSG_QUIET = 0,  /* No messages whatsoever */
+	GMT_MSG_NORMAL,                        /* Default output, e.g., warnings and errors only */
+	GMT_MSG_TICTOC,                        /* To print a tic-toc elapsed time message */
+	GMT_MSG_COMPAT,                        /* Compatibility warnings */
+	GMT_MSG_VERBOSE,                       /* Verbose level */
+	GMT_MSG_LONG_VERBOSE,                  /* Longer verbose */
+	GMT_MSG_DEBUG};                        /* Debug messages for developers mostly */
 
 /*============================================================ */
 /*===============+ GMT_GRID Public Declaration =============== */
@@ -217,7 +218,7 @@ enum GMT_enum_gridio {
 	GMT_GRID_DATA_ONLY		= 2U,	/* Read|write the grid array given w/e/s/n set in the header */
 	GMT_GRID_IS_COMPLEX_REAL	= 4U,	/* Read|write the real component to/from a complex grid */
 	GMT_GRID_IS_COMPLEX_IMAG	= 8U,	/* Read|write the imaginary component to/from a complex grid */
-	GMT_GRID_IS_COMPLEX_MASK	= 12U,	/* To mask out the rea|imag flags */
+	GMT_GRID_IS_COMPLEX_MASK	= 12U,	/* To mask out the real|imag flags */
 	GMT_GRID_NO_HEADER		= 16U,	/* Write a native grid without the leading grid header */
 	GMT_GRID_ROW_BY_ROW		= 32U,	/* Read|write the grid array one row at the time sequentially */
 	GMT_GRID_ROW_BY_ROW_MANUAL	= 64U};	/* Read|write the grid array one row at the time in any order */
@@ -275,6 +276,7 @@ struct GMT_GRID_HEADER {
 	size_t nm;                       /* Number of data items in this grid (nx * ny) [padding is excluded] */
 	size_t size;                     /* Actual number of items (not bytes) required to hold this grid (= mx * my) */
 	size_t n_alloc;                  /* Bytes allcoated for this grid */
+	unsigned int trendmode;          /* Holds status for detrending of grids.  0 if not detrended, 1 if mean, 2 if mid-value, and 3 if LS plane removed */
 	unsigned int arrangement;        /* Holds status for complex grid as how the read/imag is placed in the grid (interleaved, R only, etc.) */
 	unsigned int n_bands;            /* Number of bands [1]. Used with IMAGE containers and macros to get ij index from row,col, band */
 	unsigned int pad[4];             /* Padding on west, east, south, north sides [2,2,2,2] */
@@ -459,6 +461,7 @@ struct GMT_DATASET {	/* Single container for an array of GMT tables (files) */
 /* ---- Variables "hidden" from the API ---- */
 	uint64_t id;			/* The internal number of the data set */
 	size_t n_alloc;			/* The current allocation length of tables */
+	uint64_t dim[4];		/* Only used by GMT_Duplicate_Data to override dimensions */
 	unsigned int geometry;		/* The geometry of this dataset */
 	unsigned int alloc_level;	/* The level it was allocated at */
 	enum GMT_enum_dest io_mode;	/* -1 means write OGR format (requires proper -a),

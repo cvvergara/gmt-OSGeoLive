@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dcw.c 12423 2013-11-01 04:22:53Z pwessel $
+ *	$Id: gmt_dcw.c 12849 2014-02-04 00:18:26Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -469,7 +469,7 @@ struct GMT_DATASET * GMT_DCW_operation (struct GMT_CTRL *GMT, struct GMT_DCW_SEL
 		GMT_free (GMT, lon);
 		GMT_free (GMT, lat);
 		P->coord[GMT_X] = P->coord[GMT_Y] = NULL;
-		GMT_free_segment (GMT, P);
+		GMT_free_segment (GMT, &P, GMT_ALLOCATED_BY_GMT);
 	}
 	return (D);
 }
@@ -521,7 +521,7 @@ void GMT_DCW_option (struct GMTAPI_CTRL *API, char option, unsigned int plot)
 	GMT_Message (API, GMT_TIME_NONE, "\t     for a region in these multiples [none].  Use +R to extend region by increments instead [0].\n");
 	if (plot == 1) {
 		GMT_Message (API, GMT_TIME_NONE, "\t   Append +p<pen> to draw outline [none] and +g<fill> to fill [none].\n");
-		GMT_Message (API, GMT_TIME_NONE, "\t   One of +p|g must be specified unless -M is in effect to plot or get data.\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t   One of +p|g must be specified to plot; if -M is in effect we just get the data.\n");
 		GMT_Message (API, GMT_TIME_NONE, "\t   If modifier +r or +R is given and no -J or -M is set we just print the -Rstring.\n");
 	}
 }

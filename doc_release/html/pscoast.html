@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pscoast &mdash; GMT 5.1.0 documentation</title>
+    <title>pscoast &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pscontour" href="pscontour.html" />
     <link rel="prev" title="psclip" href="psclip.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -81,7 +80,7 @@
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
 <p><strong>pscoast</strong> <strong>-J</strong><em>parameters</em>
 <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>]
-[ <strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>] ]
+[ <strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+as</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>] ]
 [ <strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> ]
 [ <strong>-C</strong>[<strong>l</strong>|<strong>r</strong>/]<em>fill</em> ]
 [ <strong>-D</strong><em>resolution</em>[<strong>+</strong>] ]
@@ -152,15 +151,13 @@ plotted, with no third dimension.  </dd>
 <div class="section" id="optional-arguments">
 <h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+ag</strong>|<strong>i</strong>|<strong>s</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>]</dt>
+<dt><strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+as</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>+p</strong><em>percent</em>]</dt>
 <dd>Features with an area smaller than <em>min_area</em> in km^2 or of
 hierarchical level that is lower than <em>min_level</em> or higher than
 <em>max_level</em> will not be plotted [Default is 0/0/4 (all features)].
 Level 2 (lakes) contains regular lakes and wide river bodies which
 we normally include as lakes; append <strong>+r</strong> to just get river-lakes
-or <strong>+l</strong> to just get regular lakes. By default we select the grounding
-line as coastline for Antarctica; append <strong>ai</strong> to instead select the
-hydrostatic (ic) line.  For expert users who wish to
+or <strong>+l</strong> to just get regular lakes. For expert users who wish to
 print their own Antarctica coastline and islands via <cite>psxy</cite> you can
 use <strong>+as</strong> to skip all GSHHG features below 60S.  Finally, append
 <strong>+p</strong><em>percent</em> to exclude polygons whose percentage area of the
@@ -173,13 +170,13 @@ GSHHG INFORMATION below for more details.  </dd>
 <dt><strong>-C</strong>[<strong>l</strong>|<strong>r</strong>/]<em>fill</em></dt>
 <dd>Set the shade, color, or pattern for lakes and river-lakes [Default
 is the fill chosen for &#8220;wet&#8221; areas (<strong>-S</strong>)]. Optionally, specify
-separate fills by prepending <strong>l</strong>/ for lakes and <strong>r</strong>/ for
+separate fills by prepending <strong>l/</strong> for lakes and <strong>r/</strong> for
 river-lakes, repeating the <strong>-C</strong> option as needed.</dd>
 <dt><strong>-D</strong><em>resolution</em>[<strong>+</strong>]</dt>
 <dd>Selects the resolution of the data set to use ((<strong>f</strong>)ull,
 (<strong>h</strong>)igh, (<strong>i</strong>)ntermediate, (<strong>l</strong>)ow, and (<strong>c</strong>)rude). The
 resolution drops off by 80% between data sets [Default is <strong>l</strong>].
-Append )+) to automatically select a lower resolution should the one
+Append <strong>+</strong> to automatically select a lower resolution should the one
 requested not be available [abort if not found].</dd>
 <dt><strong>-F</strong><em>code1,code2,...</em>[<strong>+l</strong>|<strong>L</strong>][<strong>+g</strong><em>fill</em>][<strong>+p</strong><em>pen</em>][<strong>+r</strong>|<strong>R</strong>[<em>incs</em>]]</dt>
 <dd>Select painting or dumping country polygons from the Digital Chart of the World.
@@ -239,7 +236,7 @@ often as necessary.</p>
 <dd>Do not finalize the PostScript plot.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-L</strong>[<strong>f</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>[/<em>slon</em>]/<em>slat</em>/<em>length</em>[<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>M</strong>|<strong>n</strong>|<strong>u</strong>][<strong>+l</strong><em>label</em>][<strong>+j</strong><em>just</em>][<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>][<strong>+u</strong>] ]</dt>
+<dt><strong>-L</strong>[<strong>f</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>[/<em>slon</em>]/<em>slat</em>/<em>length</em>[<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>M</strong>|<strong>n</strong>|<strong>u</strong>][<strong>+l</strong><em>label</em>][<strong>+j</strong><em>just</em>][<strong>+p</strong><em>pen</em>][<strong>+g</strong><em>fill</em>][<strong>+u</strong>]</dt>
 <dd>Draws a simple map scale centered on <em>lon0/lat0</em>. Use <strong>-Lx</strong> to
 specify x/y position instead. Scale is calculated at latitude <em>slat</em>
 (optionally supply longitude <em>slon</em> for oblique projections [Default
@@ -253,11 +250,14 @@ top of the scale [t]. Change this by giving your own label (append
 <strong>+j</strong><em>justification</em> (choose among l(eft), r(ight), t(op), and b(ottom)). Apply
 <strong>+u</strong> to append the unit to all distance annotations along the
 scale. If you want to place a rectangle behind the scale, specify
-suitable <strong>+p</strong><em>pen</em> and/or <strong>+g</strong><em>fill</em> parameters.</dd>
+suitable <strong>+p</strong><em>pen</em> and/or <strong>+g</strong><em>fill</em> parameters. Note:
+Use <a class="reference internal" href="gmt.conf.html#font-label"><em>FONT_LABEL</em></a> to change the label font and <a class="reference internal" href="gmt.conf.html#font-annot-primary"><em>FONT_ANNOT_PRIMARY</em></a>
+to change the annotation font.  The height of the map scale is controlled
+by <a class="reference internal" href="gmt.conf.html#map-scale-height"><em>MAP_SCALE_HEIGHT</em></a>.</dd>
 <dt><strong>-M</strong></dt>
 <dd>Dumps a single multisegment ASCII (or binary, see
 <strong>-bo</strong>) file to standard output. No plotting
-occurs. Specify any combination of <strong>-F</strong>, <strong>-W</strong>, <strong>-I</strong>, <strong>-N</strong>.
+occurs. Specify one of <strong>-F</strong>, <strong>-I</strong>, <strong>-N</strong> or <strong>-W</strong>.
 Note: if <strong>-M</strong> is used with <strong>-F</strong> then <strong>-R</strong> or the <strong>+r</strong> modifier
 to <strong>-F</strong> are not required as we automatically determine the region
 given the selected geographic entities.</dd>
@@ -353,10 +353,10 @@ listed will not be drawn [Default draws all levels; but see <strong>-A</strong>]
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -373,23 +373,26 @@ permanent major rivers in thick blue pen, additional major rivers in
 thin blue pen, and national borders as dashed lines on a Mercator map at
 scale 0.1 inch/degree, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pscoast -R-30/30/-40/40 -Jm0.1i -B5 -I1/1p,blue -N1/0.25p,- \
-            -I2/0.25p,blue -W0.25p,white -Ggreen -Sblue -P &gt; africa.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscoast -R-30/30/-40/40 -Jm0.1i -B5 -I1/1p,blue -N1/0.25p,- \
+            -I2/0.25p,blue -W0.25p,white -Ggreen -Sblue -P &gt; africa.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To plot Iceland using the lava pattern (# 28) at 100 dots per inch, on a
 Mercator map at scale 1 cm/degree, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pscoast -R-30/-10/60/65 -Jm1c -B5 -Gp100/28 &gt; iceland.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscoast -R-30/-10/60/65 -Jm1c -B5 -Gp100/28 &gt; iceland.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To initiate a clip path for Africa so that the subsequent colorimage of
 gridded topography is only seen over land, using a Mercator map at scale
 0.1 inch/degree, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pscoast  -R-30/30/-40/40 -Jm0.1i -B5 -Gc -P -K &gt; africa.ps
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscoast  -R-30/30/-40/40 -Jm0.1i -B5 -Gc -P -K &gt; africa.ps
 gmt grdimage -Jm0.1i etopo5.nc -Ccolors.cpt -O -K &gt;&gt; africa.ps
-gmt pscoast  -Q -O &gt;&gt; africa.ps</pre>
+gmt pscoast  -Q -O &gt;&gt; africa.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p><strong>pscoast</strong> will first look for coastline files in directory
@@ -490,6 +493,11 @@ Institute, Lensfield Road, Cambridge CB2 1ER, United Kingdom.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="pscontour.html"
                         title="next chapter">pscontour</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pscoast.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -508,7 +516,7 @@ Institute, Lensfield Road, Cambridge CB2 1ER, United Kingdom.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -526,9 +534,9 @@ Institute, Lensfield Road, Cambridge CB2 1ER, United Kingdom.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

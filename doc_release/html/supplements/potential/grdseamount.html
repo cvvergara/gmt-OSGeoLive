@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdseamount &mdash; GMT 5.1.0 documentation</title>
+    <title>grdseamount &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="POTENTIAL" href="../../SUP_POTENTIAL.html" />
     <link rel="next" title="SEGY" href="../../SUP_SEGY.html" />
     <link rel="prev" title="grdredpol" href="grdredpol.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" accesskey="U">POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -82,7 +81,7 @@
 <p><strong>grdseamount</strong> [ <em>intable</em> ]
 <strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]]
 <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>]
-[ <strong>-A</strong>[<em>out/in</em>] ] [ <strong>-C</strong> ] [ <strong>-G</strong><em>grdfile</em> ] [ <strong>-L</strong>[<em>cut</em>] ]
+[ <strong>-A</strong>[<em>out/in</em>] ] [ <strong>-C</strong> ] [ <strong>-E</strong> ] [ <strong>-G</strong><em>grdfile</em> ] [ <strong>-L</strong>[<em>cut</em>] ]
 [ <strong>-N</strong><em>norm</em> ] [ <strong>-S</strong><em>scale</em> ] [ <strong>-T</strong>[<em>flattening</em>] ] [ <strong>-Z</strong><em>level</em> ]
 [ <strong>-V</strong>[<em>level</em>] ]
 [ <strong>-bi</strong>[<em>ncols</em>][<em>type</em>][w][<strong>+L</strong>|<strong>+B</strong>] ]
@@ -99,7 +98,7 @@ Gaussian or conical shapes, which may be circular or elliptical, and optionally 
 Various scaling options are available to modify the result, including an option to add in
 a background depth.  The input must contain <em>lon, lat, radius, height</em> for each seamount.
 For elliptical features (<strong>-E</strong>) we expect <em>lon, lat, azimuth, semi-major, semi-minor,
-radius, height</em> instead.  If flattening is specified (<strong>TT</strong>) then a final column with
+radius, height</em> instead. If flattening is specified (<strong>-T</strong>) then a final column with
 flattening is expected.</p>
 </div>
 <div class="section" id="required-arguments">
@@ -123,7 +122,7 @@ giving an increment you may specify the <em>number of nodes</em> desired by
 appending <strong>+</strong> to the supplied integer argument; the increment is then
 recalculated from the number of nodes and the domain. The resulting
 increment value depends on whether you have selected a
-gridline-registered or pixel-registered grid; see Appendix B for
+gridline-registered or pixel-registered grid; see <a class="reference internal" href="../../GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a> for
 details. Note: if <strong>-R</strong><em>grdfile</em> is used then the grid spacing has
 already been initialized; use <strong>-I</strong> to override the values.</dd>
 </dl>
@@ -140,6 +139,9 @@ already been initialized; use <strong>-I</strong> to override the values.</dd>
 Here, height is ignored and <strong>-L</strong>, <strong>-N</strong> and <strong>-Z</strong> are disallowed</dd>
 <dt><strong>-C</strong></dt>
 <dd>Cone model [Default is Gaussian].</dd>
+<dt><strong>-E</strong></dt>
+<dd>Elliptical data format [Default is Circular]. Read lon, lat, azimuth,
+major, minor, height (m) for each seamount.</dd>
 <dt><strong>-G</strong><em>outgrid</em></dt>
 <dd>Sets name of output gridfile.</dd>
 <dt><strong>-L</strong>[<em>cut</em>]</dt>
@@ -185,10 +187,10 @@ km via a &#8220;Flat Earth&#8221; approximation using the current ellipsoid para
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -234,6 +236,11 @@ options, then exits.</dd>
   <h4>Next topic</h4>
   <p class="topless"><a href="../../SUP_SEGY.html"
                         title="next chapter">SEGY</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/potential/grdseamount.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -252,7 +259,7 @@ options, then exits.</dd>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" >POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -270,9 +277,9 @@ options, then exits.</dd>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

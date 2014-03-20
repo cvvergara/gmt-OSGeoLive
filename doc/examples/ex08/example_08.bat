@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 08
 REM
-REM		$Id: example_08.bat 11641 2013-06-07 00:06:36Z pwessel $
+REM		$Id: example_08.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Make a 3-D bar plot
 REM GMT progs:	grd2xyz, pstext, psxyz

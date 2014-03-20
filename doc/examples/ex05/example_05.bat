@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 05
 REM
-REM		$Id: example_05.bat 11905 2013-07-06 02:23:09Z pwessel $
+REM		$Id: example_05.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Generate grid and show monochrome 3-D perspective
 REM GMT progs:	grdgradient, grdmath, grdview, pstext

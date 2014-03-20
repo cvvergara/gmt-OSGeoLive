@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_grd.h 12022 2013-08-04 10:29:09Z fwobbe $
+ *	$Id: gmt_grd.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -161,7 +161,7 @@ enum GMT_enum_wesnIDs {
 /* Just a loop over columns */
 #define GMT_col_loop2(C,G,col) for (col = 0; (int)col < (int)G->header->nx; col++)
 /* Loop over all nodes including the pad */
-#define GMT_row_padloop(C,G,row,ij) for (row = ij = 0; (int)row < (int)G->header->my; row++)
+#define GMT_row_padloop(C,G,row,ij) for (row = 0, ij = 0; (int)row < (int)G->header->my; row++)
 #define GMT_col_padloop(C,G,col,ij) for (col = 0; (int)col < (int)G->header->mx; col++, ij++)
 #define GMT_grd_padloop(C,G,row,col,ij) GMT_row_padloop(C,G,row,ij) GMT_col_padloop(C,G,col,ij)
 /* Just a loop over columns */

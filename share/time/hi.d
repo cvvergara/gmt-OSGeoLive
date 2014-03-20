@@ -1,6 +1,6 @@
 # GMT Time language file for HI (Hawaiian) mode [US]
 #
-#	$Id: hi.d 10084 2012-05-12 21:04:53Z fwobbe $
+#	$Id: hi.d 12807 2014-01-30 10:31:56Z remko $
 #-------------------------------------------------
 # Monthnames, with 3-char and 1-char abbreviations
 M	1	Ianuali		Ian	I

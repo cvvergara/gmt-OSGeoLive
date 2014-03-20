@@ -1,4 +1,4 @@
-/* $Id: inttypes.h 9839 2012-03-11 22:14:41Z fwobbe $
+/* $Id: inttypes.h 12822 2014-01-31 23:39:56Z remko $
  * ISO C9x  compliant inttypes.h for Microsoft Visual Studio
  * Based on ISO/IEC 9899:TC2 Committee draft (May 6, 2005) WG14/N1124
  *

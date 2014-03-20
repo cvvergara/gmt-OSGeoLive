@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmtselect &mdash; GMT 5.1.0 documentation</title>
+    <title>gmtselect &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmtset" href="gmtset.html" />
     <link rel="prev" title="gmtmath" href="gmtmath.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -80,7 +79,7 @@
 <div class="section" id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
 <p><strong>gmtselect</strong> [ <em>table</em> ]
-[ <strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>] ]
+[ <strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+as</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>] ]
 [ <strong>-C</strong><em>dist</em>[<em>unit</em>]/<em>ptfile</em> ]
 [ <strong>-D</strong><em>resolution</em>[<strong>+</strong>] ] [ <strong>-E</strong>[<strong>fn</strong>] ]
 [ <strong>-F</strong><em>polygonfile</em> ] [ <strong>-I</strong>[<strong>cflrsz</strong>] ]
@@ -126,15 +125,13 @@ table file(s) holding a number of data columns. If no tables are given
 then we read from standard input.  </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+ag</strong>|<strong>i</strong>|<strong>s</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>p</strong><em>percent</em>]</dt>
+<dt><strong>-A</strong><em>min_area</em>[/<em>min_level</em>/<em>max_level</em>][<strong>+as</strong>][<strong>+r</strong>|<strong>l</strong>][<strong>+p</strong><em>percent</em>]</dt>
 <dd>Features with an area smaller than <em>min_area</em> in km^2 or of
 hierarchical level that is lower than <em>min_level</em> or higher than
 <em>max_level</em> will not be plotted [Default is 0/0/4 (all features)].
 Level 2 (lakes) contains regular lakes and wide river bodies which
 we normally include as lakes; append <strong>+r</strong> to just get river-lakes
-or <strong>+l</strong> to just get regular lakes. By default we select the grounding
-line as coastline for Antarctica; append <strong>ai</strong> to instead select the
-hydrostatic (ic) line.  For expert users who wish to
+or <strong>+l</strong> to just get regular lakes. For expert users who wish to
 print their own Antarctica coastline and islands via <cite>psxy</cite> you can
 use <strong>+as</strong> to skip all GSHHG features below 60S.  Finally, append
 <strong>+p</strong><em>percent</em> to exclude polygons whose percentage area of the
@@ -263,10 +260,10 @@ is given then the <strong>Iz</strong> option cannot be used.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -334,7 +331,8 @@ by point, not by segment.</p>
 <p>To extract the subset of data set that is within 300 km of any of the
 points in pts.d but more than 100 km away from the lines in lines.d, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtselect lonlatfile -fg -C300k/pts.d -L100/lines.d -Il &gt; subset</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtselect lonlatfile -fg -C300k/pts.d -L100/lines.d -Il &gt; subset
+</pre></div>
 </div>
 </div></blockquote>
 <p>Here, you must specify <strong>-fg</strong> so the program knows you are processing
@@ -342,19 +340,22 @@ geographical data.</p>
 <p>To keep all points in data.d within the specified region, except the
 points on land (as determined by the high-resolution coastlines), use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtselect data.d -R120/121/22/24 -Dh -Nk/s &gt; subset</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtselect data.d -R120/121/22/24 -Dh -Nk/s &gt; subset
+</pre></div>
 </div>
 </div></blockquote>
 <p>To return all points in quakes.d that are inside or on the spherical
 polygon lonlatpath.d, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtselect quakes.d -Flonlatpath.d -fg &gt; subset1</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtselect quakes.d -Flonlatpath.d -fg &gt; subset1
+</pre></div>
 </div>
 </div></blockquote>
 <p>To return all points in stations.d that are within 5 cm of the point in
 origin.d for a certain projection, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt gmtselect stations.d -C5/origin.d -R20/50/-10/20 -JM20c --PROJ_LENGTH_UNIT=cm &gt; subset2</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtselect stations.d -C5/origin.d -R20/50/-10/20 -JM20c --PROJ_LENGTH_UNIT=cm &gt; subset2
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -421,6 +422,11 @@ further details.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="gmtset.html"
                         title="next chapter">gmtset</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/gmtselect.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -439,7 +445,7 @@ further details.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -457,9 +463,9 @@ further details.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

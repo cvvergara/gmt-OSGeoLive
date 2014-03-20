@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: hotspotter.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: hotspotter.c 12822 2014-01-31 23:39:56Z remko $
  *
- *   Copyright (c) 1999-2012 by P. Wessel
+ *   Copyright (c) 1999-2014 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -195,8 +195,7 @@ int GMT_hotspotter_usage (struct GMTAPI_CTRL *API, int level)
 
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Specify the rotation file to be used (see man page for format).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Prepend + if you want to invert the rotations prior to use.\n");
+	spotter_rot_usage (API, 'E');
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Specify file name for output CVA grid.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Specify grid interval(s); Append m [or c] to <dx> and/or <dy> for minutes [or seconds].\n");
 	GMT_Option (API, "Rg");

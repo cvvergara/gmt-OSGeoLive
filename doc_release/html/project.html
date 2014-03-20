@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>project &mdash; GMT 5.1.0 documentation</title>
+    <title>project &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="P" href="P.html" />
     <link rel="next" title="PS" href="PS.html" />
     <link rel="prev" title="P" href="P.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="P.html" accesskey="U">P</a> &raquo;</li>
 <li class="right">
@@ -248,10 +247,10 @@ within <em>w_min</em> &lt; <em>q</em> &lt; <em>w_max</em>.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -276,20 +275,23 @@ specify more decimals using the <a class="reference internal" href="gmt.conf.htm
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>To generate points every 10km along a great circle from 10N,50W to 30N,10W:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt project -C-50/10 -E-10/30 -G10 -Q &gt; great_circle_points.xyp</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt project -C-50/10 -E-10/30 -G10 -Q &gt; great_circle_points.xyp
+</pre></div>
 </div>
 </div></blockquote>
 <p>(Note that great_circle_points.xyp could now be used as input for <strong>grdtrack</strong>, etc. ).</p>
 <p>To generate points every 10km along a small circle of colatitude 60 from 10N,50W to 30N,10W:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt project -C-50/10 -E-10/30 -G10/60 -Q &gt; small_circle_points.xyp</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt project -C-50/10 -E-10/30 -G10/60 -Q &gt; small_circle_points.xyp
+</pre></div>
 </div>
 </div></blockquote>
 <p>To create a partial small circle of colatitude 80 about a pole at
 40E,85N, with extent of 45 degrees to either side of the meridian
 defined by the great circle from the pole to a point 15E,15N, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt project -C15/15 -T40/85 -G1/80 -L-45/45 &gt; some_circle.xyp</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt project -C15/15 -T40/85 -G1/80 -L-45/45 &gt; some_circle.xyp
+</pre></div>
 </div>
 </div></blockquote>
 <p>To project the shiptrack gravity, magnetics, and bathymetry in
@@ -297,7 +299,8 @@ c2610.xygmb along a great circle through an origin at 30S, 30W, the
 great circle having an azimuth of N20W at the origin, keeping only the
 data from NE of the profile and within +/- 500 km of the origin, run:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt project c2610.xygmb -C-30/-30 -A-20 -W-10000/0 -L-500/500 -Fpz -Q &gt; c2610_projected.pgmb</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt project c2610.xygmb -C-30/-30 -A-20 -W-10000/0 -L-500/500 -Fpz -Q &gt; c2610_projected.pgmb
+</pre></div>
 </div>
 </div></blockquote>
 <p>(Note in this example that <strong>-W</strong>-10000/0 is used to admit any value
@@ -307,20 +310,23 @@ are on our right as we walk along the great circle path, or to the NE in this ex
 new origin is at 5,3 and the new <em>x</em> axis (<em>p</em>) makes
 an angle of 20 degrees with the old <em>x</em> axis, use:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt project mydata.xy -C5/3 -A70 -Fpq &gt; mydata.pq</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt project mydata.xy -C5/3 -A70 -Fpq &gt; mydata.pq
+</pre></div>
 </div>
 </div></blockquote>
 <p>To take data in the file pacific.lonlat and transform it into oblique
 coordinates using a pole from the hotspot reference frame and placing
 the oblique zero meridian (<em>p</em> = 0 line) through Tahiti, run:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt project pacific.lonlat -T-75/68 -C-149:26/-17:37 -Fpq &gt; pacific.pq</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt project pacific.lonlat -T-75/68 -C-149:26/-17:37 -Fpq &gt; pacific.pq
+</pre></div>
 </div>
 </div></blockquote>
 <p>Suppose that pacific_topo.nc is a grid file of bathymetry, and you want
 to make a file of flowlines in the hotspot reference frame. If you run:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grd2xyz pacific_topo.nc | project -T-75/68 -C0/-90 -Fxyq | xyz2grd -Retc -Ietc -Cflow.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grd2xyz pacific_topo.nc | project -T-75/68 -C0/-90 -Fxyq | xyz2grd -Retc -Ietc -Cflow.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>then flow.nc is a file in the same area as pacific_topo.nc, but flow
@@ -373,6 +379,11 @@ This gives coordinates for an oblique small circle.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="PS.html"
                         title="next chapter">PS</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/project.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -391,7 +402,7 @@ This gives coordinates for an oblique small circle.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="P.html" >P</a> &raquo;</li>
 <li class="right">
@@ -409,9 +420,9 @@ This gives coordinates for an oblique small circle.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

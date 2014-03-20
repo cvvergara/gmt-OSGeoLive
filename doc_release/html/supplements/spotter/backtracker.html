@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>backtracker &mdash; GMT 5.1.0 documentation</title>
+    <title>backtracker &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="SPOTTER" href="../../SUP_SPOTTER.html" />
     <link rel="next" title="grdpmodeler" href="grdpmodeler.html" />
     <link rel="prev" title="SPOTTER" href="../../SUP_SPOTTER.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" accesskey="U">SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -226,10 +225,10 @@ rotation.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -244,13 +243,15 @@ options, then exits.</dd>
 <p>To backtrack the (x,y,t) points in the file seamounts.d to their origin
 (presumably the hotspot), using the DC85.d Euler poles, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt backtracker seamounts.d -Db -EDC85.d &gt; newpos.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt backtracker seamounts.d -Db -EDC85.d &gt; newpos.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To project flowlines forward from the (x,y,t) points stored in several
 3-column, binary, double precision files, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt backtracker points.gmt \* -Df -EDC85.d -Lf25 -bo -bi3 &gt; lines.b</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt backtracker points.gmt \* -Df -EDC85.d -Lf25 -bo -bi3 &gt; lines.b
+</pre></div>
 </div>
 </div></blockquote>
 <p>This file can then be plotted with <strong>psxy</strong>.
@@ -258,7 +259,8 @@ To compute the predicted Hawaiian hotspot track from 0 to 80 Ma every 1
 Ma, given a history of hotspot motion file (HIdrift.txt) and a set of
 total reconstruction rotations for the plate (PAC_APM.d), try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>echo 204 19 80 | gmt backtracker -Df -EPAC_APM.d -Lb1 &gt; path.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>echo 204 19 80 | gmt backtracker -Df -EPAC_APM.d -Lb1 &gt; path.d
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -305,6 +307,11 @@ p. 319.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdpmodeler.html"
                         title="next chapter">grdpmodeler</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/spotter/backtracker.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -323,7 +330,7 @@ p. 319.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" >SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -341,9 +348,9 @@ p. 319.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

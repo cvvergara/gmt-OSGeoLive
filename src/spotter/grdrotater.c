@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdrotater.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: grdrotater.c 12822 2014-01-31 23:39:56Z remko $
  *
- *   Copyright (c) 1999-2012 by P. Wessel
+ *   Copyright (c) 1999-2014 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -106,8 +106,7 @@ int GMT_grdrotater_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Set output filename of the new, rotated grid.  The boundary of the\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   original grid (or a subset; see -F) after rotation is written to stdout\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   unless the grid is global.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Specify the rotation file to be used (see man page for format).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Prepend + if you want to invert the finite rotations prior to use.\n");
+	spotter_rot_usage (API, 'E');
 	GMT_Message (API, GMT_TIME_NONE, "\t   This option requires you to specify the age of the reconstruction with -T.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-e Alternatively, specify a single finite rotation (in degrees) to be applied.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");

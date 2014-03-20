@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdcut &mdash; GMT 5.1.0 documentation</title>
+    <title>grdcut &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdedit" href="grdedit.html" />
     <link rel="prev" title="grdcontour" href="grdcontour.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -92,8 +91,8 @@
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p><strong>grdcut</strong> will produce a new <em>outgrid</em> file which is a subregion of
 <em>ingrid</em>. The subregion is specified with <strong>-R</strong> as in other programs;
-the specified range must not exceed the range of <em>ingrid</em>. If in doubt,
-run <strong>grdinfo</strong> to check range. Alternatively, define the subregion
+the specified range must not exceed the range of <em>ingrid</em> (but see <strong>-N</strong>).
+If in doubt, run <strong>grdinfo</strong> to check range. Alternatively, define the subregion
 indirectly via a range check on the node values or via distances from a
 given point. Complementary to <strong>grdcut</strong> there is <strong>grdpaste</strong>, which
 will join together two grid files along a common edge.</p>
@@ -139,10 +138,10 @@ outside the <em>z</em>-range.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -212,19 +211,22 @@ will indicate both this unit and epoch.</p>
 between 148E - 162E and 8N - 32N, and you do not trust the gridding near
 the edges, so you want to keep only the area between 150E - 160E and 10N - 30N, then:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdcut grav_148_162_8_32.nc -Ggrav_150_160_10_30.nc -R150/160/10/30 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdcut grav_148_162_8_32.nc -Ggrav_150_160_10_30.nc -R150/160/10/30 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To return the subregion of a grid such that any boundary strips where
-all values are entirely above 0, try</p>
+all values are entirely above 0 are excluded, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdcut bathy.nc -Gtrimmed_bathy.nc -Z-/0 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdcut bathy.nc -Gtrimmed_bathy.nc -Z-/0 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To return the subregion of a grid that contains all nodes within a
 distance of 500 km from the point 45,30 try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdcut bathy.nc -Gsubset_bathy.nc -S45/30/500k -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdcut bathy.nc -Gsubset_bathy.nc -S45/30/500k -V
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -265,6 +267,11 @@ distance of 500 km from the point 45,30 try</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdedit.html"
                         title="next chapter">grdedit</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdcut.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -283,7 +290,7 @@ distance of 500 km from the point 45,30 try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -301,9 +308,9 @@ distance of 500 km from the point 45,30 try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

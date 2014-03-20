@@ -1,4 +1,5 @@
 #!/bin/bash
+# $Id: filled_font.sh 12769 2014-01-16 16:03:50Z remko $
 # Test gmt pstext with filled and outline fonts
 
 ps=filled_font.ps

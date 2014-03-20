@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pscoast.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: pscoast.c 12849 2014-02-04 00:18:26Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -91,6 +91,7 @@ struct PSCOAST_CTRL {
 	struct I {	/* -I<feature>[/<pen>] */
 		bool active;
 		unsigned int use[GSHHS_N_RLEVELS];
+		unsigned int list[GSHHS_N_RLEVELS];
 		unsigned int n_rlevels;
 		struct GMT_PEN pen[GSHHS_N_RLEVELS];
 	} I;
@@ -104,6 +105,7 @@ struct PSCOAST_CTRL {
 	struct N {	/* -N<feature>[/<pen>] */
 		bool active;
 		unsigned int use[GSHHS_N_BLEVELS];
+		unsigned int list[GSHHS_N_BLEVELS];
 		unsigned int n_blevels;
 		struct GMT_PEN pen[GSHHS_N_BLEVELS];
 	} N;
@@ -219,8 +221,8 @@ int GMT_pscoast_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t      c = All canals (8-10).\n");
 	GMT_Option (API, "K");
 	GMT_mapscale_syntax (API->GMT, 'L', "Draws a simple map scale centered on <lon0>/<lat0>");
-	GMT_Message (API, GMT_TIME_NONE, "\t-M Dump a multisegment ascii (or binary, see -bo) file to standard output.  No plotting occurs.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Specify any combination of -W, -I, -N.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-M Dump a multisegment ASCII (or binary, see -bo) file to standard output.  No plotting occurs.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Specify one of -F, -I, -N, or -W.\n");
 	GMT_pen_syntax (API->GMT, 'N', "Draw boundaries.  Specify feature and optionally append pen [Default for all levels: %s].");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Choose from the features below.  Repeat the -N option as many times as needed.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     1 = National boundaries.\n");
@@ -513,23 +515,19 @@ int GMT_pscoast_parse (struct GMT_CTRL *GMT, struct PSCOAST_CTRL *Ctrl, struct G
 	n_errors += GMT_check_condition (GMT, !(Ctrl->G.active || Ctrl->S.active || Ctrl->C.active || Ctrl->F.active || Ctrl->W.active || Ctrl->N.active || Ctrl->I.active || Ctrl->Q.active), "Syntax error: Must specify at least one of -C, -G, -S, -I, -N, -Q and -W\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->M.active && (Ctrl->F.active + Ctrl->N.active + Ctrl->I.active + Ctrl->W.active) != 1, "Syntax error -M: Must specify one of -F, -I, -N, and -W\n");
 
-	if (Ctrl->I.active) {
+	if (Ctrl->I.active) {	/* Generate list of desired river features in sorted order */
 		for (k = Ctrl->I.n_rlevels = 0; k < GSHHS_N_RLEVELS; k++) {
 			if (!Ctrl->I.use[k]) continue;
 			n_errors += GMT_check_condition (GMT, Ctrl->I.pen[k].width < 0.0, "Syntax error -I option: Pen thickness cannot be negative\n");
-			Ctrl->I.use[Ctrl->I.n_rlevels] = k;
-			if (k != Ctrl->I.n_rlevels) Ctrl->I.pen[Ctrl->I.n_rlevels] = Ctrl->I.pen[k];
-			Ctrl->I.n_rlevels++;
+			Ctrl->I.list[Ctrl->I.n_rlevels++] = k;	/* Since goes from 0-10 */
 		}
 	}
 
-	if (Ctrl->N.active) {
+	if (Ctrl->N.active) {	/* Generate list of desired border features in sorted order */
 		for (k = Ctrl->N.n_blevels = 0; k < GSHHS_N_BLEVELS; k++) {
 			if (!Ctrl->N.use[k]) continue;
 			n_errors += GMT_check_condition (GMT, Ctrl->N.pen[k].width < 0.0, "Syntax error -N option: Pen thickness cannot be negative\n");
-			Ctrl->N.use[Ctrl->N.n_blevels] = k + 1;
-			if (k != Ctrl->N.n_blevels) Ctrl->N.pen[Ctrl->N.n_blevels] = Ctrl->N.pen[k];
-			Ctrl->N.n_blevels++;
+			Ctrl->N.list[Ctrl->N.n_blevels++] = k + 1;	/* Add one so we get range 1-3 */
 		}
 	}
 
@@ -588,6 +586,7 @@ int GMT_pscoast (void *V_API, int mode, void *args)
 
 	int i, np, ind, bin = 0, base, anti_bin = -1, np_new, k, last_k, err, bin_trouble, error, n;
 	int level_to_be_painted = 0, direction, start_direction, stop_direction, last_pen_level;
+	
 	bool shift = false, need_coast_base, recursive;
 	bool greenwich = false, possibly_donut_hell = false, fill_in_use = false;
 	bool clobber_background, paint_polygons = false, donut;
@@ -657,6 +656,11 @@ int GMT_pscoast (void *V_API, int mode, void *args)
 
 	if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_RUNTIME_ERROR);
 
+	if (!GMT_is_geographic (GMT, GMT_IN)) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Error: You must use a map projection or -Jx|X...d[/...d] for geographic data\n");
+		Return (EXIT_FAILURE);
+	}
+	
 	world_map_save = GMT->current.map.is_world;
 
 	if (need_coast_base && GMT_init_shore (GMT, Ctrl->D.set, &c, GMT->common.R.wesn, &Ctrl->A.info))  {
@@ -966,7 +970,7 @@ int GMT_pscoast (void *V_API, int mode, void *args)
 		for (ind = 0; ind < r.nb; ind++) {	/* Loop over necessary bins only */
 
 			bin = r.bins[ind];
-			GMT_get_br_bin (GMT, ind, &r, Ctrl->I.use, Ctrl->I.n_rlevels);
+			GMT_get_br_bin (GMT, ind, &r, Ctrl->I.list, Ctrl->I.n_rlevels);
 
 			if (r.ns == 0) continue;
 
@@ -1027,7 +1031,7 @@ int GMT_pscoast (void *V_API, int mode, void *args)
 		for (ind = 0; ind < b.nb; ind++) {	/* Loop over necessary bins only */
 
 			bin = b.bins[ind];
-			GMT_get_br_bin (GMT, ind, &b, Ctrl->N.use, Ctrl->N.n_blevels);
+			GMT_get_br_bin (GMT, ind, &b, Ctrl->N.list, Ctrl->N.n_blevels);
 
 			if (b.ns == 0) continue;
 

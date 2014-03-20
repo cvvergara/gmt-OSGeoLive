@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>psmask &mdash; GMT 5.1.0 documentation</title>
+    <title>psmask &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="psrose" href="psrose.html" />
     <link rel="prev" title="pslib" href="pslib.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -138,7 +137,7 @@ giving an increment you may specify the <em>number of nodes</em> desired by
 appending <strong>+</strong> to the supplied integer argument; the increment is then
 recalculated from the number of nodes and the domain. The resulting
 increment value depends on whether you have selected a
-gridline-registered or pixel-registered grid; see Appendix B for
+gridline-registered or pixel-registered grid; see <a class="reference internal" href="GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a> for
 details. Note: if <strong>-R</strong><em>grdfile</em> is used then the grid spacing has
 already been initialized; use <strong>-I</strong> to override the values.</dd>
 </dl>
@@ -259,10 +258,10 @@ pattern. Cannot be used with <strong>-D</strong>.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -288,18 +287,21 @@ exact geodesic calculations (slower but more accurate).</p>
 <p>To make an overlay PostScript file that will mask out the regions of a
 contour map where there is no control data using clip polygons, use:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt psmask africa_grav.xyg -R20/40/20/40 -I5m -JM10i -O -K &gt; mask.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psmask africa_grav.xyg -R20/40/20/40 -I5m -JM10i -O -K &gt; mask.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>We do it again, but this time we wish to save the clipping polygons to
 file all_pols.txt:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt psmask africa_grav.xyg -R20/40/20/40 -I5m -Dall_pols.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psmask africa_grav.xyg -R20/40/20/40 -I5m -Dall_pols.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>A repeat of the first example but this time we use white tiling:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt psmask africa_grav.xyg -R20/40/20/40 -I5m -JM10i -T -O -K -Gwhite &gt; mask.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt psmask africa_grav.xyg -R20/40/20/40 -I5m -JM10i -T -O -K -Gwhite &gt; mask.ps
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -337,6 +339,11 @@ file all_pols.txt:</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="psrose.html"
                         title="next chapter">psrose</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/psmask.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -355,7 +362,7 @@ file all_pols.txt:</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -373,9 +380,9 @@ file all_pols.txt:</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

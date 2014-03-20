@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: common_runpath.c 12183 2013-09-22 14:58:38Z fwobbe $
+ *	$Id: common_runpath.c 12921 2014-02-19 18:49:42Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -281,6 +281,7 @@ char *GMT_runtime_libdir (char *result) {
 #endif /* WIN32 */
 
 	/* unsupported, or not shared library */
+		
 	return NULL;
 }
 

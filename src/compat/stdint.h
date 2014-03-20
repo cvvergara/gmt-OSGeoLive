@@ -1,4 +1,4 @@
-/* $Id: stdint.h 10188 2012-05-30 00:52:15Z pwessel $
+/* $Id: stdint.h 12822 2014-01-31 23:39:56Z remko $
  * ISO C9x  compliant stdint.h for Microsoft Visual Studio
  * Based on ISO/IEC 9899:TC2 Committee draft (May 6, 2005) WG14/N1124
  *

@@ -1,5 +1,5 @@
 #
-# $Id: CheckTypeExists.cmake 9127 2011-09-26 13:48:05Z remko $
+# $Id: CheckTypeExists.cmake 12822 2014-01-31 23:39:56Z remko $
 #
 # - Check if the given struct or class has the specified member variable
 # CHECK_STRUCT_MEMBER (STRUCT MEMBER HEADER VARIABLE)

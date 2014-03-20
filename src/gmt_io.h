@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_io.h 12095 2013-09-01 21:14:06Z pwessel $
+ *	$Id: gmt_io.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -114,7 +114,7 @@ enum GMT_lon_enum {
 	GMT_IS_M360_TO_0			= 4,	/* Report -360 < lon <= 0 */
 	GMT_IS_M180_TO_P180_RANGE		= 5,	/* Report -180 <= lon <= +180 */
 	GMT_IS_M180_TO_P180			= 6,	/* Report -180 <= lon < +180 */
-	GMT_IS_M180_TO_P270_RANGE		= 7};	/* Report -180 <= lon < +270 [GSHHS only] */
+	GMT_IS_M180_TO_P270_RANGE		= 7};	/* Report -180 <= lon < +270 [GSHHG only] */
 
 /* How to handle NaNs in records */
 
@@ -236,6 +236,7 @@ struct GMT_IO {				/* Used to process input data records */
 	bool skip_duplicates;	/* true if we should ignore duplicate x,y records */
 	bool read_mixed;		/* true if we are reading ascii x y [z] [variable numbers of text] */
 	bool need_previous;		/* true if when parsing a record we need access to previous record values (e.g., for gap or duplicate checking) */
+	bool warn_geo_as_cartesion;	/* true if we should warn if we read a record with geographic data while the expected format has not been set (i.e., no -J or -fg) */
 
 	uint64_t seg_no;		/* Number of current multi-segment in entire data set */
 	uint64_t seg_in_tbl_no;		/* Number of current multi-segment in current table */

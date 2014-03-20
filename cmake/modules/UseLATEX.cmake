@@ -1,4 +1,4 @@
-# $Id: UseLATEX.cmake 11532 2013-05-22 16:00:11Z fwobbe $
+# $Id: UseLATEX.cmake 12822 2014-01-31 23:39:56Z remko $
 #
 # CMAKE commands to actually use the LaTeX compiler
 # Version: 1.9.1

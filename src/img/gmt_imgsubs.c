@@ -1,6 +1,6 @@
-/* $Id: gmt_imgsubs.c 11886 2013-07-03 01:25:20Z pwessel $
+/* $Id: gmt_imgsubs.c 12822 2014-01-31 23:39:56Z remko $
  *
- * Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ * Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
  * gmt_imgsubs.c -- subroutines supporting the GMT supplement img,

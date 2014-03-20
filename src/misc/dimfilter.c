@@ -1,5 +1,5 @@
 /*
- * $Id: dimfilter.c 12407 2013-10-30 16:46:27Z pwessel $
+ * $Id: dimfilter.c 12822 2014-01-31 23:39:56Z remko $
  *
  * dimfilter.c  reads a grdfile and creates filtered grd file
  *

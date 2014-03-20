@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegy.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: pssegy.c 12822 2014-01-31 23:39:56Z remko $
  *
- *    Copyright (c) 1999-2012 by T. Henstock
+ *    Copyright (c) 1999-2014 by T. Henstock
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* pssegy program to plot segy files in postscript with variable trace spacing option

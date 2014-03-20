@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77info.c 12419 2013-10-31 22:00:31Z pwessel $
+ *	$Id: mgd77info.c 12822 2014-01-31 23:39:56Z remko $
  *
- *    Copyright (c) 2004-2012 by P. Wessel
+ *    Copyright (c) 2004-2014 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*

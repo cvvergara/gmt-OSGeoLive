@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(39) Evaluation of spherical harmonics coefficients &mdash; GMT 5.1.0 documentation</title>
+    <title>(39) Evaluation of spherical harmonics coefficients &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(40) Line simplification" href="ex40.html" />
     <link rel="prev" title="(38) Histogram equalization of bathymetry grids" href="ex38.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -109,7 +108,7 @@ gmt psscale -Ct.cpt -O -K -D1.25i/-0.2i/5.5i/0.1ih -Bxaf -By+lm &gt;&gt; <span c
 gmt grdgradient v2.nc -Nt0.75 -A45 -Gvint.nc
 gmt grdimage v2.nc -Ivint.nc -JG -O -K -Bg -Ct.cpt -X-1.25i -Y1.9i &gt;&gt; <span class="nv">$ps</span>
 <span class="nb">echo </span>4 4.5 <span class="nv">L</span> <span class="o">=</span> 90 | gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
-gmt sph2grd VenusTopo180.txt -I1 -Rg -Ng -Gv3.nc -V -F1/1/170/180
+gmt sph2grd VenusTopo180.txt -I1 -Rg -Ng -Gv3.nc -F1/1/170/180
 gmt grdgradient v3.nc -Nt0.75 -A45 -Gvint.nc
 gmt grdimage v3.nc -Ivint.nc -JG -O -K -Bg -Ct.cpt -X-1.25i -Y1.9i &gt;&gt; <span class="nv">$ps</span>
 <span class="nb">echo </span>4 4.5 <span class="nv">L</span> <span class="o">=</span> 180 | gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
@@ -118,7 +117,7 @@ rm -f v*.nc t.cpt
 </pre></div>
 </div>
 <div class="figure align-center">
-<img alt="../_images/example_39.png" src="../_images/example_39.png" style="width: 500px;" />
+<a class="reference internal image-reference" href="../_images/example_39.png"><img alt="../_images/example_39.png" src="../_images/example_39.png" style="width: 500px;" /></a>
 <p class="caption">Evaluation of spherical harmonics coefficients.</p>
 </div>
 </div>
@@ -135,6 +134,11 @@ rm -f v*.nc t.cpt
   <h4>Next topic</h4>
   <p class="topless"><a href="ex40.html"
                         title="next chapter">(40) Line simplification</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/gallery/ex39.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -153,7 +157,7 @@ rm -f v*.nc t.cpt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -171,9 +175,9 @@ rm -f v*.nc t.cpt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

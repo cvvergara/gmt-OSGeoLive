@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdfft &mdash; GMT 5.1.0 documentation</title>
+    <title>grdfft &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdfilter" href="grdfilter.html" />
     <link rel="prev" title="grdedit" href="grdedit.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -202,7 +201,7 @@ dimensions &gt; grid file dimensions, data are extended and tapered to zero.</p>
 <p>Control detrending of data: Append modifiers for removing a linear trend:</p>
 <blockquote>
 <div><p><strong>+d</strong>: Detrend data, i.e. remove best-fitting linear trend [Default].</p>
-<p><strong>+a</strong>: Only remove mean value, i.e. 0.5 * (max + min).</p>
+<p><strong>+a</strong>: Only remove mean value.</p>
 <p><strong>+h</strong>: Only remove mid value, i.e. 0.5 * (max + min).</p>
 <p><strong>+l</strong>: Leave data alone.</p>
 </div></blockquote>
@@ -242,10 +241,10 @@ meters via a &#8220;Flat Earth&#8221; approximation using the current ellipsoid 
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -303,13 +302,15 @@ using <a class="reference internal" href="grdproject.html"><em>grdproject</em></
 <p>To upward continue the sea-level magnetic anomalies in the file
 mag_0.nc to a level 800 m above sealevel:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfft mag_0.nc -C800 -V -Gmag_800.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfft mag_0.nc -C800 -V -Gmag_800.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>To transform geoid heights in m (geoid.nc) on a geographical grid to
 free-air gravity anomalies in mGal:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfft geoid.nc -Dg -V -Ggrav.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfft geoid.nc -Dg -V -Ggrav.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>To transform gravity anomalies in mGal (faa.nc) to deflections of the
@@ -317,27 +318,31 @@ vertical (in micro-radians) in the 038 direction, we must first
 integrate gravity to get geoid, then take the directional derivative,
 and finally scale radians to micro-radians:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfft faa.nc -Ig -A38 -S1e6 -V -Gdefl_38.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfft faa.nc -Ig -A38 -S1e6 -V -Gdefl_38.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>Second vertical derivatives of gravity anomalies are related to the
 curvature of the field. We can compute these as mGal/m^2 by
 differentiating twice:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfft gravity.nc -D -D -V -Ggrav_2nd_derivative.nc</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfft gravity.nc -D -D -V -Ggrav_2nd_derivative.nc
+</pre></div>
 </div>
 </div></blockquote>
 <p>To compute cross-spectral estimates for co-registered bathymetry and
 gravity grids, and report result as functions of wavelengths in km, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfft bathymetry.nc gravity.grd -Ewk -fg -V &gt; cross_spectra.txt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfft bathymetry.nc gravity.grd -Ewk -fg -V &gt; cross_spectra.txt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To examine the pre-FFT grid after detrending, point-symmetry reflection,
 and tapering has been applied, as well as saving the real and imaginary
 components of the raw spectrum of the data in topo.nc, try</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdfft topo.nc -N+w+z -fg -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdfft topo.nc -N+w+z -fg -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>You can now make plots of the data in topo_taper.nc, topo_real.nc, and topo_imag.nc.</p>
@@ -379,6 +384,11 @@ components of the raw spectrum of the data in topo.nc, try</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="grdfilter.html"
                         title="next chapter">grdfilter</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdfft.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -397,7 +407,7 @@ components of the raw spectrum of the data in topo.nc, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -415,9 +425,9 @@ components of the raw spectrum of the data in topo.nc, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

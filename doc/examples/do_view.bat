@@ -1,6 +1,6 @@
 echo OFF
 REM
-REM	$Id: do_view.bat 11599 2013-05-27 01:29:16Z pwessel $
+REM	$Id: do_view.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM DOS batch script to view all GMT examples.
 REM Assumes gsview32 is in the path and that

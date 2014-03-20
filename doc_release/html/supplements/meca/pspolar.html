@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pspolar &mdash; GMT 5.1.0 documentation</title>
+    <title>pspolar &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="MECA" href="../../SUP_MECA.html" />
     <link rel="next" title="psvelo" href="psvelo.html" />
     <link rel="prev" title="psmeca" href="psmeca.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MECA.html" accesskey="U">MECA</a> &raquo;</li>
 <li class="right">
@@ -246,10 +245,10 @@ half-size,v_width,h_length,h_width in inch (unless <strong>c</strong>, <strong>i
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -262,26 +261,28 @@ options, then exits.</dd>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pspolar -R239/240/34/35.2 -JM8c -N -Sc0.4 -h1 -D39.5/34.5 -M5 &lt;&lt; END &gt; test.ps
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pspolar -R239/240/34/35.2 -JM8c -N -Sc0.4 -h1 -D39.5/34.5 -M5 &lt;&lt; END &gt; test.ps
 #stat azim ih pol
 0481 11 147 c
 6185 247 120 d
 0485 288 114 +
 0490 223 112 -
 0487 212 109 .
-END</pre>
+END
+</pre></div>
 </div>
 </div></blockquote>
 <p>or</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pspolar -R239/240/34/35.2 -JM8c -N -Sc0.4 -h1 -D239.5/34.5 -M5 &lt;&lt;END &gt; test.ps
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pspolar -R239/240/34/35.2 -JM8c -N -Sc0.4 -h1 -D239.5/34.5 -M5 &lt;&lt;END &gt; test.ps
 #Date Or. time stat azim ih
 910223 1 22 0481 11 147 ipu0
 910223 1 22 6185 247 120 ipd0
 910223 1 22 0485 288 114 epu0
 910223 1 22 0490 223 112 epd0
 910223 1 22 0487 212 109 epu0
-END</pre>
+END
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -328,6 +329,11 @@ Institut de Physique du Globe de Paris, Departement de Sismologie, Paris, France
   <h4>Next topic</h4>
   <p class="topless"><a href="psvelo.html"
                         title="next chapter">psvelo</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/meca/pspolar.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -346,7 +352,7 @@ Institut de Physique du Globe de Paris, Departement de Sismologie, Paris, France
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MECA.html" >MECA</a> &raquo;</li>
 <li class="right">
@@ -364,9 +370,9 @@ Institut de Physique du Globe de Paris, Departement de Sismologie, Paris, France
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

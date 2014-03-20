@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: meca_4.sh 12114 2013-09-03 19:19:00Z fwobbe $
+#	$Id: meca_4.sh 12962 2014-02-27 18:02:03Z pwessel $
 #
 
 ps=meca_4.ps
@@ -53,7 +53,7 @@ EOF
 
 # simpler colors, labeled with following font
 gmt gmtset FONT_ANNOT_PRIMARY Helvetica
-gmt psvelo -Se0.2/0.39/18 -R-10/10/-10/10 -Jx0.2i/0.2i -O -Umeca_4 << EOF >> $ps    
+gmt psvelo -Se0.2/0.39/18 -R-10/10/-10/10 -Jx0.2i/0.2i -A0.25c+p0.25p+e -O -Umeca_4 << EOF >> $ps    
 # Long.   Lat.   Evel   Nvel   Esig   Nsig  CorEN SITE
 # (deg)  (deg)    (mm/yr)        (mm/yr)
    0.    -8.     0.0    0.0     4.0    6.0  0.100  4x6

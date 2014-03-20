@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>makecpt &mdash; GMT 5.1.0 documentation</title>
+    <title>makecpt &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="M" href="M.html" />
     <link rel="next" title="mapproject" href="mapproject.html" />
     <link rel="prev" title="M" href="M.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="M.html" accesskey="U">M</a> &raquo;</li>
 <li class="right">
@@ -189,10 +188,10 @@ constant colors for each interval].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -207,18 +206,21 @@ options, then exits.</dd>
 <p>To make a cpt file with z-values from -200 to 200, with discrete color
 changes every 25, and using a polar blue-white-red colortable:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt makecpt -Cpolar -T-200/200/25 &gt; colors.cpt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt makecpt -Cpolar -T-200/200/25 &gt; colors.cpt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To make an equidistant cpt file from z = -2 to 6, in steps of 1, using
 continuous default rainbow colors:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt makecpt -T-2/6/1 -Z &gt; rainbow.cpt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt makecpt -T-2/6/1 -Z &gt; rainbow.cpt
+</pre></div>
 </div>
 </div></blockquote>
 <p>To make a GEBCO look-alike cpt file for bathymetry, run</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt makecpt -Cgebco &gt; my_gebco.cpt</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt makecpt -Cgebco &gt; my_gebco.cpt
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -260,6 +262,11 @@ as an output filename; hence the my_gebco.cpt in the example.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="mapproject.html"
                         title="next chapter">mapproject</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/makecpt.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -278,7 +285,7 @@ as an output filename; hence the my_gebco.cpt in the example.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="M.html" >M</a> &raquo;</li>
 <li class="right">
@@ -296,9 +303,9 @@ as an output filename; hence the my_gebco.cpt in the example.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psmask.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: psmask.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -726,7 +726,7 @@ int GMT_psmask (void *V_API, int mode, void *args)
 				closed = false;
 				shrink_clip_contours (GMT, x, y, n, Grid->header->wesn[XLO], Grid->header->wesn[XHI], Grid->header->wesn[YLO], Grid->header->wesn[YHI]);
 				if (Ctrl->D.active && n > (uint64_t)Ctrl->Q.min) {	/* Save the contour as output data */
-					S = GMT_dump_contour (GMT, x, y, n, GMT->session.d_NaN);
+					S = GMT_prepare_contour (GMT, x, y, n, GMT->session.d_NaN);
 					/* Select which table this segment should be added to */
 					if (n_seg == n_seg_alloc) {
 						size_t n_old_alloc = n_seg_alloc;

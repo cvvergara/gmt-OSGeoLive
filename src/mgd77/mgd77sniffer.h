@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77sniffer.h 12022 2013-08-04 10:29:09Z fwobbe $	
+ *	$Id: mgd77sniffer.h 12822 2014-01-31 23:39:56Z remko $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2004-2012 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2004-2014 by P. Wessel and M. T. Chandler
  *	File:	mgd77sniffer.h
  *
  *	Include file for mgd77sniffer

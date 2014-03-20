@@ -1,4 +1,4 @@
-/*	$Id: meca.h 11286 2013-04-09 17:08:06Z pwessel $
+/*	$Id: meca.h 12822 2014-01-31 23:39:56Z remko $
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence
  *    See README file for copying and redistribution conditions.

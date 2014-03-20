@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdvolume &mdash; GMT 5.1.0 documentation</title>
+    <title>grdvolume &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="I" href="I.html" />
     <link rel="prev" title="grdview" href="grdview.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -156,10 +155,10 @@ this scaling has occurred).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -203,28 +202,33 @@ how to read splices of 3-, 4-, or 5-dimensional grids.</p>
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>To determine the volume in km^3 under the surface hawaii_topo.nc (height in km), use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdvolume hawaii_topo.nc -Sk</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdvolume hawaii_topo.nc -Sk
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find the volume between the surface peaks.nc and the contour z = 250, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdvolume peaks.nc -Sk -C250</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdvolume peaks.nc -Sk -C250
+</pre></div>
 </div>
 </div></blockquote>
 <p>To search for the contour, between 100 and 300 in steps of 10, that
 maximizes the ratio of volume to surface area for the file peaks.nc, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdvolume peaks.nc -Sk -C100/300/10 -Th &gt; results.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdvolume peaks.nc -Sk -C100/300/10 -Th &gt; results.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To see the areas and volumes for all the contours in the previous example, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdvolume peaks.nc -Sk -C100/300/10 &gt; results.d</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdvolume peaks.nc -Sk -C100/300/10 &gt; results.d
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find the volume of water in a lake with its free surface at 0 and max depth of 300 meters, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdvolume lake.nc -Cr-300/0</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdvolume lake.nc -Cr-300/0
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -281,6 +285,11 @@ regional-residual separation of geophysical data, <em>Math. Geol.</em>, <strong>
   <h4>Next topic</h4>
   <p class="topless"><a href="I.html"
                         title="next chapter">I</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdvolume.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -299,7 +308,7 @@ regional-residual separation of geophysical data, <em>Math. Geol.</em>, <strong>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -317,9 +326,9 @@ regional-residual separation of geophysical data, <em>Math. Geol.</em>, <strong>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

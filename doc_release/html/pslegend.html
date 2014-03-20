@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pslegend &mdash; GMT 5.1.0 documentation</title>
+    <title>pslegend &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pslib" href="pslib.html" />
     <link rel="prev" title="psimage" href="psimage.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -188,10 +187,10 @@ indicates the shift relative to the foreground frame
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -334,12 +333,12 @@ specifications, use</p>
 <p>N 2</p>
 <p>V 0 1p</p>
 <p>S 0.1i c 0.15i p300/12 0.25p 0.3i This circle is hachured</p>
-<p>S 0.1i e 0.15i 255/255/0 0.25p 0.3i This ellipse is yellow</p>
-<p>S 0.1i w 0.15i 0/255/0 0.25p 0.3i This wedge is green</p>
-<p>S 0.1i f 0.25i/-1/0.075ilb 0/0/255 0.25p 0.3i This is a fault</p>
-<p>S 0.1i - 0.15i - 0.25tap 0.3i A contour</p>
-<p>S 0.1i v 0.25i/0.02i/0.06i/0.05i 255/0/255 0.25p 0.3i This is a vector</p>
-<p>S 0.1i i 0.15i 0/255/255 0.25p 0.3i This triangle is boring</p>
+<p>S 0.1i e 0.15i yellow 0.25p 0.3i This ellipse is yellow</p>
+<p>S 0.1i w 0.15i green 0.25p 0.3i This wedge is green</p>
+<p>S 0.1i f0.1i+l+t 0.25i blue 0.25p 0.3i This is a fault</p>
+<p>S 0.1i - 0.15i - 0.25p,- 0.3i A dashed contour</p>
+<p>S 0.1i v0.1i+a40+e 0.25i magenta 0.25p 0.3i This is a vector</p>
+<p>S 0.1i i 0.15i cyan 0.25p 0.3i This triangle is boring</p>
 <p>V 0 1p</p>
 <p>D 0.2i 1p</p>
 <p>N 1</p>
@@ -415,6 +414,11 @@ such duplication.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="pslib.html"
                         title="next chapter">pslib</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pslegend.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -433,7 +437,7 @@ such duplication.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -451,9 +455,9 @@ such duplication.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

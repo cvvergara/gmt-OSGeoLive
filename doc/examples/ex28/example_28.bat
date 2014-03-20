@@ -1,5 +1,5 @@
 REM		GMT EXAMPLE 28
-REM		$Id: example_28.bat 11641 2013-06-07 00:06:36Z pwessel $
+REM		$Id: example_28.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Illustrates how to mix UTM data and UTM projection
 REM GMT progs:	makecpt, grdgradient, grdimage, grdinfo, pscoast, pstext

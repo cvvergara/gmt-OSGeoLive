@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: okbfuns.h 12022 2013-08-04 10:29:09Z fwobbe $
+ *	$Id: okbfuns.h 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -41,11 +41,7 @@ struct MAG_VAR {		/* Used when only the modulus of magnetization varies */
 	double	rk[3];
 } *mag_var;
 
-EXTERN_MSC double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double rho, bool is_grav, struct BODY_DESC bd_desc, struct BODY_VERTS *bd_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or);
-EXTERN_MSC double okb_grv (unsigned int n_vert, struct LOC_OR *loc_or, double *c_phi);
-EXTERN_MSC double okb_mag (unsigned int n_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or, double *c_tet, double *s_tet, double *c_phi, double *s_phi); 
-EXTERN_MSC double eq_30 (double c, double s, double x, double y, double z);
-EXTERN_MSC double eq_43 (double mz, double c, double tg, double auxil, double x, double y, double z);
-EXTERN_MSC void rot_17 (unsigned int n_vert, bool top, struct LOC_OR *loc_or, double *c_tet, double *s_tet, double *c_phi, double *s_phi);
+EXTERN_MSC double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double rho, bool is_grav,
+		struct BODY_DESC bd_desc, struct BODY_VERTS *bd_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or);
 
 #endif /* OKBFUNS_H */

@@ -1,5 +1,5 @@
 #
-# $Id: CheckPrototypeExists.cmake 9340 2011-10-27 11:28:21Z fwobbe $
+# $Id: CheckPrototypeExists.cmake 12822 2014-01-31 23:39:56Z remko $
 #
 # - Check if the prototype for a function exists.
 # CHECK_PROTOTYPE_EXISTS (FUNCTION HEADER VARIABLE)

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: segy2grd.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: segy2grd.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2012 by T. Henstock
+ *	Copyright (c) 1991-2014 by T. Henstock
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify

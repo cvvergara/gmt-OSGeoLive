@@ -1,4 +1,4 @@
-# $Id: GSHHS_h_Australia.txt 10084 2012-05-12 21:04:53Z fwobbe $
+# $Id: GSHHS_h_Australia.txt 12822 2014-01-31 23:39:56Z remko $
 #
 # GSHHS Master File: Resolution = high Continent = Australia
 #

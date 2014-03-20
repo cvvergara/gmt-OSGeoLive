@@ -1,5 +1,5 @@
-#!/bin/sh
-# $Id: prog_use.sh 9857 2012-03-13 10:55:26Z fwobbe $
+#!/bin/bash
+# $Id: prog_use.sh 12464 2013-11-06 15:58:22Z fwobbe $
 # Returns a count of how many time a GMT program is used in our test scripts
 # including doc and examples.  Give -l to see which scripts [Default returns the count]
 #

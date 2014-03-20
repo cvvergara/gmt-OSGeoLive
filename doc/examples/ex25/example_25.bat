@@ -1,7 +1,7 @@
 REM
 REM             GMT EXAMPLE 25
 REM
-REM             $Id: example_25.bat 11641 2013-06-07 00:06:36Z pwessel $
+REM             $Id: example_25.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:    Display distribution of antipode types
 REM

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>spectrum1d &mdash; GMT 5.1.0 documentation</title>
+    <title>spectrum1d &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="S" href="S.html" />
     <link rel="next" title="sph2grd" href="sph2grd.html" />
     <link rel="prev" title="sample1d" href="sample1d.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="S.html" accesskey="U">S</a> &raquo;</li>
 <li class="right">
@@ -203,10 +202,10 @@ file[s] [Default = frequency, (cycles / <em>dt</em>)].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -232,7 +231,8 @@ specify more decimals using the <a class="reference internal" href="gmt.conf.htm
 <p>Suppose data.g is gravity data in mGal, sampled every 1.5 km. To write
 its power spectrum, in mGal**2-km, to the file data.xpower, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt spectrum1d data.g -S256 -D1.5 -Ndata</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt spectrum1d data.g -S256 -D1.5 -Ndata
+</pre></div>
 </div>
 </div></blockquote>
 <p>Suppose in addition to data.g you have data.t, which is topography in
@@ -240,7 +240,8 @@ meters sampled at the same points as data.g. To estimate various
 features of the transfer function, considering data.t as input and
 data.g as output, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>paste data.t data.g | gmt spectrum1d -S256 -D1.5 -Ndata -C</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>paste data.t data.g | gmt spectrum1d -S256 -D1.5 -Ndata -C
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -286,6 +287,11 @@ AU-15, No 2.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="sph2grd.html"
                         title="next chapter">sph2grd</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/spectrum1d.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -304,7 +310,7 @@ AU-15, No 2.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="S.html" >S</a> &raquo;</li>
 <li class="right">
@@ -322,9 +328,9 @@ AU-15, No 2.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

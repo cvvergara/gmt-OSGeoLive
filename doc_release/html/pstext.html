@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pstext &mdash; GMT 5.1.0 documentation</title>
+    <title>pstext &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pswiggle" href="pswiggle.html" />
     <link rel="prev" title="psscale" href="psscale.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -77,8 +76,8 @@
   <div class="section" id="pstext">
 <span id="index-0"></span><h1>pstext<a class="headerlink" href="#pstext" title="Permalink to this headline">¶</a></h1>
 <p>pstext - Plot or typeset text on maps</p>
-<div class="section" id="id1">
-<h2><a class="reference external" href="#toc1">Synopsis</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
 <p><strong>pstext</strong> [ <em>textfiles</em> ] <strong>-J</strong><em>parameters</em>
 <strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]
 [ <strong>-A</strong> ]
@@ -122,7 +121,7 @@ Composite characters (overstrike) may be indicated with the
 each other. To learn the octal codes for symbols not available on the
 keyboard and some accented European characters, see Section 4.16 and
 Appendix F in the GMT Technical Reference and Cookbook. Note that
-<strong>PS_CHAR_ENCODING</strong> must be set to an extended character set in your
+<a class="reference internal" href="gmt.conf.html#ps-char-encoding"><em>PS_CHAR_ENCODING</em></a> must be set to an extended character set in your
 <a class="reference internal" href="gmt.conf.html"><em>gmt.conf</em></a> file in order to use the accented characters. Using the
 <strong>-G</strong> or <strong>-W</strong> options, a rectangle underlying the text may be plotted
 (does not work for strings with sub/super scripts, symbols, or composite
@@ -170,7 +169,7 @@ current projection.</dd>
 <dd>Sets the clearance between the text and the surrounding box [15%].
 Only used if <strong>-W</strong> or <strong>-G</strong> are specified. Append the unit you
 want (<strong>c</strong>m, <strong>i</strong>nch, or <strong>p</strong>oint; if not given we consult
-<strong>PROJ_LENGTH_UNIT</strong>) or % for a percentage of the font size.</dd>
+<a class="reference internal" href="gmt.conf.html#proj-length-unit"><em>PROJ_LENGTH_UNIT</em></a>) or % for a percentage of the font size.</dd>
 <dt><strong>-D</strong>[<strong>j</strong>|<strong>J</strong>]<em>dx</em>[/<em>dy</em>][<strong>v</strong>[<em>pen</em>]]</dt>
 <dd>Offsets the text from the projected (<em>x</em>,<em>y</em>) point by <em>dx</em>,<em>dy</em>
 [0/0]. If <em>dy</em> is not specified then it is set equal to <em>dx</em>. Use
@@ -182,7 +181,7 @@ a line from the original point to the shifted point; append a <em>pen</em>
 to change the attributes for this line.</dd>
 <dt><strong>-F</strong>[<strong>+a</strong>[<em>angle</em>]][<strong>+c</strong>[<em>justify</em>]][<strong>+f</strong>[<em>font</em>]][<strong>+h</strong>][<strong>+j</strong>[<em>justify</em>]][<strong>+l</strong>]</dt>
 <dd>By default, text will be placed horizontally, using the primary
-annotation font attributes (<strong>FONT_ANNOT_PRIMARY</strong>), and centered
+annotation font attributes (<a class="reference internal" href="gmt.conf.html#font-annot-primary"><em>FONT_ANNOT_PRIMARY</em></a>), and centered
 on the data point. Use this option to override these defaults by
 specifying up to three text attributes (font, angle, and
 justification) directly on the command line. Use <strong>+f</strong> to set the
@@ -196,11 +195,11 @@ specified with the <strong>-F</strong> option. Example:
 <strong>-F</strong><strong>+f</strong>12p,Helvetica-Bold,red<strong>+j+a</strong> selects a 12p red
 Helvetica-Bold font and expects to read the justification and angle
 from the file, in that order, after <em>x</em>, <em>y</em> and before <em>text</em>.
-The <strong>+c</strong> justification lets us use x,y coordinates extracted from the
-<strong>-R</strong> string instead of providing them from file. For example <strong>-F+c</strong>TL
+In addition, the <strong>+c</strong> justification lets us use x,y coordinates extracted from the
+<strong>-R</strong> string instead of providing them in the input file. For example <strong>-F+c</strong>TL
 gets the <em>x_min</em>, <em>y_max</em> from the <strong>-R</strong> string and plots the text
 at the Upper Left corner of the map.  Normally, the text to be plotted
-comes from the data record.  Use <strong>+h</strong> or <strong>+l</strong> to instead select the
+comes from the data record.  Instead, use <strong>+h</strong> or <strong>+l</strong> to select the
 text as the most recent segment header or segment label, respectively.</dd>
 <dt><strong>-G</strong><em>color</em></dt>
 <dd>Sets the shade or color used for filling the text box [Default is no
@@ -249,10 +248,9 @@ leaves all text as is].</dd>
 <dt><strong>-T</strong></dt>
 <dd>Specify the shape of the textbox when using <strong>-G</strong> and/or <strong>-W</strong>.
 Choose lower case <strong>o</strong> to get a straight rectangle [Default].
-Choose upper case <strong>O</strong> to get a rounded rectangle. Choose lower
-case <strong>c</strong> to get a concave rectangle (only in paragraph mode).
-Choose upper case <strong>C</strong> to get a convex rectangle (only in paragraph
-mode).</dd>
+Choose upper case <strong>O</strong> to get a rounded rectangle. In paragraph
+mode (<strong>-M</strong>) you can also choose lower case <strong>c</strong> to get a concave
+rectangle or upper case <strong>C</strong> to get a convex rectangle.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] <a class="reference internal" href="gmt.html#u-full"><em>(more ...)</em></a></dt>
@@ -304,10 +302,10 @@ paragraph mode).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -322,26 +320,30 @@ options, then exits.</dd>
 <p>To plot just the red outlines of the (lon at text strings) stored in the
 file text.d on a Mercator plot with the given specifications, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pstext text.d -R-30/30/-10/20 -Jm0.1i -P -F+f18p,Helvetica,-=0.5p,red -B5 &gt; plot.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pstext text.d -R-30/30/-10/20 -Jm0.1i -P -F+f18p,Helvetica,-=0.5p,red -B5 &gt; plot.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To plot a text at the upper left corner of a 10 cm map</p>
 <blockquote>
-<div><div class="highlight-python"><pre>echo TopLeft | gmt pstext -R1/10/1/10 -JX10 -F+cTL -P &gt; plot.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>echo TopLeft | gmt pstext -R1/10/1/10 -JX10 -F+cTL -P &gt; plot.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>To add a typeset figure caption for a 3-inch wide illustration, use</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt pstext -R0/3/0/5 -JX3i -O -H -M -N &lt;&lt; EOF &gt;&gt; figure.ps</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pstext -R0/3/0/5 -JX3i -O -H -M -N &lt;&lt; EOF &gt;&gt; figure.ps
+</pre></div>
 </div>
 </div></blockquote>
 <p>This is an optional header record</p>
 <blockquote>
-<div><div class="highlight-python"><pre>&gt; 0 -0.5 12 0 4 LT 13p 3i j
+<div><div class="highlight-python"><div class="highlight"><pre>&gt; 0 -0.5 12 0 4 LT 13p 3i j
 @%5%Figure 1.@%% This illustration shows nothing useful, but it still needs
 a figure caption. Highlighted in @;255/0/0;red@;; you can see the locations
 of cities where it is @\_impossible@\_ to get any good Thai food; these are to be avoided.
-EOF</pre>
+EOF
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -359,7 +361,9 @@ such duplication.</p>
 <h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
 <p>In paragraph mode, the presence of composite characters and other escape
 sequences may lead to unfortunate word splitting. Also, if a font is
-requested with an outline pen it will not be used in paragraph mode.</p>
+requested with an outline pen it will not be used in paragraph mode.
+Note if any single word is wider than your chosen paragraph width then
+the paragraph width is automatically enlarged to fit the widest word.</p>
 <p>The <strong>-N</strong> option does not adjust the BoundingBox information so you may
 have to post-process the PostScript output with ps2raster to obtain a
 correct BoundingBox.</p>
@@ -383,7 +387,7 @@ correct BoundingBox.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">pstext</a><ul>
-<li><a class="reference internal" href="#id1">Synopsis</a></li>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
 <li><a class="reference internal" href="#description">Description</a></li>
 <li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
 <li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
@@ -401,6 +405,11 @@ correct BoundingBox.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="pswiggle.html"
                         title="next chapter">pswiggle</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pstext.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -419,7 +428,7 @@ correct BoundingBox.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -437,9 +446,9 @@ correct BoundingBox.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

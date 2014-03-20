@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 14
 REM
-REM		$Id: example_14.bat 12380 2013-10-23 19:20:13Z pwessel $
+REM		$Id: example_14.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Showing simple gridding, contouring, and resampling along tracks
 REM GMT progs:	gmtset, blockmean, grdcontour, grdtrack, grdtrend, gmtinfo, project, pstext

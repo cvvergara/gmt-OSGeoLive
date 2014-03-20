@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdgradient &mdash; GMT 5.1.0 documentation</title>
+    <title>grdgradient &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,8 +18,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '5.1.0',
+        URL_ROOT:    './',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdhisteq" href="grdhisteq.html" />
     <link rel="prev" title="grdfilter" href="grdfilter.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -119,7 +118,7 @@ negative of the directional derivative, -[dz/dx*sin(<em>azim</em>) +
 dz/dy*cos(<em>azim</em>)], is found; negation yields positive values
 when the slope of z(x,y) is downhill in the <em>azim</em> direction, the
 correct sense for shading the illumination of an image (see
-<strong>grdimage</strong> and <strong>grdview</strong>) by a light source above the x,y plane
+<a class="reference internal" href="grdimage.html"><em>grdimage</em></a> and <a class="reference internal" href="grdview.html"><em>grdview</em></a>) by a light source above the x,y plane
 shining from the <em>azim</em> direction. Optionally, supply two azimuths,
 <strong>-A</strong><em>azim</em>/<em>azim2</em>, in which case the gradients in each of these
 directions are calculated and the one larger in magnitude is
@@ -133,16 +132,17 @@ above. Append <strong>c</strong> to use conventional Cartesian angles measured
 counterclockwise from the positive x (east) direction. Append <strong>o</strong>
 to report orientations (0-180) rather than directions (0-360).
 Append <strong>n</strong> to add 90 degrees to all angles (e.g., to give
-orientation of lineated features).</dd>
+orientation of lineated features).  Unlike <strong>-A</strong>, here we return
+the up-slope direction of the gradient.</dd>
 <dt><strong>-E</strong>[<strong>s|p</strong>]<em>azim/elev</em>[/<em>ambient</em>/<em>diffuse</em>/<em>specular</em>/<em>shine</em>]</dt>
-<dd>Compute Lambertian radiance appropriate to use with <strong>grdimage</strong> and
-<strong>grdview</strong>. The Lambertian Reflection assumes an ideal surface that
+<dd>Compute Lambertian radiance appropriate to use with <a class="reference internal" href="grdimage.html"><em>grdimage</em></a> and <a class="reference internal" href="grdview.html"><em>grdview</em></a>.
+The Lambertian Reflection assumes an ideal surface that
 reflects all the light that strikes it and the surface appears
 equally bright from all viewing directions. <em>azim</em> and <em>elev</em> are
 the azimuth and elevation of light vector. Optionally, supply
 <em>ambient</em> <em>diffuse</em> <em>specular</em> <em>shine</em> which are parameters that
 control the reflectance properties of the surface. Default values
-are: <em>0.55</em>/ <em>0.6</em>/<em>0.4</em>/<em>10</em> To leave some of the values untouched,
+are: <em>0.55</em>/<em>0.6</em>/<em>0.4</em>/<em>10</em> To leave some of the values untouched,
 specify = as the new value. For example <strong>-E</strong><em>60</em>/<em>30</em>/<em>=</em>/<em>0.5</em>
 sets the <em>azim</em> <em>elev</em> and <em>diffuse</em> to 60, 30 and 0.5 and leaves
 the other reflectance parameters untouched. Append <strong>s</strong> to use a
@@ -195,10 +195,10 @@ meters via a &#8220;Flat Earth&#8221; approximation using the current ellipsoid 
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -216,7 +216,7 @@ specified unit to meter.  If your grid is geographic, convert distances to meter
 <div class="section" id="hints">
 <h2>Hints<a class="headerlink" href="#hints" title="Permalink to this headline">¶</a></h2>
 <p>If you don&#8217;t know what <strong>-N</strong> options to use to make an intensity file
-for <strong>grdimage</strong> or <strong>grdview</strong>, a good first try is <strong>-Ne</strong>0.6.</p>
+for <a class="reference internal" href="grdimage.html"><em>grdimage</em></a> or <a class="reference internal" href="grdview.html"><em>grdview</em></a>, a good first try is <strong>-Ne</strong>0.6.</p>
 <p>Usually 255 shades are more than enough for visualization purposes. You
 can save 75% disk space by appending =nb/a to the output filename
 <em>out_grdfile</em>.</p>
@@ -226,8 +226,7 @@ all the maps, use the <strong>-N</strong> option and supply the same value of <e
 and <em>offset</em> to <strong>grdgradient</strong> for each map. A good guess is <em>offset</em> =
 0 and <em>sigma</em> found by <strong>grdinfo</strong> <strong>-L2</strong> or <strong>-L1</strong> applied to an
 unnormalized gradient grd.</p>
-<p>If you simply need the <em>x</em>- or <em>y</em>-derivatives of the grid, use
-<strong>grdmath</strong>.</p>
+<p>If you simply need the <em>x</em>- or <em>y</em>-derivatives of the grid, use <a class="reference internal" href="grdmath.html"><em>grdmath</em></a>.</p>
 </div>
 <div class="section" id="grid-file-formats">
 <h2>Grid File Formats<a class="headerlink" href="#grid-file-formats" title="Permalink to this headline">¶</a></h2>
@@ -265,12 +264,14 @@ how to read splices of 3-, 4-, or 5-dimensional grids.</p>
 normalized gradients in the range [-0.6,0.6] imitating light sources in
 the north and west directions:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdgradient geoid.nc -A0/270 -Ggradients.nc=nb/a -Ne0.6 -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdgradient geoid.nc -A0/270 -Ggradients.nc=nb/a -Ne0.6 -V
+</pre></div>
 </div>
 </div></blockquote>
 <p>To find the azimuth orientations of seafloor fabric in the file topo.nc:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt grdgradient topo.nc -Dno -Gazimuths.nc -V</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdgradient topo.nc -Dno -Gazimuths.nc -V
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -319,6 +320,11 @@ IEEE, Vol. 69, No. 1, January 1981, pp. 14-47.
   <h4>Next topic</h4>
   <p class="topless"><a href="grdhisteq.html"
                         title="next chapter">grdhisteq</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/grdgradient.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -337,7 +343,7 @@ IEEE, Vol. 69, No. 1, January 1981, pp. 14-47.
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -355,9 +361,9 @@ IEEE, Vol. 69, No. 1, January 1981, pp. 14-47.
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

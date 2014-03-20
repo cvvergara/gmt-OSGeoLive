@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.c 12326 2013-10-14 18:03:08Z pwessel $
+ *	$Id: gmt.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -70,7 +70,7 @@ int main (int argc, char *argv[]) {
 	/* Initialize new GMT session */
 	if ((api_ctrl = GMT_Create_Session (argv[0], 2U, 0U, NULL)) == NULL)
 		return EXIT_FAILURE;
-
+	api_ctrl->internal = true;	/* This is a proper GMT internal session (external programs will default to false) */
 	progname = strdup (GMT_basename (argv[0])); /* Last component from the pathname */
 	/* Remove any filename extensions added for example
 	 * by the MSYS shell when executing gmt via symlinks */
@@ -169,7 +169,6 @@ int main (int argc, char *argv[]) {
 	} /* status == GMT_NOT_A_VALID_MODULE */
 
 	/* Here we have found a recognized GMT module and the API has been initialized. */
-
 	if (argv[1+modulename_arg_n] && !strcmp (argv[1+modulename_arg_n], "=") && argv[2+modulename_arg_n] == NULL)	/* Just want to know if module exists */
 		status = GMT_OK;
 	else {	/* Now run the specified GMT module: */

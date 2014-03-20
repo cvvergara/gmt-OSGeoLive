@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psxyz.c 12407 2013-10-30 16:46:27Z pwessel $
+ *	$Id: psxyz.c 12922 2014-02-20 01:38:37Z pwessel $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -556,6 +556,7 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 	in = GMT->current.io.curr_rec;
 
 	if (not_line) {	/* symbol part (not counting GMT_SYMBOL_FRONT and GMT_SYMBOL_QUOTED_LINE) */
+		unsigned int n_warn[3] = {0, 0, 0}, warn;
 		double in2[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, *p_in = GMT->current.io.curr_rec;
 		if (GMT_Init_IO (API, set_type, geometry, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Register data input */
 			Return (API->error);
@@ -563,6 +564,7 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 		if (GMT_Begin_IO (API, set_type, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
 			Return (API->error);
 		}
+		GMT_set_meminc (GMT, GMT_BIG_CHUNK);	/* Only a sizeable amount of PSXZY_DATA structures when we initially allocate */
 		GMT->current.map.is_world = !(S.symbol == GMT_SYMBOL_ELLIPSE && S.convert_angles);
 		if (S.symbol == GMT_SYMBOL_ELLIPSE && S.n_required == 1) p_in = in2;
 		if (!read_symbol) API->object[API->current_item[GMT_IN]]->n_expected_fields = n_needed;
@@ -703,11 +705,13 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 						data[n].dim[0] = p_in[ex1];	/* direction */
 						data[n].dim[1] = p_in[ex2];
 						data[n].dim[2] = p_in[ex3];
+						GMT_flip_angle_d (GMT, &data[n].dim[0]);
 					}
 					else if (!GMT_is_geographic (GMT, GMT_IN)) {	/* Got axes in user units, change to inches */
 						data[n].dim[0] = 90.0 - p_in[ex1];	/* Cartesian azimuth */
 						data[n].dim[1] = p_in[ex2] * GMT->current.proj.scale[GMT_X];
 						data[n].dim[2] = p_in[ex3] * GMT->current.proj.scale[GMT_X];
+						GMT_flip_angle_d (GMT, &data[n].dim[0]);
 					}
 					else {				/* Got axis in km */
 						data[n].dim[0] = p_in[ex1];	/* Azimuth will be forwarded to GMT_geo_rectangle/ellipse */
@@ -747,6 +751,7 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 						data[n].dim[1] = hypot (data[n].x - x_2, data[n].y - y_2);	/* Compute vector length in case of shrinking */
 					}
 					else {
+						GMT_flip_angle_d (GMT, &data[n].dim[0]);
 						sincosd (data[n].dim[0], &s, &c);
 						x_2 = data[n].x + data[n].dim[1] * c;
 						y_2 = data[n].y + data[n].dim[1] * s;
@@ -952,7 +957,8 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 				case GMT_SYMBOL_GEOVECTOR:
 					GMT_plane_perspective (GMT, GMT_Z, data[i].z);
 					S.v = data[i].v;	/* Update vector attributes from saved values */
-					GMT_geo_vector (GMT, data[i].x, data[i].y, data[i].dim[0], data[i].dim[1], &data[i].p, &S);
+					warn = GMT_geo_vector (GMT, data[i].x, data[i].y, data[i].dim[0], data[i].dim[1], &data[i].p, &S);
+					n_warn[warn]++;
 					break;
 				case GMT_SYMBOL_MARC:
 					GMT_plane_perspective (GMT, GMT_Z, data[i].z);
@@ -981,7 +987,10 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 			}
 		}
 		PSL_command (GMT->PSL, "U\n");
+		if (n_warn[1]) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: %d vector heads had length exceeding the vector length and were skipped. Consider the +n<norm> modifier to -S\n", n_warn[1]);
+		if (n_warn[2]) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: %d vector heads had to be scaled more than implied by +n<norm> since they were still too long. Consider changing the +n<norm> modifier to -S\n", n_warn[2]);
 		GMT_free (GMT, data);
+		GMT_reset_meminc (GMT);
 	}
 	else {	/* Line/polygon part */
 		uint64_t seg;
@@ -995,12 +1004,14 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 		}
 
 		for (tbl = 0; tbl < D->n_tables; tbl++) {
-			if (D->table[tbl]->n_headers && S.G.label_type == 2) GMT_extract_label (GMT, &D->table[tbl]->header[0][1], S.G.label, NULL);	/* Set first header as potential label */
+			if (D->table[tbl]->n_headers && S.G.label_type == GMT_LABEL_IS_HEADER) GMT_extract_label (GMT, &D->table[tbl]->header[0][1], S.G.label, NULL);	/* Set first header as potential label */
 
 			for (seg = 0; seg < D->table[tbl]->n_segments; seg++) {	/* For each segment in the table */
 
 				L = D->table[tbl]->segment[seg];	/* Set shortcut to current segment */
 				if (polygon && GMT_polygon_is_hole (L)) continue;	/* Holes are handled together with perimeters */
+
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Plotting table %" PRIu64 " segment %" PRIu64 "\n", tbl, seg);
 
 				n = (int)L->n_rows;				/* Number of points in this segment */
 
@@ -1035,7 +1046,7 @@ int GMT_psxyz (void *V_API, int mode, void *args)
 					polygon = false;
 					PSL_setcolor (PSL, current_fill.rgb, PSL_IS_STROKE);
 				}
-				if (S.G.label_type == 2)	/* Get potential label from segment header */
+				if (S.G.label_type == GMT_LABEL_IS_HEADER)	/* Get potential label from segment header */
 					GMT_extract_label (GMT, L->header, S.G.label, L->ogr);
 
 				xp = GMT_memory (GMT, NULL, n, double);

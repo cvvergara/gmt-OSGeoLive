@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>mgd77track &mdash; GMT 5.1.0 documentation</title>
+    <title>mgd77track &mdash; GMT 5.1.1 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.0',
+        VERSION:     '5.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
     <link rel="up" title="MGD77" href="../../SUP_MGD77.html" />
     <link rel="next" title="MISC" href="../../SUP_MISC.html" />
     <link rel="prev" title="mgd77sniffer" href="mgd77sniffer.html" /> 
@@ -51,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" accesskey="U">MGD77</a> &raquo;</li>
 <li class="right">
@@ -92,6 +91,7 @@
 [ <strong>-TT</strong>|<strong>t</strong>|<strong>d</strong><em>ms</em>,<em>mc</em>,<em>mfs</em>,<em>mf</em>,<em>mfc</em> ]
 [ <strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] ]
 [ <strong>-V</strong>[<em>level</em>] ]
+[ <strong>-W</strong>[<strong>-</strong>|<strong>+</strong>][<em>pen</em>] ]
 [ <strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]] ]
 [ <strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] ]
 [ <strong>-c</strong><em>copies</em> ]
@@ -156,7 +156,7 @@ plotted, with no third dimension.  </dd>
 <dt><strong>-A</strong>[<strong>c</strong>][<em>size</em>][,<em>spacing</em>]</dt>
 <dd>Append <strong>c</strong> to annotate using the MGD77 cruise ID [Default uses the
 filename prefix]. Optional <em>size</em> is the font size in points. The
-leg annotation font is controlled by <strong>FONT_LABEL</strong>. By default,
+leg annotation font is controlled by <a class="reference internal" href="../../gmt.conf.html#font-label"><em>FONT_LABEL</em></a>. By default,
 each leg is annotated every time it enters the map region.
 Alternatively, append ,<em>spacing</em> to place this label every
 <em>spacing</em> units apart along the track. Append one of the units <strong>k</strong>
@@ -199,8 +199,8 @@ one format. [Default ignores none].</dd>
 <dt><strong>-L</strong><em>trackticks</em></dt>
 <dd>To put time/distance log-marks on the track. E.g.
 <strong>a</strong>500<strong>ka</strong>24<strong>ht</strong>6<strong>h</strong> means (<strong>a</strong>)nnotate every
-500 km (<strong>k</strong>) and 24 <strong>h**(ours), with
-(**t</strong>)ickmarks every 500 km and 6 hours. Alternatively you may use
+500 km (<strong>k</strong>) and 24 <strong>h</strong>(ours), with
+(<strong>t</strong>)ickmarks every 500 km and 6 hours. Alternatively you may use
 the modifiers <strong>d</strong> (days) and <strong>n</strong> (nautical miles).</dd>
 </dl>
 <dl class="docutils">
@@ -229,9 +229,12 @@ can specify the 5 comma-separated attributes <em>markersize</em>,
 <dl class="docutils">
 <dt><strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] <a class="reference internal" href="../../gmt.html#u-full"><em>(more ...)</em></a></dt>
 <dd>Draw GMT time stamp logo on plot.</dd>
-<dt><strong>-W</strong><em>pen</em></dt>
-<dd>Append <em>pen</em> used for the trackline. [Default is 0.25p,black].
-[Default is solid].</dd>
+<dt><strong>-W</strong>[<strong>-</strong>|<strong>+</strong>][<em>pen</em>]</dt>
+<dd>Append <em>pen</em> used for the trackline. [Defaults:
+width = default, color = black, style = solid]. A leading <strong>+</strong> will
+use the lookup color (via <strong>-C</strong>) for both symbol fill and outline
+pen color, while a leading <strong>-</strong> will set outline pen color and turn
+off symbol fill.</dd>
 </dl>
 <p><strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]]</p>
 <dl class="docutils">
@@ -256,10 +259,10 @@ can specify the 5 comma-separated attributes <em>markersize</em>,
 </dl>
 <dl class="docutils">
 <dt><strong>-^</strong></dt>
-<dd>Print a short message about the syntax of the command, then exits. (NOTE: on Windows use just <strong>-</strong>)</dd>
+<dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
 <dt><strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
-any module-specific option (but not the GMT common options), then exits</dd>
+any module-specific option (but not the GMT common options), then exits.</dd>
 <dt><strong>-?</strong></dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
@@ -278,8 +281,9 @@ every 10 degrees, draw gridlines every 5 degrees, and mark the track
 every day and 1000 km, with ticks every 6 hours and 250 km, and send the
 plot to the default printer, enter the following command:</p>
 <blockquote>
-<div><div class="highlight-python"><pre>gmt mgd77track 01010007 -R70W/20E/40S/20N -Jm0.1 -B10g5 -A10 \
-                        -La1da1000kf6hf250k \| lpr</pre>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77track 01010007 -R70W/20E/40S/20N -Jm0.1 -B10g5 -A10 \
+               -La1da1000kf6hf250k \| lpr
+</pre></div>
 </div>
 </div></blockquote>
 </div>
@@ -322,6 +326,11 @@ plot to the default printer, enter the following command:</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../../SUP_MISC.html"
                         title="next chapter">MISC</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/supplements/mgd77/mgd77track.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -340,7 +349,7 @@ plot to the default printer, enter the following command:</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" >MGD77</a> &raquo;</li>
 <li class="right">
@@ -358,9 +367,9 @@ plot to the default printer, enter the following command:</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2013, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Nov 05, 2013.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on Mar 01, 2014.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

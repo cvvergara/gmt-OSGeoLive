@@ -1,7 +1,7 @@
 /*
- * $Id: gmt_config.h.in 12402 2013-10-29 20:30:53Z fwobbe $
+ * $Id: gmt_config.h.in 12910 2014-02-17 21:27:37Z fwobbe $
  *
- *  Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo,
+ *  Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
@@ -54,9 +54,6 @@
 /* compile with ZLIB support <zlib.h> */
 #cmakedefine HAVE_ZLIB
 
-/* file locking */
-#cmakedefine FLOCK
-
 /* shared library */
 #cmakedefine BUILD_SHARED_LIBS
 
@@ -80,8 +77,12 @@
 #cmakedefine HAVE_ERRNO_H_
 #cmakedefine HAVE_EXECINFO_H_
 #cmakedefine HAVE_FCNTL_H_
-#cmakedefine HAVE_STAT_H_
+#cmakedefine HAVE_SIGNAL_H_
 #cmakedefine HAVE_SYS_DIR_H_
+#cmakedefine HAVE_SYS_RESOURCE_H_
+#cmakedefine HAVE_SYS_STAT_H_
+#cmakedefine HAVE_SYS_TIME_H_
+#cmakedefine HAVE_SYS_UCONTEXT_H_
 #cmakedefine HAVE_UNISTD_H_
 
 /* system specific functions */
@@ -90,6 +91,7 @@
 #cmakedefine HAVE__ACCESS
 #cmakedefine HAVE_BASENAME
 #cmakedefine HAVE_DLADDR
+#cmakedefine HAVE_FCNTL
 #cmakedefine HAVE_FILENO
 #cmakedefine HAVE__FILENO
 #cmakedefine HAVE_FSEEKO
@@ -312,6 +314,12 @@
 #		undef _FILE_OFFSET_BITS
 #	endif
 #	define _FILE_OFFSET_BITS 64
+#endif
+
+/* Check whether conditions for sighandler are met */
+#if !(defined(HAVE_SIGNAL_H_) && defined(HAVE_SYS_RESOURCE_H_) && \
+			defined(HAVE_SYS_TIME_H_) && defined(HAVE_SYS_UCONTEXT_H_))
+#	define NO_SIGHANDLER
 #endif
 
 #endif /* !_GMT_CONFIG_H */

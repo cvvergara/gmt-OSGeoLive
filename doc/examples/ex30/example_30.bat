@@ -1,5 +1,5 @@
 REM             GMT EXAMPLE 30
-REM             $Id: example_30.bat 11641 2013-06-07 00:06:36Z pwessel $
+REM             $Id: example_30.bat 12820 2014-01-31 21:01:19Z remko $
 REM
 REM Purpose:	Show graph mode and math angles
 REM GMT progs:	gmtmath, psbasemap, pstext and psxy

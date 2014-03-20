@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: common_sighandler.c 12128 2013-09-07 16:37:35Z fwobbe $
+ *	$Id: common_sighandler.c 12822 2014-01-31 23:39:56Z remko $
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -67,18 +67,24 @@ void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 #elif defined(__FreeBSD__)
 # ifdef __x86_64__
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.mc_rip)
+# elif defined( __arm__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
 # else
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.mc_eip)
 # endif
 #elif defined(SIZEOF_GREG_T)
 # ifdef __x86_64__
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_RIP])
+# elif defined( __arm__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
 # else
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_EIP])
 # endif
 #else
 # ifdef __x86_64__
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.rip)
+# elif defined( __arm__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
 # else
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.eip)
 # endif
@@ -146,6 +152,7 @@ void sig_handler(int sig_num, siginfo_t *info, void *ucontext) {
 
 	if (sig_num == SIGINT) {
 		/* catch ctrl-c */
+		int c;
 		struct sigaction act, oldact;
 		sigemptyset (&act.sa_mask);
 		act.sa_flags = 0;
@@ -155,7 +162,7 @@ void sig_handler(int sig_num, siginfo_t *info, void *ucontext) {
 		backtrace_symbols_fd (array, 1, STDERR_FILENO); /* print interrupted function */
 		process_info();
 		fprintf (stderr, "Press return to continue, ctrl-c to quit.");
-		while ( getchar() != '\n' );
+		while (( c = getchar() != '\n' && c != EOF ));
 		sigaction (SIGINT, &oldact, NULL); /* restore old action */
 		return;
 	}
