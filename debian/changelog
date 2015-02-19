@@ -1,17 +1,31 @@
-gmt (5.1.0-0~1) experimental; urgency=low
+gmt (5.1.1-1) UNRELEASED; urgency=medium
 
+  [ Francesco Paolo Lovergine ]
   * New upstream major release: build system moved to cmake.
-  * Now following general advice from upstream about packaging as listed 
+  * Now following general advice from upstream about packaging as listed
     in http://gmt.soest.hawaii.edu/projects/gmt/wiki/PackagingGMT
   * Added a new cmake patch with Debian changes to CMake configurations.
   * Removed autotools b-dep and rules.
   * Removed all (obsolete) patches.
   * Moved to current full dh_* auto support.
-  * Octave/mex stuff now lives in its own repository and should go into 
+  * Octave/mex stuff now lives in its own repository and should go into
     a separate source package. So, dropped octave-gmt ATM.
   * Updated list of b-d.
 
+  [ Ross Gammon ]
+  * Update watch file
+
  -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 27 Nov 2013 13:27:48 +0100
+
+gmt (4.5.12-1) unstable; urgency=medium
+
+  * New upstream release for 4.x series, bug fixing only.
+  * Now using unversioned paths for installing the octave files.
+    Thanks Rafael Laboissiere (closes: #734047).
+  * Policy set to 3.9.5, no changes done.
+  * Set debhelper to level 9 for both -arch and -indep sections.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Thu, 20 Mar 2014 10:34:32 +0100
 
 gmt (4.5.11-1) unstable; urgency=low
 
