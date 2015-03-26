@@ -1,5 +1,5 @@
 usr/bin
-usr/lib/gmt/bin
-usr/share/gmt
-usr/share/man
-etc
+#usr/lib/gmt/bin
+#usr/share/gmt
+#usr/share/man
+#etc

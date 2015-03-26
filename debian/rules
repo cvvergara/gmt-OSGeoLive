@@ -1,65 +1,65 @@
 #! /usr/bin/make -f
 
 # Some special build options
-ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
-   CFLAGS += -g -O0
-   LDFLAGS += -g
-else
-   CFLAGS += -O2
-endif
+#ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
+#   CFLAGS += -g -O0
+#   LDFLAGS += -g
+#else
+#   CFLAGS += -O2
+#endif
 
-ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
-   DH_VERBOSE=1
-   export DH_VERBOSE
-endif
+#ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
+DH_VERBOSE=1
+export DH_VERBOSE
+#endif
 
-BUILDDIR = $(CURDIR)/debian/build
-DESTDIR	= $(CURDIR)/debian/tmp
+#BUILDDIR = $(CURDIR)/debian/build
+#DESTDIR	= $(CURDIR)/debian/tmp
 
-CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-			-DDCW_ROOT=/usr/share/gmt/dcw \
-			-DGSHHG_ROOT=/usr/share/gmt/gshhg \
-			-DNETCDF_ROOT=/usr \
-			-DFFTW3_ROOT=/usr \
-			-DGDAL_ROOT=/usr \
-			-DPCRE_ROOT=/usr \
-			-DFLOCK=on \
-			-DGMT_INSTALL_MODULE_LINKS=off \
-			-DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=off \
-			-DLICENSE_RESTRICTED=LGPL 
+#CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+#            -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
+#           -DCMAKE_INSTALL_PREFIX=/usr \
+#			-DDCW_ROOT=/usr/share/gmt/dcw \
+#			-DGSHHG_ROOT=/usr/share/gmt/gshhg \
+#			-DNETCDF_ROOT=/usr \
+#			-DFFTW3_ROOT=/usr \
+#			-DGDAL_ROOT=/usr \
+#			-DPCRE_ROOT=/usr \
+#			-DFLOCK=on \
+#			-DGMT_INSTALL_MODULE_LINKS=off \
+#			-DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=off \
+#			-DLICENSE_RESTRICTED=LGPL 
 
 %:
 	dh $@ --buildsystem cmake \
-		--sourcedirectory=$(CURDIR) --builddirectory=$(BUILDDIR) \
-		--parallel
+#		--sourcedirectory=$(CURDIR) --builddirectory=$(BUILDDIR) \
+#		--parallel
 
-override_dh_auto_build:
-	mkdir $(BUILDDIR) || true 
-	cd $(BUILDDIR) && cmake $(CMAKE_OPTS) ../..
-	$(MAKE) -C $(BUILDDIR) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 
+#override_dh_auto_build:
+#	mkdir $(BUILDDIR) || true 
+#	cd $(BUILDDIR) && cmake $(CMAKE_OPTS) ../..
+#	$(MAKE) -C $(BUILDDIR) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 
 
-override_dh_auto_install:
-	DESTDIR=$(DESTDIR) $(MAKE) -C $(BUILDDIR) install
-	# remove duplicated stuff
-	rm -rf debian/tmp/usr/share/conf \
-		debian/tmp/usr/share/cpt \
-		debian/tmp/usr/share/custom \
-		debian/tmp/usr/share/dbase \
-		debian/tmp/usr/share/mgd77 \
-		debian/tmp/usr/share/mgg \
-		debian/tmp/usr/share/pattern \
-		debian/tmp/usr/share/pslib \
-		debian/tmp/usr/share/time \
-		debian/tmp/usr/share/tools \
-		debian/tmp/usr/share/VERSION \
-		debian/tmp/usr/share/x2sys
-	dh_auto_install
-	# Uncompress examples stuff 
-	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
-	# Remove +x 
-	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
+#override_dh_auto_install:
+#	DESTDIR=$(DESTDIR) $(MAKE) -C $(BUILDDIR) install
+#	# remove duplicated stuff
+#	rm -rf debian/tmp/usr/share/conf \
+#		debian/tmp/usr/share/cpt \
+#		debian/tmp/usr/share/custom \
+#		debian/tmp/usr/share/dbase \
+#		debian/tmp/usr/share/mgd77 \
+#		debian/tmp/usr/share/mgg \
+#		debian/tmp/usr/share/pattern \
+#		debian/tmp/usr/share/pslib \
+#		debian/tmp/usr/share/time \
+#		debian/tmp/usr/share/tools \
+#		debian/tmp/usr/share/VERSION \
+#		debian/tmp/usr/share/x2sys
+#	dh_auto_install
+#	# Uncompress examples stuff 
+#	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
+#	# Remove +x 
+#	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
 
 #	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
 #	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
@@ -98,6 +98,9 @@ override_dh_auto_install:
 #	rm -rf $(DESTDIR)/usr/share/gmt/man
 	
 
-override_dh_auto_clean:
-	rm -rf $(BUILDDIR) $(DESTDIR)
-	dh_auto_clean
+#override_dh_auto_clean:
+#	rm -rf $(BUILDDIR) $(DESTDIR)
+#	dh_auto_clean
+
+override_dh_install:
+	dh_install --list-missing
