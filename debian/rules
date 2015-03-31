@@ -104,3 +104,7 @@ export DH_VERBOSE
 
 override_dh_install:
 	dh_install --list-missing
+
+override_dh_compress:
+	# Don't compress the pdf files needed for the gmt-doc-pdf package
+	dh_compress -X.pdf

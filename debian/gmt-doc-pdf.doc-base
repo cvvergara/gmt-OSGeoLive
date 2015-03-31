@@ -1,0 +1,6 @@
+Document: gmt-doc-pdf
+Title: Generic Mapping Tools (GMT) Manual
+Abstract: These are manuals for GMT in PDF format.
+Section: Science/Geoscience
+Format: PDF
+Files: /usr/share/doc/gmt/pdf/*.pdf
