@@ -1,4 +1,4 @@
-gmt (5.1.2-1) UNRELEASED; urgency=medium
+gmt (5.1.2+dfsg-1) UNRELEASED; urgency=medium
 
   [ Francesco Paolo Lovergine ]
   * New upstream major release: build system moved to cmake.
@@ -31,7 +31,7 @@ gmt (5.1.2-1) UNRELEASED; urgency=medium
     - Add license & copyright for differently licensed files (mostly BSD/MIT)
   * Repack upstream source using Files-Excluded in the copyright file.
 
- -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 14:32:40 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 18:12:12 +0200
 
 gmt (4.5.12-1) unstable; urgency=medium
 
