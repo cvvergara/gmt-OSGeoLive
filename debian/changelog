@@ -13,7 +13,12 @@ gmt (5.1.1-1) UNRELEASED; urgency=medium
   * Updated list of b-d.
 
   [ Ross Gammon ]
-  * Update watch file
+  * Update watch file with sepwatch changes.
+
+  [ Bas Couwenberg ]
+  * Update watchfile, changes:
+    - Use passive FTP
+    - Add common dversionmangle
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 27 Nov 2013 13:27:48 +0100
 
