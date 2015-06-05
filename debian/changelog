@@ -31,6 +31,7 @@ gmt (5.1.2+dfsg-1) UNRELEASED; urgency=medium
     - Add license & copyright for differently licensed files (mostly BSD/MIT)
   * Repack upstream source using Files-Excluded in the copyright file.
   * Fix libgmt5 installation.
+  * Disable use of non-free triangle source.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 18:12:12 +0200
 
