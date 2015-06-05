@@ -25,6 +25,10 @@ gmt (5.1.2-1) UNRELEASED; urgency=medium
     - Update Vcs-Browser URL to use cgit instead of gitweb
     - Bump Standards-Version to 3.9.6, no changes.
   * Add gbp.conf to use pristine-tar by default.
+  * Update copyright file, changes:
+    - Changed OSSIM license to LGPL-3+ only
+    - Update copyright years, add additional copyright holders
+    - Add license & copyright for differently licensed files (mostly BSD/MIT)
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 14:32:40 +0200
 
