@@ -1,4 +1,4 @@
-gmt (5.1.1-1) UNRELEASED; urgency=medium
+gmt (5.1.2-1) UNRELEASED; urgency=medium
 
   [ Francesco Paolo Lovergine ]
   * New upstream major release: build system moved to cmake.
@@ -16,6 +16,7 @@ gmt (5.1.1-1) UNRELEASED; urgency=medium
   * Update watch file with sepwatch changes.
 
   [ Bas Couwenberg ]
+  * New upstream release.
   * Update watchfile, changes:
     - Use passive FTP
     - Add common dversionmangle
@@ -24,7 +25,7 @@ gmt (5.1.1-1) UNRELEASED; urgency=medium
     - Bump Standards-Version to 3.9.6, no changes.
   * Add gbp.conf to use pristine-tar by default.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 27 Nov 2013 13:27:48 +0100
+ -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 14:32:40 +0200
 
 gmt (4.5.12-1) unstable; urgency=medium
 
