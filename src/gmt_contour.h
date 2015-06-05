@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_contour.h 12937 2014-02-22 05:11:02Z pwessel $
+ *	$Id: gmt_contour.h 14183 2015-03-19 02:22:19Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -61,6 +61,7 @@ struct GMT_LABEL {	/* Contains information on contour/lineation labels */
 	double angle;		/* Angle of text unless curved text */
 	double line_angle;	/* Angle of line at label unless curved text */
 	double dist;
+	double rgb[4];		/* Font rgb */
 	uint64_t node;		/* Node of label on the line */
 	int end;		/* If N is used then -1 is start, +1 is end label */
 	char *label;
@@ -123,7 +124,8 @@ struct GMT_CONTOUR {
 	bool number;			/* true if we have constraints on the number of labels to apply */
 	bool do_interpolate;		/* true if we must resample the crossing lines */
 	bool fixed;			/* true if we chose fixed positions */
-	bool transparent;		/* true for transparent textbox, false for opaque */
+	bool fillbox;			/* true for filling the textbox, false for none */
+	bool must_clip;			/* true for transparent textbox, false for opaque */
 	bool curved_text;		/* true for text to follow curved lines */
 	bool no_gap;		/* Clip contour or not depends on label placement */
 	bool data_col;		/* true if there is data in the zz arrays passed, false if they are NULL */

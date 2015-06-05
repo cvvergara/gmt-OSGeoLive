@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdpaste.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grdpaste.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -73,6 +73,8 @@ int GMT_grdpaste_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t<grid1> and <grid2> must have same dx,dy and one edge in common.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\tIf in doubt, run grdinfo first and check your files.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\tUse grdpaste and/or grdsample to adjust files as necessary.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\tIf grids are geographic and adds to full 360-degree range then grid1\n");
+	GMT_Message (API, GMT_TIME_NONE, "\tdetermines west.  Use grdedit -S to rotate grid to another -Rw/e/s/n.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Specify file name for output grid file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Option (API, "V,f,.");
@@ -95,9 +97,9 @@ int GMT_grdpaste_parse (struct GMT_CTRL *GMT, struct GRDPASTE_CTRL *Ctrl, struct
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (n_in == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
+				if (n_in == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID))
 					Ctrl->In.file[n_in++] = strdup (opt->arg);
-				else if (n_in == 1 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
+				else if (n_in == 1 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID))
 					Ctrl->In.file[n_in++] = strdup (opt->arg);
 				else {
 					n_errors++;
@@ -108,7 +110,7 @@ int GMT_grdpaste_parse (struct GMT_CTRL *GMT, struct GRDPASTE_CTRL *Ctrl, struct
 			/* Processes program-specific parameters */
 
  			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -141,7 +143,7 @@ static inline bool is_nc_grid (struct GMT_GRID *grid) {
 
 int GMT_grdpaste (void *V_API, int mode, void *args)
 {
-	int error = 0, way;
+	int error = 0, way = 0;
 	unsigned int one_or_zero;
 	bool common_y = false;
 
@@ -200,8 +202,8 @@ int GMT_grdpaste (void *V_API, int mode, void *args)
 	if ((C = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_NONE, A)) == NULL) Return (API->error);	/* Just to get a header */
 	
 	one_or_zero = A->header->registration == GMT_GRID_NODE_REG;
-	x_noise = GMT_SMALL * C->header->inc[GMT_X];
-	y_noise = GMT_SMALL * C->header->inc[GMT_Y];
+	x_noise = GMT_CONV4_LIMIT * C->header->inc[GMT_X] * 10;
+	y_noise = GMT_CONV4_LIMIT * C->header->inc[GMT_Y] * 10;
 
 	common_y = (fabs (A->header->wesn[YLO] - B->header->wesn[YLO]) < y_noise && fabs (A->header->wesn[YHI] - B->header->wesn[YHI]) < y_noise);
 	
@@ -209,7 +211,12 @@ int GMT_grdpaste (void *V_API, int mode, void *args)
 		double del;
 		if (common_y) {	/* A and B are side-by-side, may differ by +-360 +- 1 pixel width */
 			del = A->header->wesn[XLO] - B->header->wesn[XHI];	/* Test if B left of A */
-			if (del < (360.0 + C->header->inc[GMT_X] + x_noise) && del > (360.0 - C->header->inc[GMT_X] - x_noise)) {
+			if (doubleAlmostEqual (fabs (del), 360.0)) {	/* Let A remain left of B */
+				/* Since new range is a full 360 we always let the first grid decide west boundary.
+				 * If this is not desirable the user should switch A and B or sue grdedit -S */
+				way = 4;
+			}
+			else if (del < (360.0 + C->header->inc[GMT_X] + x_noise) && del > (360.0 - C->header->inc[GMT_X] - x_noise)) {
 				B->header->wesn[XLO] += 360.0;	B->header->wesn[XHI] += 360.0;
 			}
 			else if (del < (-360.0 + C->header->inc[GMT_X] + x_noise) && del > (-360.0 - C->header->inc[GMT_X] - x_noise)) {
@@ -241,15 +248,15 @@ int GMT_grdpaste (void *V_API, int mode, void *args)
 
 		C->header->ny = A->header->ny;
 
-		if (fabs (A->header->wesn[XLO] - B->header->wesn[XHI]) < x_noise) {			/* A is on the right of B */
-			way = 3;
-			C->header->nx = A->header->nx + B->header->nx - one_or_zero;
-			C->header->wesn[XLO] = B->header->wesn[XLO];			/* ...but not for west */
-		}
-		else if (fabs (A->header->wesn[XHI] - B->header->wesn[XLO]) < x_noise) {	/* A is on the left of B */
+		if (way == 4 || fabs (A->header->wesn[XHI] - B->header->wesn[XLO]) < x_noise) {	/* A is on the left of B */
 			way = 4;
 			C->header->nx = A->header->nx + B->header->nx - one_or_zero;
 			C->header->wesn[XHI] = B->header->wesn[XHI];			/* ...but not for east */
+		}
+		else if (fabs (A->header->wesn[XLO] - B->header->wesn[XHI]) < x_noise) {			/* A is on the right of B */
+			way = 3;
+			C->header->nx = A->header->nx + B->header->nx - one_or_zero;
+			C->header->wesn[XLO] = B->header->wesn[XLO];			/* ...but not for west */
 		}
 		else if ((fabs (A->header->wesn[XLO] - B->header->wesn[XHI]) < (C->header->inc[GMT_X] + x_noise)) ) {
 			/* A is on right of B but their pixel|grid reg limits under|overlap by one cell */

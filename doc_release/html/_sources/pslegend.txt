@@ -177,13 +177,14 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
     of the column, with the optional explanatory *text* starting *dx2*
     from the margin, printed with **FONT\_ANNOT\_PRIMARY**. Use **-** if
     no *fill* or outline (*pen*) is required. When plotting just a
-    symbol, without text, *dx2* and *text* can be omitted. Two **psxy**
-    symbols may take special modifiers: front (**f**) and vector (**v**). 
-    You can append modifiers to the symbol and affect how the fronts and
+    symbol, without text, *dx2* and *text* can be omitted. Three **psxy**
+    symbols may take special modifiers: front (**f**), quoted line (**q**) and vector (**v**). 
+    You can append modifiers to the symbol and affect how the fronts, quoted lines and
     vectors are presented (see :doc:`psxy` man page for modifiers).
     **pslegend** will determine default settings for all modifiers and
     secondary arguments if not provided.  A few other symbols (the rectangles,
     ellipse, wedge, mathangle) may take more than a single argument size.
+    Note that for a line segment you should use the horizontal dash symbol (**-**).
     If just a single size if given then **pslegend** will provide reasonable
     arguments to plot the symbol  (See `Defaults`_).
     Alternatively, combine the required
@@ -236,69 +237,40 @@ Examples
 To add an example of a legend to a Mercator plot (map.ps) with the given
 specifications, use
 
+   ::
+
     gmt pslegend -R-10/10/-10/10 -JM6i -F+gazure1 -Dx0.5i/0.5i/5i/3.3i/BL \
     -C0.1i/0.1i -L1.2 -B5f1 << EOF >> map.ps
-
     # Legend test for pslegend
-
     # G is vertical gap, V is vertical line, N sets # of columns, D draws horizontal line.
-
     # H is header, L is label, S is symbol, T is paragraph text, M is map scale.
-
     #
-
     G -0.1i
-
     H 24 Times-Roman My Map Legend
-
     D 0.2i 1p
-
     N 2
-
     V 0 1p
-
     S 0.1i c 0.15i p300/12 0.25p 0.3i This circle is hachured
-
     S 0.1i e 0.15i yellow 0.25p 0.3i This ellipse is yellow
-
     S 0.1i w 0.15i green 0.25p 0.3i This wedge is green
-
     S 0.1i f0.1i+l+t 0.25i blue 0.25p 0.3i This is a fault
-
     S 0.1i - 0.15i - 0.25p,- 0.3i A dashed contour
-
     S 0.1i v0.1i+a40+e 0.25i magenta 0.25p 0.3i This is a vector
-
     S 0.1i i 0.15i cyan 0.25p 0.3i This triangle is boring
-
     V 0 1p
-
     D 0.2i 1p
-
     N 1
-
     M 5 5 600+u f
-
     G 0.05i
-
     I SOEST_logo.ras 3i CT
-
     G 0.05i
-
     B colors.cpt 0.2i 0.2i
-
     G 0.05i L 9 4 R Smith et al., @%5%J. Geophys. Res., 99@%%, 2000
-
     G 0.1i
-
     P
-
     T Let us just try some simple text that can go on a few lines.
-
     T There is no easy way to predetermine how many lines will be required,
-
     T so we may have to adjust the box height to get the right size box.
-
     EOF
 
 Note On Legend Height

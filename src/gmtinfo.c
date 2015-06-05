@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: gmtinfo.c 12822 2014-01-31 23:39:56Z remko $
+ *    $Id: gmtinfo.c 14214 2015-04-08 23:38:32Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -164,7 +164,7 @@ int GMT_gmtinfo_parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GM
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -256,6 +256,10 @@ int GMT_gmtinfo_parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GM
 	}
 
 	if (Ctrl->I.mode != ACTUAL_BOUNDS) GMT_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
+	if (Ctrl->I.active && special && Ctrl->I.ncol > 1) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -Ip. Only a single increment is expected.\n");
+		n_errors++;
+	}
 	if (Ctrl->I.active && !special && Ctrl->I.ncol == 1) {		/* Special case of dy = dx if not given */
 		Ctrl->I.inc[GMT_Y] = Ctrl->I.inc[GMT_X];
 		Ctrl->I.ncol = 2;
@@ -281,14 +285,14 @@ int GMT_gmtinfo_parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GM
 int GMT_gmtinfo (void *V_API, int mode, void *args)
 {
 	bool got_stuff = false, first_data_record, give_r_string = false;
-	bool brackets = false, work_on_abs_value, do_report, save_range, done;
+	bool brackets = false, work_on_abs_value, do_report, done;
 	int i, j, error = 0, col_type[GMT_MAX_COLUMNS];
-	unsigned int fixed_phase[2] = {1, 1}, min_cols, o_mode;
+	unsigned int fixed_phase[2] = {1, 1}, min_cols, o_mode, save_range;
 	uint64_t col, ncol = 0, n = 0;
 
 	char file[GMT_BUFSIZ] = {""}, chosen[GMT_BUFSIZ] = {""}, record[GMT_BUFSIZ] = {""}, buffer[GMT_BUFSIZ] = {""}, delimeter[2] = {""};
 
-	double *xyzmin = NULL, *xyzmax = NULL, *in = NULL, phase[2] = {0.0, 0.0}, this_phase, off;
+	double *xyzmin = NULL, *xyzmax = NULL, *in = NULL, *dchosen = NULL, phase[2] = {0.0, 0.0}, this_phase, off;
 	double west = 0.0, east = 0.0, south = 0.0, north = 0.0, low, high, value, e_min = DBL_MAX, e_max = -DBL_MAX;
 
 	struct GMT_QUAD *Q = NULL;
@@ -447,8 +451,17 @@ int GMT_gmtinfo (void *V_API, int mode, void *args)
 				i = strip_blanks_and_output (GMT, buffer, east, Ctrl->T.col);		strcat (record, &buffer[i]);	strcat (record, "/");
 				i = strip_blanks_and_output (GMT, buffer, Ctrl->T.inc, Ctrl->T.col);	strcat (record, &buffer[i]);
 			}
-			else if (Ctrl->E.active)	/* Return extreme record */
+			else if (Ctrl->E.active) {	/* Return extreme record */
+				int sep = 0;
+				if (GMT->common.b.active[GMT_IN]) {	/* Make ascii record */
+					GMT_memset (chosen, GMT_BUFSIZ, char);
+					for (col = 0; col < ncol; col++) {	/* Report min/max for each column in the format controlled by -C */
+						GMT_add_to_record (GMT, chosen, dchosen[col], col, sep);
+						sep = 1;
+					}
+				}
 				strncpy (record, chosen, GMT_BUFSIZ);
+			}
 			else {				/* Return min/max for each column */
 				if (!Ctrl->C.active) {	/* Want info about each item */
 					record[0] = '\0';	/* Start with blank slate */
@@ -523,7 +536,10 @@ int GMT_gmtinfo (void *V_API, int mode, void *args)
 		if (first_data_record) {	/* First time we read data, we must allocate arrays based on the number of columns */
 
 			ncol = GMT_get_cols (GMT, GMT_IN);
-			if (Ctrl->E.active && Ctrl->E.col == UINT_MAX) Ctrl->E.col = ncol - 1;	/* Default is last column */
+			if (Ctrl->E.active) {
+				if (Ctrl->E.col == UINT_MAX) Ctrl->E.col = ncol - 1;	/* Default is last column */
+				if (GMT->common.b.active[GMT_IN]) dchosen = GMT_memory (GMT, NULL, ncol, double);
+			}
 			min_cols = 2;	if (Ctrl->S.xbar) min_cols++;	if (Ctrl->S.ybar) min_cols++;
 			if (Ctrl->S.active && min_cols > ncol) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Not enough columns to support the -S option\n");
@@ -563,11 +579,17 @@ int GMT_gmtinfo (void *V_API, int mode, void *args)
 				value = (work_on_abs_value) ? fabs (in[Ctrl->E.col]) : in[Ctrl->E.col];
 				if (Ctrl->E.mode == -1 && value < e_min) {	/* Lower than previous low */
 					e_min = value;
-					strncpy (chosen, GMT->current.io.current_record, GMT_BUFSIZ);
+					if (GMT->common.b.active[GMT_IN])
+						GMT_memcpy (dchosen, in, ncol, double);
+					else
+						strncpy (chosen, GMT->current.io.current_record, GMT_BUFSIZ);
 				}
 				else if (Ctrl->E.mode == +1 && value > e_max) {	/* Higher than previous high */
 					e_max = value;
-					strncpy (chosen, GMT->current.io.current_record, GMT_BUFSIZ);
+					if (GMT->common.b.active[GMT_IN])
+						GMT_memcpy (dchosen, in, ncol, double);
+					else
+						strncpy (chosen, GMT->current.io.current_record, GMT_BUFSIZ);
 				}
 			}
 		}
@@ -615,6 +637,8 @@ int GMT_gmtinfo (void *V_API, int mode, void *args)
 	if (Ctrl->C.active) {	/* Restore previous output col types */
 		GMT_memcpy (GMT->current.io.col_type[GMT_OUT], col_type, GMT_MAX_COLUMNS, int);
 	}
+	if (Ctrl->E.active && GMT->common.b.active[GMT_IN])
+		GMT_free (GMT, dchosen);
 
 	Return (GMT_OK);
 }

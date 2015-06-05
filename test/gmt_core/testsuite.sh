@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# $Id: testsuite.sh 12183 2013-09-22 14:58:38Z fwobbe $
+# $Id: testsuite.sh 13579 2014-10-02 20:35:47Z pwessel $
 
 # test if testsuite is up to date and setup correctly
 # make sure we are using the gmt executable from the build tree
@@ -10,8 +10,6 @@ echo -n "gmt location: "
 gmt --show-bindir       | grep "^${GMT_BINARY_DIR}/src$"
 echo -n "sharedir    : "
 gmt --show-datadir     | grep "^${GMT_SHAREDIR}$"
-echo -n "userdir     : "
-gmt gmtget DIR_USER     | grep "^${GMT_USERDIR}$"
 echo -n "gmt gshhg dir   : "
 gmt gmtget DIR_GSHHG    | grep "^${GSHHG_DIR}$"
 

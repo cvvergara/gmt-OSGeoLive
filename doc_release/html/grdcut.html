@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdcut &mdash; GMT 5.1.1 documentation</title>
+    <title>grdcut &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdedit" href="grdedit.html" />
     <link rel="prev" title="grdcontour" href="grdcontour.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -83,7 +83,7 @@
 [ <strong>-N</strong>[<em>nodata</em>] ]
 [ <strong>-S</strong>[<strong>n</strong>]<em>lon/lat/radius</em>[<em>unit</em>] ]
 [ <strong>-V</strong>[<em>level</em>] ]
-[ <strong>-Z</strong>[<strong>n</strong>]<em>min/max</em>] ]
+[ <strong>-Z</strong>[<strong>n</strong>|<strong>r</strong>]<em>min/max</em> ]
 [ <strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> ]</p>
 <p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
 </div>
@@ -125,24 +125,28 @@ nodes on or inside the circle are contained in the subset. If
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
 <dd>Select verbosity level [c].  </dd>
-<dt><strong>-Z</strong>[<strong>n</strong>]<em>min/max</em>]</dt>
-<dd>Determine the new rectangular region so that all nodes outside this
+<dt><strong>-Z</strong>[<strong>n</strong>|<strong>r</strong>]<em>min/max</em></dt>
+<dd>Determine the new rectangular region so that all nodes <em>outside</em> this
 region are also outside the given <em>z</em>-range [-inf/+inf]. To indicate
 no limit on min or max, specify a hyphen (-). Normally, any NaNs
-encountered are simply skipped. Use <strong>-Zn</strong> to consider a NaN to be
-outside the <em>z</em>-range.</dd>
+encountered are simply skipped and not considered in the decision.
+Use <strong>-Zn</strong> to consider a NaN to be outside the <em>z</em>-range. This means
+the new subset will be NaN-free. Alternatively, use <strong>-Zr</strong> to
+consider NaNs to be within the data range. In this case we stop
+shrinking the boundaries once a NaN is found [Default simply skips NaNs
+when making the range decision].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> <a class="reference internal" href="gmt.html#f-full"><em>(more ...)</em></a></dt>
 <dd>Specify data types of input and/or output columns.  </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -290,7 +294,7 @@ distance of 500 km from the point 45,30 try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -308,9 +312,9 @@ distance of 500 km from the point 45,30 try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

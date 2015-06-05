@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_error.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 
 const char *g_error_string[] = {
 	/* GMT_NOERROR */			"No internal GMT error",
+	/* GMT_GRDIO_NONUNIQUE_FORMAT */	"Non-unique grid format",
 	/* GMT_GRDIO_UNKNOWN_FORMAT */		"Not a supported grid format",
 	/* GMT_GRDIO_UNKNOWN_TYPE */		"Unknown grid data type",
 	/* GMT_GRDIO_UNKNOWN_ID */		"Unknown grid format id number",

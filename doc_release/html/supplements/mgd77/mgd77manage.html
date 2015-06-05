@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>mgd77manage &mdash; GMT 5.1.1 documentation</title>
+    <title>mgd77manage &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="MGD77" href="../../SUP_MGD77.html" />
     <link rel="next" title="mgd77path" href="mgd77path.html" />
     <link rel="prev" title="mgd77magref" href="mgd77magref.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" accesskey="U">MGD77</a> &raquo;</li>
 <li class="right">
@@ -146,7 +146,7 @@ IGF gravity reference field (a.k.a &#8220;normal gravity&#8221;), <strong>m</str
 IGRF total field magnetic reference field, and <strong>r</strong> for recomputed
 magnetic anomaly (append 1 or 2 to specify which total field column
 to use [1]). For gravity we choose the reference field based on the
-parameter Gravity Theoretical Formula Code in the cruise’s MGD77
+parameter Gravity Theoretical Formula Code in the cruise&#8217;s MGD77
 header. If this is not set or is invalid we default to the IGF 1980.
 You can override this behaviour by appending the desired code: 1 =
 Heiskanen 1924, 2 = International 1930, 3 = IGF1967, or 4 = IGF1980.</p>
@@ -231,7 +231,7 @@ new filename to the old filename, and finally remove the old,
 renamed file.</dd>
 <dt><strong>-E</strong><em>empty</em></dt>
 <dd>Give a single character that will be repeated to fill empty string
-values, e.g., ’9’ will yield a string like &#8220;99999...&#8221; [9].</dd>
+values, e.g., &#8220;9&#8221; will yield a string like &#8220;99999...&#8221; [9].</dd>
 <dt><strong>-F</strong></dt>
 <dd>Force mode. When this mode is active you are empowered to delete or
 replace even the standard MGD77 set of columns. You better know what
@@ -274,12 +274,12 @@ numerical data columns.</dd>
 <dd>Select interpolation mode for grids.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -350,7 +350,7 @@ all MGD77+ files, try</p>
 <p><strong>1. Preamble</strong></p>
 <p>The mgd77 supplement is an attempt to (1) improve on the
 limited functionality of the existing mgg supplement, (2) incorporate
-some of the ideas from Scripps’ gmt+ supplement by allowing extra data
+some of the ideas from Scripps&#8217; gmt+ supplement by allowing extra data
 columns, and (3) add new capabilities for managing marine
 geophysical trackline data stored in an architecture-independent CF-1.0-
 and COARDS-compliant netCDF file format. Here are some of the underlying
@@ -443,7 +443,7 @@ terms will have those corrections applied (if a correction table is
 supplied). All of these steps require the presence of the relevant
 meta-data and all can be overruled by the user. In addition, users may
 add their own bitflags as separate data columns and use
-<strong>mgd77list</strong>’s logical tests to further dictate which data are
+<strong>mgd77list</strong>&#8216;s logical tests to further dictate which data are
 suppressed from output.</p>
 </div>
 <div class="section" id="credits">
@@ -522,7 +522,7 @@ Luis, and adapted to GMT style by Paul Wessel.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" >MGD77</a> &raquo;</li>
 <li class="right">
@@ -540,9 +540,9 @@ Luis, and adapted to GMT style by Paul Wessel.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

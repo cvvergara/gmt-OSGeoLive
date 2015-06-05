@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(30) Trigonometric functions plotted in graph mode &mdash; GMT 5.1.1 documentation</title>
+    <title>(30) Trigonometric functions plotted in graph mode &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(31) Using non-default fonts in PostScript" href="ex31.html" />
     <link rel="prev" title="(29) Gridding spherical surface data using splines" href="ex29.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -97,8 +97,8 @@ gmt psbasemap -R0/360/-1.25/1.75 -JX8i/6i -Bx90f30+u<span class="s2">&quot;\\312
 
 <span class="c"># Draw sine an cosine curves</span>
 
-gmt gmtmath -T0/360/0.1 T <span class="nv">COSD</span> <span class="o">=</span> | gmt psxy -R -J -O -K -W3p &gt;&gt; <span class="nv">$ps</span>
-gmt gmtmath -T0/360/0.1 T <span class="nv">SIND</span> <span class="o">=</span> | gmt psxy -R -J -O -K -W3p,0_6:0 --PS_LINE_CAP<span class="o">=</span>round &gt;&gt; <span class="nv">$ps</span>
+gmt gmtmath -T0/360/0.1 T <span class="nv">COSD</span> <span class="o">=</span> <span class="p">|</span> gmt psxy -R -J -O -K -W3p &gt;&gt; <span class="nv">$ps</span>
+gmt gmtmath -T0/360/0.1 T <span class="nv">SIND</span> <span class="o">=</span> <span class="p">|</span> gmt psxy -R -J -O -K -W3p,0_6:0 --PS_LINE_CAP<span class="o">=</span>round &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># Indicate the x-angle = 120 degrees</span>
 gmt psxy -R -J -O -K -W0.5p,- <span class="s">&lt;&lt; EOF &gt;&gt; $ps</span>
@@ -116,7 +116,7 @@ gmt pstext -R -J -O -K -Dj0.2c -N -F+f+j <span class="s">&lt;&lt; EOF &gt;&gt; $
 
 <span class="c"># Draw a circle and indicate the 0-70 degree angle</span>
 
-<span class="nb">echo </span>0 0 | gmt psxy -R-1/1/-1/1 -Jx1.5i -O -K -X3.625i -Y2.75i -Sc2i -W1p -N &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span><span class="m">0</span> <span class="m">0</span> <span class="p">|</span> gmt psxy -R-1/1/-1/1 -Jx1.5i -O -K -X3.625i -Y2.75i -Sc2i -W1p -N &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O -K -W1p <span class="s">&lt;&lt; EOF &gt;&gt; $ps</span>
 <span class="s">&gt; x-gridline  -Wdefault</span>
 <span class="s">-1	0</span>
@@ -145,7 +145,7 @@ gmt pstext -R -J -O -K -Dj0.05i -F+f+a+j <span class="s">&lt;&lt; EOF &gt;&gt; $
 <span class="s">-0.33333 0.6 12p,Times-Roman 30 LB 120\\312</span>
 <span class="s">EOF</span>
 
-<span class="nb">echo </span>0 0 0.5i 0 120 | gmt psxy -R -J -O -Sm0.15i+e -W1p -Gblack &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span><span class="m">0</span> <span class="m">0</span> 0.5i <span class="m">0</span> <span class="m">120</span> <span class="p">|</span> gmt psxy -R -J -O -Sm0.15i+e -W1p -Gblack &gt;&gt; <span class="nv">$ps</span>
 </pre></div>
 </div>
 <div class="figure align-center">
@@ -189,7 +189,7 @@ gmt pstext -R -J -O -K -Dj0.05i -F+f+a+j <span class="s">&lt;&lt; EOF &gt;&gt; $
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -207,9 +207,9 @@ gmt pstext -R -J -O -K -Dj0.05i -F+f+a+j <span class="s">&lt;&lt; EOF &gt;&gt; $
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

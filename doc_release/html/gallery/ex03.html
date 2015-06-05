@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(3) Spectral estimation and xy-plots &mdash; GMT 5.1.1 documentation</title>
+    <title>(3) Spectral estimation and xy-plots &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(4) A 3-D perspective mesh plot" href="ex04.html" />
     <link rel="prev" title="(2) Image presentations" href="ex02.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -132,10 +132,10 @@ specify positions in inches directly. Thus, the complete automated script reads:
 <span class="c">#</span>
 <span class="nv">ps</span><span class="o">=</span>example_03.ps
 gmt fitcircle sat.xyg -L2 &gt; report
-<span class="nv">cposx</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 Average Position&quot;</span> report | cut -f1<span class="sb">`</span> 
-<span class="nv">cposy</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 Average Position&quot;</span> report | cut -f2<span class="sb">`</span> 
-<span class="nv">pposx</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 N Hemisphere&quot;</span> report | cut -f1<span class="sb">`</span> 
-<span class="nv">pposy</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 N Hemisphere&quot;</span> report | cut -f2<span class="sb">`</span> 
+<span class="nv">cposx</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 Average Position&quot;</span> report <span class="p">|</span> cut -f1<span class="sb">`</span> 
+<span class="nv">cposy</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 Average Position&quot;</span> report <span class="p">|</span> cut -f2<span class="sb">`</span> 
+<span class="nv">pposx</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 N Hemisphere&quot;</span> report <span class="p">|</span> cut -f1<span class="sb">`</span> 
+<span class="nv">pposy</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&quot;L2 N Hemisphere&quot;</span> report <span class="p">|</span> cut -f2<span class="sb">`</span> 
 <span class="c">#</span>
 <span class="c"># Now we use &quot;gmt project&quot; to gmt project the data in both sat.xyg and ship.xyg</span>
 <span class="c"># into data.pg, where g is the same and p is the oblique longitude around</span>
@@ -149,7 +149,7 @@ gmt project ship.xyg -C<span class="nv">$cposx</span>/<span class="nv">$cposy</s
 <span class="c"># We use this information first with a large -I value to find the appropriate -R</span>
 <span class="c"># to use to plot the .pg data. </span>
 <span class="c">#</span>
-<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>cat sat.pg ship.pg | gmt info -I100/25<span class="sb">`</span>
+<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>cat sat.pg ship.pg <span class="p">|</span> gmt info -I100/25<span class="sb">`</span>
 gmt psxy <span class="nv">$R</span> -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3a in Cookbook&quot;</span> -BWeSn <span class="se">\</span>
 	-Bxa500f100+l<span class="s2">&quot;Distance along great circle&quot;</span> -Bya100f25+l<span class="s2">&quot;Gravity anomaly (mGal)&quot;</span> <span class="se">\</span>
 	-JX8i/5i -X2i -Y1.5i -K -Wthick sat.pg &gt; example_03a.ps
@@ -164,10 +164,10 @@ gmt psxy -R -JX -O -Sp0.03i ship.pg &gt;&gt; example_03a.ps
 <span class="c"># typically spaced using $AWK to get the delta-p between points and view it with </span>
 <span class="c"># &quot;gmt pshistogram&quot;.</span>
 <span class="c">#</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;{ if (NR &gt; 1) print $1 - last1; last1=$1; }&#39;</span> ship.pg | gmt pshistogram  -W0.1 -Gblack <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{ if (NR &gt; 1) print $1 - last1; last1=$1; }&#39;</span> ship.pg <span class="p">|</span> gmt pshistogram  -W0.1 -Gblack <span class="se">\</span>
 	-JX3i -K -X2i -Y1.5i -B0 -B+t<span class="s2">&quot;Ship&quot;</span> -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3b in Cookbook&quot;</span> <span class="se">\</span>
 	&gt; example_03b.ps
-<span class="nv">$AWK</span> <span class="s1">&#39;{ if (NR &gt; 1) print $1 - last1; last1=$1; }&#39;</span> sat.pg  | gmt pshistogram  -W0.1 -Gblack <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{ if (NR &gt; 1) print $1 - last1; last1=$1; }&#39;</span> sat.pg  <span class="p">|</span> gmt pshistogram  -W0.1 -Gblack <span class="se">\</span>
 	-JX3i -O -X5i -B0 -B+t<span class="s2">&quot;Sat&quot;</span> &gt;&gt; example_03b.ps
 <span class="c">#</span>
 <span class="c"># This experience shows that the satellite values are spaced fairly evenly, with</span>
@@ -199,7 +199,7 @@ gmt sample1d sat.pg -Nsamp.x &gt; samp_sat.pg
 <span class="c"># it because of the gaps &gt; 1 km we found.  So we use gmt filter1d | gmt sample1d.  We also</span>
 <span class="c"># use the -E on gmt filter1d to use the data all the way out to sampr1/sampr2 :</span>
 <span class="c">#</span>
-gmt filter1d ship.pg -Fm1 -T<span class="nv">$sampr1</span>/<span class="nv">$sampr2</span>/1 -E | gmt sample1d -Nsamp.x &gt; samp_ship.pg
+gmt filter1d ship.pg -Fm1 -T<span class="nv">$sampr1</span>/<span class="nv">$sampr2</span>/1 -E <span class="p">|</span> gmt sample1d -Nsamp.x &gt; samp_ship.pg
 <span class="c">#</span>
 <span class="c"># Now we plot them again to see if we have done the right thing:</span>
 <span class="c">#</span>
@@ -211,7 +211,7 @@ gmt psxy -R -JX -O -Sp0.03i samp_ship.pg &gt;&gt; example_03c.ps
 <span class="c"># Now to do the cross-spectra, assuming that the ship is the input and the sat is the output </span>
 <span class="c"># data, we do this:</span>
 <span class="c"># </span>
-gmt gmtconvert -A samp_ship.pg samp_sat.pg -o1,3 | gmt spectrum1d -S256 -D1 -W -C &gt; /dev/null
+gmt gmtconvert -A samp_ship.pg samp_sat.pg -o1,3 <span class="p">|</span> gmt spectrum1d -S256 -D1 -W -C &gt; /dev/null
 <span class="c"># </span>
 <span class="c"># Now we want to plot the spectra. The following commands will plot the ship and sat </span>
 <span class="c"># power in one diagram and the coherency on another diagram, both on the same page.  </span>
@@ -219,25 +219,25 @@ gmt gmtconvert -A samp_ship.pg samp_sat.pg -o1,3 | gmt spectrum1d -S256 -D1 -W -
 <span class="c"># plots. For that purpose we often use -Jx1i and specify positions in inches directly:</span>
 <span class="c">#</span>
 gmt psxy spectrum.coh -Bxa1f3p+l<span class="s2">&quot;Wavelength (km)&quot;</span> -Bya0.25f0.05+l<span class="s2">&quot;Coherency@+2@+&quot;</span> <span class="se">\</span>
-	-BWeSn+g240/255/240 -JX-4il/3.75i -R1/1000/0/1 -P -K -X2.5i -Sc0.07i -Gmagenta <span class="se">\</span>
+	-BWeSn+g240/255/240 -JX-4il/3.75i -R1/1000/0/1 -P -K -X2.5i -Sc0.07i -Gpurple <span class="se">\</span>
 	-Ey/0.5p -Y1.5i &gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;3.85 3.6 Coherency@+2@+&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx1i -F+f18p,Helvetica-Bold+jTR <span class="se">\</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.85 3.6 Coherency@+2@+&quot;</span> <span class="p">|</span> gmt pstext -R0/4/0/3.75 -Jx1i -F+f18p,Helvetica-Bold+jTR <span class="se">\</span>
 	-O -K &gt;&gt; <span class="nv">$ps</span>
 gmt psxy spectrum.xpower -Bxa1f3p -Bya1f3p+l<span class="s2">&quot;Power (mGal@+2@+km)&quot;</span> <span class="se">\</span>
 	-BWeSn+t<span class="s2">&quot;Ship and Satellite Gravity&quot;</span>+g240/255/240 <span class="se">\</span>
 	-Gred -ST0.07i -O -R1/1000/0.1/10000 -JX-4il/3.75il -Y4.2i -K -Ey/0.5p &gt;&gt; <span class="nv">$ps</span>
 gmt psxy spectrum.ypower -R -JX -O -K -Gblue -Sc0.07i -Ey/0.5p &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;3.9 3.6 Input Power&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.9 3.6 Input Power&quot;</span> <span class="p">|</span> gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O -K &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -Jx -O -K -Gwhite -L -Wthicker &gt;&gt; <span class="nv">$ps</span> <span class="s">&lt;&lt; END</span>
 <span class="s">0.25	0.25</span>
 <span class="s">1.4	0.25</span>
 <span class="s">1.4	0.9</span>
 <span class="s">0.25	0.9</span>
 <span class="s">END</span>
-<span class="nb">echo</span> <span class="s2">&quot;0.4 0.7&quot;</span> | gmt psxy -R -Jx -O -K -ST0.07i -Gred &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;0.5 0.7 Ship&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O -K &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;0.4 0.4&quot;</span> | gmt psxy -R -Jx -O -K -Sc0.07i -Gblue &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;0.5 0.4 Satellite&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.7&quot;</span> <span class="p">|</span> gmt psxy -R -Jx -O -K -ST0.07i -Gred &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.7 Ship&quot;</span> <span class="p">|</span> gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.4&quot;</span> <span class="p">|</span> gmt psxy -R -Jx -O -K -Sc0.07i -Gblue &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.4 Satellite&quot;</span> <span class="p">|</span> gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O &gt;&gt; <span class="nv">$ps</span>
 <span class="c">#</span>
 <span class="c"># Now we wonder if removing that large feature at 250 km would make any difference.</span>
 <span class="c"># We could throw away a section of data with $AWK or sed or head and tail, but we</span>
@@ -257,14 +257,14 @@ gmt psxy <span class="nv">$R</span> -JX8i/1.1i -O -Y4.25i -Bxf100 -Bya0.5f0.1+l<
 <span class="c"># From this we see that we might want to throw away values where w &lt; 0.6.  So we try that,</span>
 <span class="c"># and this time we also use gmt trend1d to return the residual from the model fit (the </span>
 <span class="c"># de-trended data):</span>
-gmt trend1d -Fxrw -N2r samp_ship.pg | <span class="nv">$AWK</span> <span class="s1">&#39;{ if ($3 &gt; 0.6) print $1, $2 }&#39;</span> <span class="se">\</span>
-	| gmt sample1d -Nsamp.x &gt; samp2_ship.pg
-gmt trend1d -Fxrw -N2r samp_sat.pg  | <span class="nv">$AWK</span> <span class="s1">&#39;{ if ($3 &gt; 0.6) print $1, $2 }&#39;</span> <span class="se">\</span>
-	| gmt sample1d -Nsamp.x &gt; samp2_sat.pg
+gmt trend1d -Fxrw -N2r samp_ship.pg <span class="p">|</span> <span class="nv">$AWK</span> <span class="s1">&#39;{ if ($3 &gt; 0.6) print $1, $2 }&#39;</span> <span class="se">\</span>
+	<span class="p">|</span> gmt sample1d -Nsamp.x &gt; samp2_ship.pg
+gmt trend1d -Fxrw -N2r samp_sat.pg  <span class="p">|</span> <span class="nv">$AWK</span> <span class="s1">&#39;{ if ($3 &gt; 0.6) print $1, $2 }&#39;</span> <span class="se">\</span>
+	<span class="p">|</span> gmt sample1d -Nsamp.x &gt; samp2_sat.pg
 <span class="c">#</span>
 <span class="c"># We plot these to see how they look:</span>
 <span class="c">#</span>
-<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>cat samp2_sat.pg samp2_ship.pg | gmt info -I100/25<span class="sb">`</span>
+<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>cat samp2_sat.pg samp2_ship.pg <span class="p">|</span> gmt info -I100/25<span class="sb">`</span>
 gmt psxy <span class="nv">$R</span> -JX8i/5i -X2i -Y1.5i -K -Wthick <span class="se">\</span>
 	-Bxa500f100+l<span class="s2">&quot;Distance along great circle&quot;</span> -Bya50f25+l<span class="s2">&quot;Gravity anomaly (mGal)&quot;</span> <span class="se">\</span>
 	-BWeSn -UL/-1.75i/-1.25i/<span class="s2">&quot;Example 3e in Cookbook&quot;</span> samp2_sat.pg &gt; example_03e.ps
@@ -274,12 +274,12 @@ gmt psxy -R -JX -O -Sp0.03i samp2_ship.pg &gt;&gt; example_03e.ps
 <span class="c"># the previous one (example_03d.ps) we see that throwing out the large feature has reduced</span>
 <span class="c"># the power in both data sets and reduced the coherency at wavelengths between 20--60 km.</span>
 <span class="c">#</span>
-gmt gmtconvert -A samp2_ship.pg samp2_sat.pg -o1,3 | gmt spectrum1d -S256 -D1 -W -C &gt; /dev/null
+gmt gmtconvert -A samp2_ship.pg samp2_sat.pg -o1,3 <span class="p">|</span> gmt spectrum1d -S256 -D1 -W -C &gt; /dev/null
 <span class="c"># </span>
 gmt psxy spectrum.coh -Bxa1f3p+l<span class="s2">&quot;Wavelength (km)&quot;</span> -Bya0.25f0.05+l<span class="s2">&quot;Coherency@+2@+&quot;</span> -BWeSn <span class="se">\</span>
 	-JX-4il/3.75i -R1/1000/0/1 -UL/-2.25i/-1.25i/<span class="s2">&quot;Example 3f in Cookbook&quot;</span> -P -K -X2.5i <span class="se">\</span>
 	-Sc0.07i -Gblack -Ey/0.5p -Y1.5i &gt; example_03f.ps
-<span class="nb">echo</span> <span class="s2">&quot;3.85 3.6 Coherency@+2@+&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O <span class="se">\</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.85 3.6 Coherency@+2@+&quot;</span> <span class="p">|</span> gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O <span class="se">\</span>
 	-K &gt;&gt; example_03f.ps
 cat &gt; box.d <span class="s">&lt;&lt; END</span>
 <span class="s">2.375	3.75</span>
@@ -291,7 +291,7 @@ gmt psxy -Bxa1f3p -Bya1f3p+l<span class="s2">&quot;Power (mGal@+2@+km)&quot;</sp
 	spectrum.xpower -ST0.07i -O -R1/1000/0.1/10000 -JX-4il/3.75il -Y4.2i -K -Ey/0.5p <span class="se">\</span>
 	&gt;&gt; example_03f.ps
 gmt psxy spectrum.ypower -R -JX -O -K -Gblack -Sc0.07i -Ey/0.5p &gt;&gt; example_03f.ps
-<span class="nb">echo</span> <span class="s2">&quot;3.9 3.6 Input Power&quot;</span> | gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O <span class="se">\</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.9 3.6 Input Power&quot;</span> <span class="p">|</span> gmt pstext -R0/4/0/3.75 -Jx -F+f18p,Helvetica-Bold+jTR -O <span class="se">\</span>
 	-K &gt;&gt; example_03f.ps
 gmt psxy -R -Jx -O -K -Wthicker box.d &gt;&gt; example_03f.ps
 gmt psxy -R -Jx -O -K -Glightgray -L -Wthicker &gt;&gt; example_03f.ps <span class="s">&lt;&lt; END</span>
@@ -300,10 +300,10 @@ gmt psxy -R -Jx -O -K -Glightgray -L -Wthicker &gt;&gt; example_03f.ps <span cla
 <span class="s">1.4	0.9</span>
 <span class="s">0.25	0.9</span>
 <span class="s">END</span>
-<span class="nb">echo</span> <span class="s2">&quot;0.4 0.7&quot;</span> | gmt psxy -R -Jx -O -K -ST0.07i -Gblack &gt;&gt; example_03f.ps
-<span class="nb">echo</span> <span class="s2">&quot;0.5 0.7 Ship&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O -K &gt;&gt; example_03f.ps
-<span class="nb">echo</span> <span class="s2">&quot;0.4 0.4&quot;</span> | gmt psxy -R -Jx -O -K -Sc0.07i -Gblack &gt;&gt; example_03f.ps
-<span class="nb">echo</span> <span class="s2">&quot;0.5 0.4 Satellite&quot;</span> | gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.7&quot;</span> <span class="p">|</span> gmt psxy -R -Jx -O -K -ST0.07i -Gblack &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.7 Ship&quot;</span> <span class="p">|</span> gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O -K &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;0.4 0.4&quot;</span> <span class="p">|</span> gmt psxy -R -Jx -O -K -Sc0.07i -Gblack &gt;&gt; example_03f.ps
+<span class="nb">echo</span> <span class="s2">&quot;0.5 0.4 Satellite&quot;</span> <span class="p">|</span> gmt pstext -R -Jx -F+f14p,Helvetica-Bold+jLM -O &gt;&gt; example_03f.ps
 <span class="c">#</span>
 rm -f box.d report tmp samp* *.pg *.extr spectrum.*
 </pre></div>
@@ -353,7 +353,7 @@ improves dramatically for wavelengths &gt; 20 km.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -371,9 +371,9 @@ improves dramatically for wavelengths &gt; 20 km.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

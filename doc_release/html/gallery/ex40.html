@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(40) Line simplification &mdash; GMT 5.1.1 documentation</title>
+    <title>(40) Line simplification &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="Introduction" href="anim_introduction.html" />
     <link rel="prev" title="(39) Evaluation of spherical harmonics coefficients" href="ex39.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -75,6 +75,10 @@
             
   <div class="section" id="line-simplification">
 <span id="example-40"></span><h1>(40) Line simplification<a class="headerlink" href="#line-simplification" title="Permalink to this headline">¶</a></h1>
+<p>This example demonstrate the Douglas-Peucker line simplification algorithm as
+implemented in the tool <a class="reference internal" href="../gmtsimplify.html"><em>gmtsimplify</em></a>.  We show the full
+resolution coastline of Australia and two much simplified versions using two
+different thresholds.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
 <span class="c">#               GMT EXAMPLE 40</span>
 <span class="c">#               $Id $</span>
@@ -90,21 +94,21 @@ gmt psbasemap -R112/154/-40/-10 -JM5.5i -P -K -B20 -BWSne+g240/255/240 -Xc &gt; 
 gmt psxy GSHHS_h_Australia.txt -R -J -O -Wfaint -G240/240/255 -K &gt;&gt; <span class="nv">$ps</span>
 gmt psxy GSHHS_h_Australia.txt -R -J -O -Sc0.01c -Gred -K &gt;&gt; <span class="nv">$ps</span>
 gmt gmtsimplify GSHHS_h_Australia.txt -T500k &gt; T500k.txt
-gmt gmtspatial GSHHS_h_Australia.txt -fg -Qk | awk <span class="s1">&#39;{printf &quot;Full area = %.0f km@+2@+\n&quot;, $3}&#39;</span> &gt; area.txt
-gmt gmtspatial T500k.txt -fg -Qk | awk <span class="s1">&#39;{printf &quot;Reduced area = %.0f km@+2@+\n&quot;, $3}&#39;</span> &gt; area_T500k.txt
+gmt gmtspatial GSHHS_h_Australia.txt -fg -Qk <span class="p">|</span> awk <span class="s1">&#39;{printf &quot;Full area = %.0f km@+2@+\n&quot;, $3}&#39;</span> &gt; area.txt
+gmt gmtspatial T500k.txt -fg -Qk <span class="p">|</span> awk <span class="s1">&#39;{printf &quot;Reduced area = %.0f km@+2@+\n&quot;, $3}&#39;</span> &gt; area_T500k.txt
 gmt psxy -R -J -O -K -W1p,blue T500k.txt &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O -K -Sx0.3i -W3p centroid.txt &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo </span>112 -10 <span class="nv">T</span> <span class="o">=</span> 500 km | gmt pstext -R -J -O -K -Dj0.1i/0.1i -F+jTL+f18p &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span><span class="m">112</span> -10 <span class="nv">T</span> <span class="o">=</span> <span class="m">500</span> km <span class="p">|</span> gmt pstext -R -J -O -K -Dj0.1i/0.1i -F+jTL+f18p &gt;&gt; <span class="nv">$ps</span>
 gmt pstext -R -J -O -K area.txt -F+14p+cCM &gt;&gt; <span class="nv">$ps</span>
 gmt pstext -R -J -O -K area_T500k.txt -F+14p+cLB -Dj0.2i &gt;&gt; <span class="nv">$ps</span>
 gmt psbasemap -R -J -O -K -B20+lightgray -BWsne+g240/255/240 -Y4.7i &gt;&gt; <span class="nv">$ps</span>
 gmt psxy GSHHS_h_Australia.txt -R -J -O -Wfaint -G240/240/255 -K &gt;&gt; <span class="nv">$ps</span>
 gmt psxy GSHHS_h_Australia.txt -R -J -O -Sc0.01c -Gred -K &gt;&gt; <span class="nv">$ps</span>
 gmt gmtsimplify GSHHS_h_Australia.txt -T100k &gt; T100k.txt
-gmt gmtspatial T100k.txt -fg -Qk | awk <span class="s1">&#39;{printf &quot;Reduced area = %.0f km@+2@+\n&quot;, $3}&#39;</span> &gt; area_T100k.txt
+gmt gmtspatial T100k.txt -fg -Qk <span class="p">|</span> awk <span class="s1">&#39;{printf &quot;Reduced area = %.0f km@+2@+\n&quot;, $3}&#39;</span> &gt; area_T100k.txt
 gmt psxy -R -J -O -K -W1p,blue T100k.txt &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O -K -Sx0.3i -W3p centroid.txt &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo </span>112 -10 <span class="nv">T</span> <span class="o">=</span> 100 km | gmt pstext -R -J -O -K -Dj0.1i/0.1i -F+jTL+f18p &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span><span class="m">112</span> -10 <span class="nv">T</span> <span class="o">=</span> <span class="m">100</span> km <span class="p">|</span> gmt pstext -R -J -O -K -Dj0.1i/0.1i -F+jTL+f18p &gt;&gt; <span class="nv">$ps</span>
 gmt pstext -R -J -O -K area.txt -F+14p+cCM &gt;&gt; <span class="nv">$ps</span>
 gmt pstext -R -J -O -K area_T100k.txt -F+14p+cLB -Dj0.2i &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O -T &gt;&gt; <span class="nv">$ps</span>
@@ -152,7 +156,7 @@ rm -f centroid.txt area*.txt T*.txt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -170,9 +174,9 @@ rm -f centroid.txt area*.txt T*.txt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

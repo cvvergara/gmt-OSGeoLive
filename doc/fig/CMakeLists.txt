@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 12822 2014-01-31 23:39:56Z remko $
+# $Id: CMakeLists.txt 13981 2015-01-25 04:06:56Z pwessel $
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify

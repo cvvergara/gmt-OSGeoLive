@@ -103,7 +103,7 @@
         plot-distance units. An exception occurs for a linear projection in
         which we assume the dimensions are given in the same units as **-R**.
 
-**-Sk**
+    **-Sk**
         **k**\ ustom symbol. Append <name>/*size*, and we will look for a
         definition file called <name>.def in (1) the current
         directory or (2) in ~/.gmt or (3) in
@@ -214,7 +214,7 @@
             **+e**
                 Delay the plotting of the text. This is used to build a clip path
                 based on the text, then lay down other overlays while that clip path
-                is in effect, then turning of clipping with psclip **-Ct** which
+                is in effect, then turning of clipping with psclip **-Cs** which
                 finally plots the original text.
 
             **+f**\ *font*
@@ -263,7 +263,7 @@
                 **c**\ \|\ **i**\ \|\ **p** to specify the units). Increments
                 are considered in the coordinate system defined by the
                 orientation of the line; use **+N** to force increments in the
-                plot x/y coordinates system [no nudging].
+                plot x/y coordinates system [no nudging]. Not allowed with **+v**.
 
             **+o**
                 Selects rounded rectangular text box [Default is rectangular].
@@ -276,7 +276,7 @@
                 color = black, style = solid].
 
             **+r**\ *min\_rad*
-                Will not place labels where the line’s radius of curvature is
+                Will not place labels where the line's radius of curvature is
                 less than *min\_rad* [Default is 0].
 
             **+t**\ [*file*\ ]

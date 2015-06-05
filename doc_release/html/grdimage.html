@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdimage &mdash; GMT 5.1.1 documentation</title>
+    <title>grdimage &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdinfo" href="grdinfo.html" />
     <link rel="prev" title="grdhisteq" href="grdhisteq.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -108,8 +108,8 @@ green, and blue components directly (all must be in the 0-255 range).
 Optionally, illumination may be added by providing a file with
 intensities in the (-1,+1) range. Values outside this range will be
 clipped. Such intensity files can be created from the grid using
-<strong>grdgradient</strong> and, optionally, modified by <strong>grdmath</strong> or
-<strong>grdhisteq</strong>. Yet as a third alternative available when GMT is build
+<a class="reference internal" href="grdgradient.html"><em>grdgradient</em></a> and, optionally, modified by <a class="reference internal" href="grdmath.html"><em>grdmath</em></a> or
+<a class="reference internal" href="grdhisteq.html"><em>grdhisteq</em></a>. Yet as a third alternative available when GMT is build
 with GDAL support the grd_z file can be an image referenced or not
 (than see <strong>-Dr</strong>). In this case the images can be illuminated with the
 file provided via the <strong>-I</strong> option. Here if image has no coordinates
@@ -169,7 +169,7 @@ built with GDAL support. The image can be indexed or true color
 is a valid file syntax. Note, however, that to use it this way you
 must not be blocked by a proxy. If you are, chances are good that it
 can work by setting the environmental variable
-<em>http_proxy</em> with the value ’your_proxy:port’ Append
+<em>http_proxy</em> with the value &#8216;your_proxy:port&#8217; Append
 <strong>r</strong> to use the region specified by <strong>-R</strong> to apply to the image.
 For example, if you have used <strong>-Rd</strong> then the image will be
 assigned the limits of a global domain. The interest of this mode is
@@ -259,12 +259,12 @@ subset of the grid [Default is the region given by the grid file].</p>
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -435,7 +435,7 @@ remotely located Jessica Rabbit</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -453,9 +453,9 @@ remotely located Jessica Rabbit</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

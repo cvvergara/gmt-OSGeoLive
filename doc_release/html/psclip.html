@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>psclip &mdash; GMT 5.1.1 documentation</title>
+    <title>psclip &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pscoast" href="pscoast.html" />
     <link rel="prev" title="psbasemap" href="psbasemap.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -80,6 +80,7 @@
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
 <p><strong>psclip</strong> [ <em>table</em> ] <strong>-J</strong><em>parameters</em>
 <strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]
+[ <strong>-A</strong>[<strong>m</strong>|<strong>p</strong>] ]
 [ <strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> ]
 <strong>-Jz</strong>|<strong>Z</strong><em>parameters</em> ] [ <strong>-K</strong> ] [ <strong>-N</strong> ] [ <strong>-O</strong> ]
 [ <strong>-P</strong> ] [ <strong>-T</strong> ]
@@ -96,7 +97,7 @@
 [ <strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] ]
 [ <strong>-t</strong>[<em>transp</em>] ]
 [ <strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] ]</p>
-<p><strong>psclip</strong> <strong>-C</strong>[<strong>c</strong>|<strong>s</strong>|[<strong>a</strong>|<em>n</em>] [ <strong>-K</strong> ] [ <strong>-O</strong> ]</p>
+<p><strong>psclip</strong> <strong>-C</strong>[<em>n</em>] [ <strong>-K</strong> ] [ <strong>-O</strong> ]</p>
 <p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
 </div>
 <div class="section" id="description">
@@ -118,19 +119,13 @@ against these paths, the clipping may be deactivated by running
 <div class="section" id="required-arguments">
 <h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><strong>-C</strong>[<strong>c</strong>|<strong>s</strong>[<strong>a</strong>|<em>n</em>]</dt>
+<dt><strong>-C</strong>[|<em>n</em>]</dt>
 <dd>Mark end of existing clip path(s). No input file will be processed.
 No projection information is needed unless <strong>-B</strong> has been selected
-as well. Append <strong>c</strong> (for curved text) or <strong>s</strong> (for straight text)
-to plot text previously used to lay down a clip path (e.g., via
-contouring, pstext, or psxy <strong>-Sq</strong>). The curved text option
-(<strong>-Cc</strong>) is only required if psxy <strong>-Sq</strong> was run with the <strong>+v</strong>
-modifier; the pstext and contouring mechanisms use straight text.
-Both <strong>-Cc</strong> and <strong>-Cs</strong> assumes only one level of text clipping was
-initialized and we thus reduce the clip level by one. To undo one
-level of polygon clipping (perhaps initiated by earlier psclip,
-pscoast, or psmask calls) use <strong>-C</strong>. You can undo all clip levels
-with <strong>-Ca</strong> or a specific number with <strong>-C</strong><em>n</em>. Also supply
+as well. With no arguments we terminate all active clipping paths.
+Experts may restrict the termination to just <em>n</em> of the active
+clipping path by passing that as the argument.
+Remember to supply
 <strong>-X</strong> and <strong>-Y</strong> settings if you have moved since the clip started.</dd>
 </dl>
 <dl class="docutils">
@@ -150,6 +145,12 @@ with <strong>-Ca</strong> or a specific number with <strong>-C</strong><em>n</em
 <dd>One or more ASCII (or binary, see <strong>-bi</strong>[<em>ncols</em>][<em>type</em>]) data
 table file(s) holding a number of data columns. If no tables are given
 then we read from standard input.  </dd>
+<dt><strong>-A</strong>[<strong>m</strong>|<strong>p</strong>]</dt>
+<dd>By default line segments are connected as great circle arcs. To connect them as
+straight lines, use the <strong>-A</strong> flag. Alternatively, add <strong>m</strong> to connect
+the line by first following a meridian, then a parallel. Or append <strong>p</strong>
+to start following a parallel, then a meridian. (This can be practical
+to connect lines along parallels, for example).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> <a class="reference internal" href="gmt.html#b-full"><em>(more ...)</em></a></dt>
@@ -215,7 +216,7 @@ current map region. Basically, <strong>-T</strong> is a convenient way to run
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] <a class="reference internal" href="gmt.html#perspective-full"><em>(more ...)</em></a></dt>
@@ -230,12 +231,12 @@ current map region. Basically, <strong>-T</strong> is a convenient way to run
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -260,13 +261,6 @@ area to which subsequent plotting will be confined, run:</p>
 </div>
 </div></blockquote>
 </div>
-<div class="section" id="bugs">
-<h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this headline">¶</a></h2>
-<p><strong>psclip</strong> cannot handle polygons that contain the south or north pole.
-For such polygons, you should split them into two and make each
-explicitly contain the polar point. The two clip polygons will combine
-to give the desired effect.</p>
-</div>
 <div class="section" id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="grdmask.html"><em>grdmask</em></a>,
@@ -288,7 +282,6 @@ to give the desired effect.</p>
 <li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
 <li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
-<li><a class="reference internal" href="#bugs">Bugs</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
 </ul>
 </li>
@@ -323,7 +316,7 @@ to give the desired effect.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -341,9 +334,9 @@ to give the desired effect.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grd2cpt &mdash; GMT 5.1.1 documentation</title>
+    <title>grd2cpt &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grd2rgb" href="grd2rgb.html" />
     <link rel="prev" title="greenspline" href="greenspline.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -96,7 +96,7 @@
 <p><strong>grd2cpt</strong> reads one or more grid files and writes a color palette
 (cpt) file to standard output. The cpt file is based on an existing
 master cpt file of your choice, and the mapping from data value to
-colors is through the data’s cumulative distribution function (CDF), so
+colors is through the data&#8217;s cumulative distribution function (CDF), so
 that the colors are histogram equalized. Thus if the grid(s) and the
 resulting cpt file are used in <strong>grdimage</strong> with a linear projection,
 the colors will be uniformly distributed in area on the plot. Let z be
@@ -167,7 +167,7 @@ specified by the parameters <strong>COLOR_BACKGROUND</strong> and
 <strong>COLOR_FOREGROUND</strong>.</dd>
 <dt><strong>-L</strong><em>minlimit/maxlimit</em></dt>
 <dd>Limit range of cpt file to <em>minlimit/maxlimit</em>, and don&#8217;t count data
-outside range when estimating CDF(Z). [Default uses min and max of data.]</dd>
+outside this range when estimating CDF(Z). [Default uses min and max of data.]</dd>
 <dt><strong>-M</strong></dt>
 <dd>Overrule background, foreground, and NaN colors specified in the
 master cpt file with the values of the parameters
@@ -189,8 +189,9 @@ colors, and writes out z.</dd>
 <dt><strong>-S</strong><em>zstart/zstop/zinc</em> or <strong>-S</strong><em>n</em></dt>
 <dd>Set steps in cpt file. Calculate entries in cpt file from <em>zstart</em>
 to <em>zstop</em> in steps of (<em>zinc</em>). Default chooses arbitrary values by
-a crazy scheme. Use <strong>-S</strong><em>n</em> to select <em>n</em> points from a
-cumulative normal distribution.</dd>
+a crazy scheme based on equidistant values for a Gaussian CDF.
+Use <strong>-S</strong><em>n</em> to select <em>n</em> points from such a
+cumulative normal distribution [11].</dd>
 <dt><strong>-T</strong><strong>-</strong>|<strong>+</strong>|<strong>_</strong>|<strong>=</strong></dt>
 <dd>Force the color table to be symmetric about zero (from -R to +R).
 Append flag to set the range R: <strong>-</strong> for R =|zmin|, <strong>+</strong> for R =
@@ -209,12 +210,12 @@ combination with <strong>-Z</strong>.</dd>
 i.e., constant color intervals]</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -329,7 +330,7 @@ file relief, run</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -347,9 +348,9 @@ file relief, run</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

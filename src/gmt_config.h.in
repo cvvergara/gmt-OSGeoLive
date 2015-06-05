@@ -1,7 +1,7 @@
 /*
- * $Id: gmt_config.h.in 12910 2014-02-17 21:27:37Z fwobbe $
+ * $Id: gmt_config.h.in 13957 2015-01-21 12:45:26Z fwobbe $
  *
- *  Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo,
+ *  Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
@@ -37,7 +37,7 @@
 #ifndef _GMT_CONFIG_H
 #define _GMT_CONFIG_H
 
-#include "../config.h"
+#include "config.h"
 
 
 /* which regex library <pcre.h>, <regex.h> */
@@ -113,6 +113,7 @@
 #cmakedefine HAVE__POPEN
 #cmakedefine HAVE_POSIX_MEMALIGN
 #cmakedefine HAVE_QSORT_R_GLIBC
+#cmakedefine HAVE_SETLOCALE
 #cmakedefine HAVE__SETMODE
 #cmakedefine HAVE_SNPRINTF_
 #cmakedefine HAVE__SNPRINTF_
@@ -283,11 +284,13 @@
 #cmakedefine HAVE__BYTESWAP_ULONG /* for 32 bit */
 #cmakedefine HAVE__BYTESWAP_UINT64 /* for 64 bit */
 
+#if 0	/* PW: Commented out; see issue # 614 */
 /* Architecture type (32/64 bits) */
 #if !defined(__x86_64__) && !defined(__i386__) && SIZEOF_VOID_P == 4 /* on i386 */
 #	define __i386__ 1
 #elif !defined(__x86_64__) && !defined(__i386__) && SIZEOF_VOID_P == 8 /* on x86_64 */
 #	define __x86_64__ 1
+#endif
 #endif
 
 #if !(defined(__LP64__) || defined(__LLP64__)) && defined(__x86_64__) && \

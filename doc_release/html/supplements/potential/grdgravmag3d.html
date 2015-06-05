@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdgravmag3d &mdash; GMT 5.1.1 documentation</title>
+    <title>grdgravmag3d &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="POTENTIAL" href="../../SUP_POTENTIAL.html" />
     <link rel="next" title="grdredpol" href="grdredpol.html" />
     <link rel="prev" title="gravfft" href="gravfft.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" accesskey="U">POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -81,9 +81,10 @@
 <p><strong>grdgravmag3d</strong> <em>grdfile_top</em> [<em>grdfile_bot</em>] [ <strong>-C</strong><em>density</em> ]
 [ <strong>-D</strong> ] [ <strong>-F</strong><em>xy_file</em> ]
 [ <strong>-G</strong><em>outgrid</em> ]
-<strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]]
+[ <strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]] ]
 [ <strong>-L</strong><em>z_obs</em> ]
 [ <strong>-Q</strong>[<strong>n</strong><em>n_pad</em>]|[<em>pad_dist</em>]|[&lt;w/e/s/n&gt;] ]
+[ <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] ]
 [ <strong>-V</strong>[<em>level</em>] ]
 [ <strong>-Z</strong><em>level</em> ]
 [ <strong>-fg</strong> ]</p>
@@ -103,14 +104,16 @@ allows computing the anomaly of arbitrarily complex shapes.</p>
 <dd>Grid file whose gravity efect is going to be computed. If two grids are
 provided then the gravity/magnetic efect of the volume between them is computed.</dd>
 <dt><strong>-C</strong><em>density</em></dt>
-<dd>Sets body density in SI. This option is mutually exclusive with
-<strong>-H</strong>.</dd>
+<dd>Sets body density in SI.</dd>
 <dt><strong>-F</strong><em>xy_file</em></dt>
 <dd>Provide locations where the anomaly will be computed. Note this
 option is mutually exlusive with <strong>-G</strong>.</dd>
 <dt><strong>-G</strong><em>outgrid</em></dt>
 <dd>Output the gravity anomaly at nodes of this grid file.</dd>
 </dl>
+</div>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]]</dt>
 <dd><em>x_inc</em> [and optionally <em>y_inc</em>] is the grid spacing. Optionally,
@@ -133,17 +136,8 @@ increment value depends on whether you have selected a
 gridline-registered or pixel-registered grid; see <a class="reference internal" href="../../GMT_Docs.html#app-file-formats"><em>B. GMT File Formats</em></a> for
 details. Note: if <strong>-R</strong><em>grdfile</em> is used then the grid spacing has
 already been initialized; use <strong>-I</strong> to override the values.</dd>
-</dl>
-<dl class="docutils">
-<dt><strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] <a class="reference internal" href="../../gmt.html#r-full"><em>(more ...)</em></a></dt>
-<dd>Specify the region of interest.  </dd>
-</dl>
-</div>
-<div class="section" id="optional-arguments">
-<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
 <dt><strong>-L</strong><em>z_obs</em></dt>
-<dd>sets level of observation [Default = 0]. That is the height (z) at
+<dd>Sets level of observation [Default = 0]. That is the height (z) at
 which anomalies are computed.</dd>
 <dt><strong>-Q</strong>[<strong>n</strong><em>n_pad</em>]|[<em>pad_dist</em>]|[&lt;w/e/s/n&gt;]</dt>
 <dd><dl class="first last docutils">
@@ -155,6 +149,10 @@ cells to have a fake width of <em>n_pad</em> * dx[/dy].</p>
 </dd>
 </dl>
 </dd>
+</dl>
+<dl class="docutils">
+<dt><strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] <a class="reference internal" href="../../gmt.html#r-full"><em>(more ...)</em></a></dt>
+<dd>Specify the region of interest. Note: this overrides the source grid region (Default: use same region as input)</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="../../gmt.html#v-full"><em>(more ...)</em></a></dt>
@@ -169,12 +167,12 @@ whater depth to compute a Bouguer anomaly.</dd>
 meters via a &#8220;Flat Earth&#8221; approximation using the current ellipsoid parameters.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -260,7 +258,7 @@ polyhedral bodies and translation into magnetic anomalies, <em>Geophysics</em>,
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" >POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -278,9 +276,9 @@ polyhedral bodies and translation into magnetic anomalies, <em>Geophysics</em>,
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

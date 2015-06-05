@@ -1,8 +1,8 @@
 #!/bin/bash
 #               GMT ANIMATION 04
-#               $Id: anim_04.sh 11490 2013-05-16 06:26:21Z pwessel $
+#               $Id: anim_04.sh 13893 2015-01-07 13:02:08Z fwobbe $
 #
-# Purpose:      Make DVD-res Quicktime movie of NY to Miami flight
+# Purpose:      Make DVD-res movie of NY to Miami flight
 # GMT progs:    gmt gmtset, gmt gmtmath, gmt psbasemap, gmt pstext, gmt psxy, gmt ps2raster
 # Unix progs:   awk, mkdir, rm, mv, echo, qt_export, cat
 # Note:         Run with any argument to build movie; otherwise 1st frame is plotted only.
@@ -26,30 +26,62 @@ ps=${name}.ps
 # Set up flight path
 gmt project -C-73.8333/40.75 -E-80.133/25.75 -G5 -Q > $$.path.d
 frame=0
-mkdir -p frames
-gmt grdgradient USEast_Coast.nc -A90 -Nt1 -G$${_int}.nc
-gmt makecpt -Cglobe -Z > $$.cpt
-while read lon lat dist; do
+mkdir -p $$
+gmt grdgradient USEast_Coast.nc -A90 -Nt1 -Gint_$$.nc
+gmt makecpt -Cglobe -Z > globe_$$.cpt
+function make_frame () {
+	local frame file ID lon lat dist
+	frame=$1; lon=$2; lat=$3; dist=$4
 	file=`gmt_set_framename ${name} ${frame}`
 	ID=`echo ${frame} | $AWK '{printf "%04d\n", $1}'`
 	gmt grdimage -JG${lon}/${lat}/${altitude}/${azimuth}/${tilt}/${twist}/${Width}/${Height}/7i+ \
-		${REGION} -P -Y0.1i -X0.1i USEast_Coast.nc -I$${_int}.nc -C$$.cpt \
-		--PS_MEDIA=${px}ix${py}i -K > $$.ps
-	gmt psxy -R -J -O -K -W1p $$.path.d >> $$.ps
-	gmt pstext -R0/${px}/0/${py} -Jx1i -F+f14p,Helvetica-Bold+jTL -O >> $$.ps <<< "0 4.6 ${ID}"
+		${REGION} -P -Y0.1i -X0.1i USEast_Coast.nc -Iint_$$.nc -Cglobe_$$.cpt \
+		--PS_MEDIA=${px}ix${py}i -K > ${file}_$$.ps
+	gmt psxy -JG${lon}/${lat}/${altitude}/${azimuth}/${tilt}/${twist}/${Width}/${Height}/7i+ \
+		${REGION} -O -K -W1p $$.path.d >> ${file}_$$.ps
+	gmt pstext -R0/${px}/0/${py} -Jx1i -F+f14p,Helvetica-Bold+jTL -O >> ${file}_$$.ps <<< "0 4.6 ${ID}"
+	[[ ${frame} -eq 0 ]] && cp ${file}_$$.ps ${ps}
 	if [ $# -eq 0 ]; then
-		mv $$.ps ${ps}
 		gmt_cleanup .gmt
 		gmt_abort "${0}: First frame plotted to ${name}.ps"
 	fi
-	gmt ps2raster $$.ps -Tt -E${dpi}
-	mv $$.tif frames/${file}.tif
-        echo "Frame ${file} completed"
+	gmt ps2raster ${file}_$$.ps -Tt -E${dpi}
+	mv ${file}_$$.tif $$/${file}.tif
+	rm -f ${file}_$$.ps
+	echo "Frame ${file} completed"
+}
+n_jobs=0
+max_jobs=$(getconf _NPROCESSORS_ONLN || echo 1)
+while read lon lat dist; do
+	make_frame ${frame} ${lon} ${lat} ${dist} &
+	((++n_jobs))
 	frame=`gmt_set_framenext ${frame}`
+	if [ ${n_jobs} -ge ${max_jobs} ]; then
+		wait
+		n_jobs=0
+	fi
 done < $$.path.d
-if [ $# -eq 0 ]; then
-	echo "anim_04.sh: Made ${frame} frames at 480x720 pixels placed in subdirectory frames"
-#	qt_export $$/anim_0_123456.tiff --video=h263,24,100, ${name}_movie.m4v
+wait
+
+file=`gmt_set_framename ${name} 0`
+
+echo "Made ${frame} frames at 720x480 pixels"
+# GIF animate every 20th frame
+${GRAPHICSMAGICK-gm} convert -delay 40 -loop 0 +dither $$/${name}_*[02468]0.tif ${name}.gif
+if type -ft ${FFMPEG-ffmpeg} >/dev/null 2>&1 ; then
+	# create H.264 video at 25fps
+	echo "Creating H.264 video"
+	${FFMPEG:-ffmpeg} -loglevel warning -y -f image2 -r 25 -i $$/${name}_%6d.tif \
+		-vcodec libx264 -preset slower -crf 25 -pix_fmt yuv420p ${name}.mp4
+	# create WebM video
+	echo "Creating WebM video"
+	${FFMPEG:-ffmpeg} -loglevel warning -y -f image2 -r 25 -i $$/${name}_%6d.tif \
+		-vcodec libvpx -crf 10 -b:v 1.2M -pix_fmt yuv420p ${name}.webm
+	# create Theora video
+	echo "Creating Theora video"
+	${FFMPEG:-ffmpeg} -loglevel warning -y -f image2 -r 25 -i $$/${name}_%6d.tif \
+		-vcodec libtheora -q 4 -pix_fmt yuv420p ${name}.ogv
 fi
+
 # 4. Clean up temporary files
 gmt_cleanup .gmt

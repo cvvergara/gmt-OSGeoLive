@@ -80,7 +80,8 @@ Optional Arguments
     allowed. **-C** (no arguments) resets the default action of using
     all columns except time column (see **-N**). **-Ca** selects all
     columns, including time column, while **-Cr** reverses (toggles) the
-    current choices.
+    current choices.  When **-C** is in effect it also controls which
+    columns from a file will be placed on the stack.
 **-E**\ *eigen*
     Sets the minimum eigenvalue used by operators LSQFIT and SVDFIT [1e-7].
     Smaller eigenvalues are set to zero and will not be considered in the
@@ -492,7 +493,7 @@ natural boundary conditions.
 
 8. The bitwise operators
 (**BITAND**, **BITLEFT**, **BITNOT**, **BITOR**, **BITRIGHT**,
-**BITTEST**, and **BITXOR**) convert a tables’s double precision values
+**BITTEST**, and **BITXOR**) convert a tables's double precision values
 to unsigned 64-bit ints to perform the bitwise operations. Consequently,
 the largest whole integer value that can be stored in a double precision
 value is 2^53 or 9,007,199,254,740,992. Any higher result will be masked
@@ -615,6 +616,22 @@ solution is simply
    ::
 
     gmt gmtmath -T lsqsys.d LSQFIT = solution.d
+
+Users must be aware that when **-C** controls which columns are to be
+active the control extends to placing columns from files as well.
+Constrast the different result obtained by these very similar commands:
+
+::
+
+    echo 1 2 3 4 | gmt math STDIN -C3 1 ADD =
+    1    2    3    5
+
+versus
+
+::
+
+    echo 1 2 3 4 | gmt math -C3 STDIN 1 ADD =
+    0    0    0    5
 
 References
 ----------

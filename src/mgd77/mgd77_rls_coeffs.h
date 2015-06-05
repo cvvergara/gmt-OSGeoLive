@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77_rls_coeffs.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: mgd77_rls_coeffs.h 13846 2014-12-28 21:46:54Z pwessel $
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2004-2014 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2004-2015 by P. Wessel and M. T. Chandler
  *	File:	mgd77_rls_coeffs.c
  *
  *	Tables consisting of regression statistics for (in this order):

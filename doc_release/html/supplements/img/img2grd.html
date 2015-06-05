@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>img2grd &mdash; GMT 5.1.1 documentation</title>
+    <title>img2grd &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="IMGSRC" href="../../SUP_IMGSRC.html" />
     <link rel="next" title="img2google" href="img2google.html" />
     <link rel="prev" title="IMGSRC" href="../../SUP_IMGSRC.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_IMGSRC.html" accesskey="U">IMGSRC</a> &raquo;</li>
 <li class="right">
@@ -109,7 +109,7 @@ Sandwell and Smith. If the user has set an environment variable
 <dd><em>grdfile</em> is the name of the output grid file.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
+<dt><strong>-R</strong>[<em>unit</em>]<em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
 <dd><em>west</em>, <em>east</em>, <em>south</em>, and <em>north</em> specify the region of interest,
 and you may specify them in decimal degrees or in
 [+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
@@ -206,12 +206,12 @@ file. Versions since 1995 have had <em>maxlon</em> = 360.0, while some
 earlier files had <em>maxlon</em> = 390.0. [Default is 360.0].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -307,7 +307,7 @@ match up.</p>
 had pixels 2.0 minutes wide (or checking the nx and ny with grdinfo
 merc_grav.nc) we realize that merc_grav.nc used the full resolution of
 the img file and it has 2400 by 2039 pixels, and at 8 inches wide this
-is 300 pixels per inch. We decide we don’t need that many and we will be
+is 300 pixels per inch. We decide we do not need that many and we will be
 satisfied with 100 pixels per inch, so we want to average the data into
 3 by 3 squares. (If we want a contour plot we will probably choose to
 average the data much more (e.g., 6 by 6) to get smooth contours.) Since
@@ -394,7 +394,7 @@ eliminate NaNs, and pipe through <a class="reference internal" href="../../mappr
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_IMGSRC.html" >IMGSRC</a> &raquo;</li>
 <li class="right">
@@ -412,9 +412,9 @@ eliminate NaNs, and pipe through <a class="reference internal" href="../../mappr
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

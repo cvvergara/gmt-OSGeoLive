@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdtrend.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grdtrend.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -175,7 +175,7 @@ int GMT_grdtrend_parse (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *Ctrl, struct
 
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -184,7 +184,7 @@ int GMT_grdtrend_parse (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *Ctrl, struct
 			/* Processes program-specific parameters */
 
 			case 'D':
-				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_OUT)))
+				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->D.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -197,7 +197,7 @@ int GMT_grdtrend_parse (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *Ctrl, struct
 				if (opt->arg[j]) Ctrl->N.value = atoi(&opt->arg[j]);
 				break;
 			case 'T':
-				if ((Ctrl->T.active = GMT_check_filearg (GMT, 'T', opt->arg, GMT_OUT)))
+				if ((Ctrl->T.active = GMT_check_filearg (GMT, 'T', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->T.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -205,7 +205,7 @@ int GMT_grdtrend_parse (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *Ctrl, struct
 			case 'W':
 				Ctrl->W.active = true;
 				/* OK if this file doesn't exist; we always write to that file on output */
-				if (GMT_check_filearg (GMT, 'W', opt->arg, GMT_IN) || GMT_check_filearg (GMT, 'W', opt->arg, GMT_OUT)) 
+				if (GMT_check_filearg (GMT, 'W', opt->arg, GMT_IN, GMT_IS_GRID) || GMT_check_filearg (GMT, 'W', opt->arg, GMT_OUT, GMT_IS_GRID)) 
 					Ctrl->W.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -270,6 +270,7 @@ void compute_trend (struct GMT_CTRL *GMT, struct GMT_GRID *T, double *xval, doub
 {	/* Find trend from a model  */
 	unsigned int row, col, k;
 	uint64_t ij;
+	GMT_UNUSED(GMT);
 
 	GMT_grd_loop (GMT, T, row, col, ij) {
 		load_pstuff (pstuff, n_model, xval[col], yval[row], 1, (!(col)));
@@ -282,6 +283,7 @@ void compute_resid (struct GMT_CTRL *GMT, struct GMT_GRID *D, struct GMT_GRID *T
 {	/* Find residuals from a trend  */
 	unsigned int row, col;
 	uint64_t ij;
+	GMT_UNUSED(GMT);
 
 	GMT_grd_loop (GMT, T, row, col, ij) R->data[ij] = D->data[ij] - T->data[ij];
 }
@@ -296,6 +298,7 @@ void grd_trivial_model (struct GMT_CTRL *GMT, struct GMT_GRID *G, double *xval, 
 	unsigned int row, col;
 	uint64_t ij;
 	double x2, y2, sumx2 = 0.0, sumy2 = 0.0, sumx2y2 = 0.0;
+	GMT_UNUSED(GMT);
 
 	/* First zero the model parameters to use for sums */
 
@@ -332,6 +335,7 @@ double compute_chisq (struct GMT_CTRL *GMT, struct GMT_GRID *R, struct GMT_GRID 
 	unsigned int row, col;
 	uint64_t ij;
 	double tmp, chisq = 0.0;
+	GMT_UNUSED(GMT);
 
 	GMT_grd_loop (GMT, R, row, col, ij) {
 		if (GMT_is_fnan (R->data[ij])) continue;
@@ -413,6 +417,7 @@ void load_gtg_and_gtd (struct GMT_CTRL *GMT, struct GMT_GRID *G, double *xval, d
 
 	unsigned int row, col, k, l, n_used = 0;
 	uint64_t ij;
+	GMT_UNUSED(GMT);
 
 	/* First zero things out to start */
 

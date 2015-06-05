@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_customio.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_customio.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -84,10 +84,12 @@ int GMT_nc_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, floa
  *-----------------------------------------------------------*/
 
 int GMT_dummy_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
+	if (header) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Unknown grid format.\n");
 	return (GMT_GRDIO_UNKNOWN_FORMAT);
 }
 
 int GMT_dummy_grd_read (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, float *grid, double wesn[], unsigned int *pad, unsigned int complex_mode) {
+	if (header && grid && wesn && pad && complex_mode < 1024) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Unknown grid format.\n");
 	return (GMT_GRDIO_UNKNOWN_FORMAT);
 }
 
@@ -545,10 +547,14 @@ int GMT_is_native_grid (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
 				GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Will try to determine if a native 4-byte grid is float or int but may be wrong.\n");
 				GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Please append =bf (float) or =bi (integer) to avoid this situation.\n");
 				/* Naive test to see if we can decide it is a float grid */
-				if ((t_head.z_scale_factor == 1.0 && t_head.z_add_offset == 0.0) || fabs((t_head.z_min/t_head.z_scale_factor) - rint(t_head.z_min/t_head.z_scale_factor)) > GMT_CONV_LIMIT || fabs((t_head.z_max/t_head.z_scale_factor) - rint(t_head.z_max/t_head.z_scale_factor)) > GMT_CONV_LIMIT)
+				if ((t_head.z_scale_factor == 1.0 && t_head.z_add_offset == 0.0) || fabs((t_head.z_min/t_head.z_scale_factor) - rint(t_head.z_min/t_head.z_scale_factor)) > GMT_CONV8_LIMIT || fabs((t_head.z_max/t_head.z_scale_factor) - rint(t_head.z_max/t_head.z_scale_factor)) > GMT_CONV8_LIMIT) {
+					GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Based on header values we guessed the grid is 4-byte float.  If wrong you must add =bi.\n");
 					header->type = GMT_GRID_IS_BF;
-				else
+				}
+				else {
+					GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Based on header values we guessed the grid is 4-byte int.  If wrong you must add =bf.\n");
 					header->type = GMT_GRID_IS_BI;
+				}
 			}
 			else {
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: Cannot determine if a native 4-byte grid is float or int without more information.\n");
@@ -580,6 +586,7 @@ int GMT_native_write_grd_header (FILE *fp, struct GMT_GRID_HEADER *header)
 int GMT_native_skip_grd_header (FILE *fp, struct GMT_GRID_HEADER *header)
 {
 	int err = GMT_NOERROR;
+	GMT_UNUSED(header);
 	/* Because GMT_GRID_HEADER is not 64-bit aligned we must estimate the # of bytes in parts */
 
 	if (fseek (fp, SIZEOF_NATIVE_GRD_HDR, SEEK_SET))
@@ -1576,6 +1583,7 @@ int GMT_gdal_read_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header
 }
 
 int GMT_gdal_write_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
+	GMT_UNUSED(GMT); GMT_UNUSED(header);
 	return (GMT_NOERROR);
 }
 
@@ -1659,10 +1667,18 @@ int GMT_gdal_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 	/* Tell gmt_gdalread that we already have the memory allocated and send in the *grid pointer */
 	to_gdalread->f_ptr.active = true;
 	to_gdalread->f_ptr.grd = grid;
+	
+	/* If header->nan_value != NaN tell gdalread to replace nan_value by NaN (in floats only) */
+	to_gdalread->N.nan_value = header->nan_value;
 
 	if (GMT_gdalread (GMT, header->name, to_gdalread, from_gdalread)) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR reading file with gdalread.\n");
 		return (GMT_GRDIO_OPEN_FAILED);
+	}
+
+	if (to_gdalread->B.active) {
+		free(header->pocket);		/* It was allocated by strdup. Free it for an eventual reuse. */
+		header->pocket = NULL;
 	}
 
 	if (subset) {	/* We had a Sub-region demand */
@@ -1756,6 +1772,7 @@ int GMT_gdal_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, fl
 	int *zi32 = NULL;
 	unsigned int *zu32 = NULL;
 	struct GDALWRITE_CTRL *to_GDALW = NULL;
+	GMT_UNUSED(pad);
 	type[0] = '\0';
 
 	if (header->pocket == NULL) {

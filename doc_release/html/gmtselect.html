@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmtselect &mdash; GMT 5.1.1 documentation</title>
+    <title>gmtselect &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmtset" href="gmtset.html" />
     <link rel="prev" title="gmtmath" href="gmtmath.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -186,7 +186,7 @@ ASCII regardless of whether <strong>-bi</strong> is used.</dd>
 <dd>Pass all records whose location is within <em>dist</em> of any of the line
 segments in the ASCII multiple-segment file <em>linefile</em>. If <em>dist</em> is
 zero then we will scan each sub-header in the <em>ptfile</em> for an
-embedded <strong>-D</strong><em>dist</em> setting that sets each line’s individual
+embedded <strong>-D</strong><em>dist</em> setting that sets each line&#8217;s individual
 distance value. Distances are Cartesian and in user units; specify
 <strong>-fg</strong> to indicate spherical distances append a distance unit (see
 UNITS). Alternatively, if <strong>-R</strong> and <strong>-J</strong> are used then geographic
@@ -195,7 +195,7 @@ points, as determined by <a class="reference internal" href="gmt.conf.html#proj-
 distances are compared to <em>dist</em>. Use <strong>-Lp</strong> to ensure only points
 whose orthogonal projections onto the nearest line-segment fall
 within the segments endpoints [Default considers points &#8220;beyond&#8221; the
-line’s endpoints.</dd>
+line&#8217;s endpoints.</dd>
 <dt><strong>-N</strong><em>maskvalues</em></dt>
 <dd><p class="first">Pass all records whose location is inside specified geographical
 features. Specify if records should be skipped (s) or kept (k) using
@@ -213,7 +213,8 @@ features. Specify if records should be skipped (s) or kept (k) using
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
 <dd>Select verbosity level [c].  </dd>
 <dt><strong>-Z</strong><em>min</em>[/<em>max</em>][<strong>+c</strong><em>col</em>]</dt>
-<dd>Pass all records whose 3rd column (<em>z</em>; <em>col</em> = 2) lies within the given range.
+<dd>Pass all records whose 3rd column (<em>z</em>; <em>col</em> = 2) lies within the given range
+or is NaN (use <strong>-s</strong> to skip NaN records).
 If <em>max</em> is omitted then we test if <em>z</em> equals <em>min</em> instead.
 Input file must have at least three columns. To indicate no limit on
 min or max, specify a hyphen (-). If your 3rd column is absolute
@@ -227,7 +228,7 @@ is given then the <strong>Iz</strong> option cannot be used.</dd>
 <dd>Select binary input. [Default is 2 input columns].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output. [Default is same as input].</dd>
 </dl>
 <dl class="docutils">
@@ -244,11 +245,11 @@ is given then the <strong>Iz</strong> option cannot be used.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-o</strong><em>cols</em>[,...] <a class="reference internal" href="gmt.html#ocols-full"><em>(more ...)</em></a></dt>
-<dd>Select output columns.</dd>
+<dd>Select output columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-s</strong>[<em>cols</em>][<strong>a</strong>|<strong>r</strong>] <a class="reference internal" href="gmt.html#s-full"><em>(more ...)</em></a></dt>
@@ -259,12 +260,12 @@ is given then the <strong>Iz</strong> option cannot be used.</dd>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -354,7 +355,8 @@ polygon lonlatpath.d, try</p>
 <p>To return all points in stations.d that are within 5 cm of the point in
 origin.d for a certain projection, try</p>
 <blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtselect stations.d -C5/origin.d -R20/50/-10/20 -JM20c --PROJ_LENGTH_UNIT=cm &gt; subset2
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtselect stations.d -C5/origin.d -R20/50/-10/20 -JM20c \
+--PROJ_LENGTH_UNIT=cm &gt; subset2
 </pre></div>
 </div>
 </div></blockquote>
@@ -445,7 +447,7 @@ further details.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -463,9 +465,9 @@ further details.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

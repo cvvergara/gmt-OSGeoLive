@@ -1,5 +1,5 @@
 /*
- * $Id: grdseamount.c 12822 2014-01-31 23:39:56Z remko $
+ * $Id: grdseamount.c 14247 2015-04-28 18:46:55Z pwessel $
  *
  * grdseamount.c will create a grid made up from elliptical or circular
  * seamounts that can be Gaussian or Conical, with or without truncated
@@ -130,7 +130,7 @@ int GMT_grdseamount_parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, 
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -150,7 +150,7 @@ int GMT_grdseamount_parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, 
 				Ctrl->E.active = true;
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -230,7 +230,7 @@ void gaussian_area_volume_height (double a, double b, double h, double hc, doubl
 
 	if (circular) {
 		r = a;
-		if (fabs (hc) < GMT_CONV_LIMIT) {	/* Exact, no noise floor */
+		if (fabs (hc) < GMT_CONV8_LIMIT) {	/* Exact, no noise floor */
 			*A = M_PI * r * r;
 			*V = (2.0 / 9.0) * M_PI * r * r * h * (1.0 + (9.0 / 2.0) * f * f);
 		}
@@ -246,7 +246,7 @@ void gaussian_area_volume_height (double a, double b, double h, double hc, doubl
 		d = 3 * M_SQRT2 * f / 2.0;
 		t = hc / h;
 		logt = log (t);
-		if (fabs (hc) < GMT_CONV_LIMIT) {	/* Exact, no noise floor */
+		if (fabs (hc) < GMT_CONV8_LIMIT) {	/* Exact, no noise floor */
 			*A = M_PI * a * b;
 			*V = (2.0 / 9.0) * M_PI * a * b * h * (pow (erfc (d), 2.0) * exp (c) + c);
 		}
@@ -320,7 +320,7 @@ int GMT_grdseamount (void *V_API, int mode, void *args)
 	}
 	else {	/* Set up and allocate output grid */
 		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
-			GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+			GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 	}
 
 	map = GMT_is_geographic (GMT, GMT_IN);

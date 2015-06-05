@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdhisteq &mdash; GMT 5.1.1 documentation</title>
+    <title>grdhisteq &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdimage" href="grdimage.html" />
     <link rel="prev" title="grdgradient" href="grdgradient.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -97,9 +97,9 @@ result in most of the image being very dark gray, with the mountain
 being almost white. One could use <strong>grdhisteq</strong> to write to stdout or file an
 ASCII list of those data values which divide the range of the data into
 <em>n_cells</em> segments, each of which has an equal area in the image. Using
-<strong>awk</strong> or <strong>makecpt</strong> one can take this output and build a cpt file;
+<strong>awk</strong> or <a class="reference internal" href="makecpt.html"><em>makecpt</em></a> one can take this output and build a cpt file;
 using the cptfile with grdimage will result in an image with all levels
-of gray occurring equally. Alternatively, see <strong>grd2cpt</strong>.</p>
+of gray occurring equally. Alternatively, see <a class="reference internal" href="grd2cpt.html"><em>grd2cpt</em></a>.</p>
 <p>The second common use of <strong>grdhisteq</strong> is in writing a grid with
 statistics based on some kind of cumulative distribution function. In
 this application, the output has relative highs and lows in the same
@@ -109,9 +109,9 @@ find the lowest 10% of the data: Take a grid, run <strong>grdhisteq</strong> and
 a grid using <em>n_cells</em> = 10, and then contour the result to trace the 1
 contour. This will enclose the lowest 10% of the data, regardless of
 their original values. Another example is in equalizing the output of
-<strong>grdgradient</strong>. For shading purposes it is desired that the data have a
+<a class="reference internal" href="grdgradient.html"><em>grdgradient</em></a>. For shading purposes it is desired that the data have a
 smooth distribution, such as a Gaussian. If you run <strong>grdhisteq</strong> on
-output from <strong>grdgradient</strong> and make a grid file output with the
+output from <a class="reference internal" href="grdgradient.html"><em>grdgradient</em></a> and make a grid file output with the
 Gaussian option, you will have a grid whose values are distributed
 according to a Gaussian distribution with zero mean and unit variance.
 The locations of these values will correspond to the locations of the
@@ -122,7 +122,7 @@ location of the most negative input value, and so on.</p>
 <h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><em>in_grdfile</em></dt>
-<dd>2-D binary grid file to be equalized. (See GRID FILE FORMATS below).</dd>
+<dd>2-D grid file to be equalized. (See GRID FILE FORMATS below).</dd>
 </dl>
 </div>
 <div class="section" id="optional-arguments">
@@ -154,12 +154,12 @@ exceeds the boundaries of the grid, only the common region will be extracted.</d
 <dd>Select verbosity level [c].  </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -208,7 +208,7 @@ divisions of equal area:</p>
 </div>
 </div></blockquote>
 <p>To make the poorly distributed intensities in the file raw_intens.nc
-suitable for use with <strong>grdimage</strong> or <strong>grdview</strong>, run</p>
+suitable for use with <a class="reference internal" href="grdimage.html"><em>grdimage</em></a> or <a class="reference internal" href="grdview.html"><em>grdview</em></a>, run</p>
 <blockquote>
 <div><div class="highlight-python"><div class="highlight"><pre>gmt grdhisteq raw_intens.nc -Gsmooth_intens.nc -N -V
 </pre></div>
@@ -218,14 +218,14 @@ suitable for use with <strong>grdimage</strong> or <strong>grdview</strong>, run
 <div class="section" id="restrictions">
 <h2>Restrictions<a class="headerlink" href="#restrictions" title="Permalink to this headline">¶</a></h2>
 <p>If you use <strong>grdhisteq</strong> to make a Gaussian output for gradient shading
-in <strong>grdimage</strong> or <strong>grdview</strong>, you should be aware of the following:
+in <a class="reference internal" href="grdimage.html"><em>grdimage</em></a> or <a class="reference internal" href="grdview.html"><em>grdview</em></a>, you should be aware of the following:
 the output will be in the range [-x, x], where x is based on the number
 of data in the input grid (nx * ny) and the cumulative Gaussian
 distribution function F(x). That is, let N = nx * ny. Then x will be
 adjusted so that F(x) = (N - 1 + 0.5)/N. Since about 68% of the values
 from a standard normal distribution fall within +/- 1, this will be true
 of the output grid. But if N is very large, it is possible for x to be
-greater than 4. Therefore, with the <strong>grdimage</strong> program clipping
+greater than 4. Therefore, with the <a class="reference internal" href="grdview.html"><em>grdview</em></a> program clipping
 gradients to the range [-1, 1], you will get correct shading of 68% of
 your data, while 16% of them will be clipped to -1 and 16% of them
 clipped to +1. If this makes too much of the image too light or too
@@ -294,7 +294,7 @@ range [-1, 1]. Alternatively, supply a normalization factor with <strong>-N</str
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -312,9 +312,9 @@ range [-1, 1]. Alternatively, supply a normalization factor with <strong>-N</str
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

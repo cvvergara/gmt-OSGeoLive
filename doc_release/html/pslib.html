@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pslib &mdash; GMT 5.1.1 documentation</title>
+    <title>pslib &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="psmask" href="psmask.html" />
     <link rel="prev" title="pslegend" href="pslegend.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -260,11 +260,11 @@ Let <em>colormode</em> be one of PSL_RGB (0), PSL_CMYK
 (1), PSL_HSV (2) or PSL_GRAY (3); this setting controls how colors
 are presented in the PostScript code. The <em>origin</em> setting
 determines for x and y separately the origin of the specified
-offsets (next argument). Each of the two characters are either ’r’
-for an offset relative to the current origin, ’a’ for a temporaty
+offsets (next argument). Each of the two characters are either <strong>r</strong>
+for an offset relative to the current origin, <strong>a</strong> for a temporaty
 adjustment of the origin which is undone during BD(PSL_endplot),
-’f’ for a placement of the origin relative to the lower left corner
-of the page, ’c’ for a placement of the origin relative to the
+<strong>f</strong> for a placement of the origin relative to the lower left corner
+of the page, <strong>c</strong> for a placement of the origin relative to the
 center of the page. The array <em>offset</em> specifies the offset of the
 new origin relative to the position indicated by <strong>origin</strong>.
 <em>page_size</em> means the physical width and height of the plotting
@@ -378,6 +378,16 @@ N.-Bold, 28 = N.-BoldItalic, 29 = Palatino-Roman, 30 = P.-Italic, 31
 ZapfDingbats, 35 = Ryumin-Light-EUC-H, 36 = Ryumin-Light-EUC-V, 37 =
 GothicBBB-Medium-EUC-H, and 38 = GothicBBB-Medium-EUC-V. If <em>fontnr</em>
 is outside this range, it is reset to 0.</div></blockquote>
+<p><strong>long PSL_setfontdims</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>double</strong> <em>supsub</em>,
+<strong>double</strong> <em>scaps</em>, <strong>double</strong> <em>sup</em>, <strong>double</strong> <em>sdown</em>)</p>
+<blockquote>
+<div>Changes the settings for a variety of relative font sizes and shifts
+pertaining to sub-scripts, super-scripts, and small caps.  Default
+settings are given in brackets.  Here, <em>supsub</em> sets the relative size
+of sub- and super-scripts [0.58], <em>scaps</em> sets the relative size of
+small caps [0.8], <em>sup</em> indicates the upward baseline shift for placement
+of super-scripts [0.33], while <em>sdown</em> sets the downward baseline shift
+for sub-scripts [0.33].</div></blockquote>
 <p><strong>long PSL_setformat</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>long</strong> <em>n_decimals</em>)</p>
 <blockquote>
 <div>Sets the number of decimals to be used when writing color or gray
@@ -476,7 +486,8 @@ To end the segments and draw the lines, add PSL_STROKE
 be PSL_MOVE + PSL_STROKE (3). The line is
 drawn using the current pen attributes. Add PSL_CLOSE
 (8) to <em>type</em> to close the first and last point
-by the PostScript operators.</div></blockquote>
+by the PostScript operators; this is done automatically if the
+first and last point are equal.</div></blockquote>
 <p><strong>long PSL_plotpoint</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>double</strong> <em>x</em>,
 <strong>double</strong> <em>y</em>, <strong>long</strong> <em>type</em>)</p>
 <blockquote>
@@ -644,8 +655,8 @@ to by the open file pointer <em>fp</em>. The routine can handle
 Encapsulated PostScript files or 1-, 8-, 24-, or 32-bit raster
 images in old, standard, run-length encoded, or RGB-style Sun
 format. Non-Sun rasters are automatically reformatted to Sun rasters
-via a system call to ImageMagick’s BD(convert), if installed. The
-image is returned via the IT(image) pointer.</div></blockquote>
+via a system call to GraphicsMagick&#8217;s or ImageMagick&#8217;s <strong>convert</strong>, if installed. The
+image is returned via the <em>image</em> pointer.</div></blockquote>
 </div>
 <div class="section" id="plotting-text">
 <h2>Plotting Text<a class="headerlink" href="#plotting-text" title="Permalink to this headline">¶</a></h2>
@@ -699,41 +710,6 @@ width). The <em>offset</em> array holds the horizontal and vertical
 distance gaps between text and the surrounding text box in distance
 units. The smaller of the two determined the radius of the rounded
 corners (if requested).</div></blockquote>
-<p><strong>long PSL_plottextclip</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>double</strong> <em>x</em>,
-<strong>double</strong> <em>y</em>, <strong>long</strong> <em>n</em>, <strong>double</strong> <em>fontsize</em>, <strong>char</strong>
-<em>*text</em>[], <strong>double</strong> <em>angle</em>[], <strong>long</strong> <em>justify</em>, <strong>double</strong>
-<em>offset</em>[], <strong>long</strong> <em>mode</em>)</p>
-<blockquote>
-<div>This function is called twice: First time we pass the text strings
-and other parameters and use PostScript to compute clip paths so
-that no feature plotted after this call will be visible in areas
-where text will be plotted. The second call actually plots the texts
-in the predetermined locations (NULL may be passed for all arrays
-for the second call). All labels have a straight baseline (for
-plotting along curved text, see <strong>PSL_plottextpath</strong>). The <em>x</em> and
-<em>y</em> arrays contain the plot coordinates where labels will be
-plotted; there are <em>n</em> such labels and locations. Each label has its
-own entry in the <em>angle</em> array. The <em>text</em> is an array of text
-pointers to the individual text items, which will all appear using
-the current font and scaled to specified <em>fontsize</em> in points. The
-<em>offset</em> array holds the horizontal and vertical distance gaps
-between text and the surrounding text box in user units (the clip
-path is the combination of all these text boxes). Use <em>justify</em> to
-specify how the text string relates to the coordinates (see
-<strong>JUSTIFICATION</strong> for details). Finally, <em>mode</em> is a bit pattern
-that controls how the function does its work; pass <em>mode</em> as the sum
-of the values you need: 0 = lay down clip path, 1 = place the text,
-2 = turn off clipping, 4 = draw the <em>x-y</em> line (useful for
-debugging), 8 = reuse the previous parameters (so pass NULL as
-args), 16 = construct rounded text boxes [Default is rectangular],
-128 = fill the text box (this requires you to first define the text
-box rgb color with <strong>PSL_define_rgb</strong> by setting a local
-PostScript variable that must be called PSL_setboxrgb), and 256 =
-draw the text box outlines (this requires you to first define the
-text box pen with <strong>PSL_define_pen</strong> by setting a local
-PostScript variable that must be called PSL_setboxpen). For font
-color you must use <strong>PSL_define_rgb</strong> and create a PostScript
-variable called PSL_settxtrgb. If not set we default to black.</div></blockquote>
 <p><strong>long PSL_deftextdim</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>char</strong>
 <em>*prefix</em>, <strong>double</strong> <em>fontsize</em>, <strong>char</strong> <em>*text</em>)</p>
 <blockquote>
@@ -751,11 +727,11 @@ height will be left on the PostScript stack.</div></blockquote>
 <p><strong>long PSL_setparagraph</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>double</strong>
 <em>line_space</em>, <strong>double</strong> <em>par_width</em>, <strong>long</strong> <em>par_just</em>)</p>
 <blockquote>
-<div><p>Initialize common settings to be used when typesetting paragraphs of
+<div>Initialize common settings to be used when typesetting paragraphs of
 text with <strong>PSL_plotparagraph</strong>. Specify the line spacing (1 equals
 the font size) and paragraph width (in distance units). Text can be
 aligned left (PSL_BL), centered (PSL_BC), right (PSL_BR), or
-justified (PSL_JUST) and is controlled by <em>par_just</em>.</p>
+justified (PSL_JUST) and is controlled by <em>par_just</em>.</div></blockquote>
 <p><strong>long PSL_plotparagraphbox</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>,
 <strong>double</strong> <em>x</em>, <strong>double</strong> <em>y</em>, <strong>double</strong> <em>fontsize</em>, <strong>char</strong>
 <em>*text</em>, <strong>double</strong> <em>angle</em>, <strong>long</strong> <em>justify</em>, <strong>double</strong>
@@ -791,49 +767,53 @@ block is positioned at plot coordinates <em>x</em>, <em>y</em>, which is
 mapped to a point on the block specified by <em>justify</em> (see
 <strong>JUSTIFICATION</strong> for details). See <strong>PSL_plotparagraphbox</strong>
 for laying down the surrounding text rectangle first.</div></blockquote>
-<p><strong>long PSL_plottextpath</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>double</strong>
-<em>x</em>, <strong>double</strong> <em>y</em>, <strong>long</strong> <em>n</em>, <strong>long</strong> <em>node</em>[], <strong>double</strong>
-<em>fontsize</em>, <strong>char</strong> <em>*text</em>[], <strong>long</strong> <em>m</em>, <strong>double</strong>
-<em>angle</em>[], <strong>long</strong> <em>justify</em>, <strong>double</strong> <em>offset</em>[], <strong>long</strong> <em>mode</em>)</p>
+<p><strong>long PSL_plottextline</strong> (<strong>struct PSL_CTRL</strong> <em>*P</em>, <strong>double</strong>
+<em>*xpath</em>, <strong>double</strong> <em>*ypath</em>, <strong>long</strong> <em>*np</em>, <strong>long</strong> <em>nseg</em>,
+<strong>void</strong> <em>*arg1</em>, <strong>void</strong> <em>*arg2</em>, <strong>char</strong> <em>*text</em>[],
+<strong>double</strong> <em>angle</em>[], <strong>long</strong> <em>n_per_seg</em>[], <strong>double</strong> <em>fontsize,
+***long*</em> <em>justify</em>, <strong>double</strong> <em>offset</em>[], <strong>long</strong> <em>mode</em>)</p>
 <blockquote>
-<div>Please text along a curved path. This function is also called
-twice: First time we pass the text strings and locations and
-PostScript will compute clip paths so that no features plotted
-after this call will be visible in areas where text will be
-plotted. The second call actually plots the texts in the
-predetermined locations (NULL may be passed for all arrays for
-the second call). All labels will follow the path specified by
-the plot coordinates in the <em>x</em>, <em>y</em> arrays (for plotting
-straight text with clipping, see <strong>PSL_plottextclip</strong>). The
-<em>node</em> array contains the index numbers into the <em>x</em> and <em>y</em>
-arrays where each labels will be plotted; there are <em>n</em> such
-labels and node locations. Each label has its own entry in the
+<div>Please text along one or more path segments. The function does
+different things depending on the bit flags in <em>mode</em>. A key
+distinction occurs if the bit flag contains the bit PSL_TXT_CURVED
+(64) which means we wish to typeset the text along a variable and curved
+baseline given by the segments in <em>xpath, ypath</em>; otherwise we set
+straight text (possibly at an angle) and the <em>xpath, ypath</em> are
+not considered for text placement [If no line drawing is desired
+then these two arrays may be NULL].  We will describe the action
+taken for each bit value.  Multiple values may be passed at the
+same time and we processes from low to hight bit.
+PSL_TXT_INIT: When mode contains this bit (1) we will initialize
+all the required variables and store them in the PostScript file.
+PSL_TXT_SHOW: We wish to see the text strings (otherwise they may
+only serve as guides to set up clip paths).
+PSL_TXT_CLIP_ON: Use the text and the paths to set up clip paths.
+PSL_TXT_DRAW: Draw the lines defined by the <em>xpath, ypath</em> arrays.
+PSL_TXT_CLIP_OFF: Turn the text path clipping off.
+We pass the text strings via <em>text</em>.  The locations of text plotting
+depends on whether PSL_TXT_CURVED is selected.  If it is then
+you must pass as <em>arg1</em> the <em>node</em> array indicating at which
+node in the <em>xpath, ypath</em> array the text will be plotted; let
+<em>arg2</em> be NULL. For
+straight baselines you must instead pass another set of x,y
+coordinates with the locations of the text label placements
+via <em>arg1, arg2</em>.
+Each label has its own entry in the
 <em>angle</em> array. The <em>text</em> is an array of text pointers to the
-individual text items, which will all appear using the current
-font and scaled to specified <em>fontsize</em> (in points). The
+individual text items. The
 <em>offset</em> array holds the x and y distance gaps between text and
 the surrounding text box in user units (the clip path is the
 combination of all these text boxes). Use <em>justify</em> to specify
 how the text string relates to the coordinates (see
-BF(JUSTIFICATION) for details). Finally, <em>mode</em> is a bit pattern
-that controls how the function does its work; pass <em>mode</em> as the
-sum of the values you need: 0 = lay down clip path, 1 = place
-the text, 2 = turn off clipping, 4 = draw the <em>x-y</em> line (useful
-for debugging), 8 = reuse the previous parameters (so pass NULL
-as args), 16 = construct rounded text boxes [Default is
-rectangular], 32 = set the first time <strong>PSL_plottextpath</strong> is
-called (if you are placing text several times), 64 = set the
-last time <strong>PSL_plottextpath</strong> is called, 128 = fill the text
-box (this requires you to first define the text box rgb color
-with <strong>PSL_define_rgb</strong> by setting a local PostScript
-variable that must be called PSL_setboxrgb), and 256 = draw the
-text box outlines (this requires you to first define the text
-box pen with <strong>PSL_define_pen</strong> by setting a local
-PostScript variable that must be called PSL_setboxpen). For
-font color you must use <strong>PSL_define_rgb</strong> and create a
-PostScript variable called PSL_settxtrgb. If not set we
-default to black.</div></blockquote>
-</div></blockquote>
+BF(JUSTIFICATION) for details).
+PSL_TXT_FILLBOX (128) will fill the text box (this requires you
+to first define the text box rgb color with <strong>PSL_define_rgb</strong>
+by setting a local PostScript variable that must be called PSL_setboxrgb).
+PSL_TXT_DRAWBOX (256) will draw the text box outlines (this requires
+you to first define the text box pen with <strong>PSL_define_pen</strong> by setting a local
+PostScript variable that must be called PSL_setboxpen). Before
+calling this function you must also initialize a PSL array for
+line pens and text fonts.</div></blockquote>
 </div>
 <div class="section" id="clipping">
 <h2>Clipping<a class="headerlink" href="#clipping" title="Permalink to this headline">¶</a></h2>
@@ -955,7 +935,7 @@ edition, Addison-Wesley, (ISBN 0-201-18127-4).</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -973,9 +953,9 @@ edition, Addison-Wesley, (ISBN 0-201-18127-4).</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

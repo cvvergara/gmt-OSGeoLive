@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(25) Global distribution of antipodes &mdash; GMT 5.1.1 documentation</title>
+    <title>(25) Global distribution of antipodes &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(26) General vertical perspective projection" href="ex26.html" />
     <link rel="prev" title="(24) Data selection based on geospatial criteria" href="ex24.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -118,18 +118,18 @@ categorical data, like these, that should not be interpolated.</p>
 <span class="c"># Create D minutes global grid with -1 over oceans and +1 over land</span>
 <span class="nv">ps</span><span class="o">=</span>example_25.ps
 <span class="nv">D</span><span class="o">=</span>30
-gmt grdlandmask -Rg -Im -Dc -A500 -N-1/1/1/1/1 -r -Gwetdry.nc
+gmt grdlandmask -Rg -I<span class="si">${</span><span class="nv">D</span><span class="si">}</span>m -Dc -A500 -N-1/1/1/1/1 -r -Gwetdry.nc
 <span class="c"># Manipulate so -1 means ocean/ocean antipode, +1 = land/land, and 0 elsewhere</span>
-gmt grdmath -fg wetdry.nc DUP 180 ROTX FLIPUD ADD 2 <span class="nv">DIV</span> <span class="o">=</span> key.nc
+gmt grdmath -fg wetdry.nc DUP <span class="m">180</span> ROTX FLIPUD ADD <span class="m">2</span> <span class="nv">DIV</span> <span class="o">=</span> key.nc
 <span class="c"># Calculate percentage area of each type of antipode match.</span>
-gmt grdmath -Rg -Im -r Y COSD 60 <span class="nv">$D</span> DIV 360 MUL DUP MUL PI DIV DIV 100 <span class="nv">MUL</span> <span class="o">=</span> scale.nc
-gmt grdmath -fg key.nc -1 EQ 0 NAN scale.nc <span class="nv">MUL</span> <span class="o">=</span> tmp.nc
+gmt grdmath -Rg -I<span class="si">${</span><span class="nv">D</span><span class="si">}</span>m -r Y COSD <span class="m">60</span> <span class="nv">$D</span> DIV <span class="m">360</span> MUL DUP MUL PI DIV DIV <span class="m">100</span> <span class="nv">MUL</span> <span class="o">=</span> scale.nc
+gmt grdmath -fg key.nc -1 EQ <span class="m">0</span> NAN scale.nc <span class="nv">MUL</span> <span class="o">=</span> tmp.nc
 gmt grd2xyz tmp.nc -s -ZTLf &gt; key.b
 <span class="nv">ocean</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -bi1f -Ca -S key.b SUM UPPER <span class="nv">RINT</span> <span class="o">=</span><span class="sb">`</span>
-gmt grdmath -fg key.nc 1 EQ 0 NAN scale.nc <span class="nv">MUL</span> <span class="o">=</span> tmp.nc
+gmt grdmath -fg key.nc <span class="m">1</span> EQ <span class="m">0</span> NAN scale.nc <span class="nv">MUL</span> <span class="o">=</span> tmp.nc
 gmt grd2xyz tmp.nc -s -ZTLf &gt; key.b
 <span class="nv">land</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -bi1f -Ca -S key.b SUM UPPER <span class="nv">RINT</span> <span class="o">=</span><span class="sb">`</span>
-gmt grdmath -fg key.nc 0 EQ 0 NAN scale.nc <span class="nv">MUL</span> <span class="o">=</span> tmp.nc
+gmt grdmath -fg key.nc <span class="m">0</span> EQ <span class="m">0</span> NAN scale.nc <span class="nv">MUL</span> <span class="o">=</span> tmp.nc
 gmt grd2xyz tmp.nc -s -ZTLf &gt; key.b
 <span class="nv">mixed</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -bi1f -Ca -S key.b SUM UPPER <span class="nv">RINT</span> <span class="o">=</span><span class="sb">`</span>
 <span class="c"># Generate corresponding color table</span>
@@ -193,7 +193,7 @@ rm -f *.nc key.* gmt.conf
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -211,9 +211,9 @@ rm -f *.nc key.* gmt.conf
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

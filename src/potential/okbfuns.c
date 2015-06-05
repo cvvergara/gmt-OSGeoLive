@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: okbfuns.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: okbfuns.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double r
 	unsigned int i, l, k, cnt_v = 0, n_vert;
 	bool top = true;
 	struct LOC_OR loc_or[32];
+	GMT_UNUSED(loc_or_);
 	GMT_declare_gmutex		/* A no-op when no USE_GTHREADS */
 
 /* x_o, y_o, z_o are the coordinates of the observation point

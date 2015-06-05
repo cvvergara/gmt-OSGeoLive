@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(18) Volumes and Spatial Selections &mdash; GMT 5.1.1 documentation</title>
+    <title>(18) Volumes and Spatial Selections &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(19) Color patterns on maps" href="ex19.html" />
     <link rel="prev" title="(17) Images clipped by coastlines" href="ex17.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -115,7 +115,7 @@ gmt grdimage AK_gulf_grav.nc -IAK_gulf_grav_i.nc -JM5.5i -Cgrav.cpt -B2f1 -P -K 
 	-Y5.85i &gt; <span class="nv">$ps</span>
 gmt pscoast -RAK_gulf_grav.nc -J -O -K -Di -Ggray -Wthinnest &gt;&gt; <span class="nv">$ps</span>
 gmt psscale -D2.75i/-0.4i/4i/0.15ih -Cgrav.cpt -Bx20f10 -By+l<span class="s2">&quot;mGal&quot;</span> -O -K &gt;&gt; <span class="nv">$ps</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, &quot;Pratt&quot;}&#39;</span> pratt.d | gmt pstext -R -J -O -K -D0.1i/0.1i <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, &quot;Pratt&quot;}&#39;</span> pratt.d <span class="p">|</span> gmt pstext -R -J -O -K -D0.1i/0.1i <span class="se">\</span>
 	-F+f12p,Helvetica-Bold+jLB &gt;&gt; <span class="nv">$ps</span>
 gmt psxy pratt.d -R -J -O -K -SE- -Wthinnest &gt;&gt; <span class="nv">$ps</span>
 
@@ -139,7 +139,7 @@ gmt gmtspatial -Q -fg sm_*_C.txt &gt; centers.d
 
 <span class="c"># Only plot the ones within 200 km</span>
 
-gmt gmtselect -C200k/pratt.d centers.d -fg | gmt psxy -R -J -O -K -SC0.04i -Gred -Wthinnest &gt;&gt; <span class="nv">$ps</span>
+gmt gmtselect -C200k/pratt.d centers.d -fg <span class="p">|</span> gmt psxy -R -J -O -K -SC0.04i -Gred -Wthinnest &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O -K -ST0.1i -Gyellow -Wthinnest pratt.d &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># Then report the volume and area of these seamounts only</span>
@@ -149,8 +149,8 @@ gmt psxy -R -J -O -K -ST0.1i -Gyellow -Wthinnest pratt.d &gt;&gt; <span class="n
 gmt grdmath -R <span class="sb">`</span><span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2}&#39;</span> pratt.d<span class="sb">`</span> <span class="nv">SDIST</span> <span class="o">=</span> mask.nc
 gmt grdclip mask.nc -Sa200/NaN -Sb200/1 -Gmask.nc
 gmt grdmath AK_gulf_grav.nc mask.nc <span class="nv">MUL</span> <span class="o">=</span> tmp.nc
-<span class="nv">area</span><span class="o">=</span><span class="sb">`</span>gmt grdvolume tmp.nc -C50 -Sk | cut -f2<span class="sb">`</span>
-<span class="nv">volume</span><span class="o">=</span><span class="sb">`</span>gmt grdvolume tmp.nc -C50 -Sk | cut -f3<span class="sb">`</span>
+<span class="nv">area</span><span class="o">=</span><span class="sb">`</span>gmt grdvolume tmp.nc -C50 -Sk <span class="p">|</span> cut -f2<span class="sb">`</span>
+<span class="nv">volume</span><span class="o">=</span><span class="sb">`</span>gmt grdvolume tmp.nc -C50 -Sk <span class="p">|</span> cut -f3<span class="sb">`</span>
 
 gmt psxy -R -J -A -O -K -L -Wthin -Gwhite &gt;&gt; <span class="nv">$ps</span> <span class="s">&lt;&lt; END</span>
 <span class="s">-148.5	52.75</span>
@@ -215,7 +215,7 @@ rm -f grav.cpt sm_*.txt *_i.nc tmp.nc mask.nc pratt.d center* gmt.conf
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -233,9 +233,9 @@ rm -f grav.cpt sm_*.txt *_i.nc tmp.nc mask.nc pratt.d center* gmt.conf
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

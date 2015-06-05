@@ -86,7 +86,7 @@ Optional Arguments
     specification with format [*size*,][\ *font*,][*color*\ ] where
     *size* is text size in points, *font* is the font to use, and
     *color* sets the font color. To draw outline fonts you append
-    =\ *pen* to the filo. The *angle* is measured in degrees
+    =\ *pen* to the font specification. The *angle* is measured in degrees
     counter-clockwise from horizontal, and *justify* sets the alignment.
     If *font* is not an integer, then it is taken to be a text string
     with the desired fontname (see **-L** for available fonts). The
@@ -137,14 +137,15 @@ Optional Arguments
     gets the *x_min*, *y_max* from the **-R** string and plots the text
     at the Upper Left corner of the map.  Normally, the text to be plotted
     comes from the data record.  Instead, use **+h** or **+l** to select the
-    text as the most recent segment header or segment label, respectively.
+    text as the most recent segment header or segment label, respectively in
+    a multisegment input file.
 
 **-G**\ *color*
     Sets the shade or color used for filling the text box [Default is no
-    fill]. Alternatively, use **-Gc** to use text (and **-C**) to build
-    clip paths and turn clipping on. This clipping can then be turned
-    off later and the text may be finally plotted using psclip **-Ct**
-    (provided only one pstext call was issued). 
+    fill]. Alternatively, use **-Gc** to plot the text and then use the
+    text dimensions (and **-C**) to build clip paths and turn clipping on.
+    This clipping can then be turned off later with psclip **-C**.
+    To **not** plot the text but activate clipping, use **-GC** instead.
 
 .. include:: explain_-Jz.rst_
 
@@ -155,7 +156,7 @@ Optional Arguments
 **-M**
     Paragraph mode. Files must be multiple segment files. Segments are
     separated by a special record whose first character must be *flag*
-    [Default is ’>’]. Starting in the 3rd column, we expect to find
+    [Default is **>**]. Starting in the 3rd column, we expect to find
     information pertaining to the typesetting of a text paragraph (the
     remaining lines until next segment header). The information expected
     is (*x y* [*font angle justify*\ ] *linespace parwidth parjust*),
@@ -166,7 +167,9 @@ Optional Arguments
     which may be **l**\ (eft), **c**\ (enter), **r**\ (ight), or
     **j**\ (ustified). The segment header is followed by one or more
     lines with paragraph text. Text may contain the escape sequences
-    discussed above. Separate paragraphs with a blank line.
+    discussed above. Separate paragraphs with a blank line.  Note that
+    here, the justification set via **-F+j** applies to the box alignment
+    since the text justification is set by *parjust*.
 **-N**
     Do NOT clip text at map boundaries [Default will clip]. 
 

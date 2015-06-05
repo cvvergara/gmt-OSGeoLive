@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: project.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: project.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -410,7 +410,7 @@ int GMT_project_parse (struct GMT_CTRL *GMT, struct PROJECT_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Input files are OK */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -721,8 +721,21 @@ int GMT_project (void *V_API, int mode, void *args)
 		for (col = 3; col < P.n_outputs; col++) P.output_choice[col] = (int)col - 1;
 		P.find_new_point = true;
 	}
-	if (Ctrl->G.active) P.n_outputs = 3;
-
+	if (Ctrl->G.active) {	/* Hardwire 3 output columns and set their types */
+		P.n_outputs = 3;
+		GMT->current.io.col_type[GMT_OUT][GMT_X] = GMT_IS_LON;
+		GMT->current.io.col_type[GMT_OUT][GMT_Y] = GMT_IS_LAT;
+		GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_FLOAT;
+	}
+	else {	/* Decode and set the various output column types */
+		for (col = 0; col < P.n_outputs; col++) {
+			switch (P.output_choice[col]) {
+				case 0: case 4: GMT->current.io.col_type[GMT_OUT][col] = GMT_IS_LON;	break;
+				case 1: case 5: GMT->current.io.col_type[GMT_OUT][col] = GMT_IS_LAT;	break;
+				default: 	GMT->current.io.col_type[GMT_OUT][col] = GMT_IS_FLOAT;	break;
+			}
+		}
+	}
 	p_data = GMT_memory (GMT, NULL, n_alloc, struct PROJECT_DATA);
 
 	if (Ctrl->G.active && Ctrl->E.active && (Ctrl->L.min == Ctrl->L.max)) Ctrl->L.constrain = true;	/* Default generate from A to B  */
@@ -758,7 +771,7 @@ int GMT_project (void *V_API, int mode, void *args)
 				Ctrl->G.mode = 0;
 			}
 			else if (doubleAlmostEqual (Ctrl->G.colat, 90.0)) {	/* Great circle pole needed */
-				if (!Ctrl->L.active) Ctrl->L.max = d_acosd (GMT_dot3v (GMT, a, b));
+				if (Ctrl->L.constrain) Ctrl->L.max = d_acosd (GMT_dot3v (GMT, a, b));
 			}
 			else {	/* Find small circle pole so C and E are |lat| degrees from it. */
 				for (col = 0; col < 3; col++) m[col] = a[col] + b[col];	/* Mid point along A-B */
@@ -773,7 +786,7 @@ int GMT_project (void *V_API, int mode, void *args)
 					for (col = 0; col < 3; col++) x[col] = P.pole[col] * s + m[col] * c;
 					GMT_normalize3v (GMT, x);
 					radius = d_acosd (GMT_dot3v (GMT, a, x)); 
-					if (fabs (radius - fabs (Ctrl->G.colat)) < GMT_CONV_LIMIT)
+					if (fabs (radius - fabs (Ctrl->G.colat)) < GMT_CONV8_LIMIT)
 						done = true;
 					else if (radius > fabs (Ctrl->G.colat))
 						s_hi = s_mid;
@@ -793,7 +806,7 @@ int GMT_project (void *V_API, int mode, void *args)
 				GMT_normalize3v (GMT, x);
 				GMT_cross3v (GMT, x, P.pole, bp);
 				GMT_normalize3v (GMT, bp);
-				if (!Ctrl->L.active) Ctrl->L.max = d_acosd (GMT_dot3v (GMT, ap, bp));
+				if (Ctrl->L.constrain) Ctrl->L.max = d_acosd (GMT_dot3v (GMT, ap, bp));
 			}
 		}
 		if (Ctrl->L.constrain) {
@@ -834,7 +847,7 @@ int GMT_project (void *V_API, int mode, void *args)
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Generate table data\n");
 		d_along = Ctrl->L.min;
-		while ((Ctrl->L.max - d_along) > (GMT_CONV_LIMIT*Ctrl->G.inc)) {
+		while ((Ctrl->L.max - d_along) > (GMT_CONV8_LIMIT*Ctrl->G.inc)) {
 			p_data[P.n_used].a[2] = d_along;
 			p_data[P.n_used].t = NULL;	/* Initialize since that is not done by realloc */
 			p_data[P.n_used].z = NULL;	/* Initialize since that is not done by realloc */

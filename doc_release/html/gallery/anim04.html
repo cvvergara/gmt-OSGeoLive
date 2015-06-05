@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(4) Flying over topography &mdash; GMT 5.1.1 documentation</title>
+    <title>(4) Flying over topography &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="Users Script Contributions" href="../Users_contrib_script.html" />
     <link rel="prev" title="(3) Orbiting a static map" href="anim03.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -91,13 +91,14 @@ expect to add this functionality in a future version.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
 <span class="c">#               GMT ANIMATION 04</span>
 <span class="c">#</span>
-<span class="c"># Purpose:      Make DVD-res Quicktime movie of NY to Miami flight</span>
+<span class="c"># Purpose:      Make DVD-res movie of NY to Miami flight</span>
 <span class="c"># GMT progs:    gmt gmtset, gmt gmtmath, gmt psbasemap, gmt pstext, gmt psxy, gmt ps2raster</span>
 <span class="c"># Unix progs:   awk, mkdir, rm, mv, echo, qt_export, cat</span>
 <span class="c"># Note:         Run with any argument to build movie; otherwise 1st frame is plotted only.</span>
 <span class="c">#</span>
 <span class="c"># 1. Initialization</span>
 <span class="c"># 1a) Assign movie parameters</span>
+. gmt_shell_functions.sh
 <span class="nv">REGION</span><span class="o">=</span>-Rg
 <span class="nv">altitude</span><span class="o">=</span>160.0
 <span class="nv">tilt</span><span class="o">=</span>55
@@ -109,45 +110,81 @@ expect to add this functionality in a future version.</p>
 <span class="nv">py</span><span class="o">=</span>4.8
 <span class="nv">dpi</span><span class="o">=</span>100
 <span class="nv">name</span><span class="o">=</span>anim_04
-<span class="nv">ps</span><span class="o">=</span>.ps
+<span class="nv">ps</span><span class="o">=</span><span class="si">${</span><span class="nv">name</span><span class="si">}</span>.ps
 
 <span class="c"># Set up flight path</span>
 gmt project -C-73.8333/40.75 -E-80.133/25.75 -G5 -Q &gt; <span class="nv">$$</span>.path.d
 <span class="nv">frame</span><span class="o">=</span>0
-mkdir -p frames
-gmt grdgradient USEast_Coast.nc -A90 -Nt1 -G<span class="nv">$.</span>nc
-gmt makecpt -Cglobe -Z &gt; <span class="nv">$$</span>.cpt
-<span class="k">while </span><span class="nb">read </span>lon lat dist; <span class="k">do</span>
-<span class="k">	</span><span class="nv">file</span><span class="o">=</span><span class="sb">`</span>gmt_set_framename  <span class="sb">`</span>
-	<span class="nv">ID</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span>  | <span class="nv">$AWK</span> <span class="s1">&#39;{printf &quot;%04d\n&quot;, $1}&#39;</span><span class="sb">`</span>
-	gmt grdimage -JG////////7i+ <span class="se">\</span>
-		 -P -Y0.1i -X0.1i USEast_Coast.nc -I<span class="nv">$.</span>nc -C<span class="nv">$$</span>.cpt <span class="se">\</span>
-		--PS_MEDIA<span class="o">=</span>ixi -K &gt; <span class="nv">$$</span>.ps
-	gmt psxy -R -J -O -K -W1p <span class="nv">$$</span>.path.d &gt;&gt; <span class="nv">$$</span>.ps
-	gmt pstext -R0//0/ -Jx1i -F+f14p,Helvetica-Bold+jTL -O &gt;&gt; <span class="nv">$$</span>.ps <span class="o">&lt;&lt;&lt;</span> <span class="s2">&quot;0 4.6 &quot;</span>
-	<span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span>-eq 0 <span class="o">]</span>; <span class="k">then</span>
-<span class="k">		</span>mv <span class="nv">$$</span>.ps 
+mkdir -p <span class="nv">$$</span>
+gmt grdgradient USEast_Coast.nc -A90 -Nt1 -Gint_<span class="nv">$$</span>.nc
+gmt makecpt -Cglobe -Z &gt; globe_<span class="nv">$$</span>.cpt
+<span class="k">function</span> make_frame <span class="o">()</span> <span class="o">{</span>
+	<span class="nb">local </span>frame file ID lon lat dist
+	<span class="nv">frame</span><span class="o">=</span><span class="nv">$1</span><span class="p">;</span> <span class="nv">lon</span><span class="o">=</span><span class="nv">$2</span><span class="p">;</span> <span class="nv">lat</span><span class="o">=</span><span class="nv">$3</span><span class="p">;</span> <span class="nv">dist</span><span class="o">=</span><span class="nv">$4</span>
+	<span class="nv">file</span><span class="o">=</span><span class="sb">`</span>gmt_set_framename <span class="si">${</span><span class="nv">name</span><span class="si">}</span> <span class="si">${</span><span class="nv">frame</span><span class="si">}</span><span class="sb">`</span>
+	<span class="nv">ID</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="si">${</span><span class="nv">frame</span><span class="si">}</span> <span class="p">|</span> <span class="nv">$AWK</span> <span class="s1">&#39;{printf &quot;%04d\n&quot;, $1}&#39;</span><span class="sb">`</span>
+	gmt grdimage -JG<span class="si">${</span><span class="nv">lon</span><span class="si">}</span>/<span class="si">${</span><span class="nv">lat</span><span class="si">}</span>/<span class="si">${</span><span class="nv">altitude</span><span class="si">}</span>/<span class="si">${</span><span class="nv">azimuth</span><span class="si">}</span>/<span class="si">${</span><span class="nv">tilt</span><span class="si">}</span>/<span class="si">${</span><span class="nv">twist</span><span class="si">}</span>/<span class="si">${</span><span class="nv">Width</span><span class="si">}</span>/<span class="si">${</span><span class="nv">Height</span><span class="si">}</span>/7i+ <span class="se">\</span>
+		<span class="si">${</span><span class="nv">REGION</span><span class="si">}</span> -P -Y0.1i -X0.1i USEast_Coast.nc -Iint_<span class="nv">$$</span>.nc -Cglobe_<span class="nv">$$</span>.cpt <span class="se">\</span>
+		--PS_MEDIA<span class="o">=</span><span class="si">${</span><span class="nv">px</span><span class="si">}</span>ix<span class="si">${</span><span class="nv">py</span><span class="si">}</span>i -K &gt; <span class="si">${</span><span class="nv">file</span><span class="si">}</span>_<span class="nv">$$</span>.ps
+	gmt psxy -JG<span class="si">${</span><span class="nv">lon</span><span class="si">}</span>/<span class="si">${</span><span class="nv">lat</span><span class="si">}</span>/<span class="si">${</span><span class="nv">altitude</span><span class="si">}</span>/<span class="si">${</span><span class="nv">azimuth</span><span class="si">}</span>/<span class="si">${</span><span class="nv">tilt</span><span class="si">}</span>/<span class="si">${</span><span class="nv">twist</span><span class="si">}</span>/<span class="si">${</span><span class="nv">Width</span><span class="si">}</span>/<span class="si">${</span><span class="nv">Height</span><span class="si">}</span>/7i+ <span class="se">\</span>
+		<span class="si">${</span><span class="nv">REGION</span><span class="si">}</span> -O -K -W1p <span class="nv">$$</span>.path.d &gt;&gt; <span class="si">${</span><span class="nv">file</span><span class="si">}</span>_<span class="nv">$$</span>.ps
+	gmt pstext -R0/<span class="si">${</span><span class="nv">px</span><span class="si">}</span>/0/<span class="si">${</span><span class="nv">py</span><span class="si">}</span> -Jx1i -F+f14p,Helvetica-Bold+jTL -O &gt;&gt; <span class="si">${</span><span class="nv">file</span><span class="si">}</span>_<span class="nv">$$</span>.ps <span class="o">&lt;&lt;&lt;</span> <span class="s2">&quot;0 4.6 </span><span class="si">${</span><span class="nv">ID</span><span class="si">}</span><span class="s2">&quot;</span>
+	<span class="o">[[</span> <span class="si">${</span><span class="nv">frame</span><span class="si">}</span> -eq <span class="m">0</span> <span class="o">]]</span> <span class="o">&amp;&amp;</span> cp <span class="si">${</span><span class="nv">file</span><span class="si">}</span>_<span class="nv">$$</span>.ps <span class="si">${</span><span class="nv">ps</span><span class="si">}</span>
+	<span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span>-eq <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
 		gmt_cleanup .gmt
-		gmt_abort <span class="s2">&quot;: First frame plotted to .ps&quot;</span>
+		gmt_abort <span class="s2">&quot;</span><span class="si">${</span><span class="nv">0</span><span class="si">}</span><span class="s2">: First frame plotted to </span><span class="si">${</span><span class="nv">name</span><span class="si">}</span><span class="s2">.ps&quot;</span>
 	<span class="k">fi</span>
-<span class="k">	</span>gmt ps2raster <span class="nv">$$</span>.ps -Tt -E
-	mv <span class="nv">$$</span>.tif frames/.tif
-        <span class="nb">echo</span> <span class="s2">&quot;Frame  completed&quot;</span>
-	<span class="nv">frame</span><span class="o">=</span><span class="sb">`</span>gmt_set_framenext <span class="sb">`</span>
+	gmt ps2raster <span class="si">${</span><span class="nv">file</span><span class="si">}</span>_<span class="nv">$$</span>.ps -Tt -E<span class="si">${</span><span class="nv">dpi</span><span class="si">}</span>
+	mv <span class="si">${</span><span class="nv">file</span><span class="si">}</span>_<span class="nv">$$</span>.tif <span class="nv">$$</span>/<span class="si">${</span><span class="nv">file</span><span class="si">}</span>.tif
+	rm -f <span class="si">${</span><span class="nv">file</span><span class="si">}</span>_<span class="nv">$$</span>.ps
+	<span class="nb">echo</span> <span class="s2">&quot;Frame </span><span class="si">${</span><span class="nv">file</span><span class="si">}</span><span class="s2"> completed&quot;</span>
+<span class="o">}</span>
+<span class="nv">n_jobs</span><span class="o">=</span>0
+<span class="nv">max_jobs</span><span class="o">=</span><span class="k">$(</span>getconf _NPROCESSORS_ONLN <span class="o">||</span> <span class="nb">echo </span>1<span class="k">)</span>
+<span class="k">while</span> <span class="nb">read </span>lon lat dist<span class="p">;</span> <span class="k">do</span>
+	make_frame <span class="si">${</span><span class="nv">frame</span><span class="si">}</span> <span class="si">${</span><span class="nv">lon</span><span class="si">}</span> <span class="si">${</span><span class="nv">lat</span><span class="si">}</span> <span class="si">${</span><span class="nv">dist</span><span class="si">}</span> <span class="p">&amp;</span>
+	<span class="o">((</span>++n_jobs<span class="o">))</span>
+	<span class="nv">frame</span><span class="o">=</span><span class="sb">`</span>gmt_set_framenext <span class="si">${</span><span class="nv">frame</span><span class="si">}</span><span class="sb">`</span>
+	<span class="k">if</span> <span class="o">[</span> <span class="si">${</span><span class="nv">n_jobs</span><span class="si">}</span> -ge <span class="si">${</span><span class="nv">max_jobs</span><span class="si">}</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+		<span class="nb">wait</span>
+<span class="nb">		</span><span class="nv">n_jobs</span><span class="o">=</span>0
+	<span class="k">fi</span>
 <span class="k">done</span> &lt; <span class="nv">$$</span>.path.d
-<span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span>-eq 0 <span class="o">]</span>; <span class="k">then</span>
-<span class="k">	</span><span class="nb">echo</span> <span class="s2">&quot;anim_04.sh: Made  frames at 480x720 pixels placed in subdirectory frames&quot;</span>
-<span class="c">#	qt_export $$/anim_0_123456.tiff --video=h263,24,100, _movie.m4v</span>
+<span class="nb">wait</span>
+
+<span class="nv">file</span><span class="o">=</span><span class="sb">`</span>gmt_set_framename <span class="si">${</span><span class="nv">name</span><span class="si">}</span> 0<span class="sb">`</span>
+
+<span class="nb">echo</span> <span class="s2">&quot;Made </span><span class="si">${</span><span class="nv">frame</span><span class="si">}</span><span class="s2"> frames at 720x480 pixels&quot;</span>
+<span class="c"># GIF animate every 20th frame</span>
+<span class="si">${</span><span class="nv">GRAPHICSMAGICK</span><span class="p">-gm</span><span class="si">}</span> convert -delay <span class="m">40</span> -loop <span class="m">0</span> +dither <span class="nv">$$</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>_*<span class="o">[</span>02468<span class="o">]</span>0.tif <span class="si">${</span><span class="nv">name</span><span class="si">}</span>.gif
+<span class="k">if</span> <span class="nb">type</span> -ft <span class="si">${</span><span class="nv">FFMPEG</span><span class="p">-ffmpeg</span><span class="si">}</span> &gt;/dev/null 2&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">;</span> <span class="k">then</span>
+	<span class="c"># create H.264 video at 25fps</span>
+	<span class="nb">echo</span> <span class="s2">&quot;Creating H.264 video&quot;</span>
+	<span class="si">${</span><span class="nv">FFMPEG</span><span class="k">:-</span><span class="nv">ffmpeg</span><span class="si">}</span> -loglevel warning -y -f image2 -r <span class="m">25</span> -i <span class="nv">$$</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>_%6d.tif <span class="se">\</span>
+		-vcodec libx264 -preset slower -crf <span class="m">25</span> -pix_fmt yuv420p <span class="si">${</span><span class="nv">name</span><span class="si">}</span>.mp4
+	<span class="c"># create WebM video</span>
+	<span class="nb">echo</span> <span class="s2">&quot;Creating WebM video&quot;</span>
+	<span class="si">${</span><span class="nv">FFMPEG</span><span class="k">:-</span><span class="nv">ffmpeg</span><span class="si">}</span> -loglevel warning -y -f image2 -r <span class="m">25</span> -i <span class="nv">$$</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>_%6d.tif <span class="se">\</span>
+		-vcodec libvpx -crf <span class="m">10</span> -b:v 1.2M -pix_fmt yuv420p <span class="si">${</span><span class="nv">name</span><span class="si">}</span>.webm
+	<span class="c"># create Theora video</span>
+	<span class="nb">echo</span> <span class="s2">&quot;Creating Theora video&quot;</span>
+	<span class="si">${</span><span class="nv">FFMPEG</span><span class="k">:-</span><span class="nv">ffmpeg</span><span class="si">}</span> -loglevel warning -y -f image2 -r <span class="m">25</span> -i <span class="nv">$$</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>_%6d.tif <span class="se">\</span>
+		-vcodec libtheora -q <span class="m">4</span> -pix_fmt yuv420p <span class="si">${</span><span class="nv">name</span><span class="si">}</span>.ogv
 <span class="k">fi</span>
+
 <span class="c"># 4. Clean up temporary files</span>
 gmt_cleanup .gmt
 </pre></div>
 </div>
+<a class="reference internal image-reference" href="../_images/anim_04.png"><img alt="../_images/anim_04.png" src="../_images/anim_04.png" style="width: 0px;" /></a>
 <div class="figure align-center">
-<a class="reference internal image-reference" href="../_images/anim_04.png"><img alt="../_images/anim_04.png" src="../_images/anim_04.png" style="width: 400px;" /></a>
-<p class="caption">Flying over topography.</p>
-</div>
-</div>
+  <video width="720" height="480" poster="../_images/anim_04.png" controls>
+    <source src="../_static/anim_04.mp4" type="video/mp4">
+    <source src="../_static/anim_04.webm" type="video/webm">
+    Your browser does not support the video tag.
+  </video>
+  <p class="caption">Flying over topography.</p>
+</div></div>
 
 
           </div>
@@ -184,7 +221,7 @@ gmt_cleanup .gmt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -202,9 +239,9 @@ gmt_cleanup .gmt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

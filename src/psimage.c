@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psimage.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: psimage.c 14228 2015-04-22 15:53:10Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: psimage reads a 1, 8, 24, or 32 bit Sun rasterfile and plots it on the page
- * Other raster formats are supported if ImageMagick's convert is found in the
+ * Other raster formats are supported if GraphicsMagick's/ImageMagick's convert is found in the
  * system path.
  *
  * Author:	Paul Wessel
@@ -149,7 +149,7 @@ int GMT_psimage_parse (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (n_files++ == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
+				if (n_files++ == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_IMAGE))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -283,8 +283,9 @@ int file_is_known (struct GMT_CTRL *GMT, char *file)
 	}
 	GMT_fclose (GMT, fp);
 	if (j) file[j] = '+';			/* Reset the band request string */
-	if (GMT_same_rgb (c, magic_ps)) return(1);
-	if (GMT_same_rgb (c, magic_ras)) return(2);
+	/* Note: cannot use GMT_same_rgb here, because that requires doubles */
+	if (c[0] == magic_ps[0] && c[1] == magic_ps[1] && c[2] == magic_ps[2] && c[3] == magic_ps[3]) return(1);
+	if (c[0] == magic_ras[0] && c[1] == magic_ras[1] && c[2] == magic_ras[2] && c[3] == magic_ras[3]) return(2);
 	return (0);	/* Neither */
 }
 
@@ -335,16 +336,15 @@ int find_unique_color (struct GMT_CTRL *GMT, unsigned char *rgba, size_t n, int 
 
 int GMT_psimage (void *V_API, int mode, void *args)
 {
-	int i, j, k, n, justify, PS_interpolate = 1, PS_transparent = 1, known = 0, error = 0, has_trans = 0;
+	int i, j, n, justify, PS_interpolate = 1, PS_transparent = 1, known = 0, error = 0;
 	unsigned int row, col;
 	bool free_GMT = false, did_gray = false;
 
 	double x, y, wesn[4];
 
-	unsigned char *picture = NULL, *buffer = NULL, colormap[4*256];
-	int r, g, b;
+	unsigned char *picture = NULL, *buffer = NULL;
 
-	char *format[2] = {"EPS", "Sun raster"};
+	char path[GMT_BUFSIZ] = {""}, *format[2] = {"EPS", "Sun raster"};
 
 	struct imageinfo header;
 
@@ -353,6 +353,8 @@ int GMT_psimage (void *V_API, int mode, void *args)
 	struct GMT_OPTION *options = NULL;
 	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
 #ifdef HAVE_GDAL
+	int k, r,g,b, has_trans = 0;
+	unsigned char colormap[4*256];
 	struct GMT_IMAGE *I = NULL;		/* A GMT image datatype, if GDAL is used */
 #endif
 	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
@@ -375,7 +377,6 @@ int GMT_psimage (void *V_API, int mode, void *args)
 
 	/*---------------------------- This is the psimage main code ----------------------------*/
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input EPS or Sun rasterfile\n");
 	PS_interpolate = (Ctrl->W.interpolate) ? -1 : +1;
 
 	known = file_is_known (GMT, Ctrl->In.file);	/* Determine if this is an EPS file, Sun rasterfile, or other */
@@ -386,13 +387,19 @@ int GMT_psimage (void *V_API, int mode, void *args)
 
 	memset (&header, 0, sizeof(struct imageinfo)); /* initialize struct */
 	if (known) {	/* Read an EPS or Sun raster file */
-		if (PSL_loadimage (PSL, Ctrl->In.file, &header, &picture)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Trouble loading %s file %s!\n", format[known-1], Ctrl->In.file);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Processing input EPS or Sun rasterfile\n");
+		if (GMT_getdatapath (GMT, Ctrl->In.file, path, R_OK) == NULL) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Cannot find/open file %s.\n", Ctrl->In.file);
+			Return (EXIT_FAILURE);
+		}
+		if (PSL_loadimage (PSL, path, &header, &picture)) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Trouble loading %s file %s!\n", format[known-1], path);
 			Return (EXIT_FAILURE);
 		}
 	}
 #ifdef HAVE_GDAL
 	else  {	/* Read a raster image */
+		GMT_Report (API, GMT_MSG_VERBOSE, "Processing input raster via GDAL\n");
 		GMT_set_pad (GMT, 0U);	/* Temporary turn off padding (and thus BC setting) since we will use image exactly as is */
 		if ((I = GMT_Read_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);

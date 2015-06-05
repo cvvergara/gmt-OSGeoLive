@@ -482,7 +482,7 @@ Notes On Operators
    set or implied, else they return Cartesian distances. Note: If the current
    :ref:`PROJ_ELLIPSOID <Projection Parameters>` is ellipsoidal then
    geodesics are used in calculations of distances, which can be slow.
-   You can trade speed with accuracy by changing the algorighm used to
+   You can trade speed with accuracy by changing the algorithm used to
    compute the geodesic (see :ref:`PROJ_GEODESIC <Projection Parameters>`).
 
 #. The operator **PLM** calculates the associated Legendre polynomial
@@ -522,7 +522,7 @@ Notes On Operators
 #. All functions expecting a positive radius (e.g., **LOG**, **KEI**,
    etc.) are passed the absolute value of their argument. (9) The bitwise
    operators (**BITAND**, **BITLEFT**, **BITNOT**, **BITOR**, **BITRIGHT**,
-   **BITTEST**, and **BITXOR**) convert a grid’s single precision values to
+   **BITTEST**, and **BITXOR**) convert a grid's single precision values to
    unsigned 32-bit ints to perform the bitwise operations. Consequently,
    the largest whole integer value that can be stored in a float grid is
    2^24 or 16,777,216. Any higher result will be masked to fit in the lower

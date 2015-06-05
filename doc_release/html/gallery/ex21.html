@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(21) Time-series of RedHat stock price &mdash; GMT 5.1.1 documentation</title>
+    <title>(21) Time-series of RedHat stock price &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(22) World-wide seismicity the last 7 days" href="ex22.html" />
     <link rel="prev" title="(20) Custom plot symbols" href="ex20.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -118,11 +118,11 @@ gmt info -fT -I50 -C RHAT_price.csv &gt; RHAT.info
 <span class="nv">e</span><span class="o">=</span><span class="sb">`</span>cut -f2 RHAT.info<span class="sb">`</span>
 <span class="nv">s</span><span class="o">=</span><span class="sb">`</span>cut -f3 RHAT.info<span class="sb">`</span>
 <span class="nv">n</span><span class="o">=</span><span class="sb">`</span>cut -f4 RHAT.info<span class="sb">`</span>
-<span class="nv">R</span><span class="o">=</span><span class="s2">&quot;-R$w/$e/$s/$n&quot;</span>
+<span class="nv">R</span><span class="o">=</span><span class="s2">&quot;-R</span><span class="nv">$w</span><span class="s2">/</span><span class="nv">$e</span><span class="s2">/</span><span class="nv">$s</span><span class="s2">/</span><span class="nv">$n</span><span class="s2">&quot;</span>
 
 <span class="c"># Lay down the basemap:</span>
 
-gmt psbasemap <span class="nv">$R</span> -JX9i/6i -K -Bsx1Y -Bpxa3Of1o -Bpy50+p<span class="s2">&quot;$ &quot;</span> <span class="se">\</span>
+gmt psbasemap <span class="nv">$R</span> -JX9i/6i -K -Bsx1Y -Bpxa3Of1o -Bpy50+p<span class="s2">&quot;</span><span class="nv">$ </span><span class="s2">&quot;</span> <span class="se">\</span>
 	-BWSen+t<span class="s2">&quot;RedHat (RHT) Stock Price Trend since IPO&quot;</span>+glightgreen &gt; <span class="nv">$ps</span>
 
 <span class="c"># Plot main window with open price as red line over yellow envelope of low/highs</span>
@@ -143,7 +143,7 @@ gmt psxy -R -J RHAT.pw -Wthinner,- -O -K &gt;&gt; <span class="nv">$ps</span>
 <span class="nb">echo</span> <span class="s2">&quot;01-Jan-02	25&quot;</span> &gt;&gt; RHAT.pw
 gmt psxy -R -J RHAT.pw -Wthick,- -O -K &gt;&gt; <span class="nv">$ps</span>
 gmt gmtset FORMAT_DATE_IN yyyy-mm-dd
-<span class="nb">echo</span> <span class="s2">&quot;$w 25 PW buy&quot;</span> | gmt pstext -R -J -O -K -D1.5i/0.05i -N -F+f12p,Bookman-Demi+jLB &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;</span><span class="nv">$w</span><span class="s2"> 25 PW buy&quot;</span> <span class="p">|</span> gmt pstext -R -J -O -K -D1.5i/0.05i -N -F+f12p,Bookman-Demi+jLB &gt;&gt; <span class="nv">$ps</span>
 gmt gmtset FORMAT_DATE_IN dd-o-yy
 
 <span class="c"># Draw P Wessel&#39;s sales price as line and label it.</span>
@@ -155,17 +155,17 @@ gmt psxy -R -J RHAT.pw -Wthinner,- -O -K &gt;&gt; <span class="nv">$ps</span>
 <span class="nb">echo</span> <span class="s2">&quot;01-Jan-08	23.8852&quot;</span> &gt;&gt; RHAT.pw
 gmt psxy -R -J RHAT.pw -Wthick,- -O -K &gt;&gt; <span class="nv">$ps</span>
 gmt gmtset FORMAT_DATE_IN yyyy-mm-dd
-<span class="nb">echo</span> <span class="s2">&quot;$e 23.8852 PW sell&quot;</span> | gmt pstext -R -J -O -K -Dj0.8i/0.05i -N <span class="se">\</span>
+<span class="nb">echo</span> <span class="s2">&quot;</span><span class="nv">$e</span><span class="s2"> 23.8852 PW sell&quot;</span> <span class="p">|</span> gmt pstext -R -J -O -K -Dj0.8i/0.05i -N <span class="se">\</span>
 	-F+f12p,Bookman-Demi+jRB &gt;&gt; <span class="nv">$ps</span>
 gmt gmtset FORMAT_DATE_IN dd-o-yy
 
 <span class="c"># Get smaller region for insert for trend since 2004</span>
 
-<span class="nv">R</span><span class="o">=</span><span class="s2">&quot;-R2004T/$e/$s/40&quot;</span>
+<span class="nv">R</span><span class="o">=</span><span class="s2">&quot;-R2004T/</span><span class="nv">$e</span><span class="s2">/</span><span class="nv">$s</span><span class="s2">/40&quot;</span>
 
 <span class="c"># Lay down the basemap, using Finnish annotations and place the insert in the upper right</span>
 
-gmt psbasemap --TIME_LANGUAGE<span class="o">=</span><span class="k">fi</span> <span class="nv">$R</span> -JX6i/3i -Bpxa3Of3o -Bpy10+p<span class="s2">&quot;$ &quot;</span> -BESw+glightblue -Bsx1Y <span class="se">\</span>
+gmt psbasemap --TIME_LANGUAGE<span class="o">=</span><span class="k">fi</span> <span class="nv">$R</span> -JX6i/3i -Bpxa3Of3o -Bpy10+p<span class="s2">&quot;</span><span class="nv">$ </span><span class="s2">&quot;</span> -BESw+glightblue -Bsx1Y <span class="se">\</span>
 	-O -K -X3i -Y3i &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># Again, plot close price as red line over yellow envelope of low/highs</span>
@@ -232,7 +232,7 @@ Internet bubble...</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -250,9 +250,9 @@ Internet bubble...</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

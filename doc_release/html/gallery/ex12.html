@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(12) Optimal triangulation of data &mdash; GMT 5.1.1 documentation</title>
+    <title>(12) Optimal triangulation of data &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(13) Plotting of vector fields" href="ex13.html" />
     <link rel="prev" title="(11) A 3-D RGB color cube" href="ex11.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -99,7 +99,7 @@ image the data. We use a color palette table <tt class="docutils literal"><span 
 gmt triangulate table_5.11 -M &gt; net.xy
 gmt psxy -R0/6.5/-0.2/6.5 -JX3.06i/3.15i -B2f1 -BWSNe net.xy -Wthinner -P -K -X0.9i -Y4.65i &gt; <span class="nv">$ps</span>
 gmt psxy table_5.11 -R -J -O -K -Sc0.12i -Gwhite -Wthinnest &gt;&gt; <span class="nv">$ps</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, NR-1}&#39;</span> table_5.11 | gmt pstext -R -J -F+f6p -O -K &gt;&gt; <span class="nv">$ps</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, NR-1}&#39;</span> table_5.11 <span class="p">|</span> gmt pstext -R -J -F+f6p -O -K &gt;&gt; <span class="nv">$ps</span>
 <span class="c">#</span>
 <span class="c"># Then draw network and print the node values</span>
 <span class="c">#</span>
@@ -118,7 +118,7 @@ gmt pscontour -R -J table_5.11 -B2f1 -BWSne -Wthin -Ctopo.cpt -Lthinnest,- -Gd1i
 <span class="c"># Finally color the topography</span>
 <span class="c">#</span>
 gmt pscontour -R -J table_5.11 -B2f1 -BeSnw -Ctopo.cpt -I -X3.25i -O -K &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;3.16 8 Delaunay Triangulation&quot;</span> | <span class="se">\</span>
+<span class="nb">echo</span> <span class="s2">&quot;3.16 8 Delaunay Triangulation&quot;</span> <span class="p">|</span> <span class="se">\</span>
 	gmt pstext -R0/8/0/11 -Jx1i -F+f30p,Helvetica-Bold+jCB -O -X-3.25i &gt;&gt; <span class="nv">$ps</span>
 <span class="c">#</span>
 rm -f net.xy topo.cpt
@@ -165,7 +165,7 @@ rm -f net.xy topo.cpt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -183,9 +183,9 @@ rm -f net.xy topo.cpt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

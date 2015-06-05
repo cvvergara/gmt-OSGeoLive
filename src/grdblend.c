@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: grdblend.c 12822 2014-01-31 23:39:56Z remko $
+ *    $Id: grdblend.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -142,8 +142,8 @@ bool out_of_phase (struct GMT_GRID_HEADER *g, struct GMT_GRID_HEADER *h)
 	for (side = 0; side < 4; side++) {
 		way = side / 2;
 		a = fabs (fmod (g->wesn[side] - h->wesn[side], h->inc[way]));
-		if (a < GMT_CONV_LIMIT) continue;
-		if (fabs (a - h->inc[way]) < GMT_CONV_LIMIT) continue;
+		if (a < GMT_CONV8_LIMIT) continue;
+		if (fabs (a - h->inc[way]) < GMT_CONV8_LIMIT) continue;
 		return true;
 	}
 	return false;
@@ -506,7 +506,7 @@ int GMT_grdblend_parse (struct GMT_CTRL *GMT, struct GRDBLEND_CTRL *Ctrl, struct
 			case '<':	/* Collect input files */
 				Ctrl->In.active = true;
 				if (n_alloc <= Ctrl->In.n) Ctrl->In.file = GMT_memory (GMT, Ctrl->In.file, n_alloc += GMT_SMALL_CHUNK, char *);
-				if (GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
+				if (GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID))
 					Ctrl->In.file[Ctrl->In.n++] = strdup (opt->arg);
 				else
 					n_errors++;
@@ -528,7 +528,7 @@ int GMT_grdblend_parse (struct GMT_CTRL *GMT, struct GRDBLEND_CTRL *Ctrl, struct
 				}
 				break;
 			case 'G':	/* Output filename */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -618,7 +618,7 @@ int GMT_grdblend (void *V_API, int mode, void *args)
 	/*---------------------------- This is the grdblend main code ----------------------------*/
 
 	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
-		GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 	if ((err = GMT_grd_get_format (GMT, Ctrl->G.file, Grid->header, false)) != GMT_NOERROR){
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: %s [%s]\n", GMT_strerror(err), Ctrl->G.file); Return (EXIT_FAILURE);

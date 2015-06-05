@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>mgd77sniffer &mdash; GMT 5.1.1 documentation</title>
+    <title>mgd77sniffer &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="MGD77" href="../../SUP_MGD77.html" />
     <link rel="next" title="mgd77track" href="mgd77track.html" />
     <link rel="prev" title="mgd77path" href="mgd77path.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" accesskey="U">MGD77</a> &raquo;</li>
 <li class="right">
@@ -240,7 +240,7 @@ multiple cruises.</dd>
 <dt><strong>-K</strong></dt>
 <dd>Reverse navigation quality flags (good to bad and vice versa). May
 be necessary when a majority of navigation fixes are erroneously
-flagged bad, which can happen when a cruise’s first navigation fix
+flagged bad, which can happen when a cruise&#8217;s first navigation fix
 is extremely erroneous. Caution! This will affect sniffer output and
 should only be attempted after careful manual navigation review.</dd>
 <dt><strong>-L</strong><em>custom-limits-file</em></dt>
@@ -308,7 +308,7 @@ level. (i.e., -P5 flags coefficients m, b, rms, and r that fall
 outside 95%.)</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
+<dt><strong>-R</strong>[<em>unit</em>]<em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
 <dd><em>west</em>, <em>east</em>, <em>south</em>, and <em>north</em> specify the region of interest,
 and you may specify them in decimal degrees or in
 [+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
@@ -351,7 +351,7 @@ compatible with any <strong>-D</strong> options.</dd>
 <dd>Select verbosity level [c].  </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="../../gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output. Output binary data for <strong>-D</strong>d|f|s|v option.</dd>
 </dl>
 <dl class="docutils">
@@ -359,12 +359,12 @@ compatible with any <strong>-D</strong> options.</dd>
 <dd>Select interpolation mode for grids.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -475,7 +475,7 @@ global grid comparisons are reported as E77 header information.</p>
 <p># Arguments: -De -Gdepth,/data/GRIDS/etopo5_hdr.i2</p>
 <p>N Errata table verification status</p>
 <p># mgd77manage applies corrections if the errata table is verified
-(toggle ’N’ above to ’Y’ after review)</p>
+(toggle &#8216;N&#8217; above to &#8216;Y&#8217; after review)</p>
 <p># For instructions on E77 format and usage, see
 <a class="reference external" href="http://gmt.soest.hawaii.edu/mgd77/errata.php">http://gmt.soest.hawaii.edu/mgd77/errata.php</a></p>
 <p># Verified by:</p>
@@ -504,7 +504,7 @@ types. See below for error code format description.</p>
 <p class="last">Y  08010039  1975-05-10T22:16:05.88  74  C-0-0 NAV: excessive speed</p>
 </dd>
 <dt><strong>Error Code Description</strong></dt>
-<dd><p class="first">Each of the three error classes is separated by a dash ’-’ and
+<dd><p class="first">Each of the three error classes is separated by a dash <strong>-</strong> and
 described by a combination of alphabetic characters or 0 signifying
 no detected problems.</p>
 <p>Error classes: NAV-VAL-GRAD</p>
@@ -641,7 +641,7 @@ Sandwell/Smith 2 min gravity version 11, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_MGD77.html" >MGD77</a> &raquo;</li>
 <li class="right">
@@ -659,9 +659,9 @@ Sandwell/Smith 2 min gravity version 11, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

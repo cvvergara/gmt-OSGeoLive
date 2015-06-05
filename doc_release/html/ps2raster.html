@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>ps2raster &mdash; GMT 5.1.1 documentation</title>
+    <title>ps2raster &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="psbasemap" href="psbasemap.html" />
     <link rel="prev" title="PS" href="PS.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -156,7 +156,7 @@ the GS path to system&#8217;s path or give the full path here. (e.g.,
 <strong>-G</strong>c:\programs\gs\gs9.02\bin\gswin64c). WARNING: because
 of the poor decision of embedding the bits on the gs exe name we
 cannot satisfy both the 32 and 64 bits GhostScript executable names.
-So in case of ’get from registry’ failure the default name (when no
+So in case of &#8216;get from registry&#8217; failure the default name (when no
 <strong>-G</strong> is used) is the one of the 64 bits version, or gswin64c</dd>
 <dt><strong>-I</strong></dt>
 <dd>Enforce gray-shades by using ICC profiles.  GhostScript versions
@@ -189,11 +189,11 @@ This option also prevent all intermediate files from being removed.</dd>
 <strong>E</strong> means EPS with PageSize command, <strong>f</strong> means PDF, <strong>F</strong> means
 multi-page PDF, <strong>j</strong> means JPEG, <strong>g</strong> means PNG, <strong>G</strong> means
 transparent PNG (untouched regions are transparent), <strong>m</strong> means
-PPM, and <strong>t</strong> means TIFF [default is JPEG]. For <strong>bjgt</strong> you can
-append - to get a grayscale image only. The EPS format can be
+PPM, and <strong>t</strong> means TIFF [default is JPEG]. To <strong>bjgt</strong> you can
+append <strong>-</strong> in order to get a grayscale image. The EPS format can be
 combined with any of the other formats. For example, <strong>-Tef</strong>
 creates both an EPS and a PDF file. The <strong>-TF</strong> creates a multi-page
-PDF file from the list of input PS or PDF files. It requires <strong>-F</strong> option.</dd>
+PDF file from the list of input PS or PDF files. It requires the <strong>-F</strong> option.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
@@ -219,7 +219,7 @@ command that reads the raster + world file and creates a true
 geotiff file. Use <strong>-W+g</strong> to do a system call to gdal_translate
 and create a geoTIFF image right away. The output file will have a
 .tiff extension.</p>
-<p>The world file naming follows the convention of jamming a ’w’ in the
+<p>The world file naming follows the convention of jamming a &#8216;w&#8217; in the
 file extension. So, if output is tif <strong>-Tt</strong> the world file is a
 .tfw, for jpeg we have a .jgw and so on. This option automatically
 sets <strong>-A</strong> <strong>-P</strong>.</p>
@@ -248,19 +248,28 @@ for further explanation
 <p>Further notes on the creation of georeferenced rasters.
 <strong>ps2raster</strong> can create a georeferenced raster image with a world
 file OR uses GDAL to convert the GMT PostScript file to geotiff.
-GDAL uses Proj.4 for it’s projection library. To provide with the
+GDAL uses Proj.4 for its projection library. To provide with the
 information it needs to do the georeferencing, GMT 4.5 embeds a
 comment near the start of the PostScript file defining the
 projection using Proj.4 syntax. Users with pre-GMT v4.5 PostScript
 files, or even non-GMT ps files, can provide the information
 <strong>ps2raster</strong> requires by manually editing a line into the
 PostScript file, prefixed with %%PROJ.</p>
-<p>For example the command gmt pscoast -JM0/12c -R-10/-4/37/43
--W1 -Di -Bg30m &#8211;MAP_FRAME_TYPE=inside &gt; cara.ps</p>
+<p>For example the command</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscoast -JM0/12c -R-10/-4/37/43 \
+-W1 -Di -Bg30m --MAP_FRAME_TYPE=inside &gt; cara.ps
+</pre></div>
+</div>
+</div></blockquote>
 <p>adds this comment line</p>
-<p>%%PROJ: merc -10.0 -4.0 37.0 43.0 -1113194.908 -445277.963
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre>%%PROJ: merc -10.0 -4.0 37.0 43.0 -1113194.908 -445277.963
 4413389.889 5282821.824 +proj=merc +lon_0=0 +k=-1 +x_0=0 +y_0=0
-+a=6378137.0 +b=6356752.314245</p>
++a=6378137.0 +b=6356752.314245
+</pre></div>
+</div>
+</div></blockquote>
 <p class="last">where &#8216;merc&#8217; is the keyword for the coordinate conversion; the 2 to
 5th elements contain the map limits, 6 to 9th the map limits in
 projected coordinates and the rest of the line has the regular proj4
@@ -268,12 +277,12 @@ string for this projection.</p>
 </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -352,7 +361,8 @@ gdalwarp -s_srs +proj=merc cara.tif carageo.tiff
 </div></blockquote>
 <p>To create a Polar Stereographic geotiff file of Patagonia</p>
 <blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre>gmt pscoast -JS-55/-60/15c -R-77/-55/-57.5/-48r -Di -Gred -P -Bg2 --MAP_FRAME_TYPE=inside &gt; patagonia.ps
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pscoast -JS-55/-60/15c -R-77/-55/-57.5/-48r -Di -Gred -P -Bg2 \
+--MAP_FRAME_TYPE=inside &gt; patagonia.ps
 gmt ps2raster patagonia.ps -Tt -W+g -V
 </pre></div>
 </div>
@@ -437,7 +447,7 @@ documentation.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -455,9 +465,9 @@ documentation.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

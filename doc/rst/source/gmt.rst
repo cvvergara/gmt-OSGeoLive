@@ -28,11 +28,35 @@ Synopsis
 **gmt** module module-options
 
 where module is the name of a GMT module and the options are those
-that pertain to that particular module.  In addition to all the regular
-module-options that the various modules support, you can also give the
-special option **=**.  It will check if that module exist and if so the
-program will exit with status of 0; otherwise the status of exit will
-be non-zero.
+that pertain to that particular module.  If no module is given then
+several other options are available:
+
+**-**\ **-help**
+    List and description of GMT modules.
+
+**-**\ **-version**
+    Print version and exit.
+
+**-**\ **-show-datadir**
+    Show data directory and exit.
+
+**-**\ **-show-bindir** 
+    Show directory of executables and exit.
+
+**=**
+    Check if that module exist and if so the
+    program will exit with status of 0; otherwise the status of exit will
+    be non-zero.
+
+Command-line completion
+-----------------------
+
+GMT provides basic command-line completion (tab completion) for bash.
+The completion rules are either installed in ``/etc/bash_completion.d/gmt``
+or ``<prefix>/share/tools/gmt_completion.bash``.  Depending on the
+distribution, you may still need to source the gmt completion file from
+``~/.bash_completion`` or ``~/.bashrc``.  For more information see Section
+:ref:`command-line-completion` in the CookBook.
 
 GMT Overview
 ------------
@@ -109,7 +133,6 @@ programs. No space between the option flag and the associated arguments.
 .. |Add_-bi| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-bi_full.rst_
 
-.. |Add_-bo| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-bo_full.rst_
 
 .. include:: explain_-c_full.rst_

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmt &mdash; GMT 5.1.1 documentation</title>
+    <title>gmt &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmt2kml" href="gmt2kml.html" />
     <link rel="prev" title="gmt.conf" href="gmt.conf.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -92,11 +92,31 @@ completely general and will handle any (x,y) or (x,y,z) data as input.</p>
 <p><strong>gmt</strong> is the main program that can start any of the modules:</p>
 <p><strong>gmt</strong> module module-options</p>
 <p>where module is the name of a GMT module and the options are those
-that pertain to that particular module.  In addition to all the regular
-module-options that the various modules support, you can also give the
-special option <strong>=</strong>.  It will check if that module exist and if so the
+that pertain to that particular module.  If no module is given then
+several other options are available:</p>
+<dl class="docutils">
+<dt><strong>-</strong><strong>-help</strong></dt>
+<dd>List and description of GMT modules.</dd>
+<dt><strong>-</strong><strong>-version</strong></dt>
+<dd>Print version and exit.</dd>
+<dt><strong>-</strong><strong>-show-datadir</strong></dt>
+<dd>Show data directory and exit.</dd>
+<dt><strong>-</strong><strong>-show-bindir</strong></dt>
+<dd>Show directory of executables and exit.</dd>
+<dt><strong>=</strong></dt>
+<dd>Check if that module exist and if so the
 program will exit with status of 0; otherwise the status of exit will
-be non-zero.</p>
+be non-zero.</dd>
+</dl>
+</div>
+<div class="section" id="command-line-completion">
+<h2>Command-line completion<a class="headerlink" href="#command-line-completion" title="Permalink to this headline">¶</a></h2>
+<p>GMT provides basic command-line completion (tab completion) for bash.
+The completion rules are either installed in <tt class="docutils literal"><span class="pre">/etc/bash_completion.d/gmt</span></tt>
+or <tt class="docutils literal"><span class="pre">&lt;prefix&gt;/share/tools/gmt_completion.bash</span></tt>.  Depending on the
+distribution, you may still need to source the gmt completion file from
+<tt class="docutils literal"><span class="pre">~/.bash_completion</span></tt> or <tt class="docutils literal"><span class="pre">~/.bashrc</span></tt>.  For more information see Section
+<a class="reference internal" href="GMT_Docs.html#command-line-completion"><em>Command-line completion</em></a> in the CookBook.</p>
 </div>
 <div class="section" id="gmt-overview">
 <h2>GMT Overview<a class="headerlink" href="#gmt-overview" title="Permalink to this headline">¶</a></h2>
@@ -319,169 +339,166 @@ each program can be found in the separate manual pages.</p>
 <tr class="row-even"><td><strong>surface</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>testapi</strong></td>
+<tr class="row-odd"><td><strong>trend1d</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>trend1d</strong></td>
+<tr class="row-even"><td><strong>trend2d</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>trend2d</strong></td>
+<tr class="row-odd"><td><strong>triangulate</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>triangulate</strong></td>
+<tr class="row-even"><td><strong>xyz2grd</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>xyz2grd</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-odd"><td>&nbsp;</td>
 <td>Supplement <em>gshhg</em>:</td>
 </tr>
-<tr class="row-odd"><td><strong>gshhg</strong></td>
+<tr class="row-even"><td><strong>gshhg</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-odd"><td>&nbsp;</td>
 <td>Supplement <em>img</em>:</td>
 </tr>
-<tr class="row-odd"><td><strong>img2grd</strong></td>
+<tr class="row-even"><td><strong>img2grd</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-odd"><td>&nbsp;</td>
 <td>Supplement <em>meca</em>:</td>
 </tr>
-<tr class="row-odd"><td><strong>pscoupe</strong></td>
+<tr class="row-even"><td><strong>pscoupe</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>psmeca</strong></td>
+<tr class="row-odd"><td><strong>psmeca</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>pspolar</strong></td>
+<tr class="row-even"><td><strong>pspolar</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>psvelo</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-odd"><td>&nbsp;</td>
-<td>Supplement <em>mgd77</em>:</td>
-</tr>
-<tr class="row-even"><td><strong>mgd77convert</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-odd"><td><strong>mgd77info</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-even"><td><strong>mgd77list</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-odd"><td><strong>mgd77magref</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-even"><td><strong>mgd77manage</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-odd"><td><strong>mgd77path</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-even"><td><strong>mgd77sniffer</strong></td>
-<td>&nbsp;</td>
-</tr>
-<tr class="row-odd"><td><strong>mgd77track</strong></td>
+<tr class="row-odd"><td><strong>psvelo</strong></td>
 <td>&nbsp;</td>
 </tr>
 <tr class="row-even"><td>&nbsp;</td>
+<td>Supplement <em>mgd77</em>:</td>
+</tr>
+<tr class="row-odd"><td><strong>mgd77convert</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><strong>mgd77info</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><strong>mgd77list</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><strong>mgd77magref</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><strong>mgd77manage</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><strong>mgd77path</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><strong>mgd77sniffer</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><strong>mgd77track</strong></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>&nbsp;</td>
 <td>Supplement <em>potential</em>:</td>
 </tr>
-<tr class="row-odd"><td><strong>gmtgravmag3d</strong></td>
+<tr class="row-even"><td><strong>gmtgravmag3d</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>gravfft</strong></td>
+<tr class="row-odd"><td><strong>gravfft</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>grdgravmag3d</strong></td>
+<tr class="row-even"><td><strong>grdgravmag3d</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>redpol</strong></td>
+<tr class="row-odd"><td><strong>redpol</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-even"><td>&nbsp;</td>
 <td>Supplement <em>segy</em>:</td>
 </tr>
-<tr class="row-even"><td><strong>pssegy</strong></td>
+<tr class="row-odd"><td><strong>pssegy</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>pssegyz</strong></td>
+<tr class="row-even"><td><strong>pssegyz</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>segy2grd</strong></td>
+<tr class="row-odd"><td><strong>segy2grd</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-even"><td>&nbsp;</td>
 <td>Supplement <em>sph</em>:</td>
 </tr>
-<tr class="row-even"><td><strong>sphdistance</strong></td>
+<tr class="row-odd"><td><strong>sphdistance</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>sphinterpolate</strong></td>
+<tr class="row-even"><td><strong>sphinterpolate</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>sphtriangulate</strong></td>
+<tr class="row-odd"><td><strong>sphtriangulate</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-even"><td>&nbsp;</td>
 <td>Supplement <em>spotter</em>:</td>
 </tr>
-<tr class="row-even"><td><strong>backtracker</strong></td>
+<tr class="row-odd"><td><strong>backtracker</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>grdpmodeler</strong></td>
+<tr class="row-even"><td><strong>grdpmodeler</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>grdrotater</strong></td>
+<tr class="row-odd"><td><strong>grdrotater</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>grdspotter</strong></td>
+<tr class="row-even"><td><strong>grdspotter</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>hotspotter</strong></td>
+<tr class="row-odd"><td><strong>hotspotter</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>originator</strong></td>
+<tr class="row-even"><td><strong>originator</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>rotconverter</strong></td>
+<tr class="row-odd"><td><strong>rotconverter</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-even"><td>&nbsp;</td>
 <td>Supplement <em>x2sys</em>:</td>
 </tr>
-<tr class="row-even"><td><strong>x2sys_binlist</strong></td>
+<tr class="row-odd"><td><strong>x2sys_binlist</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>x2sys_cross</strong></td>
+<tr class="row-even"><td><strong>x2sys_cross</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>x2sys_datalist</strong></td>
+<tr class="row-odd"><td><strong>x2sys_datalist</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>x2sys_get</strong></td>
+<tr class="row-even"><td><strong>x2sys_get</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>x2sys_init</strong></td>
+<tr class="row-odd"><td><strong>x2sys_init</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>x2sys_list</strong></td>
+<tr class="row-even"><td><strong>x2sys_list</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>x2sys_merge</strong></td>
+<tr class="row-odd"><td><strong>x2sys_merge</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>x2sys_put</strong></td>
+<tr class="row-even"><td><strong>x2sys_put</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-even"><td><strong>x2sys_report</strong></td>
+<tr class="row-odd"><td><strong>x2sys_report</strong></td>
 <td>&nbsp;</td>
 </tr>
-<tr class="row-odd"><td><strong>x2sys_solve</strong></td>
+<tr class="row-even"><td><strong>x2sys_solve</strong></td>
 <td>&nbsp;</td>
 </tr>
 </tbody>
@@ -672,11 +689,14 @@ Several GMT parameters can affect the projection: <a class="reference internal" 
 Choose one of the following projections (The <strong>E</strong> or <strong>C</strong> after
 projection names stands for Equal-Area and Conformal, respectively):</p>
 <blockquote>
-<div><p><strong>CYLINDRICAL PROJECTIONS:</strong></p>
-<p><strong>-Jc</strong><em>lon0/lat0/scale</em> or <strong>-JC</strong><em>lon0/lat0/width</em> (Cassini).</p>
+<div><strong>CYLINDRICAL PROJECTIONS:</strong></div></blockquote>
+<blockquote id="jc-full">
+<div><p><strong>-Jc</strong><em>lon0/lat0/scale</em> or <strong>-JC</strong><em>lon0/lat0/width</em> (Cassini).</p>
 <blockquote>
 <div>Give projection center <em>lon0/lat0</em> and <em>scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</div></blockquote>
-<p><strong>-Jcyl_stere</strong>/[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or
+</div></blockquote>
+<blockquote id="jcyl-stere-full">
+<div><p><strong>-Jcyl_stere</strong>/[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or
 <strong>-JCyl_stere</strong>/[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> (Cylindrical Stereographic).</p>
 <blockquote>
 <div><p>Give central meridian <em>lon0</em> (optional), standard parallel <em>lat0</em>
@@ -693,15 +713,21 @@ can be any value):</p>
 </ul>
 </div></blockquote>
 </div></blockquote>
-<p><strong>-Jj</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JJ</strong>[<em>lon0/</em>]<em>width</em> (Miller Cylindrical Projection).</p>
+</div></blockquote>
+<blockquote id="jj-full">
+<div><p><strong>-Jj</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JJ</strong>[<em>lon0/</em>]<em>width</em> (Miller Cylindrical Projection).</p>
 <blockquote>
 <div>Give the central meridian <em>lon0</em> (optional) and <em>scale</em>
 (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</div></blockquote>
-<p><strong>-Jm</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or <strong>-JM</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> (Mercator <strong>[C]</strong>)</p>
+</div></blockquote>
+<blockquote id="jm-full">
+<div><p><strong>-Jm</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or <strong>-JM</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> (Mercator <strong>[C]</strong>)</p>
 <blockquote>
 <div>Give central meridian <em>lon0</em> (optional), standard parallel <em>lat0</em>
 (optional), and <em>scale</em> along parallel (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</div></blockquote>
-<p><strong>-Jo</strong><em>parameters</em> (Oblique Mercator <strong>[C]</strong>).</p>
+</div></blockquote>
+<blockquote id="jo-full">
+<div><p><strong>-Jo</strong><em>parameters</em> (Oblique Mercator <strong>[C]</strong>).</p>
 <blockquote>
 <div><p>Typically used with <strong>-R</strong><em>LLx/LLy/URx/URy</em><strong>r</strong> or with projected coordinates.  Specify one of:</p>
 <dl class="docutils">
@@ -716,7 +742,9 @@ equator <em>lon1/lat1</em>, and <em>scale</em>.</dd>
 Give <em>scale</em> along oblique equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
 </dl>
 </div></blockquote>
-<p><strong>-Jq</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or
+</div></blockquote>
+<blockquote id="jq-full">
+<div><p><strong>-Jq</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or
 <strong>-JQ</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> (Cylindrical Equidistant).</p>
 <blockquote>
 <div><p>Give the central meridian <em>lon0</em> (optional), standard parallel
@@ -733,17 +761,23 @@ standard parallel is typically one of these (but can be any value):</p>
 </ul>
 </div></blockquote>
 </div></blockquote>
-<p><strong>-Jt</strong><em>lon0/</em>[<em>lat0/</em>]<em>scale</em> or
+</div></blockquote>
+<blockquote id="jt-full">
+<div><p><strong>-Jt</strong><em>lon0/</em>[<em>lat0/</em>]<em>scale</em> or
 <strong>-JT</strong><em>lon0/</em>[<em>lat0/</em>]<em>width</em> (Transverse Mercator <strong>[C]</strong>)</p>
 <blockquote>
 <div>Give the central meridian <em>lon0</em>, central parallel <em>lat0</em>
 (optional), and <em>scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</div></blockquote>
-<p><strong>-Ju</strong><em>zone/scale</em> or <strong>-JU</strong><em>zone/width</em> (UTM - Universal Transverse Mercator <strong>[C]</strong>).</p>
+</div></blockquote>
+<blockquote id="ju-full">
+<div><p><strong>-Ju</strong><em>zone/scale</em> or <strong>-JU</strong><em>zone/width</em> (UTM - Universal Transverse Mercator <strong>[C]</strong>).</p>
 <blockquote>
 <div>Give the UTM zone (A,B,1-60[C-X],Y,Z)) and <em>scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/degree).
 Zones: If C-X not given, prepend - or + to enforce southern or
 northern hemisphere conventions [northern if south &gt; 0].</div></blockquote>
-<p><strong>-Jy</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or <strong>-JY</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> (Cylindrical Equal-Area <strong>[E]</strong>).</p>
+</div></blockquote>
+<blockquote id="jy-full">
+<div><p><strong>-Jy</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or <strong>-JY</strong>[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> (Cylindrical Equal-Area <strong>[E]</strong>).</p>
 <blockquote>
 <div><p>Give the central meridian <em>lon0</em> (optional), standard parallel
 <em>lat0</em> (optional), and <em>scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/degree). The
@@ -761,16 +795,30 @@ standard parallel is typically one of these (but can be any value):</p>
 </div></blockquote>
 </div></blockquote>
 <p><strong>CONIC PROJECTIONS:</strong></p>
-<dl class="docutils">
+</div></blockquote>
+<blockquote id="jb-full">
+<div><dl class="docutils">
 <dt><strong>-Jb</strong><em>lon0/lat0/lat1/lat2/scale</em> or <strong>-JB</strong><em>lon0/lat0/lat1/lat2/width</em> (Albers <strong>[E]</strong>).</dt>
 <dd>Give projection center <em>lon0/lat0</em>, two standard parallels
 <em>lat1/lat2</em>, and <em>scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jd-full">
+<div><dl class="docutils">
 <dt><strong>-Jd</strong><em>lon0/lat0/lat1/lat2/scale</em> or <strong>-JD</strong><em>lon0/lat0/lat1/lat2/width</em> (Conic Equidistant)</dt>
 <dd>Give projection center <em>lon0/lat0</em>, two standard parallels
 <em>lat1/lat2</em>, and <em>scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jl-full">
+<div><dl class="docutils">
 <dt><strong>-Jl</strong><em>lon0/lat0/lat1/lat2/scale</em> or <strong>-JL</strong><em>lon0/lat0/lat1/lat2/width</em> (Lambert <strong>[C]</strong>)</dt>
 <dd>Give origin <em>lon0/lat0</em>, two standard parallels <em>lat1/lat2</em>, and
 <em>scale</em> along these (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jpoly-full">
+<div><dl class="docutils">
 <dt><strong>-Jpoly</strong>/[<em>lon0/</em>[<em>lat0/</em>]]<em>scale</em> or <strong>-JPoly</strong>/[<em>lon0/</em>[<em>lat0/</em>]]<em>width</em> ((American) Polyconic).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional), reference parallel
 <em>lat0</em> (optional, default = equator), and <em>scale</em> along central
@@ -779,25 +827,39 @@ meridian (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
 <p><strong>AZIMUTHAL PROJECTIONS:</strong></p>
 <p>Except for polar aspects, <strong>-R</strong>w/e/s/n will be reset to <strong>-Rg</strong>.
 Use <strong>-R</strong>&lt;...&gt;<strong>r</strong> for smaller regions.</p>
-<dl class="docutils">
+</div></blockquote>
+<blockquote id="ja-full">
+<div><dl class="docutils">
 <dt><strong>-Ja</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/scale</em> or <strong>-JA</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/width</em> (Lambert <strong>[E]</strong>).</dt>
 <dd><em>lon0/lat0</em> specifies the projection center. <em>horizon</em> specifies
 the max distance from projection center (in degrees, &lt;= 180,
 default 90). Give <em>scale</em> as <strong>1:</strong><em>xxxx</em> or <em>radius/lat</em>,
 where <em>radius</em> is distance in UNIT from origin to the oblique
 latitude <em>lat</em>.</dd>
+</dl>
+</div></blockquote>
+<blockquote id="je-full">
+<div><dl class="docutils">
 <dt><strong>-Je</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/scale</em> or <strong>-JE</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/width</em> (Azimuthal Equidistant).</dt>
 <dd><em>lon0/lat0</em> specifies the projection center. <em>horizon</em> specifies
 the max distance from projection center (in degrees, &lt;= 180,
 default 180). Give <em>scale</em> as <strong>1:</strong><em>xxxx</em> or <em>radius/lat</em>,
 where <em>radius</em> is distance in UNIT from origin to the oblique
 latitude <em>lat</em>.</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jf-full">
+<div><dl class="docutils">
 <dt><strong>-Jf</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/scale</em> or <strong>-JF</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/width</em> (Gnomonic).</dt>
 <dd><em>lon0/lat0</em> specifies the projection center. <em>horizon</em> specifies
 the max distance from projection center (in degrees, &lt; 90,
 default 60). Give <em>scale</em> as <strong>1:</strong><em>xxxx</em> or <em>radius/lat</em>,
 where <em>radius</em> is distance in UNIT from origin to the oblique
 latitude <em>lat</em>.</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jg-full">
+<div><dl class="docutils">
 <dt><strong>-Jg</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/scale</em> or <strong>-JG</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/width</em> (Orthographic).</dt>
 <dd><em>lon0/lat0</em> specifies the projection center. <em>horizon</em> specifies
 the max distance from projection center (in degrees, &lt;= 90,
@@ -817,6 +879,10 @@ centered on the horizon. Further, specify the clockwise <em>twist</em>,
 <em>Width</em>, and <em>Height</em> of the viewpoint in degrees. Give <em>scale</em>
 as <strong>1:</strong><em>xxxx</em> or <em>radius/lat</em>, where <em>radius</em> is distance in
 UNIT from origin to the oblique latitude <em>lat</em>.</dd>
+</dl>
+</div></blockquote>
+<blockquote id="js-full">
+<div><dl class="docutils">
 <dt><strong>-Js</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/scale</em> or <strong>-JS</strong><em>lon0/lat0</em>[<em>/horizon</em>]<em>/width</em> (General Stereographic <strong>[C]</strong>).</dt>
 <dd><em>lon0/lat0</em> specifies the projection center. <em>horizon</em> specifies
 the max distance from projection center (in degrees, &lt; 180,
@@ -828,34 +894,62 @@ latitude <em>lat</em>). Note if <strong>1:</strong><em>xxxx</em> is used then to
 ambiguity.</dd>
 </dl>
 <p><strong>MISCELLANEOUS PROJECTIONS:</strong></p>
-<dl class="docutils">
+</div></blockquote>
+<blockquote id="jh-full">
+<div><dl class="docutils">
 <dt><strong>-Jh</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JH</strong>[<em>lon0/</em>]<em>width</em> (Hammer <strong>[E]</strong>).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="ji-full">
+<div><dl class="docutils">
 <dt><strong>-Ji</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JI</strong>[<em>lon0/</em>]<em>width</em> (Sinusoidal <strong>[E]</strong>).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jk-full">
+<div><dl class="docutils">
 <dt><strong>-Jkf</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JKf</strong>[<em>lon0/</em>]<em>width</em> (Eckert IV) <strong>[E]</strong>).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
 <dt><strong>-Jk</strong>[<strong>s</strong>][<em>lon0/</em>]<em>scale</em> or <strong>-JK</strong>[<strong>s</strong>][<em>lon0/</em>]<em>width</em> (Eckert VI) <strong>[E]</strong>).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jn-full">
+<div><dl class="docutils">
 <dt><strong>-Jn</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JN</strong>[<em>lon0/</em>]<em>width</em> (Robinson).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jr-full">
+<div><dl class="docutils">
 <dt><strong>-Jr</strong>[<em>lon0/</em>]<em>scale</em> <strong>-JR</strong>[<em>lon0/</em>]<em>width</em> (Winkel Tripel).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jv-full">
+<div><dl class="docutils">
 <dt><strong>-Jv</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JV</strong>[<em>lon0/</em>]<em>width</em> (Van der Grinten).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
+</dl>
+</div></blockquote>
+<blockquote id="jw-full">
+<div><dl class="docutils">
 <dt><strong>-Jw</strong>[<em>lon0/</em>]<em>scale</em> or <strong>-JW</strong>[<em>lon0/</em>]<em>width</em> (Mollweide <strong>[E]</strong>).</dt>
 <dd>Give the central meridian <em>lon0</em> (optional) and <em>scale</em> along
 equator (<strong>1:</strong><em>xxxx</em> or UNIT/degree).</dd>
 </dl>
 <p><strong>NON-GEOGRAPHICAL PROJECTIONS:</strong></p>
-<p><strong>-Jp</strong>[<strong>a</strong>]<em>scale</em>[<em>/origin</em>][<strong>r</strong>|<strong>z</strong>] or <strong>-JP</strong>[<strong>a</strong>]<em>width</em>[<em>/origin</em>][<strong>r</strong>|<strong>z</strong>]
+</div></blockquote>
+<blockquote id="jp-full">
+<div><p><strong>-Jp</strong>[<strong>a</strong>]<em>scale</em>[<em>/origin</em>][<strong>r</strong>|<strong>z</strong>] or <strong>-JP</strong>[<strong>a</strong>]<em>width</em>[<em>/origin</em>][<strong>r</strong>|<strong>z</strong>]
 (Polar coordinates (theta,r))</p>
 <p>Optionally insert <strong>a</strong> after <strong>-Jp</strong> [ or <strong>-JP</strong>] for azimuths CW
 from North instead of directions CCW from East [Default]. Optionally
@@ -863,7 +957,9 @@ append /<em>origin</em> in degrees to indicate an angular offset [0]).
 Finally, append <strong>r</strong> if r is elevations in degrees (requires s &gt;= 0
 and n &lt;= 90) or <strong>z</strong> if you want to annotate depth rather than
 radius [Default]. Give <em>scale</em> in UNIT/r-unit.</p>
-<p><strong>-Jx</strong><em>x-scale</em>[<em>/y-scale</em>] or <strong>-JX</strong><em>width</em>[<em>/height</em>] (Linear, log, and power scaling)</p>
+</div></blockquote>
+<blockquote id="jx-full">
+<div><p><strong>-Jx</strong><em>x-scale</em>[<em>/y-scale</em>] or <strong>-JX</strong><em>width</em>[<em>/height</em>] (Linear, log, and power scaling)</p>
 <p>Give <em>x-scale</em> (<strong>1:</strong><em>xxxx</em> or UNIT/x-unit) and/or <em>y-scale</em>
 (<strong>1:</strong><em>xxxx</em> or UNIT/y-unit); or specify <em>width</em> and/or <em>height</em>
 in UNIT. <em>y-scale</em>=<em>x-scale</em> if not specified separately and
@@ -916,7 +1012,7 @@ multi-layer plots.</dd>
 <dt><strong>-P</strong></dt>
 <dd>Select &#8220;Portrait&#8221; plot orientation [Default is &#8220;Landscape&#8221;; see
 <strong>gmt.conf</strong> or <strong>gmtset</strong> to change the <strong>PS_PAGE_ORIENTATION</strong>
-parameter, or supply &#8211;PS_PAGE_ORIENTATION=<em>orientation</em> on the
+parameter, or supply <strong>-</strong><strong>-PS_PAGE_ORIENTATION=</strong><em>orientation</em> on the
 command line].</dd>
 </dl>
 <dl class="docutils" id="r-full">
@@ -924,8 +1020,8 @@ command line].</dd>
 <dd><em>xmin</em>, <em>xmax</em>, <em>ymin</em>, and <em>ymax</em> specify the region of interest.
 For geographic regions, these limits correspond to <em>west</em>, <em>east</em>,
 <em>south</em>, and <em>north</em> and you may specify them in decimal degrees or
-in [+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
-and upper right map coordinates are given instead of w/e/s/n. The
+in [<strong>+-</strong>]<em>dd</em><strong>:</strong><em>mm</em>[<strong>:</strong><em>ss.xxx</em>][<strong>W</strong>|<strong>E</strong>|<strong>S</strong>|<strong>N</strong>] format. Append <strong>r</strong> if lower left
+and upper right map coordinates are given instead of <em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>. The
 two shorthands <strong>-Rg</strong> and <strong>-Rd</strong> stand for global domain (0/360
 and -180/+180 in longitude respectively, with -90/+90 in latitude).
 Alternatively, specify the name of an existing grid file and the
@@ -939,14 +1035,15 @@ For calendar time coordinates you may either give (a) relative time
 time of the form [<em>date</em>]<strong>T</strong>[<em>clock</em>] (append <strong>T</strong> to
 <strong>-JX</strong>|<strong>x</strong>). At least one of <em>date</em> and <em>clock</em> must be
 present; the <strong>T</strong> is always required. The <em>date</em> string must be of
-the form [-]yyyy[-mm[-dd]] (Gregorian calendar) or yyyy[-Www[-d]]
+the form [<strong>-</strong>]<em>yyyy</em>[<strong>-</strong><em>mm</em>[<strong>-</strong><em>dd</em>]]
+(Gregorian calendar) or <em>yyyy</em>[<strong>-W</strong><em>ww</em>[<strong>-</strong><em>d</em>]]
 (ISO week calendar), while the <em>clock</em> string must be of the form
-hh:mm:ss[.xxx]. The use of delimiters and their type and positions
+<em>hh</em><strong>:</strong><em>mm</em><strong>:</strong><em>ss</em>[<em>.xxx</em>]. The use of delimiters and their type and positions
 must be exactly as indicated (however, input, output and plot
 formats are customizable; see <strong>gmt.conf</strong>).
 You can also use Cartesian projected coordinates compatible with the
 chosen projection.  Give them with a leading length <em>unit</em>, (e.g.,
-<strong>k</strong>-200/200/-300/300 for a 400 by 600 km rectangular area centered
+<strong>-Rk</strong>-200/200/-300/300 for a 400 by 600 km rectangular area centered
 on the projection center (0, 0). These coordinates are internally
 converted to the corresponding geographic (longitude, latitude)
 coordinates for the lower left and upper right corners. This form is
@@ -998,7 +1095,7 @@ or <strong>-Y</strong> are used without any further arguments, the values from
 the last use of that option in a previous GMT command will be used.</dd>
 </dl>
 <dl class="docutils" id="aspatial-full">
-<dt><strong>-a</strong><em>col</em>=<em>name</em>[<em>...</em>]</dt>
+<dt><strong>-a</strong>[<em>col</em>=]<em>name</em>[<em>...</em>]</dt>
 <dd>Control how aspatial data are handled in GMT during input and output.
 Reading OGR/GMT-formatted files. To assign certain aspatial data
 items to GMT data columns, give one or more comma-separated
@@ -1008,7 +1105,9 @@ to as data input for column <em>col</em>. In addition, to assign an
 aspatial value to non-column data, you may specify <em>col</em> as <strong>D</strong>
 for <em>distance</em>, <strong>G</strong> for <em>fill</em>, <strong>I</strong> for <em>ID</em>, <strong>L</strong> for <em>label</em>,
 <strong>T</strong> for <em>text</em>, <strong>W</strong> for <em>pen</em>, and <strong>Z</strong> for <em>value</em> [e.g., used
-to look-up color via a CPT].
+to look-up color via a CPT].  If you skip the leading &#8220;<em>col</em>=&#8221; in
+the argument then we supply (and automatically increment) a column
+value starting at 2.
 Write OGR/GMT-formatted files. Give one or more comma-separated
 associations <em>col</em>=<em>name</em>[:<em>type</em>], To write OGR/GMT-formatted
 files, give one or more comma-separated associations
@@ -1114,26 +1213,29 @@ produce a line break. Issue an additional <strong>-ga</strong> to indicate that
 all criteria must be met instead.</dd>
 </dl>
 <dl class="docutils" id="h-full">
-<dt><strong>-h</strong>[<strong>i</strong>|<strong>o</strong>][<em>n</em>][<strong>+c</strong>][<strong>+d</strong>][<strong>+r</strong><em>title</em>]</dt>
+<dt><strong>-h</strong>[<strong>i</strong>|<strong>o</strong>][<em>n</em>][<strong>+c</strong>][<strong>+d</strong>][<strong>+r</strong><em>remark</em>][<strong>+t</strong><em>title</em>]</dt>
 <dd>Input file(s) has header record(s). If used, the default number of
 header records is <a class="reference internal" href="gmt.conf.html#io-n-header-recs"><em>IO_N_HEADER_RECS</em></a> [1]. Use <strong>-hi</strong> if only
 input data should have header records [Default will write out header
 records if the input data have them]. Blank lines and lines starting
 with # are always skipped. For output you may request additional headers
 to be written via the option modifiers, and use <strong>+d</strong> to remove existing
-header records. If used with native binary data we
-interpret <em>n</em> to instead mean the number of bytes to skip on input
-or pad on output.</dd>
+header records. Append <strong>+c</strong> to issue a header comment with column names to the output [none].
+Append <strong>+r</strong> to add a <em>remark</em> comment to the output [none].
+Append <strong>+t</strong> to add a <em>title</em> comment to the output [none].
+These optional strings may contain n to indicate line-breaks).
+If used with native binary data we interpret <em>n</em> to instead mean the
+number of bytes to skip on input or pad on output.</dd>
 </dl>
 <dl class="docutils" id="icols-full">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>]</dt>
 <dd>Select specific data columns for input, in arbitrary order. Columns
 not listed will be skipped. Give columns (or column ranges)
-separated by commas [Default reads all columns in order]. To each
-column, optionally add any of the following, in this order: <strong>l</strong>
-takes the <strong>log10</strong> of the input values first; <strong>s</strong><em>scale</em>,
-subsequently multiplies by a given scale factor; <strong>o</strong><em>offset</em>,
-finally adds a given offset.</dd>
+separated by commas [Default reads all columns in order, starting
+with the first column (0)]. To each column, optionally add any of
+the following, in this order: <strong>l</strong> takes the <strong>log10</strong> of the input
+values first; <strong>s</strong><em>scale</em>, subsequently multiplies by a given
+scale factor; <strong>o</strong><em>offset</em>, finally adds a given offset.</dd>
 </dl>
 <dl class="docutils" id="n-full">
 <dt><strong>-n</strong>[<strong>b</strong>|<strong>c</strong>|<strong>l</strong>|<strong>n</strong>][<strong>+a</strong>][<strong>+b</strong><em>BC</em>][<strong>+c</strong>][<strong>+t</strong><em>threshold</em>]</dt>
@@ -1199,12 +1301,12 @@ consider for this NaN test.</dd>
 is 0, i.e., opaque].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -1380,6 +1482,7 @@ GMT home page <a class="reference external" href="http://gmt.soest.hawaii.edu/">
 <li><a class="reference internal" href="#">gmt</a><ul>
 <li><a class="reference internal" href="#introduction">Introduction</a></li>
 <li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#command-line-completion">Command-line completion</a></li>
 <li><a class="reference internal" href="#gmt-overview">GMT Overview</a></li>
 <li><a class="reference internal" href="#custom-modules">Custom Modules</a></li>
 <li><a class="reference internal" href="#the-common-gmt-options">The Common GMT Options</a></li>
@@ -1426,7 +1529,7 @@ GMT home page <a class="reference external" href="http://gmt.soest.hawaii.edu/">
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -1444,9 +1547,9 @@ GMT home page <a class="reference external" href="http://gmt.soest.hawaii.edu/">
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

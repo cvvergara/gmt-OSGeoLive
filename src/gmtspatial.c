@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
-*    $Id: gmtspatial.c 12841 2014-02-03 16:10:34Z pwessel $
+*    $Id: gmtspatial.c 14247 2015-04-28 18:46:55Z pwessel $
 *
-*	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+*	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 *	See LICENSE.TXT file for copying and redistribution conditions.
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU Lesser General Public License as published by
@@ -735,7 +735,7 @@ int GMT_gmtspatial_parse (struct GMT_CTRL *GMT, struct GMTSPATIAL_CTRL *Ctrl, st
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				n_files[GMT_IN]++;
 				break;
 			case '>':	/* Got named output file */
@@ -796,7 +796,7 @@ int GMT_gmtspatial_parse (struct GMT_CTRL *GMT, struct GMTSPATIAL_CTRL *Ctrl, st
 							Ctrl->D.I.inside = 1;
 							break;
 						case 'f':	/* Gave a file name */
-							if (GMT_check_filearg (GMT, 'D', &p[1], GMT_IN))
+							if (GMT_check_filearg (GMT, 'D', &p[1], GMT_IN, GMT_IS_DATASET))
 								Ctrl->D.file = strdup (&p[1]);
 							else
 								n_errors++;
@@ -1669,7 +1669,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 		struct GMT_DATASEGMENT **L = NULL;
 		
 		dim[GMT_TBL] = D->n_tables;	dim[GMT_COL] = D->n_columns;	/* Same number of tables and columns as the input */
-		if ((Dout = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, Ctrl->Out.file)) == NULL) Return (API->error);
+		if ((Dout = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (API->error);
 		/* Dout has no allocated segments yet */
 		Dout->n_segments = 0;
 		for (tbl = 0; tbl < D->n_tables; tbl++) {

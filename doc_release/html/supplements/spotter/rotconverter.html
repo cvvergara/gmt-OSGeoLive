@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>rotconverter &mdash; GMT 5.1.1 documentation</title>
+    <title>rotconverter &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="SPOTTER" href="../../SUP_SPOTTER.html" />
     <link rel="next" title="X2SYS" href="../../SUP_X2SYS.html" />
     <link rel="prev" title="originator" href="originator.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" accesskey="U">SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -81,7 +81,7 @@
 <p><strong>rotconverter</strong> [ <strong>+</strong>|<strong>-</strong> ] <em>rotA</em> [ <strong>+</strong>|<strong>-</strong> <em>rotB</em> ]
 [ <strong>+</strong>|<strong>-</strong> <em>rotC</em> ] ... [ <strong>-A</strong> ] [ <strong>-D</strong> ] [
 <strong>-E</strong>[<em>fact</em>] ] [ <strong>-F</strong><em>out</em> ] [ <strong>-G</strong> ] [ <strong>-N</strong> ] [ <strong>-S</strong> ]
-[ <strong>-T</strong> ]
+[ <strong>-T</strong> ] [ <strong>-W</strong> ]
 [ <strong>-V</strong>[<em>level</em>] ]
 [ <strong>-h</strong>[<strong>i</strong>|<strong>o</strong>][<em>n</em>][<strong>+c</strong>][<strong>+d</strong>][<strong>+r</strong><em>remark</em>][<strong>+r</strong><em>title</em>] ]</p>
 <p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
@@ -138,18 +138,20 @@ reconstruction rotations)].</dd>
 <dd>Place all output poles in the southern hemisphere [Default reports positive rotation angles].</dd>
 <dt><strong>-T</strong></dt>
 <dd>Transpose the final result, i.e., change the sign of the rotation angles.</dd>
+<dt><strong>-W</strong></dt>
+<dd>Ensure all output rotations have negative opening angles [Default reports positive rotation angles].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="../../gmt.html#v-full"><em>(more ...)</em></a></dt>
 <dd>Select verbosity level [c]. Report statistics of extracted rotations.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -157,6 +159,10 @@ options, then exits.</dd>
 <dt><strong>-</strong><strong>-show-datadir</strong></dt>
 <dd>Print full path to GMT share directory and exit.</dd>
 </dl>
+</div>
+<div class="section" id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
+<p>Note that only one of <strong>-N</strong>, <strong>-S</strong>, and <strong>-W</strong> can be used at the same time.</p>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
@@ -225,6 +231,7 @@ GPlates rotations database, try</p>
 <li><a class="reference internal" href="#description">Description</a></li>
 <li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
 <li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#limitations">Limitations</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
 </ul>
@@ -260,7 +267,7 @@ GPlates rotations database, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" >SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -278,9 +285,9 @@ GPlates rotations database, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

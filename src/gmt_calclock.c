@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_calclock.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_calclock.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -69,9 +69,9 @@ int64_t GMT_splitinteger (double value, int epsilon, double *doublepart) {
 	double x = floor (value / epsilon);
 	int64_t i = lrint (x);
 	*doublepart = value - x * epsilon;
-	if ((*doublepart) < GMT_SMALL)
+	if ((*doublepart) < GMT_CONV4_LIMIT)
 		*doublepart = 0.0;	/* Snap to the lower integer */
-	else if ((double)epsilon - (*doublepart) < GMT_SMALL) {
+	else if ((double)epsilon - (*doublepart) < GMT_CONV4_LIMIT) {
 		i++;			/* Snap to the higher integer */
 		*doublepart = 0.0;
 	}
@@ -183,6 +183,10 @@ int64_t GMT_rd_from_gymd (struct GMT_CTRL *GMT, int gy, int gm, int gd) {
 	double s;
 	int64_t rd;
 	int day_offset, yearm1;
+	
+	if (gm < 1 || gm > 12 || gd < 1 || gd > 31) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error: GMT_rd_from_gymd given bad month or day.\n");
+	}
 	
 	if (gm <= 2)
 		day_offset = 0;

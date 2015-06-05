@@ -1,4 +1,4 @@
-$Id: README 12822 2014-01-31 23:39:56Z remko $
+$Id: README 13853 2014-12-30 20:49:01Z pwessel $
 
 == Information for installing GMT 5 ==
 
@@ -22,7 +22,7 @@ other platforms.
 Note there are three GMT tar archives available (#3 is optional):
 
 1. gmt-5.x.x.tar.bz2:          The GMT 5 distribution
-2. gshhg-gmt-nc4-2.x.x.tar.gz: All five resolutions of GSHHG coastline data
+2. gshhg-gmt-2.x.x.tar.gz:     All five resolutions of GSHHG coastline data
 3. dcw-gmt-1.x.x.tar.bz2:      Digital Chart of the World polygon data
 
 The archives are available in bzip2 (*.bz2) and gzip (*.gz) formats.
@@ -103,21 +103,14 @@ a for-profit organization you should read Shewchuk's copyright statement (in
 src/triangle.c) first.  If you agree with the license terms you can enable
 Shewchuk's triangulation routine in cmake/ConfigUser.cmake.
 
-At run-time, GMT will initialize all default variables by reading either the
-share/gmtdefaults_SI or the share/gmtdefaults_US file.  Both are installed,
-and the one that is read is given by the file share/gmt.conf.  This file will
-have either SI or US as the first two columns on a line.  SI is default. You
-can configure the default at build time in cmake/ConfigUser.cmake.
-
-The default values differ slightly between SI and US, mostly because it is
-inconvenient to convert, say, 1" to 2.54 cm; we use 2.5 cm instead.  Although
-strongly discouraged, if you want to make permanent changes to some of the
-defaults you can edit the gmtdefaults_{SI,US} files directly.  A much better
-approach is to create a gmt.conf file in your home directory and edit those
-settings since GMT will check for that file before loading system defaults
-(actually, it will first look in the current directory, then the home
-directory, and then finally in share).  See the gmtdefaults man page for a
-description of all defaults.
+At run-time, GMT will initialize all default variables by reading the
+share/gmt.conf. Although strongly discouraged, if you want to make permanent
+changes to some of the defaults you can edit the share/gmt.conf file directly.
+A much better approach is to create a gmt.conf file in your home directory
+and edit those settings since GMT will check for that file before loading
+system defaults (actually, it will first look in the current directory, then
+the home directory, and then finally in share).  See the gmt.conf man page
+for a description of all defaults.
 
 To prevent two GMT processes writing to the same gmt.conf file simultaneously
 (thereby corrupting it), GMT can implement the POSIX advisory file locking
@@ -200,12 +193,13 @@ produce PostScript code compatible with the rest of GMT or simply perform data
 manipulation.  In addition, misc.  code developed by us depend on GMT
 libraries.  Currently, the supplemental archive include the directories:
 
-  gshhs     - Data extractor for GSHHS shoreline polygons.
+  gshhg     - Data extractor for GSHHG shoreline polygons and rivers, borders.
   img       - Data extractor for Smith/Sandwell altimetry grids.
   meca      - Plotting of focal mechanisms, velocity arrows,
               and error ellipses on maps.
   mgd77     - Programs for handling of native MGD77 files.
   misc      - dimfilter
+  potential - geopotential manipulations
   segyprogs - Plotting SEGY seismic data sets.
   spotter   - Plate tectonic & kinematics applications.
   x2sys     - Track intersection (crossover) tools.
@@ -228,12 +222,10 @@ A reminder
 ----------
 
 If you think it is appropriate, you may consider paying us back by including
-our latest EOS article (Wessel, P. and W. H. F. Smith, New, improved version
-of the Generic Mapping Tools released, EOS Trans.  AGU, 79, 579, 1998, and our
-Geophysics article on the gridding algorithm in surface (Smith, W. H. F. and
-P. Wessel, Gridding with continuous curvature splines in tension, Geophysics,
-55, 293-305, 1990) in the reference list of your future publications that will
-benefit from the availability of GMT.
+our latest EOS article (Wessel, P., W. H. F. Smith, R. Scharroo, J. F. Luis,
+and F. Wobbe (2013), Generic Mapping Tools: Improved version released, Eos
+Trans. AGU, 94(45), 409-410, doi:10.1002/2013EO450001) in the reference list
+of your future publications that will benefit from the availability of GMT.
 
 
 Software support
@@ -245,20 +237,9 @@ you find a bug in any of the programs, please report it to us
 we, and through us, other users may benefit from your find.  Make sure you
 provide us with enough information so that we can recreate the problem.
 
-Two mailing lists of interest to GMT users are available:
-gmt-group@lists.hawaii.edu allows us to notify registered users in the event
-of bugfixes and/or new releases.  A separate mailing list
-(gmt-help@lists.hawaii.edu) exists for GMT users who have questions about GMT
-installation and usage.  If you want to subscribe to one or both of these
-mailinglists, send a message to listproc@hawaii.edu that contains one or both
-of the commands
-
-subscribe gmt-help <yourname, not email address>
-subscribe gmt-group <yourname, not email address>
-
-or register at https://listserv.hawaii.edu/.  You may post messages to
-gmt-help while gmt-group is more of a one-way street for us to inform users of
-bug fixes and upgrades.
+In addition to the bug tracking feature (New Issues) on the website, you
+can also post general questions on the GMT user forum.  Note that registration
+is required to post on the site.
 
 
 Ordering the GMT package on CD/DVD-Rs

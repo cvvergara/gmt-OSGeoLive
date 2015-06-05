@@ -1,4 +1,4 @@
-#	$Id: gmt_keywords.d 12822 2014-01-31 23:39:56Z remko $
+#	$Id: gmt_keywords.d 13556 2014-09-28 17:56:25Z remko $
 #
 # List of all deprecated GMT 4 defaults parameters (and some from GMT 5)
 # This file will eventually be removed when we no longer support GMT 4
@@ -30,6 +30,8 @@ DEGREE_FORMAT
 DEGREE_SYMBOL
 DOTS_PR_INCH
 D_FORMAT
+DIR_TMP
+DIR_USER
 ELLIPSOID
 FIELD_DELIMITER
 FRAME_PEN

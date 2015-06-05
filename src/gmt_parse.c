@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_parse.c 12894 2014-02-13 22:07:17Z pwessel $
+ *	$Id: gmt_parse.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -108,7 +108,7 @@ struct GMT_OPTION * GMT_Create_Options (void *V_API, int n_args_in, void *in)
 
 	int error = GMT_OK;
 	unsigned int arg, first_char, n_args;
-	char option, **args = NULL, **new_args = NULL;
+	char option, **args = NULL, **new_args = NULL, *pch = NULL;
 	struct GMT_OPTION *head = NULL, *new_opt = NULL;
 	struct GMT_CTRL *G = NULL;
 	struct GMTAPI_CTRL *API = NULL;
@@ -144,7 +144,8 @@ struct GMT_OPTION * GMT_Create_Options (void *V_API, int n_args_in, void *in)
 				new_args = GMT_memory (G, new_args, n_alloc, char *);
 			}
 		}
-		for (k = 0; txt_in[k]; k++) if (txt_in[k] == 29) txt_in[k] = '\t'; else if (txt_in[k] == 31) txt_in[k] = ' ';	/* Replace spaces and tabs masked above */
+		for (k = 0; txt_in[k]; k++)
+			if (txt_in[k] == 29) txt_in[k] = '\t'; else if (txt_in[k] == 31) txt_in[k] = ' ';	/* Replace spaces and tabs masked above */
 		args = new_args;
 		n_args = new_n_args;
 	}
@@ -164,6 +165,8 @@ struct GMT_OPTION * GMT_Create_Options (void *V_API, int n_args_in, void *in)
 			first_char = 0, option = GMT_OPT_OUTFILE, arg++;
 		else if (args[arg][0] == '+' && !args[arg][1] && n_args == 1)	/* extended synopsis + */
 			first_char = 1, option = GMT_OPT_USAGE, G->common.synopsis.extended = true;
+		else if (args[arg][0] == '-' && args[arg][1] == '+' && !args[arg][2] && n_args == 1)	/* extended synopsis + */
+			first_char = 1, option = GMT_OPT_USAGE, G->common.synopsis.extended = true;
 		else if (args[arg][0] != '-')	/* Probably a file (could also be a gmt/grdmath OPERATOR or number, to be handled later by GMT_Make_Option) */
 			first_char = 0, option = GMT_OPT_INFILE;
 		else if (!args[arg][1])	/* Found the special synopsis option "-" */
@@ -171,11 +174,28 @@ struct GMT_OPTION * GMT_Create_Options (void *V_API, int n_args_in, void *in)
 		else if (!strcmp(args[arg], "--help"))	/* Translate '--help' to '-?' */
 			first_char = 6, option = GMT_OPT_USAGE;
 		else if ((isdigit ((int)args[arg][1]) || args[arg][1] == '.') && !GMT_not_numeric (API->GMT, args[arg])) /* A negative number, most likely; convert to "file" for now */
-				first_char = 0, option = GMT_OPT_INFILE;
+			first_char = 0, option = GMT_OPT_INFILE;
 		else	/* Most likely found a regular option flag (e.g., -D45.0/3) */
 			first_char = 2, option = args[arg][1];
 
-		if ((new_opt = GMT_Make_Option (API, option, &args[arg][first_char])) == NULL) return_null (API, error);	/* Create the new option structure given the args, or return the error */
+		if ((new_opt = GMT_Make_Option (API, option, &args[arg][first_char])) == NULL)
+			return_null (API, error);	/* Create the new option structure given the args, or return the error */
+
+		if (option == GMT_OPT_INFILE && ((pch = strstr(new_opt->arg, "+b")) != NULL) && !strstr(new_opt->arg, "=gd")) {
+			/* Here we deal with the case that the filename has embeded a band request for gdalread, as in img.tif+b1
+			   However, the issue is that for these cases the machinery is set only to parse the request in the
+			   form of img.tif=gd+b1 so the trick is to insert the '=gd' in the filename and let go.
+			   JL 29-November 2014
+			*/
+			char t[GMT_LEN256] = {""};
+			pch[0] = '\0';
+			strcpy(t, new_opt->arg);
+			strcat(t, "=gd"); 
+			pch[0] = '+';			/* Restore what we have erased 2 lines above */
+			strcat(t, pch);
+			free(new_opt->arg);		/* free it so that we can extend it */
+			new_opt->arg = strdup(t);
+		}
 
 		head = GMT_Append_Option (API, new_opt, head);		/* Hook new option to the end of the list (or initiate list if head == NULL) */
 	}
@@ -605,5 +625,7 @@ int GMT_Parse_Common (void *V_API, char *given_options, struct GMT_OPTION *optio
 	/* Update [read-only] pointer to the current option list */
 	API->GMT->current.options = options;
 	if (n_errors) return_error (API, GMT_PARSE_ERROR);	/* One or more options failed to parse */
+	if (GMT_is_geographic (API->GMT, GMT_IN)) API->GMT->current.io.warn_geo_as_cartesion = false;	/* Don't need this warning */
+	
 	return (GMT_OK);
 }

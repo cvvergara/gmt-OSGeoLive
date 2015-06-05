@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(38) Histogram equalization of bathymetry grids &mdash; GMT 5.1.1 documentation</title>
+    <title>(38) Histogram equalization of bathymetry grids &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(39) Evaluation of spherical harmonics coefficients" href="ex39.html" />
     <link rel="prev" title="(37) Spectral coherence between gravity and bathymetry grids" href="ex37.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -93,17 +93,17 @@ gmt makecpt -Crainbow -T0/15/1 &gt; c.cpt
 gmt grdgradient topo.nc -Nt1 -fg -A45 -Gitopo.nc
 gmt grdhisteq topo.nc -Gout.nc -C16
 gmt grdimage topo.nc -Iitopo.nc -Ct.cpt -JM3i -Y5i -K -P -B5 -BWSne &gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;315 -10 Original&quot;</span> | gmt pstext -Rtopo.nc -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;315 -10 Original&quot;</span> <span class="p">|</span> gmt pstext -Rtopo.nc -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
 gmt grdimage out.nc -Cc.cpt -J -X3.5i -K -O -B5 -BWSne &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;315 -10 Equalized&quot;</span> | gmt pstext -R -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;315 -10 Equalized&quot;</span> <span class="p">|</span> gmt pstext -R -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
 gmt psscale -D0i/-0.4i/5i/0.15ih -O -K -Ct.cpt -Ba500 -By+lm -E+n &gt;&gt; <span class="nv">$ps</span>
 gmt grdhisteq topo.nc -Gout.nc -N
 gmt makecpt -Crainbow -T-3/3/0.1 -Z &gt; c.cpt
 gmt grdimage out.nc -Cc.cpt -J -X-3.5i -Y-3.3i -K -O -B5 -BWSne &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;315 -10 Normalized&quot;</span> | gmt pstext -R -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;315 -10 Normalized&quot;</span> <span class="p">|</span> gmt pstext -R -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
 gmt grdhisteq topo.nc -Gout.nc -N
 gmt grdimage out.nc -Cc.cpt -J -X3.5i -K -O -B5 -BWSne &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;315 -10 Quadratic&quot;</span> | gmt pstext -R -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;315 -10 Quadratic&quot;</span> <span class="p">|</span> gmt pstext -R -J -O -K -F+jTR+f14p -T -Gwhite -W1p -Dj0.1i &gt;&gt; <span class="nv">$ps</span>
 gmt psscale -D0i/-0.4i/5i/0.15ih -O -Cc.cpt -Bx1 -By+lz -E+n &gt;&gt; <span class="nv">$ps</span>
 rm -f itopo.nc out.nc ?.cpt
 </pre></div>
@@ -149,7 +149,7 @@ rm -f itopo.nc out.nc ?.cpt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -167,9 +167,9 @@ rm -f itopo.nc out.nc ?.cpt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdblend &mdash; GMT 5.1.1 documentation</title>
+    <title>grdblend &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdclip" href="grdclip.html" />
     <link rel="prev" title="grd2xyz" href="grd2xyz.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -97,7 +97,7 @@ cosine-taper weights. <strong>grdblend</strong> will report if some of the nodes
 not filled in with data. Such unconstrained nodes are set to a value
 specified by the user [Default is NaN]. Nodes with more than one value
 will be set to the weighted average value. Any input grid that does not
-share the final output grid’s node registration and grid spacing will
+share the final output grid&#8217;s node registration and grid spacing will
 automatically be resampled via calls to grdsample. Note: Due to the
 row-by-row i/o nature of operations in grdblend we only support the
 netCDF and native binary grid formats for both input and output.</p>
@@ -199,12 +199,12 @@ option is valid when only one input grid is provided [Default makes the blend].<
 <dd>Set pixel node registration [gridline].  </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -280,6 +280,16 @@ weights, make the blendfile like this</p>
 </div>
 </div></blockquote>
 </div>
+<div class="section" id="warning-on-large-file-sets">
+<h2>Warning on large file sets<a class="headerlink" href="#warning-on-large-file-sets" title="Permalink to this headline">¶</a></h2>
+<p>While grdblend can process any number of files, it works by keeping those
+files open that are being blended, and close files as soon as they are finished.
+Depending on your session, many files may remain open at the same time.
+Some operating systems set fairly modest
+default limits on how many concurrent files can be open, e.g., 256.  If you
+run into this problem then you can change this limit; see your operating system
+documentation for how to change system limits.</p>
+</div>
 <div class="section" id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="grd2xyz.html"><em>grd2xyz</em></a>,
@@ -304,6 +314,7 @@ weights, make the blendfile like this</p>
 <li><a class="reference internal" href="#geographical-and-time-coordinates">Geographical And Time Coordinates</a></li>
 <li><a class="reference internal" href="#tapering">Tapering</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#warning-on-large-file-sets">Warning on large file sets</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
 </ul>
 </li>
@@ -338,7 +349,7 @@ weights, make the blendfile like this</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -356,9 +367,9 @@ weights, make the blendfile like this</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

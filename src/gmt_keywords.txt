@@ -1,4 +1,4 @@
-#	$Id: gmt_keywords.txt 12822 2014-01-31 23:39:56Z remko $
+#	$Id: gmt_keywords.txt 13556 2014-09-28 17:56:25Z remko $
 #
 # List of all GMT 5 defaults parameters.
 #
@@ -24,8 +24,6 @@ COLOR_HSV_MIN_V			# Minimum value assigned for most positive intensity value
 DIR_DATA			# Colon-separated list of dirs where we look for data
 DIR_DCW				# Location of DCW file
 DIR_GSHHG			# Location of GSHHG files
-DIR_TMP				# Where to write temporary files
-DIR_USER			# User dir with custom settings and fonts
 #-------------------------------------------------------
 # FONT Group: Fonts and sizes for plotting
 #-------------------------------------------------------

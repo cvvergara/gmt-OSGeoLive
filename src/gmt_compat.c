@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_compat.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_compat.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@
 EXTERN_MSC int GMT_gmtdp (void *V_API, int mode, void *args);
 EXTERN_MSC int GMT_minmax (void *V_API, int mode, void *args);
 EXTERN_MSC int GMT_gmtstitch (void *V_API, int mode, void *args);
+EXTERN_MSC int GMT_gmt2rgb (void *V_API, int mode, void *args);
 
 int GMT_gmtdp (void *V_API, int mode, void *args)
 {	/* This was the GMT4 name */
@@ -37,7 +38,7 @@ int GMT_gmtdp (void *V_API, int mode, void *args)
 		GMT_Report (API, GMT_MSG_COMPAT, "Warning: module gmtdp is deprecated; use gmtsimplify.\n");
 		return (GMT_Call_Module (API, "gmtsimplify", mode, args));
 	}
-	GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: gmtdpi\n");
+	GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: gmtdp\n");
 	return (GMT_NOT_A_VALID_MODULE);
 }
 
@@ -60,5 +61,16 @@ int GMT_gmtstitch (void *V_API, int mode, void *args)
 		return (GMT_Call_Module (API, "gmtconnect", mode, args));
 	}
 	GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: gmtstitch\n");
+	return (GMT_NOT_A_VALID_MODULE);
+}
+
+int GMT_gmt2rgb (void *V_API, int mode, void *args)
+{	/* This was the GMT4 name */
+	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	if (GMT_compat_check (API->GMT, 4)) {
+		GMT_Report (API, GMT_MSG_COMPAT, "Warning: module gmt2rgb is deprecated; use grd2rgb.\n");
+		return (GMT_Call_Module (API, "grd2rgb", mode, args));
+	}
+	GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: gmt2rgb\n");
 	return (GMT_NOT_A_VALID_MODULE);
 }

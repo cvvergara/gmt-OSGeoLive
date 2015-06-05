@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 12822 2014-01-31 23:39:56Z remko $
+# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -50,11 +50,17 @@ if (EXISTS ${GMT_INSTALL_EXTERNAL_DOC})
 		USE_SOURCE_PERMISSIONS)
 endif (EXISTS ${GMT_INSTALL_EXTERNAL_DOC})
 
+if (NOT WIN32)
+	# Do not install .bat files
+	set (_exclude_bat "*.bat")
+endif (NOT WIN32)
+
 # Install target for examples
 install (DIRECTORY examples
 	DESTINATION ${GMT_DOCDIR}
 	COMPONENT Documentation
 	USE_SOURCE_PERMISSIONS
+	PATTERN "${_exclude_bat}" EXCLUDE
 	PATTERN ".svn" EXCLUDE
 	PATTERN "CMakeLists.txt" EXCLUDE
 	REGEX "[.](cmake|in|ps)$" EXCLUDE)

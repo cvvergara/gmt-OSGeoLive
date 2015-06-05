@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# $Id: gmt_make_module_src.sh 12691 2014-01-01 09:41:00Z pwessel $
+# $Id: gmt_make_module_src.sh 13913 2015-01-10 09:05:01Z pwessel $
 #
-# Copyright (c) 2012-2014
+# Copyright (c) 2012-2015
 # by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
@@ -37,8 +37,8 @@ if [ "$U_TAG" = "SUPPLEMENTS" ]; then	# Look in directories under the current di
 	grep "#define THIS_MODULE_LIB		" */*.c | awk -F: '{print $1}' | sort > /tmp/tmp.lis
 	LIB_STRING="GMT suppl: The official supplements to the Generic Mapping Tools"
 elif [ "$U_TAG" = "CORE" ]; then	# Just look in current dir and set LIB_STRING
-	grep "#define THIS_MODULE_LIB		" */*.c | awk -F: '{print $1}' | sort > /tmp/tmp.lis
-	LIB_STRING="GMT core: The main section of the Generic Mapping Tools"
+	grep "#define THIS_MODULE_LIB		" *.c | awk -F: '{print $1}' | sort > /tmp/tmp.lis
+	LIB_STRING="GMT core: The main modules of the Generic Mapping Tools"
 else	# Just look in current dir (for user extension)
 	echo "Error: Tag must be either core or supplements"
 	exit

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# $Id: gmtest.in 12688 2013-12-29 18:55:29Z pwessel $
+# $Id: gmtest.in 13990 2015-01-26 18:00:58Z pwessel $
 #
 # Bash script inclusion to test all GMT examples.
 # It sets the environment such that the examples are created as in the manual.
@@ -19,9 +19,9 @@ fi
 shift
 
 # choose awk
-if type gawk 2>&1 >/dev/null ; then
+if type gawk >/dev/null 2>&1 ; then
   export AWK=gawk
-elif type nawk 2>&1 >/dev/null ; then
+elif type nawk >/dev/null 2>&1 ; then
   export AWK=nawk
 else
   export AWK=awk
@@ -54,21 +54,21 @@ function gmt()
     valgrind ${VALGRIND_ARGS} --log-file=valgrind_%p.log \
       --dsymutil=yes @GMT_BINARY_DIR@/src/gmt "$@"
   else
-    @GMT_BINARY_DIR@/src/gmt "$@"
+    "@GMT_BINARY_DIR@/src/gmt" "$@"
   fi
 }
 
 # gmtlogo wrapper
 function gmtlogo()
 {
-  @GMT_SOURCE_DIR@/src/gmtlogo "$@"
+  "@GMT_SOURCE_DIR@/src/gmtlogo" "$@"
 }
 
 # export function definitions to subshells
 export -f gmt gmtlogo
 
 # invalidate module calls without "gmt" prefix, which would bypass gmt from build dir
-. @GMT_SOURCE_DIR@/test/invalidate_modules.sh
+. "@GMT_SOURCE_DIR@/test/invalidate_modules.sh"
 
 # Convert PS to PDF
 function make_pdf()

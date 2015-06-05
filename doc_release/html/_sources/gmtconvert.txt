@@ -15,7 +15,7 @@ Synopsis
 
 **gmtconvert** [ *table* ] [ **-A** ] [ **-D**\ [*template*] ]
 [ **-E**\ [**f**\ \|\ **l**\ \|\ **m**\ *stride*] ] [ **-L** ]
-[ **-I**\ [**tsr**\ ] ] [ **-N** ] [ **-Q**\ [**~**\ ]*selection* ]
+[ **-I**\ [**tsr**\ ] ] [ **-Q**\ [**~**\ ]*selection* ]
 [ **-S**\ [**~**\ ]\ *"search string"* \|
 **-S**\ [**~**\ ]/\ *regexp*/[**i**\ ] ]
 [ **-T** ]
@@ -93,9 +93,6 @@ Optional Arguments
 **-L**
     Only output a listing of all segment header records and no data
     records (requires ASCII data).
-
-**-N**
-    Do not write records that only contain NaNs in every field [Default writes all records].
 
 **-Q**\ [**~**\ ]*selection*
     Only write segments whose number is included in *selection* and skip
@@ -222,6 +219,31 @@ To extract segments 20 to 40 in steps of 2, plus segment 0 in a file, try
    ::
 
     gmt gmtconvert lots_of_segments.txt -Q0,20:2:40 > my_segments.txt
+
+
+To extract the attribute ELEVATION from an ogr gmt file like this
+
+   ::
+
+    # @VGMT1.0 @GPOINT
+    ...
+    # @NELEVATION|DISPX|DISPY
+    # @Tdouble|double|double
+    # FEATURE_DATA
+    # @D4.945000|-106500.00000000|-32700.00000000
+    -9.36890245902635 39.367156766570389
+
+do
+
+   ::
+
+    gmt gmtconvert file.gmt -a2=ELEVATION > xyz.dat
+
+or just
+
+   ::
+
+    gmt gmtconvert file.gmt -aELEVATION > xyz.dat
 
 See Also
 --------

@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_datalist.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: x2sys_datalist.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *      Copyright (c) 1999-2014 by P. Wessel
+ *      Copyright (c) 1999-2015 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -129,7 +129,7 @@ int GMT_x2sys_datalist_parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *
 			/* Common parameters */
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -145,13 +145,13 @@ int GMT_x2sys_datalist_parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *
 				Ctrl->F.flags = strdup (opt->arg);
 				break;
 			case 'I':
-				if ((Ctrl->I.active = GMT_check_filearg (GMT, 'I', opt->arg, GMT_IN)))
+				if ((Ctrl->I.active = GMT_check_filearg (GMT, 'I', opt->arg, GMT_IN, GMT_IS_TEXTSET)))
 					Ctrl->I.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'L':	/* Crossover correction table */
-				if ((Ctrl->L.active = GMT_check_filearg (GMT, 'L', opt->arg, GMT_IN)))
+				if ((Ctrl->L.active = GMT_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_TEXTSET)))
 					Ctrl->L.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -419,6 +419,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 		A = GMT_memory (GMT, NULL, s->n_out_columns, struct X2SYS_ADJUST *);
 		adj_col = GMT_memory (GMT, NULL, s->n_out_columns, bool);
 	}
+	if (Ctrl->E.active) GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Enable segment headers */
 	
 	last_col = s->n_out_columns - 1;	/* column number of last output column */
 	
@@ -440,7 +441,10 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 			for (k = 0; k < s->n_out_columns; k++) adj_col[k] = x2sys_load_adjustments (GMT, X2SYS_HOME, Ctrl->T.TAG, trk_name[trk_no], s->info[s->out_order[k]].name, &A[k]);
 		}
 
-		if (Ctrl->E.active) GMT_write_segmentheader (GMT, GMT->session.std[GMT_OUT], s->n_fields);
+		if (Ctrl->E.active) {	/* Insert a segment header between files */
+			sprintf (GMT->current.io.segment_header, "%s\n", trk_name[trk_no]);
+			GMT_write_segmentheader (GMT, GMT->session.std[GMT_OUT], s->n_fields);
+		}
 
 		cumulative_dist = 0.0;
 		for (row = 0; row < p.n_rows; row++) {	/* Process all records in this file */

@@ -98,7 +98,7 @@ Optional Arguments
     **-G**\ c:\\programs\\gs\\gs9.02\\bin\\gswin64c). WARNING: because
     of the poor decision of embedding the bits on the gs exe name we
     cannot satisfy both the 32 and 64 bits GhostScript executable names.
-    So in case of ’get from registry’ failure the default name (when no
+    So in case of 'get from registry' failure the default name (when no
     **-G** is used) is the one of the 64 bits version, or gswin64c
 
 **-I**
@@ -138,11 +138,11 @@ Optional Arguments
     **E** means EPS with PageSize command, **f** means PDF, **F** means
     multi-page PDF, **j** means JPEG, **g** means PNG, **G** means
     transparent PNG (untouched regions are transparent), **m** means
-    PPM, and **t** means TIFF [default is JPEG]. For **bjgt** you can
-    append - to get a grayscale image only. The EPS format can be
+    PPM, and **t** means TIFF [default is JPEG]. To **bjgt** you can
+    append **-** in order to get a grayscale image. The EPS format can be
     combined with any of the other formats. For example, **-Tef**
     creates both an EPS and a PDF file. The **-TF** creates a multi-page
-    PDF file from the list of input PS or PDF files. It requires **-F** option.
+    PDF file from the list of input PS or PDF files. It requires the **-F** option.
 
 .. |Add_-V| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-V.rst_
@@ -155,7 +155,7 @@ Optional Arguments
     with the **-B** option is that it creates a frame and very likely
     its annotations. That introduces pixels outside the map data extent,
     and therefore the map extents estimation will be wrong. To avoid
-    this problem use --MAP_FRAME_TYPE=inside option which plots all
+    this problem use -\ -MAP_FRAME_TYPE=inside option which plots all
     annotations and ticks inside the image and therefore does not
     compromise the coordinate computations. Pay attention also to the
     cases when the plot has any of the sides with whites only because
@@ -170,7 +170,7 @@ Optional Arguments
     and create a geoTIFF image right away. The output file will have a
     .tiff extension.
 
-    The world file naming follows the convention of jamming a ’w’ in the
+    The world file naming follows the convention of jamming a 'w' in the
     file extension. So, if output is tif **-Tt** the world file is a
     .tfw, for jpeg we have a .jgw and so on. This option automatically
     sets **-A** **-P**.
@@ -201,7 +201,7 @@ Optional Arguments
     Further notes on the creation of georeferenced rasters.
     **ps2raster** can create a georeferenced raster image with a world
     file OR uses GDAL to convert the GMT PostScript file to geotiff.
-    GDAL uses Proj.4 for it’s projection library. To provide with the
+    GDAL uses Proj.4 for its projection library. To provide with the
     information it needs to do the georeferencing, GMT 4.5 embeds a
     comment near the start of the PostScript file defining the
     projection using Proj.4 syntax. Users with pre-GMT v4.5 PostScript
@@ -209,14 +209,20 @@ Optional Arguments
     **ps2raster** requires by manually editing a line into the
     PostScript file, prefixed with %%PROJ.
 
-    For example the command gmt pscoast -JM0/12c -R-10/-4/37/43
-    -W1 -Di -Bg30m --MAP_FRAME_TYPE=inside > cara.ps
+    For example the command
+    
+       ::
+       
+        gmt pscoast -JM0/12c -R-10/-4/37/43 \
+        -W1 -Di -Bg30m --MAP_FRAME_TYPE=inside > cara.ps
 
     adds this comment line
 
-    %%PROJ: merc -10.0 -4.0 37.0 43.0 -1113194.908 -445277.963
-    4413389.889 5282821.824 +proj=merc +lon_0=0 +k=-1 +x_0=0 +y_0=0
-    +a=6378137.0 +b=6356752.314245
+       ::
+
+        %%PROJ: merc -10.0 -4.0 37.0 43.0 -1113194.908 -445277.963
+        4413389.889 5282821.824 +proj=merc +lon_0=0 +k=-1 +x_0=0 +y_0=0
+        +a=6378137.0 +b=6356752.314245
 
     where 'merc' is the keyword for the coordinate conversion; the 2 to
     5th elements contain the map limits, 6 to 9th the map limits in
@@ -303,7 +309,8 @@ To create a Polar Stereographic geotiff file of Patagonia
 
    ::
 
-    gmt pscoast -JS-55/-60/15c -R-77/-55/-57.5/-48r -Di -Gred -P -Bg2 --MAP_FRAME_TYPE=inside > patagonia.ps
+    gmt pscoast -JS-55/-60/15c -R-77/-55/-57.5/-48r -Di -Gred -P -Bg2 \
+    --MAP_FRAME_TYPE=inside > patagonia.ps
     gmt ps2raster patagonia.ps -Tt -W+g -V
 
 To create a simple KMZ file for use in Google Earth, try

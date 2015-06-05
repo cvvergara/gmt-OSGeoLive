@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtconvert.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmtconvert.c 13935 2015-01-13 14:55:32Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,7 @@ struct GMTCONVERT_CTRL {
 	} A;
 	struct D {	/* -D[<template>] */
 		bool active;
+		unsigned int mode;
 		char *name;
 	} D;
 	struct E {	/* -E */
@@ -68,9 +69,6 @@ struct GMTCONVERT_CTRL {
 		bool active;
 		unsigned int mode;
 	} I;
-	struct N {	/* -N */
-		bool active;
-	} N;
 	struct Q {	/* -Q<selections> */
 		bool active;
 		struct GMT_INT_SELECTION *select;
@@ -107,7 +105,7 @@ int GMT_gmtconvert_usage (struct GMTAPI_CTRL *API, int level)
 {
 	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: gmtconvert [<table>] [-A] [-D[<template>]] [-E[f|l|m<stride>]] [-I[tsr]] [-L] [-N] [-Q[~]<selection>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "usage: gmtconvert [<table>] [-A] [-D[<template>]] [-E[f|l|m<stride>]] [-I[tsr]] [-L] [-Q[~]<selection>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-S[~]\"search string\"] [-T] [%s] [%s]\n\t[%s] [%s] [%s]\n", GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_f_OPT, GMT_g_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT, GMT_colon_OPT);
 
@@ -134,7 +132,6 @@ int GMT_gmtconvert_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t     r: reverse the order of records within each segment on output [Default].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Output only segment headers and skip all data records.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Requires ASCII input data [Output headers and data].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Skip records where all fields == NaN [Write all records].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Only output specificed segment numbers in <selection> [All].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   <selection> syntax is [~]<range>[,<range>,...] where each <range> of items is\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   either a single number, start-stop (for range), start:step:stop (for stepped range),\n");
@@ -169,10 +166,10 @@ int GMT_gmtconvert_parse (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *Ctrl, st
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 			case '>':	/* Got named output file */
-				if (n_files++ == 0 && GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT))
+				if (n_files++ == 0 && GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT, GMT_IS_DATASET))
 					Ctrl->Out.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -213,7 +210,7 @@ int GMT_gmtconvert_parse (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *Ctrl, st
 				Ctrl->I.active = true;
 				for (k = 0; opt->arg[k]; k++) {
 					switch (opt->arg[k]) {
-						case 'f': Ctrl->I.mode |= INV_TBLS; break;	/* Reverse table order */
+						case 't': Ctrl->I.mode |= INV_TBLS; break;	/* Reverse table order */
 						case 's': Ctrl->I.mode |= INV_SEGS; break;	/* Reverse segment order */
 						case 'r': Ctrl->I.mode |= INV_ROWS; break;	/* Reverse record order */
 						default:
@@ -226,9 +223,6 @@ int GMT_gmtconvert_parse (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *Ctrl, st
 				break;
 			case 'L':	/* Only output segment headers */
 				Ctrl->L.active = true;
-				break;
-			case 'N':	/* Skip all-NaN records */
-				Ctrl->N.active = true;
 				break;
 			case 'Q':	/* Only report for specified segment numbers */
 				Ctrl->Q.active = true;
@@ -248,6 +242,39 @@ int GMT_gmtconvert_parse (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *Ctrl, st
 		}
 	}
 	
+	if (Ctrl->D.active) {	/* Validate the name template, if given */
+		/* Must write individual segments to separate files so create the needed name template */
+		unsigned int n_formats = 0;
+		if (!Ctrl->D.name) {	/* None give, auto-assign to segment files with extension based on binary or not */
+			Ctrl->D.name = GMT->common.b.active[GMT_OUT] ?
+				strdup ("gmtconvert_segment_%d.bin") : strdup ("gmtconvert_segment_%d.txt");
+			Ctrl->D.mode = GMT_WRITE_SEGMENT;
+		}
+		else { /* Ctrl->D.name given, need to check correct format */
+			char *p = Ctrl->D.name;
+			while ( (p = strchr (p, '%')) ) {
+				/* found %, now check format */
+				++p;	/* Skip the % sign */
+				p += strspn (p, "0123456789."); /* span past digits and decimal */
+				if ( strspn (p, "diu") == 0 ) {
+					/* No valid conversion specifier */
+					GMT_Report (API, GMT_MSG_NORMAL,
+						"Syntax error: Use of unsupported conversion specifier at position %" PRIuS " in format string '%s'.\n",
+						p - Ctrl->D.name + 1, Ctrl->D.name);
+					n_errors++;
+				}
+				++n_formats;
+			}
+			if ( n_formats == 0 || n_formats > 2 ) {	/* Incorrect number of format specifiers */
+				GMT_Report (API, GMT_MSG_NORMAL,
+					"Syntax error: Incorrect number of format specifiers in format string '%s'.\n",
+					Ctrl->D.name);
+				n_errors++;
+			}
+			/* The io_mode tells the i/o function to split tables or segments into files, if requested */
+			Ctrl->D.mode = (n_formats == 2) ? GMT_WRITE_TABLE_SEGMENT: GMT_WRITE_SEGMENT;
+		}
+	}
 	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0, "Syntax error: Must specify number of columns in binary input data (-bi)\n");
 	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_IN] && (Ctrl->L.active || Ctrl->S.active), "Syntax error: -L or -S requires ASCII input data\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->D.active && Ctrl->D.name && !strstr (Ctrl->D.name, "%"), "Syntax error: -D Output template must contain %%d\n");
@@ -445,48 +472,13 @@ int GMT_gmtconvert (void *V_API, int mode, void *args)
 
 	/* Now ready for output */
 
-	if (Ctrl->D.active) {
-		/* TODO: move this block to GMT_gmtconvert_parse() and replace exit() with
-		 * Return() */
-		/* Must write individual segments to separate files so create the needed template */
-		unsigned int n_formats = 0;
-		if (!Ctrl->D.name) {
-			Ctrl->D.name = GMT->common.b.active[GMT_OUT] ?
-					strdup ("gmtconvert_segment_%d.bin") : strdup ("gmtconvert_segment_%d.txt");
-			D[GMT_OUT]->io_mode = GMT_WRITE_SEGMENT;
-		}
-		else { /* Ctrl->D.name */
-			/* need to check correct format */
-			char *p = Ctrl->D.name;
-			while ( (p = strchr (p, '%')) ) {
-				/* found %, now check format */
-				++p;	/* Skip the % sign */
-				p += strspn (p, "0123456789."); /* span past digits */
-				if ( strspn (p, "diu") == 0 ) {
-					/* no valid conversion specifier */
-					GMT_Report (API, GMT_MSG_NORMAL,
-							"Syntax error: Use of unsupported conversion specifier at position %" PRIuS " in format string '%s'.\n",
-							p - Ctrl->D.name + 1, Ctrl->D.name);
-					exit (EXIT_FAILURE);
-				}
-				++n_formats;
-			}
-			if ( n_formats == 0 || n_formats > 2 ) {
-				/* Incorrect number of format specifiers */
-					GMT_Report (API, GMT_MSG_NORMAL,
-							"Syntax error: Incorrect number of format specifiers in format string '%s'.\n",
-							Ctrl->D.name);
-					exit (EXIT_FAILURE);
-			}
-			D[GMT_OUT]->io_mode = (n_formats == 2) ? GMT_WRITE_TABLE_SEGMENT: GMT_WRITE_SEGMENT;
-			/* The io_mode tells the i/o function to split segments into files */
-			if (Ctrl->Out.file)
-				free (Ctrl->Out.file);
-			Ctrl->Out.file = strdup (Ctrl->D.name);
-		} /* Ctrl->D.name */
+	if (Ctrl->D.active) {	/* Set composite name and io-mode */
+		if (Ctrl->Out.file)
+			free (Ctrl->Out.file);
+		Ctrl->Out.file = strdup (Ctrl->D.name);
+		D[GMT_OUT]->io_mode = Ctrl->D.mode;
 	}
-	else {
-		/* Just register output to stdout or given file via ->outfile */
+	else {	/* Just register output to stdout or given file via ->outfile */
 		if (GMT->common.a.output)
 			D[GMT_OUT]->io_mode = GMT_WRITE_OGR;
 	}

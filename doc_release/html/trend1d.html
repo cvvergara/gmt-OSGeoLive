@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>trend1d &mdash; GMT 5.1.1 documentation</title>
+    <title>trend1d &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,10 +30,10 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="T" href="T.html" />
     <link rel="next" title="trend2d" href="trend2d.html" />
-    <link rel="prev" title="testapi" href="testapi.html" /> 
+    <link rel="prev" title="T" href="T.html" /> 
   </head>
   <body>
     <div class="related">
@@ -46,11 +46,11 @@
           <a href="trend2d.html" title="trend2d"
              accesskey="N">next</a> </li>
         <li class="right" >
-          <a href="testapi.html" title="testapi"
+          <a href="T.html" title="T"
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="T.html" accesskey="U">T</a> &raquo;</li>
 <li class="right">
@@ -149,7 +149,7 @@ fit]. [Default reads only the first 2 columns.]</dd>
 <dd>Select binary input. [Default is 2 (or 3 if <strong>-W</strong> is set) columns].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output. [Default is 1-5 columns as given by <strong>-F</strong>].</dd>
 </dl>
 <dl class="docutils">
@@ -162,19 +162,19 @@ fit]. [Default reads only the first 2 columns.]</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] <a class="reference internal" href="gmt.html#colon-full"><em>(more ...)</em></a></dt>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -292,8 +292,8 @@ Revised Edition, Academic Press, San Diego.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="testapi.html"
-                        title="previous chapter">testapi</a></p>
+  <p class="topless"><a href="T.html"
+                        title="previous chapter">T</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="trend2d.html"
                         title="next chapter">trend2d</a></p>
@@ -316,11 +316,11 @@ Revised Edition, Academic Press, San Diego.</p>
           <a href="trend2d.html" title="trend2d"
              >next</a> </li>
         <li class="right" >
-          <a href="testapi.html" title="testapi"
+          <a href="T.html" title="T"
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="T.html" >T</a> &raquo;</li>
 <li class="right">
@@ -338,9 +338,9 @@ Revised Edition, Academic Press, San Diego.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

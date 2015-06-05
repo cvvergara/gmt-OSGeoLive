@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(10) A geographical bar graph plot &mdash; GMT 5.1.1 documentation</title>
+    <title>(10) A geographical bar graph plot &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(11) A 3-D RGB color cube" href="ex11.html" />
     <link rel="prev" title="(9) Time-series along tracks" href="ex09.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -98,19 +98,19 @@ Our script that produces Figure ex_10 reads:</p>
 <span class="nv">ps</span><span class="o">=</span>example_10.ps
 gmt pscoast -Rd -JX8id/5id -Dc -Sazure2 -Gwheat -Wfaint -A5000 -p200/40 -K &gt; <span class="nv">$ps</span>
 <span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $3+$4+$5+$6+$7}&#39;</span> languages.txt <span class="se">\</span>
-	| gmt pstext -R -J -O -K -p -Gwhite@30 -D-0.25i/0 <span class="se">\</span>
+	<span class="p">|</span> gmt pstext -R -J -O -K -p -Gwhite@30 -D-0.25i/0 <span class="se">\</span>
 	-F+f30p,Helvetica-Bold,firebrick<span class="o">=</span>thinner+jRM &gt;&gt; <span class="nv">$ps</span>
 gmt psxyz languages.txt -R-180/180/-90/90/0/2500 -J -JZ2.5i -So0.3i -Gpurple -Wthinner <span class="se">\</span>
 	--FONT_TITLE<span class="o">=</span>30p,Times-Bold --MAP_TITLE_OFFSET<span class="o">=</span>-0.7i -O -K -p --FORMAT_GEO_MAP<span class="o">=</span>dddF <span class="se">\</span>
 	-Bx60 -By30 -Bza500+lLanguages -BWSneZ+t<span class="s2">&quot;World Languages By Continent&quot;</span> &gt;&gt; <span class="nv">$ps</span>
 <span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $3+$4, $3}&#39;</span> languages.txt <span class="se">\</span>
-	| gmt psxyz -R -J -JZ -So0.3ib -Gblue -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
+	<span class="p">|</span> gmt psxyz -R -J -JZ -So0.3ib -Gblue -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
 <span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $3+$4+$5, $3+$4}&#39;</span> languages.txt <span class="se">\</span>
-	| gmt psxyz -R -J -JZ -So0.3ib -Gdarkgreen -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
+	<span class="p">|</span> gmt psxyz -R -J -JZ -So0.3ib -Gdarkgreen -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
 <span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $3+$4+$5+$6, $3+$4+$5}&#39;</span> languages.txt <span class="se">\</span>
-	| gmt psxyz -R -J -JZ -So0.3ib -Gyellow -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
+	<span class="p">|</span> gmt psxyz -R -J -JZ -So0.3ib -Gyellow -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
 <span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $3+$4+$5+$6+$7, $3+$4+$5+$6}&#39;</span> languages.txt <span class="se">\</span>
-	| gmt psxyz -R -J -JZ -So0.3ib -Gred -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
+	<span class="p">|</span> gmt psxyz -R -J -JZ -So0.3ib -Gred -Wthinner -O -K -p &gt;&gt; <span class="nv">$ps</span>
 gmt pslegend -R -J -JZ -D-170/-80/1.35i/0/BL -O --FONT<span class="o">=</span>Helvetica-Bold <span class="se">\</span>
 	-F+glightgrey+pthinner+s-4p/-6p/grey20@40 -p legend.txt &gt;&gt; <span class="nv">$ps</span>
 </pre></div>
@@ -156,7 +156,7 @@ gmt pslegend -R -J -JZ -D-170/-80/1.35i/0/BL -O --FONT<span class="o">=</span>He
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -174,9 +174,9 @@ gmt pslegend -R -J -JZ -D-170/-80/1.35i/0/BL -O --FONT<span class="o">=</span>He
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

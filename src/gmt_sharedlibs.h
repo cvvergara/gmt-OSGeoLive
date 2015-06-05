@@ -1,6 +1,6 @@
-/* $Id: gmt_sharedlibs.h 12822 2014-01-31 23:39:56Z remko $
+/* $Id: gmt_sharedlibs.h 13846 2014-12-28 21:46:54Z pwessel $
  *
- * Copyright (c) 2012-2014
+ *	Copyright (c) 2012-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */

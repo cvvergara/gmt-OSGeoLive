@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: nearneighbor.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: nearneighbor.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -177,7 +177,7 @@ int GMT_nearneighbor_parse (struct GMT_CTRL *GMT, struct NEARNEIGHBOR_CTRL *Ctrl
 		switch (opt->option) {
 
 			case '<':	/* Input file(s) */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -192,7 +192,7 @@ int GMT_nearneighbor_parse (struct GMT_CTRL *GMT, struct NEARNEIGHBOR_CTRL *Ctrl
 				}
 				break;
 			case 'G':	/* Output file */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -210,7 +210,7 @@ int GMT_nearneighbor_parse (struct GMT_CTRL *GMT, struct NEARNEIGHBOR_CTRL *Ctrl
 					strncpy (GMT->common.n.BC, opt->arg, 4U);
 					/* We turn on geographic coordinates if -Lg is given by faking -fg */
 					/* But since GMT_parse_f_option is private to gmt_init and all it does */
-					/* in this case are 2 lines bellow we code it here */
+					/* in this case are 2 lines below we code it here */
 					if (!strcmp (GMT->common.n.BC, "g")) {
 						GMT_set_geographic (GMT, GMT_IN);
 						GMT_set_geographic (GMT, GMT_OUT);
@@ -263,7 +263,7 @@ int GMT_nearneighbor (void *V_API, int mode, void *args)
 	int col_0, row_0, row, col, row_end, col_end, ii, jj, error = 0;
 	unsigned int k, rowu, colu, d_row, sector, y_wrap, max_d_col, x_wrap, *d_col = NULL;
 	bool wrap_180, replicate_x, replicate_y;
-	size_t n_alloc = GMT_CHUNK;
+	size_t n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 
 	uint64_t ij, ij0, kk, n, n_read, n_almost, n_none, n_set, n_filled;
 

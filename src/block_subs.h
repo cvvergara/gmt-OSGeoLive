@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: block_subs.h 12822 2014-01-31 23:39:56Z remko $
+ *    $Id: block_subs.h 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -123,6 +123,15 @@ static char *blk_name[BLK_N_ITEMS] =
 };
 #endif
 
+#if defined(BLOCKMODE)	/* Only used by blockmode */
+enum Blockmode_mode {
+	BLOCKMODE_DEF  = -2,
+	BLOCKMODE_LOW  = -1,
+	BLOCKMODE_AVE  = 0,
+	BLOCKMODE_HIGH = +1
+};
+#endif
+
 #if defined(BLOCKMEAN)	/* Only used by blockmean */
 enum GMT_enum_blks {BLK_Z	= 0,
 	BLK_W		= 1,
@@ -164,6 +173,9 @@ void * NEW_BLK (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control
 	C = GMT_memory (GMT, NULL, 1, struct  BLOCK_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
+#if defined(BLOCKMODE)	/* Only used by blockmode */
+	C->D.mode = BLOCKMODE_LOW;
+#endif
 #if defined(BLOCKMEDIAN)	/* Initialize default to 0.5, i.e., the median */
 	C->T.quantile = 0.5;
 #endif

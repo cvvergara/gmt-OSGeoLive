@@ -37,7 +37,7 @@ Description
 -----------
 
 **gmt2kml** reads one or more GMT table file and converts them to a
-single output file using Google Earth’s KML format. Data may represent
+single output file using Google Earth's KML format. Data may represent
 points, lines, or polygons, and you may specify additional attributes
 such as title, altitude mode, colors, pen widths, transparency, regions,
 and data descriptions. You may also extend the feature down to ground
@@ -125,6 +125,7 @@ Optional Arguments
     immediately following the data coordinates and they will be encoded
     in the KML file as Extended Data sets, whose attributes will be
     available in the Google Earth balloon when the item is selected.
+    This option is not available unless input is an ASCII file.
 
 **-N**\ [-\|+\|\ *name\_template*\ \|\ *name*]
     By default, if segment headers contain a **-L**"label string" then
@@ -144,7 +145,8 @@ Optional Arguments
     point number (symbols) appearing where %d is placed, (4) give no
     arguments to turn symbol labeling off; line segments will still be
     named. Note: if **-N-** is used with **-L** then the label must
-    appear before the extended data columns.
+    appear before the extended data columns.  Also note that options
+    (1) and (2) are not available unless input is an ASCII file.
 
 **-O**
     Appended KML code to an existing KML file [initialize a new KML file].

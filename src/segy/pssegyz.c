@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegyz.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: pssegyz.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *    Copyright (c) 1999-2014 by T. Henstock
+ *    Copyright (c) 1999-2015 by T. Henstock
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* pssegyzz program to plot segy files in 3d in postscript with variable trace spacing option
@@ -30,7 +30,7 @@
  *		2.2 7/30/2010 Ported to GMT 5 P. Wessel (global variables removed)
  *
  * This program is free software and may be copied, modified or redistributed
- * under the terms of the GNU public license, see http://www.gnu.org
+ * under the terms of the GNU LGPL license, see http://www.gnu.org
  */
 
 #define THIS_MODULE_NAME	"pssegyz"
@@ -195,7 +195,7 @@ int GMT_pssegyz_parse (struct GMTAPI_CTRL *C, struct PSSEGYZ_CTRL *Ctrl, struct 
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -297,7 +297,7 @@ int GMT_pssegyz_parse (struct GMTAPI_CTRL *C, struct PSSEGYZ_CTRL *Ctrl, struct 
 				break;
 			case 'T':	/* plot traces only at listed locations */
 				Ctrl->T.active = true;
-				Ctrl->T.file = strdup (opt->arg);
+				if (opt->arg[0]) Ctrl->T.file = strdup (opt->arg);
 				break;
 			case 'W':
 				Ctrl->W.active = true;
@@ -314,7 +314,7 @@ int GMT_pssegyz_parse (struct GMTAPI_CTRL *C, struct PSSEGYZ_CTRL *Ctrl, struct 
 	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify the -R option\n");
 	n_errors += GMT_check_condition (GMT, GMT->common.R.wesn[ZLO]  == GMT->common.R.wesn[ZHI], "Syntax error: Must specify z range in -R option\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->T.active && !Ctrl->T.file, "Syntax error: Option -T requires a file name\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && Ctrl->T.file && !access (Ctrl->T.file, R_OK), "Syntax error: Cannot file file %s\n", Ctrl->T.file);
+	n_errors += GMT_check_condition (GMT, Ctrl->T.active && Ctrl->T.file && access (Ctrl->T.file, R_OK), "Syntax error: Cannot file file %s\n", Ctrl->T.file);
 	n_errors += GMT_check_condition (GMT, Ctrl->E.value < 0.0, "Syntax error -E option: Slop cannot be negative\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->I.active && !Ctrl->F.active, "Syntax error: Must specify -F with -I\n");
 	n_errors += GMT_check_condition (GMT, !Ctrl->F.active && !Ctrl->W.active, "Syntax error: Must specify -F or -W\n");

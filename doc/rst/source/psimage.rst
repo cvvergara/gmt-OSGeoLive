@@ -78,6 +78,7 @@ Optional Arguments
     Draws a rectangular frame around the image with the given pen [no
     frame]. 
 
+.. |Add_-J| replace:: (Used only with **-p**)
 .. include:: explain_-J.rst_
 
 .. include:: explain_-Jz.rst_
@@ -96,8 +97,8 @@ Optional Arguments
 
 .. include:: explain_-P.rst_
 
-.. |Add_-Rgeo| unicode:: 0x20 .. just an invisible code
-.. include:: explain_-Rgeo.rst_
+.. |Add_-R| replace:: (Used only with **-p**)
+.. include:: explain_-R.rst_
 
 .. |Add_-Rz| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-Rz.rst_

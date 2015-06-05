@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: blockmedian.c 12822 2014-01-31 23:39:56Z remko $
+ *    $Id: blockmedian.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -87,7 +87,7 @@ int GMT_blockmedian_parse (struct GMT_CTRL *GMT, struct BLOCKMEDIAN_CTRL *Ctrl, 
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -162,6 +162,7 @@ void median_output (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *h, uint64_t fi
 	uint64_t node, n_in_cell, node1;
 	unsigned int k, k_for_xy;
 	int way;
+	GMT_UNUSED(GMT);
 
 	/* Remember: Data are already sorted on z for each cell */
 
@@ -339,6 +340,8 @@ int GMT_blockmedian (void *V_API, int mode, void *args)
 	sid_col = (Ctrl->W.weighted[GMT_IN]) ? 4 : 3;	/* Column with integer source id [if -Es is set] */
 	n_read = n_pitched = 0;	/* Initialize counters */
 
+	GMT->session.min_meminc = GMT_INITIAL_MEM_ROW_ALLOC;	/* Start by allocating a 32 Mb chunk */ 
+
 	/* Read the input data */
 
 	do {	/* Keep returning records until we reach EOF */
@@ -385,6 +388,8 @@ int GMT_blockmedian (void *V_API, int mode, void *args)
 
 		n_pitched++;
 	} while (true);
+
+	GMT->session.min_meminc = GMT_MIN_MEMINC;		/* Reset to the default value */
 	
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 		Return (API->error);

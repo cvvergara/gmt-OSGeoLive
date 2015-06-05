@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: psmeca.c 12822 2014-01-31 23:39:56Z remko $
+ *    $Id: psmeca.c 14228 2015-04-22 15:53:10Z remko $
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence
@@ -130,7 +130,7 @@ struct PSMECA_CTRL {
 		bool active;
 		struct GMT_PEN pen;
 	} T2;
- 	struct O2 {	/* -o */
+ 	struct O2 {	/* -Fo */
 		bool active;
 	} O2;
 };
@@ -232,7 +232,7 @@ int GMT_psmeca_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t (y) Best double couple defined from principal axis:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, T_value, T_azim, T_plunge, N_value, N_azim, N_plunge\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     P_value, P_azim, P_plunge, exp, newX, newY, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Use -o option for old (psvelomeca) format (no depth in third column).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Fo option for old (psvelomeca) format (no depth in third column).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally add /fontsize[/offset][u]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default values are /%g/%fp\n", DEFAULT_FONTSIZE, DEFAULT_OFFSET);
 	GMT_Message (API, GMT_TIME_NONE, "\t   fontsize < 0 : no label written;\n");
@@ -271,7 +271,7 @@ int GMT_psmeca_parse (struct GMT_CTRL *GMT, struct PSMECA_CTRL *Ctrl, struct GMT
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -462,8 +462,8 @@ int GMT_psmeca_parse (struct GMT_CTRL *GMT, struct PSMECA_CTRL *Ctrl, struct GMT
 
 	no_size_needed = (Ctrl->S.readmode == READ_CMT || Ctrl->S.readmode == READ_PLANES || Ctrl->S.readmode == READ_AKI || Ctrl->S.readmode == READ_TENSOR || Ctrl->S.readmode == READ_AXIS);
 	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += GMT_check_condition (GMT, !no_size_needed && (Ctrl->S.active > 1 && Ctrl->S.scale <= 0.0), "Syntax error: -S must specify scale\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->Z.active && Ctrl->O2.active, "Syntax error: -Z cannot be combined with -o\n");
+	n_errors += GMT_check_condition (GMT, !no_size_needed && (Ctrl->S.active && Ctrl->S.scale <= 0.0), "Syntax error: -S must specify scale\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->Z.active && Ctrl->O2.active, "Syntax error: -Z cannot be combined with -Fo\n");
 
 	/* Set to default pen where needed */
 
@@ -526,7 +526,7 @@ int GMT_psmeca (void *V_API, int mode, void *args)
 	if ((error = GMT_psmeca_parse (GMT, Ctrl, options))) Return (error);
 
 	/*---------------------------- This is the psmeca main code ----------------------------*/
-	
+
 	GMT_memset (event_title, GMT_BUFSIZ, char);
 	GMT_memset (&meca, 1, st_me);
 	GMT_memset (col, GMT_LEN64*15, char);
@@ -619,7 +619,7 @@ int GMT_psmeca (void *V_API, int mode, void *args)
 		if (new_fmt) {
 			depth = atof (col[GMT_Z]);
 			if (depth < Ctrl->D.depmin || depth > Ctrl->D.depmax) continue;
-			if (Ctrl->Z.active) GMT_get_rgb_from_z (GMT, CPT, depth, Ctrl->G.fill.rgb);
+			if (Ctrl->Z.active) GMT_get_fill_from_z (GMT, CPT, depth, &Ctrl->G.fill);
 			sscanf (string, "%s %[^\n]\n", col[last+1], event_title);
 		}
 		else
@@ -629,27 +629,35 @@ int GMT_psmeca (void *V_API, int mode, void *args)
 
 		if (Ctrl->S.readmode == READ_CMT) {
 			meca.NP1.str = atof (col[2+new_fmt]);
+			if (meca.NP1.str > 180.0) meca.NP1.str -= 360.0; else if (meca.NP1.str < -180.0) meca.NP1.str += 360.0;		/* Strike must be in -180/+180 range*/
 			meca.NP1.dip = atof (col[3+new_fmt]);
 			meca.NP1.rake = atof (col[4+new_fmt]);
+			if (meca.NP1.rake > 180.0) meca.NP1.rake -= 360.0; else if (meca.NP1.rake < -180.0) meca.NP1.rake += 360.0;	/* Rake must be in -180/+180 range*/
 			meca.NP2.str = atof (col[5+new_fmt]);
+			if (meca.NP2.str > 180.0) meca.NP2.str -= 360.0; else if (meca.NP2.str < -180.0) meca.NP2.str += 360.0;		/* Strike must be in -180/+180 range*/
 			meca.NP2.dip = atof (col[6+new_fmt]);
 			meca.NP2.rake = atof (col[7+new_fmt]);
+			if (meca.NP2.rake > 180.0) meca.NP2.rake -= 360.0; else if (meca.NP2.rake < -180.0) meca.NP2.rake += 360.0;	/* Rake must be in -180/+180 range*/
 			meca.moment.mant = atof (col[8+new_fmt]);
 			meca.moment.exponent = atoi(col[9+new_fmt]);
 			if (meca.moment.exponent == 0) meca.magms = atof (col[8+new_fmt]);
 		}
 		else if (Ctrl->S.readmode == READ_AKI) {
 			meca.NP1.str = atof (col[2+new_fmt]);
+			if (meca.NP1.str > 180.0) meca.NP1.str -= 360.0; else if (meca.NP1.str < -180.0) meca.NP1.str += 360.0;		/* Strike must be in -180/+180 range*/
 			meca.NP1.dip = atof (col[3+new_fmt]);
 			meca.NP1.rake = atof (col[4+new_fmt]);
+			if (meca.NP1.rake > 180.0) meca.NP1.rake -= 360.0; else if (meca.NP1.rake < -180.0) meca.NP1.rake += 360.0;	/* Rake must be in -180/+180 range*/
 			meca.magms = atof (col[5+new_fmt]);
 			meca.moment.exponent = 0;
 			define_second_plane (meca.NP1, &meca.NP2);
 		}
 		else if (Ctrl->S.readmode == READ_PLANES) {
 			meca.NP1.str = atof (col[2+new_fmt]);
+			if (meca.NP1.str > 180.0) meca.NP1.str -= 360.0; else if (meca.NP1.str < -180.0) meca.NP1.str += 360.0;		/* Strike must be in -180/+180 range*/
 			meca.NP1.dip = atof (col[3+new_fmt]);
 			meca.NP2.str = atof (col[4+new_fmt]);
+			if (meca.NP2.str > 180.0) meca.NP2.str -= 360.0; else if (meca.NP2.str < -180.0) meca.NP2.str += 360.0;		/* Strike must be in -180/+180 range*/
 			fault = atof (col[5+new_fmt]);
 			meca.magms = atof (col[6+new_fmt]);
 			meca.moment.exponent = 0;
@@ -791,7 +799,7 @@ int GMT_psmeca (void *V_API, int mode, void *args)
 			i = (Ctrl->S.justify == PSL_BC ? 1 : -1);
 			PSL_setfill (PSL, Ctrl->R2.fill.rgb, false);
 			if (Ctrl->R2.active) PSL_plotbox (PSL, plot_x - size * 0.5, plot_y + i * (size * 0.5 + Ctrl->S.offset + Ctrl->S.fontsize / PSL_POINTS_PER_INCH), plot_x + size * 0.5, plot_y + i * (size * 0.5 + Ctrl->S.offset));
-			PSL_plottext (PSL, plot_x, plot_y + i * (size * 0.5 + Ctrl->S.offset), Ctrl->S.fontsize, event_title, angle, 
+			PSL_plottext (PSL, plot_x, plot_y + i * (size * 0.5 + Ctrl->S.offset), Ctrl->S.fontsize, event_title, angle,
 				Ctrl->S.justify, form);
 		}
 
@@ -807,7 +815,7 @@ int GMT_psmeca (void *V_API, int mode, void *args)
 		}
 		event_title[0] = string[0] = '\0';		/* Reset these two in case next record misses "string" */
 	} while (true);
-	
+
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 		Return (API->error);
 	}

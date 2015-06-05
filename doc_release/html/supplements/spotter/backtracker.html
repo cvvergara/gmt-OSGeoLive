@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>backtracker &mdash; GMT 5.1.1 documentation</title>
+    <title>backtracker &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="SPOTTER" href="../../SUP_SPOTTER.html" />
     <link rel="next" title="grdpmodeler" href="grdpmodeler.html" />
     <link rel="prev" title="SPOTTER" href="../../SUP_SPOTTER.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" accesskey="U">SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -78,8 +78,8 @@
 <p>backtracker - Generate forward and backward flowlines and hotspot tracks</p>
 <div class="section" id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
-<p><strong>backtracker</strong> [ <em>table</em> ] <strong>-E</strong><em>rot_file</em> |
-<strong>-e</strong><em>lon</em>/<em>lat</em>/<em>angle</em> [ <strong>-A</strong>[<em>young</em>/<em>old</em>] ] [
+<p><strong>backtracker</strong> [ <em>table</em> ] <strong>-E</strong><em>rot_file</em>|<em>lon</em>/<em>lat</em>/<em>angle</em>
+[ <strong>-A</strong>[<em>young</em>/<em>old</em>] ] [
 <strong>-Df</strong>|<strong>b</strong> ] [ <strong>-F</strong><em>drift.txt</em> ] [
 <strong>-Lf</strong>|<strong>b</strong><em>step</em> ] [ <strong>-N</strong><em>upper_age</em> ] [
 <strong>-Q</strong><em>fixed_age</em> ] [ <strong>-S</strong><em>filestem</em> ] [ <strong>-T</strong><em>zero_age</em> ]
@@ -124,16 +124,14 @@ freedom (<em>df</em>) in fitting the rotation is 0 or not given it is set
 to 10000. Blank lines and records whose first column contains # will
 be ignored. You may prepend a leading + to the filename to indicate
 you wish to invert the rotations.
-Alternatively, give the filename composed of two plate IDs
+Alternative 1: Give the filename composed of two plate IDs
 separated by a hyphen (e.g., PAC-MBL) and we will instead extract
 that rotation from the GPlates rotation database. We return an error
-if the rotation cannot be found.</p>
+if the rotation cannot be found.
+Alternative 2: Specify <em>lon</em>/<em>lat</em>/<em>angle</em>, i.e., the longitude,
+latitude, and opening angle (all in degrees and separated by /) for
+a single total reconstruction rotation.</p>
 </dd>
-<dt><strong>-e</strong><em>lon</em>/<em>lat</em>/<em>angle</em></dt>
-<dd>Alternatively, specify the longitude, latitude, and opening angle
-(all in degrees and separated by /) for a single total
-reconstruction rotation that should be applied to all input points
-(input ages, if present, are ignored).</dd>
 </dl>
 </div>
 <div class="section" id="optional-arguments">
@@ -204,7 +202,7 @@ rotation.</dd>
 <dd>Select binary input. [Default is 3 input columns].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="../mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="../../gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output. [Default is same as input].</dd>
 </dl>
 <dl class="docutils">
@@ -213,23 +211,23 @@ rotation.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="../../gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-o</strong><em>cols</em>[,...] <a class="reference internal" href="../../gmt.html#ocols-full"><em>(more ...)</em></a></dt>
-<dd>Select output columns.</dd>
+<dd>Select output columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] <a class="reference internal" href="../../gmt.html#colon-full"><em>(more ...)</em></a></dt>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -237,6 +235,17 @@ options, then exits.</dd>
 <dt><strong>-</strong><strong>-show-datadir</strong></dt>
 <dd>Print full path to GMT share directory and exit.</dd>
 </dl>
+</div>
+<div class="section" id="id1">
+<h2><a class="reference external" href="#toc11">Geodetic versus Geocentric Coordiinates</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>All spherical rotations are applied to geocentric coordinates.
+This means that incoming data points and grids are considered
+to represent geodetic coordinates and must first
+be converted to geocentric coordinates. Rotations are then applied, and the
+final reconstructed points are converted back to geodetic
+coordinates.  This default behavior can be bypassed if the
+ellipsoid setting <a class="reference internal" href="../../gmt.conf.html#projection-parameters"><em>PROJ_ELLIPSOID</em></a>
+is changed to Sphere.</p>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
@@ -294,6 +303,7 @@ p. 319.</p>
 <li><a class="reference internal" href="#description">Description</a></li>
 <li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
 <li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#id1">Geodetic versus Geocentric Coordiinates</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
 <li><a class="reference internal" href="#references">References</a></li>
@@ -330,7 +340,7 @@ p. 319.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SPOTTER.html" >SPOTTER</a> &raquo;</li>
 <li class="right">
@@ -348,9 +358,9 @@ p. 319.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

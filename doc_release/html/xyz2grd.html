@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>xyz2grd &mdash; GMT 5.1.1 documentation</title>
+    <title>xyz2grd &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="X" href="X.html" />
     <link rel="next" title="GSHHG" href="SUP_GSHHS.html" />
     <link rel="prev" title="X" href="X.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="X.html" accesskey="U">X</a> &raquo;</li>
 <li class="right">
@@ -157,14 +157,21 @@ at each node, respectively. Append <strong>m</strong> or <strong>r</strong> to c
 RMS value at each node, respectively. Append <strong>n</strong> to simply count
 the number of data points that were assigned to each node. Append
 <strong>z</strong> to sum multiple values that belong to the same node.</dd>
+</dl>
+<dl class="docutils">
 <dt><strong>-D</strong><em>xname</em>/<em>yname</em>/<em>zname</em>/<em>scale</em>/<em>offset</em>/<em>invalid</em>/<em>title</em>/<em>remark</em></dt>
-<dd>Give values for <em>xname</em>, <em>yname</em>, <em>zname</em>, <em>scale</em>, <em>offset</em>,
-<em>invalid</em>, <em>title</em>, and <em>remark</em>. To leave some of these values untouched,
+<dd>Give values for <em>xname</em>, <em>yname</em>, <em>zname</em> (give the names of those variables
+and in square bracket their units, e.g., &#8220;distance [km]&#8221;), <em>scale</em> (to multiply grid values after
+read [normally 1]), <em>offset</em> (to add to grid after scaling [normally 0]),
+<em>invalid</em> (a value to represent missing data [NaN]), <em>title</em> (anything you
+like), and <em>remark</em> (anything you like). To leave some of these values untouched,
 leave field blank. Empty fields in the end may be skipped. Alternatively,
 to allow &#8220;/&#8221; to be part of one of the values, use any non-alphanumeric
 character (and not the equal sign) as separator by both starting and ending
 with it. For example:
-<strong>-D</strong>:<em>xname</em>:<em>yname</em>:<em>zname</em>:<em>scale</em>:<em>offset</em>:<em>invalid</em>:<em>title</em>:<em>remark</em>:</dd>
+<strong>-D</strong>:<em>xname</em>:<em>yname</em>:<em>zname</em>:<em>scale</em>:<em>offset</em>:<em>invalid</em>:<em>title</em>:<em>remark</em>:
+Use quotes to group texts with more than one word.
+Note that for geographic grids (<strong>-fg</strong>) <em>xname</em> and <em>yname</em> are set automatically.</dd>
 <dt><strong>-N</strong><em>nodata</em></dt>
 <dd>No data. Set nodes with no input xyz triplet to this value [Default
 is NaN]. For z-tables, this option is used to replace z-values that
@@ -229,7 +236,7 @@ to xyz input files; see <strong>-Z</strong> for z tables.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-r</strong> <a class="reference internal" href="gmt.html#nodereg-full"><em>(more ...)</em></a></dt>
@@ -240,12 +247,12 @@ to xyz input files; see <strong>-Z</strong> for z tables.</dd>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -395,7 +402,7 @@ swap the byte-order with</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="X.html" >X</a> &raquo;</li>
 <li class="right">
@@ -413,9 +420,9 @@ swap the byte-order with</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

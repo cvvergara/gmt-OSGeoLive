@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>greenspline &mdash; GMT 5.1.1 documentation</title>
+    <title>greenspline &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grd2cpt" href="grd2cpt.html" />
     <link rel="prev" title="GR" href="GR.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -96,10 +96,10 @@
 </div>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p><strong>greenspline</strong> uses the Green’s function G(<strong>x</strong>; <strong>x’</strong>) for the
+<p><strong>greenspline</strong> uses the Green&#8217;s function G(<strong>x</strong>; <strong>x&#8217;</strong>) for the
 chosen spline and geometry to interpolate data at regular [or arbitrary]
 output locations. Mathematically, the solution is composed as
-<em>w</em>(<strong>x</strong>) = sum {<em>c</em>(<em>i</em>) G(<strong>x’</strong>; <strong>x</strong>(<em>i</em>))}, for <em>i</em> = 1,
+<em>w</em>(<strong>x</strong>) = sum {<em>c</em>(<em>i</em>) G(<strong>x&#8217;</strong>; <strong>x</strong>(<em>i</em>))}, for <em>i</em> = 1,
 <em>n</em>, the number of data points {<strong>x</strong>(<em>i</em>), <em>w</em>(<em>i</em>)}. Once the <em>n</em>
 coefficients <em>c</em>(<em>i</em>) have been found the sum can be evaluated at any
 output point <strong>x</strong>. Choose between minimum curvature, regularized, or
@@ -241,7 +241,7 @@ append <em>tension</em> and optional <em>scale</em>. The last two are spherical
 surface splines and both imply <strong>-D</strong>4: (<strong>p</strong>) Minimum
 curvature spline [<em>Parker</em>, 1994], (<strong>q</strong>) Continuous curvature
 spline in tension [<em>Wessel and Becker</em>, 2008]; append <em>tension</em>. The
-G(<strong>x’</strong>; <strong>x’</strong>) for the last method is slower to compute (a series solution) so we
+G(<strong>x&#8217;</strong>; <strong>x&#8217;</strong>) for the last method is slower to compute (a series solution) so we
 pre-calculate values and use cubic spline interpolation lookup instead.
 Optionally append <strong>+n</strong><em>N</em> (an odd integer) to change how many
 points to use in the spline setup [10001].  The finite Legendre sum has
@@ -266,7 +266,7 @@ least squares fit.  Note that this only has an effect if <strong>-CC</strong> is
 columns (<strong>x</strong>,<em>w</em>); the number depends on the chosen dimension].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output.  </dd>
 </dl>
 <dl class="docutils">
@@ -279,23 +279,23 @@ columns (<strong>x</strong>,<em>w</em>); the number depends on the chosen dimens
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-o</strong><em>cols</em>[,...] <a class="reference internal" href="gmt.html#ocols-full"><em>(more ...)</em></a></dt>
-<dd>Select output columns.</dd>
+<dd>Select output columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-r</strong> <a class="reference internal" href="gmt.html#nodereg-full"><em>(more ...)</em></a></dt>
 <dd>Set pixel node registration [gridline].  </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -373,7 +373,7 @@ a measure of uranium oxide concentrations (in percent), try</p>
 </div>
 <div class="section" id="d-spherical-surface-examples">
 <h2>2-d Spherical Surface Examples<a class="headerlink" href="#d-spherical-surface-examples" title="Permalink to this headline">¶</a></h2>
-<p>To recreate Parker’s [1994] example on a global 1x1 degree grid,
+<p>To recreate Parker&#8217;s [1994] example on a global 1x1 degree grid,
 assuming the data are in file mag_obs_1990.d, try</p>
 <blockquote>
 <div><div class="highlight-python"><div class="highlight"><pre>greenspline -V -Rg -Sp -D3 -I1 -GP1994.nc mag_obs_1990.d
@@ -513,7 +513,7 @@ Int</em>, <strong>174</strong>, 21-28.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -531,9 +531,9 @@ Int</em>, <strong>174</strong>, 21-28.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

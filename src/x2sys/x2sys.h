@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: x2sys.h 13953 2015-01-20 23:55:44Z pwessel $
  *
- *      Copyright (c) 1999-2014 by P. Wessel
+ *      Copyright (c) 1999-2015 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -126,6 +126,7 @@ struct X2SYS_INFO {
 	char suffix[16];		/* Suffix for these data files */
 	char fflags[GMT_BUFSIZ];	/* Text copy of selected columns */
 	char path[GMT_BUFSIZ];		/* Full path to current data file */
+	char separators[8];		/* List of characters used for column separators */
 	struct X2SYS_DATA_INFO *info;	/* Array of info for each data field */
 };
 

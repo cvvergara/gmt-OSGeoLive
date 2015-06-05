@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_common.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_common.h 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -79,6 +79,7 @@ struct GMT_COMMON {
 		bool active;
 		bool oblique;	/* true when -R...r was given (oblique map, probably), else false (map borders are meridians/parallels) */
 		double wesn[6];		/* Boundaries of west, east, south, north, low-z and hi-z */
+		double wesn_orig[4];	/* Original Boundaries of west, east, south, north (oblique projection may reset wesn above) */
 		char string[GMT_LEN256];
 	} R;
 	struct U {	/* -U */

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt.c 13981 2015-01-25 04:06:56Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 #endif
 
 #define PROGRAM_NAME	"gmt"
+#define GMT_PAD_DEFAULT	2U
 
 /* Determine the system environmetal parameter that leads to shared libraries */
 #if defined _WIN32
@@ -46,8 +47,10 @@
 
 int main (int argc, char *argv[]) {
 	int status = GMT_NOT_A_VALID_MODULE;	/* Default status code */
-	bool gmt_main = false;		/* Set to true if no module specified */
+	int k, v_mode = GMT_MSG_COMPAT;		/* Default verbosity */
+	bool gmt_main = false;			/* Set to true if no module specified */
 	unsigned int modulename_arg_n = 0;	/* Argument number in argv[] that contains module name */
+	unsigned int mode = 0;			/* Default API mode */
 	struct GMTAPI_CTRL *api_ctrl = NULL;	/* GMT API control structure */
 	char gmt_module[GMT_LEN32] = "gmt";
 	char *progname = NULL;			/* Last component from the pathname */
@@ -67,8 +70,12 @@ int main (int argc, char *argv[]) {
 	sigaction (SIGSEGV, &act, NULL);
 #endif /* !(defined(WIN32) || defined(NO_SIGHANDLER)) */
 
+	/* Look for and process any -V[flag] so we may use GMT_Report_Error early on.
+	 * Because first 2 bits of mode is used for other things we must left-shift by 2 */
+	for (k = 1; k < argc; k++) if (!strncmp (argv[k], "-V", 2U)) v_mode = GMT_get_V (argv[k][2]);
+	if (v_mode) mode = ((unsigned int)v_mode) << 2;	/* Left-shift the mode by 2 */
 	/* Initialize new GMT session */
-	if ((api_ctrl = GMT_Create_Session (argv[0], 2U, 0U, NULL)) == NULL)
+	if ((api_ctrl = GMT_Create_Session (argv[0], GMT_PAD_DEFAULT, mode, NULL)) == NULL)
 		return EXIT_FAILURE;
 	api_ctrl->internal = true;	/* This is a proper GMT internal session (external programs will default to false) */
 	progname = strdup (GMT_basename (argv[0])); /* Last component from the pathname */
@@ -79,6 +86,12 @@ int main (int argc, char *argv[]) {
 	/* Test if argv[0] contains a module name: */
 	module = progname;	/* Try this module name unless it equals PROGRAM_NAME in which case we just enter the test if argc > 1 */
 	gmt_main = !strcmp (module, PROGRAM_NAME);	/* true if running the main program, false otherwise */
+	if (gmt_main && argc > 1 && (!strcmp (argv[1], "read") || !strcmp (argv[1], "write"))) {	/* Cannot call read or write module from command-line gmt.c */
+		module = argv[1];	/* Name of module that does not exist */
+		status = GMT_NOT_A_VALID_MODULE;
+		modulename_arg_n = 1;
+		goto no_such;
+	}
 
 	if ((gmt_main || (status = GMT_Call_Module (api_ctrl, module, GMT_MODULE_EXIST, NULL)) == GMT_NOT_A_VALID_MODULE) && argc > 1) {
 		/* argv[0] does not contain a valid module name, and
@@ -100,6 +113,7 @@ int main (int argc, char *argv[]) {
 
 		if (argv[1+modulename_arg_n] && !strcmp (argv[1+modulename_arg_n], "=") && argv[2+modulename_arg_n] == NULL) {
 			/* Just wanted to know if module exists */
+			status = 1; /* Return nonzero when modules does not exist */
 			goto exit;
 		}
 
@@ -108,6 +122,11 @@ int main (int argc, char *argv[]) {
 
 			/* Print module list */
 			if (!strcmp (argv[arg_n], "--help")) {
+				fprintf (stderr, "\n\tGMT - The Generic Mapping Tools, Version %s\n", GMT_VERSION);
+				fprintf (stderr, "(c) 1991-%d Paul Wessel, Walter H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe\n\n", GMT_VERSION_YEAR);
+				fprintf (stderr, "Supported in part by the US National Science Foundation (http://www.nsf.gov/)\n");
+				fprintf (stderr, "and volunteers from around the world (see http://gmt.soest.hawaii.edu/).\n\n");
+
 				GMT_Call_Module (api_ctrl, NULL, GMT_MODULE_PURPOSE, NULL);
 				goto exit;
 			}
@@ -135,9 +154,12 @@ int main (int argc, char *argv[]) {
 		 *
 		 * gmt.c is itself not a module and hence can use fprintf (stderr, ...). Any API needing a
 		 * gmt-like application will write one separately [see mex API] */
+no_such:
+
 		fprintf (stderr, "\n\tGMT - The Generic Mapping Tools, Version %s\n", GMT_VERSION);
 		fprintf (stderr, "(c) 1991-%d Paul Wessel, Walter H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe\n\n", GMT_VERSION_YEAR);
-		fprintf (stderr, "Supported in part by the US National Science Foundation (www.nsf.gov)\nand volunteers from around the world.\n\n");
+		fprintf (stderr, "Supported in part by the US National Science Foundation (http://www.nsf.gov/)\n");
+		fprintf (stderr, "and volunteers from around the world (see http://gmt.soest.hawaii.edu/).\n\n");
 
 		fprintf (stderr, "This program comes with NO WARRANTY, to the extent permitted by law.\n");
 		fprintf (stderr, "You may redistribute copies of this program under the terms of the\n");
@@ -152,7 +174,7 @@ int main (int argc, char *argv[]) {
 		fprintf (stderr, "  --show-bindir     Show directory of executables and exit.\n\n");
 		fprintf (stderr, "if <module options> is \'=\' we call exit (0) if module exist and non-zero otherwise.\n\n");
 		if (modulename_arg_n == 1) {
-			fprintf (stderr, "ERROR: No module named %s was found,  This could mean:\n", module);
+			fprintf (stderr, "ERROR: No module named %s was found.  This could mean:\n", module);
 			fprintf (stderr, "  1. There actually is no such module; check your spelling.\n");
 			if (strlen (GMT_SUPPL_LIB_NAME))
 				fprintf (stderr, "  2. Module exists in the GMT supplemental library, but the library could not be found.\n");

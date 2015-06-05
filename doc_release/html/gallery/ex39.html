@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(39) Evaluation of spherical harmonics coefficients &mdash; GMT 5.1.1 documentation</title>
+    <title>(39) Evaluation of spherical harmonics coefficients &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(40) Line simplification" href="ex40.html" />
     <link rel="prev" title="(38) Histogram equalization of bathymetry grids" href="ex38.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -81,6 +81,8 @@ the resulting global grid for three sets of upper order/degrees, here 30,
 We use the coefficients to evaluate the grids and make perspective globes
 of the different resolutions.  The key tool
 used here is <a class="reference internal" href="../sph2grd.html"><em>sph2grd</em></a>.</p>
+<p>Note that we use a special format in <a class="reference internal" href="../psscale.html"><em>psscale</em></a> so that the
+annotations will include the separators for the thousands.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
 <span class="c">#               GMT EXAMPLE 39</span>
 <span class="c">#               $Id$</span>
@@ -103,16 +105,16 @@ gmt sph2grd VenusTopo180.txt -I1 -Rg -Ng -Gv3.nc -F1/1/170/180
 gmt grd2cpt v3.nc -Crainbow -E16 -Z &gt; t.cpt
 gmt grdgradient v1.nc -Nt0.75 -A45 -Gvint.nc
 gmt grdimage v1.nc -Ivint.nc -JG90/30/5i -P -K -Bg -Ct.cpt -X3i -Y1.1i &gt; <span class="nv">$ps</span>
-<span class="nb">echo </span>4 4.5 <span class="nv">L</span> <span class="o">=</span> 30 | gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
-gmt psscale -Ct.cpt -O -K -D1.25i/-0.2i/5.5i/0.1ih -Bxaf -By+lm &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span><span class="m">4</span> 4.5 <span class="nv">L</span> <span class="o">=</span> <span class="m">30</span> <span class="p">|</span> gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
+gmt psscale --FORMAT_FLOAT_MAP<span class="o">=</span><span class="s2">&quot;%&#39;g&quot;</span> -Ct.cpt -O -K -D1.25i/-0.2i/5.5i/0.1ih -Bxaf -By+lm &gt;&gt; <span class="nv">$ps</span>
 gmt grdgradient v2.nc -Nt0.75 -A45 -Gvint.nc
 gmt grdimage v2.nc -Ivint.nc -JG -O -K -Bg -Ct.cpt -X-1.25i -Y1.9i &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo </span>4 4.5 <span class="nv">L</span> <span class="o">=</span> 90 | gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span><span class="m">4</span> 4.5 <span class="nv">L</span> <span class="o">=</span> <span class="m">90</span> <span class="p">|</span> gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
 gmt sph2grd VenusTopo180.txt -I1 -Rg -Ng -Gv3.nc -F1/1/170/180
 gmt grdgradient v3.nc -Nt0.75 -A45 -Gvint.nc
 gmt grdimage v3.nc -Ivint.nc -JG -O -K -Bg -Ct.cpt -X-1.25i -Y1.9i &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo </span>4 4.5 <span class="nv">L</span> <span class="o">=</span> 180 | gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo </span>3.75 5.4 Venus Spherical Harmonic Model | gmt pstext -R0/6/0/6 -Jx1i -O -F+f24p+jCM -N &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span><span class="m">4</span> 4.5 <span class="nv">L</span> <span class="o">=</span> <span class="m">180</span> <span class="p">|</span> gmt pstext -R0/6/0/6 -Jx1i -O -K -Dj0.2i -F+f16p+jLM -N &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo </span>3.75 5.4 Venus Spherical Harmonic Model <span class="p">|</span> gmt pstext -R0/6/0/6 -Jx1i -O -F+f24p+jCM -N &gt;&gt; <span class="nv">$ps</span>
 rm -f v*.nc t.cpt
 </pre></div>
 </div>
@@ -157,7 +159,7 @@ rm -f v*.nc t.cpt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -175,9 +177,9 @@ rm -f v*.nc t.cpt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

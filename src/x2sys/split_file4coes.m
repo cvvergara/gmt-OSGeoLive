@@ -21,9 +21,9 @@ function split_file4coes(fname, n_int)
 %			of 'cruzados_%d.txt', e.g. cruzados_5.txt
 
 %  -------------------------------------------------------------------------------------
-% 	$Id: split_file4coes.m 12822 2014-01-31 23:39:56Z remko $
+% 	$Id: split_file4coes.m 13846 2014-12-28 21:46:54Z pwessel $
 % 
-%       Copyright (c) 1999-2014 by J. Luis
+%       Copyright (c) 1999-2015 by J. Luis
 %       See LICENSE.TXT file for copying and redistribution conditions.
 %
 %       This program is free software; you can redistribute it and/or modify

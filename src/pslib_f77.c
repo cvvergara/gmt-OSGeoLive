@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pslib_f77.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: pslib_f77.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 2009-2014 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2015 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -57,8 +57,7 @@
  * PSL_plotsymbol	: Plots a geometric symbol and [optionally] fills it
  * PSL_plottext		: Plots textstring
  * PSL_plottextbox	: Draw a filled box around a textstring
- * PSL_plottextclip	: Place clippaths to protect areas where labels will print
- * PSL_plottextpath	: --"-- for curved text following lines - also places labels
+ * PSL_plottextline	: Place labels along paths (straigt or curved), set clip path, draw line
  * PSL_loadimage	: Read image file of supported type
  * PSL_command		: Writes a given PostScript statement to the plot file
  * PSL_comment		: Writes a comment statement to the plot file
@@ -313,14 +312,9 @@ int PSL_plottext_ (double *x, double *y, double *fontsize, char *text, double *a
 	return (PSL_plottext (PSL_FORTRAN, *x, *y, *fontsize, text, *angle, *justify, *mode));
 }
 
-int PSL_plottextpath_ (double x[], double y[], int *n, int node[], double *fontsize, char *label[], int *m, double angle[], int *justify, double offset[], int *mode, int len)
+int PSL_plottextline_ (double x[], double y[], int np[], int n_segments, int node[], char *label[], double angle[], int nlabel_per_seg[], double fontsize, int justify, double offset[], int mode)
 {
-	return (PSL_plottextpath (PSL_FORTRAN, x, y, *n, node, *fontsize, label, *m, angle, *justify, offset, *mode));
-}
-
-int PSL_plottextclip_ (double x[], double y[], int *m, double *fontsize, char *label[], double angle[], int *justify, double offset[], int *mode, int len)
-{
-	return (PSL_plottextclip (PSL_FORTRAN, x, y, *m, *fontsize, label, angle, *justify, offset, *mode));
+	return (PSL_plottextline (PSL_FORTRAN, x, y, np, *n_segments, node, label, angle, nlabel_per_seg, *fontsize, *justify, offset, * mode));
 }
 
 int PSL_setorigin_ (double *x, double *y, double *angle, int *mode)

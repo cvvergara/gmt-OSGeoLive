@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sphdistance.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: sphdistance.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 2008-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2008-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -167,7 +167,7 @@ int GMT_sphdistance_parse (struct GMT_CTRL *GMT, struct SPHDISTANCE_CTRL *Ctrl, 
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -185,7 +185,7 @@ int GMT_sphdistance_parse (struct GMT_CTRL *GMT, struct SPHDISTANCE_CTRL *Ctrl, 
 				Ctrl->E.active = true;
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -342,6 +342,8 @@ int GMT_sphdistance (void *V_API, int mode, void *args)
 			Return (API->error);	/* Enables data input and sets access mode */
 		}
 
+		GMT->session.min_meminc = GMT_INITIAL_MEM_ROW_ALLOC;	/* Start by allocating a 32 Mb chunk */ 
+
 		n_alloc = 0;
 		if (!Ctrl->C.active) GMT_malloc2 (GMT, lon, lat, 0, &n_alloc, double);
 		n_alloc = 0;
@@ -413,12 +415,13 @@ int GMT_sphdistance (void *V_API, int mode, void *args)
 		if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 			Return (API->error);
 		}
+		GMT->session.min_meminc = GMT_MIN_MEMINC;		/* Reset to the default value */
 	}
 
 	/* OK, time to create and work on the distance grid */
 
 	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
-		GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 	GMT_Report (API, GMT_MSG_VERBOSE, "Start processing distance grid\n");
 
 	grid_lon = GMT_grd_coord (GMT, Grid->header, GMT_X);
