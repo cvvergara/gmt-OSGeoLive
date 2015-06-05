@@ -19,6 +19,9 @@ gmt (5.1.1-1) UNRELEASED; urgency=medium
   * Update watchfile, changes:
     - Use passive FTP
     - Add common dversionmangle
+  * Restructure control file with cme, changes:
+    - Update Vcs-Browser URL to use cgit instead of gitweb
+    - Bump Standards-Version to 3.9.6, no changes.
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 27 Nov 2013 13:27:48 +0100
 

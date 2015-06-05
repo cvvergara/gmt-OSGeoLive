@@ -1,32 +1,36 @@
 Source: gmt
-Section: science
-Priority: extra
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
 Uploaders: Francesco Paolo Lovergine <frankie@debian.org>
-Build-Depends: cmake
- , libnetcdf-dev
- , debhelper (>= 9)
- , libxmu-headers
- , libxaw7-dev
- , libgdal-dev
- , libpcre3-dev
- , zlib1g-dev
- , sfftw-dev
- , python-sphinx
+Section: science
+Priority: extra
+Build-Depends: cmake,
+               libnetcdf-dev,
+               debhelper (>= 9),
+               libxmu-headers,
+               libxaw7-dev,
+               libgdal-dev,
+               libpcre3-dev,
+               zlib1g-dev,
+               sfftw-dev,
+               python-sphinx
 Build-Depends-Indep: debhelper (>= 9)
-Standards-Version: 3.9.5
-Homepage: http://gmt.soest.hawaii.edu/projects/gmt
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-grass/gmt.git
+Standards-Version: 3.9.6
+Vcs-Browser: https://anonscm.debian.org/cgit/pkg-grass/gmt.git
 Vcs-Git: git://anonscm.debian.org/pkg-grass/gmt.git
-
+Homepage: http://gmt.soest.hawaii.edu/projects/gmt
 
 Package: gmt
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Replaces: gmt-manpages
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Recommends: gmt-gshhs-data | gmt-gshhs-low,
+            gmt-doc,
+            gmt-dcw
+Suggests: gmt-tutorial-pdf,
+          gmt-doc-pdf,
+          gmt-examples
 Conflicts: gmt-manpages
-Recommends: gmt-gshhs-data | gmt-gshhs-low (>= 2.2.0), gmt-doc, gmt-dcw
-Suggests: gmt-tutorial-pdf, gmt-doc-pdf, gmt-examples
+Replaces: gmt-manpages
 Description: Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -42,7 +46,8 @@ Description: Generic Mapping Tools
 Package: libgmt5
 Architecture: any
 Section: libs
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
 Suggests: gmt
 Conflicts: libgmt4
 Replaces: libgmt4
@@ -56,7 +61,10 @@ Description: Generic Mapping Tools Library
 Package: libgmt-dev
 Architecture: any
 Section: libdevel
-Depends: ${shlibs:Depends}, libgmt5 (=${binary:Version}), libnetcdf-dev, ${misc:Depends}
+Depends: ${shlibs:Depends},
+         libgmt5 (= ${binary:Version}),
+         libnetcdf-dev,
+         ${misc:Depends}
 Suggests: gmt
 Description: Generic Mapping Tools Library
  These set of libraries allow manipulating geographic and Cartesian data sets
@@ -71,8 +79,8 @@ Description: Generic Mapping Tools Library
 Package: gmt-doc-pdf
 Architecture: all
 Section: doc
-Suggests: pdf-viewer
 Depends: ${misc:Depends}
+Suggests: pdf-viewer
 Description: PDF docs for GMT, the Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -88,8 +96,8 @@ Description: PDF docs for GMT, the Generic Mapping Tools
 Package: gmt-tutorial-pdf
 Architecture: all
 Section: doc
-Suggests: pdf-viewer
 Depends: ${misc:Depends}
+Suggests: pdf-viewer
 Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -105,8 +113,8 @@ Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
 Package: gmt-doc
 Architecture: all
 Section: doc
-Suggests: www-browser
 Depends: ${misc:Depends}
+Suggests: www-browser
 Conflicts: gmt (<< 4.5.7-1~)
 Description: HTML documentation for GMT, the Generic Mapping Tools
  GMT is a collection of UNIX tools that allow users to manipulate
@@ -128,8 +136,8 @@ Description: HTML documentation for GMT, the Generic Mapping Tools
 Package: gmt-examples
 Architecture: all
 Section: doc
-Suggests: gmt
 Depends: ${misc:Depends}
+Suggests: gmt
 Description: Example scripts illustrating the use of GMT
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -141,4 +149,3 @@ Description: Example scripts illustrating the use of GMT
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries. 
-
