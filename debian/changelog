@@ -17,6 +17,7 @@ gmt (5.1.2-1) UNRELEASED; urgency=medium
 
   [ Bas Couwenberg ]
   * New upstream release.
+  * Add myself to Uploaders.
   * Update watchfile, changes:
     - Use passive FTP
     - Add common dversionmangle

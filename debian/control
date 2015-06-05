@@ -1,6 +1,7 @@
 Source: gmt
 Maintainer: Debian GIS Project <pkg-grass-devel@lists.alioth.debian.org>
-Uploaders: Francesco Paolo Lovergine <frankie@debian.org>
+Uploaders: Francesco Paolo Lovergine <frankie@debian.org>,
+           Bas Couwenberg <sebastic@debian.org>
 Section: science
 Priority: extra
 Build-Depends: cmake,
