@@ -29,6 +29,7 @@ gmt (5.1.2-1) UNRELEASED; urgency=medium
     - Changed OSSIM license to LGPL-3+ only
     - Update copyright years, add additional copyright holders
     - Add license & copyright for differently licensed files (mostly BSD/MIT)
+  * Repack upstream source using Files-Excluded in the copyright file.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 14:32:40 +0200
 
