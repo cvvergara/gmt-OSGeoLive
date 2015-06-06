@@ -4,17 +4,16 @@ Uploaders: Francesco Paolo Lovergine <frankie@debian.org>,
            Bas Couwenberg <sebastic@debian.org>
 Section: science
 Priority: extra
-Build-Depends: cmake,
-               libnetcdf-dev,
-               debhelper (>= 9),
-               libxmu-headers,
-               libxaw7-dev,
+Build-Depends: debhelper (>= 9),
+               cmake,
                libgdal-dev,
+               libnetcdf-dev,
                libpcre3-dev,
-               zlib1g-dev,
+               libxaw7-dev,
+               libxmu-headers,
+               python-sphinx,
                sfftw-dev,
-               python-sphinx
-Build-Depends-Indep: debhelper (>= 9)
+               zlib1g-dev
 Standards-Version: 3.9.6
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-grass/gmt.git
 Vcs-Git: git://anonscm.debian.org/pkg-grass/gmt.git
