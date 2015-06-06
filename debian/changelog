@@ -32,6 +32,7 @@ gmt (5.1.2+dfsg-1) UNRELEASED; urgency=medium
   * Repack upstream source using Files-Excluded in the copyright file.
   * Fix libgmt5 installation.
   * Disable use of non-free triangle source.
+  * Fix bash-completion installation.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 18:12:12 +0200
 
