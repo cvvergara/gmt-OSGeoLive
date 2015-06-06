@@ -8,6 +8,8 @@
 #   CFLAGS += -O2
 #endif
 
+CFLAGS += $(CPPFLAGS)
+
 #ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
 DH_VERBOSE=1
 export DH_VERBOSE
