@@ -71,6 +71,12 @@ export DH_VERBOSE
 	rm -rf debian/tmp/usr/etc/bash_completion.d
 	rmdir debian/tmp/usr/etc/
 
+	# Strip RPATH
+	chrpath --delete \
+	        debian/tmp/usr/lib/*/gmt/plugins/supplements.so \
+	        debian/tmp/usr/lib/*/lib*.so.*.* \
+	        debian/tmp/usr/bin/gmt
+
 #	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
 #	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
 	

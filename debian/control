@@ -5,6 +5,7 @@ Uploaders: Francesco Paolo Lovergine <frankie@debian.org>,
 Section: science
 Priority: extra
 Build-Depends: debhelper (>= 9),
+               chrpath,
                cmake,
                libgdal-dev,
                libnetcdf-dev,

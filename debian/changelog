@@ -33,6 +33,7 @@ gmt (5.1.2+dfsg-1) UNRELEASED; urgency=medium
   * Fix libgmt5 installation.
   * Disable use of non-free triangle source.
   * Fix bash-completion installation.
+  * Strip RPATH from binary & libraries.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 18:12:12 +0200
 
