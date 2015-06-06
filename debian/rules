@@ -65,8 +65,11 @@ export DH_VERBOSE
 #	# Remove +x 
 #	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
 
-	# Fix /etc installation
-	mv debian/tmp/usr/etc debian/tmp/
+	# Fix bash-completion installation
+	mkdir -p debian/tmp/usr/share/bash-completion/completions
+	mv debian/tmp/usr/etc/bash_completion.d/gmt debian/tmp/usr/share/bash-completion/completions
+	rm -rf debian/tmp/usr/etc/bash_completion.d
+	rmdir debian/tmp/usr/etc/
 
 #	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
 #	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
