@@ -1,3 +1,4 @@
 usr/lib/*/gmt/plugins/supplements.so
 usr/lib/*/lib*.so
 usr/include/gmt         usr/include
+usr/bin/gmt-config

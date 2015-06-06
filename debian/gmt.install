@@ -1,4 +1,8 @@
-usr/bin
+usr/bin/gmt
+usr/bin/gmtlogo
+usr/bin/gmtswitch
+usr/bin/gmt_shell_functions.sh
+usr/bin/isogmt
 usr/share/conf/*  etc/gmt
 usr/share/cpt     usr/share/gmt
 usr/share/custom  usr/share/gmt
