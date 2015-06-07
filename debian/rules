@@ -35,6 +35,10 @@ export DH_VERBOSE
 #		--sourcedirectory=$(CURDIR) --builddirectory=$(BUILDDIR) \
 #		--parallel
 
+#override_dh_auto_clean:
+#	rm -rf $(BUILDDIR) $(DESTDIR)
+#	dh_auto_clean
+
 #override_dh_auto_build:
 #	mkdir $(BUILDDIR) || true 
 #	cd $(BUILDDIR) && cmake $(CMAKE_OPTS) ../..
@@ -100,11 +104,6 @@ export DH_VERBOSE
 #	done
 #	rm -rf $(DESTDIR)/usr/share/gmt/man
 	
-
-#override_dh_auto_clean:
-#	rm -rf $(BUILDDIR) $(DESTDIR)
-#	dh_auto_clean
-
 override_dh_install:
 	dh_install --list-missing
 
