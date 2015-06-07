@@ -26,7 +26,7 @@ gmt (5.1.2+dfsg1-1) UNRELEASED; urgency=medium
     - Bump Standards-Version to 3.9.6, no changes.
   * Add gbp.conf to use pristine-tar by default.
   * Update copyright file, changes:
-    - Changed OSSIM license to LGPL-3+ only
+    - Changed GMT license to LGPL-3+ only
     - Update copyright years, add additional copyright holders
     - Add license & copyright for differently licensed files (mostly BSD/MIT)
   * Repack upstream source using Files-Excluded in the copyright file.
