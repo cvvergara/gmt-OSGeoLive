@@ -3,16 +3,5 @@ usr/bin/gmtlogo
 usr/bin/gmtswitch
 usr/bin/gmt_shell_functions.sh
 usr/bin/isogmt
-usr/share/conf/*  etc/gmt
-usr/share/cpt     usr/share/gmt
-usr/share/custom  usr/share/gmt
-usr/share/dbase   usr/share/gmt
-usr/share/mgd77   usr/share/gmt
-usr/share/mgg     usr/share/gmt
-usr/share/pattern usr/share/gmt
-usr/share/pslib   usr/share/gmt
-usr/share/time    usr/share/gmt
-usr/share/tools   usr/share/gmt
-usr/share/x2sys   usr/share/gmt
-usr/share/man
 usr/share/bash-completion
+usr/share/gmt
