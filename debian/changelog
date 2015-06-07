@@ -34,6 +34,7 @@ gmt (5.1.2+dfsg-1) UNRELEASED; urgency=medium
   * Disable use of non-free triangle source.
   * Fix bash-completion installation.
   * Strip RPATH from binary & libraries.
+  * Also exclude prebuilt documentation and manpages from repacked source.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 18:12:12 +0200
 

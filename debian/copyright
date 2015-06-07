@@ -3,6 +3,7 @@ Upstream-Name: GMT
 Upstream-Contact: Paul Wessel <wessel@soest.hawaii.edu> and Walter Smith <wsmith@nodc.noaa.gov>
 Source: http://gmt.soest.hawaii.edu/
 Comment: The upstream source is repacked to exclude the non-free triangle source.
+ .
  The license & copyright of the excluded files was:
  .
   Files: src/triangle.c
@@ -23,8 +24,12 @@ Comment: The upstream source is repacked to exclude the non-free triangle source
    customer, and you are instead telling them how they can obtain it for
    free, then you are not required to make any arrangement with me.)
  .
+ The prebuilt documentation and manpages are also excluded.
+ .
 Files-Excluded: src/triangle.c
  src/triangle.h
+ doc_release/*
+ man_release/*
 
 Files: *
 Copyright: 1991-2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
