@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: ps2raster.c 12956 2014-02-27 15:15:21Z remko $
+ *	$Id: ps2raster.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -47,6 +47,9 @@ void GMT_str_toupper (char *string);
 #	include <process.h>
 #	define getpid _getpid
 	int ghostbuster(struct GMTAPI_CTRL *API, struct PS2RASTER_CTRL *C);
+	static char quote = '\"';
+#else
+	static char quote = '\'';
 #endif
 
 #define N_GS_DEVICES		12	/* Number of supported GS output devices */
@@ -233,6 +236,7 @@ int parse_GE_settings (struct GMT_CTRL *GMT, char *arg, struct PS2RASTER_CTRL *C
 	bool error = false;
 	unsigned int pos = 0;
 	char txt[GMT_BUFSIZ] = {""}, p[GMT_BUFSIZ] = {""};
+	GMT_UNUSED(GMT);
 
 	C->W.active = true;
 	strncpy (txt, arg, GMT_BUFSIZ);
@@ -350,7 +354,7 @@ int GMT_ps2raster_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "Works by modifying the page size in order that the resulting\n");
 	GMT_Message (API, GMT_TIME_NONE, "image will have the size specified by the BoundingBox.\n");
 	GMT_Message (API, GMT_TIME_NONE, "As an option, a tight BoundingBox may be computed.\n\n");
-	GMT_Message (API, GMT_TIME_NONE, "<psfile(s)> postscript file(s) to be converted.\n");
+	GMT_Message (API, GMT_TIME_NONE, "<psfile(s)> PostScript file(s) to be converted.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-A Adjust the BoundingBox to the minimum required by the image contents.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append u to strip out time-stamps (produced by GMT -U options).\n");
@@ -473,7 +477,7 @@ int GMT_ps2raster_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_TEXTSET)) n_errors++;
 				Ctrl->In.n_files++;
 				break;
 
@@ -486,7 +490,7 @@ int GMT_ps2raster_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 				add_to_list (Ctrl->C.arg, opt->arg);	/* Append to list of extra GS options */
 				break;
 			case 'D':	/* Change output directory */
-				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_OUT))) {
+				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_OUT, GMT_IS_TEXTSET))) {
 					free (Ctrl->D.dir);
 					Ctrl->D.dir = strdup (opt->arg);
 				}
@@ -498,7 +502,7 @@ int GMT_ps2raster_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 				Ctrl->E.dpi = atoi (opt->arg);
 				break;
 			case 'F':	/* Set explicitly the output file name */
-				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_OUT))) {
+				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_OUT, GMT_IS_TEXTSET))) {
 					Ctrl->F.file = strdup (opt->arg);
 					GMT_chop_ext (Ctrl->F.file);	/* Make sure file name has no extension */
 				}
@@ -506,9 +510,10 @@ int GMT_ps2raster_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 					n_errors++;
 				break;
 			case 'G':	/* Set GS path */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_IN))) {
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_IN, GMT_IS_TEXTSET))) {
 					free (Ctrl->G.file);
-					Ctrl->G.file = strdup (opt->arg);
+					Ctrl->G.file = malloc (strlen (opt->arg)+3);	/* Add space for quotes */
+					sprintf (Ctrl->G.file, "%c%s%c", quote, opt->arg, quote);
 				}
 				else
 					n_errors++;
@@ -517,7 +522,7 @@ int GMT_ps2raster_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 				Ctrl->I.active = true;
 				break;
 			case 'L':	/* Give list of files to convert */
-				if ((Ctrl->L.active = GMT_check_filearg (GMT, 'L', opt->arg, GMT_IN)))
+				if ((Ctrl->L.active = GMT_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_TEXTSET)))
 					Ctrl->L.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -844,9 +849,10 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			free (ps_names[k]);
 		}
 		cmd2 = GMT_memory (GMT, NULL, n_alloc + GMT_BUFSIZ, char);
-		sprintf (cmd2, "%s%s -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite %s -r%d -sOutputFile=%s.pdf %s",
-			at_sign, Ctrl->G.file, Ctrl->C.arg, Ctrl->E.dpi, Ctrl->F.file, all_names_in);
+		sprintf (cmd2, "%s%s -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite %s%s -r%d -sOutputFile=%c%s.pdf%c %c%s%c",
+			at_sign, Ctrl->G.file, Ctrl->C.arg, alpha_bits(Ctrl), Ctrl->E.dpi, quote, Ctrl->F.file, quote, quote, all_names_in, quote);
 
+		GMT_Report (API, GMT_MSG_DEBUG, "Running: %s\n", cmd2);
 		sys_retval = system (cmd2);		/* Execute the GhostScript command */
 		if (sys_retval) {
 			GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd2, sys_retval);
@@ -873,11 +879,11 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			continue;
 		}
 
-		GMT_Report (API, GMT_MSG_VERBOSE, "Processing %s...", ps_file);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Processing %s...\n", ps_file);
 
 		if (Ctrl->A.strip) {	/* Must strip off the GMT timestamp stuff, but pass any font encodings */
 			int dump = true;
-			GMT_Report (API, GMT_MSG_LONG_VERBOSE, " Strip GMT time-stamp...");
+			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Strip GMT time-stamp...\n");
 			sprintf (no_U_file, "%s/ps2raster_%db.eps", Ctrl->D.dir, (int)getpid());
 			if ((fp2 = fopen (no_U_file, "w+")) == NULL) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a temporary file\n");
@@ -916,10 +922,11 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 
 		if (Ctrl->A.active) {
 			char *psfile_to_use;
-			GMT_Report (API, GMT_MSG_LONG_VERBOSE, " Find HiResBoundingBox ");
+			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Find HiResBoundingBox ...\n");
 			sprintf (BB_file, "%s/ps2raster_%dc.bb", Ctrl->D.dir, (int)getpid());
 			psfile_to_use = Ctrl->A.strip ? no_U_file : ((strlen (clean_PS_file) > 0) ? clean_PS_file : ps_file);
-			sprintf (cmd, "%s%s %s %s 2> %s", at_sign, Ctrl->G.file, gs_BB, psfile_to_use, BB_file);
+			sprintf (cmd, "%s%s %s %s %c%s%c 2> %c%s%c", at_sign, Ctrl->G.file, gs_BB, Ctrl->C.arg, quote, psfile_to_use, quote, quote, BB_file, quote);
+			GMT_Report (API, GMT_MSG_DEBUG, "Running: %s\n", cmd);
 			sys_retval = system (cmd);		/* Execute the command that computes the tight BB */
 			if (sys_retval) {
 				GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
@@ -946,10 +953,11 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 							sprintf (tmp_file, "%s/", Ctrl->D.dir);
 						strncat (tmp_file, &ps_file[pos_file], (size_t)(pos_ext - pos_file));
 						strcat (tmp_file, ext[Ctrl->T.device]);
-						sprintf (cmd, "%s%s %s %s%s -sDEVICE=%s %s -g1x1 -r%d -sOutputFile=%s -f%s",
+						sprintf (cmd, "%s%s %s %s%s -sDEVICE=%s %s -g1x1 -r%d -sOutputFile=%c%s%c -f%c%s%c",
 							at_sign, Ctrl->G.file, gs_params, Ctrl->C.arg, alpha_bits(Ctrl), device[Ctrl->T.device],
 							device_options[Ctrl->T.device],
-							Ctrl->E.dpi, tmp_file, ps_file);
+							Ctrl->E.dpi, quote, tmp_file, quote, quote, ps_file, quote);
+						GMT_Report (API, GMT_MSG_DEBUG, "Running: %s\n", cmd);
 						sys_retval = system (cmd);		/* Execute the GhostScript command */
 						if (Ctrl->S.active)
 							GMT_Report (API, GMT_MSG_NORMAL, "%s\n", cmd);
@@ -967,13 +975,13 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			if (fpb != NULL) /* don't close twice */
 				fclose (fpb);
 			if (!Ctrl->S.active) remove (BB_file);	/* Remove the file with BB info */
-			if (got_BB) GMT_Report (API, GMT_MSG_LONG_VERBOSE, "[%g %g %g %g]...", x0, y0, x1, y1);
+			if (got_BB) GMT_Report (API, GMT_MSG_LONG_VERBOSE, "[%g %g %g %g]...\n", x0, y0, x1, y1);
 		}
 
 		/* Open temporary file to be processed by ghostscript. When -Te is used, tmp_file is for keeps */
 
 		if (Ctrl->T.eps)
-			GMT_Report (API, GMT_MSG_LONG_VERBOSE, " Format EPS file...");
+			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Format EPS file...\n");
 		if (Ctrl->T.eps) {
 			if (Ctrl->D.active) sprintf (tmp_file, "%s/", Ctrl->D.dir);	/* Use specified output directory */
 			if (!Ctrl->F.active)
@@ -1068,7 +1076,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 		transparency = false;
 		while (line_reader (GMT, &line, &line_size, fp) != EOF) {
 			if (line[0] != '%') {	/* Copy any non-comment line, except one containing /PageSize in the Setup block */
-				if (look_for_transparency && line[0] == '{' && strstr (line, " PSL_transp")) {
+				if (look_for_transparency && strstr (line, " PSL_transp")) {
 					transparency = true;		/* Yes, found transparency */
 					look_for_transparency = false;	/* No need to check anymore */
 				}
@@ -1308,10 +1316,10 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				/* Temporarily change output device to PDF to get the PDF tmp file */
 				Ctrl->T.device = GS_DEV_PDF;
 				/* After conversion, convert the tmp PDF file to desired format via a 2nd gs call */
-				GMT_Report (API, GMT_MSG_LONG_VERBOSE, " Convert to PDF...");
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert to PDF...\n");
 			}
 			else
-				GMT_Report (API, GMT_MSG_LONG_VERBOSE, " Convert to %s...", tag);
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert to %s...\n", tag);
 
 			if (!Ctrl->F.active) {
 				if (Ctrl->D.active) sprintf (out_file, "%s/", Ctrl->D.dir);	/* Use specified output directory */
@@ -1330,15 +1338,16 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				pix_h = urint (ceil (h * Ctrl->E.dpi / 72.0));
 			}
 
-			sprintf (cmd, "%s%s %s %s%s -sDEVICE=%s %s -g%dx%d -r%d -sOutputFile=%s -f%s",
+			sprintf (cmd, "%s%s %s %s%s -sDEVICE=%s %s -g%dx%d -r%d -sOutputFile=%c%s%c -f%c%s%c",
 				at_sign, Ctrl->G.file, gs_params, Ctrl->C.arg, alpha_bits(Ctrl), device[Ctrl->T.device],
 				device_options[Ctrl->T.device],
-				pix_w, pix_h, Ctrl->E.dpi, out_file, tmp_file);
+				pix_w, pix_h, Ctrl->E.dpi, quote, out_file, quote, quote, tmp_file, quote);
 
 			if (Ctrl->S.active)	/* Print GhostScript command */
 				GMT_Report (API, GMT_MSG_NORMAL, "%s\n", cmd);
 
 			/* Execute the GhostScript command */
+			GMT_Report (API, GMT_MSG_DEBUG, "Running: %s\n", cmd);
 			sys_retval = system (cmd);
 			if (sys_retval) {
 				GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
@@ -1376,13 +1385,14 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 					strncpy (out_file, Ctrl->F.file, GMT_BUFSIZ);
 				strcat (out_file, ext[Ctrl->T.device]);
 				/* After conversion, convert the tmp PDF file to desired format via a 2nd gs call */
-				sprintf (cmd, "%s%s %s %s%s -sDEVICE=%s %s -r%d -sOutputFile=%s %s",
+				sprintf (cmd, "%s%s %s %s%s -sDEVICE=%s %s -r%d -sOutputFile=%c%s%c %c%s%c",
 					at_sign, Ctrl->G.file, gs_params, Ctrl->C.arg, alpha_bits(Ctrl), device[Ctrl->T.device],
 					device_options[Ctrl->T.device],
-					Ctrl->E.dpi, out_file, pdf_file);
+					Ctrl->E.dpi, quote, out_file, quote, quote, pdf_file, quote);
 				if (Ctrl->S.active)	/* Print 2nd GhostScript command */
 					GMT_Report (API, GMT_MSG_NORMAL, "%s\n", cmd);
 				/* Execute the 2nd GhostScript command */
+				GMT_Report (API, GMT_MSG_DEBUG, "Running: %s\n", cmd);
 				sys_retval = system (cmd);
 				if (sys_retval) {
 					GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
@@ -1392,7 +1402,7 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 			}
 
 		}
-		GMT_Report (API, GMT_MSG_VERBOSE, " Done.\n");
+		GMT_Report (API, GMT_MSG_VERBOSE, "Done.\n");
 
 		if (!Ctrl->S.active) {
 			if (!Ctrl->T.eps)
@@ -1466,16 +1476,12 @@ int GMT_ps2raster (void *V_API, int mode, void *args)
 				else
 					quiet = "";
 
-#ifdef WIN32
-				sprintf (cmd, "gdal_translate -a_srs \"%s\" -co COMPRESS=LZW -co TILED=YES %s %s %s",
-						proj4_cmd, quiet, out_file, world_file);
-#else
-				sprintf (cmd, "gdal_translate -a_srs '%s' -co COMPRESS=LZW -co TILED=YES %s %s %s",
-						proj4_cmd, quiet, out_file, world_file);
-#endif
+				sprintf (cmd, "gdal_translate -a_srs %c%s%c -co COMPRESS=LZW -co TILED=YES %s %c%s%c %c%s%c",
+						quote, proj4_cmd, quote, quiet, quote, out_file, quote, quote, world_file, quote);
 				free(proj4_cmd);
+				GMT_Report (API, GMT_MSG_DEBUG, "Running: %s\n", cmd);
 				sys_retval = system (cmd);		/* Execute the gdal_translate command */
-				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "\nThe gdal_translate command: \n%s\n", cmd);
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "The gdal_translate command: \n%s\n", cmd);
 				if (sys_retval) {
 					GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
 					Return (EXIT_FAILURE);

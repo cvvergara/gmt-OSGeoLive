@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdredpol &mdash; GMT 5.1.1 documentation</title>
+    <title>grdredpol &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="POTENTIAL" href="../../SUP_POTENTIAL.html" />
     <link rel="next" title="grdseamount" href="grdseamount.html" />
     <link rel="prev" title="grdgravmag3d" href="grdgravmag3d.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" accesskey="U">POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -78,12 +78,12 @@
 <p>grdredpol - Compute the Continuous Reduction To the Pole, AKA differential RTP.</p>
 <div class="section" id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
-<p><strong>grdredpol</strong> <em>anom_grd</em> <strong>-G</strong><em>rtp_grd</em> [<strong>-C</strong><em>&lt;dec/dip&gt;</em>]
-[<strong>-E</strong><em>&lt;dec_grd/dipgrd&gt;</em>] [<strong>-F</strong><em>&lt;m/n&gt;</em>] [<strong>-M</strong><em>&lt;m|r&gt;</em>]
-[<strong>-N</strong> ] [<strong>-W</strong><em>&lt;win_width&gt;</em>]
+<p><strong>grdredpol</strong> <em>anom_grd</em> <strong>-G</strong><em>rtp_grd</em> [<strong>-C</strong><em>dec/dip</em>]
+[<strong>-E</strong><em>dec_grd/dipgrd</em>] [<strong>-F</strong><em>&lt;m/n&gt;</em>] [<strong>-M</strong><em>m|r</em>]
+[<strong>-N</strong> ] [<strong>-W</strong><em>win_width</em>]
 [ <strong>-V</strong>[<em>level</em>] ]
-[ <strong>-T&lt;year&gt;</strong> ]
-[ <strong>-Z&lt;filter&gt;</strong> ]
+[ <strong>-T</strong><em>year</em> ]
+[ <strong>-Z</strong><em>filtergrd</em> ]
 [ <strong>-V</strong>[<em>level</em>] ]
 [ <strong>-n</strong>[<strong>b</strong>|<strong>c</strong>|<strong>l</strong>|<strong>n</strong>][<strong>+a</strong>][<strong>+b</strong><em>BC</em>][<strong>+t</strong><em>threshold</em>] ]</p>
 <p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
@@ -135,13 +135,13 @@ the anomaly grid. They can be coarser.</dd>
 <dd>Do NOT use Taylor expansion.</dd>
 <dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em></dt>
 <dd>defines the Region of the output points. [Default: Same as input.]</dd>
-<dt><strong>-Y</strong><em>year</em></dt>
+<dt><strong>-T</strong><em>year</em></dt>
 <dd>Decimal year used by the IGRF routine to compute the declination and
 inclination at each point [default: 2000]</dd>
 <dt><strong>-W</strong><em>width</em></dt>
 <dd>The size of the moving window in degrees [5].</dd>
 <dt><strong>-Z</strong><em>filter_grd</em></dt>
-<dd>Write the filter file on disk.</dd>
+<dd>Write the filter file to disk.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="../../gmt.html#v-full"><em>(more ...)</em></a></dt>
@@ -240,7 +240,7 @@ of the Azores Triple Junction and associated plateau. <em>JGR</em>, VOL.
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" >POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -258,9 +258,9 @@ of the Azores Triple Junction and associated plateau. <em>JGR</em>, VOL.
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

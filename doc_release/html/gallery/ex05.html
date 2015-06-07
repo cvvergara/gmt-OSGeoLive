@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(5) A 3-D illuminated surface (in bw) &mdash; GMT 5.1.1 documentation</title>
+    <title>(5) A 3-D illuminated surface (in bw) &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(6) Plotting of histograms" href="ex06.html" />
     <link rel="prev" title="(4) A 3-D perspective mesh plot" href="ex04.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -98,13 +98,13 @@ the SW and view the surface from SE:</p>
 <span class="c"># Unix progs:	echo, rm</span>
 <span class="c">#</span>
 <span class="nv">ps</span><span class="o">=</span>example_05.ps
-gmt grdmath -R-15/15/-15/15 -I0.3 X Y HYPOT DUP 2 MUL PI MUL 8 DIV COS EXCH NEG 10 DIV <span class="se">\</span>
+gmt grdmath -R-15/15/-15/15 -I0.3 X Y HYPOT DUP <span class="m">2</span> MUL PI MUL <span class="m">8</span> DIV COS EXCH NEG <span class="m">10</span> DIV <span class="se">\</span>
 	EXP <span class="nv">MUL</span> <span class="o">=</span> sombrero.nc
 <span class="nb">echo</span> <span class="s1">&#39;-5 128 5 128&#39;</span> &gt; gray.cpt
 gmt grdgradient sombrero.nc -A225 -Gintensity.nc -Nt0.75
 gmt grdview sombrero.nc -JX6i -JZ2i -B5 -Bz0.5 -BSEwnZ -N-1+gwhite -Qs -Iintensity.nc -X1.5i <span class="se">\</span>
 	-Cgray.cpt -R-15/15/-15/15/-1/1 -K -p120/30 &gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;4.1 5.5 z(r) = cos (2@~p@~r/8) @~\327@~e@+-r/10@+&quot;</span> | gmt pstext -R0/11/0/8.5 -Jx1i <span class="se">\</span>
+<span class="nb">echo</span> <span class="s2">&quot;4.1 5.5 z(r) = cos (2@~p@~r/8) @~\327@~e@+-r/10@+&quot;</span> <span class="p">|</span> gmt pstext -R0/11/0/8.5 -Jx1i <span class="se">\</span>
 	-F+f50p,ZapfChancery-MediumItalic+jBC -O &gt;&gt; <span class="nv">$ps</span>
 rm -f gray.cpt sombrero.nc intensity.nc
 </pre></div>
@@ -157,7 +157,7 @@ will result in a plot like the one in Figure.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -175,9 +175,9 @@ will result in a plot like the one in Figure.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

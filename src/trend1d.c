@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: trend1d.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: trend1d.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -77,7 +77,7 @@
 
 #include "gmt_dev.h"
 
-#define GMT_PROG_OPTIONS "-:>Vbhis" GMT_OPT("H")
+#define GMT_PROG_OPTIONS "-:>Vbfhis" GMT_OPT("H")
 
 #define TREND1D_N_OUTPUT_CHOICES 5
 
@@ -122,7 +122,7 @@ struct	TREND1D_DATA {
 int read_data_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA **data, uint64_t *n_data, double *xmin, double *xmax, int weighted_input, double **work)
 {
 	uint64_t i;
-	size_t n_alloc = GMT_CHUNK;
+	size_t n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 	double *in = NULL;
 
 	*data = GMT_memory (GMT, NULL, n_alloc, struct TREND1D_DATA);
@@ -521,7 +521,7 @@ int GMT_trend1d_parse (struct GMT_CTRL *GMT, struct TREND1D_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: pspolar.c 12822 2014-01-31 23:39:56Z remko $ 
+ *    $Id: pspolar.c 13744 2014-11-27 02:05:42Z pwessel $ 
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence
@@ -212,7 +212,7 @@ int GMT_pspolar_parse (struct GMT_CTRL *GMT, struct PSPOLAR_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -558,7 +558,7 @@ int GMT_pspolar (void *V_API, int mode, void *args)
 			GMT_setpen (GMT, &Ctrl->W.pen);
 			sincosd (azS, &si, &co);
 			if (Ctrl->S2.vector) {
-				double dim[7];
+				double dim[PSL_MAX_DIMS];
 				dim[0] = plot_x + Ctrl->S2.size*si; dim[1] = plot_y + Ctrl->S2.size*co;
 				dim[2] = Ctrl->S2.width; dim[3] = Ctrl->S2.length; dim[4] = Ctrl->S2.head;
 				dim[5] = GMT->current.setting.map_vector_shape; dim[6] = GMT_VEC_END | GMT_VEC_FILL;

@@ -120,7 +120,7 @@ Optional Arguments
     Pass all records whose location is within *dist* of any of the line
     segments in the ASCII multiple-segment file *linefile*. If *dist* is
     zero then we will scan each sub-header in the *ptfile* for an
-    embedded **-D**\ *dist* setting that sets each line’s individual
+    embedded **-D**\ *dist* setting that sets each line's individual
     distance value. Distances are Cartesian and in user units; specify
     **-fg** to indicate spherical distances append a distance unit (see
     UNITS). Alternatively, if **-R** and **-J** are used then geographic
@@ -129,7 +129,7 @@ Optional Arguments
     distances are compared to *dist*. Use **-Lp** to ensure only points
     whose orthogonal projections onto the nearest line-segment fall
     within the segments endpoints [Default considers points "beyond" the
-    line’s endpoints.
+    line's endpoints.
 
 **-N**\ *maskvalues*
     Pass all records whose location is inside specified geographical
@@ -149,8 +149,9 @@ Optional Arguments
 .. include:: explain_-V.rst_
 
 **-Z**\ *min*\ [/*max*]\ [**+c**\ *col*]
-    Pass all records whose 3rd column (*z*; *col* = 2) lies within the given range.
-    If *max* is omitted then we test if *z* equals *min* instead.
+    Pass all records whose 3rd column (*z*; *col* = 2) lies within the given range
+    or is NaN (use **-s** to skip NaN records).
+    If *max* is omitted then we test if *z* equals *min* instead.  
     Input file must have at least three columns. To indicate no limit on
     min or max, specify a hyphen (-). If your 3rd column is absolute
     time then remember to supply **-f**\ 2T. To specify another column, append
@@ -255,7 +256,8 @@ origin.d for a certain projection, try
 
    ::
 
-    gmt gmtselect stations.d -C5/origin.d -R20/50/-10/20 -JM20c --PROJ_LENGTH_UNIT=cm > subset2
+    gmt gmtselect stations.d -C5/origin.d -R20/50/-10/20 -JM20c \
+    --PROJ_LENGTH_UNIT=cm > subset2
 
 .. include:: explain_gshhs.rst_
 

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *      $Id: gmt_notposix.c 12822 2014-01-31 23:39:56Z remko $
+ *      $Id: gmt_notposix.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *      Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *      Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -418,7 +418,7 @@ double j1 (double x)
 #define ACC 40.0
 #define BIGNO 1.0e10
 #define BIGNI 1.0e-10
-#define IS_ZERO(x) (fabs (x) < GMT_CONV_LIMIT)
+#define IS_ZERO(x) (fabs (x) < GMT_CONV8_LIMIT)
 
 /* Alternative jn coded from Numerical Recipes by Press et al */
 

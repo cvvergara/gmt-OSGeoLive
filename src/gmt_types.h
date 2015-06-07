@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_types.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_types.h 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@ struct GMT_MAP {		/* Holds all map-related parameters */
 	int prev_x_status;
 	int prev_y_status;
 	int corner;			/* Tells us which corner 1-4 or -1 if not a corner */
+	bool coastline;			/* true if we are currently plotting the coastline data in pscoast */
 	bool on_border_is_outside;		/* true if a point exactly on the map border shoud be considered outside the map */
 	bool is_world;			/* true if map has 360 degrees of longitude range */
 	bool is_world_tm;			/* true if GMT_TM map is global? */

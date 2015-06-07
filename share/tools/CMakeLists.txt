@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 12822 2014-01-31 23:39:56Z remko $
+# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -28,5 +28,18 @@ install (PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/gmt5syntax
 	DESTINATION ${GMT_DATADIR}/tools
 	COMPONENT Runtime)
+
+if (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
+	install (PROGRAMS
+		gmt_completion.bash
+		DESTINATION ${GMT_DATADIR}/tools
+		COMPONENT Runtime)
+else (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
+	install (FILES
+		gmt_completion.bash
+		DESTINATION etc/bash_completion.d
+		COMPONENT Runtime
+		RENAME gmt)
+endif (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

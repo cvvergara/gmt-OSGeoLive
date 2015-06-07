@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>psimage &mdash; GMT 5.1.1 documentation</title>
+    <title>psimage &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pslegend" href="pslegend.html" />
     <link rel="prev" title="pshistogram" href="pshistogram.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -170,24 +170,8 @@ vertically. If <em>ny</em> is omitted, it will be identical to <em>nx</em>
 <dd>Select &#8220;Portrait&#8221; plot orientation.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
-<dd><em>west</em>, <em>east</em>, <em>south</em>, and <em>north</em> specify the region of interest,
-and you may specify them in decimal degrees or in
-[+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
-and upper right map coordinates are given instead of w/e/s/n. The
-two shorthands <strong>-Rg</strong> and <strong>-Rd</strong> stand for global domain (0/360
-and -180/+180 in longitude respectively, with -90/+90 in latitude).
-Alternatively, specify the name of an existing grid file and the
-<strong>-R</strong> settings (and grid spacing, if applicable) are copied from
-the grid. Using <strong>-R</strong><em>unit</em> expects projected (Cartesian)
-coordinates compatible with chosen <strong>-J</strong> and we inversely project
-to determine actual rectangular geographic region.
-For perspective view (<strong>-p</strong>), optionally append /<em>zmin</em>/<em>zmax</em>.
-In case of perspective view (<strong>-p</strong>), a z-range (<em>zmin</em>, <em>zmax</em>)
-can be appended to indicate the third dimension. This needs to be
-done only when using the <strong>-Jz</strong> option, not when using only the
-<strong>-p</strong> option. In the latter case a perspective view of the plane is
-plotted, with no third dimension.  </dd>
+<dt><strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>] <a class="reference internal" href="gmt.html#r-full"><em>(more ...)</em></a></dt>
+<dd>Specify the region of interest. (Used only with <strong>-p</strong>)</dd>
 </dl>
 <p>For perspective view <strong>p</strong>, optionally append /<em>zmin</em>/<em>zmax</em>. <a class="reference internal" href="gmt.html#rz-full"><em>(more ...)</em></a>  </p>
 <dl class="docutils">
@@ -241,12 +225,12 @@ transparent.</dd>
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -347,7 +331,7 @@ to be 1 cm wide, use</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -365,9 +349,9 @@ to be 1 cm wide, use</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>psxy &mdash; GMT 5.1.1 documentation</title>
+    <title>psxy &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="psxyz" href="psxyz.html" />
     <link rel="prev" title="pswiggle" href="pswiggle.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -144,7 +144,7 @@ then we read from standard input. Use <strong>-T</strong> to ignore all input fi
 straight lines, use the <strong>-A</strong> flag. Alternatively, add <strong>m</strong> to draw
 the line by first following a meridian, then a parallel. Or append <strong>p</strong>
 to start following a parallel, then a meridian. (This can be practical
-to draw a lines along parallels, for example).</dd>
+to draw a line along parallels, for example).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-B</strong>[<strong>p</strong>|<strong>s</strong>]<em>parameters</em> <a class="reference internal" href="gmt.html#b-full"><em>(more ...)</em></a></dt>
@@ -266,10 +266,8 @@ unchanged.) Furthermore, the axes lengths must be given in km instead of
 plot-distance units. An exception occurs for a linear projection in
 which we assume the ellipse axes are given in the same units as <strong>-R</strong>.
 For degenerate ellipses (circles) with diameter given in km, use <strong>-SE-</strong>.</dd>
-<dt><strong>-Sf</strong></dt>
-<dd><strong>f</strong>ront.
-<strong>-Sf</strong><em>gap</em>[/<em>size</em>][<strong>+l</strong>|<strong>+r</strong>][<strong>+b+c+f+s+t</strong>][<strong>+o</strong><em>offset</em>].
-Supply distance gap between symbols and symbol size. If <em>gap</em> is
+<dt><strong>-Sf</strong><em>gap</em>[/<em>size</em>][<strong>+l</strong>|<strong>+r</strong>][<strong>+b+c+f+s+t</strong>][<strong>+o</strong><em>offset</em>].</dt>
+<dd>Draw a <strong>f</strong>ront. Supply distance gap between symbols and symbol size. If <em>gap</em> is
 negative, it is interpreted to mean the number of symbols along the
 front instead. If <em>size</em> is missing it is set to 30% of the <em>gap</em>, except
 when <em>gap</em> is negative and <em>size</em> is thus required.  Append <strong>+l</strong> or
@@ -332,9 +330,9 @@ in columns 3-5. See VECTOR ATTRIBUTES for specifying other attributes.</dd>
 The required argument controls the placement of labels along the quoted
 lines. Choose among five controlling algorithms:</p>
 <blockquote>
-<div><p><strong>d</strong><em>dist</em>[<strong>c</strong>|<strong>i</strong>|<strong>p</strong>] or
-<strong>D</strong><em>dist</em>[<strong>d</strong>|<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>m</strong>|<strong>M</strong>|<strong>n</strong>|<strong>s</strong>]
-For lower case <strong>d</strong>, give distances between labels on the plot in
+<div><dl class="docutils">
+<dt><strong>d</strong><em>dist</em>[<strong>c</strong>|<strong>i</strong>|<strong>p</strong>] or <strong>D</strong><em>dist</em>[<strong>d</strong>|<strong>e</strong>|<strong>f</strong>|<strong>k</strong>|<strong>m</strong>|<strong>M</strong>|<strong>n</strong>|<strong>s</strong>]</dt>
+<dd>For lower case <strong>d</strong>, give distances between labels on the plot in
 your preferred measurement unit <strong>c</strong> (cm), <strong>i</strong> (inch), or <strong>p</strong>
 (points), while for upper case <strong>D</strong>, specify distances in map units
 and append the unit; choose among <strong>e</strong> (m), <strong>f</strong> (foot), <strong>k</strong>
@@ -343,35 +341,35 @@ and <strong>d</strong> (arc degree), <strong>m</strong> (arc minute), or <strong
 [Default is 10<strong>c</strong> or 4<strong>i</strong>]. As an option, you can append
 /<em>fraction</em> which is used to place the very first label for each
 contour when the cumulative along-contour distance equals <em>fraction
-* dist</em> [0.25].
-<strong>f</strong><em>ffile.d</em>
-Reads the ascii file <em>ffile.d</em> and places labels at locations in the
+* dist</em> [0.25].</dd>
+<dt><strong>f</strong><em>ffile.d</em></dt>
+<dd>Reads the ascii file <em>ffile.d</em> and places labels at locations in the
 file that matches locations along the quoted lines. Inexact matches
-and points outside the region are skipped.
-<strong>l|L</strong><em>line1</em>[,<em>line2</em>,...]
-Give <em>start</em> and <em>stop</em> coordinates for one or more comma-separated
-straight line segments. Labels will be placed where these lines
-intersect the quoted lines. The format of each <em>line</em> specification
-is <em>start/stop</em>, where <em>start</em> and <em>stop</em> are either a specified
-point <em>lon/lat</em> or a 2-character <strong>XY</strong> key that uses the
-justification format employed in <strong>pstext</strong> to indicate a point on
-the map, given as [LCR][BMT]. <strong>L</strong> will interpret the point pairs
-as defining great circles [Default is straight line].
-<strong>n</strong><em>n_label</em>
-Specifies the number of equidistant labels for quoted lines line
+and points outside the region are skipped.</dd>
+<dt><strong>l</strong>|<strong>L</strong><em>line1</em>[,<em>line2</em>,...]</dt>
+<dd>Give the coordinates of the end points for one or more comma-separated straight line segments.
+Labels will be placed where these lines intersect the quoted lines.
+The format of each <em>line</em> specification is <em>start_lon</em>/<em>start_lat</em>/<em>stop_lon</em>/<em>stop_lat</em>.
+Both <em>start_lon</em>/<em>start_lat</em> and <em>stop_lon</em>/<em>stop_lat</em> can be replaced by a 2-character key
+that uses the justification format employed in <strong>pstext</strong> to indicate a point on the frame or
+center of the map, given as [LCR][BMT].
+<strong>L</strong> will interpret the point pairs as defining great circles [Default is straight line].</dd>
+<dt><strong>n</strong>|<strong>N</strong><em>n_label</em></dt>
+<dd>Specifies the number of equidistant labels for quoted lines line
 [1]. Upper case <strong>N</strong> starts labeling exactly at the start of the
 line [Default centers them along the line]. <strong>N</strong>-1 places one
 justified label at start, while <strong>N</strong>+1 places one justified label
 at the end of quoted lines. Optionally, append
 /<em>min_dist</em>[<strong>c</strong>|<strong>i</strong>|<strong>p</strong>] to enforce that a
-minimum distance separation between successive labels is enforced.
-<strong>x|X</strong><em>xfile.d</em>
-Reads the multisegment file <em>xfile.d</em> and places labels at the
+minimum distance separation between successive labels is enforced.</dd>
+<dt><strong>x</strong>|<strong>X</strong><em>xfile.d</em></dt>
+<dd>Reads the multisegment file <em>xfile.d</em> and places labels at the
 intersections between the quoted lines and the lines in <em>xfile.d</em>.
 <strong>X</strong> will resample the lines first along great-circle arcs.
 In addition, you may optionally append
 <strong>+r</strong><em>radius</em>[<strong>c</strong>|<strong>i</strong>|<strong>p</strong>] to set a minimum
-label separation in the x-y plane [no limitation].</p>
+label separation in the x-y plane [no limitation].</dd>
+</dl>
 <p>The optional <em>labelinfo</em> controls the specifics of the label
 formatting and consists of a concatenated string made up of any of
 the following control arguments:</p>
@@ -389,7 +387,7 @@ the workings of the quoted line setup.</dd>
 <dt><strong>+e</strong></dt>
 <dd>Delay the plotting of the text. This is used to build a clip path
 based on the text, then lay down other overlays while that clip path
-is in effect, then turning of clipping with psclip <strong>-Ct</strong> which
+is in effect, then turning of clipping with psclip <strong>-Cs</strong> which
 finally plots the original text.</dd>
 <dt><strong>+f</strong><em>font</em></dt>
 <dd>Sets the desired font [Default <a class="reference internal" href="gmt.conf.html#font-annot-primary"><em>FONT_ANNOT_PRIMARY</em></a> with its
@@ -432,7 +430,7 @@ Requires the crossing file option.</p>
 <strong>c</strong>|<strong>i</strong>|<strong>p</strong> to specify the units). Increments
 are considered in the coordinate system defined by the
 orientation of the line; use <strong>+N</strong> to force increments in the
-plot x/y coordinates system [no nudging].</dd>
+plot x/y coordinates system [no nudging]. Not allowed with <strong>+v</strong>.</dd>
 <dt><strong>+o</strong></dt>
 <dd>Selects rounded rectangular text box [Default is rectangular].
 Not applicable for curved text (<strong>+v</strong>) and only makes sense for
@@ -442,7 +440,7 @@ opaque text boxes.</dd>
 optionally specify pen for outline [Default is width = 0.25p,
 color = black, style = solid].</dd>
 <dt><strong>+r</strong><em>min_rad</em></dt>
-<dd>Will not place labels where the line’s radius of curvature is
+<dd>Will not place labels where the line&#8217;s radius of curvature is
 less than <em>min_rad</em> [Default is 0].</dd>
 <dt><strong>+t</strong>[<em>file</em>]</dt>
 <dd>Saves line label x, y, and text to <em>file</em> [Line_labels.txt].
@@ -523,7 +521,7 @@ producing any plotting output.</dd>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
 <dd>Select verbosity level [c].  </dd>
-<dt><strong>-W</strong>[<strong>-</strong>|<strong>+</strong>][<em>pen</em>]</dt>
+<dt><strong>-W</strong>[<strong>-</strong>|<strong>+</strong>][<em>pen</em>] <a class="reference internal" href="GMT_Docs.html#wpen-attrib"><em>(more ...)</em></a></dt>
 <dd>Set pen attributes for lines or the outline of symbols [Defaults:
 width = default, color = black, style = solid]. A leading <strong>+</strong> will
 use the lookup color (via <strong>-C</strong>) for both symbol fill and outline
@@ -561,7 +559,7 @@ off symbol fill.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] <a class="reference internal" href="gmt.html#colon-full"><em>(more ...)</em></a></dt>
@@ -576,12 +574,12 @@ off symbol fill.</dd>
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -594,14 +592,20 @@ options, then exits.</dd>
 <h2><a class="reference external" href="#toc15">Vector Attributes</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p>Several modifiers may be appended to the vector-producing options to
 specify the placement of vector heads, their shapes, and the
-justification of the vector:</p>
+justification of the vector. Below, left and right refers to the
+side of the vector line when viewed from the start point to the
+end point of the segment:</p>
 <blockquote>
 <div><p><strong>+a</strong><em>angle</em> sets the angle of the vector head apex [30].</p>
-<p><strong>+b</strong> places a vector head at the beginning of the vector path [none].</p>
-<p><strong>+e</strong> places a vector head at the end of the vector path [none].</p>
+<p><strong>+b</strong> places a vector head at the beginning of the vector path [none].
+Append <strong>l</strong>|<strong>r</strong> to only draw the left or right side of this head
+[both sides].</p>
+<p><strong>+e</strong> places a vector head at the end of the vector path [none].
+Append <strong>l</strong>|<strong>r</strong> to only draw the left or right side of this head
+[both sides].</p>
 <p><strong>+g</strong>-|<em>fill</em> turns off vector head fill (if -) or sets the vector
 head fill [Default fill is used, which may be no fill].</p>
-<p><strong>+l</strong> draws half-arrows, using only the left side [both].</p>
+<p><strong>+l</strong> draws half-arrows, using only the left side of specified heads [both sides].</p>
 <p><strong>+n</strong><em>norm</em> scales down vector attributes (pen thickness, head size)
 with decreasing length, where vectors shorter than <em>norm</em> will have
 their attributes scaled by length/<em>norm</em> [arrow attributes remains
@@ -611,9 +615,9 @@ small circles.  Only needed for great circles if <strong>+q</strong> is given.</
 <p><strong>+p</strong>[-][<em>pen</em>] sets the vector pen attributes. If <em>pen</em> has a
 leading - then the head outline is not drawn. [Default pen is used, and
 head outline is drawn]</p>
-<p><strong>+q</strong> means the input <em>angle</em>, <em>length</em> is instead the <em>start</em> and <em>stop</em>
-opening angles of the arc segment relative to the point.</p>
-<p><strong>+r</strong> draws half-arrows, using only the right side [both].</p>
+<p><strong>+q</strong> means the input <em>angle</em>, <em>length</em> data instead represent the <em>start</em> and <em>stop</em>
+opening angles of the arc segment relative to the given point.</p>
+<p><strong>+r</strong> draws half-arrows, using only the right side of specified heads [both sides].</p>
 </div></blockquote>
 <p>In addition, all but circular vectors may take these modifiers:</p>
 <blockquote>
@@ -758,7 +762,7 @@ a pattern. Other standard geometric symbols can also be used. See Appendix
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -776,9 +780,9 @@ a pattern. Other standard geometric symbols can also be used. See Appendix
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

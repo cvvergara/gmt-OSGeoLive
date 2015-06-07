@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>x2sys_solve &mdash; GMT 5.1.1 documentation</title>
+    <title>x2sys_solve &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="X2SYS" href="../../SUP_X2SYS.html" />
     <link rel="next" title="The GMT historical collection" href="../../Gallery.html" />
     <link rel="prev" title="x2sys_report" href="x2sys_report.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_X2SYS.html" accesskey="U">X2SYS</a> &raquo;</li>
 <li class="right">
@@ -143,7 +143,7 @@ contain cruise ID1, ID2, t1-t0, t2-t0, COE.</p>
 <dt><strong>-W</strong></dt>
 <dd>Means that each input records has an extra column with the composite
 weight for each crossover record. These are used to obtain a
-weighted least squares solution [no weights]. Append ’u’ to report
+weighted least squares solution [no weights]. Append <strong>u</strong> to report
 unweighted mean/std [Default, report weighted stats].</dd>
 </dl>
 <dl class="docutils">
@@ -151,12 +151,12 @@ unweighted mean/std [Default, report weighted stats].</dd>
 <dd>Select binary input.  </dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -164,6 +164,21 @@ options, then exits.</dd>
 <dt><strong>-</strong><strong>-show-datadir</strong></dt>
 <dd>Print full path to GMT share directory and exit.</dd>
 </dl>
+</div>
+<div class="section" id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<p>Most of the model corrections in <strong>-E</strong> involve a constant offset.
+Because crossovers are differences between values, any absolute level
+will cancel out and hence the constant offsets we obtain are relative
+to an undetermined absolute level.  To obtain a solvable solution we
+add the constraint that the sum of all constant offsets equal zero.
+If the tracks form clusters in which no tracks from one cluster cross
+any track from another cluster then these are two independent data
+sets and require they own constraint equation for their offsets.  We
+determine the number of clusters and automatically add the required
+constraint equations.  If you need a particular reference track to have
+a particular offset (e.g., 0) then you can subtract the offset you
+found from every track correction and add in the desired offset.</p>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
@@ -223,6 +238,7 @@ gmt x2sys_solve depth_coe.txt -V -TMGD77 -Cdepth -Es &gt; coe_table.txt
 <li><a class="reference internal" href="#description">Description</a></li>
 <li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
 <li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
+<li><a class="reference internal" href="#notes">Notes</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
 </ul>
@@ -258,7 +274,7 @@ gmt x2sys_solve depth_coe.txt -V -TMGD77 -Cdepth -Es &gt; coe_table.txt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_X2SYS.html" >X2SYS</a> &raquo;</li>
 <li class="right">
@@ -276,9 +292,9 @@ gmt x2sys_solve depth_coe.txt -V -TMGD77 -Cdepth -Es &gt; coe_table.txt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

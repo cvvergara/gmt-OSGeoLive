@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>makecpt &mdash; GMT 5.1.1 documentation</title>
+    <title>makecpt &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="M" href="M.html" />
     <link rel="next" title="mapproject" href="mapproject.html" />
     <link rel="prev" title="M" href="M.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="M.html" accesskey="U">M</a> &raquo;</li>
 <li class="right">
@@ -168,7 +168,7 @@ colors, and writes out z.</dd>
 <dd>Defines the range of the new cpt file by giving the lowest and
 highest z-value and interval. When used with <strong>-C</strong> and <em>z_inc</em> is
 not specified, the number of intervals remains the same as in the
-input palette. If <em>z_inc</em> is specified with a trailing ’+’ we
+input palette. If <em>z_inc</em> is specified with a trailing <strong>+</strong> we
 interpret <em>z_inc</em> as the number of desired intervals instead.
 Alternatively, give the name of a ASCII file that has one z-value
 per record. If <strong>-T</strong> is not given, the existing range in the master
@@ -179,20 +179,21 @@ cpt file will be used intact.</dd>
 <dd>Select verbosity level [c].  </dd>
 <dt><strong>-W</strong></dt>
 <dd>Do not interpolate the input color table but pick the output colors
-starting at the beginning of the map. This is particularly useful in
-combination with a categorical color table. Cannot be used in
-combination with <strong>-Z</strong>.</dd>
+starting at the beginning of the color table, until colors for all
+intervals are assigned. This is particularly useful in combination
+with a categorical color table, like &#8220;categorical&#8221;. Cannot be used
+in combination with <strong>-Z</strong>.</dd>
 <dt><strong>-Z</strong></dt>
 <dd>Creates a continuous cpt file [Default is discontinuous, i.e.,
 constant colors for each interval].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -285,7 +286,7 @@ as an output filename; hence the my_gebco.cpt in the example.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="M.html" >M</a> &raquo;</li>
 <li class="right">
@@ -303,9 +304,9 @@ as an output filename; hence the my_gebco.cpt in the example.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

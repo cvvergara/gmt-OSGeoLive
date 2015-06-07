@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 12822 2014-01-31 23:39:56Z remko $
+# $Id: CMakeLists.txt 13988 2015-01-26 16:59:00Z pwessel $
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -98,6 +98,7 @@ foreach (_fig ${_scripts_ps})
 	else (WIN32)
 		add_custom_command (OUTPUT ${RST_BINARY_DIR}/_images/${_pdf_fig}
 			COMMAND
+			_dummy_var=cmake_assumes_this_is_a_command # needed for spaces to be escaped correctly
 			GMT_USERDIR=${GMT_BINARY_DIR}/share
 			GMT_SHAREDIR=${GMT_SOURCE_DIR}/share
 			${GMT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src/gmt ps2raster -A -P -Tf
@@ -107,6 +108,7 @@ foreach (_fig ${_scripts_ps})
 			DEPENDS gmt_for_img_convert ${_fig})
 		add_custom_command (OUTPUT ${RST_BINARY_DIR}/_images/${_png_fig}
 			COMMAND
+			_dummy_var=cmake_assumes_this_is_a_command # needed for spaces to be escaped correctly
 			GMT_USERDIR=${GMT_BINARY_DIR}/share
 			GMT_SHAREDIR=${GMT_SOURCE_DIR}/share
 			${GMT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src/gmt ps2raster
@@ -124,13 +126,11 @@ foreach (_script ${_scr_nostrip})
 	FILE(MAKE_DIRECTORY ${RST_BINARY_DIR}/_verbatim)
 	# Add command that triggers generator macro when output does not exist
 	add_custom_command (OUTPUT ${RST_BINARY_DIR}/_verbatim/${_txt}
-		COMMAND ${CMAKE_COMMAND}
-		-D script=${CMAKE_CURRENT_SOURCE_DIR}/${_script}
-		-D txt=${RST_BINARY_DIR}/_verbatim/${_txt}
-		-D no_strip=TRUE
-		-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-		-P ${CMAKE_MODULE_PATH}/ScriptToVerbatim.cmake
-		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${_script})
+		COMMAND ${GMT_BINARY_DIR}/src/script2verbatim
+		${CMAKE_CURRENT_SOURCE_DIR}/${_script}
+		${RST_BINARY_DIR}/_verbatim/${_txt}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		DEPENDS script2verbatim _docs_rst_mkdir_verbatim ${CMAKE_CURRENT_SOURCE_DIR}/${_script})
 endforeach (_script)
 
 foreach (_script ${_scr_strip})
@@ -138,12 +138,11 @@ foreach (_script ${_scr_strip})
 	list (APPEND _scripts_txt ${RST_BINARY_DIR}/_verbatim/${_txt})
 	FILE(MAKE_DIRECTORY ${RST_BINARY_DIR}/_verbatim)
 	add_custom_command (OUTPUT ${RST_BINARY_DIR}/_verbatim/${_txt}
-		COMMAND ${CMAKE_COMMAND}
-		-D script=${CMAKE_CURRENT_SOURCE_DIR}/${_script}
-		-D txt=${RST_BINARY_DIR}/_verbatim/${_txt}
-		-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-		-P ${CMAKE_MODULE_PATH}/ScriptToVerbatim.cmake
-		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${_script})
+		COMMAND ${GMT_BINARY_DIR}/src/script2verbatim --strip-comments
+		${CMAKE_CURRENT_SOURCE_DIR}/${_script}
+		${RST_BINARY_DIR}/_verbatim/${_txt}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		DEPENDS script2verbatim _docs_rst_mkdir_verbatim ${CMAKE_CURRENT_SOURCE_DIR}/${_script})
 endforeach (_script)
 
 # Add build target

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdgravmag3d.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grdgravmag3d.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -383,7 +383,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		}
 
 		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc, \
-			GridA->header->registration, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+			GridA->header->registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Grid dimensions are nx = %d, ny = %d\n",
 					Gout->header->nx, Gout->header->ny);
@@ -758,6 +758,7 @@ int grdgravmag3d_body_desc(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struc
 		|________________________________________|
 
 */
+	GMT_UNUSED(Ctrl);
 	if (face == 0) {			/* Decompose the TOP square surface in 2 triangles using CW order */
 		body_desc->n_f = 2;
 		if (body_desc->n_v == NULL)
@@ -796,6 +797,7 @@ int grdgravmag3d_body_set(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct
 	float *z = Grid->data;
 	double cosj, cosj1;
 	struct GMT_GRID_HEADER *h = Grid->header;
+	GMT_UNUSED(GMT); GMT_UNUSED(body_desc);
 
 	j1 = j + inc_j;		i1 = i + inc_i;
 	cosj = cos_vec[j];		cosj1 = cos_vec[j1];

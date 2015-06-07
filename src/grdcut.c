@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcut.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grdcut.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -58,13 +58,14 @@ struct GRDCUT_CTRL {
 	} S;
 	struct GRDCUT_Z {	/* -Z[min/max] */
 		bool active;
-		unsigned int mode;	/* 1 means NaN */
+		unsigned int mode;	/* 0-2, see below */
 		double min, max;
 	} Z;
 };
 
-#define NAN_IS_INSIDE	0
-#define NAN_IS_OUTSIDE	1
+#define NAN_IS_IGNORED	0
+#define NAN_IS_INRANGE	1
+#define NAN_IS_SKIPPED	2
 
 void *New_grdcut_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct GRDCUT_CTRL *C;
@@ -75,6 +76,7 @@ void *New_grdcut_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new 
 
 	C->N.value = GMT->session.f_NaN;
 	C->Z.min = -DBL_MAX;	C->Z.max = DBL_MAX;			/* No limits on z-range */
+	C->Z.mode = NAN_IS_IGNORED;
 	return (C);
 }
 
@@ -89,7 +91,7 @@ int GMT_grdcut_usage (struct GMTAPI_CTRL *API, int level)
 {
 	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: grdcut <ingrid> -G<outgrid> %s [-N[<nodata>]]\n\t[%s] [-S[n]<lon>/<lat>/<radius>] [-Z[n][<min>/<max>]] [%s]\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_f_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: grdcut <ingrid> -G<outgrid> %s [-N[<nodata>]]\n\t[%s] [-S[n]<lon>/<lat>/<radius>] [-Z[n|r][<min>/<max>]] [%s]\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_f_OPT);
 
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
@@ -107,7 +109,8 @@ int GMT_grdcut_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Sn to set all nodes in the subset outside the circle to NaN.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Specify a range and determine the corresponding rectangular region so that\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   all values outside this region are outside the range [-inf/+inf].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Zn to consider NaNs outside as well [Default just ignores NaNs].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Zn to consider NaNs to be outside the range.  The resulting grid will be NaN-free.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Zr to consider NaNs inrange instead [Default just ignores NaNs in decision].\n");
 	GMT_Option (API, "f,.");
 	
 	return (EXIT_FAILURE);
@@ -130,7 +133,7 @@ int GMT_grdcut_parse (struct GMT_CTRL *GMT, struct GRDCUT_CTRL *Ctrl, struct GMT
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -139,7 +142,7 @@ int GMT_grdcut_parse (struct GMT_CTRL *GMT, struct GRDCUT_CTRL *Ctrl, struct GMT
 			/* Processes program-specific parameters */
 			
  			case 'G':	/* Output file */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -166,7 +169,11 @@ int GMT_grdcut_parse (struct GMT_CTRL *GMT, struct GRDCUT_CTRL *Ctrl, struct GMT
 				Ctrl->Z.active = true;
 				k = 0;
 				if (opt->arg[k] == 'n') {
-					Ctrl->Z.mode = NAN_IS_OUTSIDE;
+					Ctrl->Z.mode = NAN_IS_SKIPPED;
+					k = 1;
+				}
+				else if (opt->arg[k] == 'r') {
+					Ctrl->Z.mode = NAN_IS_INRANGE;
 					k = 1;
 				}
 				if (sscanf (&opt->arg[k], "%[^/]/%s", za, zb) == 2) {
@@ -186,6 +193,29 @@ int GMT_grdcut_parse (struct GMT_CTRL *GMT, struct GRDCUT_CTRL *Ctrl, struct GMT
 	n_errors += GMT_check_condition (GMT, n_files != 1, "Syntax error: Must specify one input grid file\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+}
+
+unsigned int count_NaNs (struct GMT_CTRL *GMT, struct GMT_GRID *G, unsigned int row0, unsigned int row1, unsigned int col0, unsigned int col1, unsigned int count[], unsigned int *side)
+{	/* Looo around current perimeter and count # of nans, return sum and pass back which side had most nans */
+	unsigned int col, row, sum = 0, k;
+	uint64_t node;
+	
+	GMT_memset (count, 4, unsigned int);	/* Reset count */
+	*side = 0;
+	/* South count: */
+	for (col = col0, node = GMT_IJP (G->header, row1, col); col <= col1; col++, node++) if (GMT_is_fnan (G->data[node])) count[0]++;
+	/* East count: */
+	for (row = row0, node = GMT_IJP (G->header, row, col1); row <= row1; row++, node += G->header->mx) if (GMT_is_fnan (G->data[node])) count[1]++;
+	/* North count: */
+	for (col = col0, node = GMT_IJP (G->header, row0, col); col <= col1; col++, node++) if (GMT_is_fnan (G->data[node])) count[2]++;
+	/* West count: */
+	for (row = row0, node = GMT_IJP (G->header, row, col0); row <= row1; row++, node += G->header->mx) if (GMT_is_fnan (G->data[node])) count[3]++;
+	for (k = 0; k < 4; k++) {	/* TIme to sum up and determine side with most NaNs */
+		sum += count[k];
+		if (k && count[k] > count[*side]) *side = k;
+	}
+	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Nans found: W = %d E = %d S = %d N = %d\n", count[3], count[1], count[0], count[2]);
+	return ((row0 == row1 && col0 == col1) ? 0 : sum);	/* Return 0 if we run out of grid, else the sum */
 }
 
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
@@ -230,66 +260,93 @@ int GMT_grdcut (void *V_API, int mode, void *args)
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid\n");
 	if (Ctrl->Z.active) {	/* Must determine new region via -Z, so get entire grid first */
-		unsigned int row0 = 0, row1 = 0, col0 = 0, col1 = 0, row, col;
+		unsigned int row0 = 0, row1 = 0, col0 = 0, col1 = 0, row, col, sum, side, count[4];
 		bool go;
 		
 		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);	/* Get entire grid */
 		}
-		
-		for (row = 0, go = true; go && row < G->header->nx; row++) {	/* Scan from xmin towards xmax */
-			for (col = 0, node = GMT_IJP (G->header, 0, row); go && col < G->header->ny; col++, node += G->header->mx) {
+		row1 = G->header->ny - 1;	col1 = G->header->nx - 1;
+		if (Ctrl->Z.mode == NAN_IS_SKIPPED) {	/* Must scan in from outside to the inside, one side at the time, remove side with most Nans */
+			sum = count_NaNs (GMT, G, row0, row1, col0, col1, count, &side);	/* Initial border count */
+			while (sum) {	/* Must eliminate the row or col with most NaNs, and move grid boundary inwards */
+				if (side == 3 && col0 < col1) {	/* Need to move in from the left */
+					col0++;
+					GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Stip off a leftmost column\n");
+				} 
+				else if (side == 1 && col1 > col0) {	/* Need to move in from the right */
+					col1--;
+					GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Stip off rightmost column\n");
+				}
+				else if (side == 0 && row1 > row0) {	/* Need to move up from the bottom */
+					row1--;
+					GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Stip off bottom row\n");
+				}
+				else if (side == 2 && row0 < row1) {	/* Need to move down from the top */
+					row0++;
+					GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Stip off top row\n");
+				}
+				sum = count_NaNs (GMT, G, row0, row1, col0, col1, count, &side);
+			}
+			if (col0 == col1 || row0 == row1) {
+				GMT_Report (API, GMT_MSG_NORMAL, "The sub-region implied by -Zn is empty!\n");
+				Return (EXIT_FAILURE);
+			}
+		}
+		/* Here NaNs have either been skipped by inward search, or will be ignored (NAN_IS_IGNORED) or will beconsider to be within range (NAN_IS_INRANGE) */
+		for (row = row0, go = true; go && row <= row1; row++) {	/* Scan from ymax towards ymin */
+			for (col = col0, node = GMT_IJP (G->header, row, 0); go && col <= col1; col++, node++) {
 				if (GMT_is_fnan (G->data[node])) {
-					if (Ctrl->Z.mode == NAN_IS_OUTSIDE) go = false;	/* Must stop since this NaN value defines the inner box */
+					if (Ctrl->Z.mode == NAN_IS_INRANGE) go = false;	/* Must stop since this NaN value defines the inner box */
 				}
 				else if (G->data[node] >= Ctrl->Z.min && G->data[node] <= Ctrl->Z.max)
 					go = false;
-				if (!go) row0 = row;	/* Found starting column */
+				if (!go) row0 = row;	/* Found starting row */
 			}
 		}
 		if (go) {
 			GMT_Report (API, GMT_MSG_NORMAL, "The sub-region implied by -Z is empty!\n");
 			Return (EXIT_FAILURE);
 		}
-		for (row = G->header->nx-1, go = true; go && row > row0; row--) {	/* Scan from xmax towards xmin */
-			for (col = 0, node = GMT_IJP (G->header, 0, row); go && col < G->header->ny; col++, node += G->header->mx) {
+		for (row = row1, go = true; go && row > row0; row--) {	/* Scan from ymin towards ymax */
+			for (col = col0, node = GMT_IJP (G->header, row, 0); go && col <= col1; col++, node++) {
 				if (GMT_is_fnan (G->data[node])) {
-					if (Ctrl->Z.mode == NAN_IS_INSIDE) go = false;	/* Must stop since this value defines the inner box */
+					if (Ctrl->Z.mode == NAN_IS_INRANGE) go = false;	/* Must stop since this NaN value defines the inner box */
 				}
 				else if (G->data[node] >= Ctrl->Z.min && G->data[node] <= Ctrl->Z.max)
 					go = false;
-				if (!go) row1 = row;	/* Found stopping column */
+				if (!go) row1 = row;	/* Found stopping row */
 			}
 		}
-		for (col = 0, go = true; go && col < G->header->ny; col++) {	/* Scan from ymin towards ymax */
-			for (row = row0, node = GMT_IJP (G->header, col, row0); go && row < row1; row++, node++) {
+		for (col = col0, go = true; go && col <= col1; col++) {	/* Scan from xmin towards xmax */
+			for (row = row0, node = GMT_IJP (G->header, row0, col); go && row <= row1; row++, node += G->header->mx) {
 				if (GMT_is_fnan (G->data[node])) {
-					if (Ctrl->Z.mode == NAN_IS_INSIDE) go = false;	/* Must stop since this value defines the inner box */
+					if (Ctrl->Z.mode == NAN_IS_INRANGE) go = false;	/* Must stop since this NaN value defines the inner box */
 				}
 				else if (G->data[node] >= Ctrl->Z.min && G->data[node] <= Ctrl->Z.max)
 					go = false;
-				if (!go) col0 = col;	/* Found starting row */
+				if (!go) col0 = col;	/* Found starting col */
 			}
 		}
-		for (col = G->header->ny-1, go = true; go && col >= col0; col--) {	/* Scan from ymax towards ymin */
-			for (row = row0, node = GMT_IJP (G->header, col, row0); go && row < row1; row++, node++) {
+		for (col = col1, go = true; go && col >= col0; col--) {	/* Scan from xmax towards xmin */
+			for (row = row0, node = GMT_IJP (G->header, row0, col); go && row <= row1; row++, node += G->header->mx) {
 				if (GMT_is_fnan (G->data[node])) {
-					if (Ctrl->Z.mode == NAN_IS_INSIDE) go = false;	/* Must stop since this value defines the inner box */
+					if (Ctrl->Z.mode == NAN_IS_INRANGE) go = false;	/* Must stop since this NaN value defines the inner box */
 				}
 				else if (G->data[node] >= Ctrl->Z.min && G->data[node] <= Ctrl->Z.max)
 					go = false;
-				if (!go) col1 = col;	/* Found starting row */
+				if (!go) col1 = col;	/* Found stopping col */
 			}
 		}
-		if (row0 == 0 && col0 == 0 && row1 == (G->header->nx-1) && col1 == (G->header->ny-1)) {
+		if (row0 == 0 && col0 == 0 && row1 == (G->header->ny-1) && col1 == (G->header->nx-1)) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Your -Z limits produced no subset - output grid is identical to input grid\n");
 			GMT_memcpy (wesn_new, G->header->wesn, 4, double);
 		}
 		else {	/* Adjust boundaries inwards */
-			wesn_new[XLO] = G->header->wesn[XLO] + row0 * G->header->inc[GMT_X];
-			wesn_new[XHI] = G->header->wesn[XHI] - (G->header->nx - 1 - row1) * G->header->inc[GMT_X];
-			wesn_new[YLO] = G->header->wesn[YLO] + (G->header->ny - 1 - col1) * G->header->inc[GMT_Y];
-			wesn_new[YHI] = G->header->wesn[YHI] - col0 * G->header->inc[GMT_Y];
+			wesn_new[XLO] = G->header->wesn[XLO] + col0 * G->header->inc[GMT_X];
+			wesn_new[XHI] = G->header->wesn[XHI] - (G->header->nx - 1 - col1) * G->header->inc[GMT_X];
+			wesn_new[YLO] = G->header->wesn[YLO] + (G->header->ny - 1 - row1) * G->header->inc[GMT_Y];
+			wesn_new[YHI] = G->header->wesn[YHI] - row0 * G->header->inc[GMT_Y];
 		}
 		GMT_free_aligned (GMT, G->data);	/* Free the grid array only as we need the header below */
 		add_mode = GMT_IO_RESET;	/* Pass this to allow reading the data again. */
@@ -417,9 +474,9 @@ int GMT_grdcut (void *V_API, int mode, void *args)
 		if (!outside[side]) continue;
 		extend++;
 		if (Ctrl->N.active)
-			GMT_Report (API, GMT_MSG_NORMAL, "Requested subset exceeds data domain on the %s side - nodes in the extra area will be initialized to %g\n", name[type][side], Ctrl->N.value);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Requested subset exceeds data domain on the %s side - nodes in the extra area will be initialized to %g\n", name[type][side], Ctrl->N.value);
 		else
-			GMT_Report (API, GMT_MSG_NORMAL, "Warning: Requested subset exceeds data domain on the %s side - truncated to match grid bounds\n", name[type][side]);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Warning: Requested subset exceeds data domain on the %s side - truncated to match grid bounds\n", name[type][side]);
 	}
 
 	/* Make sure output grid is kosher */
@@ -432,19 +489,19 @@ int GMT_grdcut (void *V_API, int mode, void *args)
 
 	/* OK, so far so good. Check if new wesn differs from old wesn by integer dx/dy */
 
-	if (GMT_minmaxinc_verify (GMT, G->header->wesn[XLO], wesn_new[XLO], G->header->inc[GMT_X], GMT_SMALL) == 1) {
+	if (GMT_minmaxinc_verify (GMT, G->header->wesn[XLO], wesn_new[XLO], G->header->inc[GMT_X], GMT_CONV4_LIMIT) == 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Old and new x_min do not differ by N * dx\n");
 		Return (GMT_RUNTIME_ERROR);
 	}
-	if (GMT_minmaxinc_verify (GMT, wesn_new[XHI], G->header->wesn[XHI], G->header->inc[GMT_X], GMT_SMALL) == 1) {
+	if (GMT_minmaxinc_verify (GMT, wesn_new[XHI], G->header->wesn[XHI], G->header->inc[GMT_X], GMT_CONV4_LIMIT) == 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Old and new x_max do not differ by N * dx\n");
 		Return (GMT_RUNTIME_ERROR);
 	}
-	if (GMT_minmaxinc_verify (GMT, G->header->wesn[YLO], wesn_new[YLO], G->header->inc[GMT_Y], GMT_SMALL) == 1) {
+	if (GMT_minmaxinc_verify (GMT, G->header->wesn[YLO], wesn_new[YLO], G->header->inc[GMT_Y], GMT_CONV4_LIMIT) == 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Old and new y_min do not differ by N * dy\n");
 		Return (GMT_RUNTIME_ERROR);
 	}
-	if (GMT_minmaxinc_verify (GMT, wesn_new[YHI], G->header->wesn[YHI], G->header->inc[GMT_Y], GMT_SMALL) == 1) {
+	if (GMT_minmaxinc_verify (GMT, wesn_new[YHI], G->header->wesn[YHI], G->header->inc[GMT_Y], GMT_CONV4_LIMIT) == 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Old and new y_max do not differ by N * dy\n");
 		Return (GMT_RUNTIME_ERROR);
 	}

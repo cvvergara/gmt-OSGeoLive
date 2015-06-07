@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(29) Gridding spherical surface data using splines &mdash; GMT 5.1.1 documentation</title>
+    <title>(29) Gridding spherical surface data using splines &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(30) Trigonometric functions plotted in graph mode" href="ex30.html" />
     <link rel="prev" title="(28) Mixing UTM and geographic data sets" href="ex28.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -119,22 +119,22 @@ gmt grdmath -Rg -I4 -r X COSD <span class="nv">$a</span> DIV DUP MUL X SIND <spa
 gmt greenspline -RPROJ_ELLIPSOID.nc mars370.in -D4 -Sp -Gmars.nc
 gmt greenspline -RPROJ_ELLIPSOID.nc mars370.in -D4 -Sq0.9975 -Gmars2.nc
 <span class="c"># Scale to km and remove PROJ_ELLIPSOID</span>
-gmt grdmath mars.nc 1000 DIV PROJ_ELLIPSOID.nc <span class="nv">SUB</span> <span class="o">=</span> mars.nc
-gmt grdmath mars2.nc 1000 DIV PROJ_ELLIPSOID.nc <span class="nv">SUB</span> <span class="o">=</span> mars2.nc
+gmt grdmath mars.nc <span class="m">1000</span> DIV PROJ_ELLIPSOID.nc <span class="nv">SUB</span> <span class="o">=</span> mars.nc
+gmt grdmath mars2.nc <span class="m">1000</span> DIV PROJ_ELLIPSOID.nc <span class="nv">SUB</span> <span class="o">=</span> mars2.nc
 gmt makecpt -Crainbow -T-7/15/22 -Z &gt; mars.cpt
 gmt grdgradient mars2.nc -fg -Ne0.75 -A45 -Gmars2_i.nc
 gmt grdimage mars2.nc -Imars2_i.nc -Cmars.cpt -B30g30 -BWsne -JH0/7i -P -K -E200 <span class="se">\</span>
 	--FONT_ANNOT_PRIMARY<span class="o">=</span>12p -X0.75i &gt; <span class="nv">$ps</span>
 gmt grdcontour mars2.nc -J -O -K -C1 -A5 -Glz+/z- &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -Rg -J -O -K -Sc0.045i -Gblack mars370.in  &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;0 90 b)&quot;</span> | gmt pstext -R -J -O -K -N -D-3.5i/-0.2i -F+f14p,Helvetica-Bold+jLB &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 90 b)&quot;</span> <span class="p">|</span> gmt pstext -R -J -O -K -N -D-3.5i/-0.2i -F+f14p,Helvetica-Bold+jLB &gt;&gt; <span class="nv">$ps</span>
 gmt grdgradient mars.nc -fg -Ne0.75 -A45 -Gmars_i.nc
 gmt grdimage mars.nc -Imars_i.nc -Cmars.cpt -B30g30 -BWsne -J -O -K -Y4.2i -E200 <span class="se">\</span>
 	--FONT_ANNOT_PRIMARY<span class="o">=</span>12p &gt;&gt; <span class="nv">$ps</span>
 gmt grdcontour mars.nc -J -O -K -C1 -A5 -Glz+/z- &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -Rg -J -O -K -Sc0.045i -Gblack mars370.in  &gt;&gt; <span class="nv">$ps</span>
 gmt psscale -Cmars.cpt -O -K -D3.5i/-0.15i/6i/0.1ih -I --FONT_ANNOT_PRIMARY<span class="o">=</span>12p -Bx2f1 -By+lkm &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s2">&quot;0 90 a)&quot;</span> | gmt pstext -R -J -O -N -D-3.5i/-0.2i -F+f14p,Helvetica-Bold+jLB &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;0 90 a)&quot;</span> <span class="p">|</span> gmt pstext -R -J -O -N -D-3.5i/-0.2i -F+f14p,Helvetica-Bold+jLB &gt;&gt; <span class="nv">$ps</span>
 <span class="c"># Clean up</span>
 rm -f *.nc mars.cpt
 </pre></div>
@@ -180,7 +180,7 @@ rm -f *.nc mars.cpt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -198,9 +198,9 @@ rm -f *.nc mars.cpt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

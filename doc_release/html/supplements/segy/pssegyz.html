@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pssegyz &mdash; GMT 5.1.1 documentation</title>
+    <title>pssegyz &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="SEGY" href="../../SUP_SEGY.html" />
     <link rel="next" title="segy2grd" href="segy2grd.html" />
     <link rel="prev" title="pssegy" href="pssegy.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SEGY.html" accesskey="U">SEGY</a> &raquo;</li>
 <li class="right">
@@ -85,10 +85,12 @@
 [ <strong>-B</strong><em>bias</em> ]
 [ <strong>-C</strong><em>clip</em> ] [ <strong>-I</strong> ] [ <strong>-K</strong> ] [ <strong>-L</strong><em>nsamp</em> ]
 [ <strong>-M</strong><em>ntrace</em> ] [ <strong>-N</strong> ] [ <strong>-O</strong> ] [ <strong>-P</strong> ]
+[ <strong>-Q</strong><em>&lt;mode&gt;&lt;value&gt;</em> ]
 [ <strong>-S</strong><em>header_x</em>/<em>header_y</em> ]
 [ <strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] ]
 [ <strong>-V</strong>[<em>level</em>] ]
-[ <strong>-X</strong><em>scale</em> ] [ <strong>-Y</strong><em>sample_int</em> ]
+[ <strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]] ]
+[ <strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] ]
 [ <strong>-Z</strong> ]
 [ <strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] ]
 [ <strong>-t</strong>[<em>transp</em>] ]</p>
@@ -129,7 +131,7 @@ the platforms to which I have access)</p>
 <dd>Select map projection.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
+<dt><strong>-R</strong>[<em>unit</em>]<em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
 <dd><em>west</em>, <em>east</em>, <em>south</em>, and <em>north</em> specify the region of interest,
 and you may specify them in decimal degrees or in
 [+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
@@ -192,6 +194,16 @@ number of traces that the program attempts to read.</dd>
 <dl class="docutils">
 <dt><strong>-P</strong> <a class="reference internal" href="../../gmt.html#p-full"><em>(more ...)</em></a></dt>
 <dd>Select &#8220;Portrait&#8221; plot orientation.</dd>
+<dt><strong>-Q</strong><em>&lt;mode&gt;&lt;value&gt;</em></dt>
+<dd><dl class="first last docutils">
+<dt>Can be used to change 4 different settings:</dt>
+<dd><p class="first"><strong>-Qb</strong><em>&lt;bias&gt;</em> to bias scaled traces (-B-0.1 subtracts 0.1 from values)</p>
+<p><strong>-Qu</strong><em>&lt;redvel&gt;</em> to apply reduction velocity (-ve removes reduction already present)</p>
+<p><strong>-Qx</strong><em>&lt;mult&gt;</em> to multiply trace locations by <em>mult</em></p>
+<p class="last"><strong>-Qy</strong><em>&lt;dy&gt;</em> to override sample interval in reel header.</p>
+</dd>
+</dl>
+</dd>
 <dt><strong>-S</strong><em>header_x</em>/<em>header_y</em></dt>
 <dd>Read trace locations from trace headers: header is either c for CDP,
 o for offset, b&lt;num&gt; to read a long starting at byte &lt;num&gt; in the
@@ -207,10 +219,11 @@ interval.</dd>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="../../gmt.html#v-full"><em>(more ...)</em></a></dt>
 <dd>Select verbosity level [c].  </dd>
-<dt><strong>-X</strong><em>scale</em></dt>
-<dd>Multiply trace locations by scale before plotting.</dd>
-<dt><strong>-Y</strong><em>sample_int</em></dt>
-<dd>Override sample interval in reel header.</dd>
+</dl>
+<p><strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]]</p>
+<dl class="docutils">
+<dt><strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] <a class="reference internal" href="../../gmt.html#xy-full"><em>(more ...)</em></a></dt>
+<dd>Shift plot origin.</dd>
 <dt><strong>-Z</strong></dt>
 <dd>Do not plot traces with zero rms amplitude.</dd>
 </dl>
@@ -223,12 +236,12 @@ interval.</dd>
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -312,7 +325,7 @@ viewing elevation increases. Wiggle-trace plotting is not affected.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_SEGY.html" >SEGY</a> &raquo;</li>
 <li class="right">
@@ -330,9 +343,9 @@ viewing elevation increases. Wiggle-trace plotting is not affected.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

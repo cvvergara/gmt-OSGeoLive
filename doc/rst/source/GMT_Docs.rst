@@ -16,7 +16,7 @@
 
 **Walter H. F. Smith**
 
-**Laboratory for Satellite Altimetry, NOAA/NESDIS**
+**Laboratory for Satellite Altimetry, NOAA/NESDIS/STAR**
 
 **Remko Scharroo**
 
@@ -43,9 +43,10 @@ Acknowledgments
 ===============
 
 The Generic Mapping Tools (GMT) could not have been designed without
-the generous support of several people. We gratefully acknowledge A. B.
-Watts and the late W. F. Haxby for supporting our efforts on the
-original version 1.0 while we were their graduate students at
+the generous support of several people. The Founders (Wessel and Smith)
+gratefully acknowledge A. B.
+Watts and the late W. F. Haxby for supporting their efforts on the
+original version 1.0 while they were their graduate students at
 Lamont-Doherty Earth Observatory. Doug Shearer and Roger Davis patiently
 answered many questions over e-mail. The subroutine ``gauss`` was
 written and supplied by Bill Menke. Further development of versions
@@ -75,7 +76,7 @@ Yip helped translate GMT to POSIX ANSI C and incorporate netCDF 3. The
 SOEST RCF staff (Ross Ishida, Pat Townsend, and Sharon Stahl) provided
 valuable help on Linux and web server support.
 
-Honolulu, HI, Silver Spring, MD, Faro, Portugal, Darmstadt and
+Honolulu, HI, College Park, MD, Faro, Portugal, Darmstadt and
 Bremerhaven, Germany, March 2014
 
 
@@ -111,7 +112,7 @@ published separately, such as
    [:doc:`dimfilter <supplements/misc/dimfilter>`, **misc** supplement]
 
 -  Luis, J. F. and J. M. Miranda, Reevaluation of magnetic chrons in the
-   North Atlantic between 35N and 47N: Implications for the formation of the
+   North Atlantic between 35ºN and 47ºN: Implications for the formation of the
    Azores Triple Junction and associated plateau,
    *J. Geophys. Res.*, 113, B10105, 2008. `doi:10.1029/2007JB005573 <http://dx.doi.org/10.1029/2007JB005573>`_.
    [:doc:`grdredpol <supplements/potential/grdredpol>`, **potential** supplement]
@@ -156,7 +157,7 @@ such decisions by supporting the GMT project.
 Copyright and Caveat Emptor!
 ============================
 
-Copyright ©1991--2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J.
+Copyright ©1991--2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J.
 Luis and F. Wobbe
 
 The Generic Mapping Tools (GMT) is free software; you can
@@ -442,6 +443,16 @@ New capabilities have been implemented by introducing new GMT default settings:
 *  :ref:`PS_TRANSPARENCY <PS_TRANSPARENCY>` allows users to modify how transparency will be
    processed when converted to PDF [Normal].
 
+A few parameters have been introduced in GMT 5 in the past and have been removed again.
+Among these are:
+
+*  *DIR_USER*: was supposed to set the directory in which the user configuration files, or data are stored, but
+   this creates problems, because it needs to be known already before it is potentially set in *DIR_USER*/gmt.conf.
+   The environment variable **$GMT_USERDIR** is used for this instead.
+
+*  *DIR_TMP*: was supposed to indicate the directory in which to store temporary files. But needs to be known without
+   gmt.conf file as well. So the environment variable **$GMT_TMPDIR** is used instead.
+
 General improvements
 --------------------
 
@@ -626,7 +637,7 @@ Finally, here is a list of numerous enhancements to individual programs:
    (for instances, the volume of water from a bathymetry grid).
 
 *  :doc:`greenspline` has an improved **-C** option to control how many eigenvalues are used
-   in the fitting, and **--Sl** adds a linear (or bilinear) spline.
+   in the fitting, and **-Sl** adds a linear (or bilinear) spline.
 
 *  :doc:`makecpt` has a new **-F** option to
    specify output color representation, e.g., to output the CPT table in
@@ -721,6 +732,53 @@ was always very approximate (no consideration of font metrics, etc.) and quite o
 and (b) :doc:`ps2raster` handles it exactly.  Hence, users who need EPS plots should
 simply process their PostScript files via :doc:`ps2raster`.
 
+.. _command-line-completion:
+
+Command-line completion
+-----------------------
+
+GMT provides basic command-line completion (tab completion) for bash.
+The easiest way to use the feature is to install the
+`bash-completion <http://bash-completion.alioth.debian.org/>`_ package
+which is available in many operating system distributions.
+
+Depending on the distribution, you may still need to source it from
+``~/.bashrc``, e.g.:
+
+.. code-block:: bash
+
+   # Use bash-completion, if available
+   if [ -r /usr/share/bash-completion/bash_completion ]; then
+     . /usr/share/bash-completion/bash_completion
+   fi
+
+When you install GMT from a distribution package, the completion rules
+are installed in ``/etc/bash_completion.d/gmt`` and loaded automatically.
+Custom GMT builds provide ``<prefix>/share/tools/gmt_completion.bash``
+which needs to be manually sourced from either ``~/.bash_completion`` or
+``~/.bashrc``.
+
+Mac users should note that bash-completion >=2.0 requires bash >=4.1.
+However, OS X won't ship anything that's licensed under GPL version 3.
+The last version of bash available under the GPLv2 is 3.2 from 2006.
+It is recommended that *bash-completion* is installed together with
+*bash* via `MacPorts <http://www.macports.org/>`_,
+`Fink <http://finkproject.org/>`_, or `Homebrew <http://brew.sh/>`_.
+You then need to change the shell used by your terminal application.
+The `bash-completion HOWTO from MacPorts
+<http://trac.macports.org/wiki/howto/bash-completion>`_
+explains how to change the preferences of Terminal.app and iTerm.app.
+Another way is to change the default shell by editing of the user
+database:
+
+.. code-block:: bash
+
+   Add /opt/local/bin/bash to /etc/shells
+   chsh -s /opt/local/bin/bash
+
+Modify the path to bash, ``/opt/local/bin/bash``, in the example above
+accordingly.
+
 Incompatibilities between GMT 5 and GMT 4
 -----------------------------------------
 
@@ -808,6 +866,11 @@ with a warning under compatibility mode:
 *  :doc:`filter1d`: The **-N**\ *ncol/tcol*
    option is deprecated; use **-N**\ *tcol* instead as we automatically
    determine the number of columns in the file.
+
+*  :doc:`gmt2kml`: The **-L** option no longer expects column numbers,
+   just the column names.  This allows the extra columns to contain text
+   strings but means users have to supply the data columns in the order
+   specified by **-L**.
 
 *  :doc:`gmtconvert`: **-F** is
    deprecated; use common option **-o** instead.
@@ -1005,9 +1068,9 @@ with a warning under compatibility mode:
 +---------------------------------+-----------------------------------------+
 | **FRAME_WIDTH**                 | **MAP_FRAME_WIDTH**                     |
 +---------------------------------+-----------------------------------------+
-| **GLOBAL_Y_SCALE**              | **PS_SCALE_X**                          |
+| **GLOBAL_X_SCALE**              | **PS_SCALE_X**                          |
 +---------------------------------+-----------------------------------------+
-| **GLOBAL\_X_SCALE**             | **PS_SCALE_X**                          |
+| **GLOBAL_Y_SCALE**              | **PS_SCALE_Y**                          |
 +---------------------------------+-----------------------------------------+
 | **GRID_CROSS_SIZE_PRIMARY**     | **MAP_GRID_CROSS_SIZE_PRIMARY**         |
 +---------------------------------+-----------------------------------------+
@@ -1043,10 +1106,6 @@ with a warning under compatibility mode:
 +---------------------------------+-----------------------------------------+
 | **INTERPOLANT**                 | **GMT_INTERPOLANT**                     |
 +---------------------------------+-----------------------------------------+
-| **INTERPOLANT**                 | **GMT_INTERPOLANT**                     |
-+---------------------------------+-----------------------------------------+
-| **INTERPOLANT**                 | **GMT_INTERPOLANT**                     |
-+---------------------------------+-----------------------------------------+
 | **LABEL_FONT**                  | **FONT_LABEL**                          |
 +---------------------------------+-----------------------------------------+
 | **LABEL_OFFSET**                | **MAP_LABEL_OFFSET**                    |
@@ -1060,8 +1119,6 @@ with a warning under compatibility mode:
 | **NAN_RECORDS**                 | **IO_NAN_RECORDS**                      |
 +---------------------------------+-----------------------------------------+
 | **OBLIQUE_ANNOTATION**          | **MAP_ANNOT_OBLIQUE**                   |
-+---------------------------------+-----------------------------------------+
-| **OUTPUT_CLOCK_FORMAT**         | **FORMAT_CLOCK_OUT**                    |
 +---------------------------------+-----------------------------------------+
 | **OUTPUT_CLOCK_FORMAT**         | **FORMAT_CLOCK_OUT**                    |
 +---------------------------------+-----------------------------------------+
@@ -2713,7 +2770,6 @@ is shown in Figure :ref:`Geographic map border <basemap_border>`.
    frame, and grid intervals.  Formatting of the annotation is controlled by
    the parameter :ref:`FORMAT_GEO_MAP <FORMAT_GEO_MAP>` in your :doc:`gmt.conf`.
 
-
 The machinery for primary and secondary annotations introduced for
 time-series axes can also be utilized for geographic basemaps. This may
 be used to separate degree annotations from minutes- and
@@ -3486,7 +3542,9 @@ Section `Standardized command line options`_) given during their previous invoca
 provides a shorthand notation for complex options. For example, if a
 basemap was created with an oblique Mercator projection, specified as
 
-``-Joc170W/25:30S/33W/56:20N/1:500000``
+    ::
+
+     -Joc170W/25:30S/33W/56:20N/1:500000
 
 then a subsequent :doc:`psxy` command to plot
 symbols only needs to state **-J**\ o in order to activate the same
@@ -3548,13 +3606,14 @@ are simply data records whose fields are all set to NaN; see Appendix
 If filenames are given for reading, GMT programs will first look for
 them in the current directory. If the file is not found, the programs
 will look in two other directories pointed to by the
-:ref:`directory parameters <DIR Parameters>` **DIR_DATA** and
-**DIR_USER** or by the environmental parameters **GMT_USERDIR** and
-**GMT_DATADIR** (if set). They may be set by the user to point to
+:ref:`directory parameters <DIR Parameters>` **DIR_DATA**
+or by the environmental parameters **$GMT_USERDIR** and
+**$GMT_DATADIR** (if set). They may be set by the user to point to
 directories that contain data sets of general use, thus eliminating the
 need to specify a full path to these files. Usually, the **DIR_DATA**
 directory will hold data sets of a general nature (tables, grids),
-whereas the **DIR_USER** directory may hold miscellaneous data sets more
+whereas the **$GMT_USERDIR** directory (its default value is $HOME/.gmt)
+may hold miscellaneous data sets more
 specific to the user; this directory also stores GMT defaults and other
 configuration files. See :ref:`directory parameters <DIR Parameters>`
 for details. Program output is always written to the current directory
@@ -3691,6 +3750,8 @@ embellishment, simply run :doc:`ps2raster`
 **-Te**. See Appendix [app:C] for an extensive discussion of converting
 PostScript to other formats.
 
+.. _-Wpen_attrib:
+
 Specifying pen attributes
 -------------------------
 
@@ -3747,10 +3808,11 @@ option argument, with commas separating the given attributes, e.g.,
        case-insensitive, so mixed upper and lower case can be used (like
        *DarkGreen*).
 
-    The *style* attribute controls the appearance of the line. A "."
-    yields a dotted line, whereas a dashed pen is requested with "-".
+    The *style* attribute controls the appearance of the line. Giving "dotted" or "."
+    yields a dotted line, whereas a dashed pen is requested with "dashed" or "-".
     Also combinations of dots and dashes, like ".-" for a dot-dashed
-    line, are allowed. The lengths of dots and dashes are scaled
+    line, are allowed. To override a default style and secure a solid line you can
+    specify "solid" for style.  The lengths of dots and dashes are scaled
     relative to the pen width (dots has a length that equals the pen
     width while dashes are 8 times as long; gaps between segments are 4
     times the pen width). For more detailed attributes including exact
@@ -4122,6 +4184,14 @@ between three types of vectors:
 #. Geo-vectors are drawn using great circle arcs. They are specified by
    a beginning point and the azimuth and length (in km) of the vector,
    or by its beginning and end point.
+
+.. figure:: /_images/GMT_arrows.*
+   :width: 500 px
+   :align: center
+
+   Examples of Cartesian (left), circular (middle), and geo-vectors (right)
+   for different attribute specifications. Note that both full and half
+   arrow-heads can be specified, as well as no head at all.
 
 There are numerous attributes you can modify, including how the vector
 should be justified relative to the given point (beginning, center, or
@@ -4513,7 +4583,7 @@ needed than name the variables on the command line. For example:
 If one or more of the selected variables are two-dimensional, and have
 the same leading dimension as the other selected variables they will be
 plotted in their entirety. For example, if a netCDF files contains 6
-time steps recording temperature at 4 points, and the variable ``tmp`` is a 6 by
+time steps recording temperature at 4 points, and the variable ``temp`` is a 6 by
 4 array, then the command ``gmtconvert "file.nc?time/temp"`` can result in:
 
    ::
@@ -4526,7 +4596,7 @@ time steps recording temperature at 4 points, and the variable ``tmp`` is a 6 by
     2012-06-27T12:00:00 27.2 27.2 27.5 27.5
 
 If, for example, only the second temperature column is needed, use
-``gmt gmtconvert "file.nc?time/temp"`` (indices start counting at 0).
+``gmt gmtconvert "file.nc?time/temp[1]"`` (indices start counting at 0).
 
 The COARDS conventions set restrictions on the names that can be used
 for the units of the variables and coordinates. For example, the units
@@ -4753,13 +4823,13 @@ skipped during reading; see Section `Data gap detection: The -g option`_ for det
 Directory parameters
 --------------------
 
-GMT versions prior to GMT 5 relied on several environment variables
+GMT versions prior to GMT 5 relied solely on several environment variables
 ($GMT_SHAREDIR, $GMT_DATADIR, $GMT_USERDIR, and $GMT_TMPDIR), pointing
 to folders with data files and program settings. Beginning with version
-5, these locations are configurable with the :doc:`gmtset` utility.
-The environment variables are still supported but are overridden by the
-:ref:`directory parameters <DIR Parameters>` DIR_DATA, DIR_USER, and
-DIR_TMP in :doc:`gmt.conf`.
+5, some of these locations are now (also or exclusively) configurable
+with the :doc:`gmtset` utility.
+When an environment variable has an equivalent parameter in the :doc:`gmt.conf` file,
+then the parameter setting will take precedence over the environment variable.
 
 Variable $GMT_SHAREDIR
     was sometimes required in previous GMT versions to locate the GMT
@@ -4780,20 +4850,30 @@ Variable $GMT_DATADIR and parameter DIR_DATA
     name that ends in a trailing slash (/) will be searched recursively
     (not under Windows).
 
-Variable $GMT_USERDIR and parameter DIR_USER
+Variable $GMT_USERDIR
     may point to a directory where the user places custom configuration
     files (e.g., an alternate ``coastline.conf`` file, preferred default
     settings in ``gmt.conf``, custom symbols and color palettes, math
     macros for :doc:`gmtmath` and :doc:`grdmath`, and shorthands for
-    gridfile extensions via ``gmt_io``). Users may also place their own
+    gridfile extensions via ``gmt_io``). When $GMT_USERDIR is not defined,
+    then the default value $HOME/.gmt will be assumed. Users may also place their own
     data files in this directory as GMT programs will search for files
-    given on the command line in both DIR_DATA and DIR_USER.
+    given on the command line in both DIR_DATA and $GMT_USERDIR.
 
-Variable $GMT_TMPDIR and parameter DIR_TMP
+Variable $GMT_TMPDIR
     may indicate the location, where GMT will write its state parameters
-    via the two files ``gmt.history`` and ``gmt.conf``. If DIR_TMP is not
+    via the two files ``gmt.history`` and ``gmt.conf``. If $GMT_TMPDIR is not
     set, these files are written to the current directory. See Section
     `Isolation mode`_ for more information.
+
+Parameter DIR_DCW
+    specifies where to look for the optional Digital Charts of the World
+    database (for country coloring or selections).
+
+Parameter DIR_GSHHG
+    specifies where to look for the required
+    Global Self-consistent Hierarchical High-resolution Geography database.
+
 
 Note that files whose full path is given will never be searched for in
 any of these directories.
@@ -4850,7 +4930,7 @@ nature of *f* itself.
 
 Two subsets of linear will be discussed separately; these are a polar
 (cylindrical) projection and a linear projection applied to geographic
-coordinates (with a 360 periodicity in the *x*-coordinate). We
+coordinates (with a 360º periodicity in the *x*-coordinate). We
 will show examples of all of these projections using dummy data sets
 created with :doc:`gmtmath`, a "Reverse
 Polish Notation" (RPN) calculator that operates on or creates table data:
@@ -4873,10 +4953,6 @@ of data:
 #. Geographic coordinates
 
 #. Calendar time coordinates
-
-.. figure:: /_images/GMT_arrows.*
-   :width: 500 px
-   :align: center
 
    Examples of Cartesian (left), circular (middle), and geo-vectors (right) for different
    attribute specifications. Note that both full and half arrow-heads can be specified, as well as no head at all.
@@ -4936,13 +5012,13 @@ Geographic coordinates
 While the Cartesian linear projection is primarily designed for regular
 floating point *x*,\ *y* data, it is sometimes necessary to plot
 geographical data in a linear projection. This poses a problem since
-longitudes have a 360 periodicity. GMT therefore needs to be informed
+longitudes have a 360º periodicity. GMT therefore needs to be informed
 that it has been given geographical coordinates even though a linear
 transformation has been chosen. We do so by adding a **g** (for
 geographical) or **d** (for degrees) directly after **-R** or by
 appending a **g** or **d** to the end of the **-Jx** (or **-JX**)
 option. As an example, we want to plot a crude world map centered on
-125E. Our command will be
+125ºE. Our command will be
 
   ::
 
@@ -5025,8 +5101,8 @@ Note that if *x*- and *y*-scaling are different and a
 appended twice: Once after the *x*-scale (before the /) and once after
 the *y*-scale.
 
-Cartesian power projection
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cartesian power projection :ref:`... <-Jx_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. _GMT_pow:
 
@@ -5053,8 +5129,8 @@ transformation <GMT_pow>`)
              -Wthick -P -K sqrt.d > GMT_pow.ps
     gmt psxy -R -J -Sc0.075i -Ggreen -W -O sqrt.d10 >> GMT_pow.ps
 
-Linear projection with polar coordinates (**-Jp** **-JP**)
-----------------------------------------------------------
+Linear projection with polar coordinates (**-Jp** **-JP**) :ref:`... <-Jp_full>`
+--------------------------------------------------------------------------------
 
 .. _GMT_polar:
 
@@ -5069,7 +5145,7 @@ This transformation converts polar coordinates (angle :math:`\theta` and
 radius *r*) to positions on a plot. Now :math:`x' = f(\theta,r)`
 and :math:`y' = g(\theta,r)`, hence it is similar to a regular map
 projection because *x* and *y* are coupled and *x*
-(i.e., :math:`\theta`) has a 360 periodicity. With input and output
+(i.e., :math:`\theta`) has a 360º periodicity. With input and output
 points both in the plane it is a **two-dimensional** projection. The
 transformation comes in two flavors:
 
@@ -5163,8 +5239,8 @@ reference cards in Section `GMT quick reference`_. For example, **-JM**\ 15c and
 Conic projections
 -----------------
 
-Albers conic equal-area projection (**-Jb** **-JB**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Albers conic equal-area projection (**-Jb** **-JB**) :ref:`... <-Jb_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This projection, developed by Albers in 1805, is predominantly used to
 map regions of large east-west extent, in particular the United States.
@@ -5188,8 +5264,8 @@ that way. E.g., you can say 0.5 which means 0.5 inch/degree or 1:200000
 which means 1 inch on the map equals 200,000 inches along the standard
 parallels. The projection center defines the origin of the rectangular
 map coordinates. As an example we will make a map of the region near
-Taiwan. We choose the center of the projection to be at 125 E/20 N and
-25 N and 45 N as our two standard parallels. We desire a map that is 5
+Taiwan. We choose the center of the projection to be at 125ºE/20ºN and
+25ºN and 45ºN as our two standard parallels. We desire a map that is 5
 inches wide. The complete command needed to generate the map below is
 therefore given by:
 
@@ -5206,8 +5282,8 @@ therefore given by:
    Albers equal-area conic map projection.
 
 
-Equidistant conic projection (**-Jd** **-JD**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Equidistant conic projection (**-Jd** **-JD**) :ref:`... <-Jd_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The equidistant conic projection was described by the Greek philosopher
 Claudius Ptolemy about A.D. 150. It is neither conformal or equal-area,
@@ -5238,8 +5314,8 @@ small countries. As an example, we generate a map of Cuba:
    Equidistant conic map projection.
 
 
-Lambert conic conformal projection (**-Jl** **-JL**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Lambert conic conformal projection (**-Jl** **-JL**) :ref:`... <-Jl_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This conic projection was designed by the Alsatian mathematician Johann
 Heinrich Lambert (1772) and has been used extensively for mapping of
@@ -5258,7 +5334,7 @@ same information as for the Albers projection, i.e.,
 -  Map scale in inch/degree or 1:xxxxx notation (**-Jl**), or map width (**-JL**).
 
 The Lambert conformal projection has been used for basemaps for all the
-48 contiguous States with the two fixed standard parallels 33N and 45N.
+48 contiguous States with the two fixed standard parallels 33ºN and 45ºN.
 We will generate a map of the continental USA using these parameters.
 Note that with all the projections you have the option of selecting a
 rectangular border rather than one defined by meridians and parallels.
@@ -5279,13 +5355,13 @@ use degrees west for longitudes. The generating commands used were
 
 
 The choice for projection center does not affect the projection but it
-indicates which meridian (here 100W) will be vertical on the map. The
+indicates which meridian (here 100ºW) will be vertical on the map. The
 standard parallels were originally selected by Adams to provide a
-maximum scale error between latitudes 30.5N and 47.5N of 0.5--1%. Some
+maximum scale error between latitudes 30.5ºN and 47.5ºN of 0.5--1%. Some
 areas, like Florida, experience scale errors of up to 2.5%.
 
-(American) polyconic projection (**-Jpoly** **-JPoly**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(American) polyconic projection (**-Jpoly** **-JPoly**) :ref:`... <-Jpoly_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The polyconic projection, in Europe usually referred to as the American
 polyconic projection, was introduced shortly before 1820 by the
@@ -5305,7 +5381,7 @@ further away from the central meridian. As a consequence, no parallel is
 standard because conformity is lost with the lengthening of the meridians.
 
 Below we reproduce the illustration by *Snyder* [1987], with a gridline
-every 10 and annotations only every 30 in longitude:
+every 10 and annotations only every 30º in longitude:
 
    ::
 
@@ -5338,7 +5414,8 @@ following information:
    to the edge (<= 180, default is 90).
 
 -  Scale as 1:xxxxx or as radius/latitude where radius is the projected
-   distance on the map from projection center to an oblique latitude
+   distance on the map from projection center to an oblique latitude where 0
+   would be the oblique Equator
    (**-Ja**), or map width (**-JA**).
 
 Two different types of maps can be made with this projection depending
@@ -5354,7 +5431,7 @@ way is that for this and many other projections, lines of equal
 longitude and latitude are not straight lines and are thus poor choices
 for map boundaries. Instead we require that the map boundaries be
 rectangular by defining the corners of a rectangular map boundary. Using
-0E/40S (lower left) and 60E/10S (upper right) as our corners we try
+0ºE/40ºS (lower left) and 60ºE/10ºS (upper right) as our corners we try
 
    ::
 
@@ -5406,8 +5483,8 @@ stereonet can be obtained by using the stereographic projection
    Equal-Area (Schmidt) and Equal-Angle (Wulff) stereo nets.
 
 
-Stereographic Equal-Angle projection (**-Js** **-JS**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Stereographic Equal-Angle projection (**-Js** **-JS**) :ref:`... <-Js_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a conformal, azimuthal projection that dates back to the Greeks.
 Its main use is for mapping the polar regions. In the polar aspect all
@@ -5422,8 +5499,8 @@ center of projection. The requirements are
 
 -  Scale as 1:xxxxx (true scale at pole), slat/1:xxxxx (true scale at
    standard parallel slat), or radius/latitude where radius is distance
-   on map in inches from projection center to a particular [possibly
-   oblique] latitude (**-Js**), or simply map width (**-JS**).
+   on map in inches from projection center to a particular
+   oblique latitude (**-Js**), or simply map width (**-JS**).
 
 A default map scale factor of 0.9996 will be applied by default
 (although you may change this with :ref:`PROJ_SCALE_FACTOR <PROJ_SCALE_FACTOR>`). However,
@@ -5431,8 +5508,8 @@ the setting is ignored when a standard parallel has been specified since
 the scale is then implicitly given. We will look at two different types
 of maps.
 
-Polar Stereographic Map
-^^^^^^^^^^^^^^^^^^^^^^^
+Polar Stereographic Map :ref:`... <-Js_full>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In our first example we will let the projection center be at the north
 pole. This means we have a polar stereographic projection and the map
@@ -5482,7 +5559,7 @@ General stereographic map
 In terms of usage this projection is identical to the Lambert azimuthal
 equal-area projection. Thus, one can make both rectangular and
 hemispheric maps. Our example shows Australia using a projection pole at
-130E/30S. The command used was
+130ºE/30ºS. The command used was
 
    ::
 
@@ -5501,8 +5578,8 @@ By choosing 0/0 as the pole, we obtain the conformal stereonet presented
 next to its equal-area cousin in the Section `Lambert Azimuthal Equal-Area (-Ja -JA)`_ on the Lambert
 azimuthal equal-area projection (Figure :ref:`Stereonets <GMT_stereonets>`).
 
-Perspective projection (**-Jg** **-JG**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Perspective projection (**-Jg** **-JG**) :ref:`... <-Jg_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The perspective projection imitates in 2 dimensions the 3-dimensional
 view of the earth from space. The implementation in GMT is very
@@ -5510,7 +5587,7 @@ flexible, and thus requires many input variables. Those are listed and
 explained below, with the values used in
 Figure :ref:`Perspective projection <GMT_perspective>` between brackets.
 
--  Longitude and latitude of the projection center (4E/52N).
+-  Longitude and latitude of the projection center (4ºE/52ºN).
 
 -  Altitude of the viewer above sea level in kilometers (230 km). If
    this value is less than 10, it is assumed to be the distance of the
@@ -5522,20 +5599,20 @@ Figure :ref:`Perspective projection <GMT_perspective>` between brackets.
    are looking, measured clockwise from north.
 
 -  Tilt in degrees (60). This is the viewing angle relative to zenith.
-   So a tilt of 0 is looking straight down, 60 is looking from 30 above
+   So a tilt of 0º is looking straight down, 60º is looking from 30º above
    the horizon.
 
 -  Twist in degrees (180). This is the boresight rotation (clockwise) of
-   the image. The twist of 180 in the example mimics the fact that the
+   the image. The twist of 180º in the example mimics the fact that the
    Space Shuttle flies upside down.
 
 -  Width and height of the viewpoint in degrees (60). This number
    depends on whether you are looking with the naked eye (in which case
-   you view is about 60 wide), or with binoculars, for example.
+   you view is about 60º wide), or with binoculars, for example.
 
 -  Scale as 1:xxxxx or as radius/latitude where radius is distance on
-   map in inches from projection center to a particular [possibly
-   oblique] latitude (**-Jg**), or map width (**-JG**) (5 inches).
+   map in inches from projection center to a particular
+   oblique latitude (**-Jg**), or map width (**-JG**) (5 inches).
 
 The imagined view of northwest Europe from a Space Shuttle at 230 km
 looking due east is thus accomplished by the following
@@ -5555,8 +5632,8 @@ looking due east is thus accomplished by the following
    View from the Space Shuttle in Perspective projection.
 
 
-Orthographic projection (**-Jg** **-JG**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Orthographic projection (**-Jg** **-JG**) :ref:`... <-Jg_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The orthographic azimuthal projection is a perspective projection from
 infinite distance. It is therefore often used to give the appearance of
@@ -5577,10 +5654,10 @@ To specify the orthographic projection the same options **-Jg** or
    to the edge (<= 90, default is 90).
 
 -  Scale as 1:xxxxx or as radius/latitude where radius is distance on
-   map in inches from projection center to a particular [possibly
-   oblique] latitude (**-Jg**), or map width (**-JG**).
+   map in inches from projection center to a particular
+   oblique latitude (**-Jg**), or map width (**-JG**).
 
-Our example of a perspective view centered on 75W/40N can therefore be
+Our example of a perspective view centered on 75ºW/40ºN can therefore be
 generated by the following :doc:`pscoast` command:
 
    ::
@@ -5594,8 +5671,8 @@ generated by the following :doc:`pscoast` command:
    Hemisphere map using the Orthographic projection.
 
 
-Azimuthal Equidistant projection (**-Je** **-JE**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Azimuthal Equidistant projection (**-Je** **-JE**) :ref:`... <-Je_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The most noticeable feature of this azimuthal projection is the fact
 that distances measured from the center are true. Therefore, a circle
@@ -5613,12 +5690,12 @@ To specify the azimuthal equidistant projection you must supply:
    to the edge (<= 180, default is 180).
 
 -  Scale as 1:xxxxx or as radius/latitude where radius is distance on
-   map in inches from projection center to a particular [possibly
-   oblique] latitude (**-Je**), or map width (**-JE**).
+   map in inches from projection center to a particular
+   oblique latitude (**-Je**), or map width (**-JE**).
 
-Our example of a global view centered on 100W/40N can therefore be
+Our example of a global view centered on 100ºW/40ºN can therefore be
 generated by the following :doc:`pscoast`
-command. Note that the antipodal point is 180 away from the center, but
+command. Note that the antipodal point is 180º away from the center, but
 in this projection this point plots as the entire map perimeter:
 
    ::
@@ -5633,8 +5710,8 @@ in this projection this point plots as the entire map perimeter:
    World map using the equidistant azimuthal projection.
 
 
-Gnomonic projection (**-Jf** **-JF**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Gnomonic projection (**-Jf** **-JF**) :ref:`... <-Je_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Gnomonic azimuthal projection is a perspective projection from the
 center onto a plane tangent to the surface. Its origin goes back to the
@@ -5654,11 +5731,11 @@ To specify the Gnomonic projection you must supply:
    to the edge (< 90, default is 60).
 
 -  Scale as 1:xxxxx or as radius/latitude where radius is distance on
-   map in inches from projection center to a particular [possibly
-   oblique] latitude (**-Jf**), or map width (**-JF**).
+   map in inches from projection center to a particular
+   oblique latitude (**-Jf**), or map width (**-JF**).
 
 Using a horizon of 60, our example of this projection centered on
-120W/35N can therefore be generated by the following :doc:`pscoast` command:
+120ºW/35ºN can therefore be generated by the following :doc:`pscoast` command:
 
    ::
 
@@ -5684,8 +5761,8 @@ cylindrical equal-area, Miller, and cylindrical stereographic
 projections) stops. Each have a different way of spacing the meridians
 and parallels to obtain certain desirable cartographic properties.
 
-Mercator projection (**-Jm** **-JM**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mercator projection (**-Jm** **-JM**) :ref:`... <-Je_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Probably the most famous of the various map projections, the Mercator
 projection takes its name from the Flemish cartographer Gheert Cremer,
@@ -5741,14 +5818,14 @@ While this example is centered on the Dateline, one can easily choose
 another configuration with the **-R** option. A map centered on
 Greenwich would specify the region with **-R**-180/180/-70/70.
 
-Transverse Mercator projection (**-Jt** **-JT**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Transverse Mercator projection (**-Jt** **-JT**) :ref:`... <-Jt_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The transverse Mercator was invented by Lambert in 1772. In this
 projection the cylinder touches a meridian along which there is no
 distortion. The distortion increases away from the central meridian and
-goes to infinity at 90 from center. The central meridian, each meridian
-90 away from the center, and equator are straight lines; other parallels
+goes to infinity at 90º from center. The central meridian, each meridian
+90º away from the center, and equator are straight lines; other parallels
 and meridians are complex curves. The projection is defined by
 specifying:
 
@@ -5762,7 +5839,7 @@ specifying:
 The optional latitude of origin defaults to Equator if not specified.
 Although defaulting to 1, you can change the map scale factor via the
 :ref:`PROJ_SCALE_FACTOR <PROJ_SCALE_FACTOR>` parameter. Our example shows a transverse
-Mercator map of south-east Europe and the Middle East with 35E as the
+Mercator map of south-east Europe and the Middle East with 35ºE as the
 central meridian:
 
    ::
@@ -5778,7 +5855,7 @@ central meridian:
 
 
 The transverse Mercator can also be used to generate a global map - the
-equivalent of the 360 Mercator map. Using the command
+equivalent of the 360º Mercator map. Using the command
 
    ::
 
@@ -5788,7 +5865,7 @@ equivalent of the 360 Mercator map. Using the command
 we made the map illustrated in Figure :ref:`Global transverse Mercator
 <GMT_TM>`. Note that
 when a world map is given (indicated by **-R**\ *0/360/s/n*), the
-arguments are interpreted to mean oblique degrees, i.e., the 360 range
+arguments are interpreted to mean oblique degrees, i.e., the 360º range
 is understood to mean the extent of the plot along the central meridian,
 while the "south" and "north" values represent how far from the central
 longitude we want the plot to extend. These values correspond to
@@ -5804,13 +5881,13 @@ than 90.
    A global transverse Mercator map.
 
 
-Universal Transverse Mercator (UTM) projection (**-Ju** **-JU**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Universal Transverse Mercator (UTM) projection (**-Ju** **-JU**) :ref:`... <-Ju_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A particular subset of the transverse Mercator is the Universal
 Transverse Mercator (UTM) which was adopted by the US Army for
 large-scale military maps. Here, the globe is divided into 60 zones
-between 84S and 84N, most of which are 6 wide. Each of these UTM zones
+between 84ºS and 84ºN, most of which are 6 wide. Each of these UTM zones
 have their unique central meridian. Furthermore, each zone is divided
 into latitude bands but these are not needed to specify the projection
 for most cases. See Figure :ref:`Universal Transverse Mercator
@@ -5845,8 +5922,8 @@ accurate for map areas that extend less than 10 away from the central
 meridian. For larger regions we use the conformal latitude in the
 general spherical formulae instead.
 
-Oblique Mercator projection (**-Jo** **-JO**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Oblique Mercator projection (**-Jo** **-JO**) :ref:`... <-Jo_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Oblique configurations of the cylinder give rise to the oblique Mercator
 projection. It is particularly useful when mapping regions of large
@@ -5906,8 +5983,8 @@ degrees about the projection center rather than the usual geographic
 coordinates. This interpretation is chosen since in general the
 parallels and meridians are not very suitable as map boundaries.
 
-Cassini cylindrical projection (**-Jc** **-JC**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cassini cylindrical projection (**-Jc** **-JC**) :ref:`... <-Jc_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This cylindrical projection was developed in 1745 by César-François
 Cassini de Thury for the survey of France. It is occasionally called
@@ -5916,7 +5993,7 @@ analysis that led to the development of the ellipsoidal formulae. The
 projection is neither conformal nor equal-area, and behaves as a
 compromise between the two end-members. The distortion is zero along the
 central meridian. It is best suited for mapping regions of north-south
-extent. The central meridian, each meridian 90 away, and equator are
+extent. The central meridian, each meridian 90º away, and equator are
 straight lines; all other meridians and parallels are complex curves.
 The requirements to define this projection are:
 
@@ -5924,7 +6001,7 @@ The requirements to define this projection are:
 
 -  Scale in inch/degree or as 1:xxxxx (**-Jc**), or map width (**-JC**).
 
-A detailed map of the island of Sardinia centered on the 845'E meridian
+A detailed map of the island of Sardinia centered on the 8º45'E meridian
 using the Cassini projection can be obtained by running the command:
 
    ::
@@ -5942,8 +6019,8 @@ using the Cassini projection can be obtained by running the command:
 As with the previous projections, the user can choose between a
 rectangular boundary (used here) or a geographical (WESN) boundary.
 
-Cylindrical equidistant projection (**-Jq** **-JQ**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cylindrical equidistant projection (**-Jq** **-JQ**) :ref:`... <-Jq_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This simple cylindrical projection is really a linear scaling of
 longitudes and latitudes. The most common form is the Plate Carrée
@@ -5971,7 +6048,7 @@ obtained by running the command:
    :width: 500 px
    :align: center
 
-   World map using the Plate Carr\'{e}e projection.
+   World map using the Plate Carrée projection.
 
 
 Different relative scalings of longitudes and latitudes can be obtained
@@ -5983,21 +6060,21 @@ Table :ref:`JQ <tbl-JQ>`.
 
 +-----------------------------------------------------+--------+
 +=====================================================+========+
-| Grafarend and Niermann, minimum linear distortion   | 61.7   |
+| Grafarend and Niermann, minimum linear distortion   | 61.7º  |
 +-----------------------------------------------------+--------+
-| Ronald Miller Equirectangular                       | 50.5   |
+| Ronald Miller Equirectangular                       | 50.5º  |
 +-----------------------------------------------------+--------+
-| Ronald Miller, minimum continental distortion       | 43.5   |
+| Ronald Miller, minimum continental distortion       | 43.5º  |
 +-----------------------------------------------------+--------+
-| Grafarend and Niermann                              | 42     |
+| Grafarend and Niermann                              | 42º    |
 +-----------------------------------------------------+--------+
-| Ronald Miller, minimum overall distortion           | 37.5   |
+| Ronald Miller, minimum overall distortion           | 37.5º  |
 +-----------------------------------------------------+--------+
-| Plate Carrée, Simple Cylindrical, Plain/Plane       | 0      |
+| Plate Carrée, Simple Cylindrical, Plain/Plane       | 0º     |
 +-----------------------------------------------------+--------+
 
-Cylindrical equal-area projections (**-Jy** **-JY**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cylindrical equal-area projections (**-Jy** **-JY**) :ref:`... <-Jy_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This cylindrical projection is actually several projections, depending
 on what latitude is selected as the standard parallel. However, they are
@@ -6018,22 +6095,22 @@ that result in known (or named) projections. These are listed in Table :ref:`JY 
 
 +-------------------+---------------------+
 +===================+=====================+
-| Balthasart        | 50                  |
+| Balthasart        | 50º                 |
 +-------------------+---------------------+
-| Gall-Peters       | 45                  |
+| Gall-Peters       | 45º                 |
 +-------------------+---------------------+
-| Hobo-Dyer         | 3730' (= 37.5)      |
+| Hobo-Dyer         | 37º30' (= 37.5º)    |
 +-------------------+---------------------+
-| Trystan Edwards   | 3724' (= 37.4)      |
+| Trystan Edwards   | 37º24' (= 37.4º)    |
 +-------------------+---------------------+
-| Caster            | 3704' (= 37.0666)   |
+| Caster            | 37º04' (= 37.0666º) |
 +-------------------+---------------------+
-| Behrman           | 30                  |
+| Behrman           | 30º                 |
 +-------------------+---------------------+
-| Lambert           | 0                   |
+| Lambert           | 0º                  |
 +-------------------+---------------------+
 
-For instance, a world map centered on the 35E meridian using the Behrman
+For instance, a world map centered on the 35ºE meridian using the Behrman
 projection (Figure :ref:`Behrman cylindrical projection <GMT_general_cyl>`)
 can be obtained by running the command:
 
@@ -6054,8 +6131,8 @@ can be obtained by running the command:
 As one can see there is considerable distortion at high latitudes since
 the poles map into lines.
 
-Miller Cylindrical projection (**-Jj** **-JJ**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Miller Cylindrical projection (**-Jj** **-JJ**) :ref:`... <-Jj_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This cylindrical projection, presented by Osborn Maitland Miller of the
 American Geographic Society in 1942, is neither equal nor conformal. All
@@ -6070,7 +6147,7 @@ this projection. Specify the projection by:
 
 -  Scale in inch/degree or as 1:xxxxx (**-Jj**), or map width (**-JJ**).
 
-For instance, a world map centered on the 90E meridian at a map scale of
+For instance, a world map centered on the 90ºE meridian at a map scale of
 1:400,000,000 (Figure :ref:`Miller projection <GMT_miller>`) can be obtained as
 follows:
 
@@ -6088,8 +6165,8 @@ follows:
    World map using the Miller cylindrical projection.
 
 
-Cylindrical stereographic projections (**-Jcyl_stere** **-JCyl_stere**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cylindrical stereographic projections (**-Jcyl_stere** **-JCyl_stere**) :ref:`... <-Jcyl_stere_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The cylindrical stereographic projections are certainly not as notable
 as other cylindrical projections, but are still used because of their
@@ -6116,19 +6193,19 @@ cartographer or publication that popularized the projection
 
 +---------------------------------------------------------+-------------+
 +=========================================================+=============+
-| Miller's modified Gall                                  | 66.159467   |
+| Miller's modified Gall                                  | 66.159467º  |
 +---------------------------------------------------------+-------------+
-| Kamenetskiy's First                                     | 55          |
+| Kamenetskiy's First                                     | 55º         |
 +---------------------------------------------------------+-------------+
-| Gall's stereographic                                    | 45          |
+| Gall's stereographic                                    | 45º         |
 +---------------------------------------------------------+-------------+
-| Bolshoi Sovietskii Atlas Mira or Kamenetskiy's Second   | 30          |
+| Bolshoi Sovietskii Atlas Mira or Kamenetskiy's Second   | 30º         |
 +---------------------------------------------------------+-------------+
-| Braun's cylindrical                                     | 0           |
+| Braun's cylindrical                                     | 0º          |
 +---------------------------------------------------------+-------------+
 
 A map of the world, centered on the Greenwich meridian, using the Gall's
-stereographic projection (standard parallel is 45,
+stereographic projection (standard parallel is 45º,
 Figure :ref:`Gall's stereographic projection <GMT_gall_stereo>`),
 is obtained as follows:
 
@@ -6158,10 +6235,10 @@ approximation rather than more elaborate elliptical formulae.
 
 In all cases, the specification of the central meridian can be skipped.
 The default is the middle of the longitude range of the plot, specified
-by the (R) option.
+by the (**-R**) option.
 
-Hammer projection (**-Jh** **-JH**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Hammer projection (**-Jh** **-JH**) :ref:`... <-Jh_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The equal-area Hammer projection, first presented by the German
 mathematician Ernst von Hammer in 1892, is also known as Hammer-Aitoff
@@ -6187,8 +6264,8 @@ A view of the Pacific ocean using the Dateline as central meridian is accomplish
    World map using the Hammer projection.
 
 
-Mollweide projection (**-Jw** **-JW**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mollweide projection (**-Jw** **-JW**) :ref:`... <-Jw_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This pseudo-cylindrical, equal-area projection was developed by the
 German mathematician and astronomer Karl Brandan Mollweide in 1805.
@@ -6217,8 +6294,8 @@ An example centered on Greenwich can be generated thus:
    World map using the Mollweide projection.
 
 
-Winkel Tripel projection (**-Jr** **-JR**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Winkel Tripel projection (**-Jr** **-JR**) :ref:`... <-Jr_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In 1921, the German mathematician Oswald Winkel a projection that was to
 strike a compromise between the properties of three elements (area,
@@ -6256,8 +6333,8 @@ Centered on Greenwich, the example in Figure :ref:`Winkel Tripel projection
    World map using the Winkel Tripel projection.
 
 
-Robinson projection (**-Jn** **-JN**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Robinson projection (**-Jn** **-JN**) :ref:`... <-Jn_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Robinson projection, presented by the American geographer and
 cartographer Arthur H. Robinson in 1963, is a modified cylindrical
@@ -6287,14 +6364,14 @@ Again centered on Greenwich, the example below was created by this command:
    World map using the Robinson projection.
 
 
-Eckert IV and VI projection (**-Jk** **-JK**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Eckert IV and VI projection (**-Jk** **-JK**) :ref:`... <-Jk_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Eckert IV and VI projections, presented by the German cartographer
 Max Eckert-Greiffendorff in 1906, are pseudocylindrical equal-area
 projections. Central meridian and all parallels are straight lines;
 other meridians are equally spaced elliptical arcs (IV) or sinusoids
-(VI). The scale is true along latitudes 4030' (IV) and 4916' (VI). Their
+(VI). The scale is true along latitudes 40º30' (IV) and 49º16' (VI). Their
 main use is in thematic world maps. To select Eckert IV you must use
 **-JKf** (**f** for "four") while Eckert VI is selected with **-JKs**
 (**s** for "six"). If no modifier is given it defaults to Eckert VI. In
@@ -6328,8 +6405,8 @@ The same script, with **s** instead of **f**, yields the Eckert VI map:
    World map using the Eckert VI projection.
 
 
-Sinusoidal projection (**-Ji** **-JI**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sinusoidal projection (**-Ji** **-JI**) :ref:`... <-Ji_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The sinusoidal projection is one of the oldest known projections, is
 equal-area, and has been used since the mid-16th century. It has also
@@ -6358,8 +6435,8 @@ A simple world map using the sinusoidal projection is therefore obtained by
 
 To reduce distortion of shape the interrupted sinusoidal projection was
 introduced in 1927. Here, three symmetrical segments are used to cover
-the entire world. Traditionally, the interruptions are at 160W, 20W, and
-60E. To make the interrupted map we must call
+the entire world. Traditionally, the interruptions are at 160ºW, 20ºW, and
+60ºE. To make the interrupted map we must call
 :doc:`pscoast` for each segment and superpose
 the results. To produce an interrupted world map (with the traditional
 boundaries just mentioned) that is 5.04 inches wide we use the scale
@@ -6386,8 +6463,8 @@ The usefulness of the interrupted sinusoidal projection is basically
 limited to display of global, discontinuous data distributions like
 hydrocarbon and mineral resources, etc.
 
-Van der Grinten projection (**-Jv** **-JV**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Van der Grinten projection (**-Jv** **-JV**) :ref:`... <-Jv_full>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Van der Grinten projection, presented by Alphons J. van der Grinten
 in 1904, is neither equal-area nor conformal. Central meridian and
@@ -6581,11 +6658,12 @@ records that do *not* start with '#' then you must make sure to use the
 **-h** option and set the parameter :ref:`IO_N_HEADER_RECS <IO_N_HEADER_RECS>` in the :doc:`gmt.conf` file
 (GMT default is one header record if **-h** is given; you may also use
 **-h**\ *nrecs* directly). Fields within a record must be separated by
-spaces, tabs, or commas. Each field can be an integer or floating-point
+spaces, tabs, commas, or semi-colons. Each field can be an integer or floating-point
 number or a geographic coordinate string using the
 [+\ \|\ -]dd[:mm[:ss]][W:\ \|\ S\ \|\ N\ \|\ E\ \|\ w\ \|\ s\ \|\ n\ \|\ e]
 format. Thus, 12:30:44.5W, 17.5S, 1:00:05, and 200:45E are all valid
-input strings. On output, fields will be separated by the character
+input strings. GMT is expected to handle most CVS (Comma-Separated Values)
+files, including numbers given in double quotes.  On output, fields will be separated by the character
 given by the parameter :ref:`IO_COL_SEPARATOR <IO_COL_SEPARATOR>`, which by default is a TAB.
 
 Optional segment header records
@@ -6847,7 +6925,7 @@ Geographical
        "south pole condition" is used at :math:`y_{min}`, else a default
        condition is used there.
 
-    "Pole conditions" use a 180 phase-shift of the data, requiring 180
+    "Pole conditions" use a 180º phase-shift of the data, requiring 180
     modulo :math:`x_{inc} = 0`.
 
 Default
@@ -6983,7 +7061,7 @@ Table :ref:`sundef <tbl-sundef>`.
 +---------------------+-------------------------------------------+
 
 Numerous public-domain programs exist, such as **xv** and
-**convert** (in the ImageMagick package), that will translate between
+**convert** (in the GraphicsMagick or ImageMagick package), that will translate between
 various raster file formats such as tiff, gif, jpeg, and Sun raster.
 Raster patterns may be created with GMT plotting tools by generating
 PostScript plots that can be rasterized by ghostscript and
@@ -7078,7 +7156,7 @@ accomplished.
    you are editing your document. This image is basically a placeholder
    for the PostScript graphics that will actually be printed.
 
--  The preferred option is to use the GMT utility
+-  However, the preferred option is to use the GMT utility
    :doc:`ps2raster`. Its **-A** option will
    figure out the tightest BoundingBox, again using ghostscript in
    the background. For example, running
@@ -7124,7 +7202,7 @@ the image into a presentation.
 
 The are a number of programs that will convert PostScript files to PDF
 or raster formats, like Aladdin's **pstopdf**, pbmplus' **pstoimg**,
-or ImageMagick's **convert**, most of which run ghostscript
+or GraphicsMagick's and ImageMagick's **convert**, most of which run ghostscript
 behind the scenes. The same is true for viewers like **ghostview** and
 Apple's Preview*. So a lot of the times when people report that
 their PostScript plot does not look right but prints fine, it is the
@@ -7231,7 +7309,7 @@ files to PNG.
 The **-P** option of :doc:`ps2raster` may
 also come in handy. When you have *not* supplied the **-P** option in
 your first GMT plot command, your plot will be in Landscape mode. That
-means that the plot will be rotated 90 degrees (anti-clockwise) to fit
+means that the plot will be rotated 90º (anti-clockwise) to fit
 on a Portrait mode page when coming out of the printer. The **-P**
 option of :doc:`ps2raster` will undo that
 rotation, so that you do not have to do so within your document. This
@@ -7282,7 +7360,7 @@ you will need to rotate the plot as well. For example,
 
      \includegraphics[angle=-90,width=0.8\textwidth]{myplot}
 
-will rotate the image 90 clockwise and scale it such that its width
+will rotate the image 90º clockwise and scale it such that its width
 (after rotation) will be 80% of the width of the text column.
 
 GMT graphics in **PowerPoint**
@@ -7634,7 +7712,7 @@ you, and *b* increasing up. Keep this sense of (*rgb*) as you look at the cube.
 
 Now tip the cube such that the black corner faces down and the white
 corner up. When looking from the top, you can see the hue, contoured in
-gray solid lines, running around in 360 counter-clockwise. It starts
+gray solid lines, running around in 360º counter-clockwise. It starts
 with shades of red (0), then goes through green (120) and blue (240),
 back to red.
 
@@ -8564,12 +8642,18 @@ unless you append the modifiers **+X** (longitude via :ref:`FORMAT_GEO_MAP <FORM
 **+Y** (latitude via :ref:`FORMAT_GEO_MAP <FORMAT_GEO_MAP>`), or **+T** (calendar time via
 :ref:`FORMAT_DATE_MAP <FORMAT_DATE_MAP>` and :ref:`FORMAT_CLOCK_MAP <FORMAT_CLOCK_MAP>`.
 
-Text alignment and font
-~~~~~~~~~~~~~~~~~~~~~~~
+Text alignment and font attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Like the **Sl** symbol in :doc:`psxy`, you can change the current
-font by appending to **l** the modifier **+f**\ *font* and the text justification
-by appending the modifier **+j**\ *justify*.
+font by appending to **l** the modifier **+f**\ *font* [FONT_ANNOT_PRIMARY] and change the text justification
+by appending the modifier **+j**\ *justify* [CM]. Note: Here, the *font* specification
+will only be considered for the font type and not its size (which is set separately by your *size*
+argument) or color and outline (which are set separately by **-G** and **-W** arguments).
+Finally, there are two ways to specify the font size.  If a fixed font size is given in points
+(e.g,, 12p) then the text will be set at that size regardless of the symbol size specified in **-S**.
+Without the trailing **p** we interpret the size as a relative size in the 0-1 range and the actual
+font size will then scale with the symbol size, just like other symbol items.
 
 Conditional statements
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -8761,7 +8845,7 @@ l:
     the grid's global maximum and minimum, respectively. For example,
     the *line* **LT**/**RB** is a diagonal from the upper left to the
     lower right map corner, while **Z-**/135W/15S is a line from the
-    grid minimum to the point (135W, 15S).
+    grid minimum to the point (135ºW, 15ºS).
 
 L:
     Same as **l** except we will treat the lines given as great circle
@@ -8972,6 +9056,11 @@ Our first example uses the default placement algorithm. Because of the
 size of the map we request contour labels every 1.5 inches along the
 lines:
 
+    ::
+
+     gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_1.ps
+     gmt grdcontour geoid.nc -J -O -B20f10 -BWSne -C10 -A20+f8p -Gd1.5i -S10 -T:LH >> GMT_App_O_1.ps
+
 As seen in Figure :ref:`Contour label 1 <Contour_label_1>`, the contours are
 placed rather arbitrary. The string of contours for -40 to
 60 align well but that is a fortuitous consequence of reaching
@@ -8992,6 +9081,11 @@ Fixed number of labels
 
 We now exercise the option for specifying exactly how many labels each
 contour line should have:
+
+    ::
+
+     gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_2.ps
+     gmt grdcontour geoid.nc -J -O -B20f10 -BWSne -C10 -A20+f8p -Gn1/1i -S10 -T:LH >> GMT_App_O_2.ps
 
 By selecting only one label per contour and requiring that labels only
 be placed on contour lines whose length exceed 1 inch, we achieve the
@@ -9015,6 +9109,17 @@ nonzero "slop" to be used in the distance calculations: The point on the
 contour closest to our fixed points and within the given maximum
 distance will host the label.
 
+    ::
+
+     cat << EOF > fix.txt
+     80      -8.5
+     55      -7.5
+     102     0
+     130     10.5
+     EOF
+     gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_3.ps
+     gmt grdcontour geoid.nc -J -O -B20f10 -BWSne -C10 -A20+d+f8p -Gffix.txt/0.1i -S10 -T:LH >> GMT_App_O_3.ps
+
 The angle of the label is evaluated from the contour line geometry, and
 the final result is shown in Figure :ref:`Contour label 3 <Contour_label_3>`.
 To aid in understanding the algorithm we chose to specify "debug" mode
@@ -9036,6 +9141,11 @@ Label placement at simple line intersections
 Often, it will suffice to place contours at the imaginary intersections
 between the contour lines and a well-placed straight line segment. The
 **-Gl** or **-GL** algorithms work well in those cases:
+
+    ::
+
+      gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_4.ps
+      gmt grdcontour geoid.nc -J -O -B20f10 -BWSne -C10 -A20+d+f8p -GLZ-/Z+ -S10 -T:LH >> GMT_App_O_4.ps
 
 The obvious choice in this example is to specify a great circle between
 the high and the low, thus placing all labels between these extrema.
@@ -9062,6 +9172,11 @@ the desired label positions becomes too large to be given conveniently
 on the command line, or (2) we have another data set or lines whose
 intersections we wish to use, the general crossing algorithm makes more
 sense:
+
+    ::
+
+     gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_5.ps
+     gmt grdcontour geoid.nc -J -O -B20f10 -BWSne -C10 -A20+d+f8p -GXcross.txt -S10 -T:LH >> GMT_App_O_5.ps
 
 .. _Contour_label_5:
 
@@ -9095,6 +9210,12 @@ so that the label is more readable. We choose the place the labels every
 1000 km along the line and use that distance as the label. The labels
 are placed normal to the line:
 
+    ::
+     gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_6.ps
+     gmt grdcontour geoid.nc -J -O -K -B20f10 -BWSne -C10 -A20+d+f8p -Gl50/10S/160/10S -S10 \
+     -T:'-+' >> GMT_App_O_6.ps
+     gmt psxy -R -J -O -SqD1000k:+g+LD+an+p -Wthick transect.txt >> GMT_App_O_6.ps
+
 .. _Contour_label_6:
 
 .. figure:: /_images/GMT_App_O_6.*
@@ -9118,6 +9239,13 @@ line, use spherical degrees for placement, append the degree symbol as a
 unit for the labels, choose a rounded rectangular text box, and
 inverse-video the label:
 
+    ::
+
+     gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_7.ps
+     gmt grdcontour geoid.nc -J -O -K -B20f10 -BWSne -C10 -A20+d+u" m"+f8p -Gl50/10S/160/10S -S10 \
+     -T:-+ >> GMT_App_O_7.ps
+     gmt psxy -R -J -O -SqD15d:+gblack+fwhite+Ld+o+u\\260 -Wthick transect.txt >> GMT_App_O_7.ps
+
 The output is presented as Figure :ref:`Contour label 7 <Contour_label_7>`.
 
 .. _Contour_label_7:
@@ -9138,6 +9266,14 @@ choose to place labels every 1500 km. To do this we need to pull out
 those records whose distances are multiples of 1500 km and create a
 "fixed points" file that can be used to place labels and specify the
 labels. This is done with **awk**.
+
+    ::
+
+     gmt gmtconvert -i0,1,4 -Em150 transect.txt | $AWK '{print $1,$2,int($3)}' > fix2.txt
+     gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_8.ps
+     gmt grdcontour geoid.nc -J -O -K -B20f10 -BWSne -C10 -A20+d+u" m"+f8p -Gl50/10S/160/10S -S10 \
+     -T:-+ >> GMT_App_O_8.ps
+     gmt psxy -R -J -O -Sqffix2.txt:+g+an+p+Lf+u" m"+f8p -Wthick transect.txt >> GMT_App_O_8.ps
 
 The output is presented as Figure :ref:`Contour label 8 <Contour_label_8>`.
 
@@ -9160,6 +9296,39 @@ the previous sections. We make a map showing the tsunami travel times
 Islands [40]_. We lay down a color map based on the travel times and the
 shape of the seafloor, and travel time contours with curved labels as
 well as a few quoted lines. The final script is
+
+    ::
+
+     R=-R-85/5/10/55
+     gmt grdgradient topo5.nc -Nt1 -A45 -Gtopo5_int.nc
+     gmt gmtset FORMAT_GEO_MAP ddd:mm:ssF FONT_ANNOT_PRIMARY +9p FONT_TITLE 22p
+     gmt project -E-74/41 -C-17/28 -G10 -Q > great_NY_Canaries.txt
+     gmt project -E-74/41 -C2.33/48.87 -G100 -Q > great_NY_Paris.txt
+     km=`echo -17 28 | gmt mapproject -G-74/41/k -fg --FORMAT_FLOAT_OUT=%.0f -o2`
+     cat << EOF > ttt.cpt
+     0	lightred	3	lightred
+     3	lightyellow	6	lightyellow
+     6	lightgreen	100	lightgreen
+     EOF
+     gmt grdimage ttt_atl.nc -Itopo5_int.nc -Cttt.cpt $R -JM5.3i -P -K -nc+t1 > GMT_App_O_9.ps
+     gmt grdcontour ttt_atl.nc -R -J -O -K -C0.5 -A1+u" hour"+v+f8p,Bookman-Demi \
+     -GL80W/31N/17W/26N,17W/28N/17W/50N -S2 >> GMT_App_O_9.ps
+     gmt psxy -R -J -Wfatter,white great_NY_Canaries.txt -O -K  >> GMT_App_O_9.ps
+     gmt pscoast -R -J -B20f5 -BWSne+t"Tsunami travel times from the Canaries" -N1/thick -O -K \
+     -Glightgray -Wfaint -A500 >> GMT_App_O_9.ps
+     gmt gmtconvert great_NY_*.txt -E | gmt psxy -R -J -O -K -Sa0.15i -Gred -Wthin >> GMT_App_O_9.ps
+     gmt psxy -R -J -Wthick great_NY_Canaries.txt -O -K \
+     -Sqn1:+f8p,Times-Italic+l"Distance Canaries to New York = $km km"+ap+v >> GMT_App_O_9.ps
+     gmt psxy -R -J great_NY_Paris.txt -O -K -Sc0.08c -Gblack >> GMT_App_O_9.ps
+     gmt psxy -R -J -Wthinner great_NY_Paris.txt -SqD1000k:+an+o+gblue+LDk+f7p,Helvetica-Bold,white \
+     -O -K >> GMT_App_O_9.ps
+     cat << EOF | gmt pstext -R -J -O -K -Gwhite -Wthin -Dj0.1i/0.1i -F+f8p,Bookman-Demi+j \
+     >> GMT_App_O_9.ps
+     74W	41N	RT	New York
+     2.33E	48.87N	CT	Paris
+     17W	28N	CT	Canaries
+     EOF
+     gmt psxy -R -J -O -T >> GMT_App_O_9.ps
 
 with the complete illustration presented as Figure
 :ref:`Contour label 9 <Contour_label_9>`.
@@ -9217,6 +9386,29 @@ simultaneously. This also provides the opportunity to create any other
 temporary files that the script might create in the same directory.
 
 The example below shows how *isolation mode* works.
+
+    ::
+
+     ps=GMT_App_P_1.ps
+
+     # Create a temporary directory. $GMT_TMPDIR will be set to its pathname.
+     # XXXXXX is replaced by a unique random combination of characters.
+     export GMT_TMPDIR=`mktemp -d /tmp/gmt.XXXXXX`
+
+     # These settings will be local to this script only since it writes to
+     # $GMT_TMPDIR/gmt.conf
+     gmt gmtset COLOR_MODEL rgb FONT_ANNOT_PRIMARY 14p
+
+     # Make grid file and color map in temporary directory
+     gmt grdmath -Rd -I1 Y = $GMT_TMPDIR/lat.nc
+     gmt makecpt -Crainbow -T-90/90/180 -Z > $GMT_TMPDIR/lat.cpt
+
+     # The gmt grdimage command creates the history file $GMT_TMPDIR/gmt.history
+     gmt grdimage $GMT_TMPDIR/lat.nc -JK6.5i -C$GMT_TMPDIR/lat.cpt -P -K -nl > $ps
+     gmt pscoast -R -J -O -Dc -A5000 -Gwhite -Bx60g30 -By30g30 >> $ps
+
+     # Clean up all temporary files and the temporary directory
+     rm -rf $GMT_TMPDIR
 
 .. figure:: /_images/GMT_App_P_2.*
    :width: 500 px
@@ -9701,8 +9893,8 @@ Finally we show an example of a polygon file:
    For an overview of color systems such as HSV, see Appendix [app:I].
 
 .. [18]
-   Convert other graphics formats to Sun ras format using ImageMagick's
-   **convert** program.
+   Convert other graphics formats to Sun ras format using GraphicsMagick's
+	 or ImageMagick's **convert** program.
 
 .. [19]
    Requires building GMT with GDAL.

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdreformat.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grdreformat.c 14187 2015-03-19 17:45:06Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -108,17 +108,18 @@ int GMT_grdreformat_parse (struct GMT_CTRL *GMT, struct GRDREFORMAT_CTRL *Ctrl, 
 		switch (opt->option) {
 
 			case '<':	/* Input and Output files */
-				if (n_in == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
+				if (n_in == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID))
 					Ctrl->IO.file[n_in++] = strdup (opt->arg);
-				else if (n_in == 1 && GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT))
+				else if (n_in == 1 && GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT, GMT_IS_GRID))
 					Ctrl->IO.file[n_in++] = strdup (opt->arg);
 				else {
 					n_in++;
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Specify only one input and one output file\n");
+					n_errors++;
 				}
 				break;
 			case '>':	/* Output file */
-				if (GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT))
+				if (GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT, GMT_IS_GRID))
 					Ctrl->IO.file[GMT_OUT] = strdup (opt->arg);
 				else
 					n_errors++;

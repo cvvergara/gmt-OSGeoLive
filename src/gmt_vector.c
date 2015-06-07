@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_vector.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_vector.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -821,7 +821,7 @@ int GMT_solve_svd (struct GMT_CTRL *GMT, double *u, unsigned int m, unsigned int
 				w[i] = 0.0;
 		}
 	}		
-	*cutoff *= (100.0 * variance / total_variance);	/* Actual explained variance level in % */
+	*cutoff = (100.0 * variance / total_variance);	/* Actual explained variance level in % */
 	if (mode == 0)
 		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "GMT_solve_svd: Ratio limit %g gave %d singular values that explain %g %% of total variance %g\n", limit, n_use, *cutoff, total_variance);
 	if (mode == 1)
@@ -852,35 +852,36 @@ int GMT_solve_svd (struct GMT_CTRL *GMT, double *u, unsigned int m, unsigned int
 	return (n_use);
 }
 
-double GMT_dot3v (struct GMT_CTRL *GMT, double *a, double *b)
-{
+double GMT_dot3v (struct GMT_CTRL *GMT, double *a, double *b) {
+	GMT_UNUSED(GMT);
 	return (a[GMT_X]*b[GMT_X] + a[GMT_Y]*b[GMT_Y] + a[GMT_Z]*b[GMT_Z]);
 }
 
-double GMT_dot2v (struct GMT_CTRL *GMT, double *a, double *b)
-{
+double GMT_dot2v (struct GMT_CTRL *GMT, double *a, double *b) {
+	GMT_UNUSED(GMT);
 	return (a[GMT_X]*b[GMT_X] + a[GMT_Y]*b[GMT_Y]);
 }
 
-double GMT_mag3v (struct GMT_CTRL *GMT, double *a)
-{
+double GMT_mag3v (struct GMT_CTRL *GMT, double *a) {
+	GMT_UNUSED(GMT);
 	return (d_sqrt(a[GMT_X]*a[GMT_X] + a[GMT_Y]*a[GMT_Y] + a[GMT_Z]*a[GMT_Z]));
 }
 
 void GMT_add3v (struct GMT_CTRL *GMT, double *a, double *b, double *c)
 {	/* C = A + B */
 	int k;
+	GMT_UNUSED(GMT);
 	for (k = 0; k < 3; k++) c[k] = a[k] + b[k];
 }
 
 void GMT_sub3v (struct GMT_CTRL *GMT, double *a, double *b, double *c)
 {	/* C = A - B */
 	int k;
+	GMT_UNUSED(GMT);
 	for (k = 0; k < 3; k++) c[k] = a[k] - b[k];
 }
 
-void GMT_normalize3v (struct GMT_CTRL *GMT, double *a)
-{
+void GMT_normalize3v (struct GMT_CTRL *GMT, double *a) {
 	double r_length;
 	r_length = GMT_mag3v (GMT,a);
 	if (r_length != 0.0) {
@@ -891,9 +892,9 @@ void GMT_normalize3v (struct GMT_CTRL *GMT, double *a)
 	}
 }
 
-void GMT_normalize2v (struct GMT_CTRL *GMT, double *a)
-{
+void GMT_normalize2v (struct GMT_CTRL *GMT, double *a) {
 	double r_length;
+	GMT_UNUSED(GMT);
 	r_length = hypot (a[GMT_X], a[GMT_Y]);
 	if (r_length != 0.0) {
 		r_length = 1.0 / r_length;
@@ -904,6 +905,7 @@ void GMT_normalize2v (struct GMT_CTRL *GMT, double *a)
 
 void GMT_cross3v (struct GMT_CTRL *GMT, double *a, double *b, double *c)
 {
+	GMT_UNUSED(GMT);
 	c[GMT_X] = a[GMT_Y] * b[GMT_Z] - a[GMT_Z] * b[GMT_Y];
 	c[GMT_Y] = a[GMT_Z] * b[GMT_X] - a[GMT_X] * b[GMT_Z];
 	c[GMT_Z] = a[GMT_X] * b[GMT_Y] - a[GMT_Y] * b[GMT_X];
@@ -912,6 +914,7 @@ void GMT_cross3v (struct GMT_CTRL *GMT, double *a, double *b, double *c)
 void GMT_matrix_vect_mult (struct GMT_CTRL *GMT, unsigned int dim, double a[3][3], double b[3], double c[3])
 {	/* c = A * b for 2 or 3 D */
 	unsigned int i, j;
+	GMT_UNUSED(GMT);
 
 	for (i = 0; i < dim; i++) for (j = 0, c[i] = 0.0; j < dim; j++) c[i] += a[i][j] * b[j];
 }
@@ -925,6 +928,7 @@ void GMT_make_rot_matrix2 (struct GMT_CTRL *GMT, double E[3], double w, double R
  */
 
 	double sin_w, cos_w, c, E_x, E_y, E_z, E_12c, E_13c, E_23c;
+	GMT_UNUSED(GMT);
 
 	sincosd (w, &sin_w, &cos_w);
 	c = 1 - cos_w;
@@ -971,6 +975,7 @@ void GMT_geo_to_cart (struct GMT_CTRL *GMT, double lat, double lon, double *a, b
 	   input coordinates are in degrees, otherwise in radian */
 
 	double clat, clon, slon;
+	GMT_UNUSED(GMT);
 
 	if (degrees) {
 		lat *= D2R;
@@ -988,6 +993,7 @@ void GMT_cart_to_geo (struct GMT_CTRL *GMT, double *lat, double *lon, double *a,
 	   coordinates (lat, lon). If degrees = true, the output coordinates
 	   are in degrees, otherwise in radian. */
 
+	GMT_UNUSED(GMT);
 	if (degrees) {
 		*lat = d_asind (a[GMT_Z]);
 		*lon = d_atan2d (a[GMT_Y], a[GMT_X]);
@@ -1004,6 +1010,7 @@ void GMT_polar_to_cart (struct GMT_CTRL *GMT, double r, double theta, double *a,
 	   to a 2-vector of unit length (a). If degrees = true,
 	   input theta is in degrees, otherwise in radian */
 
+	GMT_UNUSED(GMT);
 	if (degrees) theta *= D2R;
 	sincos (theta, &a[GMT_Y], &a[GMT_X]);
 	a[GMT_X] *= r;
@@ -1016,6 +1023,7 @@ void GMT_cart_to_polar (struct GMT_CTRL *GMT, double *r, double *theta, double *
 	   coordinates (r, theta). If degrees = true, the output coordinates
 	   are in degrees, otherwise in radian. */
 
+	GMT_UNUSED(GMT);
 	*r = hypot (a[GMT_X], a[GMT_Y]);
 	*theta = d_atan2 (a[GMT_Y], a[GMT_X]);
 	if (degrees) *theta *= R2D;
@@ -1040,6 +1048,7 @@ uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 	uint64_t i, j, n_new, n_step = 0;
 	double a[3], b[3], x[3], *lon = NULL, *lat = NULL;
 	double c, d, fraction, theta, minlon, maxlon;
+	double dlon, lon_i;
 
 	lon = *a_lon;	lat = *a_lat;	/* Input arrays */
 
@@ -1051,17 +1060,25 @@ uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 	if (step <= 0.0) step = GMT->current.map.path_step;	/* Based on GMT->current.setting.map_line_step converted to degrees */
 	if (step <= 0.0) step = 0.1;				/* Safety valve when no -J and step not set. */
 
+	/* Must be careful with connecting longitudes along a parallel since often the
+	 * longitudes might be of different sign.  E.g., first may be +115 and the second is -165.
+	 * Naive math would find a jump of -280 degrees but really it is just 80.  The test below
+	 * tries to handle these artificial jumps. */
+	
 	for (i = 1; i < n; i++) {
 
 		GMT_geo_to_cart (GMT, lat[i], lon[i], b, true);	/* End point of current arc */
 
 		if (mode == 1) {	/* First follow meridian, then parallel */
-			theta = fabs (lon[i]-lon[i-1]) * cosd (lat[i-1]);
+			dlon = lon[i]-lon[i-1];	/* Beware of jumps due to sign differences */
+			if (fabs (dlon) > 180.0) dlon += copysign (360.0, -dlon);	/* Never more than  180 to next point */
+			lon_i = lon[i-1] + dlon;	/* Use lon_i instead of lon[i] in the marching since this avoids any jumping */
+			theta = fabs (dlon) * cosd (lat[i-1]);
 			n_step = lrint (theta / step);
 			for (j = 1; j < n_step; j++) {
 				c = j / (double)n_step;
 				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i-1] * (1 - c) + lon[i] * c;
+				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i-1] * (1 - c) + lon_i * c;
 				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i-1];
 				n_new++;
 			}
@@ -1087,12 +1104,15 @@ uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i-1] * (1 - c) + lat[i] * c;
 				n_new++;
 			}
-			theta = fabs (lon[i]-lon[i-1]) * cosd(lat[i]);
+			dlon = lon[i]-lon[i-1];	/* Beware of jumps due to sign differences */
+			if (fabs (dlon) > 180.0) dlon += copysign (360.0, -dlon);	/* Never more than  180 to next point */
+			lon_i = lon[i-1] + dlon;	/* Use lon_i instead of lon[i] in the marching since this avoids any jumping */
+			theta = fabs (dlon) * cosd(lat[i]);
 			n_step = lrint (theta / step);
 			for (j = k; j < n_step; j++) {	/* Start at 0 to make sure corner point is saved */
 				c = j / (double)n_step;
 				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i-1] * (1 - c) + lon[i] * c;
+				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i-1] * (1 - c) + lon_i * c;
 				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i];
 				n_new++;
 			}
@@ -1133,7 +1153,7 @@ uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 	/* Destroy old allocated memory and put the new one in place */
 	GMT_free (GMT, lon);
 	GMT_free (GMT, lat);
-	GMT_eliminate_lon_jumps (GMT, GMT->hidden.mem_coord[GMT_X], n_new);
+	GMT_eliminate_lon_jumps (GMT, GMT->hidden.mem_coord[GMT_X], n_new);	/* Ensure longitudes are in the same quadrants */
 	*a_lon = GMT_assign_vector (GMT, n_new, GMT_X);
 	*a_lat = GMT_assign_vector (GMT, n_new, GMT_Y);
 
@@ -1456,6 +1476,7 @@ int GMT_chol_dcmp (struct GMT_CTRL *GMT, double *a, double *d, double *cond, int
 */
 	int i, j, k, ik, ij, kj, kk, nrp1;
 	double eigmax, eigmin;
+	GMT_UNUSED(GMT);
 
 	nrp1 = nr + 1;
 
@@ -1517,6 +1538,7 @@ void GMT_chol_recover (struct GMT_CTRL *GMT, double *a, double *d, int nr, int n
 */
 
 	int kbad, i, j, ii, ij, ji, nrp1;
+	GMT_UNUSED(GMT);
 
 	kbad = abs (nerr) - 1;
 	nrp1 = nr + 1;
@@ -1550,6 +1572,7 @@ void GMT_chol_solv (struct GMT_CTRL *GMT, double *a, double *x, double *y, int n
 	W H F Smith, 18 Feb 2000
 */
 	int i, j, ij, ji, ii, nrp1;
+	GMT_UNUSED(GMT);
 
 	nrp1 = nr + 1;
 

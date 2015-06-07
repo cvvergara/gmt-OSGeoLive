@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gravfft &mdash; GMT 5.1.1 documentation</title>
+    <title>gravfft &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../../index.html" />
     <link rel="up" title="POTENTIAL" href="../../SUP_POTENTIAL.html" />
     <link rel="next" title="grdgravmag3d" href="grdgravmag3d.html" />
     <link rel="prev" title="gmtgravmag3d" href="gmtgravmag3d.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" accesskey="U">POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -79,12 +79,12 @@
 <div class="section" id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
 <p><strong>gravfft</strong> <em>ingrid</em> [ <em>ingrid2</em> ] <strong>-G</strong><em>outfile</em>
-[ <strong>-C</strong>&lt;n/wavelength/mean_depth/tbw&gt; ] [ <strong>-A</strong><em>z_offset</em> ] [ <strong>-D</strong>&lt;density&gt; ]
-[ <strong>-E</strong>&lt;n_terms&gt; ] [ <strong>-F</strong>[f|g|v|n|e] ] [ <strong>-I</strong>&lt;wbctk&gt; ]
+[ <strong>-C</strong><em>n/wavelength/mean_depth/tbw</em> ] [ <strong>-D</strong><em>density</em> ] [ <strong>-E</strong><em>n_terms</em> ]
+[ <strong>-F</strong>[<strong>f</strong>|<strong>g</strong>|<strong>v</strong>|<strong>n</strong>|<strong>e</strong>] ] [ <strong>-I</strong><strong>w</strong>|<strong>b</strong>|<strong>c</strong>|<strong>t</strong> |<strong>k</strong> ]
 <strong>-N</strong>[<strong>f</strong>|<strong>q</strong>|<strong>s</strong>|<em>nx/ny</em>][<strong>+a</strong>|<strong>d</strong>|<strong>h</strong> |<strong>l</strong>][<strong>+e</strong>|<strong>n</strong>|<strong>m</strong>][<strong>+t</strong><em>width</em>][<strong>+w</strong>[<em>suffix</em>]][<strong>+z</strong>[<strong>p</strong>]]
-[ <strong>-Q</strong> ] [ <strong>-T</strong>&lt;te/rl/rm/rw&gt;[+m] ]
+[ <strong>-Q</strong> ] [ <strong>-T</strong><em>te/rl/rm/rw</em>[<strong>+m</strong>] ]
 [ <strong>-V</strong>[<em>level</em>] ]
-[ <strong>-Z</strong>&lt;zm&gt;[/&lt;zl&gt;] ]
+[ <strong>-Z</strong><em>zm</em>[<em>zl</em>] ]
 [ <strong>-fg</strong> ]</p>
 <p><strong>Note:</strong> No space is allowed between the option flag and the associated arguments.</p>
 </div>
@@ -94,8 +94,8 @@
 gravity/geoid response of a bathymetry file. It will take the 2-D
 forward FFT of a bathymetry grid and compute it&#8217;s gravity/geoid response
 using full Parker&#8217;s method applied to the chosen model. The available
-models are the “loading from top”, or elastic plate model, and the
-“loading from below” which accounts for the plate&#8217;s response to a
+models are the &#8220;loading from top&#8221;, or elastic plate model, and the
+&#8220;loading from below&#8221; which accounts for the plate&#8217;s response to a
 sub-surface load (appropriate for hot spot modeling - if you believe
 them). In both cases, the model parameters are set with <strong>-T</strong> and
 <strong>-Z</strong> options. Second mode computes the admittance or coherence between
@@ -124,18 +124,18 @@ For cross-spectral operations, also give the second grid file <em>ingrd2</em>.</
 <div class="section" id="optional-arguments">
 <h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><strong>-C</strong><em>&lt;n/wavelength/mean_depth/tbw&gt;</em></dt>
+<dt><strong>-C</strong><em>n/wavelength/mean_depth/tbw</em></dt>
 <dd>Compute only the theoretical admittance curves of the selected model
 and exit. <em>n</em> and <em>wavelength</em> are used to compute (n * wavelength)
 the total profile length in meters. <em>mean_depth</em> is the mean water
 depth. Append dataflags (one or two) of <em>tbw</em> in any order. <em>t</em> =
-use “from top” model, <em>b</em> = use &#8220;from below&#8221; model. Optionally
+use &#8220;from top&#8221; model, <em>b</em> = use &#8220;from below&#8221; model. Optionally
 specify <em>w</em> to write wavelength instead of frequency.</dd>
 <dt><strong>-D</strong><em>density</em></dt>
 <dd>Sets density contrast across surface. Used, for example, to compute
 the gravity attraction of the water layer that can later be combined
 with the free-air anomaly to get the Bouguer anomaly. In this case
-do not use <strong>-T</strong>. It also implicitly sets <strong>-N+h</strong></dd>
+do not use <strong>-T</strong>. It also implicitly sets <strong>-N+h</strong>.</dd>
 <dt><strong>-E</strong><em>n_terms</em></dt>
 <dd>Number of terms used in Parker expansion (limit is 10, otherwise
 terms depending on n will blow out the program) [Default = 3]</dd>
@@ -149,18 +149,19 @@ terms depending on n will blow out the program) [Default = 3]</dd>
 <p><strong>n</strong> = North deflections of the vertical (micro-radian).</p>
 </div></blockquote>
 </dd>
-<dt><strong>-I</strong><em>&lt;wbctk&gt;</em></dt>
-<dd>Use &lt;ingrid2&gt; and &lt;topo_grd&gt; to estimate admittance|coherence and
-write it to stdout (-G ignored if set). This grid should contain
-gravity or geoid for the same region of &lt;topo_grd&gt;. Default
+<dt><strong>-I</strong><strong>w</strong>|<strong>b</strong>|<strong>c</strong>|<strong>t</strong> |<strong>k</strong></dt>
+<dd>Use <em>ingrd2</em> and <em>ingrd1</em> (a grid with topography/bathymetry) to estimate admittance|coherence and
+write it to stdout (<strong>-G</strong> ignored if set). This grid should contain
+gravity or geoid for the same region of <em>ingrd1</em>. Default
 computes admittance. Output contains 3 or 4 columns. Frequency
 (wavelength), admittance (coherence) one sigma error bar and,
 optionally, a theoretical admittance. Append dataflags (one to
-three) of wbct. <strong>w</strong> writes wavelength instead of wavenumber <strong>k</strong>
-Use km or wavelength unit [m] <strong>c</strong> computes coherence instead of
-admittance <strong>b</strong> writes a forth column with &#8220;loading from below&#8221;
-theoretical admittance <strong>t</strong> writes a forth column with &#8220;elastic
-plate&#8221; theoretical admittance</dd>
+three) from <strong>w</strong>|<strong>b</strong>|<strong>c</strong>|<strong>t</strong>.
+<strong>w</strong> writes wavelength instead of wavenumber, <strong>k</strong>
+selects km for wavelength unit [m], <strong>c</strong> computes coherence instead of
+admittance, <strong>b</strong> writes a forth column with &#8220;loading from below&#8221;
+theoretical admittance, and <strong>t</strong> writes a forth column with &#8220;elastic
+plate&#8221; theoretical admittance.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-N</strong>[<strong>f</strong>|<strong>q</strong>|<strong>s</strong>|<em>nx/ny</em>][<strong>+a</strong>|[<strong>+d</strong>|<strong>h</strong>|<strong>l</strong>][<strong>+e</strong>|<strong>n</strong>|<strong>m</strong>][<strong>+t</strong><em>width</em>][<strong>+w</strong>[<em>suffix</em>]][<strong>+z</strong>[<strong>p</strong>]]</dt>
@@ -215,18 +216,18 @@ produced by the current bathymetry and the theoretical model. The
 necessary parameters are set within <strong>-T</strong> and <strong>-Z</strong> options. The
 number of powers in Parker expansion is restricted to 1.
 See an example further down.</dd>
-<dt><strong>-T</strong><em>&lt;te/rl/rm/rw&gt;[+m]</em></dt>
+<dt><strong>-T</strong><em>te/rl/rm/rw</em>[<strong>+m</strong>]</dt>
 <dd>Compute the isostatic compensation from the topography load (input grid file) on
 an elastic plate of thickness <em>te</em>. Also append densities for load, mantle, and
 water in SI units. Give average mantle depth via <strong>-Z</strong>. If the elastic thickness
 is &gt; 1e10 it will be interpreted as the flexural rigidity (by default it is
-computed from <em>te</em> and Young modulus). Optionaly, append <em>+m</em> to write a grid
+computed from <em>te</em> and Young modulus). Optionally, append <em>+m</em> to write a grid
 with the Moho&#8217;s geopotential effect (see <strong>-F</strong>) from model selected by <strong>-T</strong>.
 If <em>te</em> = 0 then the Airy response is returned. <strong>-T+m</strong> implicitly sets <strong>-N+h</strong></dd>
-<dt><strong>-Z</strong><em>&lt;zm&gt;[/&lt;zl&gt;]</em></dt>
-<dd>Moho [and swell] average compensation depths. For the “load from
-top” model you only have to provide <em>zm</em>, but for the “loading from
-below” don&#8217;t forget <em>zl</em>.</dd>
+<dt><strong>-Z</strong><em>zm</em>[<em>zl</em>]</dt>
+<dd>Moho [and swell] average compensation depths. For the &#8220;load from
+top&#8221; model you only have to provide <em>zm</em>, but for the &#8220;loading from
+below&#8221; don&#8217;t forget <em>zl</em>.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="../../gmt.html#v-full"><em>(more ...)</em></a></dt>
@@ -236,12 +237,12 @@ below” don&#8217;t forget <em>zl</em>.</dd>
 meters via a &#8220;Flat Earth&#8221; approximation using the current ellipsoid parameters.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -294,6 +295,19 @@ meters, select <strong>-fg</strong>. If the data are close to either pole, you s
 consider projecting the grid file onto a rectangular coordinate system
 using <a class="reference internal" href="../../grdproject.html"><em>grdproject</em></a>.</p>
 </div>
+<div class="section" id="plate-flexure">
+<h2>Plate Flexure<a class="headerlink" href="#plate-flexure" title="Permalink to this headline">¶</a></h2>
+<p>The FFT solution to elastic plate flexure requires the infill density to equal
+the load density.  This is typically only true directly beneath the load; beyond the load
+the infill tends to be lower-density sediments or even water (or air).  Wessel [2001]
+proposed an approximation that allows for the specification of an infill density
+different from the load density while still allowing for an FFT solution. Basically,
+the plate flexure is solved for using the infill density as the effective load density but
+the amplitudes are adjusted by a factor <em>A</em> = sqrt ((rm - ri)/(rm - rl)), which is
+the theoretical difference in amplitude due to a point load using the two different
+load densities.  The approximation is very good but breaks down for large
+loads on weak plates, a fairy uncommon situation.</p>
+</div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>To compute the effect of the water layer above the bat.grd bathymetry
@@ -305,7 +319,7 @@ in Parker expansion):</p>
 </pre></div>
 </div>
 </div></blockquote>
-<p>Now subtract it to your free-air anomaly faa.grd and you’ll get the
+<p>Now subtract it to your free-air anomaly faa.grd and you will get the
 Bouguer anomaly. You may wonder why we are subtracting and not adding.
 After all the Bouger anomaly pretends to correct the mass deficiency
 presented by the water layer, so we should add because water is less
@@ -322,12 +336,12 @@ it to the sea-bottom anomaly. Assuming a 6 km thick crust of density
 2700 and a mantle with 3300 density we could repeat the command used to
 compute the water layer anomaly, using 600 (3300 - 2700) as the density
 contrast. But we now have a problem because we need to know the mean
-moho depth. That is when <strong>-A</strong> option comes in hand. Notice that we
-didn&#8217;t need to do that before because mean water depth was computed
-directly from data. (notice also the negative sign of the argument to
-<strong>-A</strong>, remember z positive up):</p>
+moho depth. That is when the scale/offset that can be appended to the grid&#8217;s name
+comes in hand. Notice that we didn&#8217;t need to do that before because mean water
+depth was computed directly from data. (notice also the negative sign of the
+offset due to the fact that <em>z</em> is positive up):</p>
 <blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft bat.grd -D600 -Gmoho_g.grd -A-6000
+<div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft bat.grd=nf/1/-6000 -D600 -Gmoho_g.grd
 </pre></div>
 </div>
 </div></blockquote>
@@ -345,7 +359,7 @@ of 9 km</p>
 </pre></div>
 </div>
 </div></blockquote>
-<p>If you add now the sea-bottom and Moho’s effects, you’ll get the full
+<p>If you add now the sea-bottom and Moho&#8217;s effects, you will get the full
 gravity response of your isostatic model. We will use here only the
 first term in Parker expansion.</p>
 <blockquote>
@@ -392,7 +406,7 @@ geographic and we want wavelengths instead of frequency:</p>
 </pre></div>
 </div>
 </div></blockquote>
-<p>To compute the gravity theoretical admittance of a LFB along a 1000 km
+<p>To compute the gravity theoretical admittance of a LFB along a 2000 km
 long profile using the same parameters as above</p>
 <blockquote>
 <div><div class="highlight-python"><div class="highlight"><pre>gmt gravfft -C400/5000/3000/b -T10000/2700/3300/1035 -Z9000/40000
@@ -402,10 +416,13 @@ long profile using the same parameters as above</p>
 </div>
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
-<p>Luis, J.F. and M.C. Neves. 2006, &#8220;The isostatic compensation of the
+<p>Luis, J.F. and M.C. Neves. 2006, The isostatic compensation of the
 Azores Plateau: a 3D admittance and coherence analysis. J. Geotermal
 Vulc. Res. Volume 156, Issues 1-2, Pages 10-22,
-<a class="reference external" href="http://dx.doi.org/10.1016/j.jvolgeores.2006.03.010">http://dx.doi.org/10.1016/j.jvolgeores.2006.03.010</a></p>
+<a class="reference external" href="http://dx.doi.org/10.1016/j.jvolgeores.2006.03.010">http://dx.doi.org/10.1016/j.jvolgeores.2006.03.010</a>
+Wessel. P., 2001, Global distribution of seamounts inferred from gridded Geosat/ERS-1 altimetry,
+J. Geophys. Res., 106(B9), 19,431-19,441,
+<a class="reference external" href="http://dx.doi.org/110.1029/2000JB000083">http://dx.doi.org/10.1029/2000JB000083</a></p>
 </div>
 <div class="section" id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
@@ -430,6 +447,7 @@ Vulc. Res. Volume 156, Issues 1-2, Pages 10-22,
 <li><a class="reference internal" href="#grid-file-formats">Grid File Formats</a></li>
 <li><a class="reference internal" href="#grid-distance-units">Grid Distance Units</a></li>
 <li><a class="reference internal" href="#considerations">Considerations</a></li>
+<li><a class="reference internal" href="#plate-flexure">Plate Flexure</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
 <li><a class="reference internal" href="#references">References</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
@@ -466,7 +484,7 @@ Vulc. Res. Volume 156, Issues 1-2, Pages 10-22,
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../../SUP_POTENTIAL.html" >POTENTIAL</a> &raquo;</li>
 <li class="right">
@@ -484,9 +502,9 @@ Vulc. Res. Volume 156, Issues 1-2, Pages 10-22,
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

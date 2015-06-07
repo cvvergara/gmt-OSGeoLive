@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>spectrum1d &mdash; GMT 5.1.1 documentation</title>
+    <title>spectrum1d &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="S" href="S.html" />
     <link rel="next" title="sph2grd" href="sph2grd.html" />
     <link rel="prev" title="sample1d" href="sample1d.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="S.html" accesskey="U">S</a> &raquo;</li>
 <li class="right">
@@ -95,7 +95,7 @@ columns on standard input [or <em>x[y]file</em>]. These values are treated as
 timeseries X(t) [Y(t)] sampled at equal intervals spaced <em>dt</em> units
 apart. There may be any number of lines of input. <strong>spectrum1d</strong> will
 create file[s] containing auto- [and cross- ] spectral density estimates
-by Welch’s method of ensemble averaging of multiple overlapped windows,
+by Welch&#8217;s method of ensemble averaging of multiple overlapped windows,
 using standard error estimates from Bendat and Piersol.</p>
 <p>The output files have 3 columns: f or w, p, and e. f or w is the
 frequency or wavelength, p is the spectral density estimate, and e is
@@ -181,7 +181,7 @@ file[s] [Default = frequency, (cycles / <em>dt</em>)].</dd>
 <dd>Select binary input. [Default is 2 input columns].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output. [Default is 2 output columns].</dd>
 </dl>
 <dl class="docutils">
@@ -198,15 +198,15 @@ file[s] [Default = frequency, (cycles / <em>dt</em>)].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -245,6 +245,79 @@ data.g as output, use</p>
 </div>
 </div></blockquote>
 </div>
+<div class="section" id="tutorial">
+<h2>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h2>
+<p>The output of spectrum1d is in units of power spectral density, and so to get units
+of data-squared you must divide by delta_t, where delta_t is the sample spacing.
+(There may be a factor of 2 pi somewhere, also. If you want to be sure of the
+normalization, you can determine a scale factor from Parseval&#8217;s theorem: the sum of
+the squares of your input data should equal the sum of the squares of the outputs
+from spectrum1d, if you are simply trying to get a periodogram. [See below.])</p>
+<p>Suppose we simply take a data set, x(t), and compute the discrete Fourier transform
+(DFT) of the entire data set in one go. Call this X(f). Then suppose we form X(f)
+times the complex conjugate of X(f).</p>
+<p>P_raw(f) = X(f) * X&#8217;(f), where the &#8216; indicates complex conjugation.</p>
+<p>P_raw is called the periodogram. The sum of the samples of the periodogram equals the
+sum of the samples of the squares of x(t), by Parseval&#8217;s theorem. (If you use a DFT
+subroutine on a computer, usually the sum of P_raw equals the sum of x-squared, times M,
+where M is the number of samples in x(t).)</p>
+<p>Each estimate of X(f) is now formed by a weighted linear combination of all of the
+x(t) values. (The weights are sometimes called &#8220;twiddle factors&#8221; in the DFT literature.)
+So, no matter what the probability distribution for the x(t) values is, the probability
+distribution for the X(f) values approaches [complex] Gaussian, by the Central Limit
+Theorem. This means that the probability distribution for P_raw(f) approaches chi-squared
+with two degrees of freedom. That reduces to an exponential distribution, and the
+variance of the estimate of P_raw is proportional to the square of the mean, that is,
+the expected value of P_raw.</p>
+<p>In practice if we form P_raw, the estimates are hopelessly noisy. Thus P_raw is not useful,
+and we need to do some kind of smoothing or averaging to get a useful estimate, P_useful(f).</p>
+<p>There are several different ways to do this in the literature. One is to form P_raw and
+then smooth it. Another is to form the auto-covariance function of x(t), smooth, taper and
+shape it, and then take the Fourier transform of the smoothed, tapered and shaped auto-covariance.
+Another is to form a parametric model for the auto-correlation structure in x(t), then compute
+the spectrum of that model. This last approach is what is done in what is called the
+&#8220;maximum entropy&#8221; or &#8220;Berg&#8221; or &#8220;Box-Jenkins&#8221; or &#8220;ARMA&#8221; or &#8220;ARIMA&#8221; methods.</p>
+<p>Welch&#8217;s method is a tried-and-true method. In his method, you choose a segment length,
+<strong>-S</strong><em>N</em>, so that estimates will be made from segments of length <em>N</em>. The frequency samples
+(in cycles per delta_t unit) of your P_useful will then be at <em>k</em> /(<em>N</em> * <em>delta_t</em>),
+where <em>k</em> is an integer, and you will get <em>N</em> samples (since the spectrum is an even
+function of <em>f</em>, only <em>N</em>/2 of them are really useful). If the length of your entire
+data set, x(t), is <em>M</em> samples long, then the variance in your P_useful will decrease
+in proportion to <em>N/M</em>. Thus you need to choose <em>N</em> &lt;&lt; <em>M</em> to get very low noise and
+high confidence in P_useful. There is a trade-off here; see below.</p>
+<p>There is an additional reduction in variance in that Welch&#8217;s method uses a Von Hann
+spectral window on each sample of length <em>N</em>. This reduces side lobe leakage and has
+the effect of smoothing the (<em>N</em> segment) periodogram as if the X(f) had been
+convolved with [1/4, 1/2, 1/4] prior to forming P_useful. But this slightly widens
+the spectral bandwidth of each estimate, because the estimate at frequency sample <em>k</em>
+is now a little correlated with the estimate at frequency sample k+1. (Of course this
+would also happen if you simply formed P_raw and then smoothed it.)</p>
+<p>Finally, Welch&#8217;s method also uses overlapped processing. Since the Von Hann window is
+large in the middle and tapers to near zero at the ends, only the middle of the segment
+of length <em>N</em> contributes much to its estimate. Therefore in taking the next segment
+of data, we move ahead in the x(t) sequence only <em>N</em>/2 points. In this way, the next
+segment gets large weight where the segments on either side of it will get little weight,
+and vice versa. This doubles the smoothing effect and ensures that (if <em>N</em> &lt;&lt; <em>M</em>)
+nearly every point in x(t) contributes with nearly equal weight in the final answer.</p>
+<p>Welch&#8217;s method of spectral estimation has been widely used and widely studied. It is very
+reliable and its statistical properties are well understood. It is highly recommended in
+such textbooks as &#8220;Random Data: Analysis and Measurement Procedures&#8221; by Bendat and Piersol.</p>
+<p>In all problems of estimating parameters from data, there is a classic trade-off between
+resolution and variance. If you want to try to squeeze more resolution out of your data
+set, then you have to be willing to accept more noise in the estimates. The same trade-off
+is evident here in Welch&#8217;s method. If you want to have very low noise in the spectral
+estimates, then you have to choose <em>N</em> &lt;&lt; <em>M</em>, and this means that you get only <em>N</em>
+samples of the spectrum, and the longest period that you can resolve is only <em>N</em> * <em>delta_t</em>.
+So you see that reducing the noise lowers the number of spectral samples and lowers the
+longest period. Conversely, if you choose <em>N</em> approaching <em>M</em>, then you approach the
+periodogram with its very bad statistical properties, but you get lots of samples and
+a large fundamental period.</p>
+<p>The other spectral estimation methods also can do a good job. Welch&#8217;s method was selected
+because the way it works, how one can code it, and its effects on statistical distributions,
+resolution, side-lobe leakage, bias, variance, etc. are all easily understood. Some of the
+other methods (e.g. Maximum Entropy) tend to hide where some of these trade-offs are
+happening inside a &#8220;black box&#8221;.</p>
+</div>
 <div class="section" id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="gmt.html"><em>gmt</em></a>, <a class="reference internal" href="grdfft.html"><em>grdfft</em></a></p>
@@ -275,6 +348,7 @@ AU-15, No 2.</p>
 <li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
 <li><a class="reference internal" href="#ascii-format-precision">Ascii Format Precision</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#tutorial">Tutorial</a></li>
 <li><a class="reference internal" href="#see-also">See Also</a></li>
 <li><a class="reference internal" href="#references">References</a></li>
 </ul>
@@ -310,7 +384,7 @@ AU-15, No 2.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="S.html" >S</a> &raquo;</li>
 <li class="right">
@@ -328,9 +402,9 @@ AU-15, No 2.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

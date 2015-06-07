@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(37) Spectral coherence between gravity and bathymetry grids &mdash; GMT 5.1.1 documentation</title>
+    <title>(37) Spectral coherence between gravity and bathymetry grids &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(38) Histogram equalization of bathymetry grids" href="ex38.html" />
     <link rel="prev" title="(36) Spherical gridding using Renka’s algorithms" href="ex36.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -101,29 +101,29 @@ gmt gmtset FONT_TITLE 14p
 gmt makecpt -Crainbow -T-5000/-3000/100 -Z &gt; z.cpt
 gmt makecpt -Crainbow -T-50/25/5 -Z &gt; g.cpt
 gmt grdinfo <span class="nv">$T</span>.nc -Ib &gt; bbox
-gmt grdgradient <span class="nv">$G</span>.nc -A0 -Nt1 -G_int.nc
-gmt grdgradient <span class="nv">$T</span>.nc -A0 -Nt1 -G_int.nc
+gmt grdgradient <span class="nv">$G</span>.nc -A0 -Nt1 -G<span class="si">${</span><span class="nv">G</span><span class="si">}</span>_int.nc
+gmt grdgradient <span class="nv">$T</span>.nc -A0 -Nt1 -G<span class="si">${</span><span class="nv">T</span><span class="si">}</span>_int.nc
 <span class="nv">scl</span><span class="o">=</span>1.4e-5
 <span class="nv">sclkm</span><span class="o">=</span>1.4e-2
-gmt grdimage <span class="nv">$T</span>.nc -I_int.nc -Jxi -Cz.cpt -P -K -X1.474i -Y1i &gt; <span class="nv">$ps</span>
-gmt psbasemap -R-84/75/-78/81 -Jxi -O -K -Ba -BWSne+t<span class="s2">&quot;Multibeam bathymetry&quot;</span> &gt;&gt; <span class="nv">$ps</span>
-gmt grdimage <span class="nv">$G</span>.nc -I_int.nc -Jxi -Cg.cpt -O -K -X3.25i &gt;&gt; <span class="nv">$ps</span>
-gmt psbasemap -R-84/75/-78/81 -Jxi -O -K -Ba -BWSne+t<span class="s2">&quot;Satellite gravity&quot;</span> &gt;&gt; <span class="nv">$ps</span>
+gmt grdimage <span class="nv">$T</span>.nc -I<span class="si">${</span><span class="nv">T</span><span class="si">}</span>_int.nc -Jx<span class="si">${</span><span class="nv">scl</span><span class="si">}</span>i -Cz.cpt -P -K -X1.474i -Y1i &gt; <span class="nv">$ps</span>
+gmt psbasemap -R-84/75/-78/81 -Jx<span class="si">${</span><span class="nv">sclkm</span><span class="si">}</span>i -O -K -Ba -BWSne+t<span class="s2">&quot;Multibeam bathymetry&quot;</span> &gt;&gt; <span class="nv">$ps</span>
+gmt grdimage <span class="nv">$G</span>.nc -I<span class="si">${</span><span class="nv">G</span><span class="si">}</span>_int.nc -Jx<span class="si">${</span><span class="nv">scl</span><span class="si">}</span>i -Cg.cpt -O -K -X3.25i &gt;&gt; <span class="nv">$ps</span>
+gmt psbasemap -R-84/75/-78/81 -Jx<span class="si">${</span><span class="nv">sclkm</span><span class="si">}</span>i -O -K -Ba -BWSne+t<span class="s2">&quot;Satellite gravity&quot;</span> &gt;&gt; <span class="nv">$ps</span>
 
 gmt grdfft <span class="nv">$T</span>.nc <span class="nv">$G</span>.nc -Ewk -N192/192+d+wtmp &gt; cross.txt
-gmt grdgradient _tmp.nc -A0 -Nt1 -G_tmp_int.nc
-gmt grdgradient _tmp.nc -A0 -Nt1 -G_tmp_int.nc
+gmt grdgradient <span class="si">${</span><span class="nv">G</span><span class="si">}</span>_tmp.nc -A0 -Nt1 -G<span class="si">${</span><span class="nv">G</span><span class="si">}</span>_tmp_int.nc
+gmt grdgradient <span class="si">${</span><span class="nv">T</span><span class="si">}</span>_tmp.nc -A0 -Nt1 -G<span class="si">${</span><span class="nv">T</span><span class="si">}</span>_tmp_int.nc
 
 gmt makecpt -Crainbow -T-1500/1500/100 -Z &gt; z.cpt
 gmt makecpt -Crainbow -T-40/40/5 -Z &gt; g.cpt
 
-gmt grdimage _tmp.nc -I_tmp_int.nc -Jxi -Cz.cpt -O -K -X-3.474i -Y3i &gt;&gt; <span class="nv">$ps</span>
-gmt psxy -R_tmp.nc -J bbox -O -K -L -W0.5p,- &gt;&gt; <span class="nv">$ps</span>
-gmt psbasemap -R-100/91/-94/97 -Jxi -O -K -Ba -BWSne+t<span class="s2">&quot;Detrended and extended&quot;</span> &gt;&gt; <span class="nv">$ps</span>
+gmt grdimage <span class="si">${</span><span class="nv">T</span><span class="si">}</span>_tmp.nc -I<span class="si">${</span><span class="nv">T</span><span class="si">}</span>_tmp_int.nc -Jx<span class="si">${</span><span class="nv">scl</span><span class="si">}</span>i -Cz.cpt -O -K -X-3.474i -Y3i &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R<span class="si">${</span><span class="nv">T</span><span class="si">}</span>_tmp.nc -J bbox -O -K -L -W0.5p,- &gt;&gt; <span class="nv">$ps</span>
+gmt psbasemap -R-100/91/-94/97 -Jx<span class="si">${</span><span class="nv">sclkm</span><span class="si">}</span>i -O -K -Ba -BWSne+t<span class="s2">&quot;Detrended and extended&quot;</span> &gt;&gt; <span class="nv">$ps</span>
 
-gmt grdimage _tmp.nc -I_tmp_int.nc -Jxi -Cg.cpt -O -K -X3.25i &gt;&gt; <span class="nv">$ps</span>
-gmt psxy -R_tmp.nc -J bbox -O -K -L -W0.5p,- &gt;&gt; <span class="nv">$ps</span>
-gmt psbasemap -R-100/91/-94/97 -Jxi -O -K -Ba -BWSne+t<span class="s2">&quot;Detrended and extended&quot;</span> &gt;&gt; <span class="nv">$ps</span>
+gmt grdimage <span class="si">${</span><span class="nv">G</span><span class="si">}</span>_tmp.nc -I<span class="si">${</span><span class="nv">G</span><span class="si">}</span>_tmp_int.nc -Jx<span class="si">${</span><span class="nv">scl</span><span class="si">}</span>i -Cg.cpt -O -K -X3.25i &gt;&gt; <span class="nv">$ps</span>
+gmt psxy -R<span class="si">${</span><span class="nv">G</span><span class="si">}</span>_tmp.nc -J bbox -O -K -L -W0.5p,- &gt;&gt; <span class="nv">$ps</span>
+gmt psbasemap -R-100/91/-94/97 -Jx<span class="si">${</span><span class="nv">sclkm</span><span class="si">}</span>i -O -K -Ba -BWSne+t<span class="s2">&quot;Detrended and extended&quot;</span> &gt;&gt; <span class="nv">$ps</span>
 
 gmt gmtset FONT_TITLE 24p
 gmt psxy -R2/160/0/1 -JX-6il/2.5i -Bxa2f3g3+u<span class="s2">&quot; km&quot;</span> -Byafg0.5+l<span class="s2">&quot;Coherency@+2@+&quot;</span> -BWsNe+t<span class="s2">&quot;Coherency between gravity and bathymetry&quot;</span> -O -K -X-3.25i -Y3.3i cross.txt -i0,15 -W0.5p &gt;&gt; <span class="nv">$ps</span>
@@ -173,7 +173,7 @@ rm -f cross.txt *_tmp.nc *_int.nc ?.cpt bbox
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -191,9 +191,9 @@ rm -f cross.txt *_tmp.nc *_int.nc ?.cpt bbox
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

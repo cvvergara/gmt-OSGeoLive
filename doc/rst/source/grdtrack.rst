@@ -16,7 +16,7 @@ Synopsis
 **grdtrack** [ *xyfile* ] **-G**\ *grd1* **-G**\ *grd2* ...
 [ **-A**\ **f**\ \|\ **p**\ \|\ **m**\ \|\ **r**\ \|\ **R**\ [**+l**] ]
 [ **-C**\ *length*\ [**u**]/\ *ds*\ [*spacing*][**+a**] ] [**-D**\ *dfile* ]
-[ **-E**\ *line*\ [,\ *line*,...][**+a**\ *az*][**+d**][**+i**\ *inc*\ [**u**]][**+l**\ *length*\ [**u**]][**+n**\ *np*][**+r**\ *radius*\ [**u**] ]
+[ **-E**\ *line*\ [,\ *line*,...][**+a**\ *az*][**+d**][**+i**\ *inc*\ [**u**]][**+l**\ *length*\ [**u**]][**+n**\ *np*][**+o**\ *az*][**+r**\ *radius*\ [**u**] ]
 [ **-N** ] 
 [ |SYN_OPT-R| ]
 [ **-S**\ *method*/*modifiers* ] [ **-T**\ [*radius*\ [**u**]][**+e**\ \|\ **p**]]
@@ -85,26 +85,28 @@ Optional Arguments
     given spacing to fit the track length exactly. Finally, append
     **+l** if distances should be measured along rhumb lines
     (loxodromes). Ignored unless **-C** is used.
-**-C**\ *length*/*ds*\ [/*spacing*]
+**-C**\ *length*\ [**u**]/\ *ds*\ [*spacing*][**+a**]
     Use input line segments to create an equidistant and (optionally)
     equally-spaced set of crossing profiles along which we sample the
     grid(s) [Default simply samples the grid(s) at the input locations].
     Specify two length scales that control how the sampling is done:
     *length* sets the full length of each cross-profile, while *ds* is
-    the distance increment along each cross-profile. Optionally, append
+    the sampling spacing along each cross-profile. Optionally, append
     **/**\ *spacing* for an equidistant spacing between cross-profiles
     [Default erects cross-profiles at the input coordinates]. By
     default, all cross-profiles have the same direction. Append **+a**
     to alternate the direction of cross-profiles. Append suitable units
     to *length*; it sets the unit used for *ds* [and *spacing*] (See
-    UNITS below). The output columns will be *lon*, *lat*, *dist*,
-    *azimuth*, *z1*, *z2*, ... (sampled value for each grid)
+    UNITS below). The default unit for geographic grids is meter while
+    Cartesian grids implies the user unit.  The output columns will be
+    *lon*, *lat*, *dist*, *azimuth*, *z1*, *z2*, ..., *zn* (The *zi* are
+    the sampled values for each of the *n* grids)
 **-D**\ *dfile*
     In concert with **-C** we can save the (possibly resampled) original
     lines to the file *dfile* [Default only saves the cross-profiles].
     The columns will be *lon*, *lat*, *dist*, *azimuth*, *z1*, *z2*, ...
     (sampled value for each grid)
-**-E**\ *line*\ [,\ *line*,...][**+a**\ *az*][**+d**][**+i**\ *inc*\ [**u**]][**+l**\ *length*\ [**u**]][**+n**\ *np*][**+r**\ *radius*\ [**u**]
+**-E**\ *line*\ [,\ *line*,...][**+a**\ *az*][**+d**][**+i**\ *inc*\ [**u**]][**+l**\ *length*\ [**u**]][**+n**\ *np*][**+o**\ *az*][**+r**\ *radius*\ [**u**]
     Instead of reading input track coordinates, specify profiles via
     coordinates and modifiers. The format of each *line* is
     *start*/*stop*, where *start* or *stop* are either *lon*/*lat* (*x*/*y* for
@@ -114,17 +116,20 @@ Optional Arguments
     minimum and maximum locations in the grid (only available if only
     one grid is given). Instead of two coordinates you can specify an
     origin and one of **+a**, **+o**, or **+r**. You may append 
-    **+i**\ *inc*\ [**u**] to set the sampling interval (append appropriate
-    unit); if not given then we default to half the minimum grid interval,
-    and if geographic we select great circle distances in km as the default
-    unit and method. The **+a** sets the azimuth of a profile of given
+    **+i**\ *inc*\ [**u**] to set the sampling interval; if not given then we default to half the minimum grid interval.
+    The **+a** sets the azimuth of a profile of given
     length starting at the given origin, while **+o** centers the profile
     on the origin; both require **+l**. For circular sampling specify
     **+r** to define a circle of given radius centered on the origin;
     this option requires either **+n** or **+i**.  The **+n**\ *np* sets
     the desired number of points, while **+l**\ *length* gives the
-    total length of the profile. Use **+d** to output the along-track
+    total length of the profile. Append **+d** to output the along-track
     distances after the coordinates.  Note: No track file will be read.
+    Also note that only one distance unit can be chosen.  Giving different units
+    will result in an error.  If no units are specified we default to
+    great circle distances in km (if geographic).  If working with geographic
+    data you can prepend - (Flat Earth) or + (Geodesic) to *inc*, *length*, or *radius*
+    to change the mode of distance calculation [Great Circle].
 **-N**
     Do *not* skip points that fall outside the domain of the grid(s)
     [Default only output points within grid domain]. 
@@ -146,7 +151,7 @@ Optional Arguments
     *file* [grdtrack\_stacked_profile.txt]. **+c**\ *fact* : Compute
     envelope on stacked profile as +/- *fact*\ \*\ *deviation* [2].
     Notes: (1) Deviations depend on *method* and are st.dev (**a**), L1
-    scale (**e** and **p**), or half-range (upper-lower)/2. (2) The
+    scale (**m** and **p**), or half-range (upper-lower)/2. (2) The
     stacked profile file contains 1 plus groups of 4-6 columns, one
     group for each sampled grid. The first column holds cross distance,
     while the first 4 in a group hold stacked value, deviation, min
@@ -251,7 +256,15 @@ erecting cross-profiles every 25 km and sampling the grid every 3 km, try
 
    ::
 
-    grdtrack track.xy -Ggrav.18.1.img,0.1,1 -C100k/3/25 -Ar > xprofiles.d
+    grdtrack track.xy -Ggrav.18.1.img,0.1,1 -C100k/3/25 -Ar > xprofiles.txt
+
+To sample the grid data.nc along a line from the lower left to the upper
+right corner, using a grid spacing of 1 km, and output distances as well,
+try
+
+   ::
+
+    grdtrack -ELB/RT+i1k+d -Gdata.nc > profiles.txt
 
 See Also
 --------

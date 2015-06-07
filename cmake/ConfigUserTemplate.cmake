@@ -1,7 +1,7 @@
 #
-# $Id: ConfigUserTemplate.cmake 12904 2014-02-17 20:52:35Z fwobbe $
+# $Id: ConfigUserTemplate.cmake 13960 2015-01-22 16:45:23Z fwobbe $
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@
 # gmt program and access modules as "gmt modulename options" [TRUE]:
 #set (GMT_INSTALL_MODULE_LINKS FALSE)
 
-# Make executables relocatable on supported platforms (relative RPATH) [TRUE]:
-#set (GMT_INSTALL_RELOCATABLE FALSE)
+# Make executables relocatable on supported platforms (relative RPATH) [FALSE]:
+#set (GMT_INSTALL_RELOCATABLE TRUE)
 
 # ============================================================================
 # Advanced configuration begins here.  Usually it is not necessary to edit any
@@ -139,8 +139,12 @@
 #set (UNITS "US")
 
 # Enable building of shared libraries [TRUE] (disable to use static libraries;
-# not recommended):
+# not recommended; on non-x86 architectures uncomment the next option as well):
 #set (BUILD_SHARED_LIBS FALSE)
+
+# Create position independent code on all targets [auto] (needed for static
+# build on non-x86:
+#set (CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 # Build GMT shared lib with supplemental modules [TRUE]:
 #set (BUILD_SUPPLEMENTS FALSE)
@@ -161,6 +165,10 @@
 #set (DO_TESTS TRUE)
 # Number of parallel test jobs with "make check":
 #set (N_TEST_JOBS 4)
+
+# Location of optional third-party files used by test suite available from
+# svn://gmtserver.soest.hawaii.edu/gmt-data [${GMT_SOURCE_DIR}/test/data]
+#set (GMT_TEST_DATA "test_data_path")
 
 # Enable this option to run GMT programs from within ${GMT_BINARY_DIR} without
 # installing or setting GMT_SHAREDIR and GMT_USERDIR first. This is required
@@ -190,6 +198,11 @@
 #set (CMAKE_BUILD_TYPE Debug)
 
 # Extra debugging for developers:
+#if ( CMAKE_GENERATOR STREQUAL "Xcode" )
+##	So Xcode can find the supplemental plug-ins during debug sessions
+#	add_definitions(-DXCODER)
+#	message("Add Xcode definition for GMT")
+#endif()
 #add_definitions(-DDEBUG)
 #add_definitions(-DMEMDEBUG) # Turn on memory tracking see gmt_support.c for extra info
 #set (CMAKE_C_FLAGS "-Wall -Wdeclaration-after-statement") # recommended even for release build

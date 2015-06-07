@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(31) Using non-default fonts in PostScript &mdash; GMT 5.1.1 documentation</title>
+    <title>(31) Using non-default fonts in PostScript &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(32) Draping an image over topography" href="ex32.html" />
     <link rel="prev" title="(30) Trigonometric functions plotted in graph mode" href="ex30.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -101,9 +101,9 @@ outlined fonts or to convert to a PDF-file.</p>
 <span class="c"># Unix progs:	gs, awk, cat, rm</span>
 <span class="c">#</span>
 <span class="nv">file</span><span class="o">=</span>example_31
-<span class="nv">ps</span><span class="o">=</span>.ps
-<span class="nv">ps_outlined</span><span class="o">=</span>_outlined.ps
-<span class="nv">eps_outlined</span><span class="o">=</span>_outlined.eps
+<span class="nv">ps</span><span class="o">=</span><span class="si">${</span><span class="nv">file</span><span class="si">}</span>.ps
+<span class="nv">ps_outlined</span><span class="o">=</span><span class="si">${</span><span class="nv">file</span><span class="si">}</span>_outlined.ps
+<span class="nv">eps_outlined</span><span class="o">=</span><span class="si">${</span><span class="nv">file</span><span class="si">}</span>_outlined.eps
 
 <span class="c"># create file CUSTOM_font_info.d in current working directory</span>
 <span class="c"># and add PostScript font names of Linux Biolinum and Libertine</span>
@@ -135,15 +135,15 @@ gmt psxy europe-capitals-ru.csv -R -J -i0,1 <span class="se">\</span>
 -Sc0.15c -G196/80/80 -O -K &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># small EU cities</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;BEGIN {FS=&quot;,&quot;} $4 !=&quot;&quot; &amp;&amp; $4 &lt;= 1000000 {print $1, $2}&#39;</span> europe-capitals-ru.csv | <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;BEGIN {FS=&quot;,&quot;} $4 !=&quot;&quot; &amp;&amp; $4 &lt;= 1000000 {print $1, $2}&#39;</span> europe-capitals-ru.csv <span class="p">|</span> <span class="se">\</span>
 gmt psxy -R -J -Sc0.15c -W0.25p -O -K &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># big EU cities</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;BEGIN {FS=&quot;,&quot;} $4 &gt; 1000000 {print $1, $2}&#39;</span> europe-capitals-ru.csv | <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;BEGIN {FS=&quot;,&quot;} $4 &gt; 1000000 {print $1, $2}&#39;</span> europe-capitals-ru.csv <span class="p">|</span> <span class="se">\</span>
 gmt psxy -R -J -Sc0.15c -W1.25p -O -K &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># label big EU cities</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;BEGIN {FS=&quot;,&quot;} $4 &gt; 1000000 {print $1, $2, $3}&#39;</span> europe-capitals-ru.csv | <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;BEGIN {FS=&quot;,&quot;} $4 &gt; 1000000 {print $1, $2, $3}&#39;</span> europe-capitals-ru.csv <span class="p">|</span> <span class="se">\</span>
 gmt pstext -R -J -F+f7p,LinBiolinumOI+jBL -Dj0.1c -Gwhite -C5% -Qu -TO -O -K &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># construct legend</span>
@@ -178,10 +178,10 @@ gmt pslegend -R -J -Dx7.9c/12.6c/8.0c/BL <span class="se">\</span>
 <span class="c"># or crop with gmt ps2raster -A -Te before</span>
 <span class="c">#</span>
 <span class="c"># a. remove GMT logo and crop EPS:</span>
-<span class="c">#gmt ps2raster -P -Au -Te -C-sFONTPATH=&quot;/fonts&quot; -Fex31CropNoLogo $ps</span>
+<span class="c">#gmt ps2raster -P -Au -Te -C-sFONTPATH=&quot;${PWD}/fonts&quot; -Fex31CropNoLogo $ps</span>
 <span class="c"># b. make PS with outlined fonts:</span>
 <span class="c">#gs -q -sPAPERSIZE=a3 -dNOCACHE -dSAFER -dNOPAUSE -dBATCH -dNOPLATFONTS \</span>
-<span class="c">#  -sDEVICE=pswrite -sFONTPATH=&quot;/fonts&quot; -sOutputFile=$ps_outlined ex31CropNoLogo.eps</span>
+<span class="c">#  -sDEVICE=pswrite -sFONTPATH=&quot;${PWD}/fonts&quot; -sOutputFile=$ps_outlined ex31CropNoLogo.eps</span>
 <span class="c"># c. make croppepd EPS:</span>
 <span class="c">#gs -q -dNOCACHE -dSAFER -dNOPAUSE -dBATCH -dEPSCrop -sDEVICE=epswrite \</span>
 <span class="c">#  -sOutputFile=$eps_outlined $ps_outlined</span>
@@ -190,7 +190,7 @@ gmt pslegend -R -J -Dx7.9c/12.6c/8.0c/BL <span class="se">\</span>
 <span class="c"># uncomment to do conversation to PDF and PNG</span>
 <span class="c"># you will get a PDF with subsetted TrueType/PostScript fonts embedded</span>
 <span class="c"># which you can still edit with your favorite vector graphics editor</span>
-<span class="c">#export GS_FONTPATH=&quot;/fonts&quot;</span>
+<span class="c">#export GS_FONTPATH=&quot;${PWD}/fonts&quot;</span>
 <span class="c">#gmt ps2raster -P -A -Tf $ps</span>
 <span class="c">#gmt ps2raster -P -A -Tg -E110 $ps</span>
 <span class="c"># clean up</span>
@@ -240,7 +240,7 @@ rm -f gmt.history gmt.conf CUSTOM_font_info.d legend.txt ex31CropNoLogo.eps
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -258,9 +258,9 @@ rm -f gmt.history gmt.conf CUSTOM_font_info.d legend.txt ex31CropNoLogo.eps
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

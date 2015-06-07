@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_colors.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_colors.h 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 #define GMT_rgb_copy(a,b) memcpy (a, b, 4 * sizeof(double))
 
 /* To compare is two colors are ~ the same */
-#define GMT_eq(a,b) (fabs((a)-(b)) < GMT_SMALL)
+#define GMT_eq(a,b) (fabs((a)-(b)) < GMT_CONV4_LIMIT)
 #define GMT_same_rgb(a,b) (GMT_eq(a[0],b[0]) && GMT_eq(a[1],b[1]) && GMT_eq(a[2],b[2]) && GMT_eq(a[3],b[3]))
 
 /* Macros for conversion of RGB in 0-1 range to 0-255 range */

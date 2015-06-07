@@ -1,5 +1,5 @@
 #
-# $Id: ConfigureChecks.cmake 12907 2014-02-17 21:01:46Z fwobbe $
+# $Id: ConfigureChecks.cmake 13950 2015-01-20 20:42:10Z fwobbe $
 #
 
 if(NOT DEFINED _INCLUDED_CHECK_MACROS_)
@@ -182,6 +182,7 @@ check_symbol_exists (strsep    string.h DECLARED_STRSEP)
 
 check_symbol_exists (basename  libgen.h HAVE_BASENAME)
 check_symbol_exists (fileno    stdio.h  HAVE_FILENO)
+check_symbol_exists (setlocale locale.h HAVE_SETLOCALE)
 # Note: trailing underscore = GDAL workaround
 check_symbol_exists (snprintf  stdio.h  HAVE_SNPRINTF_)
 check_symbol_exists (vsnprintf stdio.h  HAVE_VSNPRINTF_)
@@ -215,11 +216,11 @@ if (UNIX)
 	if (HAVE_LIBDL)
 		set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} "-ldl")
 	endif (HAVE_LIBDL)
-	check_symbol_exists (dladdr    dlfcn.h  HAVE_DLADDR)
+	check_symbol_exists (dladdr dlfcn.h HAVE_DLADDR)
 	cmake_pop_check_state() # restore state of CMAKE_REQUIRED_*
 
-	check_symbol_exists (memalign       malloc.h HAVE_MEMALIGN)
-	check_symbol_exists (posix_memalign stdlib.h HAVE_POSIX_MEMALIGN)
+	check_function_exists (memalign       HAVE_MEMALIGN)
+	check_function_exists (posix_memalign HAVE_POSIX_MEMALIGN)
 endif (UNIX)
 
 #

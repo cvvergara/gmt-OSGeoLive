@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(27) Plotting Sandwell/Smith Mercator img grids &mdash; GMT 5.1.1 documentation</title>
+    <title>(27) Plotting Sandwell/Smith Mercator img grids &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(28) Mixing UTM and geographic data sets" href="ex28.html" />
     <link rel="prev" title="(26) General vertical perspective projection" href="ex26.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -128,14 +128,14 @@ gmt grdimage tasman_grav.nc<span class="o">=</span>ns/0.1 -Itasman_grav_i.nc -Jx
 <span class="c"># Then use gmt pscoast to plot land; get original -R from grid remark</span>
 <span class="c"># and use Mercator gmt projection with same scale as above on a spherical Earth</span>
 
-<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>gmt grdinfo tasman_grav.nc | grep Remark | <span class="nv">$AWK</span> <span class="s1">&#39;{print $NF}&#39;</span><span class="sb">`</span>
+<span class="nv">R</span><span class="o">=</span><span class="sb">`</span>gmt grdinfo tasman_grav.nc <span class="p">|</span> grep Remark <span class="p">|</span> <span class="nv">$AWK</span> <span class="s1">&#39;{print $NF}&#39;</span><span class="sb">`</span>
 
 gmt pscoast <span class="nv">$R</span> -Jm0.25i -Ba10f5 -BWSne -O -K -Gblack --PROJ_ELLIPSOID<span class="o">=</span>Sphere <span class="se">\</span>
 	-Cwhite -Dh+ --FORMAT_GEO_MAP<span class="o">=</span>dddF &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># Put a color legend on top of the land mask justified with 147E,31S</span>
 
-<span class="nv">pos</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo </span>147E 31S | gmt mapproject -R -J -Di --PROJ_ELLIPSOID<span class="o">=</span>Sphere | <span class="se">\</span>
+<span class="nv">pos</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo </span>147E 31S <span class="p">|</span> gmt mapproject -R -J -Di --PROJ_ELLIPSOID<span class="o">=</span>Sphere <span class="p">|</span> <span class="se">\</span>
 	<span class="nv">$AWK</span> <span class="s1">&#39;{printf &quot;%si/%si\n&quot;, $1, $2}&#39;</span><span class="sb">`</span>
 gmt psscale -D<span class="nv">$pos</span>/2i/0.15i -Cgrav.cpt -Bx50f10 -By+lmGal -I -O -T+gwhite+p1p &gt;&gt; <span class="nv">$ps</span>
 
@@ -192,7 +192,7 @@ directly - your only option under DOS</td></tr>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -210,9 +210,9 @@ directly - your only option under DOS</td></tr>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

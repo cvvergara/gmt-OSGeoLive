@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>blockmode &mdash; GMT 5.1.1 documentation</title>
+    <title>blockmode &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="B" href="B.html" />
     <link rel="next" title="F" href="F.html" />
     <link rel="prev" title="blockmedian" href="blockmedian.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="B.html" accesskey="U">B</a> &raquo;</li>
 <li class="right">
@@ -82,7 +82,7 @@
 <strong>-I</strong><em>xinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>][/<em>yinc</em>[<em>unit</em>][<strong>=</strong>|<strong>+</strong>]]
 <strong>-R</strong>[<em>unit</em>]<em>xmin</em>/<em>xmax</em>/<em>ymin</em>/<em>ymax</em>[<strong>r</strong>]
 [ <strong>-C</strong> ]
-[ <strong>-D</strong>[<em>width</em>][<strong>+c</strong>][<strong>+l</strong>|<strong>+h</strong> ]
+[ <strong>-D</strong>[<em>width</em>][<strong>+c</strong>][<strong>+a</strong>|<strong>+l</strong>|<strong>+h</strong> ]
 [ <strong>-E</strong><strong>r</strong>|<strong>s</strong>[<strong>-</strong>] ] [ <strong>-Q</strong> ]
 [ <strong>-V</strong>[<em>level</em>] ]
 [ <strong>-W</strong>[<strong>i</strong>|<strong>o</strong>] ]
@@ -151,11 +151,11 @@ is specified, <strong>blockmode</strong> will read from standard input.</dd>
 <dt><strong>-C</strong></dt>
 <dd>Use the center of the block as the output location [Default uses the
 modal xy location (but see <strong>-Q</strong>)]. <strong>-C</strong> overrides <strong>-Q</strong>.</dd>
-<dt><strong>-D</strong>[<em>width</em>][<strong>+c</strong>][<strong>+l</strong>|<strong>+h</strong>]</dt>
+<dt><strong>-D</strong>[<em>width</em>][<strong>+c</strong>][<strong>+a</strong>|<strong>+l</strong>|<strong>+h</strong> ]</dt>
 <dd>Perform unweighted mode calculation via histogram binning, using the
 specified histogram <em>width</em>. Append <strong>+c</strong> to center bins so that
 their mid point is a multiple of <em>width</em> [uncentered].
-If multiple modes are found for a block we return the average mode.
+If multiple modes are found for a block we return the average mode [<strong>+a</strong>].
 Append <strong>+l</strong> or <strong>+h</strong> to return the low of high mode instead, respectively.
 If <em>width</em> is not given it will default to 1 provided your data set only
 contains integers. Also, for integer data and integer bin <em>width</em> we
@@ -197,7 +197,7 @@ unweighted i/o].</dd>
 <dd>Select binary input. [Default is 3 (or 4 if <strong>-Wi</strong> is set)].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output. [Default is 3 (or 4 if <strong>-Wo</strong> is set)]. <strong>-E</strong> adds 3 additional columns.</dd>
 </dl>
 <dl class="docutils">
@@ -210,11 +210,11 @@ unweighted i/o].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-o</strong><em>cols</em>[,...] <a class="reference internal" href="gmt.html#ocols-full"><em>(more ...)</em></a></dt>
-<dd>Select output columns.</dd>
+<dd>Select output columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-r</strong> <a class="reference internal" href="gmt.html#nodereg-full"><em>(more ...)</em></a></dt>
@@ -228,12 +228,12 @@ unweighted i/o].</dd>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -332,7 +332,7 @@ data representing integer counts, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="B.html" >B</a> &raquo;</li>
 <li class="right">
@@ -350,9 +350,9 @@ data representing integer counts, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

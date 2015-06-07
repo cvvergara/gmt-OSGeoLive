@@ -60,6 +60,9 @@ The fastest way to get up and running is this:
 2. In your .bashrc or .[t]csrh or wherever you are maintaining your PATH
     or path variable, remove any directories you have added that contain
     GMT, and add the new path $HOME/this\_gmt/bin (might be $home for csh users).
+    Make sure this path appears before any others that might contain a GMT
+    installation, such as those used by package managers (e.g., /sw/bin for
+    fink, /opt/local/bin for Macports, etc.).
 
 3. Make the new path take effect (quit/restart terminal, logout/login, etc).
 
@@ -76,7 +79,7 @@ The fastest way to get up and running is this:
 Examples
 --------
 
-To switch to GMT version 4.5.7 (assuming it was installed as such an not
+To switch to GMT version 4.5.7 (assuming it was installed as such and not
 via a package manager), try
 
     gmtswitch GMT4.5.7
@@ -112,12 +115,12 @@ always comes first. To do that the batch works in two alternative modes:
 2 - Temporary mode
 
 The permanent mode makes use of the free executable program "EditPath"
-to change the user path in the registry. It’s called permanent because
+to change the user path in the registry. It's called permanent because
 the changes remains until ... next change. See
 
 `http://www.softpedia.com/get/Tweak/Registry-Tweak/EditPath.shtml <http://www.softpedia.com/get/Tweak/Registry-Tweak/EditPath.shtml>`_
 
-Of course the editpath.exe binary must be in your system’s path as well.
+Of course the editpath.exe binary must be in your system's path as well.
 WARNING: The path change will not be visible on the shell cmd where it
 was executed. For the change to be active you will need to open a new
 cmd window.

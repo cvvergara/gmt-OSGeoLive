@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: apicheck_I.sh 12114 2013-09-03 19:19:00Z fwobbe $
+#	$Id: apicheck_I.sh 14032 2015-02-03 10:54:47Z remko $
 #
 # Test the C API for i/o involving images
 # Note the -W option is not used but must be present.
@@ -12,7 +12,7 @@ GDAL=`gmt grdreformat 2>&1 | grep -c gd`
 if [ $GDAL -eq 0 ]; then exit; fi
 
 # Use another image as test to avoid storing one for the test
-ln -fs $GMT_DATADIR/../grdimage/gdal/needle.jpg itesti.jpg
+ln -fs $GMT_SRCDIR/../grdimage/gdal/needle.jpg itesti.jpg
 ps=apicheck_I_f.ps
 testapi -If -Wf -Ti > $ps
 ps=apicheck_I_c.ps

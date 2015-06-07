@@ -1,40 +1,15 @@
-/*	$Id: gshhg.c 12892 2014-02-13 20:29:14Z fwobbe $
+/*	$Id: gshhg.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1996-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1996-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  * PROGRAM:	gshhg.c
  * AUTHOR:	Paul Wessel (pwessel@hawaii.edu)
  * CREATED:	JAN. 28, 1996
+ * DATE:	JULY 1, 2014
  * PURPOSE:	To extract ASCII data from the binary GSHHG shoreline data
  *		as described in the 1996 Wessel & Smith JGR Data Analysis Note.
- * VERSION:	1.1 (Byte flipping added)
- *		1.2 18-MAY-1999:
- *		   Explicit binary open for DOS systems
- *		   POSIX.1 compliant
- *		1.3 08-NOV-1999: Released under GNU GPL
- *		1.4 05-SEPT-2000: Made a GMT supplement; FLIP no longer needed
- *		1.5 14-SEPT-2004: Updated to deal with latest GSHHG database (1.3)
- *		1.6 02-MAY-2006: Updated to deal with latest GSHHG database (1.4)
- *		1.7 11-NOV-2006: Fixed bug in computing level (&& vs &)
- *		1.8 31-MAR-2007: Updated to deal with latest GSHHG database (1.5)
- *		1.9 27-AUG-2007: Handle line data as well as polygon data
- *		1.10 15-FEB-2008: Updated to deal with latest GSHHG database (1.6)
- *		1.11 15-JUN-2009: Now contains information on container polygon,
- *				the polygons ancestor in the full resolution, and
- *				a flag to tell if a lake is a riverlake.
- *				Updated to deal with latest GSHHG database (2.0)
- *		1.12 24-MAY-2010: Deal with 2.1 format.
- *		1.13 15-JUL-2011: Now contains improved area information (2.2.0),
- *				 and revised greenwich flags (now 2-bit; see gshhg.h).
- *				 Also added -A and -G as suggested by José Luis García Pallero,
- *				 as well as -Qe|i to control river-lake output, and -N to
- *				 get a particular level.
- *		1.14 15-APR-2012:  	Data version is now 2.2.1. [no change to format]
- *		1.15 1-JAN-2013:   	Data version is now 2.2.2. [no change to format]
- *		1.16 1-JUL-2013:   	Data version is now 2.2.3. [no change to format]
- *		1.17 1-NOV-2013.	Data version is now 2.2.4. [no change to format]
- *		1.18 1-FEB-2014:   	Data version is now 2.3.0. [no change to format but levels 5,6 added for Antarctica]
+ * VERSION:	1-JUL-2014.  For use with GSHHG version 2.3.1
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -52,7 +27,7 @@
 #define THIS_MODULE_PURPOSE	"Extract data tables from binary GSHHS or WDBII data files"
 
 #include "gmt_dev.h"
-#include "gshhg.h"
+#include "gmt_gshhg.h"
 
 #define GMT_PROG_OPTIONS "-:Vbo"
 
@@ -146,7 +121,7 @@ int GMT_gshhg_parse (struct GMT_CTRL *GMT, struct GSHHG_CTRL *Ctrl, struct GMT_O
 
 			case '<':	/* Count input files */
 				n_files++;
-				if (n_files == 1 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
+				if (n_files == 1 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -228,12 +203,13 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 
 	double w, e, s, n, area, f_area, scale = 10.0;
 
-	char source, marker = 0, container[8] = {""}, ancestor[8] = {""}, header[GMT_BUFSIZ] = {""}, *name[2] = {"polygon", "line"};
+	char source, marker = 0, header[GMT_BUFSIZ] = {""}, *name[2] = {"polygon", "line"};
+	char west[GMT_LEN64] = {""}, east[GMT_LEN64] = {""}, south[GMT_LEN64] = {""}, north[GMT_LEN64] = {""};
 
 	FILE *fp = NULL;
 
-	struct POINT p;
-	struct GSHHG h;
+	struct GSHHG_POINT p;
+	struct GSHHG_HEADER h;
 	struct GMT_DATASET *D = NULL;
 	struct GMT_TEXTSET *X = NULL;
 	struct GMT_DATASEGMENT **T = NULL;
@@ -255,7 +231,6 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 	/* Parse the command-line arguments */
 	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	if (!GMT_is_geographic (GMT, GMT_IN)) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Implicitly set -fg unless already set */
 	Ctrl = New_gshhg_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = GMT_gshhg_parse (GMT, Ctrl, options))) Return (error);
 	
@@ -271,6 +246,8 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 	}
 
 	GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
+	GMT_set_geographic (GMT, GMT_IN);
+	GMT_set_geographic (GMT, GMT_OUT);
 	if (Ctrl->G.active) {
 		marker = GMT->current.setting.io_seg_marker[GMT_OUT];
 		GMT->current.setting.io_seg_marker[GMT_OUT] = '%';
@@ -280,14 +257,14 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 	if (Ctrl->L.active) {	/* Want a text set of headers back */
 		dim[GMT_SEG] = 1;
 		dim[GMT_ROW] = n_alloc = (Ctrl->I.active) ? ((Ctrl->I.mode) ? 6 : 1) : GSHHG_MAXPOL;
-		if ((X = GMT_Create_Data (API, GMT_IS_TEXTSET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, Ctrl->Out.file)) == NULL) {
+		if ((X = GMT_Create_Data (API, GMT_IS_TEXTSET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a text set for GSHHG header features.\n");
 			return (API->error);
 		}
 	}
 	else {
 		dim[GMT_SEG] = n_alloc = 0;
-		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, Ctrl->Out.file)) == NULL) {
+		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a data set for GSHHG features.\n");
 			return (API->error);
 		}
@@ -307,7 +284,7 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 		D->table[0]->segment = GMT_memory (GMT, NULL, n_alloc, struct GMT_DATASEGMENT *);
 		T = D->table[0]->segment;	/* There is only one output table with one or many segments */
 	}
-	n_read = fread (&h, sizeof (struct GSHHG), 1U, fp);
+	n_read = fread (&h, sizeof (struct GSHHG_HEADER), 1U, fp);
 
 	while (n_read == 1) {
 		n_seg++;
@@ -336,16 +313,16 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 			m = h.flag >> 26;
 			scale = pow (10.0, (double)m);		/* Area scale */
 		}
-		area = h.area / scale;				/* Now im km^2 */
-		f_area = h.area_full / scale;			/* Now im km^2 */
+		area = h.area / scale;				/* Now in km^2 */
+		f_area = h.area_full / scale;			/* Now in km^2 */
 		this_id = h.id;
 		
 		OK = ((!Ctrl->I.active || ((!Ctrl->I.mode && this_id == Ctrl->I.id) || (Ctrl->I.mode && this_id <= 5))) && area >= Ctrl->A.min);	/* Skip if not the one (-I) or too small (-A) */
 		if (OK && Ctrl->Q.active && ((is_river && Ctrl->Q.mode == 1) || (!is_river && Ctrl->Q.mode == 2))) OK = false;	/* Skip if riverlake/not riverlake (-Q) */
 		if (OK && Ctrl->N.active && Ctrl->N.level != level) OK = 0;		/* Skip if not the right level (-N) */
 		if (!OK) {	/* Not what we are looking for, skip to next */
-			fseek (fp, (off_t)(h.n * sizeof(struct POINT)), SEEK_CUR);
-			n_read = fread (&h, sizeof (struct GSHHG), 1U, fp);	/* Get the next GSHHG header */
+			fseek (fp, (off_t)(h.n * sizeof(struct GSHHG_POINT)), SEEK_CUR);
+			n_read = fread (&h, sizeof (struct GSHHG_HEADER), 1U, fp);	/* Get the next GSHHG header */
 			continue;	/* Back to top of loop */
 		}
 		
@@ -366,21 +343,24 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 			}
 		}
 
+		/* Format w/e/s/n for header according to users format choice */
+		GMT_ascii_format_col (GMT, west,  w, GMT_OUT, GMT_X);
+		GMT_ascii_format_col (GMT, east,  e, GMT_OUT, GMT_X);
+		GMT_ascii_format_col (GMT, south, s, GMT_OUT, GMT_Y);
+		GMT_ascii_format_col (GMT, north, n, GMT_OUT, GMT_Y);
+		
 		/* Create the segment/polygon header record */
 		if (is_line) {	/* River or border line-segment */
-			sprintf (header, "%6d%8d%3d%2c%11.5f%10.5f%10.5f%10.5f", h.id, h.n, level, source, w, e, s, n);
+			sprintf (header, "%6d%8d%3d%2c %s %s %s %s", h.id, h.n, level, source, west, east, south, north);
 			max_east = 180000000;	/* For line segments we always use -180/+180  */
 		}
-		else {		/* Island or lake polygon */
-			(h.container == -1) ? sprintf (container, "-") : sprintf (container, "%6d", h.container);
-			(h.ancestor == -1) ? sprintf (ancestor, "-") : sprintf (ancestor, "%6d", h.ancestor);
-			sprintf (header, "%6d%8d%2d%2c %.12g %.12g%11.5f%11.5f%10.5f%10.5f %s %s", h.id, h.n, level, source, area, f_area, w, e, s, n, container, ancestor);
-		}
+		else		/* Island or lake polygon */
+			sprintf (header, "%6d%8d%2d%2c %.12g %.12g %s %s %s %s %6d %6d", h.id, h.n, level, source, area, f_area, west, east, south, north, h.container, h.ancestor);
 
 		if (Ctrl->L.active) {	/* Skip data, only wanted the headers */
 			TX->record[seg_no] = strdup (header);
 			TX->n_rows++;
-			fseek (fp, (off_t)(h.n * sizeof(struct POINT)), SEEK_CUR);
+			fseek (fp, (off_t)(h.n * sizeof(struct GSHHG_POINT)), SEEK_CUR);
 		}
 		else {	/* Return the data points also */
 			/* Place the header in the output data structure */
@@ -395,7 +375,7 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 			/* Allocate h.n number of data records */
 			GMT_alloc_segment (GMT, T[seg_no], dim[GMT_ROW], dim[GMT_COL], true);
 			for (row = 0; row < h.n; row++) {
-				if (fread (&p, sizeof (struct POINT), 1U, fp) != 1) {
+				if (fread (&p, sizeof (struct GSHHG_POINT), 1U, fp) != 1) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Error reading file %s for %s %d, point %d.\n", Ctrl->In.file, name[is_line], h.id, row);
 					Return (EXIT_FAILURE);
 				}
@@ -405,12 +385,12 @@ int GMT_gshhg (void *V_API, int mode, void *args)
 				if ((greenwich && p.x > max_east) || (h.west > 180000000)) T[seg_no]->coord[GMT_X][row] -= 360.0;
 				T[seg_no]->coord[GMT_Y][row] = p.y * GSHHG_SCL;
 			}
-			T[seg_no]->coord[GMT_X][row] = T[seg_no]->coord[GMT_Y][row] = GMT->session.d_NaN;
+			if (Ctrl->G.active) T[seg_no]->coord[GMT_X][row] = T[seg_no]->coord[GMT_Y][row] = GMT->session.d_NaN;
 			D->n_records += T[seg_no]->n_rows;
 		}
 		seg_no++;
 		max_east = 180000000;	/* Only Eurasia (the first polygon) needs 270 */
-		n_read = fread (&h, sizeof (struct GSHHG), 1U, fp);	/* Get the next GSHHG header */
+		n_read = fread (&h, sizeof (struct GSHHG_HEADER), 1U, fp);	/* Get the next GSHHG header */
 	}
 	GMT_fclose (GMT, fp);
 	

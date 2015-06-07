@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: spotter.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: spotter.h 13846 2014-12-28 21:46:54Z pwessel $
  *
- *   Copyright (c) 1999-2014 by P. Wessel
+ *   Copyright (c) 1999-2015 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by

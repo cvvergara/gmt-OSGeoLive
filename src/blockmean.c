@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: blockmean.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: blockmean.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -93,7 +93,7 @@ int GMT_blockmean_parse (struct GMT_CTRL *GMT, struct BLOCKMEAN_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -262,6 +262,8 @@ int GMT_blockmean (void *V_API, int mode, void *args)
 	n_read = n_pitched = 0;	/* Initialize counters */
 	weight = 1.0;		/* Set the default point weight */
 	use_weight = (Ctrl->W.weighted[GMT_IN] && Ctrl->S.mode != 3);	/* Do not use weights if -Sn was set */
+
+	GMT->session.min_meminc = GMT_INITIAL_MEM_ROW_ALLOC;	/* Start by allocating a 32 Mb chunk */ 
 	
 	/* Read the input data */
 
@@ -317,6 +319,8 @@ int GMT_blockmean (void *V_API, int mode, void *args)
 		zw[node].a[BLK_Z] += weighted_z;	/* Sum up the weighted values */
 		n_pitched++;				/* Number of points actually used */
 	} while (true);
+
+	GMT->session.min_meminc = GMT_MIN_MEMINC;		/* Reset to the default value */
 	
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 		Return (API->error);

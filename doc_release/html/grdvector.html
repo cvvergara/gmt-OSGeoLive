@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdvector &mdash; GMT 5.1.1 documentation</title>
+    <title>grdvector &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdview" href="grdview.html" />
     <link rel="prev" title="grdtrend" href="grdtrend.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -132,7 +132,7 @@ Cartesian (x, y).</dd>
 <dd>Use <em>cptfile</em> to assign colors based on vector length.  Alternatively,
 supply the name of a GMT color master CPT [rainbow] and let
 <strong>grdvector</strong> automatically determine a 16-level continuous CPT from
-the grid’s z-range.</dd>
+the grid&#8217;s z-range.</dd>
 <dt><strong>-G</strong><em>fill</em></dt>
 <dd>Sets color or shade for vector interiors [Default is no fill].</dd>
 <dt><strong>-I</strong></dt>
@@ -208,12 +208,12 @@ default, color = black, style = solid].</dd>
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -256,14 +256,20 @@ how to read splices of 3-, 4-, or 5-dimensional grids.</p>
 <h2><a class="reference external" href="#toc15">Vector Attributes</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p>Several modifiers may be appended to the vector-producing options to
 specify the placement of vector heads, their shapes, and the
-justification of the vector:</p>
+justification of the vector. Below, left and right refers to the
+side of the vector line when viewed from the start point to the
+end point of the segment:</p>
 <blockquote>
 <div><p><strong>+a</strong><em>angle</em> sets the angle of the vector head apex [30].</p>
-<p><strong>+b</strong> places a vector head at the beginning of the vector path [none].</p>
-<p><strong>+e</strong> places a vector head at the end of the vector path [none].</p>
+<p><strong>+b</strong> places a vector head at the beginning of the vector path [none].
+Append <strong>l</strong>|<strong>r</strong> to only draw the left or right side of this head
+[both sides].</p>
+<p><strong>+e</strong> places a vector head at the end of the vector path [none].
+Append <strong>l</strong>|<strong>r</strong> to only draw the left or right side of this head
+[both sides].</p>
 <p><strong>+g</strong>-|<em>fill</em> turns off vector head fill (if -) or sets the vector
 head fill [Default fill is used, which may be no fill].</p>
-<p><strong>+l</strong> draws half-arrows, using only the left side [both].</p>
+<p><strong>+l</strong> draws half-arrows, using only the left side of specified heads [both sides].</p>
 <p><strong>+n</strong><em>norm</em> scales down vector attributes (pen thickness, head size)
 with decreasing length, where vectors shorter than <em>norm</em> will have
 their attributes scaled by length/<em>norm</em> [arrow attributes remains
@@ -273,9 +279,9 @@ small circles.  Only needed for great circles if <strong>+q</strong> is given.</
 <p><strong>+p</strong>[-][<em>pen</em>] sets the vector pen attributes. If <em>pen</em> has a
 leading - then the head outline is not drawn. [Default pen is used, and
 head outline is drawn]</p>
-<p><strong>+q</strong> means the input <em>angle</em>, <em>length</em> is instead the <em>start</em> and <em>stop</em>
-opening angles of the arc segment relative to the point.</p>
-<p><strong>+r</strong> draws half-arrows, using only the right side [both].</p>
+<p><strong>+q</strong> means the input <em>angle</em>, <em>length</em> data instead represent the <em>start</em> and <em>stop</em>
+opening angles of the arc segment relative to the given point.</p>
+<p><strong>+r</strong> draws half-arrows, using only the right side of specified heads [both sides].</p>
 </div></blockquote>
 <p>In addition, all but circular vectors may take these modifiers:</p>
 <blockquote>
@@ -361,7 +367,7 @@ using a scale of 200 km per data unit, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -379,9 +385,9 @@ using a scale of 200 km per data unit, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(23) All great-circle paths lead to Rome &mdash; GMT 5.1.1 documentation</title>
+    <title>(23) All great-circle paths lead to Rome &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(24) Data selection based on geospatial criteria" href="ex24.html" />
     <link rel="prev" title="(22) World-wide seismicity the last 7 days" href="ex22.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -123,29 +123,29 @@ cat <span class="s">&lt;&lt; END &gt; cities.d</span>
 <span class="s">END</span>
 
 gmt pscoast -Rg -JH90/9i -Glightgreen -Sblue -A1000 -Dc -Bg30 <span class="se">\</span>
-	-B+t<span class="s2">&quot;Distances from $name to the World&quot;</span> -K -Wthinnest &gt; <span class="nv">$ps</span>
+	-B+t<span class="s2">&quot;Distances from </span><span class="nv">$name</span><span class="s2"> to the World&quot;</span> -K -Wthinnest &gt; <span class="nv">$ps</span>
 
 gmt grdcontour dist.nc -A1000+v+u<span class="s2">&quot; km&quot;</span>+fwhite -Glz-/z+ -S8 -C500 -O -K -J <span class="se">\</span>
 	-Wathin,white -Wcthinnest,white,- &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># For each of the cities, plot great circle arc to Rome with gmt psxy</span>
 
-<span class="k">while </span><span class="nb">read </span>clon clat city; <span class="k">do</span>
-	<span class="o">(</span><span class="nb">echo</span> <span class="nv">$lon</span> <span class="nv">$lat</span>; <span class="nb">echo</span> <span class="nv">$clon</span> <span class="nv">$clat</span><span class="o">)</span> | gmt psxy -R -J -O -K -Wthickest,red &gt;&gt; <span class="nv">$ps</span>
+<span class="k">while</span> <span class="nb">read </span>clon clat city<span class="p">;</span> <span class="k">do</span>
+	<span class="o">(</span><span class="nb">echo</span> <span class="nv">$lon</span> <span class="nv">$lat</span><span class="p">;</span> <span class="nb">echo</span> <span class="nv">$clon</span> <span class="nv">$clat</span><span class="o">)</span> <span class="p">|</span> gmt psxy -R -J -O -K -Wthickest,red &gt;&gt; <span class="nv">$ps</span>
 <span class="k">done</span> &lt; cities.d
 
 <span class="c"># Plot red squares at cities and plot names:</span>
 gmt psxy -R -J -O -K -Ss0.2 -Gred -Wthinnest cities.d &gt;&gt; <span class="nv">$ps</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $4, $3}&#39;</span> cities.d | gmt pstext -R -J -O -K -Dj0.15/0 <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $4, $3}&#39;</span> cities.d <span class="p">|</span> gmt pstext -R -J -O -K -Dj0.15/0 <span class="se">\</span>
 	-F+f12p,Courier-Bold,red+j -N &gt;&gt; <span class="nv">$ps</span>
 <span class="c"># Place a yellow star at Rome</span>
-<span class="nb">echo</span> <span class="s2">&quot;$lon $lat&quot;</span> | gmt psxy -R -J -O -K -Sa0.2i -Gyellow -Wthin &gt;&gt; <span class="nv">$ps</span>
+<span class="nb">echo</span> <span class="s2">&quot;</span><span class="nv">$lon</span><span class="s2"> </span><span class="nv">$lat</span><span class="s2">&quot;</span> <span class="p">|</span> gmt psxy -R -J -O -K -Sa0.2i -Gyellow -Wthin &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># Sample the distance grid at the cities and use the distance in km for labels</span>
 
 gmt grdtrack -Gdist.nc cities.d <span class="se">\</span>
-	| <span class="nv">$AWK</span> <span class="s1">&#39;{printf &quot;%s %s %d\n&quot;, $1, $2, int($NF+0.5)}&#39;</span> <span class="se">\</span>
-	| gmt pstext -R -J -O -D0/-0.2i -N -Gwhite -W -C0.02i -F+f12p,Helvetica-Bold+jCT &gt;&gt; <span class="nv">$ps</span>
+	<span class="p">|</span> <span class="nv">$AWK</span> <span class="s1">&#39;{printf &quot;%s %s %d\n&quot;, $1, $2, int($NF+0.5)}&#39;</span> <span class="se">\</span>
+	<span class="p">|</span> gmt pstext -R -J -O -D0/-0.2i -N -Gwhite -W -C0.02i -F+f12p,Helvetica-Bold+jCT &gt;&gt; <span class="nv">$ps</span>
 
 <span class="c"># Clean up after ourselves:</span>
 
@@ -200,7 +200,7 @@ should consider using it.</td></tr>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -218,9 +218,9 @@ should consider using it.</td></tr>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

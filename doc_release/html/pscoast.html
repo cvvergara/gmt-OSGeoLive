@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pscoast &mdash; GMT 5.1.1 documentation</title>
+    <title>pscoast &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pscontour" href="pscontour.html" />
     <link rel="prev" title="psclip" href="psclip.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -93,7 +93,7 @@
 [ <strong>-T</strong>[<strong>f</strong>|<strong>m</strong>][<strong>x</strong>]<em>lon0</em>/<em>lat0</em>/<em>size</em>[/<em>info</em>][<strong>:</strong><em>w</em>,<em>e</em>,<em>s</em>,<em>n</em><strong>:</strong>][<strong>+</strong><em>gint</em>[/<em>mint</em>]] ]
 [ <strong>-U</strong>[<em>just</em>/<em>dx</em>/<em>dy</em>/][<strong>c</strong>|<em>label</em>] ]
 [ <strong>-V</strong>[<em>level</em>] ]
-[ <strong>-W</strong>[<em>level</em>/]*pen* ]
+[ <strong>-W</strong>[<em>level</em>/]<em>pen</em> ]
 [ <strong>-X</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>x-shift</em>[<strong>u</strong>]] ]
 [ <strong>-Y</strong>[<strong>a</strong>|<strong>c</strong>|<strong>f</strong>|<strong>r</strong>][<em>y-shift</em>[<strong>u</strong>]] ]
 [ <strong>-bo</strong>[<em>ncols</em>][<em>type</em>][w][<strong>+L</strong>|<strong>+B</strong>] ]
@@ -127,7 +127,7 @@ The PostScript code is written to standard output.</p>
 <dd>Select map projection.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-R</strong><em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
+<dt><strong>-R</strong>[<em>unit</em>]<em>west</em>/<em>east</em>/<em>south</em>/<em>north</em>[/<em>zmin</em>/<em>zmax</em>][<strong>r</strong>]</dt>
 <dd><em>west</em>, <em>east</em>, <em>south</em>, and <em>north</em> specify the region of interest,
 and you may specify them in decimal degrees or in
 [+-]dd:mm[:ss.xxx][W|E|S|N] format. Append <strong>r</strong> if lower left
@@ -180,6 +180,7 @@ Append <strong>+</strong> to automatically select a lower resolution should the 
 requested not be available [abort if not found].</dd>
 <dt><strong>-F</strong><em>code1,code2,...</em>[<strong>+l</strong>|<strong>L</strong>][<strong>+g</strong><em>fill</em>][<strong>+p</strong><em>pen</em>][<strong>+r</strong>|<strong>R</strong>[<em>incs</em>]]</dt>
 <dd>Select painting or dumping country polygons from the Digital Chart of the World.
+This is another dataset independent of GSHHG and hence the <strong>-A</strong> and <strong>-D</strong> options do not apply.
 Append one or more comma-separated countries using the 2-character
 ISO 3166-1 alpha-2 convention.  To select a state of a country
 (if available), append .state, e.g, US.TX for Texas.  To specify a
@@ -336,7 +337,7 @@ listed will not be drawn [Default draws all levels; but see <strong>-A</strong>]
 <dd>Shift plot origin.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output.  </dd>
 </dl>
 <dl class="docutils">
@@ -352,12 +353,12 @@ listed will not be drawn [Default draws all levels; but see <strong>-A</strong>]
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -446,7 +447,7 @@ ocean varies seasonally and inter-annually. There are some areas of
 permanent sea ice. In addition to these time-varying ice-ocean
 boundaries, there are also ice grounding lines where ice goes from
 floating on the sea to sitting on land, and lines delimiting areas of
-rock outcrop. For consistency’s sake, we have used the World Vector
+rock outcrop. For consistency&#8217;s sake, we have used the World Vector
 Shoreline throughout the world in pscoast, as described in the GMT
 Cookbook Appendix K. Users who need specific boundaries in Antarctica
 should get the Antarctic Digital Database, prepared by the British
@@ -516,7 +517,7 @@ Institute, Lensfield Road, Cambridge CB2 1ER, United Kingdom.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -534,9 +535,9 @@ Institute, Lensfield Road, Cambridge CB2 1ER, United Kingdom.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

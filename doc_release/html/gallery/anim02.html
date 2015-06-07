@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(2) Examining DEMs using variable illumination &mdash; GMT 5.1.1 documentation</title>
+    <title>(2) Examining DEMs using variable illumination &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(3) Orbiting a static map" href="anim03.html" />
     <link rel="prev" title="(1) Animation of the sine function" href="anim01.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -92,48 +92,49 @@ gridded data. The red arrow points in the direction of the illumination.</p>
 <span class="c">#</span>
 <span class="c"># 1. Initialization</span>
 <span class="c"># 1a) Assign movie parameters</span>
+. gmt_shell_functions.sh
 <span class="nv">width</span><span class="o">=</span>3.5i
 <span class="nv">height</span><span class="o">=</span>4.15i
 <span class="nv">dpi</span><span class="o">=</span>72
 <span class="nv">n_frames</span><span class="o">=</span>36
 <span class="nv">name</span><span class="o">=</span>anim_02
-<span class="nv">ps</span><span class="o">=</span>.ps
+<span class="nv">ps</span><span class="o">=</span><span class="si">${</span><span class="nv">name</span><span class="si">}</span>.ps
 <span class="c"># 1b) setup</span>
-<span class="nv">del_angle</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -Q 360  <span class="nv">DIV</span> <span class="o">=</span><span class="sb">`</span>
+<span class="nv">del_angle</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -Q <span class="m">360</span> <span class="si">${</span><span class="nv">n_frames</span><span class="si">}</span> <span class="nv">DIV</span> <span class="o">=</span><span class="sb">`</span>
 gmt makecpt -Crainbow -T500/4500/5000 -Z &gt; <span class="nv">$$</span>.cpt
 <span class="c"># 2. Main loop</span>
 mkdir -p <span class="nv">$$</span>
 <span class="nv">frame</span><span class="o">=</span>0
-<span class="k">while</span> <span class="o">[</span>  -lt  <span class="o">]</span>; <span class="k">do</span>
+<span class="k">while</span> <span class="o">[</span> <span class="si">${</span><span class="nv">frame</span><span class="si">}</span> -lt <span class="si">${</span><span class="nv">n_frames</span><span class="si">}</span> <span class="o">]</span><span class="p">;</span> <span class="k">do</span>
 	<span class="c"># Create file name using a name_##.tif format</span>
-	<span class="nv">file</span><span class="o">=</span><span class="sb">`</span>gmt_set_framename  <span class="sb">`</span>
-	<span class="nv">angle</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -Q   <span class="nv">MUL</span> <span class="o">=</span><span class="sb">`</span>
-	<span class="nv">dir</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -Q  180 <span class="nv">ADD</span> <span class="o">=</span><span class="sb">`</span>
-	gmt grdgradient us.nc -A -Nt2 -fg -G<span class="nv">$$</span>.us_int.nc
+	<span class="nv">file</span><span class="o">=</span><span class="sb">`</span>gmt_set_framename <span class="si">${</span><span class="nv">name</span><span class="si">}</span> <span class="si">${</span><span class="nv">frame</span><span class="si">}</span><span class="sb">`</span>
+	<span class="nv">angle</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -Q <span class="si">${</span><span class="nv">frame</span><span class="si">}</span> <span class="si">${</span><span class="nv">del_angle</span><span class="si">}</span> <span class="nv">MUL</span> <span class="o">=</span><span class="sb">`</span>
+	<span class="nv">dir</span><span class="o">=</span><span class="sb">`</span>gmt gmtmath -Q <span class="si">${</span><span class="nv">angle</span><span class="si">}</span> <span class="m">180</span> <span class="nv">ADD</span> <span class="o">=</span><span class="sb">`</span>
+	gmt grdgradient us.nc -A<span class="si">${</span><span class="nv">angle</span><span class="si">}</span> -Nt2 -fg -G<span class="nv">$$</span>.us_int.nc
 	gmt grdimage us.nc -I<span class="nv">$$</span>.us_int.nc -JM3i -P -K -C<span class="nv">$$</span>.cpt -BWSne -B1 -X0.35i -Y0.3i <span class="se">\</span>
-	--PS_MEDIA<span class="o">=</span>x --FONT_ANNOT_PRIMARY<span class="o">=</span>9p &gt; <span class="nv">$$</span>.ps
+	--PS_MEDIA<span class="o">=</span><span class="si">${</span><span class="nv">width</span><span class="si">}</span>x<span class="si">${</span><span class="nv">height</span><span class="si">}</span> --FONT_ANNOT_PRIMARY<span class="o">=</span>9p &gt; <span class="nv">$$</span>.ps
 	gmt psxy -Rus.nc -J -O -K -Sc0.8i -Gwhite -Wthin &gt;&gt; <span class="nv">$$</span>.ps <span class="o">&lt;&lt;&lt;</span> <span class="s2">&quot;256.25 35.6&quot;</span>
-	gmt psxy -Rus.nc -J -O -Sv0.1i+e -Gred -Wthick &gt;&gt; <span class="nv">$$</span>.ps <span class="o">&lt;&lt;&lt;</span> <span class="s2">&quot;256.25 35.6  0.37&quot;</span>
-	<span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span>-eq 0 <span class="o">]</span>; <span class="k">then</span>
-<span class="k">		</span>mv <span class="nv">$$</span>.ps 
+	gmt psxy -Rus.nc -J -O -Sv0.1i+e -Gred -Wthick &gt;&gt; <span class="nv">$$</span>.ps <span class="o">&lt;&lt;&lt;</span> <span class="s2">&quot;256.25 35.6 </span><span class="si">${</span><span class="nv">dir</span><span class="si">}</span><span class="s2"> 0.37&quot;</span>
+	<span class="o">[[</span> <span class="si">${</span><span class="nv">frame</span><span class="si">}</span> -eq <span class="m">0</span> <span class="o">]]</span> <span class="o">&amp;&amp;</span> cp <span class="nv">$$</span>.ps <span class="si">${</span><span class="nv">ps</span><span class="si">}</span>
+	<span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span>-eq <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
 		gmt_cleanup .gmt
-		gmt_abort <span class="s2">&quot;: First frame plotted to .ps&quot;</span>
+		gmt_abort <span class="s2">&quot;</span><span class="si">${</span><span class="nv">0</span><span class="si">}</span><span class="s2">: First frame plotted to </span><span class="si">${</span><span class="nv">name</span><span class="si">}</span><span class="s2">.ps&quot;</span>
 	<span class="k">fi</span>
 <span class="c">#	RIP to TIFF at specified dpi</span>
-	gmt ps2raster -E -Tt <span class="nv">$$</span>.ps
-	mv -f <span class="nv">$$</span>.tif <span class="nv">$$</span>/.tif
-	<span class="nb">echo</span> <span class="s2">&quot;Frame  completed&quot;</span>
-	<span class="nv">frame</span><span class="o">=</span><span class="sb">`</span>gmt_set_framenext <span class="sb">`</span>
+	gmt ps2raster -E<span class="si">${</span><span class="nv">dpi</span><span class="si">}</span> -Tt <span class="nv">$$</span>.ps
+	mv -f <span class="nv">$$</span>.tif <span class="nv">$$</span>/<span class="si">${</span><span class="nv">file</span><span class="si">}</span>.tif
+	<span class="nb">echo</span> <span class="s2">&quot;Frame </span><span class="si">${</span><span class="nv">file</span><span class="si">}</span><span class="s2"> completed&quot;</span>
+	<span class="nv">frame</span><span class="o">=</span><span class="sb">`</span>gmt_set_framenext <span class="si">${</span><span class="nv">frame</span><span class="si">}</span><span class="sb">`</span>
 <span class="k">done</span>
 <span class="c"># 3. Create animated GIF file and HTML for web page</span>
-convert -delay 10 -loop 0 <span class="nv">$$</span>/*.tif .gif
-cat <span class="s">&lt;&lt; END &gt; .html</span>
+<span class="si">${</span><span class="nv">GRAPHICSMAGICK</span><span class="p">-gm</span><span class="si">}</span> convert -delay <span class="m">10</span> -loop <span class="m">0</span> <span class="nv">$$</span>/<span class="si">${</span><span class="nv">name_</span><span class="si">}</span>*.tif <span class="si">${</span><span class="nv">name</span><span class="si">}</span>.gif
+cat <span class="s">&lt;&lt; END &gt; ${name}.html</span>
 <span class="s">&lt;HTML&gt;</span>
 <span class="s">&lt;TITLE&gt;GMT shading: A tool for feature detection&lt;/TITLE&gt;</span>
 <span class="s">&lt;BODY bgcolor=&quot;#ffffff&quot;&gt;</span>
 <span class="s">&lt;CENTER&gt;</span>
 <span class="s">&lt;H1&gt;GMT shading: A tool for feature detection&lt;/H1&gt;</span>
-<span class="s">&lt;IMG src=&quot;.gif&quot;&gt;</span>
+<span class="s">&lt;IMG src=&quot;${name}.gif&quot;&gt;</span>
 <span class="s">&lt;/CENTER&gt;</span>
 <span class="s">&lt;HR&gt;</span>
 <span class="s">We make illuminated images of topography from a section of Colorado and</span>
@@ -141,10 +142,10 @@ cat <span class="s">&lt;&lt; END &gt; .html</span>
 <span class="s">the area over 360 degrees we notice that different features in the data</span>
 <span class="s">become hightlighted.  This is because the illumination is based on data</span>
 <span class="s">gradients and such derivatives will high-light short-wavelength signal.</span>
-<span class="s">Again, our animation uses Imagemagick&#39;s convert tool to make an animated GIF file</span>
+<span class="s">Again, our animation uses GraphicsMagick&#39;s convert tool to make an animated GIF file</span>
 <span class="s">with a 0.1 second pause between the 36 frames.</span>
 <span class="s">&lt;HR&gt;</span>
-<span class="s">&lt;I&gt;.sh: Created by  on `date`&lt;/I&gt;</span>
+<span class="s">&lt;I&gt;${name}.sh: Created by ${USER} on `date`&lt;/I&gt;</span>
 <span class="s">&lt;/BODY&gt;</span>
 <span class="s">&lt;/HTML&gt;</span>
 <span class="s">END</span>
@@ -197,7 +198,7 @@ how to frame perspective views.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -215,9 +216,9 @@ how to frame perspective views.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

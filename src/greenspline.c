@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: greenspline.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: greenspline.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -282,7 +282,7 @@ int GMT_greenspline_parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, 
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			case 'R':	/* Normally processed internally but must be handled separately since it can take 1,2,3 dimensions */
@@ -381,7 +381,7 @@ int GMT_greenspline_parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, 
 				Ctrl->L.active = true;
 				break;
 			case 'N':	/* Output locations */
-				if ((Ctrl->N.active = GMT_check_filearg (GMT, 'N', opt->arg, GMT_IN)))
+				if ((Ctrl->N.active = GMT_check_filearg (GMT, 'N', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->N.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -475,7 +475,7 @@ int GMT_greenspline_parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, 
 				}
 				break;
 			case 'T':	/* Input mask grid */
-				if ((Ctrl->T.active = GMT_check_filearg (GMT, 'T', opt->arg, GMT_IN))) {	/* Obtain -R -I -r from file */
+				if ((Ctrl->T.active = GMT_check_filearg (GMT, 'T', opt->arg, GMT_IN, GMT_IS_GRID))) {	/* Obtain -R -I -r from file */
 					struct GMT_GRID *G = NULL;	
 					Ctrl->T.file = strdup (opt->arg);
 					if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, opt->arg, NULL)) == NULL) {	/* Get header only */
@@ -605,11 +605,13 @@ void dump_green (struct GMT_CTRL *GMT, double (*G) (struct GMT_CTRL *, double, d
 
 double spline1d_linear (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {	/* Dumb linear spline */
+	GMT_UNUSED(GMT); GMT_UNUSED(par); GMT_UNUSED(unused);
 	return (r);	/* Just regular spline; par not used */
 }
 
 double gradspline1d_linear (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {	/* d/dr of r is 1 */
+	GMT_UNUSED(GMT); GMT_UNUSED(r); GMT_UNUSED(par); GMT_UNUSED(unused);
 	return (1.0);
 }
 
@@ -619,6 +621,7 @@ double gradspline1d_linear (struct GMT_CTRL *GMT, double r, double par[], struct
 
 double spline1d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
+	GMT_UNUSED(GMT); GMT_UNUSED(par); GMT_UNUSED(unused);
 	if (r == 0.0) return (0.0);
 
 	return (pow (r, 3.0));	/* Just regular spline; par not used */
@@ -626,6 +629,7 @@ double spline1d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct G
 
 double gradspline1d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
+	GMT_UNUSED(GMT); GMT_UNUSED(par); GMT_UNUSED(unused);
 	return (r);	/* Just regular spline; par not used */
 }
 
@@ -637,6 +641,7 @@ double spline1d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], 
  */
 {
 	double cx;
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
 
 	if (r == 0.0) return (0.0);
 
@@ -644,9 +649,9 @@ double spline1d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], 
 	return (exp (-cx) + cx - 1.0);
 }
 
-double gradspline1d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
-{
+double gradspline1d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused) {
 	double cx;
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
 
 	if (r == 0.0) return (0.0);
 
@@ -656,15 +661,15 @@ double gradspline1d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par
 
 /*----------------------  TWO DIMENSIONS ---------------------- */
 
-double spline2d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
-{
+double spline2d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused) {
+	GMT_UNUSED(GMT); GMT_UNUSED(par); GMT_UNUSED(unused);
 	if (r == 0.0) return (0.0);
 
 	return (r * r * (log (r) - 1.0));	/* Just regular spline; par not used */
 }
 
-double gradspline2d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
-{
+double gradspline2d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused) {
+	GMT_UNUSED(GMT); GMT_UNUSED(par); GMT_UNUSED(unused);
 	if (r == 0.0) return (0.0);
 
 	return (r * (2.0 * log (r) - 1.0));	/* Just regular spline; par not used */
@@ -679,9 +684,9 @@ double gradspline2d_sandwell (struct GMT_CTRL *GMT, double r, double par[], stru
  * par[1] = 2/c
  */
 
-double spline2d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
-{
+double spline2d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused) {
 	double y, z, cx, t, g;
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
 
 	if (r == 0.0) return (0.0);
 
@@ -702,9 +707,9 @@ double spline2d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], 
 	return (g);
 }
 
-double gradspline2d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
-{
+double gradspline2d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused) {
 	double y, z, cx, t, dgdr;
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
 
 	if (r == 0.0) return (0.0);
 
@@ -734,6 +739,7 @@ double gradspline2d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par
 double spline2d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
 	double x, z, g, En, Ed;
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
 	
 	if (r == 0.0) return (0.0);
 	
@@ -767,10 +773,10 @@ double spline2d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[], st
 	return (g);
 }
 
-double gradspline2d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
-{
+double gradspline2d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused) {
 	double u, dgdr;
-	
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
+
 	if (r == 0.0) return (0.0);
 
 	u = par[1] * r * r;
@@ -789,6 +795,7 @@ double gradspline2d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[]
  
 double spline2d_Parker (struct GMT_CTRL *GMT, double x, double par[], struct GREENSPLINE_LOOKUP *unused)
 {	/* Normalized to 0-1 */
+	GMT_UNUSED(unused);
 	if (x == +1.0) return (1.0);
 	if (x == -1.0) return (0.0);
 	return (GMT_dilog (GMT, 0.5 - 0.5 * x) * par[0]);
@@ -796,6 +803,7 @@ double spline2d_Parker (struct GMT_CTRL *GMT, double x, double par[], struct GRE
 
 double gradspline2d_Parker (struct GMT_CTRL *GMT, double x, double par[], struct GREENSPLINE_LOOKUP *unused)
 {	/* Normalized to 0-1 */
+	GMT_UNUSED(GMT); GMT_UNUSED(par); GMT_UNUSED(unused);
 	if (x == +1.0 || x == -1.0) return (0.0);
 	return (log (0.5 - 0.5 * x) * sqrt ((1.0 - x) / (1.0 + x)));
 }
@@ -823,6 +831,7 @@ void series_prepare (struct GMT_CTRL *GMT, double p, unsigned int L, struct GREE
 
 unsigned int get_max_L (struct GMT_CTRL *GMT, double p, double err)
 {	/* Return max L needed given p and truncation err for Parker's simplified loop expression */
+	GMT_UNUSED(GMT);
 	return ((unsigned int)lrint (p / sqrt (err)  + 10.0));
 }
 
@@ -875,6 +884,7 @@ double spline2d_Wessel_Becker_Revised (struct GMT_CTRL *GMT, double x, double pa
 {	/* Evaluate g = M_PI * Pv(-x)/sin (v*x) - log (1-x) via series approximation */
 	unsigned int L_max, l;
 	double P0, P1, P2, S;
+	GMT_UNUSED(GMT);
 
 	L_max = get_L (x, par[0], par[1]);	/* Highest order needed in sum given x, p, and err */
 
@@ -901,6 +911,7 @@ double gradspline2d_Wessel_Becker_Revised (struct GMT_CTRL *GMT, double x, doubl
 {	/* Evaluate g = -M_PI * (v+1)*[x*Pv(-x)+Pv+1(-x)]/(sin (v*x)*sin(theta)) - 1/(1-x) via series approximation */
 	unsigned int L_max, l;
 	double sin_theta, P0, P1, P2, S;
+	GMT_UNUSED(GMT);
 
 	L_max = get_L (x, par[0], par[1]);	/* Highest order needed in sum given x, p, and err */
 	sin_theta = sqrt (1.0 - x * x);
@@ -947,7 +958,8 @@ double spline2d_lookup (struct GMT_CTRL *GMT, double x, double par[], struct GRE
 {	/* Given x, look up nearest node xx[k] <= x and do cubic spline interpolation */
 	uint64_t k;
 	double f, f0, df, y;
-	
+	GMT_UNUSED(GMT);
+
 	f = (x - par[10]) * par[9];	/* Floating point index */
 	f0 = floor (f);
 	df = f - f0;
@@ -969,6 +981,7 @@ double gradspline2d_Wessel_Becker_lookup (struct GMT_CTRL *GMT, double x, double
 
 void spline2d_Wessel_Becker_splineinit (struct GMT_CTRL *GMT, double par[], double *x, struct GREENSPLINE_LOOKUP *L)
 {	/* Set up cubic spline interpolation given the precomputed x,y values of the function */
+	GMT_UNUSED(GMT);
 	L->c = GMT_memory (GMT, NULL, 3*L->n, double);
 	GMT_cspline (GMT, x, L->y, L->n, L->c);
 }
@@ -1017,6 +1030,7 @@ void spline2d_Wessel_Becker_init (struct GMT_CTRL *GMT, double par[], struct GRE
 
 double spline3d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
+	GMT_UNUSED(GMT); GMT_UNUSED(par); GMT_UNUSED(unused);
 	if (r == 0.0) return (0.0);
 
 	return (r);	/* Just regular spline; par not used */
@@ -1024,6 +1038,7 @@ double spline3d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct G
 
 double gradspline3d_sandwell (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
+	GMT_UNUSED(GMT); GMT_UNUSED(r); GMT_UNUSED(par); GMT_UNUSED(unused);
 	return (1.0);	/* Just regular spline; par not used */
 }
 
@@ -1035,6 +1050,7 @@ double spline3d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], 
  */
 {
 	double cx;
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
 
 	if (r == 0.0) return (0.0);
 
@@ -1045,6 +1061,7 @@ double spline3d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], 
 double gradspline3d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
 	double cx;
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
 
 	if (r == 0.0) return (0.0);
 
@@ -1060,7 +1077,8 @@ double gradspline3d_Wessel_Bercovici (struct GMT_CTRL *GMT, double r, double par
 double spline3d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
 	double x;
-	
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
+
 	if (r == 0.0) return (0.0);
 	
 	x = par[0] * r;
@@ -1070,7 +1088,8 @@ double spline3d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[], st
 double gradspline3d_Mitasova_Mitas (struct GMT_CTRL *GMT, double r, double par[], struct GREENSPLINE_LOOKUP *unused)
 {
 	double u, dgdr;
-	
+	GMT_UNUSED(GMT); GMT_UNUSED(unused);
+
 	if (r == 0.0) return (0.0);
 
 	u = par[0] * r;
@@ -1267,11 +1286,11 @@ double get_dircosine (struct GMT_CTRL *GMT, double *D, double *X0, double *X1, u
 
 int GMT_greenspline (void *V_API, int mode, void *args)
 {
-	uint64_t col, row, p, k, i, j, seg, m, n, nm, n_ok = 0, ij, ji, ii;
+	uint64_t col, row, n_read, p, k, i, j, seg, m, n, nm, n_ok = 0, ij, ji, ii, n_duplicates = 0, n_skip = 0;
 	unsigned int dimension = 0, normalize = 1, unit = 0, n_cols, L_Max = 0;
 	size_t old_n_alloc, n_alloc;
 	int error, out_ID, way, nx;
-	bool new_grid = false, delete_grid = false, check_longitude;
+	bool new_grid = false, delete_grid = false, check_longitude, skip;
 	
 	char *method[N_METHODS] = {"minimum curvature Cartesian spline [1-D]",
 		"minimum curvature Cartesian spline [2-D]",
@@ -1289,7 +1308,7 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 	
 	double *obs = NULL, **D = NULL, **X = NULL, *alpha = NULL, *in = NULL;
 	double mem, part, C, p_val, r, par[11], norm[7], az, grad, weight_i, weight_j;
-	double *A = NULL;
+	double *A = NULL, r_min, r_max;
 #ifdef DEBUG
 	double x0 = 0.0, x1 = 5.0;
 #endif
@@ -1386,7 +1405,7 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 		Return (API->error);
 	}
 
-	n_alloc = GMT_CHUNK;
+	n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 	X = GMT_memory (GMT, NULL, n_alloc, double *);
 	n_cols = (Ctrl->W.active) ? dimension + 1 : dimension;	/* So X[k][dimension] holds the weight if -W is active */
 	for (k = 0; k < n_alloc; k++) X[k] = GMT_memory (GMT, NULL, n_cols, double);
@@ -1396,7 +1415,9 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
-	n = m = 0;
+	GMT_Report (API, GMT_MSG_VERBOSE, "Read input data and check for data constraint duplicates\n");
+	n = m = n_read = 0;
+	r_min = DBL_MAX;	r_max = -DBL_MAX;
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
@@ -1416,8 +1437,31 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 		}
 
 		for (k = 0; k < n_cols; k++) X[n][k] = in[k];	/* Get coordinates + optional weights (if -W) */
+		/* Check for duplicates */
+		skip = false;
+		for (i = 0; !skip && i < n; i++) {
+			r = get_radius (GMT, X[i], X[n], dimension);
+			if (GMT_IS_ZERO (r)) {	/* Duplicates will give zero point separation */
+				if (doubleAlmostEqualZero (in[dimension], obs[i])) {
+					GMT_Report (API, GMT_MSG_NORMAL, "Data constraint %" PRIu64 " is identical to %" PRIu64 " and will be skipped\n", n_read, i);
+					skip = true;
+					n_skip++;
+				}
+				else {
+					GMT_Report (API, GMT_MSG_NORMAL, "Data constraint %" PRIu64 " and %" PRIu64 " occupy the same location but differ in observation (%.12g vs %.12g)\n", n_read, i, in[dimension], obs[i]);
+					n_duplicates++;
+				}
+			}
+			else {
+				if (r < r_min) r_min = r;
+				if (r > r_max) r_max = r;
+			}
+		}
+		n_read++;
+		if (skip) continue;	/* Current point was a duplicate of a previous point */
+		
 		obs[n++] = in[dimension];
-
+		
 		if (n == n_alloc) {	/* Get more memory */
 			old_n_alloc = n_alloc;
 			n_alloc <<= 1;
@@ -1435,6 +1479,8 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 	X = GMT_memory (GMT, X, n, double *);
 	obs = GMT_memory (GMT, obs, n, double);
 	nm = n;
+	GMT_Report (API, GMT_MSG_VERBOSE, "Found %" PRIu64 " unique data constraints\n", n);
+	if (n_skip) GMT_Report (API, GMT_MSG_VERBOSE, "Skipped %" PRIu64 " data constraints as duplicates\n", n_skip);
 
 	if (Ctrl->A.active) {	/* Read gradient constraints from file */
 		struct GMT_DATASET *Din = NULL;
@@ -1451,6 +1497,7 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 		obs = GMT_memory (GMT, obs, nm, double);
 		D = GMT_memory (GMT, NULL, m, double *);
 		for (k = 0; k < m; k++) D[k] = GMT_memory (GMT, NULL, n_cols, double);
+		n_skip = n_read = 0;
 		for (seg = k = 0, p = n; seg < S->n_segments; seg++) {
 			for (row = 0; row < S->segment[seg]->n_rows; row++, k++, p++) {
 				for (ii = 0; ii < n_cols; ii++) X[p][ii] = S->segment[seg]->coord[ii][row];
@@ -1518,13 +1565,59 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 						Return (GMT_DATA_READ_ERROR);
 						break;
 				}
+				/* Check for duplicates */
+				skip = false;
+				for (i = n; !skip && i < p; i++) {
+					r = get_radius (GMT, X[i], X[p], dimension);
+					if (GMT_IS_ZERO (r)) {	/* Duplicates will give zero point separation */
+						if (doubleAlmostEqualZero (in[dimension], obs[i])) {
+							GMT_Report (API, GMT_MSG_NORMAL, "Slope constraint %" PRIu64 " is identical to %" PRIu64 " and will be skipped\n", n_read, i-n);
+							skip = true;
+							n_skip++;
+						}
+						else {
+							GMT_Report (API, GMT_MSG_NORMAL, "Slope constraint %" PRIu64 " and %" PRIu64 " occupy the same location but differ in observation (%.12g vs %.12g)\n", n_read, i-n, obs[p], obs[i]);
+							n_duplicates++;
+						}
+					}
+					else {
+						if (r < r_min) r_min = r;
+						if (r > r_max) r_max = r;
+					}
+				}
+				n_read++;
+				if (skip) p--;	/* Current point was a duplicate of a previous point; reduce p since it will be incremented in the loop */
 			}
 		}
 		if (GMT_Destroy_Data (API, &Din) != GMT_OK) {
 			Return (API->error);
 		}
+		GMT_Report (API, GMT_MSG_VERBOSE, "Found %" PRIu64 " unique slope constraints\n", m);
+		if (n_skip) GMT_Report (API, GMT_MSG_VERBOSE, "Skipped %" PRIu64 " slope constraints as duplicates\n", n_skip);
 	}
 	
+	/* Check for duplicates which would result in a singular matrix system; also update min/max radius */
+	
+	GMT_Report (API, GMT_MSG_VERBOSE, "Distance between closest constraint = %.12g]\n", r_min);
+	GMT_Report (API, GMT_MSG_VERBOSE, "Distance between distant constraint = %.12g]\n", r_max);
+
+	if (n_duplicates) {	/* These differ in observation value so need to be averaged, medianed, or whatever first */
+		GMT_Report (API, GMT_MSG_VERBOSE, "Found %" PRIu64 " data constraint duplicates with different observation values\n", n_duplicates);
+		if (!Ctrl->C.active || GMT_IS_ZERO (Ctrl->C.value)) {
+			GMT_Report (API, GMT_MSG_VERBOSE, "Reconcile duplicates before running greenspline since they will result in a singular matrix\n");
+			for (p = 0; p < nm; p++) GMT_free (GMT, X[p]);
+			GMT_free (GMT, X);
+			GMT_free (GMT, obs);
+			if (m) {
+				for (p = 0; p < m; p++) GMT_free (GMT, D[p]);
+				GMT_free (GMT, D);
+			}
+			Return (GMT_DATA_READ_ERROR);
+		}
+		else
+			GMT_Report (API, GMT_MSG_VERBOSE, "Expect some eigenvalues to be identically zero\n");
+	}
+		
 	if (m > 0 && normalize > 1) {
 		normalize &= 1;	/* Only allow taking out data mean for mixed z/slope data */
 		GMT_Report (API, GMT_MSG_NORMAL, "Only remove/restore mean z in mixed {z, grad(z)} data sets\n");
@@ -1715,7 +1808,6 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 	
 	GMT_Report (API, GMT_MSG_VERBOSE, "Build linear system using %s\n", method[Ctrl->S.mode]);
 
-	Ctrl->S.rval[0] = DBL_MAX;	Ctrl->S.rval[1] = -DBL_MAX;
 	weight_i = weight_j = 1.0;
 	for (j = 0; j < nm; j++) {	/* For each value or slope constraint */
 		if (Ctrl->W.active) {
@@ -1727,8 +1819,6 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 			ij = j * nm + i;
 			ji = i * nm + j;
 			r = get_radius (GMT, X[i], X[j], dimension);
-			if (r < Ctrl->S.rval[0]) Ctrl->S.rval[0] = r;
-			if (r > Ctrl->S.rval[1]) Ctrl->S.rval[1] = r;
 			if (j < n) {	/* Value constraint */
 				A[ij] = G (GMT, r, par, Lz);
 				if (ij == ji) continue;	/* Do the diagonal terms only once */
@@ -1814,8 +1904,17 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 	}
 	else {				/* Gauss-Jordan elimination */
 		int error;
+		if (GMT_IS_ZERO (r_min)) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Your matrix is singular because you have duplicate data constraints\n");
+			GMT_Report (API, GMT_MSG_NORMAL, "Preprocess your data with one of the blockm* modules to eliminate them\n");
+			
+		}
 		GMT_Report (API, GMT_MSG_VERBOSE, "Solve linear equations by Gauss-Jordan elimination\n");
-		if ((error = GMT_gaussjordan (GMT, A, (unsigned int)nm, (unsigned int)nm, obs, 1U, 1U))) Return (error);
+		if ((error = GMT_gaussjordan (GMT, A, (unsigned int)nm, (unsigned int)nm, obs, 1U, 1U))) {
+			GMT_Report (API, GMT_MSG_NORMAL, "You probably have nearly duplicate data constraints\n");
+			GMT_Report (API, GMT_MSG_NORMAL, "Preprocess your data with one of the blockm* modules\n");
+			Return (error);
+		}
 	}
 	alpha = obs;	/* Just a different name since the obs vector now holds the alpha factors */
 		
@@ -1840,8 +1939,6 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 				out[dimension] = 0.0;
 				for (p = 0; p < nm; p++) {
 					r = get_radius (GMT, out, X[p], dimension);
-					if (r < Ctrl->S.rval[0]) Ctrl->S.rval[0] = r;
-					if (r > Ctrl->S.rval[1]) Ctrl->S.rval[1] = r;
 					if (Ctrl->Q.active) {
 						C = get_dircosine (GMT, Ctrl->Q.dir, out, X[p], dimension, false);
 						part = dGdr (GMT, r, par, Lz) * C;
@@ -1897,8 +1994,6 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 					/* Here, V holds the current output coordinates */
 					for (p = 0, wp = 0.0; p < nm; p++) {
 						r = get_radius (GMT, V, X[p], dimension);
-						if (r < Ctrl->S.rval[0]) Ctrl->S.rval[0] = r;
-						if (r > Ctrl->S.rval[1]) Ctrl->S.rval[1] = r;
 						if (Ctrl->Q.active) {
 							C = get_dircosine (GMT, Ctrl->Q.dir, V, X[p], dimension, false);
 							part = dGdr (GMT, r, par, Lz) * C;
@@ -1951,7 +2046,7 @@ int GMT_greenspline (void *V_API, int mode, void *args)
 	free_lookup (GMT, &Lz, 0);
 	free_lookup (GMT, &Lg, 1);
 	
-	GMT_Report (API, GMT_MSG_VERBOSE, "Done [ R min/max = %g/%g]\n", Ctrl->S.rval[0], Ctrl->S.rval[1]);
+	GMT_Report (API, GMT_MSG_VERBOSE, "Done\n");
 
 	Return (EXIT_SUCCESS);
 }

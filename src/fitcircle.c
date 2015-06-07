@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: fitcircle.c 12822 2014-01-31 23:39:56Z remko $
+ *    $Id: fitcircle.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -147,7 +147,7 @@ int GMT_fitcircle_parse (struct GMT_CTRL *GMT, struct FITCIRCLE_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -374,7 +374,7 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 	
 	n_data = 0;	/* Initialize variables */
 	lonsum = latsum = 0.0;
-	n_alloc = GMT_CHUNK;
+	n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 	data = GMT_memory (GMT, NULL, n_alloc, struct FITCIRCLE_DATA);
 	sprintf (format, "%s%s%s", GMT->current.setting.format_float_out, GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out);
 

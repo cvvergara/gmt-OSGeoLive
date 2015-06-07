@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(24) Data selection based on geospatial criteria &mdash; GMT 5.1.1 documentation</title>
+    <title>(24) Data selection based on geospatial criteria &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(25) Global distribution of antipodes" href="ex25.html" />
     <link rel="prev" title="(23) All great-circle paths lead to Rome" href="ex23.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -116,9 +116,9 @@ cat <span class="s">&lt;&lt; END &gt; dateline.d</span>
 gmt pscoast <span class="nv">$R</span> -JM9i -K -Gtan -Sdarkblue -Wthin,white -Dl -A500 -Ba20f10g10 -BWeSn &gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O -K oz_quakes.d -Sc0.05i -Gred &gt;&gt; <span class="nv">$ps</span>
 gmt gmtselect oz_quakes.d -L1000k/dateline.d -Nk/s -C3000k/point.d -fg -R -Il <span class="se">\</span>
-	| gmt psxy -R -JM -O -K -Sc0.05i -Ggreen &gt;&gt; <span class="nv">$ps</span>
+	<span class="p">|</span> gmt psxy -R -JM -O -K -Sc0.05i -Ggreen &gt;&gt; <span class="nv">$ps</span>
 gmt psxy point.d -R -J -O -K -SE- -Wfat,white &gt;&gt; <span class="nv">$ps</span>
-<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $4}&#39;</span> point.d | gmt pstext -R -J -O -K -F+f14p,Helvetica-Bold,white+jLT <span class="se">\</span>
+<span class="nv">$AWK</span> <span class="s1">&#39;{print $1, $2, $4}&#39;</span> point.d <span class="p">|</span> gmt pstext -R -J -O -K -F+f14p,Helvetica-Bold,white+jLT <span class="se">\</span>
 	-D0.1i/-0.1i &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O -K point.d -Wfat,white -S+0.2i &gt;&gt; <span class="nv">$ps</span>
 gmt psxy -R -J -O dateline.d -Wfat,white -A &gt;&gt; <span class="nv">$ps</span>
@@ -166,7 +166,7 @@ rm -f point.d dateline.d
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -184,9 +184,9 @@ rm -f point.d dateline.d
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdcontour &mdash; GMT 5.1.1 documentation</title>
+    <title>grdcontour &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdcut" href="grdcut.html" />
     <link rel="prev" title="grdclip" href="grdclip.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -163,19 +163,20 @@ of a concatenated string made up of any of the following control arguments:</dd>
 <blockquote>
 <div><dl class="docutils">
 <dt><strong>+a</strong><em>angle</em></dt>
-<dd>For annotations at a fixed angle, <strong>+an</strong> for line-normal, or
-<strong>+ap</strong> for line-parallel [Default].</dd>
+<dd>For annotations at a fixed angle, <strong>+an</strong> for contour-normal, or
+<strong>+ap</strong> for contour-parallel [Default].  For <strong>+ap</strong>, you may optionally
+append <strong>u</strong> for up-hill and <strong>d</strong> for down-hill cartographic annotations.</dd>
 <dt><strong>+c</strong><em>dx</em>[/<em>dy</em>]</dt>
 <dd>Sets the clearance between label and optional text box. Append
 <strong>c</strong>|<strong>i</strong>|<strong>p</strong> to specify the unit or % to indicate a
 percentage of the label font size [15%].</dd>
 <dt><strong>+d</strong></dt>
 <dd>Turns on debug which will draw helper points and lines to illustrate
-the workings of the quoted line setup.</dd>
+the workings of the contour line setup.</dd>
 <dt><strong>+e</strong></dt>
 <dd>Delay the plotting of the text. This is used to build a clip path
 based on the text, then lay down other overlays while that clip path
-is in effect, then turning of clipping with psclip <strong>-Ct</strong> which
+is in effect, then turning of clipping with psclip <strong>-Cs</strong> which
 finally plots the original text.</dd>
 <dt><strong>+f</strong><em>font</em></dt>
 <dd>Sets the desired font [Default <strong>FONT_ANNOT_PRIMARY</strong> with its
@@ -184,44 +185,13 @@ size changed to 9p].</dd>
 <dd>Selects opaque text boxes [Default is transparent]; optionally
 specify the color [Default is <strong>PS_PAGE_COLOR</strong>].</dd>
 <dt><strong>+j</strong><em>just</em></dt>
-<dd>Sets label justification [Default is MC]. Ignored when
-<strong>-SqN</strong>|<strong>n</strong>+|-1 is used.</dd>
-<dt><strong>+l</strong><em>label</em></dt>
-<dd>Sets the constant label text.</dd>
-<dt><strong>+L</strong><em>flag</em></dt>
-<dd><p class="first">Sets the label text according to the specified flag:</p>
-<blockquote class="last">
-<div><dl class="docutils">
-<dt><strong>+Lh</strong></dt>
-<dd>Take the label from the current segment header (first scan for
-an embedded <strong>-L</strong><em>label</em> option, if not use the first word
-following the segment flag). For multiple-word labels, enclose
-entire label in double quotes.</dd>
-<dt><strong>+Ld</strong></dt>
-<dd>Take the Cartesian plot distances along the line as the label;
-append <strong>c</strong>|<strong>i</strong>|<strong>p</strong> as the unit [Default is
-<strong>PROJ_LENGTH_UNIT</strong>].</dd>
-<dt><strong>+LD</strong></dt>
-<dd>Calculate actual map distances; append
-<strong>d|e|f|k|n|M|n|s</strong> as the unit [Default is
-<strong>d</strong>(egrees), unless label placement was based on map
-distances along the lines in which case we use the same unit
-specified for that algorithm]. Requires a map projection to be used.</dd>
-<dt><strong>+Lf</strong></dt>
-<dd>Use text after the 2nd column in the fixed label location file
-as the label. Requires the fixed label location setting.</dd>
-<dt><strong>+Lx</strong></dt>
-<dd>As <strong>+Lh</strong> but use the headers in the <em>xfile.d</em> instead.
-Requires the crossing file option.</dd>
-</dl>
-</div></blockquote>
-</dd>
+<dd>Sets label justification [Default is MC].</dd>
 <dt><strong>+n</strong><em>dx</em>[/<em>dy</em>]</dt>
 <dd>Nudges the placement of labels by the specified amount (append
 <strong>c</strong>|<strong>i</strong>|<strong>p</strong> to specify the units). Increments
 are considered in the coordinate system defined by the
-orientation of the line; use <strong>+N</strong> to force increments in the
-plot x/y coordinates system [no nudging].</dd>
+orientation of the contour; use <strong>+N</strong> to force increments in the
+plot x/y coordinates system [no nudging]. Not allowed with <strong>+v</strong>.</dd>
 <dt><strong>+o</strong></dt>
 <dd>Selects rounded rectangular text box [Default is rectangular].
 Not applicable for curved text (<strong>+v</strong>) and only makes sense for
@@ -231,21 +201,22 @@ opaque text boxes.</dd>
 optionally specify pen for outline [Default is width = 0.25p,
 color = black, style = solid].</dd>
 <dt><strong>+r</strong><em>min_rad</em></dt>
-<dd>Will not place labels where the line’s radius of curvature is
+<dd>Will not place labels where the contours&#8217;s radius of curvature is
 less than <em>min_rad</em> [Default is 0].</dd>
 <dt><strong>+t</strong>[<em>file</em>]</dt>
-<dd>Saves line label x, y, and text to <em>file</em> [Line_labels.txt].
+<dd>Saves contour label x, y, and text to <em>file</em> [Contour_labels.txt].
 Use <strong>+T</strong> to save x, y, angle, text instead.</dd>
 <dt><strong>+u</strong><em>unit</em></dt>
-<dd>Appends <em>unit</em> to all line labels. [Default is no unit].</dd>
+<dd>Appends <em>unit</em> to all contour labels. [Default is no unit].
+If <strong>z</strong> is appended we use the z-unit from the grdfile.</dd>
 <dt><strong>+v</strong></dt>
-<dd>Specifies curved labels following the path [Default is straight
+<dd>Specifies curved labels following the contour [Default is straight
 labels].</dd>
 <dt><strong>+w</strong></dt>
 <dd>Specifies how many (<em>x</em>,<em>y</em>) points will be used to estimate
 label angles [Default is 10].</dd>
 <dt><strong>+=</strong><em>prefix</em></dt>
-<dd>Prepends <em>prefix</em> to all line labels. [Default is no prefix].</dd>
+<dd>Prepends <em>prefix</em> to all contour labels. [Default is no prefix].</dd>
 </dl>
 </div></blockquote>
 <dl class="docutils">
@@ -393,7 +364,7 @@ and that special precautions must be taken when determining
 0-contours.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output.  </dd>
 </dl>
 <dl class="docutils">
@@ -417,12 +388,12 @@ and that special precautions must be taken when determining
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -565,7 +536,7 @@ contours_O.txt for open contours, try</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -583,9 +554,9 @@ contours_O.txt for open contours, try</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -121,15 +121,6 @@ fonts can be found in the :doc:`gmt` man page.
 **DIR_GSHHG**
     Path to GSHHG files. Defaults to **$GMT_SHAREDIR**/coast if empty.
 
-**DIR_TMP**
-    Session temp dir. Overrides the value of the environment variable **$GMT_TMPDIR**
-    (see :ref:`Directory parameters` and :ref:`Isolation mode <Isolation mode>` in the
-    CookBook).
-
-**DIR_USER**
-    Session user dir. Overrides the value of the environment variable **$GMT_USERDIR**
-    (see :ref:`Directory parameters` in the CookBook).
-
 .. _FONT Parameters:
 
 **FONT**
@@ -298,8 +289,8 @@ fonts can be found in the :doc:`gmt` man page.
 
 **FORMAT_FLOAT_MAP**
     Format (C language printf syntax) to be used when plotting double
-    precision floating point numbers on maps. For geographic
-    coordinates, see **FORMAT_GEO_MAP**. [%.12lg].
+    precision floating point numbers along plot frames and contours.
+    For geographic coordinates, see **FORMAT_GEO_MAP**. [%.12lg].
 
 .. _FORMAT_FLOAT_OUT:
 
@@ -384,8 +375,8 @@ fonts can be found in the :doc:`gmt` man page.
     FFTW can "learn" how to optimally compute Fourier transforms on the
     current hardware and OS by computing several FFTs and measuring
     their execution time. This so gained "Wisdom" will be stored in and
-    reloaded from the file fftw_wisdom_<hostname> in DIR_USER or, if
-    DIR_USER is not writable, in the current directory. To use this
+    reloaded from the file fftw_wisdom_<hostname> in $GMT_USERDIR or, if
+    $GMT_USERDIR is not writable, in the current directory. To use this
     feature append *planner_flag*, which can be one of *measure*,
     *patient*, and *exhaustive*; see FFTW reference for details. The
     default FFTW planner flag is *estimate*, i.e., pick a (probably
@@ -423,7 +414,7 @@ fonts can be found in the :doc:`gmt` man page.
     (**-V**) Determines the level of verbosity used by GMT
     programs. Choose among 6 levels; each level adds to the verbosity of
     the lower levels: **q**\ uiet, **n**\ normal (errors and warnings),
-    **c**\ ompatibility warnings, (v)erbose progress reports, (l)ong
+    **c**\ ompatibility warnings, **v**\ erbose progress reports, **l**\ ong
     verbose progress reports, **d**\ ebugging messages [c].
 
 .. _I/O Parameters:
@@ -937,7 +928,7 @@ fonts can be found in the :doc:`gmt` man page.
 **PS_IMAGE_COMPRESS**
     Determines if PostScript images are compressed using the Run-Length
     Encoding scheme (rle), Lempel-Ziv-Welch compression (lzw), DEFLATE
-    compression (deflate[,level]), or not at all (none) [lzw]. When
+    compression (deflate[,level]), or not at all (none) [deflate,5]. When
     specifying deflate, the compression level (1--9) may optionally be
     appended.
 

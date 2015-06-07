@@ -13,10 +13,10 @@ Synopsis
 
 .. include:: common_SYN_OPTs.rst_
 
-**splitxyz** [ *table* ] **-C**\ *course_change*
-[ **-A**\ *azimuth*/*tolerance* ] [ **-D**\ *minimum_distance* ]
+**splitxyz** [ *table* ] 
+[ **-A**\ *azimuth*/*tolerance* ] [**-C**\ *course_change*] [ **-D**\ *minimum_distance* ]
 [ **-F**\ *xy\_filter*/*z\_filter* ] [ **-N**\ *template* ]
-[ **-Q**\ *flags* ] [ **-S** ] [ |SYN_OPT-V| ] [ **-Z** ]
+[ **-Q**\ *flags* ] [ **-S** ] [ |SYN_OPT-V| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
@@ -37,22 +37,19 @@ options to choose only those series which have a certain orientation, to
 set a minimum length for series, and to high- or low-pass filter the z
 values and/or the x,y values. **splitxyz** is a useful filter between
 data extraction and :doc:`pswiggle` plotting, and can also be used to
-divide a large x,y,z dataset into segments. The output is always in the
-ASCII format; input may be ASCII or binary (see **-bi**). 
+divide a large x,y[,z] dataset into segments. 
 
 Required Arguments
 ------------------
 
-**-C**\ *course\_change*
-    Terminate a segment when a course change exceeding *course\_change*
-    degrees of heading is detected.
+none.
 
 Optional Arguments
 ------------------
 
 *table*
     One or more ASCII [or binary, see **-bi**]
-    files with 3 (or 2, see **-Z**) [or 5] columns holding (x,y,z[,d,h])
+    files with 2, 3, or 5 columns holding (x,y,[z[,d,h]])
     data values. To use (x,y,z,d,h) input, sorted so that d is
     non-decreasing, specify the **-S** option; default expects (x,y,z)
     only. If no files are specified, **splitxyz** will read from
@@ -62,6 +59,9 @@ Optional Arguments
     degrees of *azimuth* in heading, measured clockwise from North, [0 -
     360]. [Default writes all acceptable segments, regardless of
     orientation].
+**-C**\ *course\_change*
+    Terminate a segment when a course change exceeding *course\_change*
+    degrees of heading is detected [ignore course changes].
 **-D**\ *minimum\_distance*
     Do not write a segment out unless it is at least *minimum\_distance*
     units long [0]
@@ -97,7 +97,7 @@ Optional Arguments
     order. Do not space between the letters. Use lower case. The output
     will be ASCII (or binary, see **-bo**)
     columns of values corresponding to *xyzdh* [Default is
-    **-Q**\ *xyzdh* (**-Q**\ *xydh* if **-Z** is set)].
+    **-Q**\ *xyzdh* (**-Q**\ *xydh* if only 2 input columns)].
 **-S**
     Both d and h are supplied. In this case, input contains x,y,z,d,h.
     [Default expects (x,y,z) input, and d,h are computed from delta x,
@@ -110,10 +110,7 @@ Optional Arguments
 .. |Add_-V| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-V.rst_
 
-**-Z**
-    Data have x,y only (no z-column). 
-
-.. |Add_-bi| replace:: [Default is 2, 3, or 5 input columns as set by **-S**, **-Z**]. 
+.. |Add_-bi| replace:: [Default is 2, 3, or 5 input columns as set by **-S**]. 
 .. include:: explain_-bi.rst_
 
 .. |Add_-bo| replace:: [Default is 1-5 output columns as set by **-Q**]. 
@@ -148,18 +145,18 @@ Examples
 --------
 
 Suppose you want to make a wiggle plot of magnetic anomalies on segments
-oriented approximately east-west from a cruise called cag71 in the
-region **-R**\ 300/315/12/20. You want to use a 100km low-pass filter to
+oriented approximately east-west from a NGDC-supplied cruise called JA020015 in the
+region **-R**\ 300/315/12/20. You want to use a 100 km low-pass filter to
 smooth the tracks and a 500km high-pass filter to detrend the magnetic
 anomalies. Try this:
 
    ::
 
-    gmt gmtlist cag71 -R300/315/12/20 -Fxyzdh | gmt splitxyz -A90/15 -F100/-500 \
-        -D100 -S -V -fg | gmt pswiggle -R300/315/12/20 -Jm0.6 -Ba5f1:.cag71: -T1 \
-        -W0.75p -Ggray -Z200 > cag71_wiggles.ps
+    gmt mgd77list JA020015 -R300/315/12/20 -Flon,lat,mag,dist,azim | gmt splitxyz -A90/15 -F100/-500 \
+        -D100 -S -V -fg | gmt pswiggle -R300/315/12/20 -Jm0.6i -Baf -B+tJA020015 -T1 \
+        -W0.75p -Ggray -Z200 > JA020015_wiggles.ps
 
-MGD-77 users: For this application we recommend that you extract d, h
+MGD-77 users: For this application we recommend that you extract dist,azim
 from :doc:`mgd77list <supplements/mgd77/mgd77list>` rather than have
 **splitxyz** compute them separately.
 

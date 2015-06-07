@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2cpt.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grd2cpt.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -152,15 +152,18 @@ int GMT_grd2cpt_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Truncate incoming CPT to be limited to the z-range <zlo>/<zhi>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   To accept one if the incoming limits, set to other to NaN.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Reverse the sense of the color table as well as back- and foreground color.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-L Limit the range of the data [Default uses actual min,max of data].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-L Limit the range of the data.  Node values outside this range are set to NaN.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default uses actual min,max of data].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-M Use GMT defaults to set back-, foreground, and NaN colors [Default uses color table].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Do not write back-, foreground, and NaN colors [Default will].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Assign a logarithmic colortable [Default is linear].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Qi: z-values are actually log10(z). Assign colors and write z [Default].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Qo: z-values are z, but take log10(z), assign colors and write z.\n");
 	GMT_Option (API, "R");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Sample points should Step from z_start to z_stop by z_inc.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-S CDF sample points should Step from <z_start> to <z_stop> by <z_inc>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -S<n> to select <n> points from a cumulative normal distribution [%d].\n", GRD2CPT_N_LEVELS);
+	GMT_Message (API, GMT_TIME_NONE, "\t   <z_start> maps to data min and <z_stop> maps to data max (but see -L).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [Default uses equidistant steps for a Gaussian CDF].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Force color tables to be symmetric about 0. Append one modifier:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   - for values symmetric about zero from -|zmin| to +|zmin|.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   + for values symmetric about zero from -|zmax| to +|zmax|.\n");
@@ -195,7 +198,7 @@ int GMT_grd2cpt_parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct G
 			case '<':	/* Input files */
 				Ctrl->In.active = true;
 				n_files[GMT_IN]++;
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) n_errors++;
 				break;
 			case '>':	/* Got named output file */
 				if (n_files[GMT_OUT]++ == 0) Ctrl->Out.file = strdup (opt->arg);
@@ -530,8 +533,8 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 				break;
 		}
 		range = (Ctrl->T.kind) ? 2.0 * fabs (start) : G[0]->header->z_max - G[0]->header->z_min;
-		range *= (1.0 + GMT_CONV_LIMIT);	/* To ensure the max grid values do not exceed the CPT limit due to round-off issues */
-		start -= fabs (start) * GMT_CONV_LIMIT;	/* To ensure the start of cpt is less than min value due to roundoff  */
+		range *= (1.0 + GMT_CONV8_LIMIT);	/* To ensure the max grid values do not exceed the CPT limit due to round-off issues */
+		start -= fabs (start) * GMT_CONV8_LIMIT;	/* To ensure the start of cpt is less than min value due to roundoff  */
 		Ctrl->S.inc = range / (double)(Ctrl->E.levels - 1);
 		cdf_cpt = GMT_memory (GMT, NULL, Ctrl->E.levels, struct CDF_CPT);
 		for (j = 0; j < Ctrl->E.levels; j++) cdf_cpt[j].z = start + j * Ctrl->S.inc;

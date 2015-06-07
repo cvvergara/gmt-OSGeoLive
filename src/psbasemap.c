@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psbasemap.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: psbasemap.c 13914 2015-01-10 09:10:08Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 
 #define THIS_MODULE_NAME	"psbasemap"
 #define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Plot PostScript base maps"
+#define THIS_MODULE_PURPOSE	"Plot base maps and frames"
 
 #include "gmt_dev.h"
 

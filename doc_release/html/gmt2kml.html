@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmt2kml &mdash; GMT 5.1.1 documentation</title>
+    <title>gmt2kml &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmt5syntax" href="gmt5syntax.html" />
     <link rel="prev" title="gmt" href="gmt.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -100,7 +100,7 @@
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p><strong>gmt2kml</strong> reads one or more GMT table file and converts them to a
-single output file using Google Earth’s KML format. Data may represent
+single output file using Google Earth&#8217;s KML format. Data may represent
 points, lines, or polygons, and you may specify additional attributes
 such as title, altitude mode, colors, pen widths, transparency, regions,
 and data descriptions. You may also extend the feature down to ground
@@ -176,7 +176,8 @@ text label), use <strong>-I</strong>-. [Default is a local icon with no director
 commas. We will expect the listed data columns to exist in the input
 immediately following the data coordinates and they will be encoded
 in the KML file as Extended Data sets, whose attributes will be
-available in the Google Earth balloon when the item is selected.</dd>
+available in the Google Earth balloon when the item is selected.
+This option is not available unless input is an ASCII file.</dd>
 <dt><strong>-N</strong>[-|+|<em>name_template</em>|<em>name</em>]</dt>
 <dd>By default, if segment headers contain a <strong>-L</strong>&#8220;label string&#8221; then
 we use that for the name of the KML feature (polygon, line segment
@@ -195,7 +196,8 @@ each feature, with the segment number (for lines and polygons) or
 point number (symbols) appearing where %d is placed, (4) give no
 arguments to turn symbol labeling off; line segments will still be
 named. Note: if <strong>-N-</strong> is used with <strong>-L</strong> then the label must
-appear before the extended data columns.</dd>
+appear before the extended data columns.  Also note that options
+(1) and (2) are not available unless input is an ASCII file.</dd>
 <dt><strong>-O</strong></dt>
 <dd>Appended KML code to an existing KML file [initialize a new KML file].</dd>
 <dt><strong>-Ra</strong>|<em>w/e/s/n</em></dt>
@@ -253,19 +255,19 @@ folder or document in the sidebar when loaded [closed].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] <a class="reference internal" href="gmt.html#colon-full"><em>(more ...)</em></a></dt>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -445,7 +447,7 @@ description tags, respectively, for the current feature.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -463,9 +465,9 @@ description tags, respectively, for the current feature.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

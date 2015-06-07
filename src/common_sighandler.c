@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: common_sighandler.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: common_sighandler.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -75,16 +75,24 @@ void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 #elif defined(SIZEOF_GREG_T)
 # ifdef __x86_64__
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_RIP])
+# elif defined(__aarch64__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.pc)
 # elif defined( __arm__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
+# elif defined(__s390__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.psw.addr)
 # else
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_EIP])
 # endif
 #else
 # ifdef __x86_64__
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.rip)
-# elif defined( __arm__)
+# elif defined(__aarch64__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.pc)
+# elif defined(__arm__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
+# elif defined(__powerpc__) || defined(__powerpc64__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.regs->nip)
 # else
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.eip)
 # endif
@@ -108,27 +116,27 @@ void process_cpu() {
 
 void process_mem() {
 	/* print current process memory usage */
-	float rss, vsize;
+	double rss, vsize;
 #if defined(__APPLE__)
 	struct task_basic_info t_info;
 	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
 
 	if (KERN_SUCCESS != task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count))
 		return;
-	rss   = t_info.resident_size / 1024.0f;
-	vsize = t_info.virtual_size / 1024.0f;
+	rss   = t_info.resident_size / 1024.0;
+	vsize = t_info.virtual_size / 1024.0;
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
 	FILE* fp = NULL;
 	if ( (fp = fopen( "/proc/self/statm", "r" )) == NULL )
 		return; /* Can't open */
-	if ( fscanf( fp, "%f %f", &vsize, &rss ) != 2 ) {
+	if ( fscanf( fp, "%lf %lf", &vsize, &rss ) != 2 ) {
 		fclose( fp );
 		return; /* Can't read */
 	}
 	fclose( fp );
-	rss   *= (float)sysconf( _SC_PAGESIZE) / 1024.0f;
-	vsize *= (float)sysconf( _SC_PAGESIZE) / 1024.0f;
+	rss   *= sysconf( _SC_PAGESIZE) / 1024.0;
+	vsize *= sysconf( _SC_PAGESIZE) / 1024.0;
 
 #else
 	fprintf (stderr, "\n");

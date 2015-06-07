@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>psxyz &mdash; GMT 5.1.1 documentation</title>
+    <title>psxyz &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="S" href="S.html" />
     <link rel="prev" title="psxy" href="psxy.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -273,18 +273,14 @@ based on the chosen map projection (<strong>-Sj</strong> leaves the directions
 unchanged.) Furthermore, the dimensions must be given in km instead of
 plot-distance units. An exception occurs for a linear projection in
 which we assume the dimensions are given in the same units as <strong>-R</strong>.</dd>
-</dl>
-</dd>
 <dt><strong>-Sk</strong></dt>
-<dd><blockquote class="first">
-<div><strong>k</strong>ustom symbol. Append &lt;name&gt;/<em>size</em>, and we will look for a
+<dd><strong>k</strong>ustom symbol. Append &lt;name&gt;/<em>size</em>, and we will look for a
 definition file called &lt;name&gt;.def in (1) the current
 directory or (2) in ~/.gmt or (3) in
 <strong>$GMT_SHAREDIR</strong>/custom. The symbol as defined in that file is of size
 1.0 by default; the appended <em>size</em> will scale symbol accordingly.
 The symbols are plotted in the <em>x-y</em> plane.  Users
-may add their own custom *.def files; see CUSTOM SYMBOLS below.</div></blockquote>
-<dl class="last docutils">
+may add their own custom *.def files; see CUSTOM SYMBOLS below.</dd>
 <dt><strong>-Sl</strong></dt>
 <dd><strong>l</strong>etter or text string (less than 64 characters). Give size, and
 append /<em>string</em> after the size. Note that the size is only approximate;
@@ -377,7 +373,7 @@ the workings of the quoted line setup.</dd>
 <dt><strong>+e</strong></dt>
 <dd>Delay the plotting of the text. This is used to build a clip path
 based on the text, then lay down other overlays while that clip path
-is in effect, then turning of clipping with psclip <strong>-Ct</strong> which
+is in effect, then turning of clipping with psclip <strong>-Cs</strong> which
 finally plots the original text.</dd>
 <dt><strong>+f</strong><em>font</em></dt>
 <dd>Sets the desired font [Default <strong>FONT_ANNOT_PRIMARY</strong> with its
@@ -420,7 +416,7 @@ Requires the crossing file option.</p>
 <strong>c</strong>|<strong>i</strong>|<strong>p</strong> to specify the units). Increments
 are considered in the coordinate system defined by the
 orientation of the line; use <strong>+N</strong> to force increments in the
-plot x/y coordinates system [no nudging].</dd>
+plot x/y coordinates system [no nudging]. Not allowed with <strong>+v</strong>.</dd>
 <dt><strong>+o</strong></dt>
 <dd>Selects rounded rectangular text box [Default is rectangular].
 Not applicable for curved text (<strong>+v</strong>) and only makes sense for
@@ -430,7 +426,7 @@ opaque text boxes.</dd>
 optionally specify pen for outline [Default is width = 0.25p,
 color = black, style = solid].</dd>
 <dt><strong>+r</strong><em>min_rad</em></dt>
-<dd>Will not place labels where the line’s radius of curvature is
+<dd>Will not place labels where the line&#8217;s radius of curvature is
 less than <em>min_rad</em> [Default is 0].</dd>
 <dt><strong>+t</strong>[<em>file</em>]</dt>
 <dd>Saves line label x, y, and text to <em>file</em> [Line_labels.txt].
@@ -506,7 +502,7 @@ for specifying attributes.</dd>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
 <dd>Select verbosity level [c].  </dd>
-<dt><strong>-W</strong>[<strong>-</strong>|<strong>+</strong>][<em>pen</em>]</dt>
+<dt><strong>-W</strong>[<strong>-</strong>|<strong>+</strong>][<em>pen</em>] <a class="reference internal" href="GMT_Docs.html#wpen-attrib"><em>(more ...)</em></a></dt>
 <dd>Set pen attributes for lines or the outline of symbols [Defaults:
 width = default, color = black, style = solid]. A leading <strong>+</strong> will
 use the lookup color (via <strong>-C</strong>) for both symbol fill and outline
@@ -544,7 +540,7 @@ off symbol fill.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 <dt><strong>-p</strong>[<strong>x</strong>|<strong>y</strong>|<strong>z</strong>]<em>azim</em>/<em>elev</em>[/<em>zlevel</em>][<strong>+w</strong><em>lon0</em>/<em>lat0</em>[/<em>z0</em>]][<strong>+v</strong><em>x0</em>/<em>y0</em>] (*)</dt>
 <dd>Select perspective view.</dd>
 </dl>
@@ -557,12 +553,12 @@ off symbol fill.</dd>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -575,14 +571,20 @@ options, then exits.</dd>
 <h2><a class="reference external" href="#toc15">Vector Attributes</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p>Several modifiers may be appended to the vector-producing options to
 specify the placement of vector heads, their shapes, and the
-justification of the vector:</p>
+justification of the vector. Below, left and right refers to the
+side of the vector line when viewed from the start point to the
+end point of the segment:</p>
 <blockquote>
 <div><p><strong>+a</strong><em>angle</em> sets the angle of the vector head apex [30].</p>
-<p><strong>+b</strong> places a vector head at the beginning of the vector path [none].</p>
-<p><strong>+e</strong> places a vector head at the end of the vector path [none].</p>
+<p><strong>+b</strong> places a vector head at the beginning of the vector path [none].
+Append <strong>l</strong>|<strong>r</strong> to only draw the left or right side of this head
+[both sides].</p>
+<p><strong>+e</strong> places a vector head at the end of the vector path [none].
+Append <strong>l</strong>|<strong>r</strong> to only draw the left or right side of this head
+[both sides].</p>
 <p><strong>+g</strong>-|<em>fill</em> turns off vector head fill (if -) or sets the vector
 head fill [Default fill is used, which may be no fill].</p>
-<p><strong>+l</strong> draws half-arrows, using only the left side [both].</p>
+<p><strong>+l</strong> draws half-arrows, using only the left side of specified heads [both sides].</p>
 <p><strong>+n</strong><em>norm</em> scales down vector attributes (pen thickness, head size)
 with decreasing length, where vectors shorter than <em>norm</em> will have
 their attributes scaled by length/<em>norm</em> [arrow attributes remains
@@ -592,9 +594,9 @@ small circles.  Only needed for great circles if <strong>+q</strong> is given.</
 <p><strong>+p</strong>[-][<em>pen</em>] sets the vector pen attributes. If <em>pen</em> has a
 leading - then the head outline is not drawn. [Default pen is used, and
 head outline is drawn]</p>
-<p><strong>+q</strong> means the input <em>angle</em>, <em>length</em> is instead the <em>start</em> and <em>stop</em>
-opening angles of the arc segment relative to the point.</p>
-<p><strong>+r</strong> draws half-arrows, using only the right side [both].</p>
+<p><strong>+q</strong> means the input <em>angle</em>, <em>length</em> data instead represent the <em>start</em> and <em>stop</em>
+opening angles of the arc segment relative to the given point.</p>
+<p><strong>+r</strong> draws half-arrows, using only the right side of specified heads [both sides].</p>
 </div></blockquote>
 <p>In addition, all but circular vectors may take these modifiers:</p>
 <blockquote>
@@ -733,7 +735,7 @@ to obtain the correct BoundingBox.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -751,9 +753,9 @@ to obtain the correct BoundingBox.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

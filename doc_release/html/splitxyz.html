@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>splitxyz &mdash; GMT 5.1.1 documentation</title>
+    <title>splitxyz &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="S" href="S.html" />
     <link rel="next" title="surface" href="surface.html" />
     <link rel="prev" title="sphtriangulate" href="sphtriangulate.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="S.html" accesskey="U">S</a> &raquo;</li>
 <li class="right">
@@ -78,10 +78,10 @@
 <p>splitxyz - Split xyz[dh] data tables into individual segments</p>
 <div class="section" id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
-<p><strong>splitxyz</strong> [ <em>table</em> ] <strong>-C</strong><em>course_change</em>
-[ <strong>-A</strong><em>azimuth</em>/<em>tolerance</em> ] [ <strong>-D</strong><em>minimum_distance</em> ]
+<p><strong>splitxyz</strong> [ <em>table</em> ]
+[ <strong>-A</strong><em>azimuth</em>/<em>tolerance</em> ] [<strong>-C</strong><em>course_change</em>] [ <strong>-D</strong><em>minimum_distance</em> ]
 [ <strong>-F</strong><em>xy_filter</em>/<em>z_filter</em> ] [ <strong>-N</strong><em>template</em> ]
-[ <strong>-Q</strong><em>flags</em> ] [ <strong>-S</strong> ] [ <strong>-V</strong>[<em>level</em>] ] [ <strong>-Z</strong> ]
+[ <strong>-Q</strong><em>flags</em> ] [ <strong>-S</strong> ] [ <strong>-V</strong>[<em>level</em>] ]
 [ <strong>-b</strong>[<strong>i</strong>|<strong>o</strong>][<em>ncol</em>][<strong>type</strong>][w][<strong>+L</strong>|<strong>+B</strong>] ]
 [ <strong>-f</strong>[<strong>i</strong>|<strong>o</strong>]<em>colinfo</em> ]
 [ <strong>-g</strong>[<strong>a</strong>]<strong>x</strong>|<strong>y</strong>|<strong>d</strong>|<strong>X</strong>|<strong>Y</strong>|<strong>D</strong>|[<em>col</em>]<strong>z</strong>[+|-]<em>gap</em>[<strong>u</strong>] ]
@@ -100,23 +100,18 @@ options to choose only those series which have a certain orientation, to
 set a minimum length for series, and to high- or low-pass filter the z
 values and/or the x,y values. <strong>splitxyz</strong> is a useful filter between
 data extraction and <a class="reference internal" href="pswiggle.html"><em>pswiggle</em></a> plotting, and can also be used to
-divide a large x,y,z dataset into segments. The output is always in the
-ASCII format; input may be ASCII or binary (see <strong>-bi</strong>).</p>
+divide a large x,y[,z] dataset into segments.</p>
 </div>
 <div class="section" id="required-arguments">
 <h2>Required Arguments<a class="headerlink" href="#required-arguments" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
-<dt><strong>-C</strong><em>course_change</em></dt>
-<dd>Terminate a segment when a course change exceeding <em>course_change</em>
-degrees of heading is detected.</dd>
-</dl>
+<p>none.</p>
 </div>
 <div class="section" id="optional-arguments">
 <h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><em>table</em></dt>
 <dd>One or more ASCII [or binary, see <strong>-bi</strong>]
-files with 3 (or 2, see <strong>-Z</strong>) [or 5] columns holding (x,y,z[,d,h])
+files with 2, 3, or 5 columns holding (x,y,[z[,d,h]])
 data values. To use (x,y,z,d,h) input, sorted so that d is
 non-decreasing, specify the <strong>-S</strong> option; default expects (x,y,z)
 only. If no files are specified, <strong>splitxyz</strong> will read from
@@ -126,6 +121,9 @@ standard input.</dd>
 degrees of <em>azimuth</em> in heading, measured clockwise from North, [0 -
 360]. [Default writes all acceptable segments, regardless of
 orientation].</dd>
+<dt><strong>-C</strong><em>course_change</em></dt>
+<dd>Terminate a segment when a course change exceeding <em>course_change</em>
+degrees of heading is detected [ignore course changes].</dd>
 <dt><strong>-D</strong><em>minimum_distance</em></dt>
 <dd>Do not write a segment out unless it is at least <em>minimum_distance</em>
 units long [0]</dd>
@@ -161,7 +159,7 @@ segment number within the table to build the file name.</dd>
 order. Do not space between the letters. Use lower case. The output
 will be ASCII (or binary, see <strong>-bo</strong>)
 columns of values corresponding to <em>xyzdh</em> [Default is
-<strong>-Q</strong><em>xyzdh</em> (<strong>-Q</strong><em>xydh</em> if <strong>-Z</strong> is set)].</dd>
+<strong>-Q</strong><em>xyzdh</em> (<strong>-Q</strong><em>xydh</em> if only 2 input columns)].</dd>
 <dt><strong>-S</strong></dt>
 <dd>Both d and h are supplied. In this case, input contains x,y,z,d,h.
 [Default expects (x,y,z) input, and d,h are computed from delta x,
@@ -174,15 +172,13 @@ counter-clockwise from horizontal].</dd>
 <dl class="docutils">
 <dt><strong>-V</strong>[<em>level</em>] <a class="reference internal" href="gmt.html#v-full"><em>(more ...)</em></a></dt>
 <dd>Select verbosity level [c].  </dd>
-<dt><strong>-Z</strong></dt>
-<dd>Data have x,y only (no z-column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-bi</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bi-full"><em>(more ...)</em></a></dt>
-<dd>Select binary input. [Default is 2, 3, or 5 input columns as set by <strong>-S</strong>, <strong>-Z</strong>].</dd>
+<dd>Select binary input. [Default is 2, 3, or 5 input columns as set by <strong>-S</strong>].</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="supplements/mgd77/mgd77list.html#bo-full"><em>(more ...)</em></a></dt>
+<dt><strong>-bo</strong>[<em>ncols</em>][<em>type</em>] <a class="reference internal" href="gmt.html#bo-full"><em>(more ...)</em></a></dt>
 <dd>Select binary output. [Default is 1-5 output columns as set by <strong>-Q</strong>].</dd>
 </dl>
 <dl class="docutils">
@@ -199,19 +195,19 @@ counter-clockwise from horizontal].</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-:</strong>[<strong>i</strong>|<strong>o</strong>] <a class="reference internal" href="gmt.html#colon-full"><em>(more ...)</em></a></dt>
 <dd>Swap 1st and 2nd column on input and/or output.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -241,18 +237,18 @@ in same units as x,y and angles are counter-clockwise from horizontal.</p>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>Suppose you want to make a wiggle plot of magnetic anomalies on segments
-oriented approximately east-west from a cruise called cag71 in the
-region <strong>-R</strong>300/315/12/20. You want to use a 100km low-pass filter to
+oriented approximately east-west from a NGDC-supplied cruise called JA020015 in the
+region <strong>-R</strong>300/315/12/20. You want to use a 100 km low-pass filter to
 smooth the tracks and a 500km high-pass filter to detrend the magnetic
 anomalies. Try this:</p>
 <blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre>gmt gmtlist cag71 -R300/315/12/20 -Fxyzdh | gmt splitxyz -A90/15 -F100/-500 \
-    -D100 -S -V -fg | gmt pswiggle -R300/315/12/20 -Jm0.6 -Ba5f1:.cag71: -T1 \
-    -W0.75p -Ggray -Z200 &gt; cag71_wiggles.ps
+<div><div class="highlight-python"><div class="highlight"><pre>gmt mgd77list JA020015 -R300/315/12/20 -Flon,lat,mag,dist,azim | gmt splitxyz -A90/15 -F100/-500 \
+    -D100 -S -V -fg | gmt pswiggle -R300/315/12/20 -Jm0.6i -Baf -B+tJA020015 -T1 \
+    -W0.75p -Ggray -Z200 &gt; JA020015_wiggles.ps
 </pre></div>
 </div>
 </div></blockquote>
-<p>MGD-77 users: For this application we recommend that you extract d, h
+<p>MGD-77 users: For this application we recommend that you extract dist,azim
 from <a class="reference internal" href="supplements/mgd77/mgd77list.html"><em>mgd77list</em></a> rather than have
 <strong>splitxyz</strong> compute them separately.</p>
 <p>Suppose you have been given a binary, double-precision file containing
@@ -323,7 +319,7 @@ profiles named <em>survey</em>_<em>###.txt</em> (when gap exceeds 100 km). Try t
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="S.html" >S</a> &raquo;</li>
 <li class="right">
@@ -341,9 +337,9 @@ profiles named <em>survey</em>_<em>###.txt</em> (when gap exceeds 100 km). Try t
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

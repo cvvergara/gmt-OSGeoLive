@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdedit.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grdedit.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -130,7 +130,7 @@ int GMT_grdedit_parse (struct GMT_CTRL *GMT, struct GRDEDIT_CTRL *Ctrl, struct G
 
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -149,7 +149,7 @@ int GMT_grdedit_parse (struct GMT_CTRL *GMT, struct GRDEDIT_CTRL *Ctrl, struct G
 				Ctrl->E.active = true;
 				break;
 			case 'N':	/* Replace nodes */
-				if ((Ctrl->N.active = GMT_check_filearg (GMT, 'N', opt->arg, GMT_IN)))
+				if ((Ctrl->N.active = GMT_check_filearg (GMT, 'N', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->N.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -339,22 +339,21 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 		uint64_t ij, ij_tr;
 		float *a_tr = NULL;
 		
-		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->In.file, G)) {	/* Get data */
+		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL) {	/* Get data */
 			Return (API->error);
 		}
 
 		h_tr = GMT_memory (GMT, NULL, 1, struct GMT_GRID_HEADER);
 		GMT_memcpy (h_tr, G->header, 1, struct GMT_GRID_HEADER);	/* First make a copy of header */
-		h_tr->nx = G->header->ny;	/* Then exchange x and y values */
 		h_tr->wesn[XLO] = G->header->wesn[YLO];
 		h_tr->wesn[XHI] = G->header->wesn[YHI];
 		h_tr->inc[GMT_X] = G->header->inc[GMT_Y];
 		strncpy (h_tr->x_units, G->header->y_units, GMT_GRID_UNIT_LEN80);
-		h_tr->ny = G->header->nx;
 		h_tr->wesn[YLO] = G->header->wesn[XLO];
 		h_tr->wesn[YHI] = G->header->wesn[XHI];
 		h_tr->inc[GMT_Y] = G->header->inc[GMT_X];
 		strncpy (h_tr->y_units, G->header->x_units, GMT_GRID_UNIT_LEN80);
+		GMT_set_grddim (GMT, h_tr);	/* Recompute nx, ny, mx, size, etc */
 
 		/* Now transpose the matrix */
 

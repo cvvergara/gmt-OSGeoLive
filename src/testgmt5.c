@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: testgmt5.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: testgmt5.c 13397 2014-07-31 02:14:11Z pwessel $
  *
  *	Copyright (c) 1991-$year by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -29,7 +29,7 @@
 
 #include "gmt_dev.h"
 
-int main (int argc, char *argv[]) {
+int main () {
 
 	int status = 0;				/* Status code from GMT API */
 	struct GMT_OPTION *head = NULL, *new_opt = NULL;	/* Linked list of options */

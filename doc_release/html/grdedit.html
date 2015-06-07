@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdedit &mdash; GMT 5.1.1 documentation</title>
+    <title>grdedit &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdfft" href="grdfft.html" />
     <link rel="prev" title="grdcut" href="grdcut.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -108,23 +108,30 @@ of that file.</p>
 <dd>Name of the 2-D grid file to modify. (See GRID FILE FORMATS below).</dd>
 </dl>
 </div>
-<div class="section" id="id1">
-<h2><a class="reference external" href="#toc5">Optional Arguments</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="optional-arguments">
+<h2>Optional Arguments<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><strong>-A</strong></dt>
-<dd>If necessary, adjust the file’s <em>x_inc</em>, <em>y_inc</em> to be compatible
+<dd>If necessary, adjust the file&#8217;s <em>x_inc</em>, <em>y_inc</em> to be compatible
 with its domain (or a new domain set with <strong>-R</strong>). Older grid files
 (i.e., created prior to GMT 3.1) often had excessive slop in
 <em>x_inc</em>, <em>y_inc</em> and an adjustment is necessary. Newer files are
 created correctly.</dd>
+</dl>
+<dl class="docutils">
 <dt><strong>-D</strong><em>xname</em>/<em>yname</em>/<em>zname</em>/<em>scale</em>/<em>offset</em>/<em>invalid</em>/<em>title</em>/<em>remark</em></dt>
-<dd>Give values for <em>xname</em>, <em>yname</em>, <em>zname</em>, <em>scale</em>, <em>offset</em>,
-<em>invalid</em>, <em>title</em>, and <em>remark</em>. To leave some of these values untouched,
+<dd>Give values for <em>xname</em>, <em>yname</em>, <em>zname</em> (give the names of those variables
+and in square bracket their units, e.g., &#8220;distance [km]&#8221;), <em>scale</em> (to multiply grid values after
+read [normally 1]), <em>offset</em> (to add to grid after scaling [normally 0]),
+<em>invalid</em> (a value to represent missing data [NaN]), <em>title</em> (anything you
+like), and <em>remark</em> (anything you like). To leave some of these values untouched,
 leave field blank. Empty fields in the end may be skipped. Alternatively,
 to allow &#8220;/&#8221; to be part of one of the values, use any non-alphanumeric
 character (and not the equal sign) as separator by both starting and ending
 with it. For example:
-<strong>-D</strong>:<em>xname</em>:<em>yname</em>:<em>zname</em>:<em>scale</em>:<em>offset</em>:<em>invalid</em>:<em>title</em>:<em>remark</em>:</dd>
+<strong>-D</strong>:<em>xname</em>:<em>yname</em>:<em>zname</em>:<em>scale</em>:<em>offset</em>:<em>invalid</em>:<em>title</em>:<em>remark</em>:
+Use quotes to group texts with more than one word.
+Note that for geographic grids (<strong>-fg</strong>) <em>xname</em> and <em>yname</em> are set automatically.</dd>
 <dt><strong>-E</strong></dt>
 <dd>Transpose the grid and exchange the <em>x</em> and <em>y</em> information.
 Incompatible with the other options.</dd>
@@ -166,15 +173,15 @@ have their domain shrunk by the same amount.</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -232,7 +239,7 @@ will indicate both this unit and epoch.</p>
 change the boundaries from geodetic longitudes to geographic and put a
 new title in the header. We accomplish this by</p>
 <blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre>gmt grdedit data.nc -R-60/-50/10/30 -D/////&quot;Gravity Anomalies&quot;
+<div><div class="highlight-python"><div class="highlight"><pre>gmt grdedit data.nc -R-60/-50/10/30 -D//////&quot;Gravity Anomalies&quot;
 </pre></div>
 </div>
 </div></blockquote>
@@ -280,7 +287,7 @@ this information, run</p>
 <li><a class="reference internal" href="#synopsis">Synopsis</a></li>
 <li><a class="reference internal" href="#description">Description</a></li>
 <li><a class="reference internal" href="#required-arguments">Required Arguments</a></li>
-<li><a class="reference internal" href="#id1">Optional Arguments</a></li>
+<li><a class="reference internal" href="#optional-arguments">Optional Arguments</a></li>
 <li><a class="reference internal" href="#grid-file-formats">Grid File Formats</a></li>
 <li><a class="reference internal" href="#geographical-and-time-coordinates">Geographical And Time Coordinates</a></li>
 <li><a class="reference internal" href="#examples">Examples</a></li>
@@ -318,7 +325,7 @@ this information, run</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -336,9 +343,9 @@ this information, run</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

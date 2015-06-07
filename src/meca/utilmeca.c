@@ -1,4 +1,4 @@
-/*	$Id: utilmeca.c 12822 2014-01-31 23:39:56Z remko $
+/*	$Id: utilmeca.c 14230 2015-04-22 16:59:26Z jluis $
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence
  *    See README file for copying and redistribution conditions.
@@ -153,7 +153,7 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 	PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 
 	GMT_setfill (GMT, F, outline);
-	if (fabs (N_axis.dip) < EPSIL) {
+	if (fabs (pos_NP1_NP2) < EPSIL) {
 		/* pure normal or inverse fault (null axis strike is determined
 		   with + or - 180 degrees. */
  		/* first nodal plane part */
@@ -610,6 +610,7 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 	double radius_size, si, co, ssize[1];
 
 	struct GMT_FILL *F1 = NULL, *F2 = NULL;
+	GMT_UNUSED(outline);
 
 	a[0] = T.str; a[1] = N.str; a[2] = P.str;
 	p[0] = T.dip; p[1] = N.dip; p[2] = P.dip;
@@ -1226,7 +1227,7 @@ void paint_ellipse (struct GMT_CTRL *GMT, double x0, double y0, double angle, do
 }
 
 /************************************************************************/
-int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, double eps2, double theta, double sscale, double v_width, double h_length, double h_width, double vector_shape,int outline,struct GMT_PEN pen)
+int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, double eps2, double theta, double sscale, double v_width, double h_length, double h_width, double vector_shape, int outline, struct GMT_PEN pen)
 {
 	/* make a Strain rate cross at(slat,slon) */
 
@@ -1241,8 +1242,11 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	/*   v_width, h_length,h_width,vector_shape: arrow characteristics */
 
 	/* local */
-	double dx, dy, x1, x2, y1, y2, hl, hw, vw, s, c, dim[7];
+	double dx, dy, x1, x2, y1, y2, hl, hw, vw, s, c, dim[PSL_MAX_DIMS];
+	GMT_UNUSED(outline);
 
+	GMT_setpen (GMT, &pen);		/* Pen for segment line */
+	PSL_setfill (GMT->PSL, pen.rgb, 0);	/* Same color for arrow head fill with no outline */
 	sincosd (theta, &s, &c);
 
 	/*  extension component */
@@ -1272,8 +1276,7 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	dim[0] = x2, dim[1] = y2;
 	dim[2] = vw, dim[3] = hl, dim[4] = hw;
 	dim[5] = vector_shape, dim[6] = GMT_VEC_END | GMT_VEC_FILL;
-	PSL_setcolor (GMT->PSL, pen.rgb, PSL_IS_STROKE);
-	PSL_plotsymbol (GMT->PSL, x1, x2, dim, PSL_VECTOR);
+	PSL_plotsymbol (GMT->PSL, x1, y1, dim, PSL_VECTOR);
 
 	/* second, extensional arrow in opposite direction */
 
@@ -1298,13 +1301,12 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 
 	dim[0] = x2, dim[1] = y2;
 	dim[2] = vw, dim[3] = hl, dim[4] = hw;
-	PSL_setcolor (GMT->PSL, pen.rgb, PSL_IS_STROKE);
 	PSL_plotsymbol (GMT->PSL, x1, y1, dim, PSL_VECTOR);
 
 	/* compression component */
 	dx = eps2 * s;
 	dy = eps2 * c;
-
+	dim[6] = GMT_VEC_BEGIN | GMT_VEC_FILL;
 	trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps2 > 0.0) {
@@ -1327,7 +1329,6 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 
 	dim[0] = x2, dim[1] = y2;
 	dim[2] = vw, dim[3] = hl, dim[4] = hw;
-	PSL_setcolor (GMT->PSL, pen.rgb, PSL_IS_STROKE);
 	PSL_plotsymbol (GMT->PSL, x1, y1, dim, PSL_VECTOR);
 
 	/* second, compressional arrow in opposite direction */
@@ -1355,14 +1356,12 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 
 	dim[0] = x2, dim[1] = y2;
 	dim[2] = vw, dim[3] = hl, dim[4] = hw;
-	PSL_setcolor (GMT->PSL, pen.rgb, PSL_IS_STROKE);
 	PSL_plotsymbol (GMT->PSL, x1, y1, dim, PSL_VECTOR);
 
 	return 0;
 }
 
-int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double *x, double *y)
-{
+int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double *x, double *y) {
 	/* make a rotation rate wedge and return in x,y */
 
 	/* Kurt Feigl, from code by D. Dong */
@@ -1471,10 +1470,7 @@ int trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp
 	return nump;
 }
 
-void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, double spinsig, double sscale, double wedge_amp, double t11, double t12, double t21, double t22,
-	int polygon, double *rgb,
-	int epolygon, double *ergb,
-	int outline)
+void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, double spinsig, double sscale, double wedge_amp, double t11, double t12, double t21, double t22, int polygon, double *rgb, int epolygon, double *ergb, int outline)
 {
 
 	/* Make a wedge at center x0,y0  */
@@ -1487,12 +1483,14 @@ void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, doubl
 	double dxe[NPOINTS], dye[NPOINTS];
 	/* absolute paper coordinates */
 	double axe[NPOINTS], aye[NPOINTS];
+	GMT_UNUSED(outline);
 
 	/* draw wedge */
 
 	npoints = trace_wedge (spin, 1.0, wedge_amp, true, dxe, dye);
 
-	for (i = 0; i <= npoints - 1; i++) transform_local (x0, y0, dxe[i], dye[i], sscale, t11, t12, t21, t22, &axe[i], &aye[i]);
+	for (i = 0; i <= npoints - 1; i++)
+		transform_local (x0, y0, dxe[i], dye[i], sscale, t11, t12, t21, t22, &axe[i], &aye[i]);
 
 	if (polygon) {
 		PSL_setfill (PSL, rgb, true);
@@ -1514,3 +1512,13 @@ void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, doubl
 	else
 		PSL_plotline (PSL, axe, aye, npoints - 1, PSL_MOVE + PSL_STROKE);
 }
+
+#ifdef DEBUG
+int dump_meca (st_me meca) {
+	fprintf (stderr, "\nNodal plane NP1: str = %g dip = %g rake = %g\n", meca.NP1.str, meca.NP1.dip, meca.NP1.rake);
+	fprintf (stderr, "Nodal plane NP2: str = %g dip = %g rake = %g\n", meca.NP2.str, meca.NP2.dip, meca.NP2.rake);
+	fprintf (stderr, "Magnitude = %g exponent = %d\n", meca.moment.mant, meca.moment.exponent);
+	fprintf (stderr, "magms = %g\n", meca.magms);
+	return (0);
+}
+#endif

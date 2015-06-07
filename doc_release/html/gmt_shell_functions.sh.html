@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmt_shell_functions.sh &mdash; GMT 5.1.1 documentation</title>
+    <title>gmt_shell_functions.sh &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmtsimplify" href="gmtsimplify.html" />
     <link rel="prev" title="gmtset" href="gmtset.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -83,14 +83,16 @@
 <p><strong>gmt_clean_up</strong> [<em>prefix</em>]</p>
 <p><strong>gmt_message</strong> <em>message</em></p>
 <p><strong>gmt_abort</strong> <em>message</em></p>
-<p><strong>gmt_nrecords</strong> <em>file(s)</em></p>
-<p><strong>gmt_nfields</strong> <em>string</em></p>
+<p><strong>gmt_get_nrecords</strong> <em>file(s)</em></p>
+<p><strong>gmt_get_ndatarecords</strong> <em>file(s)</em></p>
+<p><strong>gmt_get_nfields</strong> <em>string</em></p>
 <p><strong>gmt_get_field</strong> <em>string</em></p>
 <p><strong>gmt_get_region</strong> <em>file(s)</em> [<em>options</em>]</p>
 <p><strong>gmt_get_gridregion</strong> <em>file</em> [<em>options</em>]</p>
 <p><strong>gmt_get_map_width</strong> <strong>-R</strong> <strong>-J</strong></p>
 <p><strong>gmt_get_map_height</strong> <strong>-R</strong> <strong>-J</strong></p>
 <p><strong>gmt_set_psfile</strong> <em>file</em></p>
+<p><strong>gmt_set_pdffile</strong> <em>file</em></p>
 <p><strong>gmt_set_framename</strong> <em>prefix framenumber</em></p>
 <p><strong>gmt_set_framenext</strong> <em>framenumber</em></p>
 </div>
@@ -122,9 +124,11 @@ also delete all files and directories that begins with the given prefix.</dd>
 <dd>Send a message to standard error.</dd>
 <dt><strong>gmt_abort</strong></dt>
 <dd>Send a message to standard error and exit the shell.</dd>
-<dt><strong>gmt_nrecords</strong></dt>
+<dt><strong>gmt_get_nrecords</strong></dt>
 <dd>Returns the total number of lines in <em>file(s)</em></dd>
-<dt><strong>gmt_nfields</strong></dt>
+<dt><strong>gmt_get_ndatarecords</strong></dt>
+<dd>Returns the total number of data records in <em>file(s)</em>, i.e., not counting headers.</dd>
+<dt><strong>gmt_get_nfields</strong></dt>
 <dd>Returns the number of fields or words in <em>string</em></dd>
 <dt><strong>gmt_get_field</strong></dt>
 <dd>Returns the given <em>field</em> in a <em>string</em>. Must pass <em>string</em> between
@@ -135,10 +139,10 @@ double quotes to preserve it as one item.</dd>
 <dt><strong>gmt_get_gridregion</strong></dt>
 <dd>Returns the region in the form w/e/s/n based on the header of a grid
 <em>file</em>. Optionally add -I*dx*/<em>dy</em> to round off the answer.</dd>
-<dt><strong>gmt_map_width</strong></dt>
+<dt><strong>gmt_get_map_width</strong></dt>
 <dd>Expects the user to give the desired <strong>-R</strong> <strong>-J</strong> settings and
 returns the map width in the current measurement unit.</dd>
-<dt><strong>gmt_map_height</strong></dt>
+<dt><strong>gmt_get_map_height</strong></dt>
 <dd>Expects the user to give the desired <strong>-R</strong> <strong>-J</strong> settings and
 returns the map height in the current measurement unit.</dd>
 <dt><strong>gmt_set_psfile</strong></dt>
@@ -156,14 +160,14 @@ integer counter.</dd>
 </div>
 <div class="section" id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
-<p>1. These functions only work in the bourne shell (<strong>sh</strong>) and their
+<p>1. These functions only work in the Bourne shell (<strong>sh</strong>) and their
 derivatives (like <strong>ash</strong>, <strong>bash</strong>, <strong>ksh</strong> and <strong>zsh</strong>). These
 functions do not work in the C shell (<strong>csh</strong>) or their derivatives
 (like <strong>tcsh</strong>), and cannot be used in DOS batch scripts either.</p>
 <p>2. <strong>gmt_shell_functions.sh</strong> were first introduced in GMT version
 4.2.2 and have since been regularly expanded with other practical
 scripting short-cuts. If you want to suggest other functions, please do
-so by mailing to the GMT mailing list: <a class="reference external" href="mailto:gmt-help&#37;&#52;&#48;lists&#46;hawaii&#46;edu">gmt-help<span>&#64;</span>lists<span>&#46;</span>hawaii<span>&#46;</span>edu</a>.</p>
+so by adding a New Issue request on gmt.soest.hawaii.edu.</p>
 </div>
 <div class="section" id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
@@ -218,7 +222,7 @@ so by mailing to the GMT mailing list: <a class="reference external" href="mailt
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -236,9 +240,9 @@ so by mailing to the GMT mailing list: <a class="reference external" href="mailt
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>pslegend &mdash; GMT 5.1.1 documentation</title>
+    <title>pslegend &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="PS" href="PS.html" />
     <link rel="next" title="pslib" href="pslib.html" />
     <link rel="prev" title="psimage" href="psimage.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" accesskey="U">PS</a> &raquo;</li>
 <li class="right">
@@ -186,12 +186,12 @@ indicates the shift relative to the foreground frame
 <dd>Set PDF transparency level in percent.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -273,13 +273,14 @@ columns stay in effect until <strong>N</strong> is used again.</dd>
 of the column, with the optional explanatory <em>text</em> starting <em>dx2</em>
 from the margin, printed with <strong>FONT_ANNOT_PRIMARY</strong>. Use <strong>-</strong> if
 no <em>fill</em> or outline (<em>pen</em>) is required. When plotting just a
-symbol, without text, <em>dx2</em> and <em>text</em> can be omitted. Two <strong>psxy</strong>
-symbols may take special modifiers: front (<strong>f</strong>) and vector (<strong>v</strong>).
-You can append modifiers to the symbol and affect how the fronts and
+symbol, without text, <em>dx2</em> and <em>text</em> can be omitted. Three <strong>psxy</strong>
+symbols may take special modifiers: front (<strong>f</strong>), quoted line (<strong>q</strong>) and vector (<strong>v</strong>).
+You can append modifiers to the symbol and affect how the fronts, quoted lines and
 vectors are presented (see <a class="reference internal" href="psxy.html"><em>psxy</em></a> man page for modifiers).
 <strong>pslegend</strong> will determine default settings for all modifiers and
 secondary arguments if not provided.  A few other symbols (the rectangles,
 ellipse, wedge, mathangle) may take more than a single argument size.
+Note that for a line segment you should use the horizontal dash symbol (<strong>-</strong>).
 If just a single size if given then <strong>pslegend</strong> will provide reasonable
 arguments to plot the symbol  (See <a class="reference internal" href="#defaults">Defaults</a>).
 Alternatively, combine the required
@@ -322,38 +323,41 @@ not given as comma-separated quantities, <strong>pslegend</strong> will provide 
 <p>To add an example of a legend to a Mercator plot (map.ps) with the given
 specifications, use</p>
 <blockquote>
-<div><p>gmt pslegend -R-10/10/-10/10 -JM6i -F+gazure1 -Dx0.5i/0.5i/5i/3.3i/BL -C0.1i/0.1i -L1.2 -B5f1 &lt;&lt; EOF &gt;&gt; map.ps</p>
-<p># Legend test for pslegend</p>
-<p># G is vertical gap, V is vertical line, N sets # of columns, D draws horizontal line.</p>
-<p># H is header, L is label, S is symbol, T is paragraph text, M is map scale.</p>
-<p>#</p>
-<p>G -0.1i</p>
-<p>H 24 Times-Roman My Map Legend</p>
-<p>D 0.2i 1p</p>
-<p>N 2</p>
-<p>V 0 1p</p>
-<p>S 0.1i c 0.15i p300/12 0.25p 0.3i This circle is hachured</p>
-<p>S 0.1i e 0.15i yellow 0.25p 0.3i This ellipse is yellow</p>
-<p>S 0.1i w 0.15i green 0.25p 0.3i This wedge is green</p>
-<p>S 0.1i f0.1i+l+t 0.25i blue 0.25p 0.3i This is a fault</p>
-<p>S 0.1i - 0.15i - 0.25p,- 0.3i A dashed contour</p>
-<p>S 0.1i v0.1i+a40+e 0.25i magenta 0.25p 0.3i This is a vector</p>
-<p>S 0.1i i 0.15i cyan 0.25p 0.3i This triangle is boring</p>
-<p>V 0 1p</p>
-<p>D 0.2i 1p</p>
-<p>N 1</p>
-<p>M 5 5 600+u f</p>
-<p>G 0.05i</p>
-<p>I SOEST_logo.ras 3i CT</p>
-<p>G 0.05i</p>
-<p>B colors.cpt 0.2i 0.2i</p>
-<p>G 0.05i L 9 4 R Smith et al., &#64;%5%J. Geophys. Res., 99&#64;%%, 2000</p>
-<p>G 0.1i</p>
-<p>P</p>
-<p>T Let us just try some simple text that can go on a few lines.</p>
-<p>T There is no easy way to predetermine how many lines will be required,</p>
-<p>T so we may have to adjust the box height to get the right size box.</p>
-<p>EOF</p>
+<div><div class="highlight-python"><div class="highlight"><pre>gmt pslegend -R-10/10/-10/10 -JM6i -F+gazure1 -Dx0.5i/0.5i/5i/3.3i/BL \
+-C0.1i/0.1i -L1.2 -B5f1 &lt;&lt; EOF &gt;&gt; map.ps
+# Legend test for pslegend
+# G is vertical gap, V is vertical line, N sets # of columns, D draws horizontal line.
+# H is header, L is label, S is symbol, T is paragraph text, M is map scale.
+#
+G -0.1i
+H 24 Times-Roman My Map Legend
+D 0.2i 1p
+N 2
+V 0 1p
+S 0.1i c 0.15i p300/12 0.25p 0.3i This circle is hachured
+S 0.1i e 0.15i yellow 0.25p 0.3i This ellipse is yellow
+S 0.1i w 0.15i green 0.25p 0.3i This wedge is green
+S 0.1i f0.1i+l+t 0.25i blue 0.25p 0.3i This is a fault
+S 0.1i - 0.15i - 0.25p,- 0.3i A dashed contour
+S 0.1i v0.1i+a40+e 0.25i magenta 0.25p 0.3i This is a vector
+S 0.1i i 0.15i cyan 0.25p 0.3i This triangle is boring
+V 0 1p
+D 0.2i 1p
+N 1
+M 5 5 600+u f
+G 0.05i
+I SOEST_logo.ras 3i CT
+G 0.05i
+B colors.cpt 0.2i 0.2i
+G 0.05i L 9 4 R Smith et al., @%5%J. Geophys. Res., 99@%%, 2000
+G 0.1i
+P
+T Let us just try some simple text that can go on a few lines.
+T There is no easy way to predetermine how many lines will be required,
+T so we may have to adjust the box height to get the right size box.
+EOF
+</pre></div>
+</div>
 </div></blockquote>
 </div>
 <div class="section" id="note-on-legend-height">
@@ -437,7 +441,7 @@ such duplication.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="PS.html" >PS</a> &raquo;</li>
 <li class="right">
@@ -455,9 +459,9 @@ such duplication.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

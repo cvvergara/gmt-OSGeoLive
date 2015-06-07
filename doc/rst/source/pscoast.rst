@@ -28,7 +28,7 @@ Synopsis
 [ **-T**\ [**f**\ \|\ **m**][**x**\ ]\ *lon0*/*lat0*/*size*\ [/*info*][\ **:**\ *w*,\ *e*,\ *s*,\ *n*\ **:**][\ **+**\ *gint*\ [/*mint*]] ]
 [ |SYN_OPT-U| ]
 [ |SYN_OPT-V| ]
-[ **-W**\ [*level*/]*pen* ]
+[ **-W**\ [*level*/]\ *pen* ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
 [ |SYN_OPT-bo| ]
@@ -91,6 +91,7 @@ Optional Arguments
 
 **-F**\ *code1,code2,...*\ [**+l**\|\ **L**][**+g**\ *fill*][**+p**\ *pen*][**+r**\|\ **R**\ [*incs*]]
     Select painting or dumping country polygons from the Digital Chart of the World.
+    This is another dataset independent of GSHHG and hence the **-A** and **-D** options do not apply.
     Append one or more comma-separated countries using the 2-character
     ISO 3166-1 alpha-2 convention.  To select a state of a country
     (if available), append .state, e.g, US.TX for Texas.  To specify a
@@ -297,7 +298,7 @@ ocean varies seasonally and inter-annually. There are some areas of
 permanent sea ice. In addition to these time-varying ice-ocean
 boundaries, there are also ice grounding lines where ice goes from
 floating on the sea to sitting on land, and lines delimiting areas of
-rock outcrop. For consistency’s sake, we have used the World Vector
+rock outcrop. For consistency's sake, we have used the World Vector
 Shoreline throughout the world in pscoast, as described in the GMT
 Cookbook Appendix K. Users who need specific boundaries in Antarctica
 should get the Antarctic Digital Database, prepared by the British

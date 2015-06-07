@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>(4) A 3-D perspective mesh plot &mdash; GMT 5.1.1 documentation</title>
+    <title>(4) A 3-D perspective mesh plot &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <script type="text/javascript" src="../../_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="../index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="../index.html" />
     <link rel="up" title="The GMT historical collection" href="../Gallery.html" />
     <link rel="next" title="(5) A 3-D illuminated surface (in bw)" href="ex05.html" />
     <link rel="prev" title="(3) Spectral estimation and xy-plots" href="ex03.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" accesskey="U">The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -99,7 +99,7 @@ gmt grdcontour HI_geoid4.nc -R195/210/18/25 -Jm0.45i -p60/30 -C1 -A5+o -Gd4i -K 
 gmt pscoast -R -J -p -B2 -BNEsw -Gblack -O -K -T209/19.5/1i &gt;&gt; <span class="nv">$ps</span>
 gmt grdview HI_topo4.nc -R195/210/18/25/-6/4 -J -Jz0.34i -p -Czero.cpt -O -K <span class="se">\</span>
 	-N-6+glightgray -Qsm -B2 -Bz2+l<span class="s2">&quot;Topo (km)&quot;</span> -BneswZ -Y2.2i &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s1">&#39;3.25 5.75 H@#awaiian@# R@#idge&#39;</span> | gmt pstext -R0/10/0/10 -Jx1i <span class="se">\</span>
+<span class="nb">echo</span> <span class="s1">&#39;3.25 5.75 H@#awaiian@# R@#idge&#39;</span> <span class="p">|</span> gmt pstext -R0/10/0/10 -Jx1i <span class="se">\</span>
 	-F+f60p,ZapfChancery-MediumItalic+jCB -O &gt;&gt; <span class="nv">$ps</span>
 rm -f zero.cpt
 <span class="c">#</span>
@@ -114,7 +114,7 @@ gmt psbasemap -R -J -p -O -K -T209/19.5/1i --COLOR_BACKGROUND<span class="o">=</
 gmt psscale -R -J -p240/30 -D3.375i/-0.5i/5i/0.3ih -Cgeoid.cpt -I -O -K -Bx2+l<span class="s2">&quot;Geoid (m)&quot;</span> &gt;&gt; <span class="nv">$ps</span>
 gmt grdview HI_topo4.nc -It_intens.nc -R195/210/18/25/-6/4 -J -JZ3.4i -p60/30 -Ctopo.cpt <span class="se">\</span>
 	-O -K -N-6+glightgray -Qc100 -B2 -Bz2+l<span class="s2">&quot;Topo (km)&quot;</span> -BneswZ -Y2.2i &gt;&gt; <span class="nv">$ps</span>
-<span class="nb">echo</span> <span class="s1">&#39;3.25 5.75 H@#awaiian@# R@#idge&#39;</span> | gmt pstext -R0/10/0/10 -Jx1i <span class="se">\</span>
+<span class="nb">echo</span> <span class="s1">&#39;3.25 5.75 H@#awaiian@# R@#idge&#39;</span> <span class="p">|</span> gmt pstext -R0/10/0/10 -Jx1i <span class="se">\</span>
 	-F+f60p,ZapfChancery-MediumItalic+jCB -O &gt;&gt; <span class="nv">$ps</span>
 rm -f *_intens.nc
 </pre></div>
@@ -185,7 +185,7 @@ from Section [sec:example<sub>0</sub>2].</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="../index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="../Gallery.html" >The GMT historical collection</a> &raquo;</li>
 <li class="right">
@@ -203,9 +203,9 @@ from Section [sec:example<sub>0</sub>2].</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

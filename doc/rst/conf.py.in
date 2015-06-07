@@ -128,7 +128,7 @@ html_theme_path = ["_themes"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['_source/_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -177,6 +177,11 @@ html_show_sourcelink = True
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'GMT_Docs'
 
+# Redefine supported_image_types for the HTML builder
+from sphinx.builders.html import StandaloneHTMLBuilder
+StandaloneHTMLBuilder.supported_image_types = [
+  'image/gif', 'image/jpeg', 'image/png', 'image/svg+xml'
+]
 
 # -- Options for LaTeX output --------------------------------------------------
 
@@ -309,7 +314,6 @@ man_pages = [
 ('sphtriangulate', 'sphtriangulate', 'Delaunay or Voronoi construction of spherical lon,lat data', '', 1),
 ('splitxyz', 'splitxyz', 'Split xyz[dh] data tables into individual segments', '', 1),
 ('surface', 'surface', 'Grid table data using adjustable tension continuous curvature splines', '', 1),
-('testapi', 'testapi', 'Test API i/o methods for any data type', '', 1),
 ('trend1d', 'trend1d', 'Fit a [weighted] [robust] polynomial [or Fourier] model for y = f(x) to xy[w] data', '', 1),
 ('trend2d', 'trend2d', 'Fit a [weighted] [robust] polynomial model for z = f(x,y) to xyz[w] data', '', 1),
 ('triangulate', 'triangulate', 'Do optimal (Delaunay) triangulation and gridding of Cartesian table data [method]', '', 1),

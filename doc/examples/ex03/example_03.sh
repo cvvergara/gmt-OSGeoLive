@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 03
-#		$Id: example_03.sh 12380 2013-10-23 19:20:13Z pwessel $
+#		$Id: example_03.sh 13709 2014-11-17 01:39:48Z pwessel $
 #
 # Purpose:	Resample track data, do spectral analysis, and plot
 # GMT progs:	filter1d, fitcircle, gmtinfo, project, sample1d
@@ -112,7 +112,7 @@ gmt gmtconvert -A samp_ship.pg samp_sat.pg -o1,3 | gmt spectrum1d -S256 -D1 -W -
 # plots. For that purpose we often use -Jx1i and specify positions in inches directly:
 #
 gmt psxy spectrum.coh -Bxa1f3p+l"Wavelength (km)" -Bya0.25f0.05+l"Coherency@+2@+" \
-	-BWeSn+g240/255/240 -JX-4il/3.75i -R1/1000/0/1 -P -K -X2.5i -Sc0.07i -Gmagenta \
+	-BWeSn+g240/255/240 -JX-4il/3.75i -R1/1000/0/1 -P -K -X2.5i -Sc0.07i -Gpurple \
 	-Ey/0.5p -Y1.5i > $ps
 echo "3.85 3.6 Coherency@+2@+" | gmt pstext -R0/4/0/3.75 -Jx1i -F+f18p,Helvetica-Bold+jTR \
 	-O -K >> $ps

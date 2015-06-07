@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: surface.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: surface.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -748,6 +748,7 @@ int write_output_surface (struct GMT_CTRL *GMT, struct SURFACE_INFO *C, char *gr
 		/* Must reduce nx,ny by 1 to exclude the extra padding for pixel grids */
 		C->Grid->header->nx--;	C->nx--;
 		C->Grid->header->ny--;	C->ny--;
+		GMT_set_grddim (GMT, C->Grid->header);	/* Reset all integer dimensions and xy_off */
 	}
 	for (i = 0; i < C->nx; i++, index += C->my) {
 		for (j = 0; j < C->ny; j++) {
@@ -1300,7 +1301,7 @@ int rescale_z_values (struct GMT_CTRL *GMT, struct SURFACE_INFO *C)
 
 	C->z_scale = sqrt (ssz / C->npoints);
 
-	if (C->z_scale < GMT_CONV_LIMIT) {
+	if (C->z_scale < GMT_CONV8_LIMIT) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Input data lie exactly on a plane.\n");
 		C->r_z_scale = C->z_scale = 1.0;
 		return (1);	/* Flag to tell the main to just write out the plane */
@@ -1375,7 +1376,7 @@ void interp_breakline (struct GMT_CTRL *GMT, struct SURFACE_INFO *C, struct GMT_
 	size_t n_alloc;
 	double *x = NULL, *y = NULL, *z = NULL, dx, dy, dz, r_dx, r_dy, zmin = DBL_MAX, zmax = -DBL_MAX;
 
-	n_alloc = GMT_CHUNK;
+	n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 	x = GMT_memory (GMT, NULL, n_alloc, double);
 	y = GMT_memory (GMT, NULL, n_alloc, double);
 	z = GMT_memory (GMT, NULL, n_alloc, double);
@@ -1554,7 +1555,7 @@ int GMT_surface_parse (struct GMT_CTRL *GMT, struct SURFACE_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -1568,13 +1569,13 @@ int GMT_surface_parse (struct GMT_CTRL *GMT, struct SURFACE_CTRL *Ctrl, struct G
 				Ctrl->C.value = atof (opt->arg);
 				break;
 			case 'D':
-				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_IN)))
+				if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->D.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -1725,7 +1726,7 @@ int GMT_surface (void *V_API, int mode, void *args)
 
 	GMT_memset (&C, 1, struct SURFACE_INFO);
 	GMT_memset (&GMT_Surface_Global, 1, struct SURFACE_GLOBAL);
-	C.n_alloc = GMT_CHUNK;
+	C.n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 	C.z_scale = C.r_z_scale = 1.0;
 	C.mode_type[0] = 'I';
 	C.mode_type[1] = 'D';	/* D means include data points when iterating */
@@ -1736,12 +1737,11 @@ int GMT_surface (void *V_API, int mode, void *args)
 	if (GMT->common.r.active) {		/* Pixel registration request. Use the trick of offsetting area by x_inc(y_inc) / 2 */
 		wesn[XLO] += Ctrl->I.inc[GMT_X] / 2.0;	wesn[XHI] += Ctrl->I.inc[GMT_X] / 2.0;
 		wesn[YLO] += Ctrl->I.inc[GMT_Y] / 2.0;	wesn[YHI] += Ctrl->I.inc[GMT_Y] / 2.0;
-		one++;	/* Just so we can report correct nx,ny for the grid; internally it is the same until output */
-		/* nx,ny remains the same for now but nodes are in "pixel" position.  Must reset to original wesn and reduce nx,ny by 1 when we write result */
+		/* nx,ny remain the same for now but nodes are in "pixel" position.  Must reset to original wesn and reduce nx,ny by 1 when we write result */
 	}
 	
 	if ((C.Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, wesn, Ctrl->I.inc, \
-		GMT_GRID_NODE_REG, 2, Ctrl->G.file)) == NULL) Return (API->error);	/* Need a pad of 2 */
+		GMT_GRID_NODE_REG, 2, NULL)) == NULL) Return (API->error);	/* Need a pad of 2 */
 	
 	if (C.Grid->header->nx < 4 || C.Grid->header->ny < 4) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: Grid must have at least 4 nodes in each direction (you have %d by %d) - abort.\n", C.Grid->header->nx, C.Grid->header->ny);
@@ -1792,6 +1792,7 @@ int GMT_surface (void *V_API, int mode, void *args)
 	remove_planar_trend (&C);
 	key = rescale_z_values (GMT, &C);
 	
+	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, C.Grid) != GMT_OK) Return (API->error);
 	if (key == 1) {	/* Data lies exactly on a plane; just return the plane grid */
 		GMT_free (GMT, C.data);
 		if (GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, NULL, NULL, 0, 0, C.Grid) == NULL) Return (API->error);

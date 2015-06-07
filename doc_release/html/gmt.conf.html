@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>gmt.conf &mdash; GMT 5.1.1 documentation</title>
+    <title>gmt.conf &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GM" href="GM.html" />
     <link rel="next" title="gmt" href="gmt.html" />
     <link rel="prev" title="GM" href="GM.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" accesskey="U">GM</a> &raquo;</li>
 <li class="right">
@@ -190,13 +190,6 @@ in CMYK but interpolates in RGB).</dd>
 <dd>Path to optional Digital Chart of the World polygon files.</dd>
 <dt><strong>DIR_GSHHG</strong></dt>
 <dd>Path to GSHHG files. Defaults to <strong>$GMT_SHAREDIR</strong>/coast if empty.</dd>
-<dt><strong>DIR_TMP</strong></dt>
-<dd>Session temp dir. Overrides the value of the environment variable <strong>$GMT_TMPDIR</strong>
-(see <a class="reference internal" href="GMT_Docs.html#directory-parameters"><em>Directory parameters</em></a> and <a class="reference internal" href="GMT_Docs.html#isolation-mode"><em>Isolation mode</em></a> in the
-CookBook).</dd>
-<dt><strong>DIR_USER</strong></dt>
-<dd>Session user dir. Overrides the value of the environment variable <strong>$GMT_USERDIR</strong>
-(see <a class="reference internal" href="GMT_Docs.html#directory-parameters"><em>Directory parameters</em></a> in the CookBook).</dd>
 </dl>
 <dl class="docutils" id="font-parameters">
 <dt><strong>FONT</strong></dt>
@@ -339,8 +332,8 @@ various terms have the following purpose:</p>
 <dl class="docutils" id="format-float-map">
 <dt><strong>FORMAT_FLOAT_MAP</strong></dt>
 <dd>Format (C language printf syntax) to be used when plotting double
-precision floating point numbers on maps. For geographic
-coordinates, see <strong>FORMAT_GEO_MAP</strong>. [%.12lg].</dd>
+precision floating point numbers along plot frames and contours.
+For geographic coordinates, see <strong>FORMAT_GEO_MAP</strong>. [%.12lg].</dd>
 </dl>
 <dl class="docutils" id="format-float-out">
 <dt><strong>FORMAT_FLOAT_OUT</strong></dt>
@@ -414,8 +407,8 @@ FFT [auto].
 FFTW can &#8220;learn&#8221; how to optimally compute Fourier transforms on the
 current hardware and OS by computing several FFTs and measuring
 their execution time. This so gained &#8220;Wisdom&#8221; will be stored in and
-reloaded from the file fftw_wisdom_&lt;hostname&gt; in DIR_USER or, if
-DIR_USER is not writable, in the current directory. To use this
+reloaded from the file fftw_wisdom_&lt;hostname&gt; in $GMT_USERDIR or, if
+$GMT_USERDIR is not writable, in the current directory. To use this
 feature append <em>planner_flag</em>, which can be one of <em>measure</em>,
 <em>patient</em>, and <em>exhaustive</em>; see FFTW reference for details. The
 default FFTW planner flag is <em>estimate</em>, i.e., pick a (probably
@@ -449,7 +442,7 @@ constructions.</dd>
 <dd>(<strong>-V</strong>) Determines the level of verbosity used by GMT
 programs. Choose among 6 levels; each level adds to the verbosity of
 the lower levels: <strong>q</strong>uiet, <strong>n</strong>normal (errors and warnings),
-<strong>c</strong>ompatibility warnings, (v)erbose progress reports, (l)ong
+<strong>c</strong>ompatibility warnings, <strong>v</strong>erbose progress reports, <strong>l</strong>ong
 verbose progress reports, <strong>d</strong>ebugging messages [c].</dd>
 </dl>
 <dl class="docutils" id="io-col-separator">
@@ -905,7 +898,7 @@ which yields a somewhat slimmer PostScript file [false].</dd>
 <dt><strong>PS_IMAGE_COMPRESS</strong></dt>
 <dd>Determines if PostScript images are compressed using the Run-Length
 Encoding scheme (rle), Lempel-Ziv-Welch compression (lzw), DEFLATE
-compression (deflate[,level]), or not at all (none) [lzw]. When
+compression (deflate[,level]), or not at all (none) [deflate,5]. When
 specifying deflate, the compression level (1&#8211;9) may optionally be
 appended.</dd>
 </dl>
@@ -1179,7 +1172,7 @@ correspond to 1800 through 1828. [1950].</dd>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GM.html" >GM</a> &raquo;</li>
 <li class="right">
@@ -1197,9 +1190,9 @@ correspond to 1800 through 1828. [1950].</dd>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

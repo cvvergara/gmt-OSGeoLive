@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>grdmath &mdash; GMT 5.1.1 documentation</title>
+    <title>grdmath &mdash; GMT 5.1.2 documentation</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.1.1',
+        VERSION:     '5.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/rtd-sidebar.js"></script>
-    <link rel="top" title="GMT 5.1.1 documentation" href="index.html" />
+    <link rel="top" title="GMT 5.1.2 documentation" href="index.html" />
     <link rel="up" title="GR" href="GR.html" />
     <link rel="next" title="grdpaste" href="grdpaste.html" />
     <link rel="prev" title="grdmask" href="grdmask.html" /> 
@@ -50,7 +50,7 @@
              accesskey="P">previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" accesskey="U">GR</a> &raquo;</li>
 <li class="right">
@@ -181,7 +181,7 @@ only applies to the data files needed by operators <strong>LDIST</strong>,
 </dl>
 <dl class="docutils">
 <dt><strong>-i</strong><em>cols</em>[<strong>l</strong>][<strong>s</strong><em>scale</em>][<strong>o</strong><em>offset</em>][,<em>...</em>] <a class="reference internal" href="gmt.html#icols-full"><em>(more ...)</em></a></dt>
-<dd>Select input columns.</dd>
+<dd>Select input columns (0 is first column).</dd>
 </dl>
 <dl class="docutils">
 <dt><strong>-n</strong>[<strong>b</strong>|<strong>c</strong>|<strong>l</strong>|<strong>n</strong>][<strong>+a</strong>][<strong>+b</strong><em>BC</em>][<strong>+c</strong>][<strong>+t</strong><em>threshold</em>] <a class="reference internal" href="gmt.html#n-full"><em>(more ...)</em></a></dt>
@@ -192,12 +192,12 @@ only applies to the data files needed by operators <strong>LDIST</strong>,
 <dd>Set pixel node registration [gridline]. Only used with <strong>-R</strong> <strong>-I</strong>.</dd>
 </dl>
 <dl class="docutils">
-<dt><strong>-^</strong></dt>
+<dt><strong>-^</strong> or just <strong>-</strong></dt>
 <dd>Print a short message about the syntax of the command, then exits (NOTE: on Windows use just <strong>-</strong>).</dd>
-<dt><strong>+</strong></dt>
+<dt><strong>-+</strong> or just <strong>+</strong></dt>
 <dd>Print an extensive usage (help) message, including the explanation of
 any module-specific option (but not the GMT common options), then exits.</dd>
-<dt><strong>-?</strong></dt>
+<dt><strong>-?</strong> or no arguments</dt>
 <dd>Print a complete usage (help) message, including the explanation of
 options, then exits.</dd>
 <dt><strong>-</strong><strong>-version</strong></dt>
@@ -937,7 +937,7 @@ azimuth and back-azimuths in degrees, respectively. The operators
 set or implied, else they return Cartesian distances. Note: If the current
 <a class="reference internal" href="gmt.conf.html#projection-parameters"><em>PROJ_ELLIPSOID</em></a> is ellipsoidal then
 geodesics are used in calculations of distances, which can be slow.
-You can trade speed with accuracy by changing the algorighm used to
+You can trade speed with accuracy by changing the algorithm used to
 compute the geodesic (see <a class="reference internal" href="gmt.conf.html#projection-parameters"><em>PROJ_GEODESIC</em></a>).</p>
 </li>
 <li><p class="first">The operator <strong>PLM</strong> calculates the associated Legendre polynomial
@@ -976,7 +976,7 @@ directory (i.e., ./LOG).</p>
 <li><p class="first">All functions expecting a positive radius (e.g., <strong>LOG</strong>, <strong>KEI</strong>,
 etc.) are passed the absolute value of their argument. (9) The bitwise
 operators (<strong>BITAND</strong>, <strong>BITLEFT</strong>, <strong>BITNOT</strong>, <strong>BITOR</strong>, <strong>BITRIGHT</strong>,
-<strong>BITTEST</strong>, and <strong>BITXOR</strong>) convert a grid’s single precision values to
+<strong>BITTEST</strong>, and <strong>BITXOR</strong>) convert a grid&#8217;s single precision values to
 unsigned 32-bit ints to perform the bitwise operations. Consequently,
 the largest whole integer value that can be stored in a float grid is
 2^24 or 16,777,216. Any higher result will be masked to fit in the lower
@@ -1197,7 +1197,7 @@ Publishing Corp.</p>
              >previous</a> </li>
   <li><a href="/projects/gmt/wiki/Documentation">Project Home</a>  &raquo;</li>
   
-        <li><a href="index.html">GMT 5.1.1 documentation</a> &raquo;</li>
+        <li><a href="index.html">GMT 5.1.2 documentation</a> &raquo;</li>
 
           <li><a href="GR.html" >GR</a> &raquo;</li>
 <li class="right">
@@ -1215,9 +1215,9 @@ Publishing Corp.</p>
       </ul>
     </div>
 <div class="footer">
-    &copy; Copyright 2014, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
-  Last updated on Mar 01, 2014.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.1.
+    &copy; Copyright 2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe.
+  Last updated on May 04, 2015.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

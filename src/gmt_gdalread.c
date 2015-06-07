@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalread.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_gdalread.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@ int GMT_is_gdal_grid (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
 
 int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTRL *prhs, struct GD_CTRL *Ctrl) {
 	const char	*format = NULL;
-	int	nRGBA = 1;	/* 1 for BSQ; 3 for RGB and 4 for RGBA (If needed, value is updated bellow) */
+	int	nRGBA = 1;	/* 1 for BSQ; 3 for RGB and 4 for RGBA (If needed, value is updated below) */
 	int	complex_mode = 0;	/* 0 real only. 1|2 if complex array is to hold real (1) and imaginary (2) parts */
 	int	nPixelSize, nBands, i, nReqBands = 0;
 	int	anSrcWin[4], xOrigin = 0, yOrigin = 0;
@@ -91,8 +91,6 @@ int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTR
 			nn = atoi(prhs->B.bands);
 		whichBands = GMT_memory (GMT, NULL, nn, int);
 		nReqBands = gdal_decode_columns (GMT, prhs->B.bands, whichBands, nn);
-		free(prhs->B.bands);	/* This is actualy the contents of header->pocket allocated by strdup */
-		prhs->B.bands = NULL;
 	}
 	else if (prhs->f_ptr.active) {
 		/* Here we are going to read to a grid so if no band info was provided, default to read only the
@@ -343,7 +341,7 @@ int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTR
 	}
 
 	/* ------ compute two vectors indices that will be used inside loops below --------- */
-	/* In the "Preview" mode those guys bellow are different and what we need is the BufSize */
+	/* In the "Preview" mode those guys below are different and what we need is the BufSize */
 	if (jump)
 		nX = nBufXSize,	nY = nBufYSize;
 	else
@@ -369,7 +367,7 @@ int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTR
 		/* If we didn't computed it yet, its time to do it now */
 		if (got_R) ComputeRasterMinMax(GMT, tmp, hBand, adfMinMax, nXSize, nYSize, z_min, z_max);
 
-		/* In the "Preview" mode those guys bellow are different and what we need is the BufSize */
+		/* In the "Preview" mode those guys below are different and what we need is the BufSize */
 		if (jump) {
 			nXSize = nBufXSize;
 			nYSize = nBufYSize;
@@ -500,6 +498,16 @@ int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTR
 				break;
 			default:
 				CPLAssert( false );
+		}
+	}
+
+	if (Ctrl->Float.active && !isnan(prhs->N.nan_value)) {
+		for (m = startRow, mm = 0; m < nYSize + startRow ; m++, mm++) {
+			nn = (pad+m)*(nXSize_withPad) + startColPos;
+			for (n = 0; n < nXSize; n++) {
+				if (Ctrl->Float.data[nn] == prhs->N.nan_value) Ctrl->Float.data[nn] = (float)NAN;
+				nn += incStep;
+			}
 		}
 	}
 
@@ -833,10 +841,12 @@ int populate_metadata (struct GMT_CTRL *GMT, struct GD_CTRL *Ctrl, char *gdal_fi
 	Ctrl->Corners.LR[0] = xy_c[0];
 	Ctrl->Corners.LR[1] = xy_c[1];
 
+	/* Must check that geog grids have not y_max > 90.0 We'll be eps tollerant ... but how do I know that it's geog?*/
+
 	/* --------------------------------------------------------------------------------------
 	 * Record Geographical corners (if they exist)
 	 * -------------------------------------------------------------------------------------- */
-	if(!got_R) {
+	if (!got_R) {
 		if (!GMT_is_dnan(xy_geo[0][0])) {
 			Ctrl->GEOGCorners.LL[0] = xy_geo[0][0]; Ctrl->GEOGCorners.LL[1] = xy_geo[0][1];
 			Ctrl->GEOGCorners.UL[0] = xy_geo[1][0]; Ctrl->GEOGCorners.UL[1] = xy_geo[1][1];
@@ -1077,6 +1087,7 @@ void ComputeRasterMinMax(struct GMT_CTRL *GMT, unsigned char *tmp, GDALRasterBan
 int gdal_decode_columns (struct GMT_CTRL *GMT, char *txt, int *whichBands, unsigned int n_col) {
 	unsigned int n = 0, i, start, stop, pos = 0;
 	char p[GMT_BUFSIZ];
+	GMT_UNUSED(GMT);
 
 	while ((GMT_strtok (txt, ",", &pos, p))) {
 		if (strchr (p, '-'))

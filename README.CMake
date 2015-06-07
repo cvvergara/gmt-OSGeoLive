@@ -1,7 +1,7 @@
 ////
-$Id: README.CMake 12822 2014-01-31 23:39:56Z remko $
+$Id: README.CMake 13846 2014-12-28 21:46:54Z pwessel $
 
-Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis
+Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis
 and F. Wobbe. See LICENSE.TXT file for copying and redistribution conditions.
 
 Contact info: http://gmt.soest.hawaii.edu/
@@ -20,7 +20,8 @@ Build and runtime prerequisites
 
 1. Software:
   You need Ghostscript, CMake (>=2.8.5), netCDF (>=4.0, netCDF-4/HDF5
-  support mandatory).  Optionally install Sphinx, PCRE, GDAL, and FFTW.
+  support mandatory).  Optionally install Sphinx, PCRE, GDAL, and FFTW (single
+  precision version).
 2. Data:
   You need gshhg (>=2.2.2); optionally install dcw-gmt (>=1.0.5)
 
