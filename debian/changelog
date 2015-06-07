@@ -1,4 +1,4 @@
-gmt (5.1.2+dfsg-1) UNRELEASED; urgency=medium
+gmt (5.1.2+dfsg1-1) UNRELEASED; urgency=medium
 
   [ Francesco Paolo Lovergine ]
   * New upstream major release: build system moved to cmake.
@@ -36,7 +36,7 @@ gmt (5.1.2+dfsg-1) UNRELEASED; urgency=medium
   * Strip RPATH from binary & libraries.
   * Also exclude prebuilt documentation and manpages from repacked source.
 
- -- Bas Couwenberg <sebastic@debian.org>  Fri, 05 Jun 2015 18:12:12 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Sun, 07 Jun 2015 12:06:29 +0200
 
 gmt (4.5.12-1) unstable; urgency=medium
 
