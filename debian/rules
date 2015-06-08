@@ -71,6 +71,10 @@ override_dh_auto_install:
 	# Remove +x 
 	#find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
 
+	# Remove executable bit from shell includes
+	chmod -x debian/tmp/usr/share/gmt/tools/gmt_functions.sh \
+	         debian/tmp/usr/share/gmt/tools/gmt_aliases.csh
+
 	# Fix bash-completion installation
 	mkdir -p debian/tmp/usr/share/bash-completion/completions
 	mv debian/tmp/usr/etc/bash_completion.d/gmt debian/tmp/usr/share/bash-completion/completions
