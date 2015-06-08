@@ -121,7 +121,9 @@ Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
 Package: gmt-doc
 Architecture: all
 Section: doc
-Depends: ${misc:Depends}
+Depends: libjs-jquery,
+         libjs-underscore,
+         ${misc:Depends}
 Suggests: www-browser
 Conflicts: gmt (<< 4.5.7-1~)
 Description: HTML documentation for GMT, the Generic Mapping Tools

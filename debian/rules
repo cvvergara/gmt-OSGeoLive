@@ -75,6 +75,10 @@ override_dh_auto_install:
 	chmod -x debian/tmp/usr/share/gmt/tools/gmt_functions.sh \
 	         debian/tmp/usr/share/gmt/tools/gmt_aliases.csh
 
+	# Remove embedded sphinx copies of JS libraries in favor of packaged ones
+	rm -f debian/tmp/usr/share/doc/gmt/html/_static/jquery.js \
+	      debian/tmp/usr/share/doc/gmt/html/_static/underscore.js
+
 	# Fix bash-completion installation
 	mkdir -p debian/tmp/usr/share/bash-completion/completions
 	mv debian/tmp/usr/etc/bash_completion.d/gmt debian/tmp/usr/share/bash-completion/completions
