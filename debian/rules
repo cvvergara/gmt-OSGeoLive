@@ -91,6 +91,13 @@ override_dh_auto_install:
 	        debian/tmp/usr/lib/*/lib*.so.*.* \
 	        debian/tmp/usr/bin/gmt
 
+	# Recompress the manpages to not use timestamped gzip
+	for section in 1 3 5; do\
+		for manpage in debian/tmp/usr/share/doc/gmt/man/man$${section}/*.$${section}.gz; do \
+			gunzip $${manpage} && gzip -n `echo $${manpage} | sed 's/.gz$$//'` ; \
+		done; \
+	done
+
 #	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
 #	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
 	
