@@ -25,7 +25,8 @@ Homepage: http://gmt.soest.hawaii.edu/projects/gmt
 
 Package: gmt
 Architecture: any
-Depends: ${shlibs:Depends},
+Depends: gmt-common (= ${source:Version}),
+         ${shlibs:Depends},
          ${misc:Depends}
 Recommends: gmt-gshhs-data | gmt-gshhs-low,
             gmt-doc,
@@ -46,6 +47,23 @@ Description: Generic Mapping Tools
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
  boundaries.
+
+Package: gmt-common
+Architecture: all
+Depends: ${misc:Depends}
+Description: Generic Mapping Tools - Architecture-independent files
+ GMT is a collection of tools that allow users to manipulate
+ (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
+ projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
+ ranging from simple x-y plots through contour maps to artificially illuminated
+ surfaces and 3-D perspective views in black and white, gray tone, hachure
+ patterns, and 24-bit color.
+ .
+ GMT supports many common map projections plus linear, log, and power scaling,
+ and comes with support data such as coastlines, rivers, and political
+ boundaries.
+ .
+ This package contains the architecture-independent files for GMT.
 
 Package: libgmt5
 Architecture: any

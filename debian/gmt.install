@@ -3,5 +3,3 @@ usr/bin/gmtlogo
 usr/bin/gmtswitch
 usr/bin/gmt_shell_functions.sh
 usr/bin/isogmt
-usr/share/bash-completion
-usr/share/gmt
