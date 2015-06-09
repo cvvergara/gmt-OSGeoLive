@@ -21,8 +21,8 @@ DESTDIR	= $(CURDIR)/debian/tmp
 CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
              -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
              -DCMAKE_INSTALL_PREFIX=/usr \
-             -DDCW_ROOT=/usr/share/gmt/dcw \
-             -DGSHHG_ROOT=/usr/share/gmt/gshhg \
+             -DDCW_ROOT=/usr/share/gmt-dcw \
+             -DGSHHG_ROOT=/usr/share/gmt-gshhg \
              -DNETCDF_ROOT=/usr \
              -DFFTW3_ROOT=/usr \
              -DGDAL_ROOT=/usr \
