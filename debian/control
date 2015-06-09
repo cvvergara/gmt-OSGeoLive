@@ -41,11 +41,11 @@ Description: Generic Mapping Tools
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
- patterns, and 24-bit color. 
+ patterns, and 24-bit color.
  .
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
- boundaries. 
+ boundaries.
 
 Package: libgmt5
 Architecture: any
@@ -58,7 +58,7 @@ Description: Generic Mapping Tools Library
  (including filtering, trend fitting, gridding, projecting, etc.) and
  producing Encapsulated PostScript File (EPS) illustrations ranging from
  simple x-y plots via contour maps to artificially illuminated surfaces
- and 3-D perspective views. 
+ and 3-D perspective views.
  .
  This package contains the GMT library.
 
@@ -75,7 +75,7 @@ Description: Generic Mapping Tools Library - Development files
  (including filtering, trend fitting, gridding, projecting, etc.) and
  producing Encapsulated PostScript File (EPS) illustrations ranging from
  simple x-y plots via contour maps to artificially illuminated surfaces
- and 3-D perspective views. 
+ and 3-D perspective views.
  .
  This package contains the files used for development of programs that
  use the GMT libraries (headers).
@@ -91,11 +91,11 @@ Description: PDF docs for GMT, the Generic Mapping Tools
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
- patterns, and 24-bit color. 
+ patterns, and 24-bit color.
  .
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
- boundaries. 
+ boundaries.
  .
  This package contains documentation in PDF format.
 
@@ -110,11 +110,11 @@ Description: Tutorial for GMT, the Generic Mapping Tools (PDF)
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
- patterns, and 24-bit color. 
+ patterns, and 24-bit color.
  .
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
- boundaries. 
+ boundaries.
  .
  This package contains the GMT tutorial in PDF format.
 
@@ -132,13 +132,13 @@ Description: HTML documentation for GMT, the Generic Mapping Tools
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
- patterns, and 24-bit color. 
+ patterns, and 24-bit color.
  .
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
- boundaries. 
+ boundaries.
  .
- This package contains the HTML documentation for GMT, consisting of 
+ This package contains the HTML documentation for GMT, consisting of
    - the tutorial
    - the cookbook and technical reference
    - the manpages converted to HTML.
@@ -154,11 +154,11 @@ Description: Example scripts illustrating the use of GMT
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
  ranging from simple x-y plots through contour maps to artificially illuminated
  surfaces and 3-D perspective views in black and white, gray tone, hachure
- patterns, and 24-bit color. 
+ patterns, and 24-bit color.
  .
  GMT supports many common map projections plus linear, log, and power scaling,
  and comes with support data such as coastlines, rivers, and political
- boundaries. 
+ boundaries.
  .
  This package contains example scripts illustrating the use of GMT.
 
