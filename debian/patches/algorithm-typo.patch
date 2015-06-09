@@ -1,0 +1,25 @@
+Description: Fix 'algoritm' typo, replace with 'algorithm'.
+Author: Bas Couwenberg <sebastic@debian.org>
+
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -11534,7 +11534,7 @@
+ 	* psxyz.c:	Vector attributes can now be scaled down proportional to length
+ 
+ 1992-02-07
+-	* xyz2grd.c:	Now use same algoritm as block_eman to get i,j
++	* xyz2grd.c:	Now use same algorithm as block_eman to get i,j
+ 
+ 1992-02-07
+ 	* grd2xyz.c:	Now prints out correct x/y for pixel files
+--- a/src/triangulate.c
++++ b/src/triangulate.c
+@@ -280,7 +280,7 @@ int GMT_triangulate (void *V_API, int mo
+ 	/*---------------------------- This is the triangulate main code ----------------------------*/
+ 
+ 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
+-	GMT_Report (API, GMT_MSG_LONG_VERBOSE, "%s triangulation algoritm selected\n", tri_algorithm[GMT->current.setting.triangulate]);
++	GMT_Report (API, GMT_MSG_LONG_VERBOSE, "%s triangulation algorithm selected\n", tri_algorithm[GMT->current.setting.triangulate]);
+ 	
+ 	if (Ctrl->G.active) {
+ 		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \

@@ -1,2 +1,8 @@
 disable-triangle.patch
 disable-examples.patch
+endianness-typo.patch
+software-typo.patch
+output-typo.patch
+algorithm-typo.patch
+length-typo.patch
+palette-typo.patch

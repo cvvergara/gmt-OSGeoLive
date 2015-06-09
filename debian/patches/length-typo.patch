@@ -1,0 +1,47 @@
+Description: Fix 'lenght' typo, replace with 'length'.
+Author: Bas Couwenberg <sebastic@debian.org>
+
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -402,7 +402,7 @@
+ 2013-03-26	pwessel
+ 	* psxy[z]:		The -S= geovector now has modifiers +o<plon>/<plat> for
+ 				specifying small circle geovectors; input is then just
+-				lenght in km. Also +q to say input is rotation angles 1 and 2.
++				length in km. Also +q to say input is rotation angles 1 and 2.
+ 
+ 2013-03-25	pwessel
+ 	* greenspline.c:	Enhanced -Cv option to set desired level of variance explained.
+--- a/doc/rst/source/sphtriangulate.rst
++++ b/doc/rst/source/sphtriangulate.rst
+@@ -84,7 +84,7 @@ Optional Arguments
+ 
+ **-T**
+     Write the unique arcs of the construction [Default writes fillable
+-    triangles or polygons]. When used with **-A** we store arc lenght in
++    triangles or polygons]. When used with **-A** we store arc length in
+     the segment header in chosen unit (see **-L**).
+ 
+ .. |Add_-V| unicode:: 0x20 .. just an invisible code
+--- a/src/gmt_support.c
++++ b/src/gmt_support.c
+@@ -9420,7 +9420,7 @@ int GMT_init_custom_symbol (struct GMT_C
+ 				}
+ 			}
+ 			else {
+-				for (k = 0; k < head->n_required; k++) head->type[k] = GMT_IS_DIMENSION;	/* Default is lenghts */
++				for (k = 0; k < head->n_required; k++) head->type[k] = GMT_IS_DIMENSION;	/* Default is lengths */
+ 			}
+ 			continue;
+ 		}
+--- a/src/gmt_vector.c
++++ b/src/gmt_vector.c
+@@ -1270,7 +1270,7 @@ uint64_t gmt_resample_path_spherical (st
+ 	}
+ 	
+ 	if (mode < GMT_TRACK_SAMPLE_FIX) {
+-		if (GMT->current.map.dist[GMT_MAP_DIST].arc)	/* Gave an increment in arc lenght (degree, min, sec) */
++		if (GMT->current.map.dist[GMT_MAP_DIST].arc)	/* Gave an increment in arc length (degree, min, sec) */
+ 			step_out /= GMT->current.map.dist[GMT_MAP_DIST].scale;	/* Get degrees */
+ 		else	/* Gave increment in spatial distance (km, meter, etc.) */
+ 			step_out = (step_out / GMT->current.map.dist[GMT_MAP_DIST].scale) / GMT->current.proj.DIST_M_PR_DEG;	/* Get degrees */
