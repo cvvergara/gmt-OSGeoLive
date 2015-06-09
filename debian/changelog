@@ -10,6 +10,7 @@ gmt (5.1.0-0~1) experimental; urgency=low
   * Octave/mex stuff now lives in its own repository and should go into 
     a separate source package. So, dropped octave-gmt ATM.
   * Updated list of b-d.
+  * Set Vcs-* fields to canonical forms.
 
  -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 27 Nov 2013 13:27:48 +0100
 
