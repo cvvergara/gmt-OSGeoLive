@@ -2,22 +2,218 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: GMT
 Upstream-Contact: Paul Wessel <wessel@soest.hawaii.edu> and Walter Smith <wsmith@nodc.noaa.gov>
 Source: http://gmt.soest.hawaii.edu/
-
-File: *
-Copyright: 1991-2011 P.Wessel & W.H.F.Smith
-License: GPL-3+ or LGPL3+
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; version 2 or any later version.
+Comment: The upstream source is repacked to exclude the non-free triangle source.
  .
- This program is distributed in the hope that it will be useful,
+ The license & copyright of the excluded files was:
+ .
+  Files: src/triangle.c
+   src/triangle.h
+  Copyright: 1993, 1995, 1997-1998, 2002, 2005, Jonathan Richard Shewchuk
+  License: Triangle
+   This program may be freely redistributed under the condition that the
+   copyright notices (including this entire header and the copyright
+   notice printed when the `-h' switch is selected) are not removed, and
+   no compensation is received.  Private, research, and institutional
+   use is free.  You may distribute modified versions of this code UNDER
+   THE CONDITION THAT THIS CODE AND ANY MODIFICATIONS MADE TO IT IN THE
+   SAME FILE REMAIN UNDER COPYRIGHT OF THE ORIGINAL AUTHOR, BOTH SOURCE
+   AND OBJECT CODE ARE MADE FREELY AVAILABLE WITHOUT CHARGE, AND CLEAR
+   NOTICE IS GIVEN OF THE MODIFICATIONS.  Distribution of this code as
+   part of a commercial system is permissible ONLY BY DIRECT ARRANGEMENT
+   WITH THE AUTHOR.  (If you are not directly supplying this code to a
+   customer, and you are instead telling them how they can obtain it for
+   free, then you are not required to make any arrangement with me.)
+ .
+ The prebuilt documentation and manpages are also excluded.
+ .
+Files-Excluded: src/triangle.c
+ src/triangle.h
+ doc_release/*
+ man_release/*
+
+Files: *
+Copyright: 1991-2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+           1991-2015, T. Henstock
+           1996-2012, G. Patau
+License: LGPL-3+
+
+Files: doc/rst/themes/rtd/static/rtd-sidebar.js
+Copyright: 2007-2014, the Sphinx team
+License: BSD-2-Clause
+
+Files: src/getopt.c
+ src/getopt.h
+Copyright: 1987, 1993-1994, The Regents of the University of California
+License: BSD-4-Clause
+
+Files: src/s_rint.c
+ src/s_rint.h
+Copyright: 1993, Sun Microsystems, Inc.
+License: SunPro
+ Developed at SunPro, a Sun Microsystems, Inc. business.
+ Permission to use, copy, modify, and distribute this
+ software is freely granted, provided that this notice
+ is preserved.
+
+Files: src/compat/inttypes.h
+ src/compat/stdint.h
+Copyright: 2006-2008, Alexander Chemeris
+License: BSD-2-Clause
+
+Files: src/compat/pstdint.h
+Copyright: 2005-2011, Paul Hsieh
+License: BSD-3-Clause
+
+Files: src/compat/qsort.c
+Copyright: 1991-1992, 1996-1997, 1999, 2004, Free Software Foundation, Inc
+License: LGPL-2.1+
+
+Files: src/kiss_fft/_kiss_fft_guts.h
+ src/kiss_fft/kiss_fft.c
+ src/kiss_fft/kiss_fftnd.c
+Copyright: 2003-2010, Mark Borgerding
+License: BSD-3-Clause
+
+Files: src/segy/segy.h
+ src/segy/segy_io.c
+ src/segy/segy_io.h
+ src/segy/segyreel.h
+Copyright: disclaimed
+License: public-domain
+ From PASSCAL code base which is in the public domain
+ http://www.passcal.nmt.edu/
+
+Files: debian/*
+Copyright: 1999-2007, Torsten Landschoff <torsten@debian.org>
+           2007-2014, Francesco Paolo Lovergine <frankie@debian.org>
+License: GPL-3+
+
+License: GPL-3+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
  .
- On Debian GNU/Linux systems, the complete text of the GNU General
- Public License can be found in `/usr/share/common-licenses/GPL-3'. 
- On Debian GNU/Linux systems, the complete text of the GNU Lesser General
- Public License can be found in `/usr/share/common-licenses/LGPL-3'. If 
- you got the source archive you will find the license in the file COPYING 
- in the top directory.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+License: LGPL-3+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public License
+ version 3 can be found in "/usr/share/common-licenses/LGPL-3".
+
+License: LGPL-2.1+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public License
+ can be found in `/usr/share/common-licenses/LGPL-2.1'.
+
+License: BSD-2-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ .
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ .
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-3-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+  * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+  * Neither the author nor the names of any contributors may be used to endorse
+    or promote products derived from this software without specific prior
+    written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-4-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. All advertising materials mentioning features or use of this software
+    must display the following acknowledgement:
+      This product includes software developed by the University of
+      California, Berkeley and its contributors.
+ 4. Neither the name of the University nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+

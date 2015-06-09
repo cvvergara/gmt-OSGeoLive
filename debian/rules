@@ -8,6 +8,8 @@ else
    CFLAGS += -O2
 endif
 
+CFLAGS += $(CPPFLAGS)
+
 ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
    DH_VERBOSE=1
    export DH_VERBOSE
@@ -17,49 +19,77 @@ BUILDDIR = $(CURDIR)/debian/build
 DESTDIR	= $(CURDIR)/debian/tmp
 
 CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-			-DDCW_ROOT=/usr/share/gmt/dcw \
-			-DGSHHG_ROOT=/usr/share/gmt/gshhg \
-			-DNETCDF_ROOT=/usr \
-			-DFFTW3_ROOT=/usr \
-			-DGDAL_ROOT=/usr \
-			-DPCRE_ROOT=/usr \
-			-DFLOCK=on \
-			-DGMT_INSTALL_MODULE_LINKS=off \
-			-DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=off \
-			-DLICENSE_RESTRICTED=LGPL 
+             -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
+             -DCMAKE_INSTALL_PREFIX=/usr \
+             -DDCW_ROOT=/usr/share/gmt/dcw \
+             -DGSHHG_ROOT=/usr/share/gmt/gshhg \
+             -DNETCDF_ROOT=/usr \
+             -DFFTW3_ROOT=/usr \
+             -DGDAL_ROOT=/usr \
+             -DPCRE_ROOT=/usr \
+             -DFLOCK=on \
+             -DGMT_INSTALL_MODULE_LINKS=off \
+             -DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=off \
+             -DLICENSE_RESTRICTED=LGPL 
 
 %:
 	dh $@ --buildsystem cmake \
 		--sourcedirectory=$(CURDIR) --builddirectory=$(BUILDDIR) \
 		--parallel
 
-override_dh_auto_build:
+override_dh_auto_clean:
+	rm -rf $(BUILDDIR) $(DESTDIR)
+	dh_auto_clean
+
+override_dh_auto_build-arch:
 	mkdir $(BUILDDIR) || true 
 	cd $(BUILDDIR) && cmake $(CMAKE_OPTS) ../..
 	$(MAKE) -C $(BUILDDIR) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 
 
+override_dh_auto_build-indep:
+	$(MAKE) -C $(BUILDDIR) docs_man docs_html docs_pdf
+
 override_dh_auto_install:
 	DESTDIR=$(DESTDIR) $(MAKE) -C $(BUILDDIR) install
 	# remove duplicated stuff
-	rm -rf debian/tmp/usr/share/conf \
-		debian/tmp/usr/share/cpt \
-		debian/tmp/usr/share/custom \
-		debian/tmp/usr/share/dbase \
-		debian/tmp/usr/share/mgd77 \
-		debian/tmp/usr/share/mgg \
-		debian/tmp/usr/share/pattern \
-		debian/tmp/usr/share/pslib \
-		debian/tmp/usr/share/time \
-		debian/tmp/usr/share/tools \
-		debian/tmp/usr/share/VERSION \
-		debian/tmp/usr/share/x2sys
+#	rm -rf debian/tmp/usr/share/conf \
+#	       debian/tmp/usr/share/cpt \
+#	       debian/tmp/usr/share/custom \
+#	       debian/tmp/usr/share/dbase \
+#	       debian/tmp/usr/share/mgd77 \
+#	       debian/tmp/usr/share/mgg \
+#	       debian/tmp/usr/share/pattern \
+#	       debian/tmp/usr/share/pslib \
+#	       debian/tmp/usr/share/time \
+#	       debian/tmp/usr/share/tools \
+#	       debian/tmp/usr/share/VERSION \
+#	       debian/tmp/usr/share/x2sys
 	dh_auto_install
+
 	# Uncompress examples stuff 
-	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
+	#find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.gz" -exec gunzip {} \;
 	# Remove +x 
-	find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
+	#find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
+
+	# Remove executable bit from shell includes
+	chmod -x debian/tmp/usr/share/gmt/tools/gmt_functions.sh \
+	         debian/tmp/usr/share/gmt/tools/gmt_aliases.csh
+
+	# Remove embedded sphinx copies of JS libraries in favor of packaged ones
+	rm -f debian/tmp/usr/share/doc/gmt/html/_static/jquery.js \
+	      debian/tmp/usr/share/doc/gmt/html/_static/underscore.js
+
+	# Fix bash-completion installation
+	mkdir -p debian/tmp/usr/share/bash-completion/completions
+	mv debian/tmp/usr/etc/bash_completion.d/gmt debian/tmp/usr/share/bash-completion/completions
+	rm -rf debian/tmp/usr/etc/bash_completion.d
+	rmdir debian/tmp/usr/etc/
+
+	# Strip RPATH
+	chrpath --delete \
+	        debian/tmp/usr/lib/*/gmt/plugins/supplements.so \
+	        debian/tmp/usr/lib/*/lib*.so.*.* \
+	        debian/tmp/usr/bin/gmt
 
 #	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
 #	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
@@ -97,7 +127,10 @@ override_dh_auto_install:
 #	done
 #	rm -rf $(DESTDIR)/usr/share/gmt/man
 	
+override_dh_install:
+	dh_install --list-missing
 
-override_dh_auto_clean:
-	rm -rf $(BUILDDIR) $(DESTDIR)
-	dh_auto_clean
+override_dh_compress:
+	# Don't compress the pdf files needed for the gmt-doc-pdf package
+	dh_compress -X.pdf
+

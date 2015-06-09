@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
-*    $Id: gmtvector.c 12822 2014-01-31 23:39:56Z remko $
+*    $Id: gmtvector.c 13846 2014-12-28 21:46:54Z pwessel $
 *
-*	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+*	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 *	See LICENSE.TXT file for copying and redistribution conditions.
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU Lesser General Public License as published by
@@ -417,7 +417,7 @@ void mean_vector (struct GMT_CTRL *GMT, struct GMT_DATASET *D, bool cartesian, d
 	GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "%g%% confidence ellipse on mean position: Major axis = %g Minor axis = %g Major axis azimuth = %g\n", 100.0 * conf, E[1], E[2], E[0]);
 }
 
-void GMT_make_rot2d_matrix (struct GMT_CTRL *GMT, double angle, double R[3][3])
+void gmt_make_rot2d_matrix (double angle, double R[3][3])
 {
 	double s, c;
 	GMT_memset (R, 9, double);
@@ -469,7 +469,7 @@ int GMT_gmtvector (void *V_API, int mode, void *args)
 	if (Ctrl->T.mode == DO_ROT3D)	/* Spherical 3-D rotation */
 		GMT_make_rot_matrix (GMT, Ctrl->T.par[0], Ctrl->T.par[1], Ctrl->T.par[2], R);
 	else if (Ctrl->T.mode == DO_ROT2D)	/* Cartesian 2-D rotation */
-		GMT_make_rot2d_matrix (GMT, Ctrl->T.par[2], R);
+		gmt_make_rot2d_matrix (Ctrl->T.par[2], R);
 	else if (!(Ctrl->T.mode == DO_NOTHING || Ctrl->T.mode == DO_POLE)) {	/* Will need secondary vector, get that first before input file */
 		n = decode_vector (GMT, Ctrl->S.arg, vector_2, Ctrl->C.active[GMT_IN], Ctrl->E.active);
 		if (n == 0) Return (EXIT_FAILURE);
@@ -594,7 +594,7 @@ int GMT_gmtvector (void *V_API, int mode, void *args)
 						GMT_matrix_vect_mult (GMT, 3U, R, vector_1, vector_3);
 						break;
 					case DO_ROTVAR2D:	/* Rotate a 2-D vector about the z_axis */
-						GMT_make_rot2d_matrix (GMT, vector_1[0], R);
+						gmt_make_rot2d_matrix (vector_1[0], R);
 						GMT_matrix_vect_mult (GMT, 2U, R, vector_2, vector_3);
 						break;
 					case DO_ROTVAR3D:	/* Rotate a 3-D vector about an arbitrary pole encoded in 3x3 matrix R */

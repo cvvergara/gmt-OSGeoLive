@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: GMT_App_F_symbol.sh 11490 2013-05-16 06:26:21Z pwessel $
+#	$Id: GMT_App_F_symbol.sh 14065 2015-02-12 18:49:27Z pwessel $
 #
 #	Makes the octal code charts in Appendix F
 #
@@ -94,11 +94,11 @@ EOF
 
 $AWK -f tt.awk tt.txt > tt.d
 gmt psxy -R0/9/20/32 -J -O -K -Glightgreen -Y-2.58i << EOF >> GMT_App_F_symbol.ps
->
-1	21
-2	21
-2	20
-1	20
+#> The Euro symbol now goes here so I have commented out this green box
+#1	21
+#2	21
+#2	20
+#1	20
 >
 8	32
 9	32

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sphinterpolate.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: sphinterpolate.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 2008-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2008-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -147,13 +147,13 @@ int GMT_sphinterpolate_parse (struct GMT_CTRL *GMT, struct SPHINTERPOLATE_CTRL *
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
 
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -268,6 +268,8 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args)
 		Return (API->error);
 	}
 
+	GMT->session.min_meminc = GMT_INITIAL_MEM_ROW_ALLOC;	/* Start by allocating a 32 Mb chunk */ 
+
 	GMT_malloc4 (GMT, xx, yy, zz, ww, GMT_CHUNK, &n_alloc, double);
 	n = 0;
 	w_min = DBL_MAX;	w_max = -DBL_MAX;
@@ -299,6 +301,7 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args)
 
 	n_alloc = n;
 	GMT_malloc4 (GMT, xx, yy, zz, ww, 0, &n_alloc, double);
+	GMT->session.min_meminc = GMT_MIN_MEMINC;		/* Reset to the default value */
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Do spherical interpolation using %" PRIu64 " points\n", n);
 
@@ -310,7 +313,7 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args)
 	/* Set up output grid */
 	
 	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
-		GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Evaluate output grid\n");
 	surfd = GMT_memory (GMT, NULL, Grid->header->nm, double);

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_shore.c 12864 2014-02-06 17:32:36Z pwessel $
+ *	$Id: gmt_shore.c 13957 2015-01-21 12:45:26Z fwobbe $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
  *
  */
 
-#define GSHHG_SITE "ftp://ftp.soest.hawaii.edu/pwessel/gshhg/"
+#define GSHHG_SITE "ftp://ftp.soest.hawaii.edu/gshhg/"
 
 #define RIVERLAKE	5				/* Fill array id for riverlakes */
 #define get_level(arg) (((arg) >> 6) & 7)		/* Extract level from bit mask */
@@ -241,11 +241,15 @@ char *gmt_shore_getpathname (struct GMT_CTRL *GMT, char *stem, char *path) {
 	/* 1. Check in GMT->session.GSHHGDIR */
 
 	if (GMT->session.GSHHGDIR) {
-		sprintf (path, "%s/%s%s", GMT->session.GSHHGDIR, stem, GSHHG_EXT);
+		sprintf (path, "%s/%s%s", GMT->session.GSHHGDIR, stem, ".nc");
 		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "1. GSHHG: GSHHGDIR set, trying %s\n", path);
-		if ( access (path, R_OK) == 0 && gshhg_require_min_version (path, version) ) {
-			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "1. GSHHG: OK, could access %s\n", path);
-			return (path);
+		if ( access (path, F_OK) == 0) {	/* File exists here */
+			if ( access (path, R_OK) == 0 && gshhg_require_min_version (path, version) ) {
+				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "1. GSHHG: OK, could access %s\n", path);
+				return (path);
+			}
+			else
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Found %s but cannot read it due to wrong permissions\n", path);
 		}
 		else {
 			/* remove reference to invalid GMT->session.GSHHGDIR but don't free
@@ -258,46 +262,58 @@ char *gmt_shore_getpathname (struct GMT_CTRL *GMT, char *stem, char *path) {
 
 	/* 2. First check for coastline.conf */
 
-	if (GMT_getsharepath (GMT, "conf", "coastline", ".conf", path, R_OK) || GMT_getsharepath (GMT, "coast", "coastline", ".conf", path, R_OK)) {
+	if (GMT_getsharepath (GMT, "conf", "coastline", ".conf", path, F_OK) || GMT_getsharepath (GMT, "coast", "coastline", ".conf", path, F_OK)) {
 
 		/* We get here if coastline.conf exists - search among its directories for the named file */
 
 		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: coastline.conf found at %s\n", path);
-		fp = fopen (path, "r");
-		while (fgets (dir, GMT_BUFSIZ, fp)) {	/* Loop over all input lines until found or done */
-			if (dir[0] == '#' || dir[0] == '\n') continue;	/* Comment or blank */
-			GMT_chop (dir);		/* Chop off LF or CR/LF */
-			sprintf (path, "%s/%s%s", dir, stem, GSHHG_EXT);
-			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: Trying %s\n", path);
-			if ( gshhg_require_min_version (path, version) ) {
-				fclose (fp);
-				/* update invalid GMT->session.GSHHGDIR */
-				if (GMT->session.GSHHGDIR) free ((void *)GMT->session.GSHHGDIR);
-				GMT->session.GSHHGDIR = strdup (dir);
-				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: OK, could access %s\n", path);
-				return (path);
+		if ( access (path, R_OK) == 0) {	/* File can be read */
+			fp = fopen (path, "r");
+			while (fgets (dir, GMT_BUFSIZ, fp)) {	/* Loop over all input lines until found or done */
+				if (dir[0] == '#' || dir[0] == '\n') continue;	/* Comment or blank */
+				GMT_chop (dir);		/* Chop off LF or CR/LF */
+				sprintf (path, "%s/%s%s", dir, stem, ".nc");
+				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: Trying %s\n", path);
+				if ( access (path, R_OK) == 0) {	/* File can be read */
+					if ( gshhg_require_min_version (path, version) ) {
+						fclose (fp);
+						/* update invalid GMT->session.GSHHGDIR */
+						if (GMT->session.GSHHGDIR) free ((void *)GMT->session.GSHHGDIR);
+						GMT->session.GSHHGDIR = strdup (dir);
+						GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: OK, could access %s\n", path);
+						return (path);
+					}
+					else
+						GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: Failure, could not access %s\n", path);
+				}
+				else
+					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Found %s but cannot read it due to wrong permissions\n", path);
 			}
-			else
-				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "2. GSHHG: Failure, could not access %s\n", path);
+			fclose (fp);
 		}
-		fclose (fp);
+		else
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Found %s but cannot read it due to wrong permissions\n", path);
 	}
 
 	/* 3. Then check for the named file itself */
 
 	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: Trying via sharepath\n");
-	if (GMT_getsharepath (GMT, "coast", stem, GSHHG_EXT, path, R_OK)) {
+	if (GMT_getsharepath (GMT, "coast", stem, ".nc", path, F_OK)) {
 		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: Trying %s\n", path);
-		if ( gshhg_require_min_version (path, version) ) {
-			/* update invalid GMT->session.GSHHGDIR */
-			sprintf (dir, "%s/%s", GMT->session.SHAREDIR, "coast");
-			if (GMT->session.GSHHGDIR) free ((void *)GMT->session.GSHHGDIR);
-			GMT->session.GSHHGDIR = strdup (dir);
-			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: OK, could access %s\n", path);
-			return (path);
+		if ( access (path, R_OK) == 0) {	/* File can be read */
+			if ( gshhg_require_min_version (path, version) ) {
+				/* update invalid GMT->session.GSHHGDIR */
+				sprintf (dir, "%s/%s", GMT->session.SHAREDIR, "coast");
+				if (GMT->session.GSHHGDIR) free ((void *)GMT->session.GSHHGDIR);
+				GMT->session.GSHHGDIR = strdup (dir);
+				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: OK, could access %s\n", path);
+				return (path);
+			}
+			else
+				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: Failure, could not access %s\n", path);
 		}
 		else
-			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: Failure, could not access %s\n", path);
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Found %s but cannot read it due to wrong permissions\n", path);
 	}
 
 	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "4. GSHHG: Failure, could not access any GSHHG files\n");
@@ -920,7 +936,7 @@ int GMT_assemble_shore (struct GMT_CTRL *GMT, struct GMT_SHORE *c, int dir, bool
 	p = GMT_memory (GMT, NULL, p_alloc, struct GMT_GSHHS_POL);
 
 	if (completely_inside && use_this_level) {	/* Must include path of this bin's outline as our first polygon, e.g., there may be no segments here but we are in the middle of a continent (or lake) */
-		p[0].n = (int)GMT_graticule_path (GMT, &p[0].lon, &p[0].lat, dir, c->lon_corner[3], c->lon_corner[1], c->lat_corner[0], c->lat_corner[2]);
+		p[0].n = (int)GMT_graticule_path (GMT, &p[0].lon, &p[0].lat, dir, true, c->lon_corner[3], c->lon_corner[1], c->lat_corner[0], c->lat_corner[2]);
 		p[0].level = (c->node_level[0] == 2 && c->flag == GSHHS_NO_LAKES) ? 1 : c->node_level[0];	/* Any corner will do */
 		p[0].fid = p[0].level;	/* Override: Assumes no riverlake is that big to contain an entire bin */
 		p[0].interior = false;

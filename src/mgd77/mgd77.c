@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------
- *  $Id: mgd77.c 12822 2014-01-31 23:39:56Z remko $
+ *  $Id: mgd77.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *  Copyright (c) 2005-2014 by P. Wessel
+ *  Copyright (c) 2005-2015 by P. Wessel
  *  See README file for copying and redistribution conditions.
  *
  *  File:       mgd77.c
@@ -248,7 +248,7 @@ static inline int MGD77_cgt_test (char *value, char *match, size_t len)
 	return (strncmp (value, match, len) > 0);
 }
 
-static inline void MGD77_Init_Columns (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct MGD77_HEADER *H)
+static inline void mgd77_init_columns (struct MGD77_CONTROL *F)
 {
 	/* Initializes the output columns to equal all the input columns
 	 * and using the original order.  To change this the program must
@@ -299,7 +299,11 @@ static inline void MGD77_Path_Init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *
 	F->MGD77_datadir = GMT_memory (GMT, NULL, n_alloc, char *);
 	while (GMT_fgets (GMT, line, GMT_BUFSIZ, fp)) {
 		if (line[0] == '#') continue;	/* Comments */
-		if (line[0] == ' ' || line[0] == '\0') continue;	/* Blank line, \n included in count */
+		if (line[0] == ' ' || line[0] == '\0') continue;    /* Blank line, \n included in count */
+#ifdef WIN32
+		if (line[0] == '/' && line[2] != '/') continue;     /* A unix style path */
+		GMT_strrepc(line, '/', '\\');                       /* Replace slashes with backslashes because later the dir /b path would fail */
+#endif
 		GMT_chop (line);
 		F->MGD77_datadir[F->n_MGD77_paths] = GMT_memory (GMT, NULL, strlen (line) + 1, char);
 		strcpy (F->MGD77_datadir[F->n_MGD77_paths], line);
@@ -353,6 +357,7 @@ static inline int MGD77_atoi (char *txt) {
 	return (atoi (txt));
 }
 
+#if 0	/* Seems to be unused */
 static inline int MGD77_Get_Header_Item (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, char *item)
 {	/* Used internally where item is known to be a single full name of a header item.
 	 * The id returned can used to get stuff in MGD77_Header_Lookup. */
@@ -369,8 +374,9 @@ static inline int MGD77_Get_Header_Item (struct GMT_CTRL *GMT, struct MGD77_CONT
 
 	return id;
 }
+#endif
 
-static inline void MGD77_set_plain_mgd77 (struct GMT_CTRL *GMT, struct MGD77_HEADER *H, int mgd77t_format)
+static inline void mgd77_set_plain_mgd77 (struct MGD77_HEADER *H, int mgd77t_format)
 {
 	int i, j, k;
 
@@ -449,7 +455,7 @@ static inline void MGD77_set_plain_mgd77 (struct GMT_CTRL *GMT, struct MGD77_HEA
 	H->info[MGD77_M77_SET].n_col = (short)k;
 }
 
-static inline void MGD77_free_plain_mgd77 (struct GMT_CTRL *GMT, struct MGD77_HEADER *H)
+static inline void mgd77_free_plain_mgd77 (struct MGD77_HEADER *H)
 {
 	int c, id;
 
@@ -477,9 +483,9 @@ static inline void MGD77_free_plain_mgd77 (struct GMT_CTRL *GMT, struct MGD77_HE
 	}
 }
 
-bool MGD77_txt_are_constant (struct GMT_CTRL *GMT, char *txt, uint64_t n, size_t width)
-{
+bool MGD77_txt_are_constant (struct GMT_CTRL *GMT, char *txt, uint64_t n, size_t width) {
 	uint64_t i = 0;
+	GMT_UNUSED(GMT);
 
 	if (n == 1) return (true);
 	assert (width > 0);
@@ -493,6 +499,7 @@ bool MGD77_dbl_are_constant (struct GMT_CTRL *GMT, double x[], uint64_t n, doubl
 	uint64_t i;
 	bool constant = true;
 	double last;
+	GMT_UNUSED(GMT);
 
 	limits[0] = limits[1] = x[0];
 	if (n == 1) return (constant);
@@ -541,6 +548,7 @@ uint64_t MGD77_do_scale_offset_before_write (struct GMT_CTRL *GMT, double new_x[
 	 */
 	uint64_t k, n_crap = 0;
 	double nan_val, lo_val, hi_val, i_scale;
+	GMT_UNUSED(GMT);
 
 	nan_val = MGD77_NaN_val[type];
 	lo_val = MGD77_Low_val[type];
@@ -631,6 +639,7 @@ static void MGD77_Place_Text (struct GMT_CTRL *GMT, int dir, char *struct_member
 
 static int MGD77_Find_Cruise_ID (struct GMT_CTRL *GMT, char *name, char **cruises, unsigned int n_cruises, bool sorted)
 {
+	GMT_UNUSED(GMT);
 	if (!cruises) return (-1);	/* Null pointer passed */
 
 	if (sorted) {	/* cruises array is lexically sorted; use binary search */
@@ -658,11 +667,11 @@ static int MGD77_Find_Cruise_ID (struct GMT_CTRL *GMT, char *name, char **cruise
 	}
 }
 
-static int MGD77_Decode_Header_m77t (struct GMT_CTRL *GMT, struct MGD77_HEADER_PARAMS *P, char *record)
-{
+static int MGD77_Decode_Header_m77t (struct GMT_CTRL *GMT, struct MGD77_HEADER_PARAMS *P, char *record) {
 	/* Copies information from record to the header structure */
 	int k = 0;
 	char *stringp = NULL, *word = NULL, buffer[GMT_BUFSIZ+1];
+	GMT_UNUSED(GMT);
 
 	P->Record_Type = '4';	/* Set record type */
 
@@ -936,6 +945,7 @@ static void MGD77_Select_All_Columns (struct GMT_CTRL *GMT, struct MGD77_CONTROL
 	 * present in the current file.  Here, we implement this default "-Fall" choice
 	 */
 	int id, k, set;
+	GMT_UNUSED(GMT);
 
 	if (F->n_out_columns) return;	/* Already made selection via MGD77_Select_Columns */
 
@@ -1005,6 +1015,7 @@ static int MGD77_Read_Header_Record_m77 (struct GMT_CTRL *GMT, char *file, struc
 	char *MGD77_header[MGD77_N_HEADER_RECORDS], line[GMT_BUFSIZ] = {""};
 	int i, sequence, err, n_eols, c, n;
 	struct stat buf;
+	GMT_UNUSED(file);
 
 	n_eols = c = n = 0;	/* Also shuts up the boring compiler warnings */
 	GMT_memset (MGD77_header, MGD77_N_HEADER_RECORDS, char *);
@@ -1054,7 +1065,7 @@ static int MGD77_Read_Header_Record_m77 (struct GMT_CTRL *GMT, char *file, struc
 
 	/* Fill in info in F */
 
-	MGD77_set_plain_mgd77 (GMT, H, false);				/* Set the info for the standard 27 data fields in MGD-77 files */
+	mgd77_set_plain_mgd77 (H, false);				/* Set the info for the standard 27 data fields in MGD-77 files */
 	if ((err = MGD77_Order_Columns (GMT, F, H))) return (err);	/* Make sure requested columns are OK; if not given set defaults */
 
 	return (MGD77_NO_ERROR);	/* Success, it seems */
@@ -1064,6 +1075,7 @@ static int MGD77_Read_Header_Record_m77t (struct GMT_CTRL *GMT, char *file, stru
 {	/* Applies to MGD77T files */
 	char *MGD77_header = NULL, line[BUFSIZ] = {""};
 	int i, err;
+	GMT_UNUSED(file);
 
 	/* argument file is generally ignored since file is already open */
 
@@ -1091,15 +1103,15 @@ static int MGD77_Read_Header_Record_m77t (struct GMT_CTRL *GMT, char *file, stru
 
 	/* Fill in info in F */
 
-	MGD77_set_plain_mgd77 (GMT, H, true);				/* Set the info for the standard 27 data fields in MGD-77 files */
+	mgd77_set_plain_mgd77 (H, true);				/* Set the info for the standard 27 data fields in MGD-77 files */
 	if ((err = MGD77_Order_Columns (GMT, F, H))) return (err);	/* Make sure requested columns are OK; if not given set defaults */
 
 	return (MGD77_NO_ERROR);	/* Success, it seems */
 }
 
-static int MGD77_Convert_To_New_Format (struct GMT_CTRL *GMT, char *line)
-{
+static int MGD77_Convert_To_New_Format (struct GMT_CTRL *GMT, char *line) {
 	int yy, nconv;
+	GMT_UNUSED(GMT);
 
 	if (line[0] != '3') return false;
 
@@ -1430,6 +1442,7 @@ static int MGD77_Read_Data_asc (struct GMT_CTRL *GMT, char *file, struct MGD77_C
 	struct MGD77_DATA_RECORD MGD77Record;
 	double *values[MGD77_N_NUMBER_FIELDS+1];
 	char *text[3];
+	GMT_UNUSED(file);
 
 	for (k = n_txt = 0; k < F->n_out_columns; k++) if (S->H.info[MGD77_M77_SET].col[F->order[k].item].text) n_txt++;
 	if (n_txt > 3) return (MGD77_ERROR_READ_ASC_DATA);
@@ -1571,6 +1584,7 @@ static int MGD77_Write_Data_Record_m77t (struct GMT_CTRL *GMT, struct MGD77_CONT
 static int MGD77_Write_Data_Record_m77 (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct MGD77_DATA_RECORD *MGD77Record)	/* Will write a single ASCII MGD77 record */
 {
 	int nwords = 0, nvalues = 0, i;
+	GMT_UNUSED(GMT);
 
 	for (i = 0; i < MGD77_N_DATA_FIELDS; i++) {
 		if (i == 1) fprintf (F->fp, mgd77defs[24].printMGD77, MGD77Record->word[nwords++]);
@@ -1618,6 +1632,7 @@ static int MGD77_Write_Data_asc (struct GMT_CTRL *GMT, char *file, struct MGD77_
 	double tz, *values[MGD77_N_DATA_FIELDS+1];
 	char *text[MGD77_N_DATA_FIELDS+1];
 	struct GMT_gcal cal;
+	GMT_UNUSED(file);
 
 	GMT_memset (col, MGD77_N_DATA_FIELDS+1, int);
 	for (k = 0; k < F->n_out_columns; k++) {
@@ -1682,6 +1697,7 @@ int MGD77_Prep_Header_cdf (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct
 	bool crossed_dateline = false, crossed_greenwich = false;
 	char *text = NULL;
 	double *values = NULL, dx;
+	GMT_UNUSED(F);
 
 	entry = MGD77_Info_from_Abbrev (GMT, "time", &S->H, &t_set, &t_id);
 	if (entry != MGD77_NOT_SET) {	/* Supposedly has time, but we we'll check again */
@@ -1825,19 +1841,30 @@ static int MGD77_Write_Header_Record_cdf (struct GMT_CTRL *GMT, char *file, stru
 					MGD77_nc_status (GMT, nc_def_var (F->nc_id, H->info[set].col[id].abbrev, H->info[set].col[id].type, 1, dims, &var_id));	/* Define an array variable */
 				}
 			}
-			if (H->info[set].col[id].name && strcmp (H->info[set].col[id].name, H->info[set].col[id].abbrev)) MGD77_nc_status (GMT, nc_put_att_text   (F->nc_id, var_id, "long_name", strlen (H->info[set].col[id].name), H->info[set].col[id].name));
-			if (H->info[set].col[id].units) MGD77_nc_status (GMT, nc_put_att_text   (F->nc_id, var_id, "units", strlen (H->info[set].col[id].units), H->info[set].col[id].units));
-			if (!H->info[set].col[id].constant) MGD77_nc_status (GMT, nc_put_att_double   (F->nc_id, var_id, "actual_range", NC_DOUBLE, 2U, H->info[set].col[id].limit));
-			if (H->info[set].col[id].comment) MGD77_nc_status (GMT, nc_put_att_text   (F->nc_id, var_id, "comment", strlen (H->info[set].col[id].comment), H->info[set].col[id].comment));
-			if (set == MGD77_M77_SET && (!strcmp (H->info[set].col[id].abbrev, "depth") || !strcmp (H->info[set].col[id].abbrev, "msd"))) MGD77_nc_status (GMT, nc_put_att_text   (F->nc_id, var_id, "positive", 4U, "down"));
+			if (H->info[set].col[id].name && strcmp (H->info[set].col[id].name, H->info[set].col[id].abbrev))
+				MGD77_nc_status (GMT, nc_put_att_text (F->nc_id, var_id, "long_name", strlen (H->info[set].col[id].name), H->info[set].col[id].name));
+			if (H->info[set].col[id].units)
+				MGD77_nc_status (GMT, nc_put_att_text (F->nc_id, var_id, "units", strlen (H->info[set].col[id].units), H->info[set].col[id].units));
+			if (!H->info[set].col[id].constant)
+				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "actual_range", NC_DOUBLE, 2U, H->info[set].col[id].limit));
+			if (H->info[set].col[id].comment)
+				MGD77_nc_status (GMT, nc_put_att_text (F->nc_id, var_id, "comment", strlen (H->info[set].col[id].comment), H->info[set].col[id].comment));
+			if (set == MGD77_M77_SET && (!strcmp (H->info[set].col[id].abbrev, "depth") || !strcmp (H->info[set].col[id].abbrev, "msd")))
+				MGD77_nc_status (GMT, nc_put_att_text (F->nc_id, var_id, "positive", 4U, "down"));
 			if (!(set == MGD77_M77_SET && id == time_id)) {	/* Time coordinate value cannot have missing values */
-				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "_FillValue", H->info[set].col[id].type, 1U, &MGD77_NaN_val[H->info[set].col[id].type]));
-				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "missing_value", H->info[set].col[id].type, 1U, &MGD77_NaN_val[H->info[set].col[id].type]));
+				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "_FillValue",
+				                 H->info[set].col[id].type, 1U, &MGD77_NaN_val[H->info[set].col[id].type]));
+				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "missing_value",
+				                 H->info[set].col[id].type, 1U, &MGD77_NaN_val[H->info[set].col[id].type]));
 			}
-			if (H->info[set].col[id].factor != 1.0) MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "scale_factor", NC_DOUBLE, 1U, &H->info[set].col[id].factor));
-			if (H->info[set].col[id].offset != 0.0) MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "add_offset", NC_DOUBLE, 1U, &H->info[set].col[id].offset));
-			if (H->info[set].col[id].corr_factor  != 1.0) MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "corr_factor", NC_DOUBLE, 1U, &H->info[set].col[id].corr_factor));
-			if (H->info[set].col[id].corr_offset != 0.0) MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "corr_offset", NC_DOUBLE, 1U, &H->info[set].col[id].corr_offset));
+			if (H->info[set].col[id].factor != 1.0)
+				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "scale_factor", NC_DOUBLE, 1U, &H->info[set].col[id].factor));
+			if (H->info[set].col[id].offset != 0.0)
+				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "add_offset", NC_DOUBLE, 1U, &H->info[set].col[id].offset));
+			if (H->info[set].col[id].corr_factor  != 1.0)
+				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "corr_factor", NC_DOUBLE, 1U, &H->info[set].col[id].corr_factor));
+			if (H->info[set].col[id].corr_offset != 0.0)
+				MGD77_nc_status (GMT, nc_put_att_double (F->nc_id, var_id, "corr_offset", NC_DOUBLE, 1U, &H->info[set].col[id].corr_offset));
 			H->info[set].col[id].var_id = var_id;
 			entry++;
 		}
@@ -1862,6 +1889,7 @@ static int MGD77_Write_Data_cdf (struct GMT_CTRL *GMT, char *file, struct MGD77_
 	double *values = NULL, *x = NULL, *xtmp = NULL, single_val, scale, offset;
 	char *text = NULL;
 	bool transform, not_allocated = true;
+	GMT_UNUSED(file);
 
 	count[0] = S->H.n_records;
 
@@ -2274,7 +2302,7 @@ static int MGD77_Free_Header_Record_asc (struct GMT_CTRL *GMT, struct MGD77_HEAD
 	int i;
 
 	for (i = 0; i < 2; i++) if (H->mgd77[i]) GMT_free (GMT, H->mgd77[i]);
-	MGD77_free_plain_mgd77 (GMT, H);
+	mgd77_free_plain_mgd77 (H);
 	return (MGD77_NO_ERROR);	/* Success, it seems */
 }
 
@@ -2286,7 +2314,7 @@ static int MGD77_Free_Header_Record_cdf (struct GMT_CTRL *GMT, struct MGD77_HEAD
 	if (H->E77) GMT_free (GMT, H->E77);
 	for (i = 0; i < 2; i++) if (H->mgd77[i]) GMT_free (GMT, H->mgd77[i]);
 
-	MGD77_free_plain_mgd77 (GMT, H);
+	mgd77_free_plain_mgd77 (H);
 	return (MGD77_NO_ERROR);	/* Success, it seems */
 }
 
@@ -2429,6 +2457,7 @@ int MGD77_Write_Header_Record_m77 (struct GMT_CTRL *GMT, char *file, struct MGD7
 {
 	int i, err, use;
 	char *MGD77_header[MGD77_N_HEADER_RECORDS];
+	GMT_UNUSED(file);
 
 	use = (F->original || F->format != MGD77_FORMAT_CDF) ? MGD77_ORIG : MGD77_REVISED;
 	for (i = 0; i < MGD77_N_HEADER_RECORDS; i++) MGD77_header[i] = GMT_memory (GMT, NULL, MGD77_HEADER_LENGTH + 1, char);
@@ -2446,6 +2475,7 @@ static int MGD77_Write_Header_Record_m77t (struct GMT_CTRL *GMT, char *file, str
 {
 	int use;
 	struct MGD77_HEADER_PARAMS *P = NULL;
+	GMT_UNUSED(GMT); GMT_UNUSED(file);
 
 	use = (F->original || F->format != MGD77_FORMAT_CDF) ? MGD77_ORIG : MGD77_REVISED;
 	
@@ -2554,6 +2584,7 @@ static void MGD77_dt2rdc (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, double 
 /*	Given time in sec relative to unix epoc, load rata die of this day
 	in rd and the seconds since the start of that day in s.  */
 	double t_sec;
+	GMT_UNUSED(GMT);
 	t_sec = (t * F->utime.scale + F->utime.epoch_t0 * GMT_DAY2SEC_F);
 	i = GMT_splitinteger (t_sec, 86400, s) + F->utime.rata_die;
 	*rd = i;
@@ -2561,9 +2592,9 @@ static void MGD77_dt2rdc (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, double 
 
 /* =================================== PUBLIC FUNCTIONS =================================== */
 
-int MGD77_Info_from_Abbrev (struct GMT_CTRL *GMT, char *name, struct MGD77_HEADER *H, int *set, int *item)
-{
+int MGD77_Info_from_Abbrev (struct GMT_CTRL *GMT, char *name, struct MGD77_HEADER *H, int *set, int *item) {
 	unsigned int id, c;
+	GMT_UNUSED(GMT);
 
 	/* Returns the number in the output list AND passes set,item as the entry in H */
 
@@ -2583,6 +2614,7 @@ int MGD77_Info_from_Abbrev (struct GMT_CTRL *GMT, char *name, struct MGD77_HEADE
 int MGD77_Param_Key (struct GMT_CTRL *GMT, int record, int item) {
 	unsigned int i, u_rec, u_item;
 	int status = MGD77_BAD_HEADER_RECNO;
+	GMT_UNUSED(GMT);
 	/* Given record and item, return the structure array key that matches these two values.
 	 * If not found return BAD_HEADER if record is outside range, or BAD_ITEM if no such item */
 
@@ -2598,12 +2630,12 @@ int MGD77_Param_Key (struct GMT_CTRL *GMT, int record, int item) {
 	return (status);
 }
 
-void MGD77_select_high_resolution (struct GMT_CTRL *GMT)
-{
+void MGD77_select_high_resolution (struct GMT_CTRL *GMT) {
 	/* If it becomes necessary to store mag, diur, faa, and eot using 4-byte integers we modify
 	 * these entries in the mgd77cdf structure array.
 	 */
 
+	GMT_UNUSED(GMT);
 	mgd77cdf[16].type = mgd77cdf[18].type = NC_INT;		/* MAG & DIUR:  4-byte integer with 10 fTesla (0.01 pTesla) precision  */
 	mgd77cdf[16].factor = mgd77cdf[18].factor = 1.0e-4;
 	mgd77cdf[21].type = mgd77cdf[22].type = NC_INT;		/* EOT & FAA :  4-byte integer with 10 nGal precision */
@@ -2612,8 +2644,7 @@ void MGD77_select_high_resolution (struct GMT_CTRL *GMT)
 	mgd77cdf[19].factor = 1.0e-5;
 }
 
-int MGD77_Read_File (struct GMT_CTRL *GMT, char *file, struct MGD77_CONTROL *F, struct MGD77_DATASET *S)
-{
+int MGD77_Read_File (struct GMT_CTRL *GMT, char *file, struct MGD77_CONTROL *F, struct MGD77_DATASET *S) {
 	int err = 0;
 
 	switch (F->format) {
@@ -3486,6 +3517,7 @@ void MGD77_Verify_Prep_m77 (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struc
 	uint64_t i;
 	int ix, iy;
 	double lon, lat, xpmin, xpmax, xnmin, xnmax, ymin, ymax;
+	GMT_UNUSED(F);
 
 	xpmin = xnmin = ymin = +DBL_MAX;
 	xpmax = xnmax = ymax = -DBL_MAX;
@@ -3644,15 +3676,14 @@ int MGD77_Write_File (struct GMT_CTRL *GMT, char *file, struct MGD77_CONTROL *F,
 	return (err);
 }
 
-void MGD77_List_Header_Items (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F)
-{
+void MGD77_List_Header_Items (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F) {
 	int i;
+	GMT_UNUSED(GMT); GMT_UNUSED(F);
 
 	for (i = 0; i < MGD77_N_HEADER_ITEMS; i++) GMT_message (GMT, "\t\t%2d. %s\n", i+1, MGD77_Header_Lookup[i].name);
 }
 
-int MGD77_Select_Header_Item (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, char *item)
-{
+int MGD77_Select_Header_Item (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, char *item) {
 	unsigned int i, id, match, pick[MGD77_N_HEADER_ITEMS];
 	size_t length;
 
@@ -3714,23 +3745,23 @@ int MGD77_Select_Header_Item (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, cha
 	return 0;
 }
 
-int MGD77_Read_Data_Sequence (struct GMT_CTRL *GMT, FILE *fp, char *record)
-{
+int MGD77_Read_Data_Sequence (struct GMT_CTRL *GMT, FILE *fp, char *record) {
+	GMT_UNUSED(GMT);
 	if (fgets (record, MGD77_RECORD_LENGTH, fp)) return (1);
 	return (MGD77_NO_ERROR);
 }
 
-void MGD77_Write_Sequence (struct GMT_CTRL *GMT, FILE *fp, int seq)
-{
+void MGD77_Write_Sequence (struct GMT_CTRL *GMT, FILE *fp, int seq) {
+	GMT_UNUSED(GMT);
 	if (seq > 0) fprintf (fp, "%02d", seq);
 	fprintf (fp, "\n");
 }
 
-void MGD77_Ignore_Format (struct GMT_CTRL *GMT, int format)
-{
+void MGD77_Ignore_Format (struct GMT_CTRL *GMT, int format) {
 	/* Allow user to turn on/off acceptance of certain formats.
 	 * Use MGD77_FORMAT_ANY to reset back to defaults (all OK) */
 
+	 GMT_UNUSED(GMT);
 	 if (format == MGD77_FORMAT_ANY) {
 	 	MGD77_format_allowed[MGD77_FORMAT_M77] = true;
 	 	MGD77_format_allowed[MGD77_FORMAT_CDF] = true;
@@ -3741,8 +3772,7 @@ void MGD77_Ignore_Format (struct GMT_CTRL *GMT, int format)
 		MGD77_format_allowed[format] = false;
 }
 
-int MGD77_Select_Format (struct GMT_CTRL *GMT, int format)
-{
+int MGD77_Select_Format (struct GMT_CTRL *GMT, int format) {
 	/* Allow user to select just one format and turn off all others */
 
 	if (format >= MGD77_FORMAT_M77 && format <= MGD77_FORMAT_TBL) {
@@ -3793,7 +3823,7 @@ void MGD77_Init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F)
 
 	GMT_memset (F, 1, struct MGD77_CONTROL);		/* Initialize structure */
 	MGD77_Path_Init (GMT, F);
-	MGD77_Init_Columns (GMT, F, NULL);
+	mgd77_init_columns (F);
 	F->use_flags[MGD77_M77_SET] = F->use_flags[MGD77_CDF_SET] = true;		/* true means programs will use error bitflags (if present) when returning data */
 	F->use_corrections[MGD77_M77_SET] = F->use_corrections[MGD77_CDF_SET] = true;	/* true means we will apply correction factors (if present) when reading data */
 	GMT_get_time_system (GMT, "unix", &(GMT->current.setting.time_system));						/* MGD77+ uses GMT's Unix time epoch */
@@ -3835,10 +3865,10 @@ void MGD77_Init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F)
 	MGD77_pos[MGD77T_BQC+4] = MGD77T_BQC;	MGD77_pos[MGD77T_MQC+4] = MGD77T_MQC;	MGD77_pos[MGD77T_GQC+4] = MGD77T_GQC;	/* MGD77T extension */
 }
 
-void MGD77_Reset (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F)
-{
+void MGD77_Reset (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F) {
 	/* Reset the entire MGD77 control system except system paths, etc */
 	unsigned int k;
+	GMT_UNUSED(GMT);
 	for (k = 0; k < F->n_out_columns; k++) if (F->desired_column[k]) free ((void *)F->desired_column[k]);
 	F->use_flags[MGD77_M77_SET] = F->use_flags[MGD77_CDF_SET] = true;		/* true means programs will use error bitflags (if present) when returning data */
 	F->use_corrections[MGD77_M77_SET] = F->use_corrections[MGD77_CDF_SET] = true;	/* true means we will apply correction factors (if present) when reading data */
@@ -4007,20 +4037,20 @@ int MGD77_Select_Columns (struct GMT_CTRL *GMT, char *arg, struct MGD77_CONTROL 
 }
 
 
-int MGD77_Get_Column (struct GMT_CTRL *GMT, char *word, struct MGD77_CONTROL *F)
-{
+int MGD77_Get_Column (struct GMT_CTRL *GMT, char *word, struct MGD77_CONTROL *F) {
 	unsigned int j;
 	int k;
+	GMT_UNUSED(GMT);
 
 	for (j = 0, k = MGD77_NOT_SET; k == MGD77_NOT_SET && j < F->n_out_columns; j++)
 		if (!strcmp (word, F->desired_column[j])) k = j;
 	return (k);
 }
 
-int MGD77_Match_List (struct GMT_CTRL *GMT, char *word, unsigned int n_fields, char **list)
-{
+int MGD77_Match_List (struct GMT_CTRL *GMT, char *word, unsigned int n_fields, char **list) {
 	unsigned int j;
 	int k;
+	GMT_UNUSED(GMT);
 
 	for (j = 0, k = MGD77_NOT_SET; k == MGD77_NOT_SET && j < n_fields; j++) if (!strcmp (word, list[j])) k = j;
 	return (k);
@@ -4030,6 +4060,7 @@ int MGD77_Get_Set (struct GMT_CTRL *GMT, char *word)
 {	/* If word is one of the standard 27 MGD77 columns or time, return 0, else return 1 */
 	unsigned int j;
 	int k;
+	GMT_UNUSED(GMT);
 
 	for (j = 0, k = MGD77_NOT_SET; k == MGD77_NOT_SET && j <= MGD77_SSPN; j++) if (!strcmp (word, mgd77defs[j].abbrev)) k = j;
 	if (k == MGD77_NOT_SET && !strcmp (word, "time")) k = j;
@@ -4040,10 +4071,16 @@ void MGD77_end (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F)
 {	/* Free memory used by MGD77 machinery */
 	unsigned int i;
 	if (F->MGD77_HOME) GMT_free (GMT, F->MGD77_HOME);
-	for (i = 0; i < F->n_MGD77_paths; i++) GMT_free (GMT, F->MGD77_datadir[i]);
-	if (F->MGD77_datadir) GMT_free (GMT, F->MGD77_datadir);
-	for (i = 0; i < F->n_out_columns; i++) if (F->desired_column[i]) free ((void *)F->desired_column[i]);
-	if (F->desired_column) GMT_free (GMT, F->desired_column);
+	for (i = 0; i < F->n_MGD77_paths; i++)
+		GMT_free (GMT, F->MGD77_datadir[i]);
+	if (F->MGD77_datadir)
+		GMT_free (GMT, F->MGD77_datadir);
+	if (F->desired_column) {
+		for (i = 0; i < MGD77_MAX_COLS; i++)
+			if (F->desired_column[i])
+				free ((void *)F->desired_column[i]);
+		GMT_free (GMT, F->desired_column);
+	}
 }
 
 void MGD77_Cruise_Explain (struct GMT_CTRL *GMT)
@@ -4160,7 +4197,6 @@ int MGD77_Path_Expand (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct GMT
 				if (length && strncmp (d_name, this_arg, length)) continue;
 				k = (unsigned int)strlen (d_name) - 1;
 				while (k && d_name[k] != '.') k--;	/* Strip off file extension */
-				if (k < 8) continue;	/* Not a NGDC 8-char ID */
 				if (n == n_alloc) L = GMT_memory (GMT, L, n_alloc += GMT_CHUNK, char *);
 				L[n] = GMT_memory (GMT, NULL, k + 1, char);
 				strncpy (L[n], d_name, k);
@@ -4222,6 +4258,7 @@ bool MGD77_Pass_Record (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct MG
 	bool pass;
 	double *value = NULL;
 	char *text = NULL;
+	GMT_UNUSED(GMT);
 
 	if (F->no_checking) return (true);	/* Nothing to check for - get outa here */
 
@@ -4391,7 +4428,7 @@ void MGD77_Free_Dataset (struct GMT_CTRL *GMT, struct MGD77_DATASET **D)
 	for (i = 0; i < S->n_fields; i++) GMT_free (GMT, S->values[i]);
 	for (i = 0; i < MGD77_N_SETS; i++) if (S->flags[i]) GMT_free (GMT, S->flags[i]);
 	for (i = 0; i < 2; i++) if (S->H.mgd77[i]) GMT_free (GMT, S->H.mgd77[i]);
-	MGD77_free_plain_mgd77 (GMT, &S->H);
+	mgd77_free_plain_mgd77 (&S->H);
 	if (S->H.author) GMT_free (GMT, S->H.author);
 	if (S->H.history) GMT_free (GMT, S->H.history);
 	GMT_free (GMT, S);
@@ -4748,7 +4785,7 @@ int MGD77_igrf10syn (struct GMT_CTRL *GMT, int isv, double date, int itype, doub
   */
 
      /* Initialized data */
-     static double gh[3255] = {
+     static double gh[3450] = {
        -31543.,-2298., 5922., -677., 2905.,-1061.,  924., 1121., /* g0 (1900) */
          1022.,-1469., -330., 1256.,    3.,  572.,  523.,  876.,
           628.,  195.,  660.,  -69., -361., -210.,  134.,  -75.,
@@ -5115,62 +5152,95 @@ int MGD77_igrf10syn (struct GMT_CTRL *GMT, int isv, double date, int itype, doub
            -0.43,    -0.54,    1.18,     -1.07,   -0.37,    -0.04,    0.75,
             0.63,    -0.26,    0.21,      0.35,    0.53,    -0.05,    0.38,
             0.41,    -0.22,   -0.10,     -0.57,   -0.18,    -0.82,
-       -29496.5,  -1585.9,  4945.1,   -2396.6,  3026.0,  -2707.7,  1668.6, /* gm (2010) */
-         -575.4,   1339.7, -2326.3,    -160.5,  1231.7,    251.7,   634.2,
-         -536.8,    912.6,   809.0,     286.4,   166.6,   -211.2,  -357.1,
-          164.4,     89.7,  -309.2,    -231.1,   357.2,     44.7,   200.3,
-          188.9,   -141.2,  -118.1,    -163.1,     0.1,     -7.7,   100.9,
-           72.8,     68.6,   -20.8,      76.0,    44.2,   -141.4,    61.5,
-          -22.9,    -66.3,    13.1,       3.1,   -77.9,     54.9,    80.4,
-          -75.0,    -57.8,    -4.7,     -21.2,    45.3,      6.6,    14.0,
-           24.9,     10.4,     7.0,       1.6,   -27.7,      4.9,    -3.4,
-           24.3,      8.2,    10.9,     -14.5,   -20.0,     -5.7,    11.9,
-          -19.3,    -17.4,    11.6,      16.7,    10.9,      7.1,   -14.1,
-          -10.8,     -3.7,     1.7,       5.4,     9.4,    -20.5,     3.4,
-           11.6,     -5.3,    12.8,       3.1,    -7.2,    -12.4,    -7.4,
-           -0.8,      8.0,     8.4,       2.2,    -8.4,     -6.1,   -10.1,
-            7.0,     -2.0,    -6.3,       2.8,     0.9,     -0.1,    -1.1,
-            4.7,     -0.2,     4.4,       2.5,    -7.2,     -0.3,    -1.0,
-            2.2,     -4.0,     3.1,      -2.0,    -1.0,     -2.0,    -2.8,
-           -8.3,      3.0,    -1.5,       0.1,    -2.1,      1.7,     1.6,
-           -0.6,     -0.5,    -1.8,       0.5,     0.9,     -0.8,    -0.4,
-            0.4,     -2.5,     1.8,      -1.3,     0.2,     -2.1,     0.8,
-           -1.9,      3.8,    -1.8,      -2.1,    -0.2,     -0.8,     0.3,
-            0.3,      1.0,     2.2,      -0.7,    -2.5,      0.9,     0.5,
-           -0.1,      0.6,     0.5,       0.0,    -0.4,      0.1,    -0.4,
-            0.3,      0.2,    -0.9,      -0.8,    -0.2,      0.0,     0.8,
-           -0.2,     -0.9,    -0.8,       0.3,     0.3,      0.4,     1.7,
-           -0.4,     -0.6,     1.1,      -1.2,    -0.3,     -0.1,     0.8,
-            0.5,     -0.2,     0.1,       0.4,     0.5,      0.0,     0.4,
-            0.4,     -0.2,    -0.3,      -0.5,    -0.3,     -0.8,
-           11.4,     16.7,   -28.8,     -11.3,    -3.9,    -23.0,     2.7, /* sv (2010) */
-          -12.9,      1.3,    -3.9,       8.6,    -2.9,     -2.9,    -8.1,
-           -2.1,     -1.4,     2.0,       0.4,    -8.9,      3.2,     4.4,
-            3.6,     -2.3,    -0.8,      -0.5,     0.5,      0.5,    -1.5,
-            1.5,     -0.7,     0.9,       1.3,     3.7,      1.4,    -0.6,
-           -0.3,     -0.3,    -0.1,      -0.3,    -2.1,      1.9,    -0.4,
-           -1.6,     -0.5,    -0.2,       0.8,     1.8,      0.5,     0.2,
-           -0.1,      0.6,    -0.6,       0.3,     1.4,     -0.2,     0.3,
-           -0.1,      0.1,    -0.8,      -0.8,    -0.3,      0.4,     0.2,
-           -0.1,      0.1,     0.0,      -0.5,     0.2,      0.3,     0.5,
-           -0.3,      0.4,     0.3,       0.1,     0.2,     -0.1,    -0.5,
-            0.4,      0.2,     0.4,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0,     0.0,
-            0.0,      0.0,     0.0,       0.0,     0.0,      0.0
+       -29496.57, -1586.42, 4944.26,  -2396.06, 3026.34, -2708.54,	/* gp (2010) */
+         1668.17,  -575.73, 1339.85,  -2326.54, -160.40,  1232.10,
+          251.75,   633.73, -537.03,    912.66,  808.97,   286.48,
+          166.58,  -211.03, -356.83,    164.46,   89.40,  -309.72,
+         -230.87,   357.29,   44.58,    200.26,  189.01,  -141.05,
+         -118.06,  -163.17,   -0.01,     -8.03,  101.04,    72.78,
+           68.69,   -20.90,   75.92,     44.18, -141.40,    61.54,
+          -22.83,   -66.26,   13.10,      3.02,  -78.09,    55.40,
+           80.44,   -75.00,  -57.80,     -4.55,  -21.20,    45.24,
+            6.54,    14.00,   24.96,     10.46,    7.03,     1.64,
+          -27.61,     4.92,   -3.28,     24.41,    8.21,    10.84,
+          -14.50,   -20.03,   -5.59,     11.83,  -19.34,   -17.41,
+           11.61,    16.71,   10.85,      6.96,  -14.05,   -10.74,
+           -3.54,     1.64,    5.50,      9.45,  -20.54,     3.45,
+           11.51,    -5.27,   12.75,      3.13,   -7.14,   -12.38,
+           -7.42,    -0.76,    7.97,      8.43,    2.14,    -8.42,
+           -6.08,   -10.08,    7.01,     -1.94,   -6.24,     2.73,
+            0.89,    -0.10,   -1.07,      4.71,   -0.16,     4.44,
+            2.45,    -7.22,   -0.33,     -0.96,    2.13,    -3.95,
+            3.09,    -1.99,   -1.03,     -1.97,   -2.80,    -8.31,
+            3.05,    -1.48,    0.13,     -2.03,    1.67,     1.65,
+           -0.66,    -0.51,   -1.76,      0.54,    0.85,    -0.79,
+           -0.39,     0.37,   -2.51,      1.79,   -1.27,     0.12,
+           -2.11,     0.75,   -1.94,      3.75,   -1.86,    -2.12,
+           -0.21,    -0.87,    0.30,      0.27,    1.04,     2.13,
+           -0.63,    -2.49,    0.95,      0.49,   -0.11,     0.59,
+            0.52,     0.00,   -0.39,      0.13,   -0.37,     0.27,
+            0.21,    -0.86,   -0.77,     -0.23,    0.04,     0.87,
+           -0.09,    -0.89,   -0.87,      0.31,    0.30,     0.42,
+            1.66,    -0.45,   -0.59,      1.08,   -1.14,    -0.31,
+           -0.07,     0.78,    0.54,     -0.18,    0.10,     0.38,
+            0.49,     0.02,    0.44,      0.42,   -0.25,    -0.26,
+           -0.53,    -0.26,   -0.79,
+       -29442.0,  -1501.0,  4797.1,-2445.1, 3012.9,-2845.6, 1676.7,  /* gq (2015) */
+         -641.9,   1350.7, -2352.3, -115.3, 1225.6,  244.9,  582.0,
+         -538.4,    907.6,   813.7,  283.3,  120.4, -188.7, -334.9,
+          180.9,     70.4,  -329.5, -232.6,  360.1,   47.3,  192.4,
+          197.0,   -140.9,  -119.3, -157.5,   16.0,    4.1,  100.2,
+           70.0,     67.7,   -20.8,   72.7,   33.2, -129.9,   58.9,
+          -28.9,    -66.7,    13.2,    7.3,  -70.9,   62.6,   81.6,
+          -76.1,    -54.1,    -6.8,  -19.5,   51.8,    5.7,   15.0,
+           24.4,      9.4,     3.4,   -2.8,  -27.4,    6.8,   -2.2,
+           24.2,      8.8,    10.1,  -16.9,  -18.3,   -3.2,   13.3,
+          -20.6,    -14.6,    13.4,   16.2,   11.7,    5.7,  -15.9,
+           -9.1,     -2.0,     2.1,    5.4,    8.8,  -21.6,    3.1,
+           10.8,     -3.3,    11.8,    0.7,   -6.8,  -13.3,   -6.9,
+           -0.1,      7.8,     8.7,    1.0,   -9.1,   -4.0,  -10.5,
+            8.4,     -1.9,    -6.3,    3.2,    0.1,   -0.4,    0.5,
+            4.6,     -0.5,     4.4,    1.8,   -7.9,   -0.7,   -0.6,
+            2.1,     -4.2,     2.4,   -2.8,   -1.8,   -1.2,   -3.6,
+           -8.7,      3.1,    -1.5,   -0.1,   -2.3,    2.0,    2.0,
+           -0.7,     -0.8,    -1.1,    0.6,    0.8,   -0.7,   -0.2,
+            0.2,     -2.2,     1.7,   -1.4,   -0.2,   -2.5,    0.4,
+           -2.0,      3.5,    -2.4,   -1.9,   -0.2,   -1.1,    0.4,
+            0.4,      1.2,     1.9,   -0.8,   -2.2,    0.9,    0.3,
+            0.1,      0.7,     0.5,   -0.1,   -0.3,    0.3,   -0.4,
+            0.2,      0.2,    -0.9,   -0.9,   -0.1,    0.0,    0.7,
+            0.0,     -0.9,    -0.9,    0.4,    0.4,    0.5,    1.6,
+           -0.5,     -0.5,     1.0,   -1.2,   -0.2,   -0.1,    0.8,
+            0.4,     -0.1,    -0.1,    0.3,    0.4,    0.1,    0.5,
+            0.5,     -0.3,    -0.4,   -0.4,   -0.3,   -0.8,
+           10.3,     18.1,   -26.6,   -8.7,   -3.3,  -27.4,    2.1,  /* sv (2015) */
+          -14.1,      3.4,    -5.5,    8.2,   -0.7,   -0.4,  -10.1,
+            1.8,     -0.7,     0.2,   -1.3,   -9.1,    5.3,    4.1,
+            2.9,     -4.3,    -5.2,   -0.2,    0.5,    0.6,   -1.3,
+            1.7,     -0.1,    -1.2,    1.4,    3.4,    3.9,    0.0,
+           -0.3,     -0.1,     0.0,   -0.7,   -2.1,    2.1,   -0.7,
+           -1.2,      0.2,     0.3,    0.9,    1.6,    1.0,    0.3,
+           -0.2,      0.8,    -0.5,    0.4,    1.3,   -0.2,    0.1,
+           -0.3,     -0.6,    -0.6,   -0.8,    0.1,    0.2,   -0.2,
+            0.2,      0.0,    -0.3,   -0.6,    0.3,    0.5,    0.1,
+           -0.2,      0.5,     0.4,   -0.2,    0.1,   -0.3,   -0.4,
+            0.3,      0.3,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0,    0.0,
+            0.0,      0.0,     0.0,    0.0,    0.0,    0.0
 	 };
 
 	int i, j, k, l, m, n, ll, lm, kmx, nmx, nc;
@@ -5179,12 +5249,12 @@ int MGD77_igrf10syn (struct GMT_CTRL *GMT, int isv, double date, int itype, doub
 	double p[105], q[105], r, t, a2, b2;
 	double H, F, X = 0, Y = 0, Z = 0, dec, dip;
 
-	if (date < 1900.0 || date > 2015.0) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Your date (%g) is outside valid extrapolated range for IGRF (1900-2015)\n", date);
+	if (date < 1900.0 || date > 2020.0) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Your date (%g) is outside valid extrapolated range for IGRF (1900-2020)\n", date);
 		return (MGD77_BAD_IGRFDATE);
 	}
 
-	if (date < 2010.) {
+	if (date < 2015.) {
 		t = 0.2 * (date - 1900.);
 		ll = (int) t;
 		one = (double) ll;
@@ -5198,7 +5268,7 @@ int MGD77_igrf10syn (struct GMT_CTRL *GMT, int isv, double date, int itype, doub
 			nmx = 13;
 			nc = nmx * (nmx + 2);
 			ll = (int) ((date - 1995.) * .2);
-			ll = nc * ll + 2280		/* 2280, position of first coeff of 1995 */;
+			ll = nc * ll + 2280		/* 2280 (= 120*19), position of first coeff of 1995 */;
 			kmx = (nmx + 1) * (nmx + 2) / 2;
 		}
 		tc = 1. - t;
@@ -5208,13 +5278,13 @@ int MGD77_igrf10syn (struct GMT_CTRL *GMT, int isv, double date, int itype, doub
 		}
 	}
 	else {
-		t = date - 2010.;
+		t = date - 2015.;
 		tc = 1.;
 		if (isv == 1) {
 			t = 1.;
 			tc = 0.;
 		}
-		ll = 2865;		/* nth position corresponding to first coeff of 2010 */
+		ll = 3060;		/* nth position corresponding to first coeff of 2015 */
 		nmx = 13;
 		nc = nmx * (nmx + 2);
 		kmx = (nmx + 1) * (nmx + 2) / 2;
@@ -5320,6 +5390,7 @@ int MGD77_igrf10syn (struct GMT_CTRL *GMT, int isv, double date, int itype, doub
 
 void MGD77_IGF_text (struct GMT_CTRL *GMT, FILE *fp, int version)
 {
+	GMT_UNUSED(GMT);
 	switch (version) {
 		case 1:	/* Heiskanen 1924 model */
 			fprintf (fp, "g = %.12g * [1 + %.6f * sin^2(lat) - %.7f * sin^2(2*lat) + %.6f * cos^2(lat) * cos^2(lon-18)]\n",
@@ -5471,7 +5542,7 @@ unsigned int MGD77_Scan_Corrtable (struct GMT_CTRL *GMT, char *tablefile, char *
 		if ((cruise_id = MGD77_Find_Cruise_ID (GMT, cruise, cruises, n_cruises, sorted)) == MGD77_NOT_SET) continue; /* Not a cruise we are interested in at the moment */
 		if ((id = MGD77_Match_List (GMT, name, n_fields, field_names)) == MGD77_NOT_SET) continue; 		/* Not a column we are interested in at the moment */
 		pos = 0;
-		while (GMT_strtok (arguments, " ,\t", &pos, word)) {
+		while (GMT_strtok (arguments, GMT_TOKEN_SEPARATORS, &pos, word)) {
 			/* Each word p will be of the form factor*[cos|sin|exp]([<scale>](<name>[-<origin>]))[^<power>] */
 			if ((f = strchr (word, '*')) != NULL) {	/* No basis function, just a constant, the intercept term */
 				sscanf (word, "%[^*]*%s", factor, basis);
@@ -5600,7 +5671,7 @@ int MGD77_Parse_Corrtable (struct GMT_CTRL *GMT, char *tablefile, char **cruises
 		if ((id = MGD77_Match_List (GMT, name, n_fields, field_names)) == MGD77_NOT_SET) continue; 		/* Not a column we are interested in at the moment */
 		pos = 0;
 		previous = &C_table[cruise_id][id].term;
-		while (GMT_strtok (arguments, " ,\t", &pos, word)) {
+		while (GMT_strtok (arguments, GMT_TOKEN_SEPARATORS, &pos, word)) {
 			c = GMT_memory (GMT, NULL, 1, struct MGD77_CORRECTION);
 			/* Each word p will be of the form factor*[cos|sin|exp]([<scale>](<name>[-<origin>]))[^<power>] */
 			if ((f = strchr (word, '*')) == NULL) {	/* No basis function, just a constant, the intercept term */
@@ -5690,6 +5761,7 @@ double MGD77_Correction (struct GMT_CTRL *GMT, struct MGD77_CORRECTION *C, doubl
 	 * when data are given in a 2-D array and aux in a 1-D array for current record */
 	double dz = 0.0, z;
 	struct MGD77_CORRECTION *current;
+	GMT_UNUSED(GMT);
 
 	for (current = C; current; current = current->next) {
 		if (current->id == -1) {	/* Just a constant */
@@ -5711,6 +5783,7 @@ double MGD77_Correction_Rec (struct GMT_CTRL *GMT, struct MGD77_CORRECTION *C, d
 	 * when both data and aux are given in a 1-D array for the current record. */
 	double dz = 0.0, z;
 	struct MGD77_CORRECTION *current;
+	GMT_UNUSED(GMT);
 
 	for (current = C; current; current = current->next) {
 		if (current->id == -1) {	/* Just a constant */
@@ -5759,6 +5832,7 @@ double MGD77_time_to_fyear (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, doubl
 double MGD77_cal_to_fyear (struct GMT_CTRL *GMT, struct GMT_gcal *cal) {
 	/* Convert GMT calendar structure to decimal year for use with IGRF/CM4 function */
 	double n_days;
+	GMT_UNUSED(GMT);
 	n_days = (GMT_is_gleap (cal->year)) ? 366.0 : 365.0;	/* Number of days in this year */
 	return (cal->year + ((cal->day_y - 1.0) + (cal->hour * GMT_HR2SEC_I + cal->min * GMT_MIN2SEC_I + cal->sec) * GMT_SEC2DAY) / n_days);
 }
@@ -5775,6 +5849,7 @@ double MGD77_rdc2dt (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, int64_t rd, 
 /*	Given rata die rd and double seconds, return
 	time in secs relative to unix epoch  */
 	double f_days;
+	GMT_UNUSED(GMT);
 	f_days = (rd - F->utime.rata_die - F->utime.epoch_t0);
 	return ((f_days * GMT_DAY2SEC_F  + secs) * F->utime.i_scale);
 }
@@ -5852,12 +5927,12 @@ void MGD77_CM4_init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct MGD77
 	CM4->CM4_DATA.pred[4] = CM4->CM4_DATA.pred[5] = false;
 }
 
-double MGD77_Eotvos (struct GMT_CTRL *GMT, double lat, double velocity, double heading)
-{
+double MGD77_Eotvos (struct GMT_CTRL *GMT, double lat, double velocity, double heading) {
 	/*	Given latitude *degree), velocity (m/s), and heading (degree), return Eotvos correction.
 	 * If v is in knots then E = 7.5027*cos(lat)*sin(az)*velocity + 0.004154*velocity^2.
 	 * Since our v is in m/s and m/s / (1852/3600) gives knots we get the constants below. */
 	double E;
+	GMT_UNUSED(GMT);
 	E = (14.584247034 *cosd (lat) * sind (heading) + 0.0156960194805 * velocity) * velocity;
 	return (E);
 }

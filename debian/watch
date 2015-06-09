@@ -1,2 +1,7 @@
 version=3
-ftp://ibis.grdl.noaa.gov/pub/gmt/GMT([0-9.]+)\_src\.tar\.bz2	
+opts=passive,\
+dversionmangle=s/\+(debian|dfsg|ds|deb)\d*$//,\
+uversionmangle=s/-src$//;s/^(\S+-doc)/0.0.$1/,\
+repacksuffix=+dfsg1 \
+ftp://ftp.soest.hawaii.edu/gmt/ \
+(?:|.*/)gmt(?:[_\-]v?|)(\d[^\s/]*)\.(?:tar\.xz|txz|tar\.bz2|tbz2|tar\.gz|tgz)

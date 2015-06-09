@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dcw.c 12849 2014-02-04 00:18:26Z pwessel $
+ *	$Id: gmt_dcw.c 14071 2015-02-13 22:00:27Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -584,6 +584,10 @@ unsigned int GMT_DCW_parse (struct GMT_CTRL *GMT, char option, char *args, struc
 					break;
 			}
 		}
+	}
+	if (F->codes[0] == '\0' && !(F->mode & 3)) {	/* Gave _l or +L but no codes */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: No country codes given\n", option);
+		n_errors++;
 	}
 	return (n_errors);
 }

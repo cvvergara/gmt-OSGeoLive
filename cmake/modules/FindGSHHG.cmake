@@ -1,11 +1,11 @@
 #
-# $Id: FindGSHHG.cmake 12871 2014-02-07 17:38:13Z pwessel $
+# $Id: FindGSHHG.cmake 13957 2015-01-21 12:45:26Z fwobbe $
 #
 # Locate GSHHG shorelines
 #
 # This module accepts the following environment variables:
 #
-#    GSHHG_ROOT         - Specify the location of GSHHG
+#  GSHHG_ROOT, GSHHGDIR - Specify the location of GSHHG
 #
 # This module defines the following CMake variables:
 #
@@ -14,12 +14,11 @@
 #    GSHHG_VERSION      - String of the GSHHG version found
 #    GSHHG_MIN_REQUIRED_VERSION_{MAJOR, MINOR, PATCH}
 #                       - Major, minor, and patch version required
-#    GSHHG_EXT          - GSHHG netCDF file extension
 
 # get GSHHG path
 find_path (GSHHG_PATH
-	NAMES binned_GSHHS_c.nc binned_GSHHS_c.cdf
-	HINTS ${GSHHG_ROOT} $ENV{GSHHG_ROOT}
+	NAMES binned_GSHHS_c.nc
+	HINTS ${GSHHG_ROOT} $ENV{GSHHG_ROOT} $ENV{GSHHGDIR}
 	PATH_SUFFIXES
 	gmt-gshhg
 	gshhg-gmt-nc4
@@ -38,7 +37,7 @@ find_path (GSHHG_PATH
 # get GSHHG file
 if (GSHHG_PATH)
 	find_file (_GSHHG_FILE
-		NAMES binned_GSHHS_c.cdf binned_GSHHS_c.nc
+		NAMES binned_GSHHS_c.nc
 		HINTS ${GSHHG_PATH})
 endif (GSHHG_PATH)
 
@@ -47,8 +46,7 @@ set (GSHHG_MIN_REQUIRED_VERSION_MAJOR 2 CACHE INTERNAL "GSHHG required version m
 set (GSHHG_MIN_REQUIRED_VERSION_MINOR 2 CACHE INTERNAL "GSHHG required version minor")
 set (GSHHG_MIN_REQUIRED_VERSION_PATCH 0 CACHE INTERNAL "GSHHG required version patch")
 set (GSHHG_MIN_REQUIRED_VERSION
-	"${GSHHG_MIN_REQUIRED_VERSION_MAJOR}.${GSHHG_MIN_REQUIRED_VERSION_MINOR}.${GSHHG_MIN_REQUIRED_VERSION_PATCH}"
-	CACHE INTERNAL "GSHHG required version")
+	"${GSHHG_MIN_REQUIRED_VERSION_MAJOR}.${GSHHG_MIN_REQUIRED_VERSION_MINOR}.${GSHHG_MIN_REQUIRED_VERSION_PATCH}")
 
 # check GSHHG version
 if (_GSHHG_FILE AND NOT GSHHG_FOUND)
@@ -59,8 +57,15 @@ if (_GSHHG_FILE AND NOT GSHHG_FOUND)
 		-DINCLUDE_DIRECTORIES=${NETCDF_INCLUDE_DIR}
 		-DLINK_LIBRARIES=${NETCDF_LIBRARIES}
 		COMPILE_DEFINITIONS -DSTANDALONE
+		COMPILE_OUTPUT_VARIABLE _GSHHG_VERSION_COMPILE_OUT
 		RUN_OUTPUT_VARIABLE _GSHHG_VERSION_STRING
-		ARGS ${_GSHHG_FILE} ${GSHHG_MIN_REQUIRED_VERSION})
+		ARGS \"${_GSHHG_FILE}\" ${GSHHG_MIN_REQUIRED_VERSION})
+
+	if (NOT _COMPILED_GSHHG_VERSION OR _EXIT_GSHHG_VERSION STREQUAL FAILED_TO_RUN)
+		message(FATAL_ERROR "Cannot determine GSHHG version:\n
+		${_GSHHG_VERSION_COMPILE_OUT}\n
+		${_GSHHG_VERSION_STRING}")
+	endif ()
 
 	# check version string
 	if (_COMPILED_GSHHG_VERSION)
@@ -69,7 +74,6 @@ if (_GSHHG_FILE AND NOT GSHHG_FOUND)
 		if (_EXIT_GSHHG_VERSION EQUAL 0)
 			# found GSHHG of required version or higher
 			set (GSHHG_VERSION ${GSHHG_VERSION} CACHE INTERNAL "GSHHG version")
-			get_filename_component (GSHHG_EXT ${_GSHHG_FILE} EXT CACHE)
 		elseif (_EXIT_GSHHG_VERSION EQUAL -1)
 			# found GSHHG but version is too old
 			message (WARNING "GSHHG found but it is too old (${GSHHG_VERSION}). "
@@ -78,13 +82,8 @@ if (_GSHHG_FILE AND NOT GSHHG_FOUND)
 	endif (_COMPILED_GSHHG_VERSION)
 endif (_GSHHG_FILE AND NOT GSHHG_FOUND)
 
-if (GSHHG_EXT STREQUAL "")
-	message(FATAL_ERROR "unexpected: the string literal 'GSHHG_EXT' is empty - reset to .nc")
-	set (GSHHG_EXT ${GSHHG_EXT} CACHE INTERNAL ".nc")
-endif()
-
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (GSHHG DEFAULT_MSG
-	GSHHG_PATH GSHHG_VERSION GSHHG_EXT)
+	GSHHG_PATH GSHHG_VERSION)
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

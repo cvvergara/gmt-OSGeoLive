@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pscontour.c 12937 2014-02-22 05:11:02Z pwessel $
+ *	$Id: pscontour.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -462,7 +462,7 @@ int GMT_pscontour_parse (struct GMT_CTRL *GMT, struct PSCONTOUR_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -720,7 +720,7 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 
 	if (GMT->common.J.active && GMT_err_fail (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_RUNTIME_ERROR);
 
-	n_alloc = GMT_CHUNK;
+	n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 	x = GMT_memory (GMT, NULL, n_alloc, double);
 	y = GMT_memory (GMT, NULL, n_alloc, double);
 	z = GMT_memory (GMT, NULL, n_alloc, double);
@@ -903,6 +903,7 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 				if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
 					break;
 			}
+			if (GMT_is_a_blank_line (record)) continue;	/* Nothing in this record */
 
 			/* Data record to process */
 
@@ -953,8 +954,8 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 			if (c == c_alloc) cont = GMT_malloc (GMT, cont, c, &c_alloc, struct PSCONTOUR);
 			GMT_memset (&cont[c], 1, struct PSCONTOUR);
 			cont[c].val = ic * Ctrl->C.interval;
-			if (Ctrl->contour.annot && (cont[c].val - aval) > GMT_SMALL) aval += Ctrl->A.interval;
-			cont[c].type = (fabs (cont[c].val - aval) < GMT_SMALL) ? 'A' : 'C';
+			if (Ctrl->contour.annot && (cont[c].val - aval) > GMT_CONV4_LIMIT) aval += Ctrl->A.interval;
+			cont[c].type = (fabs (cont[c].val - aval) < GMT_CONV4_LIMIT) ? 'A' : 'C';
 			cont[c].angle = (Ctrl->contour.angle_type == 2) ? Ctrl->contour.label_angle : GMT->session.d_NaN;
 			cont[c].do_tick = Ctrl->T.active;
 		}
@@ -1000,18 +1001,19 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 		}
 		GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
 		dim[GMT_TBL] = n_tables;
-		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, Ctrl->D.file)) == NULL) Return (API->error);	/* An empty dataset */
+		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (API->error);	/* An empty dataset */
 		n_seg_alloc = GMT_memory (GMT, NULL, n_tables, size_t);
 		n_seg = GMT_memory (GMT, NULL, n_tables, uint64_t);
 		if ((error = GMT_set_cols (GMT, GMT_OUT, 3))) Return (error);
 	}
 	
 	if (make_plot) {
-		if (Ctrl->contour.delay) GMT->current.ps.nclip = +1;	/* Signal that this program initiates clipping that will outlive this process */
+		if (Ctrl->contour.delay) GMT->current.ps.nclip = (Ctrl->N.active) ? +1 : +2;	/* Signal that this program initiates clipping that will outlive this process */
 		PSL = GMT_plotinit (GMT, options);
 		GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
 		GMT_plotcanvas (GMT);	/* Fill canvas if requested */
-		if (!(Ctrl->N.active  || Ctrl->contour.delay)) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
+		if (Ctrl->contour.delay) GMT_map_basemap (GMT);	/* If delayed clipping the basemap must be done before clipping */
+		if (!Ctrl->N.active) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
 		Ctrl->contour.line_pen = Ctrl->W.pen[0];
 	}
 
@@ -1215,9 +1217,8 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 				GMT_get_rgb_from_z (GMT, P, cont[c].val, rgb);
 				GMT_rgb_copy (&Ctrl->contour.line_pen.rgb, rgb);
 			}
-			if (Ctrl->W.color_text && Ctrl->contour.curved_text) {	/* Override label color according to cpt file */
+			if (Ctrl->W.color_text)	/* Override label color according to cpt file */
 				GMT_rgb_copy (&Ctrl->contour.font_label.fill.rgb, rgb);
-			}
 			
 			head_c = last_c = GMT_memory (GMT, NULL, 1, struct PSCONTOUR_CHAIN);
 
@@ -1236,28 +1237,28 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 				cont[c].L[k] = cont[c].L[cont[c].nl];
 				while (k < cont[c].nl) {	/* As long as there are more */
 					add = 0;
-					if (fabs(cont[c].L[k].x0 - this_c->begin->x) < GMT_SMALL && fabs(cont[c].L[k].y0 - this_c->begin->y) < GMT_SMALL) {	/* L matches previous */
+					if (fabs(cont[c].L[k].x0 - this_c->begin->x) < GMT_CONV4_LIMIT && fabs(cont[c].L[k].y0 - this_c->begin->y) < GMT_CONV4_LIMIT) {	/* L matches previous */
 						p = GMT_memory (GMT, NULL, 1, struct PSCONTOUR_PT);
 						p->x = cont[c].L[k].x1;
 						p->y = cont[c].L[k].y1;
 						p->next = this_c->begin;
 						add = -1;
 					}
-					else if (fabs(cont[c].L[k].x1 - this_c->begin->x) < GMT_SMALL && fabs(cont[c].L[k].y1 - this_c->begin->y) < GMT_SMALL) {	/* L matches previous */
+					else if (fabs(cont[c].L[k].x1 - this_c->begin->x) < GMT_CONV4_LIMIT && fabs(cont[c].L[k].y1 - this_c->begin->y) < GMT_CONV4_LIMIT) {	/* L matches previous */
 						p = GMT_memory (GMT, NULL, 1, struct PSCONTOUR_PT);
 						p->x = cont[c].L[k].x0;
 						p->y = cont[c].L[k].y0;
 						p->next = this_c->begin;
 						add = -1;
 					}
-					else if (fabs(cont[c].L[k].x0 - this_c->end->x) < GMT_SMALL && fabs(cont[c].L[k].y0 - this_c->end->y) < GMT_SMALL) {	/* L matches previous */
+					else if (fabs(cont[c].L[k].x0 - this_c->end->x) < GMT_CONV4_LIMIT && fabs(cont[c].L[k].y0 - this_c->end->y) < GMT_CONV4_LIMIT) {	/* L matches previous */
 						p = GMT_memory (GMT, NULL, 1, struct PSCONTOUR_PT);
 						p->x = cont[c].L[k].x1;
 						p->y = cont[c].L[k].y1;
 						this_c->end->next = p;
 						add = 1;
 					}
-					else if (fabs(cont[c].L[k].x1 - this_c->end->x) < GMT_SMALL && fabs(cont[c].L[k].y1 - this_c->end->y) < GMT_SMALL) {	/* L matches previous */
+					else if (fabs(cont[c].L[k].x1 - this_c->end->x) < GMT_CONV4_LIMIT && fabs(cont[c].L[k].y1 - this_c->end->y) < GMT_CONV4_LIMIT) {	/* L matches previous */
 						p = GMT_memory (GMT, NULL, 1, struct PSCONTOUR_PT);
 						p->x = cont[c].L[k].x0;
 						p->y = cont[c].L[k].y0;
@@ -1414,7 +1415,7 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 
 	if (make_plot) {
 		if (!(Ctrl->N.active || Ctrl->contour.delay)) GMT_map_clip_off (GMT);
-		GMT_map_basemap (GMT);
+		if (!Ctrl->contour.delay) GMT_map_basemap (GMT);	/* If delayed clipping the basemap is done before plotting, else here */
 		GMT_plane_perspective (GMT, -1, 0.0);
 		GMT_plotend (GMT);
 	}

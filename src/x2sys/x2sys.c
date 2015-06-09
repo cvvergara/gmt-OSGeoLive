@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.c 12944 2014-02-25 18:14:38Z pwessel $
+ *	$Id: x2sys.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *      Copyright (c) 1999-2014 by P. Wessel
+ *      Copyright (c) 1999-2015 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -124,7 +124,7 @@ unsigned int n_x2sys_paths = 0;	/* Number of these directories */
 char *gmtmgg_path[10];  /* Max 10 directories for now */
 int n_gmtmgg_paths = 0; /* Number of these directories */
 
-int gmtmggpath_func (struct GMT_CTRL *GMT, char *leg_path, char *leg)
+int gmtmggpath_func (char *leg_path, char *leg)
 {
 	int id;
 	char geo_path[GMT_BUFSIZ] = {""};
@@ -213,13 +213,12 @@ void x2sys_set_home (struct GMT_CTRL *GMT)
 #endif
 }
 
-void x2sys_path (struct GMT_CTRL *GMT, char *fname, char *path)
-{
+void x2sys_path (struct GMT_CTRL *GMT, char *fname, char *path) {
+	GMT_UNUSED(GMT);
 	sprintf (path, "%s/%s", X2SYS_HOME, fname);
 }
 
-FILE *x2sys_fopen (struct GMT_CTRL *GMT, char *fname, char *mode)
-{
+FILE *x2sys_fopen (struct GMT_CTRL *GMT, char *fname, char *mode) {
 	FILE *fp = NULL;
 	char file[GMT_BUFSIZ] = {""};
 
@@ -249,7 +248,7 @@ int x2sys_access (struct GMT_CTRL *GMT, char *fname, int mode)
 
 int x2sys_fclose (struct GMT_CTRL *GMT, char *fname, FILE *fp)
 {
-
+	GMT_UNUSED(GMT); GMT_UNUSED(fname);
 	if (fclose (fp)) return (X2SYS_FCLOSE_ERR);
 	return (X2SYS_NOERROR);
 }
@@ -297,6 +296,7 @@ int x2sys_initialize (struct GMT_CTRL *GMT, char *TAG, char *fname, struct GMT_I
 	X->ms_flag = '>';	/* Default multisegment header flag */
 	sprintf (line, "%s/%s.def", TAG, fname);
 	X->dist_flag = 0;	/* Cartesian distances */
+	sprintf (X->separators, "%s\n", GMT_TOKEN_SEPARATORS);
 
 	if ((fp = x2sys_fopen (GMT, line, "r")) == NULL) return (X2SYS_BAD_DEF);
 
@@ -412,9 +412,9 @@ void x2sys_end (struct GMT_CTRL *GMT, struct X2SYS_INFO *X)
 	MGD77_end (GMT, &M);
 }
 
-unsigned int x2sys_record_length (struct GMT_CTRL *GMT, struct X2SYS_INFO *s)
-{
+unsigned int x2sys_record_length (struct GMT_CTRL *GMT, struct X2SYS_INFO *s) {
 	unsigned int i, rec_length = 0;
+	GMT_UNUSED(GMT);
 
 	for (i = 0; i < s->n_fields; i++) {
 		switch (s->info[i].intype) {
@@ -440,10 +440,10 @@ unsigned int x2sys_record_length (struct GMT_CTRL *GMT, struct X2SYS_INFO *s)
 	return (rec_length);
 }
 
-unsigned int x2sys_n_data_cols (struct GMT_CTRL *GMT, struct X2SYS_INFO *s)
-{
+unsigned int x2sys_n_data_cols (struct GMT_CTRL *GMT, struct X2SYS_INFO *s) {
 	unsigned int i, n = 0;
 	int is;
+	GMT_UNUSED(GMT);
 
 	for (i = is = 0; i < s->n_out_columns; i++, is++) {	/* Loop over all possible fields in this data set */
 		if (is == s->x_col) continue;
@@ -455,8 +455,7 @@ unsigned int x2sys_n_data_cols (struct GMT_CTRL *GMT, struct X2SYS_INFO *s)
 	return (n);
 }
 
-int x2sys_pick_fields (struct GMT_CTRL *GMT, char *string, struct X2SYS_INFO *s)
-{
+int x2sys_pick_fields (struct GMT_CTRL *GMT, char *string, struct X2SYS_INFO *s) {
 	/* Scan the -Fstring and select which columns to use and which order
 	 * they should appear on output.  Default is all columns and the same
 	 * order as on input.  Once this is set you can loop through i = 0:n_out_columns
@@ -572,7 +571,7 @@ int x2sys_read_record (struct GMT_CTRL *GMT, FILE *fp, double *data, struct X2SY
 				}
 				GMT_chop (line);	/* Remove trailing CR or LF */
 				pos = 0;
-				while ((GMT_strtok (line, " ,\t\n", &pos, p)) && k < s->n_fields) {
+				while ((GMT_strtok (line, s->separators, &pos, p)) && k < s->n_fields) {
 					if (GMT_scanf (GMT, p, G->col_type[GMT_IN][k], &data[k]) == GMT_IS_NAN) data[k] = GMT->session.d_NaN;
 					k++;;
 				}
@@ -666,7 +665,6 @@ int x2sys_read_file (struct GMT_CTRL *GMT, char *fname, double ***data, struct X
 	p->ms_rec = GMT_memory (GMT, NULL, n_alloc, uint64_t);
 	x2sys_skip_header (GMT, fp, s);
 	p->n_segments = 0;	/* So that first increment sets it to 0 */
-
 	j = 0;
 	while (!x2sys_read_record (GMT, fp, rec, s, G)) {	/* Gets the next data record */
 		if (s->multi_segment && s->ms_next && !first) p->n_segments++;
@@ -726,7 +724,7 @@ int x2sys_read_gmtfile (struct GMT_CTRL *GMT, char *fname, double ***data, struc
 		}
 		strncpy (name, fname, 80U);
 		if (strstr (fname, ".gmt")) name[strlen(fname)-4] = 0;	/* Name includes .gmt suffix, remove it */
-	  	if (gmtmggpath_func (GMT, path, name)) return (GMT_GRDIO_FILE_NOT_FOUND);
+	  	if (gmtmggpath_func (path, name)) return (GMT_GRDIO_FILE_NOT_FOUND);
 
 	}
 	strcpy (s->path, path);
@@ -795,6 +793,7 @@ int x2sys_read_mgd77file (struct GMT_CTRL *GMT, char *fname, double ***data, str
 	double **z = NULL, dvals[MGD77_N_DATA_EXTENDED];
 	struct MGD77_HEADER H;
 	struct MGD77_CONTROL M;
+	GMT_UNUSED(G);
 
 	MGD77_Init (GMT, &M);	/* Initialize MGD77 Machinery */
 
@@ -855,6 +854,7 @@ int x2sys_read_mgd77ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, s
 	double **z = NULL;
 	struct MGD77_DATASET *S = NULL;
 	struct MGD77_CONTROL M;
+	GMT_UNUSED(G);
 
 	MGD77_Init (GMT, &M);			/* Initialize MGD77 Machinery */
 	M.format  = MGD77_FORMAT_CDF;		/* Set input file's format to netCDF */
@@ -912,6 +912,7 @@ int x2sys_read_ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, struct
 	char path[GMT_BUFSIZ] = {""};
 	double **z = NULL, *in = NULL;
 	FILE *fp = NULL;
+	GMT_UNUSED(G);
 
   	if (x2sys_get_data_path (GMT, path, fname, s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
 	strcat (path, "?");	/* Set all the required fields */
@@ -1456,15 +1457,19 @@ int x2sys_get_data_path (struct GMT_CTRL *GMT, char *track_path, char *track, ch
 	unsigned int id;
 	bool add_suffix;
 	char geo_path[GMT_BUFSIZ] = {""};
-
-	if (track[0] == '/' || track[1] == ':') {	/* Full path given, just return it */
-		strcpy (track_path, track);
-		return (0);
-	}
+	GMT_UNUSED(GMT);
 
 	/* Check if we need to append suffix */
 
 	add_suffix = strncmp (&track[strlen(track)-strlen(suffix)], suffix, strlen(suffix));	/* Need to add suffix? */
+
+	if (track[0] == '/' || track[1] == ':') {	/* Full path given, just return it, possibly after appending suffix */
+		if (add_suffix)
+			sprintf (track_path, "%s.%s", track, suffix);
+		else
+			strcpy (track_path, track);
+		return (0);
+	}
 
 	/* First look in current directory */
 
@@ -1496,6 +1501,7 @@ const char * x2sys_strerror (struct GMT_CTRL *GMT, int err)
 {
 /* Returns the error string for a given error code "err"
    Passes "err" on to nc_strerror if the error code is not one we defined */
+	GMT_UNUSED(GMT);
 	switch (err) {
 		case X2SYS_FCLOSE_ERR:
 			return "Error from fclose";
@@ -1825,6 +1831,7 @@ int x2sys_find_track (struct GMT_CTRL *GMT, char *name, char **list, unsigned in
 	if (!list) return (-1);	/* Null pointer passed */
 	for (i = 0; i < n; i++) if (!strcmp (name, list[i])) return (i);
 	return (-1);
+	GMT_UNUSED(GMT);
 }
 
 int x2sys_get_tracknames (struct GMT_CTRL *GMT, struct GMT_OPTION *options, char ***filelist, bool *cmdline)
@@ -1878,6 +1885,7 @@ unsigned int separate_aux_columns2 (struct GMT_CTRL *GMT, unsigned int n_items, 
 {	/* Used in x2sys_get_corrtable */
 	unsigned int i, j, k, n_aux;
 	int this_aux;
+	GMT_UNUSED(GMT);
 	/* Based on what item_name contains, we copy over info on the 3 aux fields (dist, azim, vel) from auxlist to aux */
 	for (i = k = n_aux = 0; i < n_items; i++) {
 		for (j = 0, this_aux = MGD77_NOT_SET; j < N_GENERIC_AUX && this_aux == MGD77_NOT_SET; j++) if (!strcmp (auxlist[j].name, item_name[i])) this_aux = j;

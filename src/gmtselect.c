@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtselect.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmtselect.c 13983 2015-01-26 01:51:38Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -158,6 +158,61 @@ int compare_x (const void *point_1, const void *point_2)
 	return (0);
 }
 
+EXTERN_MSC void gmt_format_abstime_output (struct GMT_CTRL *GMT, double dt, char *text);
+void gmt_ogr_to_text (struct GMT_CTRL *GMT, struct GMT_OGR *G, char *out)
+{
+	unsigned int col, k, n_aspatial = 0;
+	size_t len;
+	char text[GMT_LEN64] = {""};
+	static int ogr[MAX_ASPATIAL];
+	
+	out[0] = '\0';	/* Start with nothing */
+	
+	if (n_aspatial == 0) {	/* First time */
+		for (col = 0; col < GMT->common.a.n_aspatial; col++) {	/* Loop over requested aspatial items via -a */
+			for (k = 0; k < G->n_aspatial; k++) {	/* Given the actual data... */
+				if (strcmp (GMT->common.a.name[col], G->name[k])) continue;	/* Not one of the specified items */
+				ogr[n_aspatial++] = k;
+			}
+		}
+	}
+	for (col = 0; col < n_aspatial; col++) {	/* Loop over requested aspatial items via -a */
+		k = ogr[col];
+		switch (G->type[k]) {
+			case GMT_TEXT:
+				len = strlen (G->tvalue[k]);
+				if (G->tvalue[k][0] == '\"' && G->tvalue[k][len-1] == '\"') {	/* Skip opening and closing quotes */
+					strncpy (text, &G->tvalue[k][1], len-2);
+					text[len-2] = '\0';
+				}
+				else
+					strcpy (text, G->tvalue[k]);
+				break;
+			case GMT_DOUBLE:
+			case GMT_FLOAT:
+				GMT_ascii_format_col (GMT, text, G->dvalue[k], GMT_OUT, GMT_Z);
+				break;
+			case GMT_CHAR:
+			case GMT_UCHAR:
+			case GMT_INT:
+			case GMT_UINT:
+			case GMT_LONG:
+			case GMT_ULONG:
+				sprintf (text, "%ld", lrint (G->dvalue[k]));
+				break;
+			case GMT_DATETIME:
+				gmt_format_abstime_output (GMT, G->dvalue[k], text);
+				break;
+			default:
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Bad type passed to gmt_write_formatted_ogr_value - assumed to be double\n");
+				GMT_ascii_format_col (GMT, text, G->dvalue[k], GMT_OUT, GMT_Z);
+				break;
+		}
+		strcat (out, GMT->current.setting.io_col_separator);
+		strcat (out, text);
+	}
+}
+
 int GMT_gmtselect_usage (struct GMTAPI_CTRL *API, int level)
 {
 	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
@@ -238,7 +293,7 @@ int GMT_gmtselect_parse (struct GMT_CTRL *GMT, struct GMTSELECT_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -249,13 +304,19 @@ int GMT_gmtselect_parse (struct GMT_CTRL *GMT, struct GMTSELECT_CTRL *Ctrl, stru
 				break;
 			case 'C':	/* Near a point test */
 				Ctrl->C.active = true;
-				if (opt->arg[0] == 'f' && GMT_compat_check (GMT, 4)) {
-					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -Cf is deprecated; use -C- instead\n");
-					opt->arg[0] = '-';
-					fix = true;
+				if (opt->arg[0] == 'f') {
+					if (GMT_compat_check (GMT, 4)) {	/* Allow old-style quick-mode specification */
+						GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -Cf is deprecated; use -C- instead\n");
+						opt->arg[0] = '-';
+						fix = true;
+					}
+					else {
+						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -C option: Expects -C%s/<file>\n", GMT_DIST_OPT);
+						n_errors++;
+					}
 				}
 				for (j = 0; opt->arg[j] && opt->arg[j] != '/'; j++);
-				if (opt->arg[j]) {
+				if (opt->arg[j]) {	/* Found a file name */
 					Ctrl->C.file = strdup (&opt->arg[j+1]);
 					opt->arg[j] = '\0';	/* Chop off the /filename part */
 					Ctrl->C.mode = GMT_get_distance (GMT, opt->arg, &(Ctrl->C.dist), &(Ctrl->C.unit));
@@ -265,7 +326,7 @@ int GMT_gmtselect_parse (struct GMT_CTRL *GMT, struct GMTSELECT_CTRL *Ctrl, stru
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -C option: Expects -C%s/<file>\n", GMT_DIST_OPT);
 					n_errors++;
 				}
-				if (fix) opt->arg[0] = 'f';
+				if (fix) opt->arg[0] = 'f';	/* Just to leave the original args unaltered */
 				break;
 			case 'D':	/* Set GSHHS resolution */
 				Ctrl->D.active = true;
@@ -286,7 +347,7 @@ int GMT_gmtselect_parse (struct GMT_CTRL *GMT, struct GMTSELECT_CTRL *Ctrl, stru
 				}
 				break;
 			case 'F':	/* Inside/outside polygon test */
-				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_IN)))
+				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->F.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -321,7 +382,7 @@ int GMT_gmtselect_parse (struct GMT_CTRL *GMT, struct GMTSELECT_CTRL *Ctrl, stru
 					n_errors++;
 				}
 				else {
-					if (GMT_check_filearg (GMT, 'L', &opt->arg[j+1], GMT_IN))
+					if (GMT_check_filearg (GMT, 'L', &opt->arg[j+1], GMT_IN, GMT_IS_DATASET))
 						Ctrl->L.file = strdup (&opt->arg[j+1]);
 					else
 						n_errors++;
@@ -427,15 +488,16 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 	unsigned int base = 3, np[2] = {0, 0}, r_mode;
 	unsigned int side, col, id;
 	int n_fields, ind, wd[2] = {0, 0}, n_minimum = 2, bin, last_bin = INT_MAX, error = 0;
-	bool inside, need_header = false, shuffle, just_copy_record = false, pt_cartesian = false;
+	bool inside = false, need_header = false, shuffle, just_copy_record = false, pt_cartesian = false;
 	bool output_header = false, do_project = false, no_resample = false, keep;
 
-	uint64_t k, row, seg, n_read = 0, n_pass = 0;
+	uint64_t k, row, seg, n_read = 0, n_pass = 0, n_output = 0;
 
 	double xx, yy, *in = NULL;
 	double west_border = 0.0, east_border = 0.0, xmin, xmax, ymin, ymax, lon;
 
 	char *shore_resolution[5] = {"full", "high", "intermediate", "low", "crude"};
+	char extra[GMT_BUFSIZ] = {""};
 
 	struct GMT_DATATABLE *pol = NULL, *line = NULL, *point = NULL;
 	struct GMT_GSHHS_POL *p[2] = {NULL, NULL};
@@ -505,8 +567,8 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 			Ctrl->N.mask[3] = Ctrl->N.mask[1];
 			Ctrl->N.mask[2] = Ctrl->N.mask[4] = Ctrl->N.mask[0];
 		}
-		if (GMT_init_shore (GMT, Ctrl->D.set, &c, GMT->common.R.wesn, &Ctrl->A.info)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "%s resolution shoreline data base not installed\n", shore_resolution[base]);
+		if ((err = GMT_init_shore (GMT, Ctrl->D.set, &c, GMT->common.R.wesn, &Ctrl->A.info))) {
+			GMT_Report (API, GMT_MSG_NORMAL, "%s [GSHHG %s resolution shorelines]\n", GMT_strerror(err), shore_resolution[base]);
 			Return (EXIT_FAILURE);
 		}
 		GMT_Report (API, GMT_MSG_LONG_VERBOSE, "GSHHG version %s\n%s\n%s\n", c.version, c.title, c.source);
@@ -515,8 +577,6 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 		wd[0] = 1;	wd[1] = -1;
 		np[0] = np[1] = 0;
 	}
-
-	just_copy_record = (GMT_is_ascii_record (GMT) && !shuffle);
 
 	/* Initiate pointer to distance calculation function */
 	if (GMT_is_geographic (GMT, GMT_IN) && !do_project) {	/* Geographic data and no -R -J conversion */
@@ -625,6 +685,9 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 		}
 	}
 	
+	/* Specify input and output expected columns */
+	if ((error = GMT_set_cols (GMT, GMT_IN,  0))) Return (error);
+
 	/* Gather input/output  file names (or stdin/out) and enable i/o */
 	
 	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
@@ -642,6 +705,7 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 
 	/* Now we are ready to take on some input values */
 
+	just_copy_record = (GMT_is_ascii_record (GMT) && !shuffle && !GMT->common.s.active);
 	GMT->common.b.ncol[GMT_OUT] = UINT_MAX;	/* Flag to have it reset to GMT->common.b.ncol[GMT_IN] when writing */
 	r_mode = (just_copy_record) ? GMT_READ_MIXED : GMT_READ_DOUBLE;
 	GMT_set_segmentheader (GMT, GMT_OUT, false);	/* Since processing of -C|L|F files might have turned it on [should be determined below] */
@@ -665,6 +729,11 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 		
 		/* Data record to process */
 
+		if (n_output == 0) {
+			GMT_set_cols (GMT, GMT_OUT, GMT_get_cols (GMT, GMT_IN));
+			n_output = GMT_get_cols (GMT, GMT_OUT);
+		}
+
 		n_read++;
 		if (n_read%1000 == 0) GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Read %" PRIu64 " records, passed %" PRIu64 "records\r", n_read, n_pass);
 
@@ -679,8 +748,9 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 		if (Ctrl->Z.active) {	/* Apply z-range test(s) */
 			for (k = 0, keep = true; keep && k < Ctrl->Z.n_tests; k++) {
 				col = Ctrl->Z.limit[k].col;			/* Shorthand notation */
-				if (GMT_is_dnan (in[col])) keep = false;	/* Cannot keep when no z-value */
-				if (Ctrl->Z.limit[k].equal)
+				if (GMT_is_dnan (in[col]))
+					keep = true;		/* Make no decision on NaNs here; see -s instead */
+				else if (Ctrl->Z.limit[k].equal)
 					inside = doubleAlmostEqualZero (in[col], Ctrl->Z.limit[k].min);
 				else
 					inside = (in[col] >= Ctrl->Z.limit[k].min && in[col] <= Ctrl->Z.limit[k].max); 
@@ -800,8 +870,13 @@ int GMT_gmtselect (void *V_API, int mode, void *args)
 			output_header = false;
 		}
 
-		if (just_copy_record)
+		if (just_copy_record) {	/* Want to (or can) do text output */
+			if (GMT->common.a.active) {	/* Add selected aspatial fields to output record */
+				gmt_ogr_to_text (GMT, GMT->current.io.OGR, extra);
+				strcat (API->GMT->current.io.current_record, extra);
+			}
 			GMT_Put_Record (API, GMT_WRITE_TEXT, NULL);
+		}
 		else
 			GMT_Put_Record (API, GMT_WRITE_DOUBLE, in);
 		n_pass++;

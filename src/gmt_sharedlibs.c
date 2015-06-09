@@ -1,7 +1,6 @@
-/* $Id: gmt_sharedlibs.c 12822 2014-01-31 23:39:56Z remko $
+/* $Id: gmt_sharedlibs.c 14129 2015-02-26 12:07:09Z remko $
  *
- * Copyright (c) 2012-2014
- * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+ *	Copyright (c) 2012-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
 
@@ -110,6 +109,7 @@ void *dlopen_special(const char *name)
 void *dlopen_special(const char *name)
 {	/* Opens the shared library file of the current process under *nix.
 	 * Just call dlopen with NULL and RTLD_LAZY */
+	GMT_UNUSED(name);
 	return (dlopen (NULL, RTLD_LAZY));
 }
 #endif

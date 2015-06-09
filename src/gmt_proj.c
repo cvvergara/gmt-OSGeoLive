@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_proj.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_proj.c 14129 2015-02-26 12:07:09Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -101,6 +101,7 @@ void gmt_check_R_J (struct GMT_CTRL *GMT, double *clon)	/* Make sure -R and -J a
 
 void GMT_translin (struct GMT_CTRL *GMT, double forw, double *inv)	/* Linear forward */
 {
+	GMT_UNUSED(GMT);
 	*inv = forw;
 }
 
@@ -119,6 +120,7 @@ void GMT_itranslind (struct GMT_CTRL *GMT, double *forw, double inv)	/* Linear i
 
 void GMT_itranslin (struct GMT_CTRL *GMT, double *forw, double inv)	/* Linear inverse */
 {
+	GMT_UNUSED(GMT);
 	*forw = inv;
 }
 
@@ -129,6 +131,7 @@ void GMT_translog10 (struct GMT_CTRL *GMT, double forw, double *inv)	/* Log10 fo
 
 void GMT_itranslog10 (struct GMT_CTRL *GMT, double *forw, double inv) /* Log10 inverse */
 {
+	GMT_UNUSED(GMT);
 	*forw = pow (10.0, inv);
 }
 
@@ -1406,7 +1409,7 @@ void GMT_vgenper (struct GMT_CTRL *GMT, double lon0, double lat0, double altitud
 	sincosd (tilt, &(GMT->current.proj.g_sin_tilt), &(GMT->current.proj.g_cos_tilt));
 	sincosd (twist, &(GMT->current.proj.g_sin_twist), &(GMT->current.proj.g_cos_twist));
 
-	GMT->current.proj.g_box = !(fabs (width) < GMT_SMALL);
+	GMT->current.proj.g_box = !(fabs (width) < GMT_CONV4_LIMIT);
 
 	if (width != 0.0 && height == 0) height = width;
 	if (height != 0.0 && width == 0) width = height;
@@ -1667,7 +1670,7 @@ void GMT_igenper (struct GMT_CTRL *GMT, double *lon, double *lat, double xt, dou
 
 	GMT->current.proj.g_outside = false;
 
-	if (rho < GMT_SMALL) {
+	if (rho < GMT_CONV4_LIMIT) {
 		*lat = GMT->current.proj.pole;
 		*lon = GMT->current.proj.central_meridian;
 		return;
@@ -1979,8 +1982,8 @@ void GMT_ihammer (struct GMT_CTRL *GMT, double *lon, double *lat, double x, doub
 /* -JV VAN DER GRINTEN PROJECTION */
 
 void GMT_vgrinten (struct GMT_CTRL *GMT, double lon0, double scale)
-{	/* Set up van der Grinten projection */
-
+{	/* Set up van der Grinten projection; scale is unused for now(?) */
+	GMT_UNUSED(scale);
 	gmt_check_R_J (GMT, &lon0);
 	GMT->current.proj.central_meridian = lon0;
 	GMT->current.proj.v_r = M_PI * GMT->current.proj.EQ_RAD;

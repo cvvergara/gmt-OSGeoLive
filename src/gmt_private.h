@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_private.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_private.h 13966 2015-01-23 21:47:31Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -110,9 +110,9 @@ struct GMTAPI_DATA_OBJECT {
 	struct GMT_PALETTE *C;
 	struct GMT_MATRIX *M;
 	struct GMT_VECTOR *V;
+#endif
 #ifdef HAVE_GDAL
 	struct GMT_IMAGE *I;
-#endif
 #endif
 };
 
@@ -130,6 +130,7 @@ struct GMTAPI_CTRL {
 	unsigned int pad;			/* Session default for number of rows/cols padding for grids [2] */
 	unsigned int mode;			/* 1 if called via external API (Matlab, Python) [0] */
 	unsigned int leave_grid_scaled;		/* 1 if we dont want to unpack a grid after we packed it for writing [0] */
+	unsigned int verbose;			/* Used until GMT is set up */
 	bool registered[2];			/* true if at least one source/destination has been registered (in and out) */
 	bool io_enabled[2];			/* true if access has been allowed (in and out) */
 	size_t n_objects_alloc;			/* Allocation counter for data objects */

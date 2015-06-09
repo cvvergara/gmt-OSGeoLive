@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: originator.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: originator.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *   Copyright (c) 2000-2014 by P. Wessel
+ *   Copyright (c) 2000-2015 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -258,7 +258,7 @@ int GMT_originator_parse (struct GMT_CTRL *GMT, struct ORIGINATOR_CTRL *Ctrl, st
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Supplemental parameters */
@@ -275,7 +275,7 @@ int GMT_originator_parse (struct GMT_CTRL *GMT, struct ORIGINATOR_CTRL *Ctrl, st
 			case 'E':
 				Ctrl->E.active = true;	k = 0;
 				if (opt->arg[0] == '+') { Ctrl->E.mode = true; k = 1;}
-				if (GMT_check_filearg (GMT, 'E', &opt->arg[k], GMT_IN))
+				if (GMT_check_filearg (GMT, 'E', &opt->arg[k], GMT_IN, GMT_IS_DATASET))
 					Ctrl->E.file  = strdup (&opt->arg[k]);
 				else
 					n_errors++;
@@ -283,7 +283,7 @@ int GMT_originator_parse (struct GMT_CTRL *GMT, struct ORIGINATOR_CTRL *Ctrl, st
 			case 'F':
 				Ctrl->F.active = true;	k = 0;
 				if (opt->arg[0] == '+') { Ctrl->F.mode = true; k = 1;}
-				if (GMT_check_filearg (GMT, 'F', &opt->arg[k], GMT_IN))
+				if (GMT_check_filearg (GMT, 'F', &opt->arg[k], GMT_IN, GMT_IS_DATASET))
 					Ctrl->F.file  = strdup (&opt->arg[k]);
 				else
 					n_errors++;

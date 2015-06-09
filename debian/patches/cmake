@@ -1,7 +1,8 @@
-Index: git/cmake/ConfigUser.cmake
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ git/cmake/ConfigUser.cmake	2013-11-27 15:22:04.000000000 +0100
+Description: Add custom cmake configuration.
+Author: Francesco Paolo Lovergine <frankie@debian.org>
+
+--- /dev/null
++++ b/cmake/ConfigUser.cmake
 @@ -0,0 +1,240 @@
 +#
 +# $Id: ConfigUserTemplate.cmake 12425 2013-11-01 10:09:27Z fwobbe $

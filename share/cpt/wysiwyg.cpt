@@ -1,4 +1,4 @@
-#	$Id: wysiwyg.cpt 12822 2014-01-31 23:39:56Z remko $
+#	$Id: wysiwyg.cpt 14177 2015-03-18 20:31:52Z pwessel $
 #
 # wysiwyg.cpt has 20 RGB colors for openwin -cubesize large and waxenvy printer.
 # Designed by W. H. F. Smith
@@ -22,4 +22,4 @@
 16	255/32/64	17	255/32/64
 17	255/96/192	18	255/96/192
 18	255/160/255	19	255/160/255
-19	255/224/255	20	255/224/225
+19	255/224/255	20	255/224/255

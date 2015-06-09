@@ -1,5 +1,5 @@
 #
-# $Id: ManageString.cmake 12822 2014-01-31 23:39:56Z remko $
+# $Id: ManageString.cmake 13846 2014-12-28 21:46:54Z pwessel $
 #
 # - Collection of String utility macros.
 # Defines the following macros:
@@ -78,7 +78,7 @@
 #       + PADDING: (Optional) apply padding at the location by the marker
 #           string PADDING
 #
-# Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -95,6 +95,9 @@
 
 if(NOT DEFINED _MANAGE_STRING_CMAKE_)
 	set(_MANAGE_STRING_CMAKE_ "DEFINED")
+
+	cmake_policy(SET CMP0010 NEW)
+	cmake_policy(SET CMP0011 NEW)
 
 	# STRING_ESCAPE(var str [NOESCAPE_SEMICOLON] [ESCAPE_VARIABLE])
 	macro(STRING_ESCAPE var str)

@@ -1,8 +1,8 @@
 #
 # GMT @GMT_PACKAGE_VERSION@ Defaults file (@GMT_CONF_TEMPLATE@ version)
 # vim:sw=8:ts=8:sts=8
-# $Revision: 12822 $
-# $LastChangedDate: 2014-02-01 00:39:56 +0100 (Sat, 01 Feb 2014) $
+# $Revision: 13836 $
+# $LastChangedDate: 2014-12-20 03:45:42 -1000 (Sat, 20 Dec 2014) $
 #
 # COLOR Parameters
 #
@@ -20,8 +20,6 @@ COLOR_HSV_MAX_V			= 1
 DIR_DATA			=
 DIR_DCW				= @DCW_INSTALL_PATH@
 DIR_GSHHG			= @GSHHG_INSTALL_PATH@
-DIR_TMP				=
-DIR_USER			=
 #
 # FONT Parameters
 #
@@ -117,7 +115,7 @@ PROJ_SCALE_FACTOR		= default
 PS_CHAR_ENCODING		= @GMT_PS_CHAR_ENCODING@
 PS_COLOR_MODEL			= rgb
 PS_COMMENTS			= false
-PS_IMAGE_COMPRESS		= lzw
+PS_IMAGE_COMPRESS		= deflate,5
 PS_LINE_CAP			= butt
 PS_LINE_JOIN			= miter
 PS_MITER_LIMIT			= 35

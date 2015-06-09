@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: sph2grd.c 12822 2014-01-31 23:39:56Z remko $
+ *    $Id: sph2grd.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -144,7 +144,7 @@ int GMT_sph2grd_parse (struct GMT_CTRL *GMT, struct SPH2GRD_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -181,7 +181,7 @@ int GMT_sph2grd_parse (struct GMT_CTRL *GMT, struct SPH2GRD_CTRL *Ctrl, struct G
 				}
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -225,7 +225,7 @@ int GMT_sph2grd_parse (struct GMT_CTRL *GMT, struct SPH2GRD_CTRL *Ctrl, struct G
 int GMT_sph2grd (void *V_API, int mode, void *args)
 {
 	bool ortho = false, duplicate_col;
-	int error, L_sign = 1, L, L_min = 0, L_max = 0, M, M_max = 0;
+	int error, L_sign = 1, L, L_min = 0, L_max = 0, M, M_max = 0, kk = 0;
 	unsigned int row, col, nx, n_PLM, n_CS, n_CS_nx, next_10_percent = 10;
 	uint64_t tbl, seg, drow, node, node_L, k;
 	char text[GMT_LEN32] = {""};
@@ -363,7 +363,7 @@ int GMT_sph2grd (void *V_API, int mode, void *args)
 	
 	/* Allocate output grid */
 	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
-		GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "Grid evaluated from spherical harmonic coefficients", Grid)) Return (API->error);
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
 
@@ -434,10 +434,10 @@ int GMT_sph2grd (void *V_API, int mode, void *args)
 		}
 		for (col = 0, node = node_L = GMT_IJP (Grid->header, row, 0); col < nx; col++, node++) {	/* For each longitude along this parallel */
 			sum = 0.0;	/* Initialize sum to zero for new output node */
-			k = (L_min) ? LM_index (L_min, 0) : 0;	/* Set start index for P_lm packed array */
+			kk = (L_min) ? LM_index (L_min, 0) : 0;	/* Set start index for P_lm packed array */
 			for (L = L_min; L <= L_max; L++) {	/* For all degrees */
-				for (M = 0; M <= L; M++, k++) {	/* For all orders <= L */
-					sum += P_lm[k] * (C[L][M] * Cosm[col][M] + S[L][M] * Sinm[col][M]);
+				for (M = 0; M <= L; M++, kk++) {	/* For all orders <= L */
+					sum += P_lm[kk] * (C[L][M] * Cosm[col][M] + S[L][M] * Sinm[col][M]);
 				}
 			}
 			Grid->data[node] = (float)sum;	/* Assign total to the grid, cast as float */

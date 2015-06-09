@@ -3,7 +3,7 @@ Creating GMT Graphics
 
 .. only:: not latex
 
-    See PDF documentation.
+    See separate entry for GMT Examples under :ref:`Gallery <example_gallery>`.
 
 .. only:: latex
 
@@ -83,11 +83,11 @@ Creating GMT Graphics
     same page. The region of interest is the Hawaiian islands, and due to
     the oblique trend of the island chain we prefer to rotate our
     geographical data sets using an oblique Mercator projection defined by
-    the hotspot pole at (68W, 69N). We choose the point (190, 25.5) to be
+    the hotspot pole at (68ºW, 69ºN). We choose the point (190º, 25.5º) to be
     the center of our projection (e.g., the local origin), and we want to
     image a rectangular region defined by the longitudes and latitudes of
     the lower left and upper right corner of region. In our case we choose
-    (160, 20) and (220, 30) as the corners. We use
+    (160º, 20º) and (220º, 30º) as the corners. We use
     :doc:`grdimage` to make the illustration:
 
     .. literalinclude:: /_verbatim/example_02.txt
@@ -1109,7 +1109,7 @@ Creating GMT Graphics
     .. _Fig_example_31:
 
     .. figure:: /_images/example_31.*
-        
+
     Draping an image over topography
     --------------------------------
 
@@ -1297,7 +1297,7 @@ Creating GMT Animations
 
 .. only:: not latex
 
-    See PDF documentation.
+    See separate entry for GMT Animations under :ref:`Gallery <example_gallery>`.
 
 .. only:: latex
 
@@ -1424,6 +1424,8 @@ Creating GMT Animations
     .. literalinclude:: /_verbatim/anim_01.txt
        :language: bash
 
+    .. figure:: /_images/anim_01.*
+
     Make sure you understand the purpose of all the steps in our script. In
     this case we did some trial-and-error to determine the exact values to
     use for the map projection, the region, the spacing around the frame,
@@ -1444,6 +1446,8 @@ Creating GMT Animations
     .. literalinclude:: /_verbatim/anim_02.txt
        :language: bash
 
+    .. figure:: /_images/anim_02.*
+
     As you can see, these sorts of animations are not terribly difficult to
     put together, especially since our vantage point is fixed. In the next
     example we will move the "camera" around and must therefore deal with
@@ -1461,6 +1465,8 @@ Creating GMT Animations
 
     .. literalinclude:: /_verbatim/anim_03.txt
        :language: bash
+
+    .. figure:: /_images/anim_03.*
 
     Flying over topography
     ----------------------
@@ -1480,4 +1486,6 @@ Creating GMT Animations
 
     .. literalinclude:: /_verbatim/anim_04.txt
        :language: bash
+
+    .. figure:: /_images/anim_04.*
 

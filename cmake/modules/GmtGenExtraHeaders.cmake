@@ -1,10 +1,10 @@
 #
-# $Id: GmtGenExtraHeaders.cmake 12822 2014-01-31 23:39:56Z remko $
+# $Id: GmtGenExtraHeaders.cmake 13846 2014-12-28 21:46:54Z pwessel $
 #
 # - Generates extra header files
 # GMT_CREATE_HEADERS ()
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify

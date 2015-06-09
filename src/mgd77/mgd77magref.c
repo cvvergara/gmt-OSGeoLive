@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77magref.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: mgd77magref.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *    Copyright (c) 2009-2014 by J. Luis and P. Wessel
+ *    Copyright (c) 2009-2015 by J. Luis and P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*

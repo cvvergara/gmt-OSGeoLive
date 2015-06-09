@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2rgb.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grd2rgb.c 14152 2015-03-06 00:40:44Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -284,7 +284,7 @@ int GMT_grd2rgb_parse (struct GMT_CTRL *GMT, struct GRD2RGB_CTRL *Ctrl, struct G
 		switch (opt->option) {
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -458,8 +458,12 @@ int GMT_grd2rgb (void *V_API, int mode, void *args)
 		}
 
 		if (!Ctrl->W.active) {
-			if (PSL_loadimage (PSL, Ctrl->In.file, &header, &picture)) {
-				GMT_Report (API, GMT_MSG_NORMAL, "Trouble loading/converting Sun rasterfile!\n");
+			if (GMT_getdatapath (GMT, Ctrl->In.file, buffer, R_OK) == NULL) {
+				GMT_Report (API, GMT_MSG_NORMAL, "Cannot find/open file %s\n", Ctrl->In.file);
+				Return (EXIT_FAILURE);
+			}
+			if (PSL_loadimage (PSL, buffer, &header, &picture)) {
+				GMT_Report (API, GMT_MSG_NORMAL, "Trouble loading/converting Sun rasterfile %s\n", buffer);
 				Return (EXIT_FAILURE);
 			}
 		}

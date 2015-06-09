@@ -109,7 +109,7 @@ Optional Arguments
     Defines the range of the new cpt file by giving the lowest and
     highest z-value and interval. When used with **-C** and *z_inc* is
     not specified, the number of intervals remains the same as in the
-    input palette. If *z_inc* is specified with a trailing ’+’ we
+    input palette. If *z_inc* is specified with a trailing **+** we
     interpret *z_inc* as the number of desired intervals instead.
     Alternatively, give the name of a ASCII file that has one z-value
     per record. If **-T** is not given, the existing range in the master
@@ -120,9 +120,10 @@ Optional Arguments
 
 **-W**
     Do not interpolate the input color table but pick the output colors
-    starting at the beginning of the map. This is particularly useful in
-    combination with a categorical color table. Cannot be used in
-    combination with **-Z**.
+    starting at the beginning of the color table, until colors for all
+    intervals are assigned. This is particularly useful in combination
+    with a categorical color table, like "categorical". Cannot be used
+    in combination with **-Z**.
 **-Z**
     Creates a continuous cpt file [Default is discontinuous, i.e.,
     constant colors for each interval]. 

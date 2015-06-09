@@ -1,0 +1,97 @@
+Description: Exclude examples that fail to build.
+Author: Bas Couwenberg <sebastic@debian.org>
+
+--- a/doc/examples/CMakeLists.txt
++++ b/doc/examples/CMakeLists.txt
+@@ -20,12 +20,21 @@
+ 
+ file (GLOB _examples RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/*/*.ps")
+ 
++list (APPEND _exclude_examples "example_23.ps")
++
+ set (_examples_pdf)
+ set (_examples_png)
+ 
+ # Convert figures to PDF and PNG
+ foreach (_ps ${_examples})
+ 	get_filename_component (_fig ${_ps} NAME)
++
++	# Skip excluded examples
++	list (FIND _exclude_examples ${_fig} _exclude_index)
++	if (_exclude_index GREATER -1)
++		continue()
++	endif (_exclude_index GREATER -1)
++
+ 	string (REPLACE ".ps" ".pdf" _pdf_fig ${_fig})
+ 	string (REPLACE ".ps" ".png" _png_fig ${_fig})
+ 	list (APPEND _examples_pdf ${RST_BINARY_DIR}/_images/${_pdf_fig})
+--- a/doc/rst/source/Gallery.rst
++++ b/doc/rst/source/Gallery.rst
+@@ -42,9 +42,9 @@ complex illustration.
+ |                  |                    |                     |
+ | |ex19|           | |ex20|             | |ex21|              |
+ +------------------+--------------------+---------------------+
+-|:ref:`example_22` | :ref:`example_23`  | :ref:`example_24`   |
++|:ref:`example_22` |                    | :ref:`example_24`   |
+ |                  |                    |                     |
+-| |ex22|           | |ex23|             | |ex24|              |
++| |ex22|           |                    | |ex24|              |
+ +------------------+--------------------+---------------------+
+ |:ref:`example_25` | :ref:`example_26`  | :ref:`example_27`   |
+ |                  |                    |                     |
+@@ -137,9 +137,6 @@ complex illustration.
+ .. |ex22| image:: /_images/example_22.*
+    :width: 150 px
+ 
+-.. |ex23| image:: /_images/example_23.*
+-   :width: 150 px
+-
+ .. |ex24| image:: /_images/example_24.*
+    :width: 150 px
+ 
+@@ -216,7 +213,6 @@ complex illustration.
+    gallery/ex20.rst
+    gallery/ex21.rst
+    gallery/ex22.rst
+-   gallery/ex23.rst
+    gallery/ex24.rst
+    gallery/ex25.rst
+    gallery/ex26.rst
+--- a/doc/rst/source/examples_chapter.rst_
++++ b/doc/rst/source/examples_chapter.rst_
+@@ -826,35 +826,6 @@ Creating GMT Graphics
+ 
+     .. figure:: /_images/example_22.*
+ 
+-    All great-circle paths lead to Rome
+-    -----------------------------------
+-
+-    While motorists recently have started to question the old saying "all
+-    roads lead to Rome", aircraft pilots have known from the start that only
+-    one great-circle path connects the points of departure and
+-    arrival [25]_. This provides the inspiration for our next example which
+-    uses :doc:`grdmath` to calculate distances from Rome to anywhere on Earth and
+-    :doc:`grdcontour` to contour these
+-    distances. We pick five cities that we connect to Rome with great circle
+-    arcs, and label these cities with their names and distances (in km) from
+-    Rome, all laid down on top of a beautiful world map. Note that we
+-    specify that contour labels only be placed along the straight map-line
+-    connecting Rome to its antipode, and request curved labels that follows
+-    the shape of the contours.
+-
+-    The script produces the plot in Figure :ref:`Example 23 <Fig_example_23>`; note
+-    how interesting the path to Seattle appears in this particular
+-    projection (Hammer). We also note that Rome's antipode lies somewhere
+-    near the Chatham plateau (antipodes will be revisited in
+-    Section [sec:example\ :sub:`2`\ 5]).
+-
+-    .. literalinclude:: /_verbatim/example_23.txt
+-       :language: bash
+-
+-    .. _Fig_example_23:
+-
+-    .. figure:: /_images/example_23.*
+-
+     Data selection based on geospatial criteria
+     -------------------------------------------
+ 

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_constants.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_constants.h 13997 2015-01-28 02:02:21Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -62,8 +62,9 @@
 #define M_EULER		0.577215664901532860606512	/* Euler's constant (gamma) */
 #endif
 
-#define GMT_CONV_LIMIT	1.0e-8		/* Fairly tight convergence limit or "close to zero" limit */
-#define GMT_SMALL	1.0e-4		/* Needed when results aren't exactly zero but close */
+#define GMT_CONV8_LIMIT	1.0e-8		/* Fairly tight convergence limit or "close to zero" limit */
+#define GMT_CONV6_LIMIT 1.0e-6		/* 1 ppm */
+#define GMT_CONV4_LIMIT	1.0e-4		/* Less tight convergence limit or "close to zero" limit */
 
 /* Various allocation-length parameters */
 enum GMT_enum_length {
@@ -160,6 +161,12 @@ enum GMT_enum_extrap {
 	GMT_EXTRAPOLATE_NONE = 0,   /* No extrapolation; set to NaN outside bounds */
 	GMT_EXTRAPOLATE_SPLINE,     /* Let spline extrapolate beyond bounds */
 	GMT_EXTRAPOLATE_CONSTANT};  /* Set extrapolation beyond bound to specifiec constant */
+
+/* Timer reporting modes */
+enum GMT_enum_timer {
+	GMT_NO_TIMER = 0,	/* No timer reported */
+	GMT_ABS_TIMER,		/* Report absolute time */
+	GMT_ELAPSED_TIMER};	/* Report elapsed time since start of session */
 
 /* Various line/grid/image interpolation modes */
 enum GMT_enum_track {

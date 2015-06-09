@@ -214,11 +214,11 @@ initialization:
     (1), PSL_HSV (2) or PSL_GRAY (3); this setting controls how colors
     are presented in the PostScript code. The *origin* setting
     determines for x and y separately the origin of the specified
-    offsets (next argument). Each of the two characters are either ’r’
-    for an offset relative to the current origin, ’a’ for a temporaty
+    offsets (next argument). Each of the two characters are either **r**
+    for an offset relative to the current origin, **a** for a temporaty
     adjustment of the origin which is undone during BD(PSL_endplot),
-    ’f’ for a placement of the origin relative to the lower left corner
-    of the page, ’c’ for a placement of the origin relative to the
+    **f** for a placement of the origin relative to the lower left corner
+    of the page, **c** for a placement of the origin relative to the
     center of the page. The array *offset* specifies the offset of the
     new origin relative to the position indicated by **origin**.
     *page_size* means the physical width and height of the plotting
@@ -343,6 +343,17 @@ affect the current state of parameters such as line and fill attributes.
     GothicBBB-Medium-EUC-H, and 38 = GothicBBB-Medium-EUC-V. If *fontnr*
     is outside this range, it is reset to 0.
 
+**long PSL_setfontdims** (**struct PSL_CTRL** *\*P*, **double** *supsub*,
+**double** *scaps*, **double** *sup*, **double** *sdown*)
+
+    Changes the settings for a variety of relative font sizes and shifts
+    pertaining to sub-scripts, super-scripts, and small caps.  Default
+    settings are given in brackets.  Here, *supsub* sets the relative size
+    of sub- and super-scripts [0.58], *scaps* sets the relative size of
+    small caps [0.8], *sup* indicates the upward baseline shift for placement
+    of super-scripts [0.33], while *sdown* sets the downward baseline shift
+    for sub-scripts [0.33].
+
 **long PSL_setformat** (**struct PSL_CTRL** *\*P*, **long** *n_decimals*)
 
     Sets the number of decimals to be used when writing color or gray
@@ -452,7 +463,8 @@ set prior to calling these functions; see CHANGING SETTINGS above.
     be PSL_MOVE + PSL_STROKE (3). The line is
     drawn using the current pen attributes. Add PSL_CLOSE
     (8) to *type* to close the first and last point
-    by the PostScript operators.
+    by the PostScript operators; this is done automatically if the
+    first and last point are equal.
 
 **long PSL_plotpoint** (**struct PSL_CTRL** *\*P*, **double** *x*,
 **double** *y*, **long** *type*)
@@ -632,8 +644,8 @@ Here are functions used to read and plot various images.
     Encapsulated PostScript files or 1-, 8-, 24-, or 32-bit raster
     images in old, standard, run-length encoded, or RGB-style Sun
     format. Non-Sun rasters are automatically reformatted to Sun rasters
-    via a system call to ImageMagick’s BD(convert), if installed. The
-    image is returned via the IT(image) pointer.
+    via a system call to GraphicsMagick's or ImageMagick's **convert**, if installed. The
+    image is returned via the *image* pointer.
 
 Plotting Text
 -------------
@@ -691,42 +703,6 @@ and others and issue calculations with **PSL_setcommand**.
     units. The smaller of the two determined the radius of the rounded
     corners (if requested).
 
-**long PSL_plottextclip** (**struct PSL_CTRL** *\*P*, **double** *x*,
-**double** *y*, **long** *n*, **double** *fontsize*, **char**
-*\*text*\ [], **double** *angle*\ [], **long** *justify*, **double**
-*offset*\ [], **long** *mode*)
-
-    This function is called twice: First time we pass the text strings
-    and other parameters and use PostScript to compute clip paths so
-    that no feature plotted after this call will be visible in areas
-    where text will be plotted. The second call actually plots the texts
-    in the predetermined locations (NULL may be passed for all arrays
-    for the second call). All labels have a straight baseline (for
-    plotting along curved text, see **PSL_plottextpath**). The *x* and
-    *y* arrays contain the plot coordinates where labels will be
-    plotted; there are *n* such labels and locations. Each label has its
-    own entry in the *angle* array. The *text* is an array of text
-    pointers to the individual text items, which will all appear using
-    the current font and scaled to specified *fontsize* in points. The
-    *offset* array holds the horizontal and vertical distance gaps
-    between text and the surrounding text box in user units (the clip
-    path is the combination of all these text boxes). Use *justify* to
-    specify how the text string relates to the coordinates (see
-    **JUSTIFICATION** for details). Finally, *mode* is a bit pattern
-    that controls how the function does its work; pass *mode* as the sum
-    of the values you need: 0 = lay down clip path, 1 = place the text,
-    2 = turn off clipping, 4 = draw the *x-y* line (useful for
-    debugging), 8 = reuse the previous parameters (so pass NULL as
-    args), 16 = construct rounded text boxes [Default is rectangular],
-    128 = fill the text box (this requires you to first define the text
-    box rgb color with **PSL_define_rgb** by setting a local
-    PostScript variable that must be called PSL_setboxrgb), and 256 =
-    draw the text box outlines (this requires you to first define the
-    text box pen with **PSL_define_pen** by setting a local
-    PostScript variable that must be called PSL_setboxpen). For font
-    color you must use **PSL_define_rgb** and create a PostScript
-    variable called PSL_settxtrgb. If not set we default to black.
-
 **long PSL_deftextdim** (**struct PSL_CTRL** *\*P*, **char**
 *\*prefix*, **double** *fontsize*, **char** *\*text*)
 
@@ -751,85 +727,90 @@ and others and issue calculations with **PSL_setcommand**.
     aligned left (PSL_BL), centered (PSL_BC), right (PSL_BR), or
     justified (PSL_JUST) and is controlled by *par_just*.
 
-    **long PSL_plotparagraphbox** (**struct PSL_CTRL** *\*P*,
-    **double** *x*, **double** *y*, **double** *fontsize*, **char**
-    *\*text*, **double** *angle*, **long** *justify*, **double**
-    *offset*\ [], **long** *mode*)
+**long PSL_plotparagraphbox** (**struct PSL_CTRL** *\*P*,
+**double** *x*, **double** *y*, **double** *fontsize*, **char**
+*\*text*, **double** *angle*, **long** *justify*, **double**
+*offset*\ [], **long** *mode*)
 
-        Computes and plots the text rectangle for a paragraph using the
-        specified *fontsize* (in points). Here, *text* is an array of
-        the text to be typeset, using the settings initialized by
-        **PSL_setparagraph**. The escape sequences described for
-        **PSL_plottext** can be used to modify the text. Separate text
-        into several paragraphs by appending \\r to the last item in a
-        paragraph. The whole text block is positioned at plot
-        coordinates *x*, *y*, which is mapped to a point on the block
-        specified by *justify* (see **JUSTIFICATION** for details). The
-        whole block is then shifted by the amounts *shift*\ []. The box
-        will be plotted using the current fill and outline settings. The
-        *offset* array holds the horizontal and vertical distance gaps
-        between text and the surrounding text box in distance units. Use
-        *mode* to indicate whether the box should be straight
-        (PSL_RECT_STRAIGHT = 0), rounded (PSL_RECT_ROUNDED = 1),
-        convex (PSL_RECT_CONVEX = 2) or concave (PSL_RECT_CONCAVE = 3).
+    Computes and plots the text rectangle for a paragraph using the
+    specified *fontsize* (in points). Here, *text* is an array of
+    the text to be typeset, using the settings initialized by
+    **PSL_setparagraph**. The escape sequences described for
+    **PSL_plottext** can be used to modify the text. Separate text
+    into several paragraphs by appending \\r to the last item in a
+    paragraph. The whole text block is positioned at plot
+    coordinates *x*, *y*, which is mapped to a point on the block
+    specified by *justify* (see **JUSTIFICATION** for details). The
+    whole block is then shifted by the amounts *shift*\ []. The box
+    will be plotted using the current fill and outline settings. The
+    *offset* array holds the horizontal and vertical distance gaps
+    between text and the surrounding text box in distance units. Use
+    *mode* to indicate whether the box should be straight
+    (PSL_RECT_STRAIGHT = 0), rounded (PSL_RECT_ROUNDED = 1),
+    convex (PSL_RECT_CONVEX = 2) or concave (PSL_RECT_CONCAVE = 3).
 
-    **long PSL_plotparagraph** (**struct PSL_CTRL** *\*P*, **double**
-    *x*, **double** *y*, **double** *fontsize*, **char** *\*text*,
-    **double** *angle*, **long** *justify*, **long** *mode*)
+**long PSL_plotparagraph** (**struct PSL_CTRL** *\*P*, **double**
+*x*, **double** *y*, **double** *fontsize*, **char** *\*text*,
+**double** *angle*, **long** *justify*, **long** *mode*)
 
-        Typesets paragraphs of text using the specified *fontsize* (in
-        points). Here, *text* is an array of the text to be typeset,
-        using the settings initialized by **PSL_setparagraph**. The
-        escape sequences described for **PSL_plottext** can be used to
-        modify the text. Separate text into several paragraphs by
-        appending \\r to the last item in a paragraph. The whole text
-        block is positioned at plot coordinates *x*, *y*, which is
-        mapped to a point on the block specified by *justify* (see
-        **JUSTIFICATION** for details). See **PSL_plotparagraphbox**
-        for laying down the surrounding text rectangle first.
+    Typesets paragraphs of text using the specified *fontsize* (in
+    points). Here, *text* is an array of the text to be typeset,
+    using the settings initialized by **PSL_setparagraph**. The
+    escape sequences described for **PSL_plottext** can be used to
+    modify the text. Separate text into several paragraphs by
+    appending \\r to the last item in a paragraph. The whole text
+    block is positioned at plot coordinates *x*, *y*, which is
+    mapped to a point on the block specified by *justify* (see
+    **JUSTIFICATION** for details). See **PSL_plotparagraphbox**
+    for laying down the surrounding text rectangle first.
 
-    **long PSL_plottextpath** (**struct PSL_CTRL** *\*P*, **double**
-    *x*, **double** *y*, **long** *n*, **long** *node*\ [], **double**
-    *fontsize*, **char** *\*text*\ [], **long** *m*, **double**
-    *angle*\ [], **long** *justify*, **double** *offset*\ [], **long** *mode*)
+**long PSL_plottextline** (**struct PSL_CTRL** *\*P*, **double**
+*\*xpath*, **double** *\*ypath*, **long** *\*np*, **long** *nseg*,
+**void** *\*arg1*\, **void** *\*arg2*\, **char** *\*text*\ [],
+**double** *angle*\ [], **long** *n_per_seg*\ [], **double** *fontsize,
+***long** *justify*, **double** *offset*\ [], **long** *mode*)
 
-        Please text along a curved path. This function is also called
-        twice: First time we pass the text strings and locations and
-        PostScript will compute clip paths so that no features plotted
-        after this call will be visible in areas where text will be
-        plotted. The second call actually plots the texts in the
-        predetermined locations (NULL may be passed for all arrays for
-        the second call). All labels will follow the path specified by
-        the plot coordinates in the *x*, *y* arrays (for plotting
-        straight text with clipping, see **PSL_plottextclip**). The
-        *node* array contains the index numbers into the *x* and *y*
-        arrays where each labels will be plotted; there are *n* such
-        labels and node locations. Each label has its own entry in the
-        *angle* array. The *text* is an array of text pointers to the
-        individual text items, which will all appear using the current
-        font and scaled to specified *fontsize* (in points). The
-        *offset* array holds the x and y distance gaps between text and
-        the surrounding text box in user units (the clip path is the
-        combination of all these text boxes). Use *justify* to specify
-        how the text string relates to the coordinates (see
-        BF(JUSTIFICATION) for details). Finally, *mode* is a bit pattern
-        that controls how the function does its work; pass *mode* as the
-        sum of the values you need: 0 = lay down clip path, 1 = place
-        the text, 2 = turn off clipping, 4 = draw the *x-y* line (useful
-        for debugging), 8 = reuse the previous parameters (so pass NULL
-        as args), 16 = construct rounded text boxes [Default is
-        rectangular], 32 = set the first time **PSL_plottextpath** is
-        called (if you are placing text several times), 64 = set the
-        last time **PSL_plottextpath** is called, 128 = fill the text
-        box (this requires you to first define the text box rgb color
-        with **PSL_define_rgb** by setting a local PostScript
-        variable that must be called PSL_setboxrgb), and 256 = draw the
-        text box outlines (this requires you to first define the text
-        box pen with **PSL_define_pen** by setting a local
-        PostScript variable that must be called PSL_setboxpen). For
-        font color you must use **PSL_define_rgb** and create a
-        PostScript variable called PSL_settxtrgb. If not set we
-        default to black.
+    Please text along one or more path segments. The function does
+    different things depending on the bit flags in *mode*. A key
+    distinction occurs if the bit flag contains the bit PSL_TXT_CURVED
+    (64) which means we wish to typeset the text along a variable and curved
+    baseline given by the segments in *xpath, ypath*; otherwise we set
+    straight text (possibly at an angle) and the *xpath, ypath* are
+    not considered for text placement [If no line drawing is desired
+    then these two arrays may be NULL].  We will describe the action
+    taken for each bit value.  Multiple values may be passed at the
+    same time and we processes from low to hight bit.
+    PSL_TXT_INIT: When mode contains this bit (1) we will initialize
+    all the required variables and store them in the PostScript file.
+    PSL_TXT_SHOW: We wish to see the text strings (otherwise they may
+    only serve as guides to set up clip paths).
+    PSL_TXT_CLIP_ON: Use the text and the paths to set up clip paths.
+    PSL_TXT_DRAW: Draw the lines defined by the *xpath, ypath* arrays.
+    PSL_TXT_CLIP_OFF: Turn the text path clipping off.
+    We pass the text strings via *text*.  The locations of text plotting
+    depends on whether PSL_TXT_CURVED is selected.  If it is then
+    you must pass as *arg1* the *node* array indicating at which
+    node in the *xpath, ypath* array the text will be plotted; let
+    *arg2* be NULL. For
+    straight baselines you must instead pass another set of x,y
+    coordinates with the locations of the text label placements
+    via *arg1, arg2*.
+    Each label has its own entry in the
+    *angle* array. The *text* is an array of text pointers to the
+    individual text items. The
+    *offset* array holds the x and y distance gaps between text and
+    the surrounding text box in user units (the clip path is the
+    combination of all these text boxes). Use *justify* to specify
+    how the text string relates to the coordinates (see
+    BF(JUSTIFICATION) for details). 
+    PSL_TXT_FILLBOX (128) will fill the text box (this requires you
+    to first define the text box rgb color with **PSL_define_rgb**
+    by setting a local PostScript variable that must be called PSL_setboxrgb).
+    PSL_TXT_DRAWBOX (256) will draw the text box outlines (this requires
+    you to first define the text box pen with **PSL_define_pen** by setting a local
+    PostScript variable that must be called PSL_setboxpen). Before
+    calling this function you must also initialize a PSL array for
+    line pens and text fonts.
 
 Clipping
 --------

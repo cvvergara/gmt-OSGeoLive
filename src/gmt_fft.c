@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_fft.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_fft.c 14230 2015-04-22 16:59:26Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -852,6 +852,7 @@ fftwf_plan gmt_fftwf_plan_dft(struct GMT_CTRL *GMT, unsigned ny, unsigned nx, ff
 
 int GMT_fft_1d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode) {
 	fftwf_plan plan = NULL;
+	GMT_UNUSED(mode);
 
 	/* Generate FFTW plan for complex 1d DFT */
 	plan = gmt_fftwf_plan_dft(GMT, 0, n, (fftwf_complex*)data, direction);
@@ -863,6 +864,7 @@ int GMT_fft_1d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int n, int dir
 
 int GMT_fft_2d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode) {
 	fftwf_plan plan = NULL;
+	GMT_UNUSED(mode);
 
 	/* Generate FFTW plan for complex 2d DFT */
 	plan = gmt_fftwf_plan_dft(GMT, ny, nx, (fftwf_complex*)data, direction);
@@ -894,6 +896,7 @@ int GMT_fft_1d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n, int dire
 	/* Base 2 exponent that specifies the largest power of
 	 * two that can be processed by fft: */
 	vDSP_Length log2n = radix2 (n);
+	GMT_UNUSED(mode);
 
 	if (log2n == 0) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Need Radix-2 input try: %u [n]\n", 1U<<propose_radix2 (n));
@@ -942,6 +945,7 @@ int GMT_fft_2d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigne
 	vDSP_Length log2nx = radix2 (nx);
 	vDSP_Length log2ny = radix2 (ny);
 	unsigned int n_xy = nx * ny;
+	GMT_UNUSED(mode);
 
 	if (log2nx == 0 || log2ny == 0) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Need Radix-2 input try: %u/%u [nx/ny]\n",
@@ -965,9 +969,11 @@ int GMT_fft_2d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigne
 	vDSP_ctoz (dsp_complex, 2, &GMT->current.fft.dsp_split_complex_2d, 1, n_xy);
 
 	/* complex: */
-	vDSP_fft2d_zip (GMT->current.fft.setup_2d, &GMT->current.fft.dsp_split_complex_2d, 1, 0, log2ny, log2nx, fft_direction);
+	/* PW note 10/26/2014: We used to pass log2ny, log2nx to vDSP_fft2d_zipbut that gave bad results for nx != ny.
+	 * I assume this is because Accelerate expects columns but we pass rows. Now matches KISS, FFTW, etc. */
+	vDSP_fft2d_zip (GMT->current.fft.setup_2d, &GMT->current.fft.dsp_split_complex_2d, 1, 0, log2nx, log2ny, fft_direction);
 	/* real:
-	vDSP_fft2d_zrip (setup, &GMT->current.fft.dsp_split_complex_2d, 1, 0, log2ny, log2nx, fft_direction); */
+	vDSP_fft2d_zrip (setup, &GMT->current.fft.dsp_split_complex_2d, 1, 0, log2nx, log2ny, fft_direction); */
 
 	vDSP_ztoc (&GMT->current.fft.dsp_split_complex_2d, 1, dsp_complex, 2, n_xy);
 
@@ -983,6 +989,7 @@ int GMT_fft_1d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int n, int dire
 {
 	kiss_fft_cpx *fin, *fout;
 	kiss_fft_cfg config;
+	GMT_UNUSED(GMT); GMT_UNUSED(mode);
 
 	/* Initialize a FFT (or IFFT) config/state data structure */
 	config = kiss_fft_alloc(n, direction == GMT_FFT_INV, NULL, NULL);
@@ -999,6 +1006,7 @@ int GMT_fft_2d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigne
 	const int dimcount = 2;      /* number of dimensions */
 	kiss_fft_cpx *fin, *fout;
 	kiss_fftnd_cfg config;
+	GMT_UNUSED(GMT); GMT_UNUSED(mode);
 
 	/* Initialize a FFT (or IFFT) config/state data structure */
 	config = kiss_fftnd_alloc (dim, dimcount, direction == GMT_FFT_INV, NULL, NULL);
@@ -2047,7 +2055,7 @@ void GMT_fft_initialization (struct GMT_CTRL *GMT) {
 #else
 	n_cpu = (int)sysconf (_SC_NPROCESSORS_CONF);
 #endif
-	if (n_cpu > 1) {
+	if (n_cpu > 1 && !GMT->current.setting.fftwf_threads) {
 		/* one-time initialization required to use FFTW3 threads */
 		if ( fftwf_init_threads() ) {
 			fftwf_plan_with_nthreads(n_cpu);

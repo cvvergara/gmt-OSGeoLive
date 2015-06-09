@@ -1,8 +1,13 @@
 #!/bin/bash
-#	$Id: filtertest.sh 12874 2014-02-08 02:29:35Z pwessel $
+#	$Id: filtertest.sh 14041 2015-02-05 17:02:57Z fwobbe $
 # Testing gmt grdfilter's weights at a given point for a given
 # filter diameter.  Specify which output you want (a|c|r|w).
 # Change args below to pick another filter.
+
+if [ "$HAVE_GMT_DEBUG_SYMBOLS" != "TRUE" ]; then
+	echo "grdfilter -A option is not available without -DDEBUG"
+	exit
+fi
 
 ps=filtertest.ps
 

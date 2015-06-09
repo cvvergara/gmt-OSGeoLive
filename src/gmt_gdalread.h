@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalread.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_gdalread.h 14188 2015-03-19 19:10:55Z jluis $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -65,6 +65,9 @@ struct GDALREAD_CTRL {
 	struct GD_M {	/* Metadata only */
 		int active;
 	} M;
+	struct GD_N {	/* For floats, replace this value by NaN */
+		float nan_value;
+	} N;
 	struct GD_P {	/* Preview mode */
 		int active;
 		char *jump;

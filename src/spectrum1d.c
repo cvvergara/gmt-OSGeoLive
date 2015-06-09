@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: spectrum1d.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: spectrum1d.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -573,7 +573,7 @@ int GMT_spectrum1d_parse (struct GMT_CTRL *GMT, struct SPECTRUM1D_CTRL *Ctrl, st
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -711,7 +711,7 @@ int GMT_spectrum1d (void *V_API, int mode, void *args)
 		dim[GMT_SEG] = 0;			/* Don't know about segments yet */
 		dim[GMT_COL] = 1 + 2 * n_outputs;	/* Number of columns needed output file */
 		dim[GMT_ROW] = C.n_spec;		/* Number of rows */
-		if ((Dout = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, Ctrl->N.name)) == NULL)
+		if ((Dout = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL)
 			Return (API->error);	/* An empty table for stacked results */
 	}
 	for (tbl = 0; tbl < Din->n_tables; tbl++) {

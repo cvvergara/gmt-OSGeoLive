@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: psvelo.c 12942 2014-02-24 20:59:24Z pwessel $
+ *    $Id: psvelo.c 14228 2015-04-22 15:53:10Z remko $
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Distributed under the Lesser GNU Public Licence
@@ -134,7 +134,7 @@ int GMT_psvelo_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Option (API, "J-,R");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Option (API, "<,B-");
-	GMT_Message (API, GMT_TIME_NONE, "\t-A Specify arrow head attributes:");
+	GMT_Message (API, GMT_TIME_NONE, "\t-A Specify arrow head attributes:\n");
 	GMT_vector_syntax (API->GMT, 15);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default is %gp+gblack+p1p\n", VECTOR_HEAD_LENGTH);
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Multiply uncertainties by sigscale. (Se and Sw only)i\n");
@@ -155,7 +155,7 @@ int GMT_psvelo_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Option (API, "U,V");
 	GMT_Message (API, GMT_TIME_NONE,  "\t-W Set pen attributes [%s].\n", GMT_putpen (API->GMT, API->GMT->current.setting.map_default_pen));
 	GMT_Option (API, "X,c,h,i,:,.");
-	
+
 	return (EXIT_FAILURE);
 }
 
@@ -168,9 +168,9 @@ int GMT_psvelo_parse (struct GMT_CTRL *GMT, struct PSVELO_CTRL *Ctrl, struct GMT
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0;
+	unsigned int n_errors = 0, n_set;
 	int n;
-	bool no_size_needed, n_set, got_A = false;
+	bool no_size_needed, got_A = false;
 	char txt[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, txt_c[GMT_LEN256] = {""}, symbol;
 	struct GMT_OPTION *opt = NULL;
 
@@ -181,7 +181,7 @@ int GMT_psvelo_parse (struct GMT_CTRL *GMT, struct PSVELO_CTRL *Ctrl, struct GMT
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -311,7 +311,7 @@ int GMT_psvelo (void *V_API, int mode, void *args)
 	int ix = 0, iy = 1, n_rec = 0, k, n_k, justify;
 	int des_ellipse = true, des_arrow = true, error = false;
 
-	double xy[2], plot_x, plot_y, vxy[2], plot_vx, plot_vy, dim[7];
+	double xy[2], plot_x, plot_y, vxy[2], plot_vx, plot_vy, dim[PSL_MAX_DIMS];
 	double eps1 = 0.0, eps2 = 0.0, spin = 0.0, spinsig = 0.0, theta = 0.0;
 	double direction = 0, small_axis = 0, great_axis = 0, sigma_x, sigma_y, corr_xy;
 	double t11 = 1.0, t12 = 0.0, t21 = 0.0, t22 = 1.0, hl, hw, vw, ssize;
@@ -490,7 +490,7 @@ int GMT_psvelo (void *V_API, int mode, void *args)
 					if (Ctrl->A.S.v.status & GMT_VEC_OUTLINE2) GMT_setpen (GMT, &Ctrl->A.S.v.pen);
 					PSL_plotsymbol (PSL, plot_x, plot_y, dim, PSL_VECTOR);
 					if (Ctrl->A.S.v.status & GMT_VEC_OUTLINE2) GMT_setpen (GMT, &Ctrl->W.pen);
-					
+
 					justify = plot_vx - plot_x > 0. ? PSL_MR : PSL_ML;
 					if (Ctrl->S.fontsize > 0.0 && strlen(station_name) > 0)	/* 1 inch = 2.54 cm */
 						PSL_plottext (PSL, plot_x + (6 - justify) / 25.4 , plot_y, Ctrl->S.fontsize, station_name, ANGLE, justify, FORM);
@@ -523,7 +523,7 @@ int GMT_psvelo (void *V_API, int mode, void *args)
 				break;
 		}
 	} while (true);
-	
+
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 		Return (API->error);
 	}

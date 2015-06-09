@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdpmodeler.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: grdpmodeler.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *   Copyright (c) 1999-2014 by P. Wessel
+ *   Copyright (c) 1999-2015 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -142,7 +142,7 @@ int GMT_grdpmodeler_parse (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *Ctrl, s
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -151,19 +151,19 @@ int GMT_grdpmodeler_parse (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *Ctrl, s
 			/* Supplemental parameters */
 			
 			case 'E':	/* File with stage poles */
-				if ((Ctrl->E.active = GMT_check_filearg (GMT, 'E', opt->arg, GMT_IN)))
+				if ((Ctrl->E.active = GMT_check_filearg (GMT, 'E', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->E.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'F':
-				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_IN)))
+				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->F.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -320,7 +320,7 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 	}
 	
 	if ((G_mod = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, inc, \
-		registration, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 	grd_x = GMT_memory (GMT, NULL, G_mod->header->nx, double);
 	grd_y = GMT_memory (GMT, NULL, G_mod->header->ny, double);

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_symbol.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_symbol.h 13846 2014-12-28 21:46:54Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -49,11 +49,12 @@ struct GMT_CUSTOM_SYMBOL_ITEM {
 };
 
 struct GMT_CUSTOM_SYMBOL {
-	char name[GMT_LEN64];
+	char name[GMT_LEN64];	/* Name of this symbol (i.e., just the <name> in [<dir>/]<name>.def) */
 	char *PS_macro;		/* Contains all the PS commands if PS is true */
 	unsigned int n_required;	/* Number of additional columns necessary to decode chosen symbol */
 	unsigned int start;	/* Column number of first additional column [2-4 depending on -C and psxy vs psxyz] */
 	bool PS;		/* true if a PSL symbol */
+	bool text;		/* true if symbol places text and hence need fonts to be set properly */
 	unsigned int *type;	/* Array with type of each parameter [0 = dimensionless, 1 = dimension, 2 = geographic angle (convert via projection)] */
 	struct GMT_CUSTOM_SYMBOL_ITEM *first;
 };

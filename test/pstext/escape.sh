@@ -1,10 +1,10 @@
 #!/bin/bash
-# $Id: escape.sh 12769 2014-01-16 16:03:50Z remko $
+# $Id: escape.sh 13591 2014-10-07 14:04:08Z remko $
 # Check pslib escape functions
 
 ps=escape.ps
 
-gmt pslegend -R0/100/0/100 -JX250p -D15c/15c/185p/60p/LT -C5p/5p -L1.2 -F -K -P -Y2i > $ps << EOF
+gmt pslegend -R0/100/0/100 -JX250p -D0/0/185p/60p/LT -C5p/5p -L1.2 -F -K -P -Y2i > $ps << EOF
 S 10p - 20p - 1p,255/0/0,-.. 24p @:10:CO@-2@-@:: @:10:injected@::
 S 10p - 20p - 1p,255/0/0,-.. 24p @:10:CO@-2@- injected@::
 EOF

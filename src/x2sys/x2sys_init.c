@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_init.c 12940 2014-02-24 20:34:01Z pwessel $
+ *	$Id: x2sys_init.c 13846 2014-12-28 21:46:54Z pwessel $
  *
- *      Copyright (c) 1999-2014 by P. Wessel
+ *      Copyright (c) 1999-2015 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify

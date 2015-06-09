@@ -1,7 +1,7 @@
 #
-# $Id: ConfigDefault.cmake 12968 2014-02-28 22:54:15Z fwobbe $
+# $Id: ConfigDefault.cmake 14257 2015-04-29 19:52:45Z fwobbe $
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -37,18 +37,18 @@ set (GMT_PACKAGE_DESCRIPTION_SUMMARY "The Generic Mapping Tools")
 
 # GMT_VERSION_YEAR is set to current date in
 # cmake/modules/ConfigCMake.cmake if not specified here:
-set (GMT_VERSION_YEAR "2014")
+set (GMT_VERSION_YEAR "2015")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION_MAJOR 5)
 set (GMT_PACKAGE_VERSION_MINOR 1)
-set (GMT_PACKAGE_VERSION_PATCH 1)
+set (GMT_PACKAGE_VERSION_PATCH 2)
 
 # The subversion revision of the GMT source code.
 # This is manually set when making GMT *public* releases.
 # However, when making internal releases or just an ordinary developer build, leave it
 # empty; if it is empty, the revision number is automatically populated for you on build.
-set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "12968")
+set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "14256")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION "${GMT_PACKAGE_VERSION_MAJOR}.${GMT_PACKAGE_VERSION_MINOR}.${GMT_PACKAGE_VERSION_PATCH}")
@@ -107,6 +107,11 @@ if (NOT DEFINED GMT_RELEASE_PREFIX)
 	set (GMT_RELEASE_PREFIX ${GMT_BINARY_DIR}/gmt-${GMT_PACKAGE_VERSION})
 endif (NOT DEFINED GMT_RELEASE_PREFIX)
 
+# Default location of optional third-party files used by test suite
+# available from svn://gmtserver.soest.hawaii.edu/gmt-data
+if (NOT DEFINED GMT_TEST_DATA)
+	set (GMT_TEST_DATA ${GMT_SOURCE_DIR}/test/data)
+endif (NOT DEFINED GMT_TEST_DATA)
 
 # The GMT copyright - string version to be used in a source file.
 set (GMT_COPYRIGHT_STRING)

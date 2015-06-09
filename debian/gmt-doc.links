@@ -1,1 +1,2 @@
-usr/share/doc/gmt/html	usr/lib/gmt/www/gmt
+usr/share/javascript/jquery/jquery.js         usr/share/doc/gmt/html/_static/jquery.js
+usr/share/javascript/underscore/underscore.js usr/share/doc/gmt/html/_static/underscore.js

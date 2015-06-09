@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dev.h 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_dev.h 14129 2015-02-26 12:07:09Z remko $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -51,13 +51,13 @@ extern "C" {
  * can be passed, even though in some cases not all arguments are used.  These will result in compiler
  * warnings [-Wunused-variable]. To suppress those (and only those), we can define GMT_UNUSED as this:
  */
-#ifdef __GNUC__
-#define GMT_UNUSED __attribute__ ((unused))
-#else
-#define GMT_UNUSED
-#endif
-/* and then add UNUSED after all such variables.  For GNU compilers the warning is then suppressed.
- * Other compilers will not see anything and give whatever harmless warnings they normally do.
+
+#define GMT_UNUSED(x) (void)(x)
+
+/* and then call GMT_UNUSED() on all such variables at the beginning of a routine. For example:
+ * bool func (int x) { GMT_UNUSED(x); return(true); }
+ * This should work for all compilers, GCC and others.
+ * Just grep for GMT_UNUSED to see where these situations occur.
  */
 
 /* CMake definitions: This must be first! */

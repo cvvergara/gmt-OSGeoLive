@@ -42,7 +42,7 @@ Description
 
 **pscontour** reads an ASCII [or binary] xyz-file and produces a raw
 contour plot by triangulation. By default, the optimal Delaunay
-triangulation is performed (using either Shewchuk’s [1996] or Watson’s
+triangulation is performed (using either Shewchuk's [1996] or Watson's
 [1982] method as selected during GMT installation; type **pscontour
 -** to see which method is selected), but the user may optionally
 provide a second file with network information, such as a triangular
@@ -106,7 +106,7 @@ Optional Arguments
     *labelinfo* controls the specifics of the label formatting and consists
     of a concatenated string made up of any of the following control arguments:
 
-.. include:: explain_labelinfo.rst_
+.. include:: explain_clabelinfo.rst_
 
 .. include:: explain_-B.rst_
 

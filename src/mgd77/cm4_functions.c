@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- *	$Id: cm4_functions.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: cm4_functions.c 14230 2015-04-22 16:59:26Z jluis $
  *
  *
  *  File:	cm4_functions.c
@@ -157,6 +157,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	char line[GMT_BUFSIZ] = {""}, *c_unused = NULL;
 
 	FILE *fp;
+	GMT_UNUSED(GMT);
 
 /* =====  FORTRAN SOUVENIRS ==============================================
    =======================================================================
@@ -1088,6 +1089,7 @@ void mseason(int ks, int ns, int ng, double d, double *t, double *e, double *g) 
 void iseason(int ks, int ns, int ng, double f, double *t, double *e, double *g) {
 	int i, j;
 	double s;
+	GMT_UNUSED(ns);
 
 	memset(e, 0, ng * sizeof(double));
 	j = 0;
@@ -1674,6 +1676,7 @@ void prebf_(int *rgen, int *ityp, int *etyp, int *dtyp, int *grad, int *nmni, in
 
     static int nx = 0;
     int i__1, edst, esvr, idst, isvr;
+    GMT_UNUSED(grad);
 
     /* Parameter adjustments */
     --u;
@@ -1789,6 +1792,7 @@ void fdlds_(int *rgen, int *grad, int *ctyp, double *clat, double *phi, double *
     double fa, fc, fd, ar, fm, ra, fp, fr, fs, fn, fnm1, fnp1, fnp2, fnfp, fprr, fdrr;
     double pbppp = 0, pbppr = 0, pbrpp = 0, pbtpp = 0, pbppt = 0, pbtpr = 0, pbrpt = 0, pbtpt = 0, pbrpr = 0, cscth2;
     double cscthe, costhe, cotthe, sinthe, fmfpst;
+    GMT_UNUSED(nsi); GMT_UNUSED(nci); GMT_UNUSED(cerr);
 
     /* Parameter adjustments */
     --dldc;

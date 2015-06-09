@@ -1,3 +1,4 @@
-usr/lib/gmt/lib/*.a usr/lib
-usr/lib/gmt/lib/lib*.so usr/lib
-usr/include/gmt usr/include
+usr/lib/*/gmt/plugins/supplements.so
+usr/lib/*/lib*.so
+usr/include/gmt         usr/include
+usr/bin/gmt-config

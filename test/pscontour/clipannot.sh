@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#	$Id: clipannot.sh 12114 2013-09-03 19:19:00Z fwobbe $
+#	$Id: clipannot.sh 13187 2014-05-26 22:40:05Z pwessel $
 
 ps=clipannot.ps
 
@@ -19,6 +19,6 @@ gmt psxy -R -J -O -K -W1p,red << EOF >> $ps
 10	8.2
 EOF
 gmt psbasemap -R -J -O -K -Bg0.2 >> $ps
-gmt psclip -Cs -O -K  >> $ps
+gmt psclip -C -O -K  >> $ps
 gmt psbasemap -R -J -O -B2 -BWSne+t"Delayed Annotations" >> $ps
 

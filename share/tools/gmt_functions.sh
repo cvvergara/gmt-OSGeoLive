@@ -1,6 +1,6 @@
-# $Id: gmt_functions.sh 12691 2014-01-01 09:41:00Z pwessel $
+# $Id: gmt_functions.sh 13846 2014-12-28 21:46:54Z pwessel $
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo,
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo,
 # J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
@@ -12,6 +12,9 @@
 # If the GMT executable is not in the search path, set an extra function:
 #   function gmt () { path/to/gmt "$@"; }
 #   export -f gmt
+
+# check for bash
+[ -z "$BASH_VERSION" ] && return
 
 gmt_modules="backtracker blockmean blockmedian blockmode dimfilter filter1d \
 fitcircle gmt2kml gmtconvert gmtdefaults gmtget gmtgravmag3d gmtinfo gmtmath \

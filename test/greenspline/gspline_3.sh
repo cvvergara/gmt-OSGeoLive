@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-#       $Id: gspline_3.sh 12114 2013-09-03 19:19:00Z fwobbe $
+#       $Id: gspline_3.sh 14221 2015-04-17 01:32:42Z pwessel $
 
 ps=gspline_3.ps
 
 # Figure 4 in Wessel, P. (2009), A general-purpose Green's function-based
-#	interpolator, Computers & Geosciences, 35, 1247–1254.
+#	interpolator, Computers & Geosciences, 35, 1247-1254.
 
 # Create synthetic data as in Lancaster & Salkauskas using C code on the fly
 

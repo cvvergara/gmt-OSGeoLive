@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcontour.c 12937 2014-02-22 05:11:02Z pwessel $
+ *	$Id: grdcontour.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -186,9 +186,9 @@ int GMT_grdcontour_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t     Use -A to force all to become A].\n");
 	GMT_Option (API, "J-Z");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-A Annotation label information. [Default is no annoted contours].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-A Annotation label settings [Default is no annoted contours].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Give annotation interval OR - to disable all contour annotations\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   implied by the informatino provided in -C.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   implied by the information provided in -C.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively prepend + to annotation interval to plot that as a single contour.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   <labelinfo> controls the specifics of the labels.  Choose from:\n");
 	GMT_label_syntax (API->GMT, 5, 0);
@@ -263,7 +263,7 @@ int GMT_grdcontour_parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, st
 
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -953,7 +953,8 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 				if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
 					break;
 			}
-
+			if (GMT_is_a_blank_line (record)) continue;	/* Nothing in this record */
+			
 			/* Data record to process */
 
 			if (n_contours == n_alloc) {
@@ -1002,16 +1003,18 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 				GMT_malloc2 (GMT, cont_type, cont_do_tick, n_contours, &n_alloc, char);
 			}
 			contour[n_contours] = c * Ctrl->C.interval;
-			if (Ctrl->contour.annot && (contour[n_contours] - aval) > GMT_SMALL) aval += Ctrl->A.interval;
-			cont_type[n_contours] = (fabs (contour[n_contours] - aval) < GMT_SMALL) ? 'A' : 'C';
+			if (Ctrl->contour.annot && (contour[n_contours] - aval) > GMT_CONV4_LIMIT) aval += Ctrl->A.interval;
+			cont_type[n_contours] = (fabs (contour[n_contours] - aval) < GMT_CONV4_LIMIT) ? 'A' : 'C';
 			cont_angle[n_contours] = (Ctrl->contour.angle_type == 2) ? Ctrl->contour.label_angle : GMT->session.d_NaN;
 			cont_do_tick[n_contours] = (char)Ctrl->T.active;
 		}
 	}
-	if (GMT->current.map.z_periodic && n_contours > 1 && fabs (contour[n_contours-1] - contour[0] - 360.0) < GMT_SMALL) {	/* Get rid of redundant contour */
+#if 0
+	/* PS: 4/10/2014: I commented this out as for phase grids in -180/180 range we always missed the 180 contour. */
+	if (GMT->current.map.z_periodic && n_contours > 1 && fabs (contour[n_contours-1] - contour[0] - 360.0) < GMT_CONV4_LIMIT) {	/* Get rid of redundant contour */
 		n_contours--;
 	}
-
+#endif
 	if (n_contours == 0) {	/* No contours within range of data */
 		GMT_Report (API, GMT_MSG_VERBOSE, "Warning: No contours found\n");
 		if (make_plot) {
@@ -1092,17 +1095,18 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 			}
 		}
 		dim[GMT_TBL] = n_tables;
-		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, Ctrl->D.file)) == NULL) Return (API->error);	/* An empty dataset */
+		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (API->error);	/* An empty dataset */
 		n_seg_alloc = GMT_memory (GMT, NULL, n_tables, size_t);
 		n_seg = GMT_memory (GMT, NULL, n_tables, uint64_t);
 	}
 
 	if (make_plot) {
-		if (Ctrl->contour.delay) GMT->current.ps.nclip = +1;	/* Signal that this program initiates clipping that will outlive this process */
+		if (Ctrl->contour.delay) GMT->current.ps.nclip = +2;	/* Signal that this program initiates clipping that will outlive this process */
 		PSL = GMT_plotinit (GMT, options);
 		GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
 		GMT_plotcanvas (GMT);	/* Fill canvas if requested */
-		if (!Ctrl->contour.delay) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
+		if (Ctrl->contour.delay) GMT_map_basemap (GMT);	/* Must do -B here before clipping makes it not doable */
+		GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
 	}
 
 	for (c = uc = 0; uc < n_contours; c++, uc++) {	/* For each contour value cval */
@@ -1128,9 +1132,8 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 			GMT_get_rgb_from_z (GMT, P, cval, rgb);
 			GMT_rgb_copy (&Ctrl->contour.line_pen.rgb, rgb);
 		}
-		if (Ctrl->W.color_text && Ctrl->contour.curved_text) {	/* Override label color according to cpt file */
+		if (Ctrl->W.color_text)	/* Override label color according to cpt file */
 			GMT_rgb_copy (&Ctrl->contour.font_label.fill.rgb, rgb);
-		}
 
 		n_alloc = 0;
 		begin = true;
@@ -1250,9 +1253,10 @@ int GMT_grdcontour (void *V_API, int mode, void *args)
 
 		GMT_contlabel_plot (GMT, &Ctrl->contour);
 		
-		if (!Ctrl->contour.delay) GMT_map_clip_off (GMT);
-
-		GMT_map_basemap (GMT);
+		if (!Ctrl->contour.delay) {
+			GMT_map_clip_off (GMT);
+			GMT_map_basemap (GMT);
+		}
 
 		GMT_plane_perspective (GMT, -1, 0.0);
 

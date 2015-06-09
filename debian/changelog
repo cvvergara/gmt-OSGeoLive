@@ -1,18 +1,55 @@
-gmt (5.1.0-0~1) experimental; urgency=low
+gmt (5.1.2+dfsg1-1) UNRELEASED; urgency=medium
 
+  [ Francesco Paolo Lovergine ]
   * New upstream major release: build system moved to cmake.
-  * Now following general advice from upstream about packaging as listed 
+  * Now following general advice from upstream about packaging as listed
     in http://gmt.soest.hawaii.edu/projects/gmt/wiki/PackagingGMT
   * Added a new cmake patch with Debian changes to CMake configurations.
   * Removed autotools b-dep and rules.
   * Removed all (obsolete) patches.
   * Moved to current full dh_* auto support.
-  * Octave/mex stuff now lives in its own repository and should go into 
+  * Octave/mex stuff now lives in its own repository and should go into
     a separate source package. So, dropped octave-gmt ATM.
   * Updated list of b-d.
   * Set Vcs-* fields to canonical forms.
 
- -- Francesco Paolo Lovergine <frankie@debian.org>  Wed, 27 Nov 2013 13:27:48 +0100
+  [ Ross Gammon ]
+  * Update watch file with sepwatch changes.
+
+  [ Bas Couwenberg ]
+  * New upstream release.
+  * Add myself to Uploaders.
+  * Update watchfile, changes:
+    - Use passive FTP
+    - Add common dversionmangle
+  * Restructure control file with cme, changes:
+    - Update Vcs-Browser URL to use cgit instead of gitweb
+    - Bump Standards-Version to 3.9.6, no changes.
+  * Add gbp.conf to use pristine-tar by default.
+  * Update copyright file, changes:
+    - Changed GMT license to LGPL-3+ only
+    - Update copyright years, add additional copyright holders
+    - Add license & copyright for differently licensed files (mostly BSD/MIT)
+  * Repack upstream source using Files-Excluded in the copyright file.
+  * Fix libgmt5 installation.
+  * Disable use of non-free triangle source.
+  * Fix bash-completion installation.
+  * Strip RPATH from binary & libraries.
+  * Also exclude prebuilt documentation and manpages from repacked source.
+  * Build documentation in build-indep target.
+  * Use packaged jquery.js & underscore.js instead of embedded sphinx copies.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sun, 07 Jun 2015 12:06:29 +0200
+
+gmt (4.5.12-1) unstable; urgency=medium
+
+  * New upstream release for 4.x series, bug fixing only.
+  * Now using unversioned paths for installing the octave files.
+    Thanks Rafael Laboissiere (closes: #734047).
+  * Policy set to 3.9.5, no changes done.
+  * Set debhelper to level 9 for both -arch and -indep sections.
+
+ -- Francesco Paolo Lovergine <frankie@debian.org>  Thu, 20 Mar 2014 10:34:32 +0100
 
 gmt (4.5.11-1) unstable; urgency=low
 

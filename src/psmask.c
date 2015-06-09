@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psmask.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: psmask.c 14247 2015-04-28 18:46:55Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -312,7 +312,7 @@ uint64_t clip_contours (struct GMT_CTRL *GMT, struct PSMASK_INFO *info, char *gr
 	return (n);
 }
 
-void shrink_clip_contours (struct GMT_CTRL *GMT, double *x, double *y, uint64_t np, double w, double e, double s, double n)
+void shrink_clip_contours (double *x, double *y, uint64_t np, double w, double e, double s, double n)
 {
 	/* Moves outside points to boundary.  Array length is not changed. */
 	uint64_t i;
@@ -405,7 +405,7 @@ int GMT_psmask_parse (struct GMT_CTRL *GMT, struct PSMASK_CTRL *Ctrl, struct GMT
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -563,7 +563,7 @@ int GMT_psmask (void *V_API, int mode, void *args)
 			}
 			if (fmt[1]) io_mode = GMT_WRITE_SEGMENT;	/* d: Want individual files with running numbers */
 		}
-		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, Ctrl->D.file)) == NULL) Return (API->error);	/* An empty table */
+		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (API->error);	/* An empty table */
 		if ((error = GMT_set_cols (GMT, GMT_OUT, 2))) Return (error);
 	}
 	
@@ -614,7 +614,7 @@ int GMT_psmask (void *V_API, int mode, void *args)
 		grd_x0 = GMT_grd_coord (GMT, Grid->header, GMT_X);
 		grd_y0 = GMT_grd_coord (GMT, Grid->header, GMT_Y);
 
-		/* Add GMT_CONV_LIMIT to ensure that special case radius = inc --> lrint(0.5) actually rounds to 1 */
+		/* Add GMT_CONV8_LIMIT to ensure that special case radius = inc --> lrint(0.5) actually rounds to 1 */
 		
 		node_only = (max_d_col == 0 && d_row == 0);
 		if (node_only && Ctrl->S.radius > 0.0) {
@@ -697,7 +697,7 @@ int GMT_psmask (void *V_API, int mode, void *args)
 			struct GMT_GRID *G = NULL;
 			char *dumpfile = "psmask.nc";
 			if ((G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Grid->header->wesn, Grid->header->inc, \
-				Grid->header->registration, 0, dumpfile)) == NULL) Return (API->error);
+				Grid->header->registration, 0, NULL)) == NULL) Return (API->error);
 			for (ij = 0; ij < Grid->header->size; ij++) G->data[ij] = (float)grd[ij];
 			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, dumpfile, G) != GMT_OK) {
 				Return (API->error);
@@ -724,7 +724,7 @@ int GMT_psmask (void *V_API, int mode, void *args)
 			first = 1;
 			while ((n = clip_contours (GMT, &info, grd, Grid->header, inc2, edge, first, &x, &y, &max_alloc_points)) > 0) {
 				closed = false;
-				shrink_clip_contours (GMT, x, y, n, Grid->header->wesn[XLO], Grid->header->wesn[XHI], Grid->header->wesn[YLO], Grid->header->wesn[YHI]);
+				shrink_clip_contours (x, y, n, Grid->header->wesn[XLO], Grid->header->wesn[XHI], Grid->header->wesn[YLO], Grid->header->wesn[YHI]);
 				if (Ctrl->D.active && n > (uint64_t)Ctrl->Q.min) {	/* Save the contour as output data */
 					S = GMT_prepare_contour (GMT, x, y, n, GMT->session.d_NaN);
 					/* Select which table this segment should be added to */
@@ -772,7 +772,7 @@ int GMT_psmask (void *V_API, int mode, void *args)
 				for (col = 0; col < Grid->header->nx; col++, ij++) {
 					if (grd[ij] == 0) continue;
 
-					np = GMT_graticule_path (GMT, &xx, &yy, 1, grd_x0[col] - inc2[GMT_X], grd_x0[col] + inc2[GMT_X], y_bot, y_top);
+					np = GMT_graticule_path (GMT, &xx, &yy, 1, true, grd_x0[col] - inc2[GMT_X], grd_x0[col] + inc2[GMT_X], y_bot, y_top);
 					plot_n = GMT_clip_to_map (GMT, xx, yy, np, &xp, &yp);
 					GMT_free (GMT, xx);
 					GMT_free (GMT, yy);

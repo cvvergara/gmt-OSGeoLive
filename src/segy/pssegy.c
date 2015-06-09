@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegy.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: pssegy.c 14214 2015-04-08 23:38:32Z pwessel $
  *
- *    Copyright (c) 1999-2014 by T. Henstock
+ *    Copyright (c) 1999-2015 by T. Henstock
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* pssegy program to plot segy files in postscript with variable trace spacing option
@@ -27,7 +27,7 @@
  *		2.2 7/30/2010 Ported to GMT 5 P. Wessel (global variables removed)
  *
  * This program is free software and may be copied or redistributed under the terms
- * of the GNU public license.
+ * of the GNU LGPL license.
  */
 
 #define THIS_MODULE_NAME	"pssegy"
@@ -192,7 +192,7 @@ int GMT_pssegy_parse (struct GMT_CTRL *GMT, struct PSSEGY_CTRL *Ctrl, struct GMT
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -272,7 +272,7 @@ int GMT_pssegy_parse (struct GMT_CTRL *GMT, struct PSSEGY_CTRL *Ctrl, struct GMT
 				break;
 			case 'T':	/* plot traces only at listed locations */
 				Ctrl->T.active = true;
-				Ctrl->T.file = strdup (opt->arg);
+				if (opt->arg[0]) Ctrl->T.file = strdup (opt->arg);
 				break;
 			case 'W':
 				Ctrl->W.active = true;
@@ -287,7 +287,7 @@ int GMT_pssegy_parse (struct GMT_CTRL *GMT, struct PSSEGY_CTRL *Ctrl, struct GMT
 		}
 	}
 	n_errors += GMT_check_condition (GMT, Ctrl->T.active && !Ctrl->T.file, "Syntax error: Option -T requires a file name\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && Ctrl->T.file && !access (Ctrl->T.file, R_OK), "Syntax error: Cannot file file %s\n", Ctrl->T.file);
+	n_errors += GMT_check_condition (GMT, Ctrl->T.active && Ctrl->T.file && access (Ctrl->T.file, R_OK), "Syntax error: Cannot file file %s\n", Ctrl->T.file);
 	n_errors += GMT_check_condition (GMT, Ctrl->E.value < 0.0, "Syntax error -E option: Slop cannot be negative\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->I.active && !Ctrl->F.active, "Syntax error: Must specify -F with -I\n");
 	n_errors += GMT_check_condition (GMT, !Ctrl->F.active && !Ctrl->W.active, "Syntax error: Must specify -F or -W\n");
@@ -502,7 +502,7 @@ int GMT_pssegy (void *V_API, int mode, void *args)
 		if (fpi == NULL) fpi = stdin;
 	}
 
-	if ((fpt = fopen (Ctrl->T.file, "r")) == NULL) {
+	if (Ctrl->T.active && (fpt = fopen (Ctrl->T.file, "r")) == NULL) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Cannot find trace list file %s\n", Ctrl->T.file);
 		Return (EXIT_FAILURE);
 	}
@@ -697,7 +697,7 @@ int GMT_pssegy (void *V_API, int mode, void *args)
 	GMT_plotend (GMT);
 
 	GMT_free (GMT, bitmap);
-	GMT_free (GMT, tracelist);
+	if (Ctrl->T.active) GMT_free (GMT, tracelist);
 
 	Return (EXIT_SUCCESS);
 }

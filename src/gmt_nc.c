@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_nc.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: gmt_nc.c 14239 2015-04-23 02:42:05Z pwessel $
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -69,7 +69,7 @@
 /* HDF5 chunk cache: reasonable defaults assuming min. chunk size of 128x128 and type byte */
 #define NC_CACHE_SIZE       33554432 /* 32MiB */
 #define NC_CACHE_NELEMS     2053     /* prime > NC_CACHE_SIZE / (128*128*1byte) */
-#define NC_CACHE_PREEMPTION 0.75
+#define NC_CACHE_PREEMPTION 0.75f
 
 int gmt_cdf_grd_info (struct GMT_CTRL *GMT, int ncid, struct GMT_GRID_HEADER *header, char job);
 int GMT_cdf_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, float *grid, double wesn[], unsigned int *pad, unsigned int complex_mode);
@@ -421,16 +421,18 @@ int gmt_nc_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, char 
 
 		/* Get information about x variable */
 		gmt_nc_get_units (GMT, ncid, ids[header->xy_dim[0]], header->x_units);
-		if (!(j = nc_get_var_double (ncid, ids[header->xy_dim[0]], xy))) gmt_nc_check_step (GMT, header->nx, xy, header->x_units, header->name);
+		if (!(j = nc_get_var_double (ncid, ids[header->xy_dim[0]], xy)))
+			gmt_nc_check_step (GMT, header->nx, xy, header->x_units, header->name);
 		if (!nc_get_att_double (ncid, ids[header->xy_dim[0]], "actual_range", dummy)) {
+			/* If actual range differs from end-points of vector then we have a pixel grid */
 			header->wesn[XLO] = dummy[0], header->wesn[XHI] = dummy[1];
-			header->registration = (!j && 1.0 - (xy[header->nx-1] - xy[0]) / (dummy[1] - dummy[0]) > 0.5 / header->nx) ?  GMT_GRID_PIXEL_REG : GMT_GRID_NODE_REG;
+			header->registration = (!j && 1.0 - (xy[header->nx-1] - xy[0]) / (dummy[1] - dummy[0]) > 0.5 / header->nx) ? GMT_GRID_PIXEL_REG : GMT_GRID_NODE_REG;
 		}
-		else if (!j) {
+		else if (!j) {	/* Got node vector, so default to gridline registration */
 			header->wesn[XLO] = xy[0], header->wesn[XHI] = xy[header->nx-1];
 			header->registration = GMT_GRID_NODE_REG;
 		}
-		else {
+		else {	/* Lacks x-vector entirely so set to point numbers, and gridline registration */
 			header->wesn[XLO] = 0.0, header->wesn[XHI] = (double) header->nx-1;
 			header->registration = GMT_GRID_NODE_REG;
 		}
@@ -439,7 +441,8 @@ int gmt_nc_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, char 
 
 		/* Get information about y variable */
 		gmt_nc_get_units (GMT, ncid, ids[header->xy_dim[1]], header->y_units);
-		if (!(j = nc_get_var_double (ncid, ids[header->xy_dim[1]], xy))) gmt_nc_check_step (GMT, header->ny, xy, header->y_units, header->name);
+		if (!(j = nc_get_var_double (ncid, ids[header->xy_dim[1]], xy)))
+			gmt_nc_check_step (GMT, header->ny, xy, header->y_units, header->name);
 		if (!nc_get_att_double (ncid, ids[header->xy_dim[1]], "actual_range", dummy))
 			header->wesn[YLO] = dummy[0], header->wesn[YHI] = dummy[1];
 		else if (!j)
@@ -507,14 +510,19 @@ int gmt_nc_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, char 
 		}
 
 #ifdef NC4_DEBUG
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->wesn: %g %g %g %g\n", header->wesn[XLO], header->wesn[XHI], header->wesn[YLO], header->wesn[YHI]);
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->row_order: %s\n", header->row_order == k_nc_start_south ? "S->N" : "N->S");
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->wesn: %g %g %g %g\n",
+	            header->wesn[XLO], header->wesn[XHI], header->wesn[YLO], header->wesn[YHI]);
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->row_order: %s\n",
+	            header->row_order == k_nc_start_south ? "S->N" : "N->S");
 	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->nx: %3d   head->ny:%3d\n", header->nx, header->ny);
 	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->mx: %3d   head->my:%3d\n", header->mx, header->my);
 	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->nm: %3d head->size:%3d\n", header->nm, header->size);
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->t-index %d,%d,%d\n", header->t_index[0], header->t_index[1], header->t_index[2]);
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->pad xlo:%u xhi:%u ylo:%u yhi:%u\n", header->pad[XLO], header->pad[XHI], header->pad[YLO], header->pad[YHI]);
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->BC  xlo:%u xhi:%u ylo:%u yhi:%u\n", header->BC[XLO], header->BC[XHI], header->BC[YLO], header->BC[YHI]);
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->t-index %d,%d,%d\n",
+	            header->t_index[0], header->t_index[1], header->t_index[2]);
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->pad xlo:%u xhi:%u ylo:%u yhi:%u\n",
+	            header->pad[XLO], header->pad[XHI], header->pad[YLO], header->pad[YHI]);
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->BC  xlo:%u xhi:%u ylo:%u yhi:%u\n",
+	            header->BC[XLO], header->BC[XHI], header->BC[YLO], header->BC[YHI]);
 	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "head->grdtype:%u %u\n", header->grdtype, GMT_GRID_GEOGRAPHIC_EXACT360_REPEAT);
 #endif
 	}
@@ -522,6 +530,7 @@ int gmt_nc_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, char 
 		/* Store global attributes */
 		unsigned int row, col;
 		const int *nc_vers = netcdf_libvers();
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "netCDF Library version: %d\n", *nc_vers);
 		GMT_err_trap (nc_put_att_text (ncid, NC_GLOBAL, "Conventions", strlen(GMT_NC_CONVENTION), GMT_NC_CONVENTION));
 		if (header->title[0]) {
 			GMT_err_trap (nc_put_att_text (ncid, NC_GLOBAL, "title", strlen(header->title), header->title));
@@ -559,24 +568,31 @@ int gmt_nc_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, char 
 
 		/* Define z variable. Attempt to remove "scale_factor" or "add_offset" when no longer needed */
 		gmt_nc_put_units (ncid, z_id, header->z_units);
+
 		if (header->z_scale_factor != 1.0) {
 			GMT_err_trap (nc_put_att_double (ncid, z_id, "scale_factor", NC_DOUBLE, 1U, &header->z_scale_factor));
 		}
 		else if (job == 'u')
 			nc_del_att (ncid, z_id, "scale_factor");
+
 		if (header->z_add_offset != 0.0) {
 			GMT_err_trap (nc_put_att_double (ncid, z_id, "add_offset", NC_DOUBLE, 1U, &header->z_add_offset));
 		}
 		else if (job == 'u')
 			nc_del_att (ncid, z_id, "add_offset");
-		if (job == 'u' && header->is_netcdf4 && nc_vers[0] == 4 && nc_vers[1] <= 3) {
-			/* netCDF-4 libs of versions <= 4.3 have a bug and crash when
-			 * rewriting the _FillValue attribute in netCDF-4 files */
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: netCDF libraries < 4.3 cannot alter the _FillValue attribute in netCDF-4 files.\n");
+
+		if (z_type != NC_FLOAT && z_type != NC_DOUBLE)
+			header->nan_value = rintf (header->nan_value); /* round to integer */
+		if (job == 'u' && header->is_netcdf4) {
+			/* netCDF-4 has a bug and crash when * rewriting the _FillValue attribute in netCDF-4 files
+			   https://bugtracking.unidata.ucar.edu/browse/NCF-187
+			   To work-around it we implement the renaming trick advised on NCF-133
+			*/
+			GMT_err_trap (nc_rename_att (ncid, z_id, "_FillValue", "_fillValue"));
+			GMT_err_trap (nc_put_att_float (ncid, z_id, "_fillValue", z_type, 1U, &header->nan_value));
+			GMT_err_trap (nc_rename_att (ncid, z_id, "_fillValue", "_FillValue"));
 		}
 		else {
-			if (z_type != NC_FLOAT && z_type != NC_DOUBLE)
-				header->nan_value = rintf (header->nan_value); /* round to integer */
 			GMT_err_trap (nc_put_att_float (ncid, z_id, "_FillValue", z_type, 1U, &header->nan_value));
 		}
 
@@ -929,10 +945,10 @@ int n_chunked_rows_in_cache (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *heade
 		level = GMT_MSG_LONG_VERBOSE;
 #endif
 		GMT_Report (GMT->parent, level,
-				"processing at most %" PRIuS " (%" PRIuS "x%" PRIuS ") chunks at a time (%.1f MiB)...\n",
+				"processing at most %" PRIuS " (%" PRIuS "x%" PRIuS ") chunks at a time (%.1lf MiB)...\n",
 				*n_contiguous_chunk_rows * chunks_per_row,
 				*n_contiguous_chunk_rows, chunks_per_row,
-				*n_contiguous_chunk_rows * z_size * width * chunksize[yx_dim[0]] / 1048576.0f);
+				*n_contiguous_chunk_rows * z_size * width * chunksize[yx_dim[0]] / 1048576.0);
 	}
 	else
 		*n_contiguous_chunk_rows = 0; /* all chunks fit into cache */
@@ -1133,7 +1149,7 @@ int nc_grd_prep_io (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, double
 		/* Global grids: if -R + padding is equal or exceeds grid bounds */
 		if (is_global && 1 + is_global_repeat + last_col - first_col >= header->nx) {
 			/* Number of requested cols >= nx: read whole grid and shift */
-			*n_shift  = -first_col;
+			*n_shift  = -(int)first_col;
 			first_col = 0;
 			last_col  = header->nx - 1;
 		}
