@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<refentry id='gmt-config'>
+
+  <refmeta>
+    <refentrytitle>gmt-config</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>gmt-config</refname>
+    <refpurpose>query GMT build options</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv id='synopsis'>
+    <cmdsynopsis>
+      <command>gmt-config</command>
+      <arg choice='opt'><option>--help</option></arg>
+      <arg choice='opt'><option>--bits</option></arg>
+      <arg choice='opt'><option>--cflags</option></arg>
+      <arg choice='opt'><option>--datadir</option></arg>
+      <arg choice='opt'><option>--dcw</option></arg>
+      <arg choice='opt'><option>--dep-libs</option></arg>
+      <arg choice='opt'><option>--gshhg</option></arg>
+      <arg choice='opt'><option>--has-fftw</option></arg>
+      <arg choice='opt'><option>--has-fftw</option></arg>
+      <arg choice='opt'><option>--has-gdal</option></arg>
+      <arg choice='opt'><option>--has-pcre</option></arg>
+      <arg choice='opt'><option>--includedir</option></arg>
+      <arg choice='opt'><option>--libs</option></arg>
+      <arg choice='opt'><option>--prefix</option></arg>
+      <arg choice='opt'><option>--version</option></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id='description'>
+    <title>DESCRIPTION</title>
+    <para>
+      <command>gmt-config</command> allows querying the options used to
+      build GMT.
+    </para>
+  </refsect1>
+
+  <refsect1 id='options'>
+    <title>OPTIONS</title>
+    <variablelist>
+
+      <varlistentry>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>display help message and exit</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--bits</option></term>
+        <listitem>
+          <para>whether library is build 32-bit or 64-bit</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--cflags</option></term>
+        <listitem>
+          <para>pre-processor and compiler flags</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--datadir</option></term>
+        <listitem>
+          <para>GMT's data directory</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--dcw</option></term>
+        <listitem>
+          <para>location of used DCW</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--dep-libs</option></term>
+        <listitem>
+          <para>dependent libraries</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--gshhg</option></term>
+        <listitem>
+          <para>location of used GSHHG</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--has-fftw</option></term>
+        <listitem>
+          <para>whether FFTW is used in build</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--has-gdal</option></term>
+        <listitem>
+          <para>whether GDAL is used in build</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--has-pcre</option></term>
+        <listitem>
+          <para>whether PCRE is used in build</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--includedir</option></term>
+        <listitem>
+          <para>include directory</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--libs</option></term>
+        <listitem>
+          <para>library linking information</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--prefix</option></term>
+        <listitem>
+          <para>install prefix</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>library version</para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+
+</refentry>

@@ -17,7 +17,11 @@ Build-Depends: debhelper (>= 9),
                sfftw-dev,
                texlive,
                texlive-latex-extra,
-               zlib1g-dev
+               zlib1g-dev,
+               docbook2x,
+               docbook-xsl,
+               docbook-xml,
+               xsltproc
 Standards-Version: 3.9.6
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-grass/gmt.git
 Vcs-Git: git://anonscm.debian.org/pkg-grass/gmt.git
