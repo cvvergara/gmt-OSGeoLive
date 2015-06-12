@@ -143,6 +143,9 @@ override_dh_compress:
 	# Don't compress the pdf files needed for the gmt-doc-pdf package
 	dh_compress -X.pdf
 
+override_dh_strip:
+	dh_strip --dbg-package=gmt-dbg
+
 override_dh_makeshlibs:
 	dh_makeshlibs -- -v$(UPSTREAM_VERSION)
 
