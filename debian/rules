@@ -15,6 +15,8 @@ ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
    export DH_VERBOSE
 endif
 
+UPSTREAM_VERSION=$(shell dpkg-parsechangelog | sed -ne 's/^Version: \(.*\)-.*/\1/p' | sed -e 's/~.*//; s/^[0-9]://')
+
 BUILDDIR = $(CURDIR)/debian/build
 DESTDIR	= $(CURDIR)/debian/tmp
 
@@ -140,4 +142,7 @@ override_dh_install:
 override_dh_compress:
 	# Don't compress the pdf files needed for the gmt-doc-pdf package
 	dh_compress -X.pdf
+
+override_dh_makeshlibs:
+	dh_makeshlibs -- -v$(UPSTREAM_VERSION)
 
