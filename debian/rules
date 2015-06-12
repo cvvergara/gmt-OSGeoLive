@@ -81,6 +81,9 @@ override_dh_auto_install:
 	rm -f debian/tmp/usr/share/doc/gmt/html/_static/jquery.js \
 	      debian/tmp/usr/share/doc/gmt/html/_static/underscore.js
 
+	# Remove empty directory
+	rmdir debian/tmp/usr/share/doc/gmt/html/_images/math/
+
 	# Fix bash-completion installation
 	mkdir -p debian/tmp/usr/share/bash-completion/completions
 	mv debian/tmp/usr/etc/bash_completion.d/gmt debian/tmp/usr/share/bash-completion/completions
