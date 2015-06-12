@@ -109,9 +109,9 @@ override_dh_installman:
 	dh_installman
 
 	# Fix gmt_shell_functions.sh man page installation
-	mv debian/gmt/usr/share/man/sh/man1/gmt_shell_functions.1 \
-	   debian/gmt/usr/share/man/man1/gmt_shell_functions.sh.1
-	rm -rf debian/gmt/usr/share/man/sh/
+	mv debian/gmt-common/usr/share/man/sh/man1/gmt_shell_functions.1 \
+	   debian/gmt-common/usr/share/man/man1/gmt_shell_functions.sh.1
+	rm -rf debian/gmt-common/usr/share/man/sh/
 
 override_dh_compress:
 	# Don't compress the pdf files needed for the gmt-doc-pdf package
