@@ -65,19 +65,6 @@ override_dh_auto_install:
 	done
 
 	DESTDIR=$(DESTDIR) $(MAKE) -C $(BUILDDIR) install
-	# remove duplicated stuff
-#	rm -rf debian/tmp/usr/share/conf \
-#	       debian/tmp/usr/share/cpt \
-#	       debian/tmp/usr/share/custom \
-#	       debian/tmp/usr/share/dbase \
-#	       debian/tmp/usr/share/mgd77 \
-#	       debian/tmp/usr/share/mgg \
-#	       debian/tmp/usr/share/pattern \
-#	       debian/tmp/usr/share/pslib \
-#	       debian/tmp/usr/share/time \
-#	       debian/tmp/usr/share/tools \
-#	       debian/tmp/usr/share/VERSION \
-#	       debian/tmp/usr/share/x2sys
 	dh_auto_install
 
 	# Uncompress examples stuff 
@@ -115,42 +102,6 @@ override_dh_auto_install:
 		done; \
 	done
 
-#	$(MAKE) -C build/src/mex DESTDIR=$(DESTDIR) install
-#	-find $(DESTDIR)/usr/lib/octave -name "*.mex" -exec rename 's/\.mex/.oct/' {} \;
-	
-	# Okay, we still have to move the documentation (the trick above does
-	# not work because the Makefile would try to overwrite the link with
-	# a directory). So move the docs and link them to where GMT will look
-	# for them. 
-#	mv $(DESTDIR)/usr/lib/gmt/share/doc/gmt $(DESTDIR)/usr/share/doc/
-#	ln -fs ../../../share/doc/gmt $(DESTDIR)/usr/lib/gmt/share/doc/gmt
-	
-	# Configuration files are still at the wrong place, let's fix this
-#	mv $(DESTDIR)/usr/share/gmt/conf/*.conf $(DESTDIR)/etc/gmt/
-#	install -m644 debian/coastline.conf $(DESTDIR)/etc/gmt/
-#	for file in $(DESTDIR)/etc/gmt/*.conf; do \
-#		ln -fs /etc/gmt/`basename $$file` $(DESTDIR)/usr/share/gmt/`basename $$file`; \
-#	done
-	
-	# GMT wrapper does not help in /usr/lib/gmt/bin (not in path by default)
-	# So: Move it to /usr/bin and patch it a bit locally to alter the PATH var.
-	# Also use 'pager' instead of more as default pager in the script.
-#	sed -e 's/^exec /PATH=\$$PATH:\$${exec_prefix}\/bin exec /' \
-#	    -e 's/:-more/:-pager/' \
-#	    	$(DESTDIR)/usr/lib/gmt/bin/GMT >$(DESTDIR)/usr/bin/GMT
-#	rm -f $(DESTDIR)/usr/lib/gmt/bin/GMT
-	
-	# Move the manpages directory into the right place...
-#	for section in 1 3 5; do \
-#		mkdir -p $(DESTDIR)/usr/share/man/man$${section}; \
-#		for manpage in $(DESTDIR)/usr/lib/gmt/share/man/man$${section}/*.$${section}; do \
-#			sed -e "s/^\.TH \(.*\) $${section}/\.TH \1 $${section}gmt/" $${manpage}|gzip \
-#			       >$(DESTDIR)/usr/share/man/man$${section}/`basename $${manpage}`gmt.gz; \
-#			rm -f $${manpage}; \
-#		done; \
-#	done
-#	rm -rf $(DESTDIR)/usr/share/gmt/man
-	
 override_dh_install:
 	dh_install --list-missing
 
