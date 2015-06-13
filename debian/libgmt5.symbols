@@ -429,8 +429,10 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_factorial@Base 5.1.2
  GMT_fclose@Base 5.1.2
  GMT_fft_1d_brenner@Base 5.1.2
+ GMT_fft_1d_fftwf@Base 5.1.2
  GMT_fft_1d_kiss@Base 5.1.2
  GMT_fft_2d_brenner@Base 5.1.2
+ GMT_fft_2d_fftwf@Base 5.1.2
  GMT_fft_2d_kiss@Base 5.1.2
  GMT_fft_any_wave@Base 5.1.2
  GMT_fft_cleanup@Base 5.1.2
@@ -1685,6 +1687,10 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_fft_Singleton_list@Base 5.1.2
  gmt_fft_save2d@Base 5.1.2
  gmt_fft_taper@Base 5.1.2
+ gmt_fftwf_export_wisdom_to_filename@Base 5.1.2
+ gmt_fftwf_import_wisdom_from_filename@Base 5.1.2
+ gmt_fftwf_plan_dft@Base 5.1.2
+ gmt_fftwf_wisdom_filename@Base 5.1.2
  gmt_file_is_readable@Base 5.1.2
  gmt_file_lock@Base 5.1.2
  gmt_file_unlock@Base 5.1.2
