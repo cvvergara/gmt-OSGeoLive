@@ -15,7 +15,7 @@ ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
    export DH_VERBOSE
 endif
 
-UPSTREAM_VERSION=$(shell dpkg-parsechangelog | sed -ne 's/^Version: \(.*\)-.*/\1/p' | sed -e 's/~.*//; s/^[0-9]://')
+UPSTREAM_VERSION=$(shell dpkg-parsechangelog | sed -ne 's/^Version: \(.*\)-.*/\1/p' | sed -e 's/[~+].*//; s/^[0-9]://')
 BUILD_DATE=$(shell dpkg-parsechangelog | sed -ne 's/^Date: //p' | LC_ALL=C date -u "+%d %B %Y" -f -)
 
 MANPAGES:=$(wildcard debian/man/*.*.xml)
