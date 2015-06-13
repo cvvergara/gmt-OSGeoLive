@@ -114,8 +114,8 @@ override_dh_installman:
 	rm -rf debian/gmt-common/usr/share/man/sh/
 
 override_dh_compress:
-	# Don't compress the pdf files needed for the gmt-doc-pdf package
-	dh_compress -X.pdf
+	# Don't compress the pdf files needed for the gmt-doc-pdf package, nor the examples
+	dh_compress -X.pdf -Xusr/share/doc/gmt-examples/examples/
 
 override_dh_strip:
 	dh_strip --dbg-package=gmt-dbg
