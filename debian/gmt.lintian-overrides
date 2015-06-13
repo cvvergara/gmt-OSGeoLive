@@ -1,3 +1,6 @@
 # User scripts rely on the extension
 gmt: script-with-language-extension usr/bin/gmt_shell_functions.sh
 
+# False positive due to language extension
+gmt: binary-without-manpage usr/bin/gmt_shell_functions.sh
+
