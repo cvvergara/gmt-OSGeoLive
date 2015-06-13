@@ -21,7 +21,7 @@ BUILD_DATE=$(shell dpkg-parsechangelog | sed -ne 's/^Date: //p' | LC_ALL=C date 
 MANPAGES:=$(wildcard debian/man/*.*.xml)
 
 BUILDDIR = $(CURDIR)/debian/build
-DESTDIR	= $(CURDIR)/debian/tmp
+DESTDIR  = $(CURDIR)/debian/tmp
 
 CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
              -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
@@ -39,8 +39,8 @@ CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 
 %:
 	dh $@ --buildsystem cmake \
-		--sourcedirectory=$(CURDIR) --builddirectory=$(BUILDDIR) \
-		--parallel
+	      --sourcedirectory=$(CURDIR) --builddirectory=$(BUILDDIR) \
+	      --parallel
 
 override_dh_clean:
 	dh_clean debian/man/*.1
