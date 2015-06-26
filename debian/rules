@@ -96,9 +96,11 @@ override_dh_auto_install:
 	        debian/tmp/usr/bin/gmt
 
 	# Recompress the manpages to not use timestamped gzip
-	for section in 1 3 5; do\
+	for section in 1 3 5; do \
 		for manpage in debian/tmp/usr/share/doc/gmt/man/man$${section}/*.$${section}.gz; do \
-			gunzip $${manpage} && gzip -n `echo $${manpage} | sed 's/.gz$$//'` ; \
+			if [ -e "$${manpage}" ] ; then \
+				gunzip $${manpage} && gzip -n `echo $${manpage} | sed 's/.gz$$//'` ; \
+			fi; \
 		done; \
 	done
 
@@ -109,9 +111,11 @@ override_dh_installman:
 	dh_installman
 
 	# Fix gmt_shell_functions.sh man page installation
-	mv debian/gmt-common/usr/share/man/sh/man1/gmt_shell_functions.1 \
-	   debian/gmt-common/usr/share/man/man1/gmt_shell_functions.sh.1
-	rm -rf debian/gmt-common/usr/share/man/sh/
+	if [ -e "debian/gmt-common/usr/share/man/sh/man1/gmt_shell_functions.1" ]; then \
+		mv debian/gmt-common/usr/share/man/sh/man1/gmt_shell_functions.1 \
+		   debian/gmt-common/usr/share/man/man1/gmt_shell_functions.sh.1 ; \
+		rm -rf debian/gmt-common/usr/share/man/sh/ ; \
+	fi
 
 override_dh_compress:
 	# Don't compress the pdf files needed for the gmt-doc-pdf package, nor the examples
