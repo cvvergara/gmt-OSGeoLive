@@ -6,3 +6,4 @@ output-typo.patch
 algorithm-typo.patch
 length-typo.patch
 palette-typo.patch
+kfreebsd.patch
