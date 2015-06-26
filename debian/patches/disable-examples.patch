@@ -1,5 +1,6 @@
 Description: Exclude examples that fail to build.
 Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: not-needed
 
 --- a/doc/examples/CMakeLists.txt
 +++ b/doc/examples/CMakeLists.txt

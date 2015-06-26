@@ -1,5 +1,6 @@
 Description: Fix 'lenght' typo, replace with 'length'.
 Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: https://gmt.soest.hawaii.edu/issues/720
 
 --- a/ChangeLog
 +++ b/ChangeLog

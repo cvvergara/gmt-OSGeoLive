@@ -1,5 +1,6 @@
 Description: Fix 'softwares' typo, replace with 'software'.
 Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: https://gmt.soest.hawaii.edu/issues/720
 
 --- a/doc/rst/source/ps2raster.rst
 +++ b/doc/rst/source/ps2raster.rst
