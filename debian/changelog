@@ -1,8 +1,8 @@
-gmt (5.1.2+dfsg1-1~exp3) UNRELEASED; urgency=medium
+gmt (5.1.2+dfsg1-1~exp3) experimental; urgency=medium
 
   * Only recompress man pages if they exist.
 
- -- Bas Couwenberg <sebastic@debian.org>  Fri, 26 Jun 2015 21:04:28 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Fri, 26 Jun 2015 21:07:10 +0200
 
 gmt (5.1.2+dfsg1-1~exp2) experimental; urgency=medium
 
