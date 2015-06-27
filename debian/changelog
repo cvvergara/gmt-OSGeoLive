@@ -1,8 +1,8 @@
-gmt (5.1.2+dfsg1-1~exp4) UNRELEASED; urgency=medium
+gmt (5.1.2+dfsg1-1~exp4) experimental; urgency=medium
 
   * Add patch to fix build on mips*.
 
- -- Bas Couwenberg <sebastic@debian.org>  Sat, 27 Jun 2015 15:51:53 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 27 Jun 2015 15:53:32 +0200
 
 gmt (5.1.2+dfsg1-1~exp3) experimental; urgency=medium
 
