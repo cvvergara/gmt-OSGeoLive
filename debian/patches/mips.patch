@@ -1,0 +1,15 @@
+Description: Use ucontext from aarch64 for mips too.
+Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: https://gmt.soest.hawaii.edu/issues/720
+
+--- a/src/common_sighandler.c
++++ b/src/common_sighandler.c
+@@ -75,7 +75,7 @@ void backtrace_symbols_fd(void *const *b
+ #elif defined(SIZEOF_GREG_T)
+ # ifdef __x86_64__
+ #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_RIP])
+-# elif defined(__aarch64__)
++# elif defined(__aarch64__) || defined(__mips__)
+ #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.pc)
+ # elif defined( __arm__)
+ #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
