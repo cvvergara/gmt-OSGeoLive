@@ -56,6 +56,8 @@ Description: Generic Mapping Tools
 Package: gmt-common
 Architecture: all
 Depends: ${misc:Depends}
+Breaks: gmt (<< 5.1.2)
+Replaces: gmt (<< 5.1.2)
 Description: Generic Mapping Tools - Architecture-independent files
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
