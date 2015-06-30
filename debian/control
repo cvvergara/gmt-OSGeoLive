@@ -58,6 +58,8 @@ Architecture: all
 Depends: ${misc:Depends}
 Breaks: gmt (<< 5.1.2)
 Replaces: gmt (<< 5.1.2)
+Conflicts: turnin-ng,
+           pslib-dev
 Description: Generic Mapping Tools - Architecture-independent files
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
@@ -95,6 +97,7 @@ Depends: ${shlibs:Depends},
          libnetcdf-dev,
          ${misc:Depends}
 Suggests: gmt
+Conficts: libpsl-dev
 Description: Generic Mapping Tools Library - Development files
  These set of libraries allow manipulating geographic and Cartesian data sets
  (including filtering, trend fitting, gridding, projecting, etc.) and
