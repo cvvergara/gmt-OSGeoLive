@@ -1,4 +1,4 @@
-gmt (5.1.2+dfsg1-1~exp5) UNRELEASED; urgency=medium
+gmt (5.1.2+dfsg1-1~exp5) experimental; urgency=medium
 
   * Add versioned Breaks/Replaces on gmt to gmt-common.
     (closes: #790521)
@@ -6,7 +6,7 @@ gmt (5.1.2+dfsg1-1~exp5) UNRELEASED; urgency=medium
     and libpsl-dev to libgmt-dev.
   * Add references to upstream metadata.
 
- -- Bas Couwenberg <sebastic@debian.org>  Tue, 30 Jun 2015 07:44:37 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Fri, 03 Jul 2015 19:30:54 +0200
 
 gmt (5.1.2+dfsg1-1~exp4) experimental; urgency=medium
 
