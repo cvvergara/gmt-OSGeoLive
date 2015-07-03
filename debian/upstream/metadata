@@ -1,5 +1,51 @@
 ---
 Bug-Database: https://gmt.soest.hawaii.edu/projects/gmt/issues
 Name: GMT
+Other-References: http://gmt.soest.hawaii.edu/projects/gmt/wiki/References
+Reference:
+- 
+  Author: Paul Wessel and Walter H. F. Smith and Remco Scharroo and Joaquim F. Luis and Florian Wobbe
+  DOI: 10.1002/2013EO450001
+  Eprint: http://onlinelibrary.wiley.com/doi/10.1002/2013EO450001/pdf
+  Journal: Eos Transactions, American Geophysical Union
+  Month: nov
+  Number: 45
+  Pages: 409-410
+  Title: Generic Mapping Tools: Improved version released
+  Volume: 94
+  Year: 2013
+- 
+  Author: Paul Wessel and Walter H. F. Smith
+  DOI: 10.1029/98EO00426
+  Eprint: http://onlinelibrary.wiley.com/doi/10.1029/98EO00426/pdf
+  Journal: Eos Transactions, American Geophysical Union
+  Month: nov
+  Number: 47
+  Pages: 579
+  Title: New, improved version of the Generic Mapping Tools released
+  Volume: 79
+  Year: 1998
+- 
+  Author: Paul Wessel and Walter H. F. Smith
+  DOI: 10.1029/95EO00198
+  Eprint: http://onlinelibrary.wiley.com/doi/10.1029/95EO00198/pdf
+  Journal: Eos Transactions, American Geophysical Union
+  Month: aug
+  Number: 33
+  Pages: 329
+  Title: New version of the Generic Mapping Tools released
+  Volume: 76
+  Year: 1995
+- 
+  Author: Paul Wessel and Walter H. F. Smith
+  DOI: 10.1029/90EO00319
+  Eprint: http://onlinelibrary.wiley.com/doi/10.1029/90EO00319/pdf
+  Journal: Eos Transactions, American Geophysical Union
+  Month: oct
+  Number: 41
+  Pages: 411-446
+  Title: Free software helps map and display data
+  Volume: 72
+  Year: 1991
 Repository: svn://gmtserver.soest.hawaii.edu/gmt5
 Repository-Browse: https://gmt.soest.hawaii.edu/projects/gmt/repository
