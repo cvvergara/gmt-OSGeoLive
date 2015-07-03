@@ -97,7 +97,6 @@ Depends: ${shlibs:Depends},
          libnetcdf-dev,
          ${misc:Depends}
 Suggests: gmt
-Conflicts: libpsl-dev
 Description: Generic Mapping Tools Library - Development files
  These set of libraries allow manipulating geographic and Cartesian data sets
  (including filtering, trend fitting, gridding, projecting, etc.) and
