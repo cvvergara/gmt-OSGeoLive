@@ -39,8 +39,10 @@ Recommends: gmt-gshhg-data | gmt-gshhg-low,
             gmt-doc
 Suggests: gmt-doc-pdf,
           gmt-examples
+Breaks: libgenome-perl (<< 0.06-3~)
 Conflicts: gmt-manpages
-Replaces: gmt-manpages
+Replaces: gmt-manpages,
+          libgenome-perl (<< 0.06-3~)
 Description: Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
