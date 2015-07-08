@@ -1,8 +1,6 @@
 gmt (5.1.2+dfsg1-1~exp6) UNRELEASED; urgency=medium
 
   * Add Breaks/Replaces on libgenome-perl versions preceding the gmt rename.
-  * Add patch rename psl library to gmt-psl to resolve conflict with
-    libpsl.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 03 Jul 2015 23:38:11 +0200
 

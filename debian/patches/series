@@ -8,4 +8,3 @@ length-typo.patch
 palette-typo.patch
 kfreebsd.patch
 mips.patch
-rename-libpsl-to-libgmt-psl.patch
