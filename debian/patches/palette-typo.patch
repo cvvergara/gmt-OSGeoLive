@@ -1,6 +1,7 @@
 Description: Fix 'pallette' typo, replace with 'palette'.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: https://gmt.soest.hawaii.edu/issues/720
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/14481
 
 --- a/doc/rst/source/gmtcolors.rst
 +++ b/doc/rst/source/gmtcolors.rst

@@ -1,6 +1,7 @@
 Description: Fix 'ouput' typo, replace with 'output'.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: https://gmt.soest.hawaii.edu/issues/720
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/14481
 
 --- a/src/gmt_api.c
 +++ b/src/gmt_api.c

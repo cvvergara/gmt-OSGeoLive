@@ -1,6 +1,7 @@
 Description: Use ucontext from FreeBSD for GNU/kFreeBSD too.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: https://gmt.soest.hawaii.edu/issues/720
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/14481
 
 --- a/src/common_sighandler.c
 +++ b/src/common_sighandler.c

@@ -1,6 +1,7 @@
 Description: Fix 'endianess' typo, replace with 'endianness'.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: https://gmt.soest.hawaii.edu/issues/720
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/14481
 
 --- a/src/gmt_esri_io.c
 +++ b/src/gmt_esri_io.c
