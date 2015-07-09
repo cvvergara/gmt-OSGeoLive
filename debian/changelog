@@ -1,4 +1,4 @@
-gmt (5.1.2+dfsg1-1~exp7) UNRELEASED; urgency=medium
+gmt (5.1.2+dfsg1-1~exp7) experimental; urgency=medium
 
   * Add patch to append 'gmt' to the man page sections.
   * Move `gzip -n` man page compression from rules to patch.
@@ -6,7 +6,7 @@ gmt (5.1.2+dfsg1-1~exp7) UNRELEASED; urgency=medium
     requires CMake >= 3.2.
   * Drop libgmt-dev.links, usr/lib/gmt is no longer used.
 
- -- Bas Couwenberg <sebastic@debian.org>  Thu, 09 Jul 2015 18:46:47 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Thu, 09 Jul 2015 22:39:30 +0200
 
 gmt (5.1.2+dfsg1-1~exp6) experimental; urgency=medium
 
