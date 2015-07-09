@@ -9,3 +9,4 @@ palette-typo.patch
 kfreebsd.patch
 mips.patch
 manpage-section.patch
+dont-use-timestamped-gzip.patch

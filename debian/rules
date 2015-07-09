@@ -95,15 +95,6 @@ override_dh_auto_install:
 	        debian/tmp/usr/lib/*/lib*.so.*.* \
 	        debian/tmp/usr/bin/gmt
 
-	# Recompress the manpages to not use timestamped gzip
-	for section in 1 3 5; do \
-		for manpage in debian/tmp/usr/share/doc/gmt/man/man$${section}/*.$${section}gmt.gz; do \
-			if [ -e "$${manpage}" ] ; then \
-				gunzip $${manpage} && gzip -n `echo $${manpage} | sed 's/.gz$$//'` ; \
-			fi; \
-		done; \
-	done
-
 override_dh_install:
 	dh_install --list-missing
 

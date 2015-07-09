@@ -1,6 +1,7 @@
 gmt (5.1.2+dfsg1-1~exp7) UNRELEASED; urgency=medium
 
   * Add patch to append 'gmt' to the man page sections.
+  * Move `gzip -n` man page compression from rules to patch.
 
  -- Bas Couwenberg <sebastic@debian.org>  Thu, 09 Jul 2015 18:46:47 +0200
 
