@@ -4,6 +4,7 @@ gmt (5.1.2+dfsg1-1~exp8) UNRELEASED; urgency=medium
     gmt man pages use 'gmt' suffix now.
   * Add Breaks/Replaces on old gmt-manpages to gmt-common.
     (closes: #790524)
+  * Drop obsolete README.Debian file.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 10 Jul 2015 01:11:01 +0200
 
