@@ -1,13 +1,5 @@
 #! /usr/bin/make -f
 
-# Some special build options
-ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
-   CFLAGS += -g -O0
-   LDFLAGS += -g
-else
-   CFLAGS += -O2
-endif
-
 CFLAGS += $(CPPFLAGS)
 
 ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
