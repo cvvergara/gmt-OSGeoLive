@@ -89,27 +89,11 @@ Description: Generic Mapping Tools Library
  .
  This package contains the GMT library.
 
-Package: libgmt-psl5
-Architecture: any
-Section: libs
-Depends: ${shlibs:Depends},
-         ${misc:Depends}
-Suggests: gmt
-Description: Generic Mapping Tools PSL Library
- GMT libraries allow manipulating geographic and Cartesian data sets
- (including filtering, trend fitting, gridding, projecting, etc.) and
- producing Encapsulated PostScript File (EPS) illustrations ranging from
- simple x-y plots via contour maps to artificially illuminated surfaces
- and 3-D perspective views.
- .
- This package contains the GMT psl library.
-
 Package: libgmt-dev
 Architecture: any
 Section: libdevel
 Depends: ${shlibs:Depends},
          libgmt5 (= ${binary:Version}),
-         libgmt-psl5 (= ${binary:Version}),
          libnetcdf-dev,
          ${misc:Depends}
 Suggests: gmt
@@ -127,7 +111,6 @@ Package: gmt-dbg
 Architecture: any
 Section: debug
 Depends: libgmt5 (= ${binary:Version}),
-         libgmt-psl5 (= ${binary:Version}),
          ${misc:Depends}
 Description: Generic Mapping Tools Library - Debugging symbols
  GMT is a collection of tools that allow users to manipulate

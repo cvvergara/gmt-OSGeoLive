@@ -1,9 +1,3 @@
-gmt (5.1.2+dfsg1-2) UNRELEASED; urgency=medium
-
-  * Use separate package for libgmt-psl.
-
- -- Bas Couwenberg <sebastic@debian.org>  Sat, 25 Jul 2015 00:25:40 +0200
-
 gmt (5.1.2+dfsg1-1) unstable; urgency=medium
 
   * Add patch rename psl library to gmt-psl to resolve conflict with
