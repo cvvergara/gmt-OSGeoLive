@@ -1,0 +1,23 @@
+Description: Search for HDF5 library in other paths too.
+ The HDF5 libraries are installation in non-standard locations in Debian,
+ not in the same directory as the NetCDF library.
+Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: http://gmt.soest.hawaii.edu/issues/732
+
+--- a/cmake/modules/FindNETCDF.cmake
++++ b/cmake/modules/FindNETCDF.cmake
+@@ -105,11 +105,13 @@ find_library (NETCDF_LIBRARY
+ 	/opt
+ )
+ 
++include (FindHDF5)
++
+ # find all libs that nc-config reports
+ foreach (_extralib ${_netcdf_lib})
+ 	find_library (_found_lib_${_extralib}
+ 		NAMES ${_extralib}
+-		PATHS ${_netcdf_libpath})
++		PATHS ${_netcdf_libpath} ${HDF5_LIBRARY_DIRS})
+ 	list (APPEND NETCDF_LIBRARY ${_found_lib_${_extralib}})
+ endforeach (_extralib)
+ 
