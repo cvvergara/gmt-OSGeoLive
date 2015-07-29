@@ -26,7 +26,7 @@ Build-Depends: debhelper (>= 9),
                xsltproc
 Standards-Version: 3.9.6
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-grass/gmt.git
-Vcs-Git: git://anonscm.debian.org/pkg-grass/gmt.git
+Vcs-Git: git://anonscm.debian.org/pkg-grass/gmt.git -b experimental
 Homepage: http://gmt.soest.hawaii.edu/projects/gmt
 
 Package: gmt
