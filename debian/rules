@@ -50,6 +50,9 @@ override_dh_auto_clean:
 	rm -rf $(BUILDDIR) $(DESTDIR)
 	dh_auto_clean
 
+override_dh_auto_configure:
+	dh_auto_configure -B $(BUILDDIR) -- $(CMAKE_OPTS)
+
 override_dh_auto_build-arch:
 	mkdir $(BUILDDIR) || true 
 	cd $(BUILDDIR) && cmake $(CMAKE_OPTS) ../..
