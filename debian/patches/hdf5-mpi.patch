@@ -6,11 +6,19 @@ Forwarded: http://gmt.soest.hawaii.edu/issues/732
 
 --- a/cmake/modules/FindNETCDF.cmake
 +++ b/cmake/modules/FindNETCDF.cmake
-@@ -105,11 +105,13 @@ find_library (NETCDF_LIBRARY
+@@ -105,11 +105,21 @@ find_library (NETCDF_LIBRARY
  	/opt
  )
  
-+include (FindHDF5)
++if (NOT DEFINED HDF5_LIBRARY_DIRS)
++  set (HDF5_LIBRARY_DIRS "")
++endif (NOT DEFINED HDF5_LIBRARY_DIRS)
++
++if (NOT DEFINED HDF5_INCLUDE_DIRS)
++  set (HDF5_INCLUDE_DIRS "")
++else (NOT DEFINED HDF5_INCLUDE_DIRS)
++  list (APPEND NETCDF_INCLUDE_DIR ${HDF5_INCLUDE_DIRS})
++endif (NOT DEFINED HDF5_INCLUDE_DIRS)
 +
  # find all libs that nc-config reports
  foreach (_extralib ${_netcdf_lib})
