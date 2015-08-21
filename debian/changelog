@@ -1,7 +1,7 @@
 gmt (5.1.2+dfsg1-2~exp2) UNRELEASED; urgency=medium
 
-  * Use mpi-default-dev to select the architecture specific HDF5 MPI flavor.
   * Override dh_auto_configure to use custom CMake options.
+  * Drop changes for HDF5 MPI, netcdf now built with serial flavor.
 
  -- Bas Couwenberg <sebastic@debian.org>  Thu, 30 Jul 2015 22:35:49 +0200
 

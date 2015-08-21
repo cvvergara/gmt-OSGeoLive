@@ -7,13 +7,6 @@ ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
    export DH_VERBOSE
 endif
 
-DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
-
-include /usr/share/mpi-default-dev/debian_defaults
-
-HDF5_INCLUDE_PATH=/usr/include/hdf5/$(ARCH_DEFAULT_MPI_IMPL)
-HDF5_LIBRARY_PATH=/usr/lib/$(DEB_HOST_MULTIARCH)/hdf5/$(ARCH_DEFAULT_MPI_IMPL)
-
 UPSTREAM_VERSION=$(shell dpkg-parsechangelog | sed -ne 's/^Version: \(.*\)-.*/\1/p' | sed -e 's/\+.*//; s/^[0-9]://')
 BUILD_DATE=$(shell dpkg-parsechangelog | sed -ne 's/^Date: //p' | LC_ALL=C date -u "+%d %B %Y" -f -)
 
@@ -34,9 +27,7 @@ CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
              -DFLOCK=on \
              -DGMT_INSTALL_MODULE_LINKS=off \
              -DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=off \
-             -DLICENSE_RESTRICTED=LGPL \
-             -DHDF5_INCLUDE_DIRS=$(HDF5_INCLUDE_PATH) \
-             -DHDF5_LIBRARY_DIRS=$(HDF5_LIBRARY_PATH)
+             -DLICENSE_RESTRICTED=LGPL
 
 %:
 	dh $@ --buildsystem cmake \

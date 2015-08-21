@@ -11,4 +11,3 @@ mips.patch
 manpage-section.patch
 dont-use-timestamped-gzip.patch
 rename-libpsl-to-libgmt-psl.patch
-hdf5-mpi.patch
