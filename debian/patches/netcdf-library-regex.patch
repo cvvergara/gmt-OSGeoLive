@@ -1,0 +1,19 @@
+Description: Fix linker flag regex to not match '-l' in '-L/usr/lib/x86_64-linux-gnu/hdf5/serial'.
+Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: http://gmt.soest.hawaii.edu/issues/757
+
+--- a/cmake/modules/FindNETCDF.cmake
++++ b/cmake/modules/FindNETCDF.cmake
+@@ -58,8 +58,10 @@ if (UNIX AND NOT NETCDF_FOUND)
+ 			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+ 			OUTPUT_VARIABLE NETCDF_CONFIG_LIBS)
+ 		if (NETCDF_CONFIG_LIBS)
+-			string (REGEX MATCHALL "-l[^ ]+" _netcdf_dashl ${NETCDF_CONFIG_LIBS})
+-			string (REGEX REPLACE "-l" "" _netcdf_lib "${_netcdf_dashl}")
++			# Ensure -l is precedeced by whitespace to not match
++		        # '-l' in '-L/usr/lib/x86_64-linux-gnu/hdf5/serial'
++			string (REGEX MATCHALL "(^| )-l[^ ]+" _netcdf_dashl ${NETCDF_CONFIG_LIBS})
++			string (REGEX REPLACE "(^| )-l" "" _netcdf_lib "${_netcdf_dashl}")
+ 			string (REGEX MATCHALL "-L[^ ]+" _netcdf_dashL ${NETCDF_CONFIG_LIBS})
+ 			string (REGEX REPLACE "-L" "" _netcdf_libpath "${_netcdf_dashL}")
+ 		endif (NETCDF_CONFIG_LIBS)
