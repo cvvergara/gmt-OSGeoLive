@@ -12,3 +12,5 @@ manpage-section.patch
 dont-use-timestamped-gzip.patch
 rename-libpsl-to-libgmt-psl.patch
 netcdf-library-regex.patch
+optionally-typo.patch
+official-typo.patch
