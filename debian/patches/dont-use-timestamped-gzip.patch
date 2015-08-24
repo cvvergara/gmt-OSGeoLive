@@ -1,5 +1,6 @@
 Description: Don't use timestamped gzip for reproducible builds.
 Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: http://gmt.soest.hawaii.edu/issues/759
 
 --- a/doc/rst/CMakeLists.txt
 +++ b/doc/rst/CMakeLists.txt

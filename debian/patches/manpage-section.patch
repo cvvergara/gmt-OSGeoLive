@@ -1,6 +1,7 @@
 Description: Append 'gmt' to the man page sections to differentiate the GMT specific manuals.
 Author: Bas Couwenberg <sebastic@debian.org>
 Bug-Debian: https://bugs.debian.org/790524
+Forwarded: not-needed
 
 --- a/doc/rst/conf.py.in
 +++ b/doc/rst/conf.py.in

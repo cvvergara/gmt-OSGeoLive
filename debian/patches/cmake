@@ -1,5 +1,6 @@
 Description: Add custom cmake configuration.
 Author: Francesco Paolo Lovergine <frankie@debian.org>
+Forwarded: not-needed
 
 --- /dev/null
 +++ b/cmake/ConfigUser.cmake

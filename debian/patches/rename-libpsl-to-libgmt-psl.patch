@@ -2,6 +2,7 @@ Description: Rename psl library to gmt-psl to resolve conflict with libpsl.
 Author: Bas Couwenberg <sebastic@debian.org>
 Bug: http://gmt.soest.hawaii.edu/issues/723
 Bug-Debian: https://bugs.debian.org/790524
+Forwarded: not-needed
 
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
