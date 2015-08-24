@@ -1,6 +1,7 @@
 Description: Fix 'offical' typo, replace with 'official'.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: http://gmt.soest.hawaii.edu/issues/758
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/14770
 
 --- a/doc/rst/source/supplements/mgd77/mgd77list.rst
 +++ b/doc/rst/source/supplements/mgd77/mgd77list.rst

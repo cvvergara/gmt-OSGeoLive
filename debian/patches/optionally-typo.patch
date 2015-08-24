@@ -1,6 +1,7 @@
 Description: Fix 'optionaly' typo, replace with 'optionally'.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: http://gmt.soest.hawaii.edu/issues/758
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/14770
 
 --- a/doc/rst/source/supplements/potential/gmtgravmag3d.rst
 +++ b/doc/rst/source/supplements/potential/gmtgravmag3d.rst
