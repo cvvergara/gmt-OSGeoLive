@@ -1,6 +1,7 @@
 gmt (5.1.2+dfsg1-3) UNRELEASED; urgency=medium
 
   * Apply patch by Andreas Tille to fix YAML syntax for upstream metadata.
+  * Add patch for 'below' typo.
 
  -- Bas Couwenberg <sebastic@debian.org>  Wed, 16 Sep 2015 11:06:10 +0200
 
