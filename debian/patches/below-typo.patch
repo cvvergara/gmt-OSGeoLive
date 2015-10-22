@@ -1,6 +1,7 @@
 Description: Fix 'bellow' typo, replace with 'below'.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: http://gmt.soest.hawaii.edu/issues/795
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/15037
 
 --- a/doc/rst/source/grdvolume.rst
 +++ b/doc/rst/source/grdvolume.rst
