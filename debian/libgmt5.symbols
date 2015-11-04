@@ -1,4 +1,4 @@
-libgmt-psl.so.5 libgmt5 #MINVER#
+libpostscriptlight.so.5 libgmt5 #MINVER#
  GMT_basename@Base 5.1.2
  GMT_chop@Base 5.1.2
  GMT_chop_ext@Base 5.1.2
