@@ -24,7 +24,7 @@ Forwarded: not-needed
  	string (REPLACE ".ps" ".pdf" _pdf_fig ${_fig})
  	string (REPLACE ".ps" ".png" _png_fig ${_fig})
  	list (APPEND _examples_pdf ${RST_BINARY_DIR}/_images/${_pdf_fig})
-@@ -84,6 +91,8 @@ foreach (_ps ${_examples})
+@@ -82,6 +89,8 @@ foreach (_ps ${_examples})
  			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
  			DEPENDS gmt_for_img_convert ${CMAKE_CURRENT_SOURCE_DIR}/${_ps})
  	endif (WIN32)
@@ -47,7 +47,7 @@ Forwarded: not-needed
  +------------------+--------------------+---------------------+
  |:ref:`example_25` | :ref:`example_26`  | :ref:`example_27`   |
  |                  |                    |                     |
-@@ -137,9 +137,6 @@ complex illustration.
+@@ -141,9 +141,6 @@ complex illustration.
  .. |ex22| image:: /_images/example_22.*
     :width: 150 px
  
@@ -57,7 +57,7 @@ Forwarded: not-needed
  .. |ex24| image:: /_images/example_24.*
     :width: 150 px
  
-@@ -216,7 +213,6 @@ complex illustration.
+@@ -235,7 +232,6 @@ complex illustration.
     gallery/ex20.rst
     gallery/ex21.rst
     gallery/ex22.rst

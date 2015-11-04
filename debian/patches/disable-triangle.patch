@@ -4,7 +4,7 @@ Forwarded: not-needed
 
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -131,15 +131,15 @@ endif (DO_EXAMPLES OR DO_TESTS AND NOT D
+@@ -211,15 +211,15 @@ endif (DO_EXAMPLES OR DO_TESTS AND NOT D
  # These lines are temporarily here for the beta release
  set (GMT_DEMOS_SRCS testapi.c testgmt5.c testgmtio.c testgrdio.c testio.c)
  
@@ -26,17 +26,17 @@ Forwarded: not-needed
 +#endif (NOT LICENSE_RESTRICTED)
  
  set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
- 	fitcircle.c gmt2kml.c gmtconvert.c gmtmath.c gmtselect.c gmtsimplify.c
-@@ -175,7 +175,7 @@ set (GMT_LIB_SRCS block_subs.h common_by
- 	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h gmt_stat.h
- 	gmt_support.h gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
- 	gmt_types.h gmt_unique.h gmt_version.h gshhg_version.h pslib.h
--	s_rint.h triangle.h gmt.h gmt_resources.h gmt_define.h gmt_private.h
-+	s_rint.h gmt.h gmt_resources.h gmt_define.h gmt_private.h
+ 	fitcircle.c gmt2kml.c gmtconvert.c gmtlogo.c gmtmath.c gmtselect.c gmtsimplify.c
+@@ -255,7 +255,7 @@ set (GMT_LIB_SRCS block_subs.h common_by
+ 	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h
+ 	gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
+ 	gmt_types.h gmt_unique.h gmt_version.h gshhg_version.h postscriptlight.h
+-	s_rint.h triangle.h gmt.h gmt_resources.h gmt_private.h
++	s_rint.h gmt.h gmt_resources.h gmt_private.h
  	gmt_error_codes.h gmt_api.c gmt_bcr.c gmt_calclock.c gmt_cdf.c gmt_compat.c
  	gmt_customio.c gmt_dcw.c gmt_error.c gmt_fft.c gmt_grdio.c gmt_io.c
  	gmt_memory.c gmt_nc.c gmt_notposix.c gmt_proj.c gmt_shore.c gmt_sph.c
-@@ -277,11 +277,6 @@ configure_file (gmt-config.in gmt-config
+@@ -357,11 +357,6 @@ configure_file (gmt-config.in gmt-config
  # gmtprogram
  set (GMT_PROGRAM ${GMT_SOURCE_DIR}/src/gmtprogram.c)
  
@@ -45,6 +45,6 @@ Forwarded: not-needed
 -	PROPERTIES
 -	COMPILE_DEFINITIONS "NO_TIMER;TRILIBRARY;REDUCED;CDT_ONLY;ANSI_DECLARATORS")
 -
- if (MSVC)
- 	# Disable automatic manifest generation
- 	string(REGEX REPLACE "/MANIFEST[^ ]*( |$)" ""
+ # libpslib
+ add_library (pslib
+ 	${GMT_GEN_HDRS}

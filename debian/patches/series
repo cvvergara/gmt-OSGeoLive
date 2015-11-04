@@ -1,17 +1,3 @@
 disable-triangle.patch
 disable-examples.patch
-endianness-typo.patch
-software-typo.patch
-output-typo.patch
-algorithm-typo.patch
-length-typo.patch
-palette-typo.patch
-kfreebsd.patch
-mips.patch
 manpage-section.patch
-dont-use-timestamped-gzip.patch
-rename-libpsl-to-libgmt-psl.patch
-netcdf-library-regex.patch
-optionally-typo.patch
-official-typo.patch
-below-typo.patch
