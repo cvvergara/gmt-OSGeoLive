@@ -1,6 +1,9 @@
 gmt (5.2.1+dfsg-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Update copyright file, changes:
+    - Add license & copyright for gmt_url.c
+    - Drop license & copyright for removed compat headers
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 13 Nov 2015 00:54:23 +0100
 

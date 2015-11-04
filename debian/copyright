@@ -46,6 +46,10 @@ Files: src/getopt.c
 Copyright: 1987, 1993-1994, The Regents of the University of California
 License: BSD-4-Clause
 
+Files: src/gmt_url.c
+Copyright: Simtec Electronics
+License: BSD-3-Clause
+
 Files: src/s_rint.c
  src/s_rint.h
 Copyright: 1993, Sun Microsystems, Inc.
@@ -54,15 +58,6 @@ License: SunPro
  Permission to use, copy, modify, and distribute this
  software is freely granted, provided that this notice
  is preserved.
-
-Files: src/compat/inttypes.h
- src/compat/stdint.h
-Copyright: 2006-2008, Alexander Chemeris
-License: BSD-2-Clause
-
-Files: src/compat/pstdint.h
-Copyright: 2005-2011, Paul Hsieh
-License: BSD-3-Clause
 
 Files: src/compat/qsort.c
 Copyright: 1991-1992, 1996-1997, 1999, 2004, Free Software Foundation, Inc
