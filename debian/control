@@ -134,7 +134,7 @@ Depends: libjs-jquery,
 Suggests: www-browser
 Breaks: gmt (<< 4.5.7-1~)
 Replaces: gmt (<< 4.5.7-1~)
-Description: HTML documentation for GMT, the Generic Mapping Tools
+Description: Documentation for GMT, the Generic Mapping Tools
  GMT is a collection of UNIX tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
  projecting, etc.) and produce Encapsulated PostScript File (EPS) illustrations
@@ -146,9 +146,7 @@ Description: HTML documentation for GMT, the Generic Mapping Tools
  and comes with support data such as coastlines, rivers, and political
  boundaries.
  .
- This package contains the HTML documentation for GMT, consisting of
-   - the cookbook and technical reference
-   - the manpages converted to HTML.
+ This package contains the documentation for GMT.
 
 Package: gmt-examples
 Architecture: all

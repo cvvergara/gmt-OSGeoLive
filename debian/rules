@@ -78,6 +78,9 @@ override_dh_auto_install:
 	# Remove empty directory
 	rm -rfv debian/tmp/usr/share/doc/gmt/html/_images/math/
 
+	# Remove extra license files
+	rm -rf debian/tmp/usr/share/doc/gmt/copying/
+
 	# Fix bash-completion installation
 	mkdir -p debian/tmp/usr/share/bash-completion/completions
 	mv debian/tmp/usr/etc/bash_completion.d/gmt debian/tmp/usr/share/bash-completion/completions
