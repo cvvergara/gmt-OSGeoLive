@@ -67,9 +67,12 @@ override_dh_auto_install:
 	# Remove +x 
 	#find  $(CURDIR)/debian/gmt-examples/usr/share/doc/gmt-examples/examples -name "*.bat" -exec chmod -x {} \;
 
-	# Remove executable bit from shell includes
-	chmod -x debian/tmp/usr/share/gmt/tools/gmt_functions.sh \
-	         debian/tmp/usr/share/gmt/tools/gmt_aliases.csh
+	# Remove executable bit from shell includes & examples
+	chmod -x debian/tmp/usr/share/gmt/tools/gmt_aliases.csh \
+	         debian/tmp/usr/share/doc/gmt/examples/ex41/my_color.cpt \
+	         debian/tmp/usr/share/doc/gmt/examples/ex41/my_data.txt \
+	         debian/tmp/usr/share/doc/gmt/examples/ex41/my_symbol.def \
+	         debian/tmp/usr/share/doc/gmt/examples/ex41/my_table.txt
 
 	# Remove embedded sphinx copies of JS libraries in favor of packaged ones
 	rm -f debian/tmp/usr/share/doc/gmt/html/_static/jquery.js \
