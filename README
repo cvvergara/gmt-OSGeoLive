@@ -1,4 +1,4 @@
-$Id: README 13853 2014-12-30 20:49:01Z pwessel $
+$Id: README 15178 2015-11-06 10:45:03Z fwobbe $
 
 == Information for installing GMT 5 ==
 
@@ -59,6 +59,24 @@ To use the GDAL interface (ability to provide grids or images to be imported
 via gdal) you must have the GDAL library and include files installed.  Like
 netCDF, GDAL is available through your favorite package manager on many *NIX
 systems.
+
+
+PCRE (optional)
+---------------
+
+To use the PCRE interface (ability to specify regular expressions in some
+search options, e.g., gmtconvert) you must have the PCRE library and include
+files installed.  PCRE is available through your favorite package manager
+on many *NIX systems.
+
+
+LAPACK (optional)
+---------------
+
+To greatly speed up some linear algebra calculations (greenspline in 
+particular) you must have the LAPACK library and include files installed.
+LAPACK is available through your favorite package manager on many *NIX
+systems or in the case of OS X is built in.
 
 
 Install support data

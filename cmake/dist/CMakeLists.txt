@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 14252 2015-04-29 00:01:02Z jluis $
+# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -161,6 +161,11 @@ if (WIN32 AND NOT CYGWIN)
 	install (PROGRAMS startup_win.bat
 		DESTINATION ${GMT_BINDIR}
 		COMPONENT Runtime)
+
+	if (OMP_DLL_LOC)
+		# Install vcomp120.dll
+		install (PROGRAMS ${OMP_DLL_LOC} DESTINATION ${GMT_BINDIR} COMPONENT Runtime)
+	endif (OMP_DLL_LOC)
 
 	# Fix bundle:
 	install (CODE "

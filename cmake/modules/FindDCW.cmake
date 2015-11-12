@@ -1,5 +1,5 @@
 #
-# $Id: FindDCW.cmake 12822 2014-01-31 23:39:56Z remko $
+# $Id: FindDCW.cmake 14889 2015-09-19 13:12:39Z remko $
 #
 # Locate DCW Digital Chart of the World for GMT
 #
@@ -27,7 +27,9 @@ find_path (DCW_PATH dcw-gmt.nc
 	/opt/local # DarwinPorts
 	/opt/csw # Blastwave
 	/opt
-  DOC "Digital Chart of the World")
+	/usr/local
+	DOC "Digital Chart of the World"
+)
 
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (DCW DEFAULT_MSG DCW_PATH)

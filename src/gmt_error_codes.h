@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error_codes.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_error_codes.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -22,6 +22,11 @@
  * Author:	Paul Wessel
  * Date:	22-JUN-2012
  * Version:	5 API
+ */
+
+/*!
+ * \file gmt_error_codes.h
+ * \brief Include file for GMT API error codes 
  */
 
 #ifndef GMT_ERROR_CODES_H
@@ -69,6 +74,7 @@ enum Gmt_api_error_code {
 	GMT_NOT_A_VALID_METHOD,
 	GMT_NOT_A_VALID_MODE,
 	GMT_NOT_A_VALID_MODULE,
+	GMT_NOT_A_VALID_PARAMETER,
 	GMT_NOT_A_VALID_TYPE,
 	GMT_NOT_INPUT_OBJECT,
 	GMT_NOT_OUTPUT_OBJECT,
@@ -77,6 +83,7 @@ enum Gmt_api_error_code {
 	GMT_NO_OUTPUT,
 	GMT_NO_PARAMETERS,
 	GMT_NO_RESOURCES,
+	GMT_NO_CPT,
 	GMT_N_COLS_NOT_SET,
 	GMT_N_COLS_VARY,
 	GMT_N_ROWS_NOT_SET,
@@ -93,6 +100,7 @@ enum Gmt_api_error_code {
 	GMT_PADDING_NOT_ALLOWED,
 	GMT_PARSE_ERROR,
 	GMT_PROG_NOT_FOUND,
+	GMT_PROJECTION_ERROR,
 	GMT_PTR_IS_NULL,
 	GMT_PTR_NOT_NULL,
 	GMT_PTR_NOT_UNIQUE,

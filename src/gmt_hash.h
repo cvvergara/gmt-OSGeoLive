@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_hash.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_hash.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -23,6 +23,11 @@
  * Version:	5 API
  */
 
+/*!
+ * \file gmt_hash.h
+ * \brief Definition of the structure used for hashing
+ */
+
 #ifndef _GMT_HASH_H
 #define _GMT_HASH_H
 
@@ -39,7 +44,8 @@
  */
 #define GMT_HASH_MAXDEPTH	16
 
-struct GMT_HASH {	/* Used to relate text keywords to array indices */
+/*! Used to relate text keywords to array indices */
+struct GMT_HASH {
 	unsigned int id[GMT_HASH_MAXDEPTH];	/* Indices of corresponding keyword with identical hash value */
 	unsigned int n_id;			/* Number of hash entries for this item */
 	char *key[GMT_HASH_MAXDEPTH];		/* Name of these entries */

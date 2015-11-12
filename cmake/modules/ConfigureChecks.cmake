@@ -1,5 +1,5 @@
 #
-# $Id: ConfigureChecks.cmake 13950 2015-01-20 20:42:10Z fwobbe $
+# $Id: ConfigureChecks.cmake 15178 2015-11-06 10:45:03Z fwobbe $
 #
 
 if(NOT DEFINED _INCLUDED_CHECK_MACROS_)
@@ -221,6 +221,41 @@ if (UNIX)
 
 	check_function_exists (memalign       HAVE_MEMALIGN)
 	check_function_exists (posix_memalign HAVE_POSIX_MEMALIGN)
+
+	if (HAVE_UNISTD_H_)
+		# Check if sysconf(_SC_NPROCESSORS_ONLN) can be used for CPU count
+		check_c_source_compiles (
+			"
+			#include <unistd.h>
+			int main() {
+			  sysconf(_SC_NPROCESSORS_ONLN);
+			}
+			"
+			HAVE_SC_NPROCESSORS_ONLN)
+		# Check if sysconf(_SC_NPROC_ONLN) can be used for CPU count
+		check_c_source_compiles (
+			"
+			#include <unistd.h>
+			int main() {
+			  sysconf(_SC_NPROC_ONLN);
+			}
+			"
+			HAVE_SC_NPROC_ONLN)
+	endif (HAVE_UNISTD_H_)
+
+	# Check if sysctl can be used for CPU count
+	check_c_source_compiles (
+		"
+		#include <stddef.h>
+		#include <sys/sysctl.h>
+		int main () {
+		  int count;
+		  size_t size = sizeof(count);
+		  int mib[] = { CTL_HW, HW_NCPU };
+		  sysctl(mib, 2, &count, &size, NULL, 0);
+		}
+		"
+		HAVE_SYSCTL_HW_NCPU)
 endif (UNIX)
 
 #

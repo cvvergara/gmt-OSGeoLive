@@ -1,5 +1,5 @@
 #
-# $Id: FindFFTW3.cmake 12822 2014-01-31 23:39:56Z remko $
+# $Id: FindFFTW3.cmake 14889 2015-09-19 13:12:39Z remko $
 #
 # Locate fftw3
 #
@@ -32,7 +32,9 @@ find_path (FFTW3_INCLUDE_DIR fftw3.h
 	/sw # Fink
 	/opt/local # DarwinPorts
 	/opt/csw # Blastwave
-	/opt)
+	/opt
+	/usr/local
+)
 
 # single precision
 find_library (FFTW3F_LIBRARY
@@ -42,12 +44,14 @@ find_library (FFTW3F_LIBRARY
 	${FFTW3_ROOT}
 	$ENV{FFTW3_DIR}
 	$ENV{FFTW3_ROOT}
-	PATH_SUFFIXES lib64 lib
+	PATH_SUFFIXES lib
 	PATHS
 	/sw
 	/opt/local
 	/opt/csw
-	/opt)
+	/opt
+	/usr/local
+)
 
 get_filename_component (_fftw3_libpath ${FFTW3F_LIBRARY} PATH)
 

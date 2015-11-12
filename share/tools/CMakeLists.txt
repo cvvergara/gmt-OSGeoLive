@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -24,10 +24,17 @@ configure_file (gmt5syntax.in gmt5syntax @ONLY)
 install (PROGRAMS
 	gmt_functions.sh
 	gmt_aliases.csh
+	gmt_links.sh
+	gmt_prepmex.sh
+	gmt_uninstall.sh
 	ncdeflate
 	${CMAKE_CURRENT_BINARY_DIR}/gmt5syntax
 	DESTINATION ${GMT_DATADIR}/tools
 	COMPONENT Runtime)
+
+if (NOT DEFINED BASH_COMPLETION_DIR)
+	set (BASH_COMPLETION_DIR etc/bash_completion.d)
+endif (NOT DEFINED BASH_COMPLETION_DIR)
 
 if (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
 	install (PROGRAMS
@@ -37,7 +44,7 @@ if (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
 else (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
 	install (FILES
 		gmt_completion.bash
-		DESTINATION etc/bash_completion.d
+		DESTINATION ${BASH_COMPLETION_DIR}
 		COMPONENT Runtime
 		RENAME gmt)
 endif (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)

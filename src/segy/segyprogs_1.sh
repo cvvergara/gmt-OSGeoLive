@@ -1,15 +1,15 @@
 #!/bin/bash
 #
-#	$Id: segyprogs_1.sh 12464 2013-11-06 15:58:22Z fwobbe $
+#	$Id: segyprogs_1.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # script to plot mendo wa1 combined data
 #
 # cdp = 40 * coordinate on line, 30km max depth
 #
+ps=segyprogs_1.ps
 
 area1=-R-35/6/0/30
 proj1="-Jx0.15i/-0.15i"
-outfile=segyprogs_1.ps
 
-gmt psbasemap $area1 $proj1 -Bf5a10 -Z0.001 -Y1.5i -K -X1.5i > $outfile
-gmt pssegy wa1_mig13.segy -R -Jx -X0.1i -D0.35 -C8.0 -Y0.1i -W -F0/255/0 -B-1.2 -Sc -O >> $outfile 
+gmt pssegy wa1_mig13.segy $area1 $proj1 -Qx0.1 -D0.35 -C8.0 -Qy0.1 -W -Fgreen -Qb-1.2 -Sc -K -Xc > $ps 
+gmt psbasemap -R -J -Baf -O >> $ps

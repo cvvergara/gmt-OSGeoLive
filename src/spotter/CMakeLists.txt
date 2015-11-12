@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,7 +26,7 @@ set (SUPPL_PROGS_SRCS backtracker.c grdpmodeler.c grdrotater.c
 
 # example files
 set (SUPPL_EXAMPLE_FILES README.spotter
-	DC85.d WK97.d pac_hs.d seamounts.d)
+	DC85.txt WK97.txt pac_hs.txt seamounts.txt)
 set (SUPPL_EXAMPLE_PROGS spotter.bat spotter.sh)
 
 # lib sources

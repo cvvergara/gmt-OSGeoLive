@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: GMT_pstext_justify.sh 11490 2013-05-16 06:26:21Z pwessel $
+#	$Id: GMT_pstext_justify.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
 B=0.2
 M=0.38
@@ -7,7 +7,6 @@ T=0.56
 L=0.10
 C=1.04
 R=1.98
-gmt gmtset PS_SCALE_X 0.8 PS_SCALE_Y 0.8
 gmt pstext -R0/3/0/1.5 -Jx1i -P -K -N -C0 -Wthin,- -F+f36p,Helvetica-Bold+jLB << EOF > GMT_pstext_justify.ps
 0.1	0.2	My Text
 EOF

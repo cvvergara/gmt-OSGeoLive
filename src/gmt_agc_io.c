@@ -1,4 +1,4 @@
-/*      $Id: gmt_agc_io.c 13846 2014-12-28 21:46:54Z pwessel $
+/*      $Id: gmt_agc_io.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -267,6 +267,7 @@ int GMT_agc_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, floa
 	GMT_memset (z, ZBLOCKWIDTH * ZBLOCKHEIGHT, float); /* Initialize buffer to zero */
 
 	header->z_min = +DBL_MAX;	header->z_max = -DBL_MAX;
+	header->has_NaNs = GMT_GRID_NO_NANS;	/* We are about to check for NaNs and if none are found we retain 1, else 2 */
 	
 	n_blocks_y = urint (ceil ((double)header->ny / (double)ZBLOCKHEIGHT));
 	n_blocks_x = urint (ceil ((double)header->nx / (double)ZBLOCKWIDTH));
@@ -285,7 +286,10 @@ int GMT_agc_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, floa
 				if (col < first_col || col > last_col) continue;
 				ij = imag_offset + (((j_gmt - first_row) + pad[YHI]) * width_out + col - first_col) + pad[XLO];
 				grid[ij] = (z[j][i] == 0.0) ? GMT->session.f_NaN : z[j][i];	/* AGC uses exact zero as NaN flag */
-				if (GMT_is_fnan (grid[ij])) continue;
+				if (GMT_is_fnan (grid[ij])) {
+					header->has_NaNs = GMT_GRID_HAS_NANS;
+					continue;
+				}
 				header->z_min = MIN (header->z_min, (double)grid[ij]);
 				header->z_max = MAX (header->z_max, (double)grid[ij]);
 			}

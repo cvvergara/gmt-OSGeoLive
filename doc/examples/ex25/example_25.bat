@@ -1,7 +1,7 @@
 REM
 REM             GMT EXAMPLE 25
 REM
-REM             $Id: example_25.bat 12820 2014-01-31 21:01:19Z remko $
+REM             $Id: example_25.bat 15178 2015-11-06 10:45:03Z fwobbe $
 REM
 REM Purpose:    Display distribution of antipode types
 REM
@@ -44,7 +44,7 @@ echo N 3 > tmp
 echo S 0.15i s 0.2i red  0.25p 0.3i Terrestrial Antipodes [%land% %%%%] >> tmp
 echo S 0.15i s 0.2i blue 0.25p 0.3i Oceanic Antipodes [%ocean% %%%%] >> tmp
 echo S 0.15i s 0.2i gray 0.25p 0.3i Mixed Antipodes [%mixed% %%%%] >> tmp
-gmt pslegend -R0/9/0/0.5 -Jx1i -O -Dx4.5i/0/6i/0.3i/TC -Y-0.2i -F+pthick tmp >> %ps%
+gmt pslegend -R -J -O -DjCB+w6i+jTC -Y-0.2i -F+pthick tmp >> %ps%
 del *.nc
 del key.*
 del tmp

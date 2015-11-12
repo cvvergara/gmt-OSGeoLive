@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: okbfuns.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: okbfuns.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -16,10 +16,16 @@
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 
+/*!
+ * \file okbfuns.h
+ * \brief  
+ */
+
 #ifndef OKBFUNS_H
 #define OKBFUNS_H
 
 #include "gmt_dev.h"		/* Requires GMT to compile and link */
+#include "gmt_glib.h"
 
 struct BODY_VERTS {
 	double  x, y, z;

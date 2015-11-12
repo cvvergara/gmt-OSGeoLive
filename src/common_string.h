@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: common_string.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: common_string.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -23,6 +23,11 @@
  * Version: 5
  */
 
+/*!
+ * \file common_string.h
+ * \brief Prototypes of functions shared between GMT and PSL
+ */
+
 #pragma once
 #ifndef _COMMON_STRING_H
 #define _COMMON_STRING_H
@@ -37,11 +42,7 @@ extern "C" {
 /* Declaration modifiers for DLL support (MSC et al) */
 #include "declspec.h"
 
-#ifdef HAVE_STDBOOL_H_
-#	include <stdbool.h>
-#else
-#	include "compat/stdbool.h"
-#endif /* HAVE_STDBOOL_H_ */
+#include <stdbool.h>
 
 #include <limits.h> /* defines PATH_MAX */
 #include <stdlib.h> /* defines _MAX_PATH on WIN32 */
@@ -53,6 +54,7 @@ extern "C" {
 #endif
 
 EXTERN_MSC unsigned int GMT_strtok (const char *string, const char *sep, unsigned int *start, char *token);
+EXTERN_MSC unsigned int GMT_get_modifier (const char *string, char modifier, char *token);
 EXTERN_MSC void GMT_chop (char *string);
 EXTERN_MSC char *GMT_chop_ext (char *string);
 EXTERN_MSC void GMT_strstrip(char *string, bool strip_leading);
@@ -79,7 +81,7 @@ EXTERN_MSC char *stresep (char **stringp, const char *delim, int esc);
 
 EXTERN_MSC int match_string_in_file (const char *filename, const char *string);
 
-EXTERN_MSC char *GMT_basename(const char *path);
+EXTERN_MSC char *basename(char *path);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77sniffer.h 13846 2014-12-28 21:46:54Z pwessel $	
+ *	$Id: mgd77sniffer.h 15178 2015-11-06 10:45:03Z fwobbe $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *    Copyright (c) 2004-2015 by P. Wessel and M. T. Chandler
@@ -15,6 +15,11 @@
  *	Date:	23-Feb-2004
  * 
  * ------------------------------------------------------------------*/
+
+/*!
+ * \file mgd77sniffer.h
+ * \brief  
+ */
  
  #include "gmt_dev.h"
  #include "mgd77.h"

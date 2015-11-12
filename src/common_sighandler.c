@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: common_sighandler.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: common_sighandler.c 14480 2015-07-09 02:15:49Z pwessel $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -64,7 +64,7 @@ void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 # else
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext->ss.eip)
 # endif
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 # ifdef __x86_64__
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.mc_rip)
 # elif defined( __arm__)
@@ -75,7 +75,7 @@ void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 #elif defined(SIZEOF_GREG_T)
 # ifdef __x86_64__
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_RIP])
-# elif defined(__aarch64__)
+# elif defined(__aarch64__) || defined(__mips__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.pc)
 # elif defined( __arm__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)

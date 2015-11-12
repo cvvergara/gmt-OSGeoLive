@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: spotter.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: spotter.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *   Copyright (c) 1999-2015 by P. Wessel
  *
@@ -19,13 +19,17 @@
  *
  * Author:	Paul Wessel, SOEST, Univ. of Hawaii, Honolulu, HI, USA
  * Date:	19-JUL-2010
- * Version:	1.2 for GMT 5
+ * Version:	 GMT 5
  *
+ */
+
+/*!
+ * \file spotter.h
+ * \brief Include file for programs that link with libspotter.
  */
 
 #include "gmt_dev.h" /* Requires GMT to compile and link */
 
-#define SPOTTER_VERSION "1.2"
 #define EQ_RAD 6371.0087714
 #define KM_PR_DEG (EQ_RAD * M_PI / 180.0)
 #define BIG_CHUNK 65536
@@ -33,10 +37,12 @@
 #define PA_2_T  (1.0 / T_2_PA)
 #define SQRT_CHI2 2.44774689322	/* This is sqrt (Chi^2) for 95% and 2 degrees of freedom */
 
-#define GPLATES_PLATES "Global_EarthByte_GPlates_Rotation_20071218.txt"
-#define GPLATES_ROTATIONS "Global_EarthByte_GPlates_Rotation_20091015.rot"
+/* Latest GPlates rotation model and polygon IDs */
+#define GPLATES_PLATES    "Global_EarthByte_Plate_ID_Table_AREPS"	/* .txt */
+#define GPLATES_ROTATIONS "Global_EarthByte_230-0Ma_GK07_AREPS"		/* .rot */
 
-struct EULER {	/* Structure with info on each Euler (stage) pole */
+/*! Structure with info on each Euler (stage) pole */
+struct EULER {
 	double lon, lat;		/* Location of Euler pole in degrees */
 	double lon_r, lat_r;		/* Location of Euler pole in radians */
 	double t_start, t_stop;		/* Stage beginning and end time in Ma */
@@ -48,26 +54,28 @@ struct EULER {	/* Structure with info on each Euler (stage) pole */
 	double k_hat;			/* k_hat uncertainty scale */
 	double g;			/* g magnitude scale */
 	double df;			/* Degrees of freedom in the estimate of rotation */
-	bool has_cov;		/* true if there is a covariance matrix for this R */
+	bool has_cov;			/* true if there is a covariance matrix for this R */
 	unsigned int id[2];		/* The ID numbers for GPlates pairs */
 };
 
-struct FLOWLINE {			/* Structure with the nearest nodes for a single flowline */
+/*! Structure with the nearest nodes for a single flowline */
+struct FLOWLINE {
 	uint64_t n;		/* Number of points in this flowline */
 	uint64_t ij;		/* Node in bathymetry grid where this flowline originated */
 	uint64_t *node;		/* Nodes in CVA grid covered by this flowline */
-	unsigned short *PA;		/* Predicted Ages along flowline (t = PI/250, to nearest 0.004 My) */
+	unsigned short *PA;	/* Predicted Ages along flowline (t = PI/250, to nearest 0.004 My) */
 };
 
-struct HOTSPOT {	/* Structure holding all the information about a hotspot */
+/*! Structure holding all the information about a hotspot */
+struct HOTSPOT {
 	/* Record is lon lat abbrev id [radius toff t_on create fit plot name] */
         double lon, lat;		/* Current location of hot spot (degrees)*/
 	char abbrev[4];			/* Max 3-char abbreviation of hotspot name */
         unsigned int id;		/* Hot spot id flag */
 	double radius;			/* Uncertainty radius (in km) for hotspot location */
 	double t_off, t_on;		/* Time interval hotspot was active */
-	bool create, fit, plot;	/* true if we want to create, fit, or plot hotspot */
-        char name[GMT_LEN64];	/* Full name of hotspot */
+	bool create, fit, plot;		/* true if we want to create, fit, or plot hotspot */
+        char name[GMT_LEN64];		/* Full name of hotspot */
 	/* Secondary (derived) quantities */
         double x, y, z;			/* Cartesian Current location of hot spot */
 };
@@ -78,7 +86,7 @@ EXTERN_MSC int spotter_stage (struct GMT_CTRL *GMT, double t, struct EULER p[], 
 EXTERN_MSC void spotter_rot_usage (struct GMTAPI_CTRL *API, char option);
 EXTERN_MSC bool spotter_GPlates_pair (char *file);
 EXTERN_MSC unsigned int spotter_init (struct GMT_CTRL *GMT, char *file, struct EULER **p, bool flowline, bool total_out, bool invert, double *t_max);
-EXTERN_MSC unsigned int spotter_hotspot_init (struct GMT_CTRL *GMT, char *file, bool geocentric, struct HOTSPOT **p);
+EXTERN_MSC int spotter_hotspot_init (struct GMT_CTRL *GMT, char *file, bool geocentric, struct HOTSPOT **p);
 EXTERN_MSC unsigned int spotter_backtrack  (struct GMT_CTRL *GMT, double xp[], double yp[], double tp[], unsigned int np, struct EULER p[], unsigned int ns, double d_km, double t_zero, unsigned int do_time, double wesn[], double **c);
 EXTERN_MSC unsigned int spotter_forthtrack (struct GMT_CTRL *GMT, double xp[], double yp[], double tp[], unsigned int np, struct EULER p[], unsigned int ns, double d_km, double t_zero, unsigned int do_time, double wesn[], double **c);
 EXTERN_MSC void spotter_total_to_stages (struct GMT_CTRL *GMT, struct EULER p[], unsigned int n, bool total_rates, bool stage_rates);

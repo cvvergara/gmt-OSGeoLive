@@ -1,4 +1,4 @@
-	$Id: README.img 12822 2014-01-31 23:39:56Z remko $
+	$Id: README.img 15178 2015-11-06 10:45:03Z fwobbe $
 
 Maintained by: W H F Smith
 Distributed under the GNU Lesser Public License; see file
@@ -7,7 +7,8 @@ LICENSE.TXT in main GMT directory.
 ==> CHANGES IN GMT 5 <==
 
 img2mercgrd and img2mgrd are now a single C module (and executable).
-Much of the discussion on install below is obsolete.
+Much of the discussion on install below is obsolete; the main
+GMT5 install automatically installs all supplements.
 
 ==> CHANGES IN GMT 4.4.1 <==
 

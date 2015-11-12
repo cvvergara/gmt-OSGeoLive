@@ -1,6 +1,6 @@
 @ECHO OFF
 REM  
-REM	$Id: gmtswitch.bat 13846 2014-12-28 21:46:54Z pwessel $
+REM	$Id: gmtswitch.bat 15037 2015-10-22 10:43:37Z jluis $
 REM
 REM	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 REM	See LICENSE.TXT file for copying and redistribution conditions.
@@ -37,7 +37,7 @@ REM	The second mode is temporary because the path to the selected GMT binary dir
 REM	prepended to previous path via a shell command line. This modification disappears
 REM	when the shell cmd window where it was executes is deleted.
 REM
-REM	It is the user responsibility to set the contents of the G32_32 to G5_64 bellow
+REM	It is the user responsibility to set the contents of the G32_32 to G5_64 below
 REM	to valid paths where the binaries of the different GMT versions are installed
 REM	Note that it's not mandatory to have all four of them in you computer. For the
 REM	ones you do not have just let them pointing to nothing e.g.

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gshhg_version.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gshhg_version.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -21,6 +21,11 @@
  * Author:  Florian Wobbe
  * Date:    3-APR-2012
  * Version: 5
+ */
+
+/*!
+ * \file gshhg_version.h
+ * \brief 
  */
 
 #ifndef _GMT_GSHHG_VERSION_H

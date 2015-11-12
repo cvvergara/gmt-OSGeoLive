@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_put.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: x2sys_put.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *      Copyright (c) 1999-2015 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -32,6 +32,7 @@
 #define THIS_MODULE_NAME	"x2sys_put"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Update track index database from track bin file"
+#define THIS_MODULE_KEYS	""
 
 #include "x2sys.h"
 
@@ -144,8 +145,7 @@ int GMT_x2sys_put_parse (struct GMT_CTRL *GMT, struct X2SYS_PUT_CTRL *Ctrl, stru
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
 
-int x2sys_bix_remove_track (struct GMT_CTRL *GMT, uint32_t track_id, struct X2SYS_BIX *B)
-{
+int x2sys_bix_remove_track (struct GMT_CTRL *GMT, uint32_t track_id, struct X2SYS_BIX *B) {
 	/* Remove all traces of the track with id track_id from structure tree for all bins */
 
 	struct X2SYS_BIX_TRACK *track = NULL, *skip_track = NULL;
@@ -196,7 +196,7 @@ int GMT_x2sys_put (void *V_API, int mode, void *args)
 	char track_file[GMT_BUFSIZ] = {""}, index_file[GMT_BUFSIZ] = {""}, old_track_file[GMT_BUFSIZ] = {""}, old_index_file[GMT_BUFSIZ] = {""};
 	char track_path[GMT_BUFSIZ] = {""}, index_path[GMT_BUFSIZ] = {""}, old_track_path[GMT_BUFSIZ] = {""}, old_index_path[GMT_BUFSIZ] = {""};
 
-	int error = 0;
+	int error = 0, k;
 	bool found_it, skip;
 
 	FILE *fp = NULL, *fbin = NULL, *ftrack = NULL;
@@ -224,7 +224,7 @@ int GMT_x2sys_put (void *V_API, int mode, void *args)
 	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
 	Ctrl = New_x2sys_put_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_x2sys_put_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_x2sys_put_parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the x2sys_put main code ----------------------------*/
 
@@ -238,8 +238,9 @@ int GMT_x2sys_put (void *V_API, int mode, void *args)
 		GMT_Report (API, GMT_MSG_NORMAL, "Read error in 1st line of track binindex file\n");
 		Return (EXIT_FAILURE);
 	}
-	if (strncmp (&line[2], Ctrl->T.TAG, strlen(Ctrl->T.TAG))) {	/* Hard check to see if the TAG matches what we says it should be */
-		GMT_Report (API, GMT_MSG_NORMAL, "The TAG specified (%s) does not match the one in the .tbf file (%s)\n", Ctrl->T.TAG, &line[2]);
+	k = (line[1] == ' ') ? 2 : 1;	/* Since line may be "#TAG" or "# TAG" */
+	if (strncmp (&line[k], Ctrl->T.TAG, strlen(Ctrl->T.TAG))) {	/* Hard check to see if the TAG matches what we says it should be */
+		GMT_Report (API, GMT_MSG_NORMAL, "The TAG specified (%s) does not match the one in the .tbf file (%s)\n", Ctrl->T.TAG, &line[k]);
 		Return (EXIT_FAILURE);
 	}
 
@@ -325,11 +326,11 @@ int GMT_x2sys_put (void *V_API, int mode, void *args)
 				i = sscanf (line, "%*s %*s %d %d", &index, &flag);
 				if (i != 2) {	/* Could not decode the index and the flag entries */
 					GMT_Report (API, GMT_MSG_NORMAL, "Error processing record for track %s [%s]\n", track, line);
-					exit (EXIT_FAILURE);
+					GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
 				}
 				else if (flag > max_flag) {
 					GMT_Report (API, GMT_MSG_NORMAL, "data flag (%d) exceeds maximum (%d) for track %s!\n", flag, max_flag, track);
-					exit (EXIT_FAILURE);
+					GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
 				}
 				if (B.base[index].n_tracks == 0) {	/* First track to cross this bin */
 					B.base[index].first_track = x2sys_bix_make_track (GMT, 0, 0);

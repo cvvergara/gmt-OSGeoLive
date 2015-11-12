@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77convert.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: mgd77convert.c 15213 2015-11-11 03:40:07Z pwessel $
  *
  *    Copyright (c) 2005-2015 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -24,6 +24,7 @@
 #define THIS_MODULE_NAME	"mgd77convert"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Convert MGD77 data to other file formats"
+#define THIS_MODULE_KEYS	""
 
 #include "gmt_dev.h"
 #include "mgd77.h"
@@ -88,7 +89,7 @@ int GMT_mgd77convert_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -FC to recover the original MGD77 setting from the MGD77+ file [Default applies E77 corrections].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Convert to a file that is either (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   By default we will refuse to overwrite existing files.  Prepend + to override this policy.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\tOPTIONS:\n\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Convert from NGDC (*.h77, *.a77) to *.mgd77 format; no other options allowed.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Give one or more names of h77-files, a77-files, or just cruise prefixes.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Select high-resolution, 4-byte storage for mag, diur, faa, eot, and msd with precision\n");
@@ -143,7 +144,7 @@ int GMT_mgd77convert_parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl
 					case 'm':		/* New ASCII MGD77T file */
 						Ctrl->F.format = MGD77_FORMAT_M7T;
 						break;
-					case 't':		/* Plain ascii dat table */
+					case 't':		/* Plain ASCII dat table */
 						Ctrl->F.format = MGD77_FORMAT_TBL;
 						break;
 					default:
@@ -157,7 +158,7 @@ int GMT_mgd77convert_parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl
 				code_pos = 0;
 				if (opt->arg[code_pos] == '+') Ctrl->T.mode = true, code_pos++;	/* Force overwriting existing files */
 				switch (opt->arg[code_pos]) {									
-					case 'a':		/* Standard ascii MGD77 file */
+					case 'a':		/* Standard ASCII MGD77 file */
 						Ctrl->T.format = MGD77_FORMAT_M77;
 						break;
 					case 'c':
@@ -166,7 +167,7 @@ int GMT_mgd77convert_parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl
 					case 'm':		/* New ASCII MGD77T file */
 						Ctrl->T.format = MGD77_FORMAT_M7T;
 						break;
-					case 't':		/* Plain ascii dat table */
+					case 't':		/* Plain ASCII dat table */
 						Ctrl->T.format = MGD77_FORMAT_TBL;
 						break;
 					default:
@@ -237,7 +238,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
 	Ctrl = New_mgd77convert_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_mgd77convert_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_mgd77convert_parse (GMT, Ctrl, options)) != 0) Return (error);
 	
 	/*---------------------------- This is the mgd77convert main code ----------------------------*/
 

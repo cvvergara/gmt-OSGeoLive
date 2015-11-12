@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#	$Id: GMT_encoding.sh 11490 2013-05-16 06:26:21Z pwessel $
+#	$Id: GMT_encoding.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
 #	This plots the given encoding vector to stdout
 #
@@ -24,7 +24,7 @@ cat << EOF > tt.awk
 	printf "\n"
 }
 EOF
-egrep -v '\[|\]' "${GMT_SHAREDIR}"/share/pslib/$1.ps | $AWK -f tt.awk > tt.chart
+egrep -v '\[|\]' "${GMT_SHAREDIR}"/share/postscriptlight/$1.ps | $AWK -f tt.awk > tt.chart
 cat << EOF > tt.awk
 # This awk script creates a file for gmt psxy to plot a rectangle for undefined entries
 {
@@ -34,7 +34,7 @@ cat << EOF > tt.awk
 	}
 }
 EOF
-egrep -v '\[|\]' "${GMT_SHAREDIR}"/share/pslib/$1.ps | $AWK -f tt.awk > tt.empty
+egrep -v '\[|\]' "${GMT_SHAREDIR}"/share/postscriptlight/$1.ps | $AWK -f tt.awk > tt.empty
 
 cat << EOF > tt.awk
 BEGIN {

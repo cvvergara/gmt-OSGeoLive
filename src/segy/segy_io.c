@@ -1,5 +1,5 @@
 /*
- * $Id: segy_io.c 12822 2014-01-31 23:39:56Z remko $
+ * $Id: segy_io.c 15178 2015-11-06 10:45:03Z fwobbe $
  * segy_io.c:  A suite of functions to cover reading SEGY header variables.
  *
  * modified by T. Henstock from the PASSCAL software suite.
@@ -7,6 +7,7 @@
  * http://www.passcal.nmt.edu/
  *
  * Edit F. Wobbe: use stdint sizes, fix buffer overflow check
+ *      P. Wessel: use feof to distinguish errors from EOF.
  */
 
 #include "segy_io.h"
@@ -17,16 +18,15 @@
  * needed since the SEGY standard only allows 2^16 samples, which
  * is often exceeded in refraction experiments. */
 
-uint32_t samp_rd(SEGYHEAD *hdr) {
-  if (!hdr) {
-    printf("samp_rd: Received a NULL pointer\n");
-    return (false);
-  }
-  if (hdr->sampleLength == 0xffff && hdr->num_samps > 0xffff)
-		/* buffer overflow */
-    return (hdr->num_samps);
-  else
-    return (hdr->sampleLength);
+uint32_t samp_rd (SEGYHEAD *hdr) {
+	if (!hdr) {
+		printf("samp_rd: Received a NULL pointer\n");
+		return (false);
+	}
+	if (hdr->sampleLength == 0xffff && hdr->num_samps > 0xffff)	/* buffer overflow */
+		return (hdr->num_samps);
+	else
+		return (hdr->sampleLength);
 }
 
 /************************ get_segy_reelhd() **************************/
@@ -35,9 +35,9 @@ uint32_t samp_rd(SEGYHEAD *hdr) {
 int get_segy_reelhd (FILE *fileptr, char *reelhead) {
 	if (fread (reelhead, 3200, 1, fileptr) != 1) {
 		fprintf(stderr,"Error reading SEGY reel header \n");
-		exit(1);
+		return false;
 	}
-	return (true);
+	return true;
 }
 
 /*********************** get_segy_binhd() ****************************/
@@ -47,7 +47,7 @@ int get_segy_binhd (FILE *fileptr, SEGYREEL *binhead) {
 	if (fread (binhead, 400, 1, fileptr) !=1) {
 		fprintf(stderr, "Error reading SEGY binary header \n");
 		return(false);
-		}
+	}
 	return (true);
 }
 
@@ -64,20 +64,21 @@ int get_segy_binhd (FILE *fileptr, SEGYREEL *binhead) {
  */
 
 SEGYHEAD *get_segy_header(FILE *file_ptr) {
-  SEGYHEAD       *head_ptr;
+	SEGYHEAD *head_ptr;
 
-  /* get memory for SegyHead'er */
-  if ((head_ptr = calloc (1, 240)) == NULL) {
-    fprintf(stderr, "Error: Out of memory for SEGY Headers ");
-    return (NULL);
-  }
-  /* read in the header */
-  if (fread (head_ptr, 240, 1, file_ptr) != 1) {
-    fprintf(stderr, "Error: Unable to read next trace header -- end of file?\n");
-    free(head_ptr);
-    return (NULL);
-  }
-  return (head_ptr);
+	/* get memory for SegyHead'er */
+	if ((head_ptr = calloc (1, 240)) == NULL) {
+		fprintf(stderr, "Error: Out of memory for SEGY Headers ");
+		return (NULL);
+	}
+	/* read in the header */
+	if (fread (head_ptr, 240, 1, file_ptr) != 1) {
+		if (!feof (file_ptr))
+    			fprintf(stderr, "Error: Unable to read next trace header\n");
+		free(head_ptr);
+		return (NULL);
+	}
+	return (head_ptr);
 }
 
 /************************ get_segy_data()   **************************/
@@ -92,22 +93,23 @@ SEGYHEAD *get_segy_header(FILE *file_ptr) {
  * to stderr explaining the problem.
  */
 
-float *get_segy_data(FILE *file_ptr, SEGYHEAD *head_ptr) {
-  float    *data_ptr;
-  uint32_t num_samps;
+float *get_segy_data (FILE *file_ptr, SEGYHEAD *head_ptr) {
+	float *data_ptr;
+	uint32_t num_samps;
 
-  num_samps = samp_rd(head_ptr);
+	num_samps = samp_rd(head_ptr);
 
-  data_ptr = calloc(num_samps, sizeof(float));
-  if (data_ptr == NULL) {
-    fprintf(stderr, "Error: Out of memory for SEGY data ");
-    return (NULL);
-  }
-  /* read in data  */
-  if (fread(data_ptr, sizeof (float), num_samps, file_ptr) != num_samps) {
-    fprintf(stderr, "Error: Unable to read data ");
-    free(data_ptr);
-    return (NULL);
-  }
-  return (data_ptr);
+	data_ptr = calloc(num_samps, sizeof(float));
+	if (data_ptr == NULL) {
+		fprintf(stderr, "Error: Out of memory for SEGY data ");
+		return (NULL);
+	}
+	/* read in data  */
+	if (fread(data_ptr, sizeof (float), num_samps, file_ptr) != num_samps) {
+		if (!feof (file_ptr))
+			fprintf(stderr, "Error: Unable to read data ");
+		free(data_ptr);
+		return (NULL);
+	}
+	return (data_ptr);
 }

@@ -1,5 +1,5 @@
 #
-# $Id: FindGSHHG.cmake 13957 2015-01-21 12:45:26Z fwobbe $
+# $Id: FindGSHHG.cmake 14889 2015-09-19 13:12:39Z remko $
 #
 # Locate GSHHG shorelines
 #
@@ -32,7 +32,9 @@ find_path (GSHHG_PATH
 	/opt/local # DarwinPorts
 	/opt/csw # Blastwave
 	/opt
-  DOC "Global Self-consistent Hierarchical High-resolution Geography")
+	/usr/local
+	DOC "Global Self-consistent Hierarchical High-resolution Geography"
+)
 
 # get GSHHG file
 if (GSHHG_PATH)

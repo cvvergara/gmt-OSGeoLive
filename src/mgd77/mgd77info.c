@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77info.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: mgd77info.c 15213 2015-11-11 03:40:07Z pwessel $
  *
  *    Copyright (c) 2004-2015 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -24,6 +24,7 @@
 #define THIS_MODULE_NAME	"mgd77info"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Extract information about MGD77 files"
+#define THIS_MODULE_KEYS	">TO"
 
 #include "gmt_dev.h"
 #include "mgd77.h"
@@ -91,7 +92,7 @@ int GMT_mgd77info_usage (struct GMTAPI_CTRL *API, int level)
              
 	MGD77_Init (API->GMT, &M);		/* Initialize MGD77 Machinery */
 	MGD77_Cruise_Explain (API->GMT);
-	GMT_Message (API, GMT_TIME_NONE, "\tOPTIONS:\n\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-C List abbreviations of all columns present for each cruise.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append m for listing just the MGD77 columns present.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append e for listing just any extra columns present.\n");
@@ -124,7 +125,7 @@ int GMT_mgd77info_parse (struct GMT_CTRL *GMT, struct MGD77INFO_CTRL *Ctrl, stru
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0;
+	unsigned int n_errors = 0, n_opts = 0;
 	int sval;
 	struct GMT_OPTION *opt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
@@ -235,9 +236,14 @@ int GMT_mgd77info_parse (struct GMT_CTRL *GMT, struct MGD77INFO_CTRL *Ctrl, stru
 				break;
 		}
 	}
-
-	n_errors += GMT_check_condition (GMT, !((Ctrl->M.mode == RAW_HEADER) + (Ctrl->M.mode == E77_HEADER) + (Ctrl->M.mode == HIST_HEADER) \
-		+ Ctrl->E.active + Ctrl->C.active + (Ctrl->M.mode == FORMATTED_HEADER) + Ctrl->L.active ) == 1, "Syntax error: Specify one of -C, -E, -L, or -M\n");
+	if (Ctrl->M.mode == RAW_HEADER) n_opts++;
+	if (Ctrl->M.mode == E77_HEADER) n_opts++;
+	if (Ctrl->M.mode == HIST_HEADER) n_opts++;
+	if (Ctrl->M.mode == FORMATTED_HEADER) n_opts++;
+	if (Ctrl->E.active) n_opts++;
+	if (Ctrl->C.active) n_opts++;
+	if (Ctrl->L.active) n_opts++;
+	n_errors += GMT_check_condition (GMT, n_opts != 1, "Syntax error: Specify one of -C, -E, -L, or -M\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
@@ -284,7 +290,7 @@ int GMT_mgd77info (void *V_API, int mode, void *args)
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
 	Ctrl = New_mgd77info_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	MGD77_Init (GMT, &M);		/* Initialize MGD77 Machinery */
-	if ((error = GMT_mgd77info_parse (GMT, Ctrl, options, &M))) Return (error);
+	if ((error = GMT_mgd77info_parse (GMT, Ctrl, options, &M)) != 0) Return (error);
 
 	/*---------------------------- This is the mgd77info main code ----------------------------*/
 
@@ -474,7 +480,7 @@ int GMT_mgd77info (void *V_API, int mode, void *args)
 			
 			for (i = k = 1; k < M.n_out_columns; i++, k++) {
 				if (i == id_col || i == t_col || i == x_col || i == y_col) continue;
-				if ((length = D->H.info[M.order[k].set].col[M.order[k].item].text)) {
+				if ((length = D->H.info[M.order[k].set].col[M.order[k].item].text) != 0) {
 					if (strncmp (&tvalue[k][rec*length], ALL_NINES, length)) counter[k]++;
 				}
 				else

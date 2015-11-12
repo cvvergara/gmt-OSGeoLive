@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *  $Id: declspec.h 13846 2014-12-28 21:46:54Z pwessel $
+ *  $Id: declspec.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *  Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
@@ -17,6 +17,11 @@
  *
  *  Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------
+ */
+
+/*!
+ * \file declspec.h
+ * \brief Declarations for linking to DLLs
  */
 
 #ifndef _DECLSPEC_H_

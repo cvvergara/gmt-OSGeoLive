@@ -1,9 +1,9 @@
 #!/bin/bash
 #               GMT ANIMATION 04
-#               $Id: anim_04.sh 13893 2015-01-07 13:02:08Z fwobbe $
+#               $Id: anim_04.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Purpose:      Make DVD-res movie of NY to Miami flight
-# GMT progs:    gmt gmtset, gmt gmtmath, gmt psbasemap, gmt pstext, gmt psxy, gmt ps2raster
+# GMT progs:    gmt gmtset, gmt gmtmath, gmt pstext, gmt psxy, gmt psconvert
 # Unix progs:   awk, mkdir, rm, mv, echo, qt_export, cat
 # Note:         Run with any argument to build movie; otherwise 1st frame is plotted only.
 #
@@ -45,7 +45,7 @@ function make_frame () {
 		gmt_cleanup .gmt
 		gmt_abort "${0}: First frame plotted to ${name}.ps"
 	fi
-	gmt ps2raster ${file}_$$.ps -Tt -E${dpi}
+	gmt psconvert ${file}_$$.ps -Tt -E${dpi}
 	mv ${file}_$$.tif $$/${file}.tif
 	rm -f ${file}_$$.ps
 	echo "Frame ${file} completed"

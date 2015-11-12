@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error_codes.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_error_codes.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -62,6 +62,7 @@ const char *g_api_error_string[] = {
 	/* GMT_NOT_A_VALID_METHOD */		"GMT_NOT_A_VALID_METHOD",
 	/* GMT_NOT_A_VALID_MODE */		"GMT_NOT_A_VALID_MODE",
 	/* GMT_NOT_A_VALID_MODULE */		"GMT_NOT_A_VALID_MODULE",
+	/* GMT_NOT_A_VALID_PARAMETER */		"GMT_NOT_A_VALID_PARAMETER",
 	/* GMT_NOT_A_VALID_TYPE */		"GMT_NOT_A_VALID_TYPE",
 	/* GMT_NOT_INPUT_OBJECT */		"GMT_NOT_INPUT_OBJECT",
 	/* GMT_NOT_OUTPUT_OBJECT */		"GMT_NOT_OUTPUT_OBJECT",
@@ -70,6 +71,7 @@ const char *g_api_error_string[] = {
 	/* GMT_NO_OUTPUT */			"GMT_NO_OUTPUT",
 	/* GMT_NO_PARAMETERS */			"GMT_NO_PARAMETERS",
 	/* GMT_NO_RESOURCES */			"GMT_NO_RESOURCES",
+	/* GMT_NO_CPT */			"GMT_NO_CPT",
 	/* GMT_N_COLS_NOT_SET */		"GMT_N_COLS_NOT_SET",
 	/* GMT_N_COLS_VARY */			"GMT_N_COLS_VARY",
 	/* GMT_N_ROWS_NOT_SET */		"GMT_N_ROWS_NOT_SET",
@@ -86,6 +88,7 @@ const char *g_api_error_string[] = {
 	/* GMT_PADDING_NOT_ALLOWED */		"GMT_PADDING_NOT_ALLOWED",
 	/* GMT_PARSE_ERROR */			"GMT_PARSE_ERROR",
 	/* GMT_PROG_NOT_FOUND */		"GMT_PROG_NOT_FOUND",
+	/* GMT_PROJECTION_ERROR */		"GMT_PROJECTION_ERROR",
 	/* GMT_PTR_IS_NULL */			"GMT_PTR_IS_NULL",
 	/* GMT_PTR_NOT_NULL */			"GMT_PTR_NOT_NULL",
 	/* GMT_PTR_NOT_UNIQUE */		"GMT_PTR_NOT_UNIQUE",

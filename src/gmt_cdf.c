@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_cdf.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_cdf.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -47,6 +47,7 @@ int gmt_cdf_grd_info (struct GMT_CTRL *GMT, int ncid, struct GMT_GRID_HEADER *he
 	int nm[2];
 	double dummy[2];
 	char text[GMT_GRID_COMMAND_LEN320+GMT_GRID_REMARK_LEN160];
+	size_t limit = 2147483647U;	/* 2^31 - 1 is the max length of a 1-D array in netCDF */
 	nc_type z_type;
 
 	/* Dimension ids, varibale ids, etc. */
@@ -57,6 +58,11 @@ int gmt_cdf_grd_info (struct GMT_CTRL *GMT, int ncid, struct GMT_GRID_HEADER *he
 	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Enter gmt_cdf_grd_info with argument %c\n", (int)job);
 
 	if (job == 'w') {
+		if (header->nm > limit) {	/* Print error message and let things crash */
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Your grid contains more than 2^31 - 1 nodes (%zu) and cannot be stored with the deprecated GMT netCDF format.\n", header->nm);
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Please choose another grid format such as the default netCDF 4 COARDS-compliant grid format.\n");
+			return (GMT_DIM_TOO_LARGE);
+		}
 		GMT_err_trap (nc_def_dim (ncid, "side", 2U, &side_dim));
 		GMT_err_trap (nc_def_dim (ncid, "xysize", header->nm, &xysize_dim));
 
@@ -255,6 +261,7 @@ int GMT_cdf_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, floa
 	ij = imag_offset + pad[YHI] * width_out + pad[XLO];
 	header->z_min =  DBL_MAX;
 	header->z_max = -DBL_MAX;
+	header->has_NaNs = GMT_GRID_NO_NANS;	/* We are about to check for NaNs and if none are found we retain 1, else 2 */
 
 	for (j = first_row; j <= last_row; j++, ij += width_out) {
 		start[0] = j * header->nx;
@@ -264,7 +271,10 @@ int GMT_cdf_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, floa
 			grid[kk] = tmp[actual_col[i]];
 			if (check && grid[kk] == header->nan_value)
 				grid[kk] = GMT->session.f_NaN;
-			if (GMT_is_fnan (grid[kk])) continue;
+			if (GMT_is_fnan (grid[kk])) {
+				header->has_NaNs = GMT_GRID_HAS_NANS;
+				continue;
+			}
 			header->z_min = MIN (header->z_min, (double)grid[kk]);
 			header->z_max = MAX (header->z_max, (double)grid[kk]);
 		}

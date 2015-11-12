@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77snifferdefaults.h 13846 2014-12-28 21:46:54Z pwessel $	
+ *	$Id: mgd77snifferdefaults.h 15178 2015-11-06 10:45:03Z fwobbe $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *    Copyright (c) 2004-2015 by P. Wessel and M. T. Chandler
@@ -32,7 +32,7 @@
 {   "btc",   false,   false,     false,  false,  false,  false,   false,  false,  false},
 {  "mtf1",   19000,   72000,       200,    .32,    200,     40,   false,  false,  false},
 {  "mtf2",   19000,   72000,       200,    .32,    200,     40,   false,  false,  false},
-{   "mag",   -1000,    1000,        10,    .29,    200,     38,  -10000,  10000,  false},
+{   "mag",   -1500,    1500,        10,    .29,    200,     38,  -10000,  10000,  false},
 { "msens",   false,   false,     false,  false,  false,  false,   false,  false,  false},
 {  "diur",    -100,     100,         2,    .05,     20,      3,   false,  false,  false},
 {   "msd",   -1000,    1100,        10,    .33,    100,     10,   false,  false,  false},

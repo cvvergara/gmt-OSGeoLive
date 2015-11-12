@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_error.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -22,6 +22,11 @@
  * Author:	Paul Wessel
  * Date:	1-JAN-2010
  * Version:	5 API
+ */
+
+/*!
+ * \file gmt_error.h
+ * \brief Include file for GMT error codes
  */
 
 #ifndef GMT_ERROR_H
@@ -116,7 +121,7 @@ static inline char* __source_line_func (const char* src_line, const char* func) 
 	const char *c = src_line;
 	size_t len;
   *str = '\0';
-	while ((c = strpbrk (c, "/\\"))) /* get basename of src_line */
+	while ((c = strpbrk (c, "/\\")) != NULL) /* get basename of src_line */
 		src_line = ++c;
 	strncat (str, src_line, 255);
 	len = strlen (src_line);

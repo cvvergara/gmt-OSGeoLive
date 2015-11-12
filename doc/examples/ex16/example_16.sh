@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 16
-#		$Id: example_16.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_16.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Purpose:	Illustrates interpolation methods using same data as Example 12.
 # GMT progs:	gmtset, grdview, grdfilter, pscontour, psscale, pstext, surface, triangulate
@@ -29,6 +29,6 @@ echo "3.25 7 triangulate @~\256@~ grdfilter" | gmt pstext -R -J -O -K -N \
 	-F+f18p,Times-Roman+jCB >> $ps
 echo "3.2125 7.5 Gridding of Data" | gmt pstext -R0/10/0/10 -Jx1i -O -K -N \
 	-F+f32p,Times-Roman+jCB -X-3.5i >> $ps
-gmt psscale -D3.25i/0.35i/5i/0.25ih -Cex16.cpt -O -Y-0.75i >> $ps
+gmt psscale -Dx3.25i/0.35i+jTC+w5i/0.25i+h -Cex16.cpt -O -Y-0.75i >> $ps
 #
 rm -f *.nc gmt.conf

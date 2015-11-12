@@ -1,7 +1,7 @@
 @echo off
 REM		GMT EXAMPLE 17
 REM
-REM		$Id: example_17.bat 12820 2014-01-31 21:01:19Z remko $
+REM		$Id: example_17.bat 15178 2015-11-06 10:45:03Z fwobbe $
 REM
 REM Purpose:	Illustrates clipping of images using coastlines
 REM GMT progs:	grd2cpt, grdgradient, grdimage, pscoast, pstext
@@ -32,7 +32,7 @@ gmt pscoast -R -J -O -K -Q -B10f5 -B+t"Clipping of Images" >> %ps%
 
 REM Put a color legend on top of the land mask
 
-gmt psscale -D4i/7.6i/4i/0.2ih -Cgeoid.cpt -Bx5f1 -By+lm -I -O -K >> %ps%
+gmt psscale -DjTR+o0.3i/0.1i+w4i/0.2i+h -R -J -Cgeoid.cpt -Bx5f1 -By+lm -I -O -K >> %ps%
 
 REM Add a text paragraph (Note double %% to get a single % in DOS)
 echo 62 | gawk "{printf \"%%c 90 -10 12p 3i j\n\", $1}" > tmp
