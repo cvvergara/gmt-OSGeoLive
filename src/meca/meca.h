@@ -1,7 +1,13 @@
-/*	$Id: meca.h 12822 2014-01-31 23:39:56Z remko $
+/*	$Id: meca.h 15178 2015-11-06 10:45:03Z fwobbe $
  *    Copyright (c) 1996-2012 by G. Patau
+ *    Donated to the GMT project by G. Patau upon her retirement from IGPG
  *    Distributed under the Lesser GNU Public Licence
  *    See README file for copying and redistribution conditions.
+ */
+
+/*!
+ * \file meca.h
+ * \brief  
  */
 
 #include <stdio.h>

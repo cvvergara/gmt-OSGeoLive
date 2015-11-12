@@ -1,5 +1,5 @@
 #
-#	$Id: CMakeLists.txt 13967 2015-01-23 21:56:31Z pwessel $
+#	$Id: CMakeLists.txt 15219 2015-11-12 00:48:26Z fwobbe $
 #
 #	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 #	See LICENSE.TXT file for copying and redistribution conditions.
@@ -77,6 +77,7 @@ include (ConfigCMake)
 # Find UNIX commands
 include (FindUnixCommands)
 find_program (SVN svn)
+find_program (GS gs gswin64)
 
 # Global test target
 add_custom_target (check
@@ -95,7 +96,9 @@ endif (DO_EXAMPLES OR DO_TESTS AND NOT GRAPHICSMAGICK)
 add_subdirectory (src)
 add_subdirectory (share)      # share must be processed *after* src (GSHHG_PATH)
 add_subdirectory (doc)        # share must be processed *after* src (PDF manpages)
-add_subdirectory (test)
+if (EXISTS ${GMT_SOURCE_DIR}/test/)
+	add_subdirectory (test)
+endif (EXISTS ${GMT_SOURCE_DIR}/test/)
 add_subdirectory (cmake/dist) # make distribution bundles (always last)
 
 # Source release target
@@ -104,27 +107,36 @@ if (SVN AND HAVE_SVN_VERSION)
 	add_custom_target (svn_export_release
 		COMMAND ${SVN} --force export
 		${GMT_SOURCE_DIR} ${GMT_RELEASE_PREFIX})
-	add_depend_to_target (gmt_release svn_export_release)
+	# Remove the test dir, so that it is not included in the final release tarball
+	add_custom_target (svn_prune_test_dir
+		COMMAND ${CMAKE_COMMAND} -E remove_directory ${GMT_RELEASE_PREFIX}/test)
+	add_depend_to_target (svn_prune_test_dir svn_export_release)
+	add_depend_to_target (gmt_release svn_prune_test_dir)
 	find_program (GNUTAR NAMES gnutar gtar tar)
-	if (GNUTAR)
+	find_program (XZ NAMES xz)
+	if (GNUTAR AND GZIP AND XZ)
 		# Targets for creating tarballs
 		string (REGEX REPLACE ".*/" "" _release_dirname "${GMT_RELEASE_PREFIX}")
-		add_custom_command (OUTPUT ${_release_dirname}-src.tar.gz
-			COMMAND ${GNUTAR} -cz --owner 0 --group 0 --mode a=rX,u=rwX
-			-f ${GMT_BINARY_DIR}/${_release_dirname}-src.tar.gz ${_release_dirname}
+		add_custom_command (OUTPUT ${_release_dirname}-src.tar
+			COMMAND ${GNUTAR} -c --owner 0 --group 0 --mode a=rX,u=rwX
+			-f ${GMT_BINARY_DIR}/${_release_dirname}-src.tar ${_release_dirname}
 			DEPENDS ${GMT_RELEASE_PREFIX}
 			WORKING_DIRECTORY ${GMT_RELEASE_PREFIX}/..
 			VERBATIM)
-		add_custom_command (OUTPUT ${_release_dirname}-src.tar.bz2
-			COMMAND ${GNUTAR} -cj --owner 0 --group 0 --mode a=rX,u=rwX
-			-f ${GMT_BINARY_DIR}/${_release_dirname}-src.tar.bz2 ${_release_dirname}
-			DEPENDS ${GMT_RELEASE_PREFIX}
+		add_custom_command (OUTPUT ${_release_dirname}-src.tar.gz
+			COMMAND ${GZIP} -9 --keep --force ${GMT_BINARY_DIR}/${_release_dirname}-src.tar
+			DEPENDS ${GMT_RELEASE_PREFIX} ${_release_dirname}-src.tar
+			WORKING_DIRECTORY ${GMT_RELEASE_PREFIX}/..
+			VERBATIM)
+		add_custom_command (OUTPUT ${_release_dirname}-src.tar.xz
+			COMMAND ${XZ} -9 --keep --force ${GMT_BINARY_DIR}/${_release_dirname}-src.tar
+			DEPENDS ${GMT_RELEASE_PREFIX} ${_release_dirname}-src.tar
 			WORKING_DIRECTORY ${GMT_RELEASE_PREFIX}/..
 			VERBATIM)
 		add_custom_target (gmt_release_tar
 			DEPENDS ${GMT_RELEASE_PREFIX}
-			${_release_dirname}-src.tar.gz ${_release_dirname}-src.tar.bz2)
-	endif (GNUTAR)
+			${_release_dirname}-src.tar.gz ${_release_dirname}-src.tar.xz)
+	endif (GNUTAR AND GZIP AND XZ)
 endif (SVN AND HAVE_SVN_VERSION)
 
 get_target_property (_location gmtlib LOCATION)
@@ -141,6 +153,12 @@ if (BUILD_SUPPLEMENTS)
 else (BUILD_SUPPLEMENTS)
 	set (SUPPL "no")
 endif (BUILD_SUPPLEMENTS)
+
+if (BUILD_DEVELOPER)
+	set (DEVEL "yes")
+else (BUILD_DEVELOPER)
+	set (DEVEL "no")
+endif (BUILD_DEVELOPER)
 
 if (BUILD_SHARED_LIBS)
 	set (BUILD_MODE "shared")
@@ -172,12 +190,17 @@ message(
 	"*  Regex support              : ${GMT_CONFIG_REGEX_MESSAGE}\n"
 	"*  ZLIB library               : ${ZLIB_LIBRARY}\n"
 	"*  ZLIB include dir           : ${ZLIB_INCLUDE_DIR}\n"
+	"*  LAPACK library             : ${GMT_CONFIG_LAPACK_MESSAGE}\n"
 	"*  License restriction        : ${LICENSE_RESTRICTED}\n"
 	"*  Triangulation method       : ${GMT_TRIANGULATE}\n"
+	"*  OpenMP support             : ${GMT_CONFIG_OPENMP_MESSAGE}\n"
+	"*  GLIB GTHREAD support       : ${GMT_CONFIG_GTHREAD_MESSAGE}\n"
+	"*  PTHREAD support            : ${GMT_CONFIG_PTHREAD_MESSAGE}\n"
 	"*  Build mode                 : ${BUILD_MODE}\n"
 	"*  Build GMT core             : always [${GMT_CORE_LIB_NAME}]\n"
 	"*  Build PSL library          : always [${PSL_LIB_NAME}]\n"
 	"*  Build GMT supplements      : ${SUPPL}\n"
+	"*  Build GMT Developer        : ${DEVEL}\n"
 	"*  Build proto supplements    : ${PROTO}\n"
 	"*\n"
 	"*  Locations:\n"

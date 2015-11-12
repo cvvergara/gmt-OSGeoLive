@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_esri_io.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_esri_io.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -75,7 +75,7 @@ int GMT_is_esri_grid (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
 			GMT_fclose (GMT, fp);
 
 			if (!strncmp (record, "BYTEORDER", 4) ) {
-				sscanf (record, "%*s %c", &header->flags[0]);	/* Store the endianess flag here */
+				sscanf (record, "%*s %c", &header->flags[0]);	/* Store the endianness flag here */
 				strncpy (header->title, file, GMT_GRID_TITLE_LEN80);
 			}
 			else if (!strncmp (record, "ncols ", 6) ) {	/* Ah. A Arc/Info float binary file with a separate .hdr */
@@ -226,7 +226,7 @@ int read_esri_info (struct GMT_CTRL *GMT, FILE *fp, struct GMT_GRID_HEADER *head
 
 	if (header->flags[0] == 'M' || header->flags[0] == 'I') {	/* We are dealing with a ESRI .hdr file */
 		int error;
-		if ((error = read_esri_info_hdr (GMT, header))) 		/* Continue the work someplace else */
+		if ((error = read_esri_info_hdr (GMT, header)) != 0) 		/* Continue the work someplace else */
 			return (error);
 		else
 			return (GMT_NOERROR);
@@ -349,10 +349,10 @@ int read_esri_info (struct GMT_CTRL *GMT, FILE *fp, struct GMT_GRID_HEADER *head
 
 	if (fpBAK) {		/* Case of Arc/Info binary file with a separate header file. We still have things to do. */
 		char tmp[16];
-		/* Read an extra record containing the endianess info */
+		/* Read an extra record containing the endianness info */
 		GMT_fgets (GMT, record, GMT_BUFSIZ, fp);
 		if (sscanf (record, "%*s %s", tmp) != 1) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Arc/Info BINARY Grid: Error decoding endianess record\n");
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Arc/Info BINARY Grid: Error decoding endianness record\n");
 			return (GMT_GRDIO_READ_FAILED);
 		}
 		header->flags[0] = (tmp[0] == 'L') ? 'L' : 'B';
@@ -376,7 +376,7 @@ int GMT_esri_read_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header
 	else if ((fp = GMT_fopen (GMT, header->name, "r")) == NULL)
 		return (GMT_GRDIO_OPEN_FAILED);
 
-	if ((error = read_esri_info (GMT, fp, header))) return (error);
+	if ((error = read_esri_info (GMT, fp, header)) != 0) return (error);
 
 	GMT_fclose (GMT, fp);
 		
@@ -468,7 +468,7 @@ int GMT_esri_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 	if (!strcmp (header->name, "="))	/* Read from pipe */
 		fp = GMT->session.std[GMT_IN];
 	else if ((fp = GMT_fopen (GMT, header->name, r_mode)) != NULL) {
-		if ((error = read_esri_info (GMT, fp, header))) return (error);
+		if ((error = read_esri_info (GMT, fp, header)) != 0) return (error);
 	}
 	else
 		return (GMT_GRDIO_OPEN_FAILED);
@@ -481,11 +481,13 @@ int GMT_esri_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 	if (pad[XHI] > 0) width_out += pad[XHI];
 	n_expected = header->nx;
 
-	if (nBits == 32)		/* Either an ascii file or ESRI .HDR with NBITS = 32, in which case we assume it's a file of floats */
+	if (nBits == 32)		/* Either an ASCII file or ESRI .HDR with NBITS = 32, in which case we assume it's a file of floats */
 		tmp = GMT_memory (GMT, NULL, n_expected, float);
 	else
 		tmp16 = GMT_memory (GMT, NULL, n_expected, int16_t);
 
+	header->z_min = DBL_MAX;	header->z_max = -DBL_MAX;
+	header->has_NaNs = GMT_GRID_NO_NANS;	/* We are about to check for NaNs and if none are found we retain 1, else 2 */
 	if (is_binary) {
 		int ny = header->ny;
 		if (last_row - first_row + 1 != ny)		/* We have a sub-region */
@@ -519,8 +521,10 @@ int GMT_esri_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 					}
 					grid[kk] = tmp16[actual_col[col]];
 				}
-				if (grid[kk] == header->nan_value) 
+				if (grid[kk] == header->nan_value) {
+					header->has_NaNs = GMT_GRID_HAS_NANS;
 					grid[kk] = GMT->session.f_NaN;
+				}
 				else {		 /* Update z_min, z_max */
 					header->z_min = MIN (header->z_min, (double)grid[kk]);
 					header->z_max = MAX (header->z_max, (double)grid[kk]);
@@ -540,7 +544,6 @@ int GMT_esri_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 		check = !isnan (header->nan_value);
 		in_nx = header->nx;
 		header->nx = width_in;	/* Needed to be set here due to GMT_IJP below */
-		header->z_min = DBL_MAX;	header->z_max = -DBL_MAX;
 		while (fscanf (fp, "%f", &value) == 1 && n_left) {	/* We read all values and skip those not inside our w/e/s/n */
 			tmp[col] = value;	/* Build up a single input row */
 			col++;
@@ -550,7 +553,10 @@ int GMT_esri_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 					for (ii = 0; ii < width_in; ii++) {
 						kk = ij + ii;
 						grid[kk] = (check && tmp[actual_col[ii]] == header->nan_value) ? GMT->session.f_NaN : tmp[actual_col[ii]];
-						if (GMT_is_fnan (grid[kk])) continue;
+						if (GMT_is_fnan (grid[kk])) {
+							header->has_NaNs = GMT_GRID_HAS_NANS;
+							continue;
+						}
 						/* Update z_min, z_max */
 						header->z_min = MIN (header->z_min, (double)grid[kk]);
 						header->z_max = MAX (header->z_max, (double)grid[kk]);

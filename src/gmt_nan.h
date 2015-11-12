@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_nan.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_nan.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -28,6 +28,11 @@
  * Author:	Remko Scharroo
  * Date:	1-JAN-2010
  * Ver:		5 API
+ */
+
+/*!
+ * \file gmt_nan.h
+ * \brief Machine-dependent macros for generation and testing of NaNs
  */
 
 #ifndef _GMT_NAN_H

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_sph.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_sph.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 2008-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -16,6 +16,11 @@
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /* Include file for sph supplement */
+
+/*!
+ * \file gmt_sph.h
+ * \brief Include file for sph supplement.
+ */
 
 #define DELAUNAY	0
 #define VORONOI		1

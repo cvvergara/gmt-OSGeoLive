@@ -1,4 +1,4 @@
-/* $Id: gmt_imgsubs.h 13846 2014-12-28 21:46:54Z pwessel $
+/* $Id: gmt_imgsubs.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  * Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
@@ -20,6 +20,11 @@
  * Author:  W H F Smith
  * Date:    7 October 1998 
  *
+ */
+
+/*!
+ * \file gmt_imgsubs.h
+ * \brief Header file supporting the GMT supplement img.
  */
 
 #include "gmt_dev.h"
@@ -47,7 +52,6 @@ struct GMT_IMG_RANGE {
 	double	minlat;
 	double	maxlat;
 	double	mpixel;
-
 };
 
 /* The following structure contains info used to set up the 

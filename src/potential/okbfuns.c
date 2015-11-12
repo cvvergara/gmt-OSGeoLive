@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: okbfuns.c 14230 2015-04-22 16:59:26Z jluis $
+ *	$Id: okbfuns.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -35,7 +35,7 @@ double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double r
 	bool top = true;
 	struct LOC_OR loc_or[32];
 	GMT_UNUSED(loc_or_);
-	GMT_declare_gmutex		/* A no-op when no USE_GTHREADS */
+	GMT_declare_gmutex		/* A no-op when no HAVE_GLIB_GTHREAD */
 
 /* x_o, y_o, z_o are the coordinates of the observation point
  * rho is the body density times G constant
@@ -102,7 +102,7 @@ double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double r
 				okb_mag (n_vert, km, pm, loc_or, c_tet, s_tet, c_phi, s_phi);
 		cnt_v += n_vert;
 	}
-	GMT_set_gmutex		/* A no-op when no USE_GTHREADS */
+	GMT_set_gmutex		/* A no-op when no HAVE_GLIB_GTHREAD */
 	if (is_grav) okb *= rho;
 	GMT_unset_gmutex
 	return (okb);

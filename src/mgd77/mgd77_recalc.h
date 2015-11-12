@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77_recalc.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: mgd77_recalc.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *    Copyright (c) 2004-2015 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -12,6 +12,11 @@
  * by the calling program will have all corrections applied to them unless
  * the master switch in the MGD77 structure that controls adjustments have
  * been turned OFF [Default is ON].
+ */
+
+/*!
+ * \file mgd77_recalc.h
+ * \brief  
  */
 
 #define N_E77_CORR_FIELDS	5

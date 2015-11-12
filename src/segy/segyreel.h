@@ -1,4 +1,4 @@
-/* $Id: segyreel.h 12822 2014-01-31 23:39:56Z remko $
+/* $Id: segyreel.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  * From PASSCAL code base which is in the public domain
  * http://www.passcal.nmt.edu/
@@ -6,6 +6,11 @@
  * SEGY REEL HEADER VARIABLES
  *
  * Edit F. Wobbe: use unsigned types for values that are known to be positive
+ */
+
+/*!
+ * \file segyreel.h
+ * \brief 
  */
 
 #pragma once

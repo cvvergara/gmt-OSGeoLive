@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77path.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: mgd77path.c 15213 2015-11-11 03:40:07Z pwessel $
  *
  *    Copyright (c) 2004-2015 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -18,6 +18,7 @@
 #define THIS_MODULE_NAME	"mgd77path"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Return paths to MGD77 cruises and directories"
+#define THIS_MODULE_KEYS	">TO"
 
 #include "gmt_dev.h"
 #include "mgd77.h"
@@ -66,7 +67,7 @@ int GMT_mgd77path_usage (struct GMTAPI_CTRL *API, int level)
 	MGD77_Cruise_Explain (API->GMT);
 	GMT_Message (API, GMT_TIME_NONE, "\t-A List full cruise pAths [Default].  Append - to only get cruise names.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D List all directories with MGD77 files instead.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\tOPTIONS:\n\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Ignore certain data file formats from consideration. Append combination of act to ignore\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   (a) MGD77 ASCII, (c) MGD77+ netCDF, (m) MGD77T ASCII, or (t) plain table files. [Default ignores none].\n");
 	GMT_Option (API, "V,.");
@@ -169,7 +170,7 @@ int GMT_mgd77path (void *V_API, int mode, void *args)
 	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
 	Ctrl = New_mgd77path_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_mgd77path_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_mgd77path_parse (GMT, Ctrl, options)) != 0) Return (error);
 	
 	/*---------------------------- This is the mgd77path main code ----------------------------*/
 

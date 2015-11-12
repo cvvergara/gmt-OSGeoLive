@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 17
-#		$Id: example_17.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_17.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Purpose:	Illustrates clipping of images using coastlines
 # GMT progs:	grd2cpt, grdgradient, grdimage, pscoast, pstext
@@ -30,7 +30,7 @@ gmt pscoast -R -J -O -K -Q -B10f5 -B+t"Clipping of Images" >> $ps
 
 # Put a color legend on top of the land mask
 
-gmt psscale -D4i/7.6i/4i/0.2ih -Cgeoid.cpt -Bx5f1 -By+lm -I -O -K >> $ps
+gmt psscale -DjTR+o0.3i/0.1i+w4i/0.2i+h -R -J -Cgeoid.cpt -Bx5f1 -By+lm -I -O -K >> $ps
 
 # Add a text paragraph
 

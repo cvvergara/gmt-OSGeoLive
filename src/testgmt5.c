@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: testgmt5.c 13397 2014-07-31 02:14:11Z pwessel $
+ *	$Id: testgmt5.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-$year by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -41,7 +41,7 @@ int main () {
 	struct GMT_GRID *Gin = NULL, *Gout = NULL;
 
 	/* 1. Initializing new GMT session */
-	if ((API = GMT_Create_Session ("TEST", 2U, 0U, NULL)) == NULL) exit (EXIT_FAILURE);
+	if ((API = GMT_Create_Session ("TEST", GMT_PAD_DEFAULT, GMT_SESSION_NORMAL, NULL)) == NULL) exit (EXIT_FAILURE);
 
 	/* 2. READING IN A GRID */
 	if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, in_grid, NULL)) == NULL) exit (EXIT_FAILURE);

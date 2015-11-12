@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -21,7 +21,8 @@
 
 # source files
 set (SUPPL_LIB_SRCS okbfuns.h okbfuns.c)
-set (SUPPL_PROGS_SRCS grdredpol.c gmtgravmag3d.c gravfft.c grdgravmag3d.c grdseamount.c)
+set (SUPPL_PROGS_SRCS grdredpol.c gmtgravmag3d.c gmtflexure.c gravfft.c
+	grdflexure.c grdgravmag3d.c grdseamount.c talwani2d.c talwani3d.c)
 
 # lib sources
 set (LIB_SRCS ${SUPPL_LIB_SRCS} ${SUPPL_PROGS_SRCS})

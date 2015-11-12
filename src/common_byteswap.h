@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: common_byteswap.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: common_byteswap.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -23,17 +23,17 @@
  * Version: 5
  */
 
+/*!
+ * \file common_byteswap.h
+ * \brief Inline functions for byteswapping
+ */
+
 #pragma once
 #ifndef _COMMON_BYTESWAP_H
 #define _COMMON_BYTESWAP_H
 
 #include "gmt_config.h"
-
-#ifdef HAVE_STDINT_H_          /* VS 2010 has stdint.h */
-#	include <stdint.h>
-#else
-#	include "compat/stdint.h"    /* msinttypes for VC++ */
-#endif /* HAVE_STDINT_H_ */
+#include <stdint.h>
 
 /*
  * Default inline functions that the compiler should optimize properly. Use

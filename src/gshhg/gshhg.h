@@ -1,4 +1,4 @@
-/*	$Id: gshhg.h 13853 2014-12-30 20:49:01Z pwessel $
+/*	$Id: gshhg.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  * Include file defining structures used in the binary GSHHG files
  *
@@ -63,6 +63,11 @@
  *
  * Each header is contained in a GSHHG_HEADER struct and each point is contained in a GSHHG_POINT struct.
  * These two structures are defined below, together with the scalefactor that converts micro-degrees to degrees.
+ */
+
+/*!
+ * \file gshhg.h
+ * \brief Include file defining structures used in the binary GSHHG files.
  */
 
 #ifndef _GSHHG

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: testgrdio.c 12822 2014-01-31 23:39:56Z remko $
+ *	$Id: testgrdio.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-$year by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -47,7 +47,7 @@ int main (int argc, char *argv[])
 	}
 
 	/* 1. Initializing new GMT session */
-	if ((API = GMT_Create_Session (argv[0], 2U, 0U, NULL)) == NULL) exit (EXIT_FAILURE);
+	if ((API = GMT_Create_Session (argv[0], GMT_PAD_DEFAULT, GMT_SESSION_NORMAL, NULL)) == NULL) exit (EXIT_FAILURE);
 
 	/* 2. Read in real and imaginary components into one grid  */
 	if ((G_cplx = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL | GMT_GRID_IS_COMPLEX_REAL, NULL, name[0], NULL)) == NULL) exit (API->error);

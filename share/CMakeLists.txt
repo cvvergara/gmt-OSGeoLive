@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -19,8 +19,8 @@
 # share CMakeLists.txt
 #
 
-set (_gmt_share_dirs conf cpt custom dbase mgd77 mgg pattern
-	pslib time x2sys)
+set (_gmt_share_dirs conf cpt custom dbase localization mgd77 mgg
+	postscriptlight spotter x2sys)
 
 # install target for data
 install (DIRECTORY ${_gmt_share_dirs}

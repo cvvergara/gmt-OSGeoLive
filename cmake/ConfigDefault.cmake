@@ -1,5 +1,5 @@
 #
-# $Id: ConfigDefault.cmake 14257 2015-04-29 19:52:45Z fwobbe $
+# $Id: ConfigDefault.cmake 15220 2015-11-12 00:52:04Z fwobbe $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -41,14 +41,14 @@ set (GMT_VERSION_YEAR "2015")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION_MAJOR 5)
-set (GMT_PACKAGE_VERSION_MINOR 1)
-set (GMT_PACKAGE_VERSION_PATCH 2)
+set (GMT_PACKAGE_VERSION_MINOR 2)
+set (GMT_PACKAGE_VERSION_PATCH 1)
 
 # The subversion revision of the GMT source code.
 # This is manually set when making GMT *public* releases.
 # However, when making internal releases or just an ordinary developer build, leave it
 # empty; if it is empty, the revision number is automatically populated for you on build.
-set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "14256")
+set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "15220")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION "${GMT_PACKAGE_VERSION_MAJOR}.${GMT_PACKAGE_VERSION_MINOR}.${GMT_PACKAGE_VERSION_PATCH}")
@@ -176,7 +176,15 @@ endif (NOT DEFINED CMAKE_VERBOSE_MAKEFILE)
 set (BUILD_SHARED_LIBS true)
 set (CMAKE_FIND_STATIC LAST)
 
+# look also for lib64 when building 64-bit binaries
+if (NOT DEFINED FIND_LIBRARY_USE_LIB64_PATHS)
+	set (FIND_LIBRARY_USE_LIB64_PATHS true)
+endif (NOT DEFINED FIND_LIBRARY_USE_LIB64_PATHS)
+
 # search order for find_*
 set (CMAKE_FIND_FRAMEWORK LAST)
+
+# install GMT developer include files
+set (BUILD_DEVELOPER TRUE)
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

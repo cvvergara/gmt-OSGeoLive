@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *      $Id: gmt_notposix.c 13846 2014-12-28 21:46:54Z pwessel $
+ *      $Id: gmt_notposix.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *      Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -35,7 +35,7 @@
  *      erf:    Error function
  *      erfc:   Complementary error function
  *      strdup: Save copy of a string
- *      strtod: Convert ascii string to floating point
+ *      strtod: Convert ASCII string to floating point
  *  hypot:      sqrt(x^2 + y^2)
  *      log1p:  log(x+1)
  *      atanh:  inverse hyperbolic tangent
@@ -62,7 +62,7 @@ char *strdup (const char *s) {
 
 #ifndef HAVE_STRTOD
 double strtod (const char *s, char **ends) {
-/*      Given s, try to scan it to convert an ascii string representation of a
+/*      Given s, try to scan it to convert an ASCII string representation of a
 	double, and return the double so found.  If (ends != (char **)NULL),
 	return a pointer to the first char of s which cannot be converted.
 

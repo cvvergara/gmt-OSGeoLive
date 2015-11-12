@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# $Id: dim.template.sh 12464 2013-11-06 15:58:22Z fwobbe $
+# $Id: dim.template.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
-# Seung-Sep Kim, GG/SOEST/UHM
-# $Revision: 12464 $    $Date: 2013-11-06 05:58:22 -1000 (Wed, 06 Nov 2013) $
+# Seung-Sep Kim, CHungnam National University, Daejeon, South Korea [seungsep@cnu.ac.kr]
+# $Revision: 15178 $    $Date: 2015-11-06 11:45:03 +0100 (Fri, 06 Nov 2015) $
 
 # This is a template file showing the steps for DiM-based
 # regional-residual separation
@@ -97,4 +97,3 @@ if [ ! -f $dim ]; then
 	gmt xyz2grd /tmp/$$.err.xyz -G$err -I1m $box -V -F
 
 fi
-

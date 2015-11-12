@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: common_sighandler.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: common_sighandler.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -21,6 +21,11 @@
  * Author:  Florian Wobbe
  * Date:    5-SEP-2013
  * Version: 5
+ */
+
+/*!
+ * \file common_sighandler.h
+ * \brief Prototype of a signal-handling function
  */
 
 #pragma once

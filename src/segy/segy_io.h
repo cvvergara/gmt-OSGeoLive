@@ -1,11 +1,16 @@
 /************************ segy_io.h *******************************
- * $Id: segy_io.h 12822 2014-01-31 23:39:56Z remko $
+ * $Id: segy_io.h 15178 2015-11-06 10:45:03Z fwobbe $
  * Include file for segy_io.c, a suite of functions to
  * help reading and writing those annoying, redundant SEGY header
  * variables and for reading/writing to/from SEGY files.
  * From PASSCAL code base which is in the public domain
  * http://www.passcal.nmt.edu/
  ******************************************************************/
+
+/*!
+ * \file segy_io.h
+ * \brief 
+ */
 
 #ifndef SEGY_IO_H
 #define SEGY_IO_H

@@ -1,4 +1,4 @@
-	$Id: README.x2sys 12822 2014-01-31 23:39:56Z remko $
+	$Id: README.x2sys 15178 2015-11-06 10:45:03Z fwobbe $
 
 README file for GMT supplemental x2sys programs
 Distributed under the GNU Lesser Public License; see file
@@ -6,7 +6,9 @@ LICENSE.TXT in main GMT directory.
 
 AUTHOR:		Paul Wessel
 DATE:		1-JAN-2011
-INSTALL INFO:	The x2sys directory should install under GMT/src
+INSTALL INFO:	Installed as part of GMT5 supplements
+
+The notes below are mostly for historical references
 
 1.4 UPDATE [3-AUG-2010]
 

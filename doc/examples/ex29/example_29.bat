@@ -1,5 +1,5 @@
 REM             GMT EXAMPLE 29
-REM             $Id: example_29.bat 12820 2014-01-31 21:01:19Z remko $
+REM             $Id: example_29.bat 15178 2015-11-06 10:45:03Z fwobbe $
 REM
 REM Purpose:	Illustrates spherical surface gridding with Green's function of splines
 REM GMT progs:	makecpt, grdcontour, grdgradient, grdimage, grdmath greenspline, psscale, pstext
@@ -35,7 +35,7 @@ gmt grdgradient mars.nc -fg -Ne0.75 -A45 -Gmars_i.nc
 gmt grdimage mars.nc -Imars_i.nc -Cmars.cpt -B30g30 -BWsne -J -O -K -E200 -Y4.2i --FONT_ANNOT_PRIMARY=12p >> %ps%
 gmt grdcontour mars.nc -J -O -K -C1 -A5 -Glz+/z- >> %ps%
 gmt psxy -Rg -J -O -K -Sc0.045i -Gblack mars370.in  >> %ps%
-gmt psscale -Cmars.cpt -O -K -D3.5i/-0.15i/6i/0.1ih -I --FONT_ANNOT_PRIMARY=12p -Bx2f1 -By+lkm >> %ps%
+gmt psscale -Cmars.cpt -O -K -Dx3.5i/-0.15i+jTC+w6i/0.1i+h -I --FONT_ANNOT_PRIMARY=12p -Bx2f1 -By+lkm >> %ps%
 echo 0 90 a) | gmt pstext -R -J -O -N -D-3.5i/-0.2i -F+f14p,Helvetica-Bold+jLB >> %ps%
 REM Clean up
 del *.nc

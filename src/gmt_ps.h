@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_ps.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_ps.h 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -21,6 +21,11 @@
  * Author:	Paul Wessel
  * Date:	01-OCT-2009
  * Version:	5 API
+ */
+
+/*!
+ * \file gmt_ps.h
+ * \brief Definition of the structure with PostScript settings 
  */
 
 #ifndef _GMT_PS_H
@@ -49,7 +54,8 @@
  * that are parsed directly into the PSL internal variables.
  */
 
-struct GMT_PS {	/* PSL settings affected by GMT options -X -Y -U and clipping */
+/*! PSL settings affected by GMT options -X -Y -U and clipping */
+struct GMT_PS {
 	/* A structure pointer is passed to GMT_plotinit which calls ps_plotinit */
 	int nclip;				/* +1 if clipping will extend beyond current process, -1 if we terminate clipping */
 	int clip_level;		/* Sum total clip level, should be zero at end of command sequence */

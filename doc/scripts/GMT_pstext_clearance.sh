@@ -1,16 +1,15 @@
 #!/bin/bash
-#	$Id: GMT_pstext_clearance.sh 11490 2013-05-16 06:26:21Z pwessel $
+#	$Id: GMT_pstext_clearance.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
-gmt gmtset PS_SCALE_X 0.8 PS_SCALE_Y 0.8
-gmt pstext -R0/3/-0.1/1.5 -Jx1i -P -K -C0.2 -TO -Wthick -F+f36p,Helvetica-Bold << EOF > GMT_pstext_clearance.ps
+gmt pstext -R0/3/-0.1/1.5 -Jx1i -P -K -C0.2i -TO -Wthick -F+f36p,Helvetica-Bold << EOF > GMT_pstext_clearance.ps
 1.5	0.5	My Text
 EOF
 gmt pstext -R -J -O -K -C0 -Wthin,- -F+f36p,Helvetica-Bold << EOF >> GMT_pstext_clearance.ps
 1.5	0.5	My Text
 EOF
 gmt pstext -R -J -O -K -F+f9p+j << EOF >> GMT_pstext_clearance.ps
-2.00	0.80	LM	@~D@~y
-2.52	0.65	CB	@~D@~x
+2.00	0.80	LM	dy
+2.52	0.65	CB	dx
 0.56	0.75	LB	r
 EOF
 gmt psxy -R -J -O << EOF >> GMT_pstext_clearance.ps

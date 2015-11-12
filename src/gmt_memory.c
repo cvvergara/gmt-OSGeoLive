@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_memory.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_memory.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -34,6 +34,7 @@
  */
 
 #include "gmt_dev.h"
+#include "gmt_internals.h"
 
 #ifdef HAVE_MEMALIGN
 #	include <malloc.h>

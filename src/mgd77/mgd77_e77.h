@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77_e77.h 13846 2014-12-28 21:46:54Z pwessel $	
+ *	$Id: mgd77_e77.h 15178 2015-11-06 10:45:03Z fwobbe $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *    Copyright (c) 2004-2015 by P. Wessel and M. T. Chandler
@@ -15,6 +15,11 @@
  *	Date:	8-June-2007
  * 
  * ------------------------------------------------------------------*/
+
+/*!
+ * \file mgd77_e.h
+ * \brief Include file for mgd77 programs.
+ */
  
  /* E77 Error classes */
 #define E77_NAV                0

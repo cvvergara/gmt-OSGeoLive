@@ -1,4 +1,4 @@
-/* $Id: psldemo.c 13485 2014-08-31 00:55:53Z pwessel $
+/* $Id: psldemo.c 15178 2015-11-06 10:45:03Z fwobbe $
  *
  * psldemo.c: Test all PSL functions at least once
  */
@@ -11,7 +11,7 @@
 
 #include "gmt_notposix.h"
 
-#include "pslib.h"
+#include "postscriptlight.h"
 #include "psldemo.h"
 
 int main (int argc, char **argv) {

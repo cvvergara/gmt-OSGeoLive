@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77_rls_coeffs.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: mgd77_rls_coeffs.h 15178 2015-11-06 10:45:03Z fwobbe $
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *    Copyright (c) 2004-2015 by P. Wessel and M. T. Chandler
@@ -30,6 +30,11 @@
  *	Date:	June 2007
  * 
  * ------------------------------------------------------------------*/
+
+/*!
+ * \file mgd77_rls_coeffs.h
+ * \brief  
+ */
 
 #define RLS_N_DEPTH         4490
 #define RLS_N_DEPTH_ROWS    39

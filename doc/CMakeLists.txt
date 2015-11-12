@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CMakeLists.txt 14537 2015-07-15 19:10:06Z pwessel $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -40,6 +40,7 @@ add_subdirectory (fig)
 # Add tests and make verbatim copies from scripts
 add_subdirectory (scripts)
 add_subdirectory (examples)
+add_subdirectory (tutorial)
 
 if (EXISTS ${GMT_INSTALL_EXTERNAL_DOC})
 	# Install documentation files from external location

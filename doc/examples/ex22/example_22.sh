@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 22
-#		$Id: example_22.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_22.sh 15178 2015-11-06 10:45:03Z fwobbe $
 #
 # Purpose:	Automatic map of last 7 days of world-wide seismicity
 # GMT progs:	gmtset, pscoast, psxy, pslegend
@@ -55,8 +55,8 @@ V 0 1p
 S 0.1i c 0.1i red 0.25p 0.2i Shallow depth (0-100 km)
 S 0.1i c 0.1i green 0.25p 0.2i Intermediate depth (100-300 km)
 S 0.1i c 0.1i blue 0.25p 0.2i Very deep (> 300 km)
-V 0 1p
 D 0 1p
+V 0 1p
 N 7
 V 0 1p
 S 0.1i c 0.06i - 0.25p 0.3i M 3
@@ -66,14 +66,15 @@ S 0.1i c 0.12i - 0.25p 0.3i M 6
 S 0.1i c 0.14i - 0.25p 0.3i M 7
 S 0.1i c 0.16i - 0.25p 0.3i M 8
 S 0.1i c 0.18i - 0.25p 0.3i M 9
-V 0 1p
 D 0 1p
+V 0 1p
 N 1
 END
 
 # Put together a reasonable legend text, and add logo and user's name:
 
 cat << END >> neis.legend
+G 0.25l
 P
 T USGS/NEIS most recent earthquakes for the last seven days.  The data were
 T obtained automatically from the USGS Earthquake Hazards Program page at
@@ -90,7 +91,7 @@ END
 # OK, now we can actually run gmt pslegend.  We center the legend below the map.
 # Trial and error shows that 1.7i is a good legend height:
 
-gmt pslegend -Dx4.5i/-0.4i/7i/1.7i/TC -O -F+p+glightyellow neis.legend  >> $ps
+gmt pslegend -DJBC+o0/0.4i+w7i/1.7i -R -J -O -F+p+glightyellow neis.legend  >> $ps
 
 # Clean up after ourselves:
 

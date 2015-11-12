@@ -1,8 +1,13 @@
 /*-------------------------------------------------------------------------
- *	$Id: mgd77_IGF_coeffs.h 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: mgd77_IGF_coeffs.h 15178 2015-11-06 10:45:03Z fwobbe $
  * 
  *    Copyright (c) 2005-2015 by P. Wessel
  *    See README file for copying and redistribution conditions.
+ */
+
+/*!
+ * \file mgd77_IGF_coeffs.h
+ * \brief  
  */
  
 #define MGD77_IGF24_G0	978052.0
