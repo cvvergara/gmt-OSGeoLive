@@ -6,6 +6,7 @@ gmt (5.2.1+dfsg-1) UNRELEASED; urgency=medium
     - Drop license & copyright for removed compat headers
   * Drop patches applied upstream, refresh remaining patches.
   * Install PDF & tutorial files in gmt-doc too.
+  * Update symbols for 5.2.1.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 13 Nov 2015 00:54:23 +0100
 
