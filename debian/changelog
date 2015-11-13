@@ -1,4 +1,4 @@
-gmt (5.2.1+dfsg-1) UNRELEASED; urgency=medium
+gmt (5.2.1+dfsg-1~exp1) experimental; urgency=medium
 
   * New upstream release.
   * Update copyright file, changes:
@@ -8,7 +8,7 @@ gmt (5.2.1+dfsg-1) UNRELEASED; urgency=medium
   * Install PDF & tutorial files in gmt-doc too.
   * Update symbols for 5.2.1.
 
- -- Bas Couwenberg <sebastic@debian.org>  Fri, 13 Nov 2015 00:54:23 +0100
+ -- Bas Couwenberg <sebastic@debian.org>  Fri, 13 Nov 2015 11:06:30 +0100
 
 gmt (5.1.2+dfsg1-3) unstable; urgency=medium
 
