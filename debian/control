@@ -132,8 +132,10 @@ Depends: libjs-jquery,
          libjs-underscore,
          ${misc:Depends}
 Suggests: www-browser
-Breaks: gmt (<< 4.5.7-1~)
-Replaces: gmt (<< 4.5.7-1~)
+Breaks: gmt (<< 4.5.7-1~),
+        gmt-doc-pdf (<< 5.2.1+dfsg-1~)
+Replaces: gmt (<< 4.5.7-1~),
+          gmt-doc-pdf (<< 5.2.1+dfsg-1~)
 Description: Documentation for GMT, the Generic Mapping Tools
  GMT is a collection of UNIX tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
