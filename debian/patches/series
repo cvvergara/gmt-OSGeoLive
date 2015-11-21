@@ -2,3 +2,4 @@ disable-triangle.patch
 disable-examples.patch
 manpage-section.patch
 hppa-sighandler.patch
+alpha-sighandler.patch

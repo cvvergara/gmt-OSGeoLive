@@ -3,6 +3,7 @@ gmt (5.2.1+dfsg-3) UNRELEASED; urgency=medium
   * Add patch to fix build on HPPA.
     Thanks to John David Anglin for the patch.
     (closes: #805731)
+  * Add patch to fix build on alpha.
 
  -- Bas Couwenberg <sebastic@debian.org>  Sat, 21 Nov 2015 19:26:33 +0100
 
