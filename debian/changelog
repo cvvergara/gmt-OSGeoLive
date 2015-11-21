@@ -1,3 +1,11 @@
+gmt (5.2.1+dfsg-3) UNRELEASED; urgency=medium
+
+  * Add patch to fix build on HPPA.
+    Thanks to John David Anglin for the patch.
+    (closes: #805731)
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 21 Nov 2015 19:26:33 +0100
+
 gmt (5.2.1+dfsg-2) unstable; urgency=medium
 
   * Add Breaks/Replaces for files moved from gmt-doc-pdf to gmt-doc.
