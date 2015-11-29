@@ -1,6 +1,7 @@
 Description: Fix build on alpha.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: http://gmt.soest.hawaii.edu/issues/819
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/15281
 
 --- a/src/common_sighandler.c
 +++ b/src/common_sighandler.c
