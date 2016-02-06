@@ -2,6 +2,7 @@ gmt (5.2.1+dfsg-4) UNRELEASED; urgency=medium
 
   * Update Vcs-Git URL to use HTTPS.
   * Bump Standards-Version to 3.9.7, no changes.
+  * Add patches for various typos.
 
  -- Bas Couwenberg <sebastic@debian.org>  Sat, 06 Feb 2016 21:06:05 +0100
 

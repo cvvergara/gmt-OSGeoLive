@@ -3,3 +3,6 @@ disable-examples.patch
 manpage-section.patch
 hppa-sighandler.patch
 alpha-sighandler.patch
+supported-typo.patch
+overridden-typo.patch
+written-typo.patch
