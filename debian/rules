@@ -24,7 +24,6 @@ CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
              -DFFTW3_ROOT=/usr \
              -DGDAL_ROOT=/usr \
              -DPCRE_ROOT=/usr \
-             -DFLOCK=on \
              -DGMT_INSTALL_MODULE_LINKS=off \
              -DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=off \
              -DLICENSE_RESTRICTED=LGPL
