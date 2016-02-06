@@ -1,3 +1,9 @@
+gmt (5.2.1+dfsg-4) UNRELEASED; urgency=medium
+
+  * Update Vcs-Git URL to use HTTPS.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 06 Feb 2016 21:06:05 +0100
+
 gmt (5.2.1+dfsg-3) unstable; urgency=medium
 
   * Add patch to fix build on HPPA.
