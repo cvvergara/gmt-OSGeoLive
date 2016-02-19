@@ -1,5 +1,6 @@
 Description: Fix build on sparc64.
 Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: http://gmt.soest.hawaii.edu/issues/857
 
 --- a/src/common_sighandler.c
 +++ b/src/common_sighandler.c
