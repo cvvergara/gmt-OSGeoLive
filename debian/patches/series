@@ -6,3 +6,4 @@ alpha-sighandler.patch
 supported-typo.patch
 overridden-typo.patch
 written-typo.patch
+sparc-sighandler.patch

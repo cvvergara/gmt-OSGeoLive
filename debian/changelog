@@ -6,6 +6,7 @@ gmt (5.2.1+dfsg-4) UNRELEASED; urgency=medium
   * Add lintian override for old-style-config-script-multiarch-path.
     See: https://lists.debian.org/debian-devel/2016/01/msg00688.html
   * Drop unused FLOCK CMake option.
+  * Add patch to fix build on sparc64.
 
  -- Bas Couwenberg <sebastic@debian.org>  Sat, 06 Feb 2016 21:06:05 +0100
 
