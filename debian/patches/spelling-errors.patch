@@ -1,0 +1,292 @@
+Description: Fix spelling errors.
+ formated  -> formatted
+ Evalute   -> Evaluate
+ auxillary -> auxiliary
+Author: Bas Couwenberg <sebastic@debian.org>
+Forwarded: http://gmt.soest.hawaii.edu/issues/886
+
+--- a/src/gmt_api.c
++++ b/src/gmt_api.c
+@@ -3945,12 +3945,12 @@ int GMTAPI_Colors2CPT (struct GMTAPI_CTR
+ 	GMT_strtok (*str, ",", &pos, last);	/* Get first color entry */
+ 	strncpy (first, last, GMT_LEN64);	/* Make this the first color */
+ 	if (GMT_getrgb (API->GMT, first, rgb)) {
+-		GMT_Report (API, GMT_MSG_NORMAL, "Badly formated color entry: %s\n", first);
++		GMT_Report (API, GMT_MSG_NORMAL, "Badly formatted color entry: %s\n", first);
+ 		return (GMT_NOTSET);
+ 	}
+ 	while (GMT_strtok (*str, ",", &pos, last)) {	/* Get next color entry */
+ 		if (GMT_getrgb (API->GMT, last, rgb)) {
+-			GMT_Report (API, GMT_MSG_NORMAL, "Badly formated color entry: %s\n", last);
++			GMT_Report (API, GMT_MSG_NORMAL, "Badly formatted color entry: %s\n", last);
+ 			return (GMT_NOTSET);
+ 		}
+ 		fprintf (fp, "%g\t%s\t%g\t%s\n", z, first, z+1.0, last);
+--- a/src/gmtregress.c
++++ b/src/gmtregress.c
+@@ -330,7 +330,7 @@ int GMT_gmtregress_parse (struct GMT_CTR
+ }
+ 
+ double model (double x, double *par)
+-{	/* Evalute the model given the parameters in par */
++{	/* Evaluate the model given the parameters in par */
+ 	return (par[GMTREGRESS_SLOPE] * x + par[GMTREGRESS_ICEPT]);
+ }
+ 
+--- a/src/grd2sph.c.template
++++ b/src/grd2sph.c.template
+@@ -16,7 +16,7 @@
+  *	Contact info: gmt.soest.hawaii.edu
+  *--------------------------------------------------------------------*/
+ /*
+- * grd2sph evalutes a grid using a spherical harmonics model
++ * grd2sph evaluates a grid using a spherical harmonics model
+  *
+  * Author:	Paul Wessel
+  * Date:	10-FEB-2015
+--- a/src/postscriptlight.c
++++ b/src/postscriptlight.c
+@@ -1050,7 +1050,7 @@ void psl_computeBezierControlPoints (str
+ 		r[i] = r[i] - m*r[i-1];
+ 	}
+ 
+-	/* Evalute p1 */
++	/* Evaluate p1 */
+ 	p1[n-1] = r[n-1] / b[n-1];
+ 	for (i = n - 2; i >= 0; --i)
+ 		p1[i] = (r[i] - c[i] * p1[i+1]) / b[i];
+--- a/src/potential/grdseamount.c
++++ b/src/potential/grdseamount.c
+@@ -744,7 +744,7 @@ int GMT_grdseamount (void *V_API, int mo
+ 						phi_curr = phi_solver (in, f, v_curr, Ctrl->E.active);
+ 						phi_prev = phi_solver (in, f, v_prev, Ctrl->E.active);
+ 						h0 = (Ctrl->E.active) ? in[5] : in[3];
+-						switch (Ctrl->C.mode) {	/* Given the phi values, evalute the corresponding heights */
++						switch (Ctrl->C.mode) {	/* Given the phi values, evaluate the corresponding heights */
+ 							case SHAPE_CONE:  h_curr = h0 * (1 - phi_curr) / (1 - f); h_prev = h0 * (1 - phi_prev) / (1 - f); break;
+ 							case SHAPE_PARA:  h_curr = h0 * (1 - phi_curr * phi_curr) / (1 - f * f); h_prev = h0 * (1 - phi_prev * phi_prev) / (1 - f * f); break;
+ 							case SHAPE_GAUS:  h_curr = h0 * exp (4.5 * (f*f - phi_curr * phi_curr)); h_prev = h0 * exp (4.5 * (f*f - phi_prev * phi_prev)); break;
+@@ -787,7 +787,7 @@ int GMT_grdseamount (void *V_API, int mo
+ 						r = r_km;
+ 						if (map) r *= DEG_PR_KM;	/* Was in km so now it is in degrees, same units as grid coordinates */
+ 						f = -4.5 / (r_km * r_km);	/* So we can take exp (f * radius_in_km^2) */
+-						A = f * (e2 * ca2 + sa2);	/* Elliptical components A, B, C needed to evalute radius(az) */
++						A = f * (e2 * ca2 + sa2);	/* Elliptical components A, B, C needed to evaluate radius(az) */
+ 						B = -f * (sa * ca * (1.0 - e2));
+ 						C = f * (e2 * sa2 + ca2);
+ 						r_in = in[3];			/* Semi-major axis in user units (Cartesian or km)*/
+--- a/src/sph2grd.c
++++ b/src/sph2grd.c
+@@ -16,7 +16,7 @@
+  *	Contact info: gmt.soest.hawaii.edu
+  *--------------------------------------------------------------------*/
+ /*
+- * sph2grd evalutes a grid using a spherical harmonics model
++ * sph2grd evaluates a grid using a spherical harmonics model
+  *
+  * Author:	Paul Wessel
+  * Date:	1-JUN-2013
+--- a/src/spotter/grdpmodeler.c
++++ b/src/spotter/grdpmodeler.c
+@@ -369,7 +369,7 @@ int GMT_grdpmodeler (void *V_API, int mo
+ 		}
+ 		/* Just need on common set of x/y arrays; select G_mod[0] as our template */
+ 		G = G_mod[0];
+-		GMT_Report (API, GMT_MSG_VERBOSE, "Evalute %d model prediction grids based on %s\n", Ctrl->S.n_items, Ctrl->E.file);
++		GMT_Report (API, GMT_MSG_VERBOSE, "Evaluate %d model prediction grids based on %s\n", Ctrl->S.n_items, Ctrl->E.file);
+ 	}
+ 	else {	/* No output grids, must have input age grid to rely on */
+ 		G = G_age;
+@@ -383,7 +383,7 @@ int GMT_grdpmodeler (void *V_API, int mo
+ 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+ 			Return (API->error);
+ 		}
+-		GMT_Report (API, GMT_MSG_VERBOSE, "Evalute %d model predictions based on %s\n", Ctrl->S.n_items, Ctrl->E.file);
++		GMT_Report (API, GMT_MSG_VERBOSE, "Evaluate %d model predictions based on %s\n", Ctrl->S.n_items, Ctrl->E.file);
+ 	}
+ 	
+ 	grd_x  = GMT_memory (GMT, NULL, G->header->nx, double);
+--- a/src/mgd77/mgd77.c
++++ b/src/mgd77/mgd77.c
+@@ -2039,7 +2039,7 @@ static int MGD77_Read_Data_cdf (struct G
+ 		c  = F->order[col].set;			/* Determine set */
+ 		if (!(c == MGD77_M77_SET && F->use_corrections[c])) continue;	/* Do not apply any corrections for this set */
+ 		id = F->order[col].item;			/* Determine item */
+-		/* Need to determine which auxillary columns (e.g., lon, lat) are needed and if they are not part of the requested output columns
++		/* Need to determine which auxiliary columns (e.g., lon, lat) are needed and if they are not part of the requested output columns
+ 		 * then they need to be secured separately.  Once these are all obtained we can apply the corrections */
+ 		if (S->H.info[c].col[id].adjust) E.apply_corrections = true;	/* So we know if anything needs to be done in the next loop */
+ 		switch (S->H.info[c].col[id].adjust) {
+@@ -2094,7 +2094,7 @@ static int MGD77_Read_Data_cdf (struct G
+ 	if (E.apply_corrections) {	/* One or more of the depth, faa, and mag columns needs to be recomputed */
+ 		int nc_id[N_E77_AUX_FIELDS] = {NCPOS_TIME,NCPOS_LAT,NCPOS_LON,NCPOS_TWT,NCPOS_MTF1,NCPOS_GOBS,NCPOS_EOT};
+ 		char *abbrev[N_E77_AUX_FIELDS] = {"time","lat","lon","twt","mtf1","gobs","eot"};
+-		/* First make sure the auxillary data fields are set */
++		/* First make sure the auxiliary data fields are set */
+ 		for (i = 0; i < N_E77_AUX_FIELDS; i++) {
+ 			if (!E.needed[i]) continue;	/* Dont need this particular column */
+ 			if (E.got_it[nc_id[i]]) {	/* This aux is actually one of the output columns so we have already read it - just use a pointer */
+@@ -2109,7 +2109,7 @@ static int MGD77_Read_Data_cdf (struct G
+ 				E.needed[i] = 2;	/* So we know which aux columns to deallocate when done */
+ 			}
+ 		}
+-		/* Now E.aux[i] points to the correct array of values for each auxillary column that is needed */
++		/* Now E.aux[i] points to the correct array of values for each auxiliary column that is needed */
+ 
+ 		if (E.correction_requested[E77_CORR_FIELD_TWT]) {	/* Must correct twt for wraps */
+ 			bool has_prev_twt = false;
+--- a/src/mgd77/mgd77.h
++++ b/src/mgd77/mgd77.h
+@@ -303,7 +303,7 @@ struct MGD77_CM4 {	/* For use with cm4fi
+ 
+ /* We may want to output columns that themselves are not stored in the MGD77[+] files but
+  * rather are computed based on data that are stored in the file.  We consider such information
+- * as AUXILLARY columns and insert them between the observed columns when needed.  The following
++ * as AUXILIARY columns and insert them between the observed columns when needed.  The following
+  * structures are used to facilitate this process. */
+ 
+ #ifdef USE_CM4
+--- a/src/mgd77/mgd77list.c
++++ b/src/mgd77/mgd77list.c
+@@ -683,7 +683,7 @@ int separate_aux_columns (struct MGD77_C
+ 			k++;
+ 		}
+ 		else
+-		{	/* Found a request for an auxillary column  */
++		{	/* Found a request for an auxiliary column  */
+ 			aux[n_aux].type = auxlist[this_aux].type;
+ 			aux[n_aux].text = auxlist[this_aux].text;
+ 			aux[n_aux].pos = k;
+@@ -702,7 +702,7 @@ int augment_aux_columns (int n_items, ch
+ 	for (i = k = 0, n = n_aux; i < n_items; i++) {
+ 		for (j = 0, this_aux = MGD77_NOT_SET; j < N_MGD77_AUX && this_aux == MGD77_NOT_SET; j++)
+ 			if (!strcmp (auxlist[j].name, item_name[i])) this_aux = j;
+-		if (this_aux != MGD77_NOT_SET && !auxlist[this_aux].requested) {	/* Found a request for an auxillary column not yet requested  */
++		if (this_aux != MGD77_NOT_SET && !auxlist[this_aux].requested) {	/* Found a request for an auxiliary column not yet requested  */
+ 			aux[n].type = auxlist[this_aux].type;
+ 			aux[n].text = auxlist[this_aux].text;
+ 			aux[n].pos = k;
+@@ -842,9 +842,9 @@ int GMT_mgd77list (void *V_API, int mode
+ 	n_out_columns = M.n_out_columns;				/* This is the total number of columns in the final output */
+ 	if (MGD77_Get_Column (GMT, "depth", &M) == MGD77_NOT_SET) negative_depth = false;	/* Just so we don't accidently access dvalue[z_col] further down in the loop */
+ 	if (MGD77_Get_Column (GMT, "msd", &M) == MGD77_NOT_SET) negative_msd = false;	/* Just so we don't accidently access dvalue[m_col] further down in the loop */
+-	n_aux = separate_aux_columns (&M, fx_setting, aux, auxlist);				/* Determine which auxillary columns are requested (if any) */
++	n_aux = separate_aux_columns (&M, fx_setting, aux, auxlist);				/* Determine which auxiliary columns are requested (if any) */
+ 	if (Ctrl->L.active) {
+-		n_aux = augment_aux_columns ((int)n_items, item_names, aux, auxlist, (int)n_aux);	/* Determine which auxillary columns are needed by -L */
++		n_aux = augment_aux_columns ((int)n_items, item_names, aux, auxlist, (int)n_aux);	/* Determine which auxiliary columns are needed by -L */
+ 		for (kk = 0; kk < n_items; kk++) GMT_free (GMT, item_names[kk]);
+ 		if (n_items) GMT_free (GMT, item_names);
+ 		MGD77_Free_Table (GMT, n_items, item_names);
+@@ -853,9 +853,9 @@ int GMT_mgd77list (void *V_API, int mode
+ 	aux_tvalue[MGD77_AUX_DA] = GMT_memory (GMT, NULL, GMT_LEN64, char);	/* Just in case */
+ 	use = (M.original) ? MGD77_ORIG : MGD77_REVISED;
+ 	
+-	/* Most auxillary columns depend on values in the data columns.  If the user did not specify the
++	/* Most auxiliary columns depend on values in the data columns.  If the user did not specify the
+ 	   required data columns then we must append them to make sure we have access to the values we need
+-	   to calculate the auxillary values. Also, so limit tests on data records (e.g., distances, region,
++	   to calculate the auxiliary values. Also, so limit tests on data records (e.g., distances, region,
+ 	   or time) also implies the need for certain data columns such as time, lon, and lat.
+ 	 */
+ 	 
+@@ -867,7 +867,7 @@ int GMT_mgd77list (void *V_API, int mode
+ 	need_lonlat = (auxlist[MGD77_AUX_MG].requested || auxlist[MGD77_AUX_GR].requested || auxlist[MGD77_AUX_CT].requested || Ctrl->A.code[ADJ_MG] > 1 || Ctrl->A.code[ADJ_DP] & 4 || Ctrl->A.code[ADJ_CT] >= 2 || Ctrl->A.code[ADJ_GR] > 1 || Ctrl->A.fake_times || Ctrl->A.cable_adjust);	/* Need lon, lat to calculate reference fields or Carter correction */
+ 	need_time = (auxlist[MGD77_AUX_YR].requested || auxlist[MGD77_AUX_MO].requested || auxlist[MGD77_AUX_DY].requested || auxlist[MGD77_AUX_HR].requested || auxlist[MGD77_AUX_MI].requested || auxlist[MGD77_AUX_SC].requested \
+ 		|| auxlist[MGD77_AUX_DM].requested || auxlist[MGD77_AUX_HM].requested || auxlist[MGD77_AUX_DA].requested || auxlist[MGD77_AUX_MG].requested || Ctrl->A.code[ADJ_MG] > 1);
+-	n_sub = 0;	/* This value will hold the number of columns that we will NOT printout (they are only needed to calculate auxillary values) */
++	n_sub = 0;	/* This value will hold the number of columns that we will NOT printout (they are only needed to calculate auxiliary values) */
+ 	if (need_distances || need_lonlat) {	/* Must make sure we get lon,lat if they are not already requested */
+ 		 if (MGD77_Get_Column (GMT, "lat", &M) == MGD77_NOT_SET) strcat (fx_setting, ",lat"), n_sub++;	/* Append lat to requested list */
+ 		 if (MGD77_Get_Column (GMT, "lon", &M) == MGD77_NOT_SET) strcat (fx_setting, ",lon"), n_sub++;	/* Append lon to requested list */
+@@ -896,7 +896,7 @@ int GMT_mgd77list (void *V_API, int mode
+ 	else if (Ctrl->A.cable_adjust)
+ 		 if (MGD77_Get_Column (GMT, "mtf1", &M) == MGD77_NOT_SET) strcat (fx_setting, ",mtf1"), n_sub++;	/* Must append mtf1 to requested list */
+ 
+-	/* If logical tests are specified we must make sure the required columns are included as auxillary */
++	/* If logical tests are specified we must make sure the required columns are included as auxiliary */
+ 	for (kk = 0; kk < M.n_constraints; kk++) {
+ 		if (MGD77_Get_Column (GMT, M.Constraint[kk].name, &M) != MGD77_NOT_SET) continue;	/* OK, already included */
+ 		strcat (fx_setting, ",");
+@@ -1028,7 +1028,7 @@ int GMT_mgd77list (void *V_API, int mode
+ 			first_warning = false;
+ 		}
+ 		for (kk = kx = pos = 0; pos < n_out_columns; kk++, pos++) {	/* Prepare GMT output formatting machinery */
+-			while (kx < n_aux && aux[kx].pos == kk) {	/* Insert formatting for auxillary column (none are special) */
++			while (kx < n_aux && aux[kx].pos == kk) {	/* Insert formatting for auxiliary column (none are special) */
+ 				GMT->current.io.col_type[GMT_OUT][pos] = GMT_IS_FLOAT;
+ 				pos++, kx++;
+ 			}
+@@ -1049,7 +1049,7 @@ int GMT_mgd77list (void *V_API, int mode
+ 		if (first_cruise && !GMT->common.b.active[GMT_OUT] && GMT->current.setting.io_header[GMT_OUT]) {	/* Write out header record */
+ 			fprintf (GMT->session.std[GMT_OUT], "# ");
+ 			for (kk = kx = pos = 0; pos < n_out_columns; kk++, pos++) {
+-				while (kx < n_aux && aux[kx].pos == kk) {	/* Insert auxillary column */
++				while (kx < n_aux && aux[kx].pos == kk) {	/* Insert auxiliary column */
+ 					fprintf (GMT->session.std[GMT_OUT], "%s", auxlist[aux[kx].type].header);
+ 					if ((pos+1) < n_out_columns) fprintf (GMT->session.std[GMT_OUT], "%s", GMT->current.setting.io_col_separator);
+ 					pos++, kx++;
+@@ -1228,7 +1228,7 @@ int GMT_mgd77list (void *V_API, int mode
+ 
+ 			/* This record will now be printed out */
+ 		
+-			if (need_time) {	/* Need auxillary time columns such as year, days etc, hence we get the calendar first, then use MGD77_cal_to_fyear */
++			if (need_time) {	/* Need auxiliary time columns such as year, days etc, hence we get the calendar first, then use MGD77_cal_to_fyear */
+ 				MGD77_gcal_from_dt (GMT, &M, dvalue[t_col][rec], &cal);	/* No adjust for TZ; this is GMT UTC time */
+ 				aux_dvalue[MGD77_AUX_YR] = (double)cal.year;
+ 				aux_dvalue[MGD77_AUX_MO] = (double)cal.month;
+@@ -1442,7 +1442,7 @@ int GMT_mgd77list (void *V_API, int mode
+ 			
+ 			if (string_output) {	/* Must do it col by col and deal with the requested string(s) */
+ 				for (kk = kx = pos = 0; pos < n_out_columns; kk++, pos++) {
+-					while (kx < n_aux && aux[kx].pos == kk) {	/* Insert auxillary column */
++					while (kx < n_aux && aux[kx].pos == kk) {	/* Insert auxiliary column */
+ 						if (aux[kx].text)
+ 							fprintf (GMT->session.std[GMT_OUT], "%s", aux_tvalue[aux[kx].type]);
+ 						else
+@@ -1478,7 +1478,7 @@ int GMT_mgd77list (void *V_API, int mode
+ 			}
+ 			else {	/* Use GMT output machinery which can handle binary output, if requested */
+ 				for (kk = kx = pos = 0; pos < n_out_columns; kk++, pos++) {
+-					while (kx < n_aux && aux[kx].pos == kk) {	/* Insert auxillary column */
++					while (kx < n_aux && aux[kx].pos == kk) {	/* Insert auxiliary column */
+ 						out[pos] = aux_dvalue[aux[kx].type];
+ 						pos++, kx++;
+ 					}
+--- a/src/x2sys/x2sys.c
++++ b/src/x2sys/x2sys.c
+@@ -1901,7 +1901,7 @@ unsigned int separate_aux_columns2 (stru
+ 	/* Based on what item_name contains, we copy over info on the 3 aux fields (dist, azim, vel) from auxlist to aux */
+ 	for (i = k = n_aux = 0; i < n_items; i++) {
+ 		for (j = 0, this_aux = MGD77_NOT_SET; j < N_GENERIC_AUX && this_aux == MGD77_NOT_SET; j++) if (!strcmp (auxlist[j].name, item_name[i])) this_aux = j;
+-		if (this_aux != MGD77_NOT_SET) {	/* Found a request for an auxillary column  */
++		if (this_aux != MGD77_NOT_SET) {	/* Found a request for an auxiliary column  */
+ 			aux[n_aux].type = auxlist[this_aux].type;
+ 			aux[n_aux].text = auxlist[this_aux].text;
+ 			aux[n_aux].pos = k;
+@@ -1914,7 +1914,7 @@ unsigned int separate_aux_columns2 (stru
+ 
+ void x2sys_get_corrtable (struct GMT_CTRL *GMT, struct X2SYS_INFO *S, char *ctable, uint64_t ntracks, char **trk_name, char *column, struct MGD77_AUX_INFO *aux, struct MGD77_AUXLIST *auxlist, struct MGD77_CORRTABLE ***CORR)
+ {	/* Load an ephemeral correction table */
+-	/* Pass aux as NULL if the auxillary columns do not matter (only used by x2sys_datalist) */
++	/* Pass aux as NULL if the auxiliary columns do not matter (only used by x2sys_datalist) */
+ 	unsigned int i, n_items, n_aux = 0, n_cols, missing;
+ 	int ks;
+ 	char path[GMT_BUFSIZ] = {""}, **item_names = NULL, **col_name = NULL, **aux_name = NULL;
+@@ -1944,14 +1944,14 @@ void x2sys_get_corrtable (struct GMT_CTR
+ 		for (i = 0; i < n_cols; i++) col_name[i] = strdup (S->info[S->out_order[i]].name);
+ 	}
+ 	n_items = MGD77_Scan_Corrtable (GMT, ctable, trk_name, (unsigned int)ntracks, n_cols, col_name, &item_names, 0);
+-	if (aux && (n_aux = separate_aux_columns2 (GMT, n_items, item_names, aux, auxlist)) != 0) {	/* Determine which auxillary columns are requested (if any) */
++	if (aux && (n_aux = separate_aux_columns2 (GMT, n_items, item_names, aux, auxlist)) != 0) {	/* Determine which auxiliary columns are requested (if any) */
+ 		aux_name = GMT_memory (GMT, NULL, n_aux, char *);
+ 		for (i = 0; i < n_aux; i++) aux_name[i] = strdup (auxlist[aux[i].type].name);
+ 	}
+ 	for (i = missing = 0; i < n_items; i++) {
+ 		if (MGD77_Match_List (GMT, item_names[i], n_cols, col_name) == MGD77_NOT_SET) {	/* Requested column not among data cols */
+ 			if ((ks = MGD77_Match_List (GMT, item_names[i], n_aux, aux_name)) == MGD77_NOT_SET) {
+-				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "X2SYS Correction table (%s) requires a column (%s) not present in COE database or auxillary columns\n", ctable, item_names[i]);
++				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "X2SYS Correction table (%s) requires a column (%s) not present in COE database or auxiliary columns\n", ctable, item_names[i]);
+ 				missing++;
+ 			}
+ 			else
