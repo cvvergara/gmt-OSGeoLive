@@ -1,3 +1,0 @@
-# False positive, libgmt-dev is not marked as Multi-Arch
-libgmt-dev: old-style-config-script-multiarch-path usr/bin/gmt-config * 
-

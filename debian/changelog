@@ -3,6 +3,7 @@ gmt (5.2.1+dfsg-5) UNRELEASED; urgency=medium
   * Bump Standards-Version to 3.9.8, no changes.
   * Enable all hardening buildflags.
   * Add patch for spelling errors.
+  * Drop obsolete lintian override for old-style-config-script-multiarch-path.
 
  -- Bas Couwenberg <sebastic@debian.org>  Fri, 15 Apr 2016 18:37:53 +0200
 
