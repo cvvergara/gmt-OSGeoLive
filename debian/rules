@@ -1,5 +1,8 @@
 #! /usr/bin/make -f
 
+# Enable hardening build flags
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
 CFLAGS += $(CPPFLAGS)
 
 ifneq (,$(findstring verbose,$(DEB_BUILD_OPTIONS)))
