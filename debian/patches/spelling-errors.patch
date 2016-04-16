@@ -4,6 +4,7 @@ Description: Fix spelling errors.
  auxillary -> auxiliary
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: http://gmt.soest.hawaii.edu/issues/886
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/16240
 
 --- a/src/gmt_api.c
 +++ b/src/gmt_api.c
