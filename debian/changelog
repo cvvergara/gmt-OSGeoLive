@@ -1,11 +1,11 @@
-gmt (5.2.1+dfsg-5) UNRELEASED; urgency=medium
+gmt (5.2.1+dfsg-5) unstable; urgency=medium
 
   * Bump Standards-Version to 3.9.8, no changes.
   * Enable all hardening buildflags.
   * Add patch for spelling errors.
   * Drop obsolete lintian override for old-style-config-script-multiarch-path.
 
- -- Bas Couwenberg <sebastic@debian.org>  Fri, 15 Apr 2016 18:37:53 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Thu, 05 May 2016 12:11:06 +0200
 
 gmt (5.2.1+dfsg-4) unstable; urgency=medium
 
