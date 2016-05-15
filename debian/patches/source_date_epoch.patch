@@ -1,6 +1,7 @@
 Description: Use SOURCE_DATE_EPOCH instead of current date.
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: http://gmt.soest.hawaii.edu/issues/905
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/16437
 
 --- a/cmake/modules/ConfigCMake.cmake
 +++ b/cmake/modules/ConfigCMake.cmake
