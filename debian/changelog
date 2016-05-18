@@ -1,6 +1,7 @@
 gmt (5.2.1+dfsg-6) UNRELEASED; urgency=medium
 
   * Add patch to use SOURCE_DATE_EPOCH instead of current date.
+    (closes: #824668)
 
  -- Bas Couwenberg <sebastic@debian.org>  Sun, 15 May 2016 18:04:37 +0200
 
