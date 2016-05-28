@@ -1,9 +1,9 @@
-gmt (5.2.1+dfsg-6) UNRELEASED; urgency=medium
+gmt (5.2.1+dfsg-6) unstable; urgency=medium
 
   * Add patch to use SOURCE_DATE_EPOCH instead of current date.
     (closes: #824668)
 
- -- Bas Couwenberg <sebastic@debian.org>  Sun, 15 May 2016 18:04:37 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 28 May 2016 12:39:02 +0200
 
 gmt (5.2.1+dfsg-5) unstable; urgency=medium
 
