@@ -9,3 +9,4 @@ written-typo.patch
 sparc-sighandler.patch
 spelling-errors.patch
 source_date_epoch.patch
+glibc-2.23-ftbfs.patch
