@@ -27,7 +27,7 @@ Build-Depends: debhelper (>= 9),
 Standards-Version: 3.9.8
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-grass/gmt.git
 Vcs-Git: https://anonscm.debian.org/git/pkg-grass/gmt.git
-Homepage: http://gmt.soest.hawaii.edu/projects/gmt
+Homepage: http://gmt.soest.hawaii.edu/
 
 Package: gmt
 Architecture: any
