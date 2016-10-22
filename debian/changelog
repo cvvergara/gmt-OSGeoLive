@@ -1,4 +1,4 @@
-gmt (5.3.1+dfsg-1) UNRELEASED; urgency=medium
+gmt (5.3.1+dfsg-1) unstable; urgency=medium
 
   * New upstream release.
   * Update Homepage URL to not include 'projects/gmt' path.
@@ -11,7 +11,7 @@ gmt (5.3.1+dfsg-1) UNRELEASED; urgency=medium
   * Update symbols for version 5.3.1.
   * Add patch to fix spelling errors.
 
- -- Bas Couwenberg <sebastic@debian.org>  Sat, 22 Oct 2016 10:16:26 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 22 Oct 2016 13:03:41 +0200
 
 gmt (5.2.1+dfsg-7) unstable; urgency=medium
 
