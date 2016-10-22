@@ -1,16 +1,16 @@
 #!/bin/bash
-#	$Id: GMT_color_interpolate.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#	$Id: GMT_color_interpolate.sh 16573 2016-06-19 02:42:45Z pwessel $
 #
 ps=GMT_color_interpolate.ps
 gmt psbasemap -Jx1i -R0/6.8/0/2.0 -B0 -K > $ps
 
 # Plot polar color map in the left; right (top) and wrong (bottom)
-gmt makecpt -Cpolar -T-1/1/1 -Z > tmp.cpt
+gmt makecpt -Cpolar -T-1/1 > tmp.cpt
 gmt psscale -D1.7/1.6+w3i/0.3i+h+jTC -Ctmp.cpt -B0.5f0.1 -O -K >> $ps
 gmt psscale -D1.7/0.7+w3i/0.3i+h+jTC -Ctmp.cpt -B0.5f0.1 -O -K --COLOR_MODEL=hsv >> $ps
 
 # Plot rainbow color map in the left; right (top) and wrong (bottom)
-gmt makecpt -Crainbow -T-1/1/2 -Z > tmp.cpt
+gmt makecpt -Crainbow -T-1/1 > tmp.cpt
 gmt psscale -D5.1/1.6+w3i/0.3i+h+jTC -Ctmp.cpt -B0.5f0.1 -O -K >> $ps
 gmt psscale -D5.1/0.7+w3i/0.3i+h+jTC -Ctmp.cpt -B0.5f0.1 -O -K --COLOR_MODEL=rgb >> $ps
 

@@ -1,6 +1,6 @@
 /* $Id$
  *
- * Copyright (c) 2012-2015
+ * Copyright (c) 2012-2016
  * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
@@ -29,6 +29,7 @@ EXTERN_MSC int GMT_img2grd (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pscoupe (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psmeca (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pspolar (void *API, int mode, void *args);
+EXTERN_MSC int GMT_pssac (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psvelo (void *API, int mode, void *args);
 EXTERN_MSC int GMT_mgd77convert (void *API, int mode, void *args);
 EXTERN_MSC int GMT_mgd77info (void *API, int mode, void *args);
@@ -41,6 +42,7 @@ EXTERN_MSC int GMT_mgd77track (void *API, int mode, void *args);
 EXTERN_MSC int GMT_dimfilter (void *API, int mode, void *args);
 EXTERN_MSC int GMT_gmtflexure (void *API, int mode, void *args);
 EXTERN_MSC int GMT_gmtgravmag3d (void *API, int mode, void *args);
+EXTERN_MSC int GMT_gpsgridder (void *API, int mode, void *args);
 EXTERN_MSC int GMT_gravfft (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdflexure (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdgravmag3d (void *API, int mode, void *args);
@@ -52,12 +54,14 @@ EXTERN_MSC int GMT_pssegyz (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pssegy (void *API, int mode, void *args);
 EXTERN_MSC int GMT_segy2grd (void *API, int mode, void *args);
 EXTERN_MSC int GMT_backtracker (void *API, int mode, void *args);
+EXTERN_MSC int GMT_gmtpmodeler (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdpmodeler (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdrotater (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdspotter (void *API, int mode, void *args);
 EXTERN_MSC int GMT_hotspotter (void *API, int mode, void *args);
 EXTERN_MSC int GMT_originator (void *API, int mode, void *args);
 EXTERN_MSC int GMT_rotconverter (void *API, int mode, void *args);
+EXTERN_MSC int GMT_rotsmoother (void *API, int mode, void *args);
 EXTERN_MSC int GMT_x2sys_binlist (void *API, int mode, void *args);
 EXTERN_MSC int GMT_x2sys_cross (void *API, int mode, void *args);
 EXTERN_MSC int GMT_x2sys_datalist (void *API, int mode, void *args);
@@ -71,9 +75,9 @@ EXTERN_MSC int GMT_x2sys_solve (void *API, int mode, void *args);
 
 /* Pretty print all modules in the GMT supplements library and their purposes */
 EXTERN_MSC void gmt_supplements_module_show_all (void *API);
+/* List all modules in the GMT supplements library to stdout */
 EXTERN_MSC void gmt_supplements_module_list_all (void *API);
-
-/* Undocumented API function for developers to get information about a module */
+/* Function called by GMT_Encode_Options so developers can get information about a module */
 EXTERN_MSC const char * gmt_supplements_module_info (void *API, char *candidate);
 
 #ifdef __cplusplus

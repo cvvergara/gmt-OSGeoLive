@@ -6,21 +6,22 @@ grdfft
 
 .. only:: not man
 
-    grdfft - Do mathematical operations on grids in the wavenumber (or frequency) domain
+    grdfft - Mathematical operations on grids in the wavenumber (or frequency) domain
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**grdfft** *ingrid* [ *ingrid2* ] |-G|\ *outfile*
+**grdfft** *ingrid* [ *ingrid2* ]
+[ |-G|\ *outfile*\ \|\ *table* ]
 [ |-A|\ *azimuth* ]
 [ |-C|\ *zlevel* ]
 [ |-D|\ [*scale*\ \|\ **g**] ]
-[ |-E|\ [**r**\ \|\ **x**\ \|\ **y**][\ **w**\ [**k**]] ]
+[ |-E|\ [**r**\ \|\ **x**\ \|\ **y**][\ **w**\ [**k**]][**n**] ]
 [ |-F|\ [**r**\ \|\ **x**\ \|\ **y**]\ *params* ]
 [ |-I|\ [*scale*\ \|\ **g**] ]
-[ |-N|\ [**f**\ \|\ **q**\ \|\ **s**\ \|\ *nx/ny*][\ **+a**\ \|\ **d**\ \|\ **h**\ \|\ **l**][\ **+e**\ \|\ **n**\ \|\ **m**][\ **+t**\ *width*][\ **+w**\ [*suffix*]][\ **+z**\ [**p**]] ]
+[ |-N|\ *params* ]
 [ |-S|\ *scale* ]
 [ |SYN_OPT-V| ]
 [ **-fg** ]
@@ -77,7 +78,7 @@ Optional Arguments
 
 .. _-E:
 
-**-E**\ [**r**\ \|\ **x**\ \|\ **y**][\ **w**\ [**k**]]
+**-E**\ [**r**\ \|\ **x**\ \|\ **y**][\ **w**\ [**k**]][**n**]
     Estimate power spectrum in the radial direction [**r**\ ]. Place
     **x** or **y** immediately after **-E** to compute the spectrum in
     the x or y direction instead. No grid file is created. If one grid
@@ -89,7 +90,9 @@ Optional Arguments
     its own 1-std dev error estimate, hence the output is 17 columns wide.
     Append **w** to write wavelength instead of frequency. If your grid
     is geographic you may further append **k** to scale wavelengths from
-    meter [Default] to km.
+    meter [Default] to km.  Finally, the spectrum is obtained by summing
+    over several frequencies.  Append **n** to normalize so that the
+    mean spectral values per frequency are reported instead.
 
 .. _-F:
 
@@ -122,12 +125,20 @@ Optional Arguments
     Butterworth band-pass:
         Append *lo*/*hi*/*order*,
         the two wavelengths in correct units (see **-fg**) and the filter
-        order (an integer) to design a bandpass filter. At the given
-        wavelengths the Butterworth filter weights will be 0.5. To make a
+        order (an integer) to design a bandpass filter. At the given cut-off
+        wavelengths the Butterworth filter weights will be 0.707 (i.e., the
+	power spectrum will therefore be reduced by 0.5). To make a
         highpass or lowpass filter, give a hyphen (-) for the *hi* or *lo*
         wavelength, respectively. E.g., **-F**-/30/2 will lowpass the data
         using a 2nd-order Butterworth filter, with half-weight at 30, while
         **-F**\ 400/-/2 will highpass the data.
+
+.. _-G:
+
+**-G**\ *outfile*\ \|\ *table*
+    Filename for output netCDF grid file OR 1-D data table (see **-E**).
+    This is optional for -E (spectrum written to stdout) but mandatory for
+    all other options that require a grid output.
 
 .. _-I:
 
@@ -158,7 +169,7 @@ Optional Arguments
 
 .. include:: explain_help.rst_
 
-.. include:: explain_grd_inout.rst_
+.. include:: explain_grd_inout_short.rst_
 
 Grid Distance Units
 -------------------
@@ -174,6 +185,19 @@ other grids geographical grids were you want to convert degrees into
 meters, select **-fg**. If the data are close to either pole, you should
 consider projecting the grid file onto a rectangular coordinate system
 using :doc:`grdproject`
+
+Normalization of Spectrum
+-------------------------
+
+By default, the power spectrum returned by **-E** simply sums the contributions
+from frequencies that are part of the output frequency.  For *x*- or *y*-spectra
+this means summing the power across the other frequency dimension, while for the
+radial spectrum it means summing up power within each annulus of width *delta_q*,
+the radial frequency (*q*) spacing.  A consequence of this summing is that the radial
+spectrum of a white noise process will give a linear radial power spectrum that
+is proportional to *q*.  Appending **n** will instead compute the mean power
+per output frequency and in this case the white noise process will have a
+white radial spectrum as well.
 
 Examples
 --------

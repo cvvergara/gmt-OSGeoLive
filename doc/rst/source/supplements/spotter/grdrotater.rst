@@ -13,7 +13,7 @@ Synopsis
 
 .. include:: ../../common_SYN_OPTs.rst_
 
-**grdrotate** *ingrdfile* |-E|\ *rot_file*\|\ *lon*/*lat*/*angle*
+**grdrotater** *ingrdfile* |-E|\ *rot_file*\|\ *lon*/*lat*/*angle*
 |-G|\ *outgrdfile*
 [ |-D|\ *rotoutline* ]
 [ |-F|\ *polygonfile* ]
@@ -25,7 +25,6 @@ Synopsis
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
 [ |SYN_OPT-h| ]
-[ |SYN_OPT-i| ]
 [ |SYN_OPT-n| ]
 [ |SYN_OPT-:| ]
 
@@ -150,7 +149,6 @@ Optional Arguments
 .. include:: ../../explain_-h.rst_
 
 .. include:: ../../explain_colon.rst_
-.. include:: ../../explain_-icols.rst_
 .. include:: ../../explain_-n.rst_
 .. include:: ../../explain_help.rst_
 .. include:: ../../explain_grdresample2.rst_
@@ -215,6 +213,8 @@ See Also
 --------
 
 :doc:`backtracker`,
+:doc:`gmtpmodeler`,
+:doc:`grdpmodeler`,
 :doc:`grdspotter`,
 :doc:`hotspotter`,
 :doc:`originator`,

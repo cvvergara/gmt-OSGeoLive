@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_list.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: x2sys_list.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *      Copyright (c) 1999-2015 by P. Wessel
+ *      Copyright (c) 1999-2016 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 #define THIS_MODULE_NAME	"x2sys_list"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Extract subset from crossover data base"
-#define THIS_MODULE_KEYS	"LTi,ITi,>DO,RG-"
+#define THIS_MODULE_KEYS	">D}"
 
 #include "x2sys.h"
 
@@ -88,10 +88,10 @@ struct X2SYS_LIST_CTRL {
 	} W;
 };
 
-void *New_x2sys_list_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct X2SYS_LIST_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct X2SYS_LIST_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct X2SYS_LIST_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 
@@ -99,26 +99,26 @@ void *New_x2sys_list_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a 
 	return (C);
 }
 
-void Free_x2sys_list_Ctrl (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->In.file) free (C->In.file);
-	if (C->C.col) free (C->C.col);
-	if (C->F.flags) free (C->F.flags);
-	if (C->I.file) free (C->I.file);
-	if (C->L.file) free (C->L.file);
-	if (C->S.file) free (C->S.file);
-	if (C->T.TAG) free (C->T.TAG);
-	if (C->W.file) free (C->W.file);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->In.file);
+	gmt_M_str_free (C->C.col);
+	gmt_M_str_free (C->F.flags);
+	gmt_M_str_free (C->I.file);
+	gmt_M_str_free (C->L.file);
+	gmt_M_str_free (C->S.file);
+	gmt_M_str_free (C->T.TAG);
+	gmt_M_str_free (C->W.file);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_x2sys_list_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: x2sys_list -C<column> -T<TAG> [<COEdbase>] [-A<asymm_max] [-E] [-F<flags>] [-I<ignorelist>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-L[<corrtable.txt>]] [-N<nx_min>] [-Qe|i] [-S[+]<track>]\n\t[%s] [%s] [-W<weight>] [%s] [%s] [-m]\n\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_bo_OPT, GMT_do_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-L[<corrtable.txt>]] [-N<nx_min>] [-Qe|i] [-S[+]<track>]\n\t[%s] [%s] [-W<weight>] [%s] [%s]\n\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_bo_OPT, GMT_do_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t-C <column> is the name of the data column whose crossovers we want.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T <TAG> is the system tag for the data set.\n");
@@ -159,10 +159,10 @@ int GMT_x2sys_list_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   relative weights; otherwise the argument is the constant weight for all tracks [1].\n");
 	GMT_Option (API, "bo,do,.");
 	
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_x2sys_list_parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, struct GMT_OPTION *options) {
 
 	/* This parses the options provided to grdcut and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
@@ -170,7 +170,7 @@ int GMT_x2sys_list_parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, st
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0, i, n_files = 0;
+	unsigned int n_errors = 0, i, n_files[2] = {0, 0};
 	bool mixed = false;
 	struct GMT_OPTION *opt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
@@ -181,7 +181,11 @@ int GMT_x2sys_list_parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, st
 			/* Common parameters */
 
 			case '<':	/* Skip input files */
-				if (n_files++ == 0) Ctrl->In.file = strdup (opt->arg);
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				else if (n_files[GMT_IN]++ == 0) Ctrl->In.file = strdup (opt->arg);
+				break;
+			case '>':	/* Got named output file */
+				n_files[GMT_OUT]++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -202,7 +206,7 @@ int GMT_x2sys_list_parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, st
 				Ctrl->F.flags = strdup (opt->arg);
 				break;
 			case 'I':
-				if ((Ctrl->I.active = GMT_check_filearg (GMT, 'I', opt->arg, GMT_IN, GMT_IS_TEXTSET)) != 0)
+				if ((Ctrl->I.active = gmt_check_filearg (GMT, 'I', opt->arg, GMT_IN, GMT_IS_TEXTSET)) != 0)
 					Ctrl->I.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -210,7 +214,7 @@ int GMT_x2sys_list_parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, st
 			case 'L':	/* Crossover correction table */
 				Ctrl->L.active = true;
 				if (opt->arg[0]) {
-					if (GMT_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_TEXTSET))
+					if (gmt_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_TEXTSET))
 						Ctrl->L.file = strdup (opt->arg);
 					else
 						n_errors++;
@@ -235,7 +239,7 @@ int GMT_x2sys_list_parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, st
 				else if (opt->arg[0])
 					Ctrl->S.file = strdup (opt->arg);
 				else {
-					GMT_Report (API, GMT_MSG_NORMAL, "ERROR -S: Must supply a track name.\n");
+					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -S: Must supply a track name.\n");
 					n_errors++;
 				}
 				break;
@@ -248,32 +252,33 @@ int GMT_x2sys_list_parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, st
 				Ctrl->W.file = strdup (opt->arg);
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, n_files > 1, "Syntax error: Only one COEdatabase can be given (or stdin)\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->T.active || !Ctrl->T.TAG, "Syntax error: -T must be used to set the TAG\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->Q.mode == 3, "Syntax error: Only one of -Qe -Qi can be specified!\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->A.active && (Ctrl->A.value <= 0.0 || Ctrl->A.value > 1.0), "Syntax error option -A: Asymmetry must be in the range 0-1\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->E.active && GMT->common.b.active[GMT_OUT], "Syntax error: Cannot use -E with binary output.\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->F.flags, "Syntax error: Must use -F to specify output items.\n");
+	n_errors += gmt_M_check_condition (GMT, n_files[GMT_IN] > 1, "Syntax error: Only one COEdatabase can be given (or stdin)\n");
+	n_errors += gmt_M_check_condition (GMT, n_files[GMT_OUT] > 1, "Syntax error: More than one output file given\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->T.active || !Ctrl->T.TAG, "Syntax error: -T must be used to set the TAG\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->Q.mode == 3, "Syntax error: Only one of -Qe -Qi can be specified!\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && (Ctrl->A.value <= 0.0 || Ctrl->A.value > 1.0), "Syntax error option -A: Asymmetry must be in the range 0-1\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->E.active && GMT->common.b.active[GMT_OUT], "Syntax error: Cannot use -E with binary output.\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->F.flags, "Syntax error: Must use -F to specify output items.\n");
 	for (i = 0; Ctrl->F.flags && i < strlen (Ctrl->F.flags); i++) {
 		if (!strchr (LETTERS, (int)Ctrl->F.flags[i])) {
-			GMT_Report (API, GMT_MSG_NORMAL, "ERROR -F: Unknown item %c.\n", Ctrl->F.flags[i]);
+			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -F: Unknown item %c.\n", Ctrl->F.flags[i]);
 			n_errors++;			
 		}
 		if (Ctrl->F.flags[i] == 'n') mixed = true;		/* Both numbers and text - cannot use binary output */
 	}
 	/* GMT->parent->mode means we are calling from mex or Python and dont want to get textsets back */
-	n_errors += GMT_check_condition (GMT, (mixed || GMT->parent->mode) && GMT->common.b.active[GMT_OUT], "Syntax error: Cannot use -Fn with binary output\n");
+	n_errors += gmt_M_check_condition (GMT, (mixed || GMT->parent->mode) && GMT->common.b.active[GMT_OUT], "Syntax error: Cannot use -Fn with binary output\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-void dump_ascii_cols (struct GMT_CTRL *GMT, double *val, int col, int n, bool first, char *record)
-{	/* Short-hand to dump n = 1 or 2 numerical values in chosen format.
+GMT_LOCAL void dump_ascii_cols (struct GMT_CTRL *GMT, double *val, int col, int n, bool first, char *record) {
+	/* Short-hand to dump n = 1 or 2 numerical values in chosen format.
 	 * col is used to set the format, and first is true for first item per record.
 	 */
 	int i;
@@ -281,17 +286,16 @@ void dump_ascii_cols (struct GMT_CTRL *GMT, double *val, int col, int n, bool fi
 	if (first) record[0] = 0;
 	for (i = 0; i < n; i++) {
 		if (!first) strcat (record, GMT->current.setting.io_col_separator);
-		GMT_ascii_format_col (GMT, text, val[i], GMT_OUT, col);
+		gmt_ascii_format_col (GMT, text, val[i], GMT_OUT, col);
 		strcat (record, text);
 		first = false;
 	}
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_x2sys_list_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_x2sys_list (void *V_API, int mode, void *args)
-{
+int GMT_x2sys_list (void *V_API, int mode, void *args) {
 	char **trk_name = NULL, **weight_name = NULL, *tofrom[2] = {"stdin", "stdout"}, *from = NULL;
 	char record[GMT_BUFSIZ] = {""};
 	struct X2SYS_INFO *s = NULL;
@@ -310,23 +314,23 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 	struct X2SYS_LIST_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_x2sys_list_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_x2sys_list_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_x2sys_list_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_x2sys_list_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_x2sys_list_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
  	/*---------------------------- This is the x2sys_list main code ----------------------------*/
 
@@ -350,7 +354,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 	if (Ctrl->C.col) x2sys_err_fail (GMT, x2sys_pick_fields (GMT, Ctrl->C.col, s), "-C");
 	if (s->n_out_columns != 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: -C must specify a single column name\n");
-		Return (EXIT_FAILURE);
+		Return (GMT_RUNTIME_ERROR);
 	}
 	
 	/* Select internal, external, or both */
@@ -370,7 +374,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 
 	if (np == 0 && nx == 0) {	/* End here since nothing was allocated */
 		x2sys_end (GMT, s);
-		Return (GMT_OK);
+		Return (GMT_NOERROR);
 	}
 	
 	if (Ctrl->W.file) {	/* Got file with weights for each track, OR a fixed weight [1] */
@@ -379,8 +383,8 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 	
 	/* Must count to see total number of COE per track */
 	
-	trk_nx = GMT_memory (GMT, NULL, n_tracks, uint64_t);
-	trk_name = GMT_memory (GMT, NULL, n_tracks, char *);
+	trk_nx = gmt_M_memory (GMT, NULL, n_tracks, uint64_t);
+	trk_name = gmt_M_memory (GMT, NULL, n_tracks, char *);
 	for (p = 0; p < np; p++) {	/* For each pair of tracks that generated crossovers */
 		for (k = 0; k < 2; k++) {
 			trk_nx[P[p].id[k]] += P[p].nx;
@@ -465,18 +469,18 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 	if (Ctrl->A.active) {	/* Requested asymmetry estimates */
 		int *x_side[2] = {NULL, NULL}, half;
 		double mid[2];
-		for (j = 0; j < 2; j++) x_side[j] = GMT_memory (GMT, NULL, n_tracks, int);
-		trk_symm = GMT_memory (GMT, NULL, n_tracks, double);
+		for (j = 0; j < 2; j++) x_side[j] = gmt_M_memory (GMT, NULL, n_tracks, int);
+		trk_symm = gmt_M_memory (GMT, NULL, n_tracks, double);
 		for (p = 0; p < np; p++) {	/* For each pair of tracks that generated crossovers */
 			for (j = 0; j < 2; j++) {	/* Set mid-point for these two tracks */
-				if (GMT_is_dnan (P[p].start[j]))
+				if (gmt_M_is_dnan (P[p].start[j]))
 					mid[j] = P[p].dist[j];
 				else
 					mid[j] = 0.5 * (P[p].stop[j] + P[p].start[j]);
 			}
 			for (k = 0; k < P[p].nx; k++) {
 				for (j = 0; j < 2; j++) {
-					if (GMT_is_dnan (P[p].COE[k].data[j][COE_T]))
+					if (gmt_M_is_dnan (P[p].COE[k].data[j][COE_T]))
 						half = (P[p].COE[k].data[j][COE_D] > mid[j]);
 					else
 						half = (P[p].COE[k].data[j][COE_T] > mid[j]);
@@ -486,7 +490,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 		}
 		/* Compute symmetry */
 		for (k = 0; k < n_tracks; k++) trk_symm[k] = (double)( (x_side[1][k] - x_side[0][k]) / (x_side[1][k] + x_side[0][k]) );
-		for (j = 0; j < 2; j++) GMT_free (GMT, x_side[j]);
+		for (j = 0; j < 2; j++) gmt_M_free (GMT, x_side[j]);
 	}
 	/* Time to issue output */
 
@@ -507,15 +511,15 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 	}
 
 	o_mode = (mixed) ? GMT_IS_TEXTSET : GMT_IS_DATASET;
-	if (GMT_Init_IO (API, o_mode, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+	if (GMT_Init_IO (API, o_mode, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
 		Return (API->error);
 	}
-	GMT_set_cols (GMT, GMT_OUT, n_output);
-	if (GMT_Begin_IO (API, o_mode, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	gmt_set_cols (GMT, GMT_OUT, n_output);
+	if (GMT_Begin_IO (API, o_mode, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
-	GMT_set_tableheader (GMT, GMT_OUT, true);
-	GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
+	gmt_set_tableheader (GMT, GMT_OUT, true);
+	gmt_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
 	if (!GMT->common.b.active[GMT_OUT]) {	/* Write 3 header records */
 		char *cmd = NULL;
 		sprintf (record, " Tag: %s %s", Ctrl->T.TAG, Ctrl->C.col);
@@ -523,7 +527,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 		cmd = GMT_Create_Cmd (API, options);
 		sprintf (record, " Command: %s %s", THIS_MODULE_NAME, cmd);	/* Build command line argument string */
 		GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, record);
-		GMT_free (GMT, cmd);
+		gmt_M_free (GMT, cmd);
 		GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, "");
 		record[0] = 0;	/* Clean slate */
 		for (i = j = 0; i < n_items; i++, j++) {	/* Overwrite the above settings */
@@ -629,7 +633,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 		
 		for (k = 0; k < P[p].nx; k++) {	/* For each crossover */
 			/* First check if this record has a non-NaN COE */
-			if (check_for_NaN && (GMT_is_dnan (P[p].COE[k].data[one][COE_Z]) || GMT_is_dnan (P[p].COE[k].data[two][COE_Z]))) continue;
+			if (check_for_NaN && (gmt_M_is_dnan (P[p].COE[k].data[one][COE_Z]) || gmt_M_is_dnan (P[p].COE[k].data[two][COE_Z]))) continue;
 			record[0] = 0;	/* Clean slate */
 			for (i = j = 0, first = true; i < n_items; i++, j++) {
 				switch (Ctrl->F.flags[i]) {	/* acdhintTvwxyz */
@@ -740,7 +744,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 		}
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 		Return (API->error);
 	}
 	GMT_Report (API, GMT_MSG_VERBOSE, "Output %" PRIu64 " pairs and a total of %" PRIu64 " crossover records.\n", np_use, nx_use);
@@ -748,12 +752,12 @@ int GMT_x2sys_list (void *V_API, int mode, void *args)
 	/* Done, free up data base array */
 	
 	x2sys_free_coe_dbase (GMT, P, np);
-	GMT_free (GMT, trk_nx);
-	if (Ctrl->A.active) GMT_free (GMT,  trk_symm);
+	gmt_M_free (GMT, trk_nx);
+	if (Ctrl->A.active) gmt_M_free (GMT,  trk_symm);
 
 	if (Ctrl->L.active) MGD77_Free_Correction (GMT, CORR, (unsigned int)n_tracks);
-	GMT_free (GMT, trk_name);
+	gmt_M_free (GMT, trk_name);
 	x2sys_end (GMT, s);
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

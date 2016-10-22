@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_plot.h 16756 2016-07-09 20:07:18Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 #ifndef _GMT_PLOT_H
 #define _GMT_PLOT_H
 
-/*! Identifier for GMT_plane_perspective. The others come from GMT_io.h */
+/*! Identifier for gmt_plane_perspective. The others come from GMT_io.h */
 
 #define GMT_ZW	3
 
@@ -85,6 +85,7 @@
 enum GMT_enum_front {GMT_FRONT_FAULT = 0,
 	GMT_FRONT_TRIANGLE,
 	GMT_FRONT_SLIP,
+	GMT_FRONT_SLIPC,
 	GMT_FRONT_CIRCLE,
 	GMT_FRONT_BOX};
 
@@ -115,6 +116,9 @@ enum GMT_enum_vecattr {
 	GMT_VEC_TERMINAL	= 1,		/* Cross-bar normal to vector */
 	GMT_VEC_CIRCLE		= 2,		/* Circle as vector head */
 	GMT_VEC_SQUARE		= 3,		/* Square as vector head */
+	GMT_VEC_TAIL		= 4,		/* Vector tail */
+	GMT_VEC_ARROW_PLAIN	= 5,		/* Stylized vector head (just triangle lines; cannot be filled) */
+	GMT_VEC_TAIL_PLAIN	= 6,		/* Stylized vector tail (just inward triangle lines; cannot be filled) */
 	GMT_VEC_BEGIN		= 1,		/* Place vector head at beginning of vector. Add GMT_VEC_BEGIN_L for left only, GMT_VEC_BEGIN_R for right only */
 	GMT_VEC_END		= 2,		/* Place vector head at end of vector.  Add GMT_VEC_END_L for left only, and GMT_VEC_END_R for right only */
 	GMT_VEC_HEADS		= 3,		/* Mask for either head end */
@@ -142,12 +146,12 @@ enum GMT_enum_vecattr {
 
 /* Make sure the next three macros are in sync with any changes to GMT_enum_vecattr above! */
 
-#define GMT_vec_justify(status) ((status>>6)&3)			/* Return justification as 0-3 */
-#define GMT_vec_head(status) ((status)&3)			/* Return head selection as 0-3 */
-#define GMT_vec_side(status,head) (((status>>(2+2*head))&3) ? 2*((status>>(2+2*head))&3)-3 : 0)	/* Return side selection for this head as 0,-1,+1 */
+#define gmt_M_vec_justify(status) ((status>>6)&3)			/* Return justification as 0-3 */
+#define gmt_M_vec_head(status) ((status)&3)			/* Return head selection as 0-3 */
+#define gmt_M_vec_side(status,head) (((status>>(2+2*head))&3) ? 2*((status>>(2+2*head))&3)-3 : 0)	/* Return side selection for this head as 0,-1,+1 */
 
-#define GMT_vec_outline(status) ((status&GMT_VEC_OUTLINE) || (status&GMT_VEC_OUTLINE2))	/* Return true if outline is currently selected */
-#define GMT_vec_fill(status) ((status&GMT_VEC_FILL) || (status&GMT_VEC_FILL2))		/* Return true if fill is currently selected */
+#define gmt_M_vec_outline(status) ((status&GMT_VEC_OUTLINE) || (status&GMT_VEC_OUTLINE2))	/* Return true if outline is currently selected */
+#define gmt_M_vec_fill(status) ((status&GMT_VEC_FILL) || (status&GMT_VEC_FILL2))		/* Return true if fill is currently selected */
 
 struct GMT_VECT_ATTR {
 	/* Container for common attributes for plot attributes of vectors */
@@ -181,6 +185,7 @@ struct GMT_SYMBOL {
 	unsigned int u;		/* Measure unit id (0 = cm, 1 = inch, 2 = m, 3 = point */
 	unsigned int read_symbol_cmd;	/* 1 when -S indicated we must read symbol type from file, 2 with -SK is used */
 	bool u_set;		/* true if u was set */
+	double factor;		/* Scaling needed to unify symbol area for circle, triangles, etc. [1] */
 	double size_x;		/* Current symbol size in x */
 	double size_y;		/* Current symbol size in y */
 	double given_size_x;	/* Symbol size read from file or command line */
@@ -200,6 +205,13 @@ struct GMT_SYMBOL {
 	bool user_unit[2];	/* If true then we must project the base via R -J to get base values, otherwise they are in c|i|p units */
 	unsigned int base_set;	/* 1 if user provided a custom base, 2 if we should read it from last column [otherwise 0: default to bottom axis] */
 
+	/* These apply to geo-wedges */
+	char w_unit;		/* Radius unit */
+	double w_radius;	/* In spherical degrees */
+	unsigned int w_mode;	/* Distance mode */
+	unsigned int w_type;	/* Wedge type */
+	bool w_active;
+	
 	/* These apply to vectors */
 
 	struct GMT_VECT_ATTR v;	/* All attributes for vector shapes etc. [see struct above] */

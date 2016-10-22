@@ -20,8 +20,10 @@ Synopsis
 [ |-C|\ *cpt* ] [ |-D|\ *dx*/*dy* ]
 [ |-E|\ [**x**\ [**+**]\ \|\ **y**\ [**+**]\ \|\ **X**\ \|\ **Y**][**n**][*cap*][/[\ **-**\ \|\ **+**]\ *pen*] ]
 [ |-F|\ [**c**\ \|\ **n**\ \|\ **r**\ ][*refpoint*] ]
-[ |-G|\ *fill* ] [ |-I|\ *intens* ]
-[ |-J|\ **z**\ \|\ **Z**\ *parameters* ] [ |-K| ]
+[ |-G|\ *fill* ]
+[ |-I|\ *intens* ]
+[ |-J|\ *parameters* ]
+[ |-K| ]
 [ |-L|\ [**+b**\ \|\ **d**\ \|\ **D**][**+xl**\ \|\ **r**\ \|\ *x0*][**+yl**\ \|\ **r**\ \|\ *y0*][**+p**\ *pen*] ]
 [ |-N|\ [**c**\ \|\ **r**] ]
 [ |-O| ] [ |-P| ]
@@ -29,7 +31,7 @@ Synopsis
 [ |-T| ]
 [ |SYN_OPT-U| ]
 [ |SYN_OPT-V| ]
-[ |-W|\ [**-**\ \|\ **+**][*pen*][*attr*] ]
+[ |-W|\ [*pen*][*attr*] ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
 [ |SYN_OPT-a| ]
@@ -102,7 +104,7 @@ Optional Arguments
 .. _-C:
 
 **-C**\ *cpt*
-    Give a CPT file or specify -Ccolor1,color2[,color3,...]
+    Give a CPT or specify -Ccolor1,color2[,color3,...]
     to build a linear continuous CPT from those colors automatically.
     In this case *color*\ **n** can be a r/g/b triplet, a color name,
     or an HTML hexadecimal color (e.g. #aabbcc ).
@@ -112,7 +114,7 @@ Optional Arguments
     field, etc.). If **-S** is not set, then **psxy** expects the user to
     supply a multisegment file where each segment header contains a
     **-Z**\ *val* string. The *val* will control the color of the line or
-    polygon (if **-L** is set) via the CPT file.
+    polygon (if **-L** is set) via the CPT.
 
 .. _-D:
 
@@ -238,12 +240,13 @@ Optional Arguments
 
 .. _-W:
 
-**-W**\ [**-**\ \|\ **+**][*pen*][*attr*] :ref:`(more ...) <-Wpen_attrib>`
+**-W**\ [*pen*][*attr*] :ref:`(more ...) <-Wpen_attrib>`
     Set pen attributes for lines or the outline of symbols [Defaults:
-    width = default, color = black, style = solid]. A leading **+** will
-    use the lookup color (via **-C**) for both symbol fill and outline
-    pen color, while a leading **-** will set outline pen color and turn
-    off symbol fill.  You can also append one or more line attribute modifiers:
+    width = default, color = black, style = solid]. If the modifier **+cl**
+    is appended then the color of the line are taken from the CPT (see
+    **-C**). If instead modifier **+cf** is appended then the color from the cpt
+    file is applied to symbol fill.  Use just **+c** for both effects.
+    You can also append one or more additional line attribute modifiers:
     **+o**\ *offset*\ **u** will start and stop drawing the line the given distance offsets
     from the end point.  Append unit **u** from **c**\ \|\ **i**\ \|\ **p** to
     indicate plot distance on the map or append map distance units instead (see below)
@@ -251,6 +254,8 @@ Optional Arguments
     **+s** will draw the line using a *PostScript* Bezier spline [linear spline];
     **+v**\ *vspecs* will place a vector head at the ends of the lines.  You can
     use **+vb** and **+ve** to specify separate vector specs at each end [shared specs].
+    Because **+v** may take additional modifiers it must necessarily be given
+    at the end of the pen specification.
     See the :ref:`Vec_attributes` for more information.
 
 .. _-X:
@@ -373,7 +378,7 @@ Segment header records may contain one of more of the following options:
 **-Z**\ *zval*
     Obtain fill via cpt lookup using z-value *zval*
 **-Z**\ *NaN*
-    Get the NaN color from the CPT file
+    Get the NaN color from the CPT
 
 Custom Symbols
 --------------

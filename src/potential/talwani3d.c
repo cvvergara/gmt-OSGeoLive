@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: talwani3d.c 15186 2015-11-06 21:01:51Z pwessel $
+ *	$Id: talwani3d.c 16722 2016-07-06 13:46:09Z remko $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
 #define THIS_MODULE_NAME	"talwani3d"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute geopotential anomalies over 3-D bodies by the method of Talwani"
-#define THIS_MODULE_KEYS	"<DI,NDi,ZGi,GGo,>DO,RG-"
+#define THIS_MODULE_KEYS	"<D{,ND(,ZG(,GG),G-<,>D}"
 
 #include "gmt_dev.h"
 
@@ -56,7 +56,7 @@
 
 #define DX_FROM_DLON(x1, x2, y1, y2) (((x1) - (x2)) * DEG_TO_KM * cos (0.5 * ((y1) + (y2)) * D2R))
 #define DY_FROM_DLAT(y1, y2) (((y1) - (y2)) * DEG_TO_KM)
-#define GMT_IS_ZERO2(x) (fabs (x) < 2e-5)	/* Check for near-zero angles [used in geoid integral()]*/
+#define gmt_M_is_zero2(x) (fabs (x) < 2e-5)	/* Check for near-zero angles [used in geoid integral()]*/
 
 #define GMT_TALWANI3D_N_DEPTHS GMT_BUFSIZ	/* Max depths allowed due to OpenMP needing stack array */
 
@@ -121,26 +121,25 @@ enum Talwani3d_fields {
 	TALWANI3D_VER=1
 };
 
-void *New_talwani3d_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct TALWANI3D_CTRL *C = NULL;
 	
-	C = GMT_memory (GMT, NULL, 1, struct TALWANI3D_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct TALWANI3D_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 
 	return (C);
 }
 
-void Free_talwani3d_Ctrl (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->N.file) free (C->N.file);	
-	if (C->G.file) free (C->G.file);	
-	if (C->Z.file) free (C->Z.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->N.file);	
+	gmt_M_str_free (C->G.file);	
+	gmt_M_str_free (C->Z.file);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_talwani3d_parse (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *Ctrl, struct GMT_OPTION *options) {
 	unsigned int k, n_errors = 0;
 	struct GMT_OPTION *opt = NULL;
 
@@ -148,14 +147,14 @@ int GMT_talwani3d_parse (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Input file(s) */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			case 'A':	/* Specify z-axis is positive up [Default is down] */
-				Ctrl->A.active = TRUE;
+				Ctrl->A.active = true;
 				break;
 			case 'D':
-				Ctrl->D.active = TRUE;
+				Ctrl->D.active = true;
 				Ctrl->D.rho = atof (opt->arg);
 				break;
 			case 'F':
@@ -176,8 +175,8 @@ int GMT_talwani3d_parse (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *Ctrl, stru
 				break;
 			case 'I':
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
@@ -201,7 +200,7 @@ int GMT_talwani3d_parse (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *Ctrl, stru
 				break;
 			case 'Z':
 				Ctrl->Z.active = true;
-				if (!GMT_access (GMT, opt->arg, F_OK)) {	/* file exists */
+				if (!gmt_access (GMT, opt->arg, F_OK)) {	/* file exists */
 					Ctrl->Z.file = strdup (opt->arg);
 					Ctrl->Z.mode = 1;
 				}
@@ -211,34 +210,34 @@ int GMT_talwani3d_parse (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *Ctrl, stru
 				}
 				break;
 			default:
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 	if (GMT->common.R.active && Ctrl->I.active)
-		GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
-	n_errors += GMT_check_condition (GMT, (GMT->common.R.active && Ctrl->I.active) && Ctrl->Z.mode == 1,
+		gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	n_errors += gmt_M_check_condition (GMT, (GMT->common.R.active && Ctrl->I.active) && Ctrl->Z.mode == 1,
 	                                 "Syntax error -Z option: Cannot also specify -R -I\n");
-	n_errors += GMT_check_condition (GMT, (GMT->common.R.active + Ctrl->I.active) == 1,
+	n_errors += gmt_M_check_condition (GMT, (GMT->common.R.active + Ctrl->I.active) == 1,
 	                                 "Syntax error -R option: Must specify both -R and -I (and optionally -r)\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->N.active && !Ctrl->G.active,
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->N.active && !Ctrl->G.active,
 	                                 "Syntax error -G option: Must specify output gridfile name.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->G.active && !Ctrl->G.file,
+	n_errors += gmt_M_check_condition (GMT, Ctrl->G.active && !Ctrl->G.file,
 	                                 "Syntax error -G option: Must specify output gridfile name.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->N.active && !Ctrl->N.file,
+	n_errors += gmt_M_check_condition (GMT, Ctrl->N.active && !Ctrl->N.file,
 	                                 "Syntax error -N option: Must specify output gridfile name.\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-int GMT_talwani3d_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: talwani3d <modelfile> [-A] [-D<rho>] [-Ff|n|v] [-G<outfile>] [%s]\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-M[hz]] [-N<trktable>] [%s] [-Z<level>] [%s] \n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_f_OPT);
 	GMT_Message (API, GMT_TIME_NONE,"\t[%s]\n\t[%s] [%s] [%s]%s\n\n", GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_x_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<modelfile> is a multiple-segment ASCII file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
@@ -262,13 +261,12 @@ int GMT_talwani3d_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Cannot use both -Z<grid> and -R -I [-r].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-fg Map units (lon, lat in degree, else in m [but see -Mh]).\n");
 	GMT_Option (API, "h,i,o,r,x,.");
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
 #define INV_3 (1.0/3.0)
 
-double parint (double x[], double y[], int n)
-{
+GMT_LOCAL double parint (double x[], double y[], int n) {
 	/* parint is a piecewise parabolic integrator
 	 *
 	 * Arguments:
@@ -331,8 +329,8 @@ double parint (double x[], double y[], int n)
 	return (area);
 }
 
-double get_grav3d (double x[], double y[], int n, double x_obs, double y_obs, double z_obs, double rho, bool flat)
-{	/* Talwani et al., 1959 */
+GMT_LOCAL double get_grav3d (double x[], double y[], int n, double x_obs, double y_obs, double z_obs, double rho, bool flat) {
+	/* Talwani et al., 1959 */
 	int k;
 	double gsum = 0.0, x1, x2, y1, y2, r1, r2, ir1, ir2, xr1 = 0.0, yr1 = 0.0, side, iside;
 	double xr2 = 0.0, yr2 = 0.0, dx, dy, p, em, sign2, wsign, value, part1 = 0.0, part2 = 0.0, part3 = 0.0, q, f, psi;
@@ -423,8 +421,8 @@ double get_grav3d (double x[], double y[], int n, double x_obs, double y_obs, do
 	return (GAMMA * rho * gsum);	/* Return contribution in mGal */
 }
 
-double get_vgg3d (double x[], double y[], int n, double x_obs, double y_obs, double z_obs, double rho, bool flat)
-{	/* Kim & Wessel, 2015 */
+GMT_LOCAL double get_vgg3d (double x[], double y[], int n, double x_obs, double y_obs, double z_obs, double rho, bool flat) {
+	/* Kim & Wessel, 2016 */
 	int k;
 	double vsum = 0.0, x1, x2, y1, y2, r1, r2, ir1, ir2, xr1 = 0.0, yr1 = 0.0, side, iside;
 	double xr2 = 0.0, yr2 = 0.0, dx, dy, p, em, sign2, part2 = 0.0, part3 = 0.0, q, f, z2, p2;
@@ -512,15 +510,14 @@ double get_vgg3d (double x[], double y[], int n, double x_obs, double y_obs, dou
 	return (10 * GAMMA * rho * vsum);	/* To get Eotvos = 0.1 mGal/km */
 }
 
-double definite_integral (double a, double s, double c)
-{	/* Return out definite integral n_ij (except the factor z_j) */
+GMT_LOCAL double definite_integral (double a, double s, double c) {
+	/* Return out definite integral n_ij (except the factor z_j) */
 	/* Here, 0 <= a <= TWO_I and c >= 0 */
 	double s2, c2, u2, k, k2, q, q2, f, v, n_ij, arg1, arg2, y;
 	/* Deal with special cases */
-	if (GMT_IS_ZERO2 (a - M_PI_2)) return (0.0);
-	else if (GMT_IS_ZERO2 (a)) return (0.0);
-	else if (GMT_IS_ZERO2 (a - M_PI)) return (0.0);
-	//s = sin (a);
+	if (gmt_M_is_zero2 (a - M_PI_2)) return (0.0);
+	else if (gmt_M_is_zero2 (a)) return (0.0);
+	else if (gmt_M_is_zero2 (a - M_PI)) return (0.0);
 	s2 = s * s;
 	c2 = c * c;
 	u2 = 1.0 / s2;
@@ -539,18 +536,18 @@ double definite_integral (double a, double s, double c)
 		a, s, c, c2, k, k2, u2, q2, f, v, arg1, arg2, n_ij);
 #endif
 	if (a > M_PI_2) n_ij = -n_ij;
-	if (GMT_is_dnan (n_ij))
+	if (gmt_M_is_dnan (n_ij))
 		fprintf (stderr, "definite_integral returns n_ij = NaN!\n");
 	return (n_ij);
 }
 
-double integral (double a, double sa, double b, double sb, double c)
-{	/* Return integral of geoid function from a to b */
+GMT_LOCAL double integral (double a, double sa, double b, double sb, double c) {
+	/* Return integral of geoid function from a to b */
 	return (definite_integral (b, sb, c) - definite_integral (a, sa, c));
 }
 
-double get_geoid3d (double x[], double y[], int n, double x_obs, double y_obs, double z_obs, double rho, bool flat)
-{	/* Kim & Wessel, 2015 */
+GMT_LOCAL double get_geoid3d (double x[], double y[], int n, double x_obs, double y_obs, double z_obs, double rho, bool flat) {
+	/* Kim & Wessel, 2016 */
 	int k;
 	double nsum = 0.0, x1, x2, y1, y2, r1, r2, ir1, ir2, xr1 = 0.0, yr1 = 0.0, side, iside, c, z_j = z_obs;
 	double xr2 = 0.0, yr2 = 0.0, dx, dy, p_i, theta_i, sign2, part1 = 0.0, part2 = 0.0, fi_i, em, del_alpha, s_fi, s_th;
@@ -615,7 +612,9 @@ double get_geoid3d (double x[], double y[], int n, double x_obs, double y_obs, d
 						c = z_j / fabs (p_i);
 						part1 = integral (fi_i, s_fi, theta_i, s_th, c);
 						part2 = z_j * (part1 - del_alpha);
-						//if (dump) fprintf (stderr, "I(%g, %g, %g) = %g [z = %g p_i = %g, da = %g dx = %g dy = %g]\n", R2D*(fi_i), R2D*(theta_i), c, part2, z_j, p_i, del_alpha, dx, dy);
+#if 0
+						if (dump) fprintf (stderr, "I(%g, %g, %g) = %g [z = %g p_i = %g, da = %g dx = %g dy = %g]\n", R2D*(fi_i), R2D*(theta_i), c, part2, z_j, p_i, del_alpha, dx, dy);
+#endif
 					}
 				}
 			}
@@ -637,8 +636,8 @@ double get_geoid3d (double x[], double y[], int n, double x_obs, double y_obs, d
 	return (1.0e-2 * GAMMA * rho * nsum / G0);	/* To get geoid in meter */
 }
 
-double get_one_output3D (double x_obs, double y_obs, double z_obs, struct CAKE *cake, double depths[], unsigned int ndepths, unsigned int mode, bool flat_earth)
-{	/* Evaluate output at a single observation point (x,y,z) */
+GMT_LOCAL double get_one_output3D (double x_obs, double y_obs, double z_obs, struct CAKE *cake, double depths[], unsigned int ndepths, unsigned int mode, bool flat_earth) {
+	/* Evaluate output at a single observation point (x,y,z) */
 	/* Work array vtry must have at least of length ndepths */
 	unsigned int k;
 	double z;
@@ -679,28 +678,27 @@ double get_one_output3D (double x_obs, double y_obs, double z_obs, struct CAKE *
 	return (parint (depths, vtry, ndepths));	/* Use parabolic integrator and return value */
 }
 
-int comp_cakes (const void *cake_a, const void *cake_b)
-{	/* Used in the sorting of layers on depths */
+GMT_LOCAL int comp_cakes (const void *cake_a, const void *cake_b) {
+	/* Used in the sorting of layers on depths */
 	const struct CAKE *a = cake_a, *b = cake_b;
 	if (a->depth < b->depth) return (-1);
 	if (a->depth > b->depth) return (+1);
 	return (0);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_talwani3d_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_talwani3d (void *V_API, int mode, void *args)
-{
+int GMT_talwani3d (void *V_API, int mode, void *args) {
 	int error = 0, ns;
-	unsigned int k, tbl, seg, ndepths = 0, n = 0, dup_node, n_duplicate = 0;
+	unsigned int k, tbl, seg, ndepths = 0, n = 0, dup_node = 0, n_duplicate = 0;
 	uint64_t node;
 	size_t n_alloc = 0, n_alloc1 = 0;
 	
 	bool flat_earth = false, first_slice = true;
 	
 	char *uname[2] = {"meter", "km"}, *kind[3] = {"FAA", "VGG", "GEOID"}, remark[GMT_LEN64] = {""};
-	double z_level, depth, rho;
+	double z_level, depth = 0.0, rho = 0.0;
 	double *x = NULL, *y = NULL, *in = NULL, *depths = NULL;
 					
 	struct SLICE *sl = NULL, *slnext = NULL;
@@ -711,47 +709,47 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 	struct GMT_DATASEGMENT *S = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_talwani3d_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);
 	if (API->error) return (API->error);	/* Set or get option list */
 
 	if (!options || options->option == GMT_OPT_USAGE)
-		bailout (GMT_talwani3d_usage (API, GMT_USAGE));	/* Return the usage message */
+		bailout (usage (API, GMT_USAGE));	/* Return the usage message */
 	if (options->option == GMT_OPT_SYNOPSIS)
-		bailout (GMT_talwani3d_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+		bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_talwani3d_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_talwani3d_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the talwani3d main code ----------------------------*/
 	
-	GMT_enable_threads (GMT);	/* Set number of active threads, if supported */
+	gmt_enable_threads (GMT);	/* Set number of active threads, if supported */
 	/* Specify input expected columns to be at least 2 */
-	if ((error = GMT_set_cols (GMT, GMT_IN, 2)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_IN, 2)) != GMT_NOERROR) {
 		Return (error);
 	}
 	/* Register likely model files unless the caller has already done so */
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POLYGON, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default input sources, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POLYGON, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default input sources, unless already set */
 		Return (API->error);
 	}
 	/* Initialize the i/o for doing record-by-record reading */
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
 
 	/* Set up cake slice array and pointers */
 	
 	n_alloc1 = GMT_CHUNK;
-	cake = GMT_memory (GMT, NULL, n_alloc1, struct CAKE);
+	cake = gmt_M_memory (GMT, NULL, n_alloc1, struct CAKE);
 	
 	/* Read polygon information from multiple segment file */
 	GMT_Report (API, GMT_MSG_VERBOSE, "All x/y-values are assumed to be given in %s\n", uname[Ctrl->M.active[TALWANI3D_HOR]]);
@@ -760,11 +758,13 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 	/* Read the sliced model */
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) { 		/* Bail if there are any read errors */
+				gmt_M_free (GMT, cake);
 				Return (GMT_RUNTIME_ERROR);
-			if (GMT_REC_IS_TABLE_HEADER (GMT)) 	/* Skip all table headers */
+			}
+			if (gmt_M_rec_is_table_header (GMT)) 	/* Skip all table headers */
 				continue;
-			if (GMT_REC_IS_SEGMENT_HEADER (GMT) || GMT_REC_IS_EOF (GMT)) {	/* Process segment headers or end-of-file */
+			if (gmt_M_rec_is_segment_header (GMT) || gmt_M_rec_is_eof (GMT)) {	/* Process segment headers or end-of-file */
 				/* First close previous segment */
 				if (!first_slice) {
 					if (!(x[n-1] == x[0] && y[n-1] == y[0])) {	/* Copy first point to last */
@@ -772,18 +772,18 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 						x[n] = x[0];	y[n] = y[0];
 						n++;
 					}
-					x = GMT_memory (GMT, x, n, double);
-					y = GMT_memory (GMT, y, n, double);
+					x = gmt_M_memory (GMT, x, n, double);
+					y = gmt_M_memory (GMT, y, n, double);
 					k = 0;
 					while (k < ndepths && depth != cake[k].depth) k++;	/* Get the cake index for this depth */
 
 					if (k == ndepths) {	/* New depth, must allocate another cake */
 						if (ndepths == n_alloc1) {
 							n_alloc1 <<= 1;
-							cake = GMT_memory (GMT, cake, n_alloc1, struct CAKE);
+							cake = gmt_M_memory (GMT, cake, n_alloc1, struct CAKE);
 						}
 						cake[k].depth = depth;
-						cake[k].first_slice = GMT_memory (GMT, NULL, 1, struct SLICE);
+						cake[k].first_slice = gmt_M_memory (GMT, NULL, 1, struct SLICE);
 						cake[k].first_slice->rho = rho;
 						cake[k].first_slice->x = x;
 						cake[k].first_slice->y = y;
@@ -793,7 +793,7 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 					else {	/* Hook onto existing list of slices at same depth */
 						sl = cake[k].first_slice;
 						while (sl->next) sl = sl->next;	/* Get to end of the slices */
-						sl->next = GMT_memory (GMT, NULL, 1, struct SLICE);
+						sl->next = gmt_M_memory (GMT, NULL, 1, struct SLICE);
 						sl->next->rho = rho;
 						sl->next->x = x;
 						sl->next->y = y;
@@ -801,12 +801,13 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 					}
 				}
 				first_slice = false;
-				if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+				if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 					break;
 				/* Process the next segment header */
 				ns = sscanf (GMT->current.io.segment_header, "%lf %lf", &depth, &rho);
 				if (ns == 1 && !Ctrl->D.active) {
 					GMT_Report (API, GMT_MSG_VERBOSE, "Neither segment header nor -D specified density - must quit\n");
+					gmt_M_free (GMT, cake);
 					Return (API->error);
 				}
 				if (Ctrl->D.active) rho = Ctrl->D.rho;
@@ -815,8 +816,8 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 				if (Ctrl->A.active) depth = -depth;	/* Make positive down */
 				/* Allocate array for this slice */
 				n_alloc = GMT_CHUNK;
-				x = GMT_memory (GMT, NULL, n_alloc, double);
-				y = GMT_memory (GMT, NULL, n_alloc, double);
+				x = gmt_M_memory (GMT, NULL, n_alloc, double);
+				y = gmt_M_memory (GMT, NULL, n_alloc, double);
 				n = 0;
 				continue;
 			}
@@ -838,51 +839,64 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 			n++;
 			if (n == n_alloc) {
 				n_alloc += GMT_CHUNK;
-				x = GMT_memory (GMT, x, n_alloc, double);
-				y = GMT_memory (GMT, y, n_alloc, double);
+				x = gmt_M_memory (GMT, x, n_alloc, double);
+				y = gmt_M_memory (GMT, y, n_alloc, double);
 			}
 		}
 	} while (true);
 	
-	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+	if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
+		gmt_M_free (GMT, cake);
 		Return (API->error);
 	}
 	
 	if (ndepths >= GMT_TALWANI3D_N_DEPTHS) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Model cannot have more than %d depth layer\n", GMT_TALWANI3D_N_DEPTHS);
 		GMT_Report (API, GMT_MSG_NORMAL, "You must increase GMT_TALWANI3D_N_DEPTHS and recompile\n");
-		Return (EXIT_FAILURE);
+		gmt_M_free (GMT, cake);
+		Return (GMT_RUNTIME_ERROR);
 	}
 	/* Finish allocation and sort on layers */
 	
-	cake = GMT_memory (GMT, cake, ndepths, struct CAKE);
+	cake = gmt_M_memory (GMT, cake, ndepths, struct CAKE);
 	qsort (cake, ndepths, sizeof (struct CAKE), comp_cakes);
 
 	if (n_duplicate) GMT_Report (API, GMT_MSG_VERBOSE, "Ignored %u duplicate vertices\n", n_duplicate);
 
 	if (Ctrl->Z.mode == 1) {	/* Got grid with observation levels which also sets output locations */
 		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->Z.file, G) == NULL) {
+			gmt_M_free (GMT, cake);
 			Return (API->error);
 		}
 	}
 	else if (GMT->common.R.active) {	/* Gave -R -I [-r] */
-		if ((G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
-			GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
-	}
-	else {	/* Got a dataset with output locations */
-		if ((D = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POINT, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL) {
+		if ((G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc,
+			GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) {
+			gmt_M_free (GMT, cake);
 			Return (API->error);
 		}
 	}
+	else {	/* Got a dataset with output locations */
+		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
+		if ((D = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POINT, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL) {
+			gmt_M_free (GMT, cake);
+			Return (API->error);
+		}
+		if (D->n_columns < 2) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Input file %s has %d column(s) but at least 2 are needed\n", Ctrl->N.file, (int)D->n_columns);
+			Return (GMT_DIM_TOO_SMALL);
+		}
+		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+	}
 	
-	flat_earth = GMT_is_geographic (GMT, GMT_IN);
+	flat_earth = gmt_M_is_geographic (GMT, GMT_IN);
 	
 	if (Ctrl->A.active) Ctrl->Z.level = -Ctrl->Z.level;
 	
 	/* Now we can write (if -V) to the screen the user's polygon model characteristics. */
 	
 	GMT_Report (API, GMT_MSG_VERBOSE, "# of depths: %d\n", ndepths);
-	if (GMT_is_verbose (GMT, GMT_MSG_LONG_VERBOSE)) {
+	if (gmt_M_is_verbose (GMT, GMT_MSG_LONG_VERBOSE)) {
 	 	for (k = 0; k < ndepths; k++) {
 	 		for (sl = cake[k].first_slice; sl; sl = sl->next)
 				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Depth: %lg Rho: %lg N-vertx: %4d\n",
@@ -892,27 +906,30 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 	GMT_Report (API, GMT_MSG_VERBOSE, "Start calculating %s\n", kind[Ctrl->F.mode]);
 
 	/* Set up depths array needed by get_one_output3D */
-	depths = GMT_memory (GMT, NULL, ndepths, double);
+	depths = gmt_M_memory (GMT, NULL, ndepths, double);
 	for (k = 0; k < ndepths; k++) depths[k] = cake[k].depth;	/* Used by the parabolic integrator */
 	if (Ctrl->N.active) {	/* Single loop over specified output locations */
 		double scl = (!(flat_earth || Ctrl->M.active[TALWANI3D_HOR])) ? METERS_IN_A_MILE : 1.0;	/* Perhaps convert to km */
 		double out[4];
-		if ((error = GMT_set_cols (GMT, GMT_OUT, 4)) != GMT_OK) {
+		if ((error = gmt_set_cols (GMT, GMT_OUT, 4)) != GMT_NOERROR) {
+			gmt_M_free (GMT, depths);
 			Return (error);
 		}
-		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
+			gmt_M_free (GMT, depths);
 			Return (API->error);
 		}
-		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+			gmt_M_free (GMT, depths);
 			Return (API->error);
 		}
-		if (D->n_segments > 1) GMT_set_segmentheader (GMT, GMT_OUT, true);	
+		if (D->n_segments > 1) gmt_set_segmentheader (GMT, GMT_OUT, true);	
 		for (tbl = 0; tbl < D->n_tables; tbl++) {
 			for (seg = 0; seg < D->table[tbl]->n_segments; seg++) {
 				int64_t row;
 				S = D->table[tbl]->segment[seg];	/* Current segment */
 				GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, S->header);
-				GMT_prep_tmp_arrays (GMT, S->n_rows, 1);	/* Init or reallocate tmp vector */
+				gmt_prep_tmp_arrays (GMT, S->n_rows, 1);	/* Init or reallocate tmp vector */
 #ifdef _OPENMP
 				/* Spread calculation over selected cores */
 #pragma omp parallel for private(row,z_level) shared(GMT,Ctrl,S,scl,cake,depths,ndepths,flat_earth)
@@ -920,55 +937,63 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 				/* Separate the calculation from the output in two separate row-loops since cannot do rec-by-rec output
 				 * with OpenMP due to race condiations that would mess up the output order */
 				for (row = 0; row < (int64_t)S->n_rows; row++) {	/* Calculate attraction at all output locations for this segment */
-					z_level = (S->n_columns == 3 && !Ctrl->Z.active) ? S->coord[GMT_Z][row] : Ctrl->Z.level;	/* Default observation z level unless provided in input file */
-					GMT->hidden.mem_coord[GMT_X][row] = get_one_output3D (S->coord[GMT_X][row]/ scl, S->coord[GMT_Y][row]/ scl, z_level, cake, depths, ndepths, Ctrl->F.mode, flat_earth);
+					z_level = (S->n_columns == 3 && !Ctrl->Z.active) ? S->data[GMT_Z][row] : Ctrl->Z.level;	/* Default observation z level unless provided in input file */
+					GMT->hidden.mem_coord[GMT_X][row] = get_one_output3D (S->data[GMT_X][row]/ scl, S->data[GMT_Y][row]/ scl, z_level, cake, depths, ndepths, Ctrl->F.mode, flat_earth);
 				}
 				/* This loop is not under OpenMP */
 				out[GMT_Z] = Ctrl->Z.level;	/* Default observation z level unless provided in input file */
 				for (row = 0; row < (int64_t)S->n_rows; row++) {	/* Loop over output locations */
-					out[GMT_X] = S->coord[GMT_X][row];
-					out[GMT_Y] = S->coord[GMT_Y][row];
-					if (S->n_columns == 3 && !Ctrl->Z.active) out[GMT_Z] = S->coord[GMT_Z][row];
+					out[GMT_X] = S->data[GMT_X][row];
+					out[GMT_Y] = S->data[GMT_Y][row];
+					if (S->n_columns == 3 && !Ctrl->Z.active) out[GMT_Z] = S->data[GMT_Z][row];
 					out[3] = GMT->hidden.mem_coord[GMT_X][row];
 					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
 				}
 			}
 		}
-		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
+			gmt_M_free (GMT, depths);
 			Return (API->error);
 		}
 	}
 	else {	/* Dealing with a grid */
 		int64_t row;
-		int col, nx = (int)G->header->nx, ny = (int)G->header->ny;	/* To shut up compiler warnings */
-		double y_obs, *x_obs = GMT_memory (GMT, NULL, G->header->nx, double);
-		for (col = 0; col < nx; col++) {
-			x_obs[col] = GMT_grd_col_to_x (GMT, col, G->header);
+		int col, n_columns = (int)G->header->n_columns, n_rows = (int)G->header->n_rows;	/* To shut up compiler warnings */
+		double y_obs, *x_obs = gmt_M_memory (GMT, NULL, G->header->n_columns, double);
+		for (col = 0; col < n_columns; col++) {
+			x_obs[col] = gmt_M_grd_col_to_x (GMT, col, G->header);
 			if (!(flat_earth || Ctrl->M.active[TALWANI3D_HOR])) x_obs[col] /= METERS_IN_A_KM;	/* Convert to km */
 		}
 #ifdef _OPENMP
 		/* Spread calculation over selected cores */
 #pragma omp parallel for private(row,col,node,y_obs,z_level) shared(API,GMT,Ctrl,G,x_obs,cake,depths,ndepths,flat_earth)
 #endif
-		for (row = 0; row < ny; row++) {	/* Do row-by-row and report on progress if -V */
-			y_obs = GMT_grd_row_to_y (GMT, row, G->header);
+		for (row = 0; row < n_rows; row++) {	/* Do row-by-row and report on progress if -V */
+			y_obs = gmt_M_grd_row_to_y (GMT, row, G->header);
 			if (!(flat_earth || Ctrl->M.active[TALWANI3D_HOR])) y_obs /= METERS_IN_A_KM;	/* Convert to km */
 #ifndef _OPENMP
 			GMT_Report (API, GMT_MSG_VERBOSE, "Finished row %5d\n", row);
 #endif
-			for (col = 0; col < (int)G->header->nx; col++) {
+			for (col = 0; col < (int)G->header->n_columns; col++) {
 				/* Loop over cols; always save the next level before we update the array at that col */
-				node = GMT_IJP (G->header, row, col);
+				node = gmt_M_ijp (G->header, row, col);
 				z_level = (Ctrl->A.active) ? -G->data[node] : G->data[node];	/* Get observation z level and possibly flip direction */
 				G->data[node] = (float) get_one_output3D (x_obs[col], y_obs, z_level, cake, depths, ndepths, Ctrl->F.mode, flat_earth);
 			}
 		}
-		GMT_free (GMT, x_obs);
+		gmt_M_free (GMT, x_obs);
 		GMT_Report (API, GMT_MSG_VERBOSE, "Create %s\n", Ctrl->G.file);
 		sprintf (remark, "Calculated 3-D %s", kind[Ctrl->F.mode]);
-		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, remark, G)) Return (API->error);
-		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, G) != GMT_OK) {
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, remark, G)) {
+			gmt_M_free (GMT, depths);	gmt_M_free (GMT, cake);
+			Return (API->error);
+		}
+		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) {
+			gmt_M_free (GMT, depths);	gmt_M_free (GMT, cake);
+			Return (API->error);
+		}
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, G) != GMT_NOERROR) {
+			gmt_M_free (GMT, depths);	gmt_M_free (GMT, cake);
 			Return (API->error);
 		}
 	}
@@ -979,18 +1004,18 @@ int GMT_talwani3d (void *V_API, int mode, void *args)
 		sl = cake[k].first_slice;
 		slnext = cake[k].first_slice->next;
 		while (slnext) {
-			GMT_free (GMT, sl->x);
-			GMT_free (GMT, sl->y);
-			GMT_free (GMT, sl);
+			gmt_M_free (GMT, sl->x);
+			gmt_M_free (GMT, sl->y);
+			gmt_M_free (GMT, sl);
 			sl = slnext;
 			slnext = sl->next;
 		}
-		GMT_free (GMT, sl->x);
-		GMT_free (GMT, sl->y);
-		GMT_free (GMT, sl);
+		gmt_M_free (GMT, sl->x);
+		gmt_M_free (GMT, sl->y);
+		gmt_M_free (GMT, sl);
 	}
-	GMT_free (GMT, cake);
-	GMT_free (GMT, depths);
+	gmt_M_free (GMT, cake);
+	gmt_M_free (GMT, depths);
 
-	Return (EXIT_SUCCESS);
+	Return (GMT_NOERROR);
 }

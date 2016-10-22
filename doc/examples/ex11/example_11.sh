@@ -1,15 +1,15 @@
 #!/bin/bash
 #		GMT EXAMPLE 11
-#		$Id: example_11.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_11.sh 16750 2016-07-09 05:44:02Z pwessel $
 #
 # Purpose:	Create a 3-D RGB Cube
-# GMT progs:	gmtset, grdimage, grdmath, pstext, psxy
+# GMT modules:	gmtset, grdimage, grdmath, pstext, psxy
 # Unix progs:	rm
 ps=example_11.ps
 
 # Use gmt psxy to plot "cut-along-the-dotted" lines.
 
-gmt gmtset MAP_TICK_LENGTH_PRIMARY 0
+gmt set MAP_TICK_LENGTH_PRIMARY 0
 
 gmt psxy cut-here.txt -Wthinnest,. -R-51/306/0/1071 -JX3.5i/10.5i -X2.5i -Y0.5i -P -K > $ps
 
@@ -20,7 +20,7 @@ gmt grdmath -I1 -R0/255/0/255 X = x.nc
 gmt grdmath -I1 -R Y = y.nc
 gmt grdmath -I1 -R 0 = c.nc
 
-gmt gmtset FONT_ANNOT_PRIMARY 12p,Helvetica-Bold
+gmt set FONT_ANNOT_PRIMARY 12p,Helvetica-Bold
 
 gmt grdimage x.nc y.nc c.nc -JX2.5i/-2.5i -R -K -O -X0.5i >> $ps
 gmt psxy -Wthinner,white,- rays.txt -J -R -K -O >> $ps

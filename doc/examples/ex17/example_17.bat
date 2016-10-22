@@ -1,7 +1,7 @@
 @echo off
 REM		GMT EXAMPLE 17
 REM
-REM		$Id: example_17.bat 15178 2015-11-06 10:45:03Z fwobbe $
+REM		$Id: example_17.bat 16792 2016-07-13 21:12:21Z pwessel $
 REM
 REM Purpose:	Illustrates clipping of images using coastlines
 REM GMT progs:	grd2cpt, grdgradient, grdimage, pscoast, pstext
@@ -22,9 +22,9 @@ gmt pscoast -Rindia_geoid.nc -J -O -K -Dl -Gc >> %ps%
 
 REM Now generate topography image w/shading
 
-echo -10000 150 10000 150 > gray.cpt
+gmt makecpt -C150 -T-10000,10000 -N > shade.cpt
 gmt grdgradient india_topo.nc -Nt1 -A45 -Gindia_topo_i.nc
-gmt grdimage india_topo.nc -Iindia_topo_i.nc -J -Cgray.cpt -O -K >> %ps%
+gmt grdimage india_topo.nc -Iindia_topo_i.nc -J -Cshade.cpt -O -K >> %ps%
 
 REM Finally undo clipping and overlay basemap
 

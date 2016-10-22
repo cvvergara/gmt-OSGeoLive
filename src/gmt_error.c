@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_error.c 16983 2016-08-20 01:06:03Z remko $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 
 #include "gmt_constants.h"
 
-const char *g_error_string[] = {
+const char *gmt_error_string[] = {
 	/* GMT_NOERROR */			"No internal GMT error",
 	/* GMT_GRDIO_NONUNIQUE_FORMAT */	"Non-unique grid format",
 	/* GMT_GRDIO_UNKNOWN_FORMAT */		"Not a supported grid format",
@@ -51,6 +51,7 @@ const char *g_error_string[] = {
 	/* GMT_GRDIO_NO_VAR */			"Named variable does not exist in file",
 	/* GMT_GRDIO_BAD_DIM */			"Named variable is not 2-, 3-, 4- or 5-D",
 	/* GMT_GRDIO_NC_NO_PIPE */		"NetCDF-based I/O does not support piping",
+	/* GMT_GRDIO_NC_NOT_COARDS */	"NetCDF grid is not COARDS compliant",
 	/* GMT_GRDIO_NOT_RAS */			"Not a Sun raster file",
 	/* GMT_GRDIO_NOT_8BIT_RAS */		"Not a standard 8-bit Sun raster file",
 	/* GMT_GRDIO_NOT_SURFER */		"Not a valid Surfer 6|7 grid file",
@@ -59,13 +60,13 @@ const char *g_error_string[] = {
 	/* GMT_GRDIO_GRD98_YINC */		"GRD98 format requires n = 1/y_inc to be an integer",
 	/* GMT_GRDIO_GRD98_BADMAGIC */		"GRD98 grid file has wrong magic number",
 	/* GMT_GRDIO_GRD98_BADLENGTH */		"GRD98 grid file has wrong length",
-	/* GMT_GRDIO_ESRI_NONSQUARE */		"Only square pixels are allowed in ESRI grids"
+	/* GMT_GRDIO_ESRI_NONSQUARE */		"Only square pixels are allowed in ESRI grids",
 	/* GMT_GRDIO_RI_OLDBAD */		"Use grdedit -A on your grid file to make region and increments compatible",
 	/* GMT_GRDIO_RI_NEWBAD */		"Please select compatible -R and -I values",
 	/* GMT_GRDIO_RI_NOREPEAT */		"Pixel format grids do not have repeating rows or columns",
 	/* GMT_IO_BAD_PLOT_DEGREE_FORMAT */	"Unacceptable PLOT_DEGREE_FORMAT template. A not allowed",
-	/* GMT_CHEBYSHEV_NEG_ORDER */		"GMT_chebyshev given negative degree",
-	/* GMT_CHEBYSHEV_BAD_DOMAIN */		"GMT_chebyshev given |x| > 1",
+	/* GMT_CHEBYSHEV_NEG_ORDER */		"gmt_chebyshev given negative degree",
+	/* GMT_CHEBYSHEV_BAD_DOMAIN */		"gmt_chebyshev given |x| > 1",
 	/* GMT_MAP_EXCEEDS_360 */		"Map region exceeds 360 degrees",
 	/* GMT_MAP_BAD_ELEVATION_MIN */		"\"South\" (min elevation) is outside 0-90 degree range",
 	/* GMT_MAP_BAD_ELEVATION_MAX */		"\"North\" (max elevation) is outside 0-90 degree range",
@@ -73,6 +74,6 @@ const char *g_error_string[] = {
 	/* GMT_MAP_BAD_LAT_MAX */		"North is outside -90 to +90 degree range",
 	/* GMT_MAP_NO_REGION */			"No map region selected",
 	/* GMT_MAP_NO_PROJECTION */		"No projection selected",
-	/* GMT_MAP_BAD_DIST_FLAG */		"Wrong flag passed to GMT_dist_array",
+	/* GMT_MAP_BAD_DIST_FLAG */		"Wrong flag passed to gmt_dist_array",
 	/* GMT_MAP_BAD_MEASURE_UNIT */		"Bad measurement unit.  Choose among " GMT_DIM_UNITS_DISPLAY,
 };

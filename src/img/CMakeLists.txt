@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CMakeLists.txt 15816 2016-03-06 01:24:53Z pwessel $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -20,11 +20,10 @@
 #
 
 # source files
-set (SUPPL_LIB_SRCS gmt_imgsubs.h gmt_imgsubs.c)
 set (SUPPL_PROGS_SRCS img2grd.c)
 
 # lib sources
-set (LIB_SRCS ${SUPPL_LIB_SRCS} ${SUPPL_PROGS_SRCS})
+set (LIB_SRCS ${SUPPL_PROGS_SRCS})
 
 # create build targets
 string (REPLACE ".c" "" _gmt_modules "${SUPPL_PROGS_SRCS}")

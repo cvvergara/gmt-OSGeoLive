@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: common_runpath.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: common_runpath.h 15819 2016-03-06 20:54:48Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -44,8 +44,8 @@ extern "C" {
 
 /* Prototypes */
 #if defined (__APPLE__)
-#	define GMT_runtime_bindir(result, argv) GMT_runtime_bindir_osx(result)
-	EXTERN_MSC char *GMT_runtime_bindir_osx (char *result);
+#	define GMT_runtime_bindir(result, argv) gmt_runtime_bindir_osx(result)
+	EXTERN_MSC char *gmt_runtime_bindir_osx (char *result);
 #elif defined (_WIN32)
 #	define GMT_runtime_bindir(result, argv) GMT_runtime_bindir_win32(result)
 	EXTERN_MSC char *GMT_runtime_bindir_win32 (char *result);
@@ -53,9 +53,9 @@ extern "C" {
 	EXTERN_MSC char *GMT_runtime_bindir (char *result, const char *candidate);
 #endif
 
-EXTERN_MSC char *GMT_runtime_libdir (char *result);
-EXTERN_MSC char *GMT_guess_sharedir (char *sharedir, const char *runpath);
-EXTERN_MSC int GMT_verify_sharedir_version (const char *dir);
+EXTERN_MSC char *gmt_runtime_libdir (char *result);
+EXTERN_MSC char *gmt_guess_sharedir (char *sharedir, const char *runpath);
+EXTERN_MSC int gmt_verify_sharedir_version (const char *dir);
 
 #ifdef __cplusplus
 }

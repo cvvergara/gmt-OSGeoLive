@@ -1,20 +1,18 @@
-/* $Id: gmt_sharedlibs.h 15178 2015-11-06 10:45:03Z fwobbe $
+/* $Id: gmt_sharedlibs.h 16871 2016-07-27 20:48:42Z pwessel $
  *
- *	Copyright (c) 2012-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2012-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
 
-/* gmt_module.h declares structures needed by the various modules libraries. */
-
 /*!
  * \file gmt_sharedlibs.h
- * \brief Structures needed by the various modules libraries. 
+ * \brief Structures needed by the various shared libraries. 
  */
 
 #pragma once
-#ifndef _GMT_MODULE_H
-#define _GMT_MODULE_H
+#ifndef _GMT_SHAREDLIBS_H
+#define _GMT_SHAREDLIBS_H
 
 #ifdef __cplusplus /* Basic C++ support */
 extern "C" {
@@ -46,4 +44,4 @@ struct Gmt_libinfo {
 }
 #endif
 
-#endif /* !_GMT_MODULE_H */
+#endif /* !_GMT_SHAREDLIBS_H */

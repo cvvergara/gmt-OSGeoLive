@@ -137,7 +137,7 @@ Optional Arguments
 Operators
 ---------
 
-Choose among the following 169 operators. "args" are the number of input
+Choose among the following 200 operators. "args" are the number of input
 and output arguments.
 
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
@@ -157,7 +157,9 @@ and output arguments.
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **AND**       | 2 1   | B if A == NaN, else A                                                                                  |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
-| **ARC**       | 2 1   | return arc(A,B) on [0 pi]                                                                              |
+| **ARC**       | 2 1   | Return arc(A,B) on [0 pi]                                                                              |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **AREA**      | 0 1   | Area of each gridnode cell (in km^2 if geographic)                                                     |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **ASEC**      | 1 1   | asec (A)                                                                                               |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
@@ -353,6 +355,8 @@ and output arguments.
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **LMSSCL**    | 1 1   | LMS scale estimate (LMS STD) of A                                                                      |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **LMSSCLW**   | 2 1   | Weighted LMS scale estimate (LMS STD) of A for weights in B                                            |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **LOWER**     | 1 1   | The lowest (minimum) value of A                                                                        |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **LPDF**      | 1 1   | Laplace probability density function for z = A                                                         |
@@ -367,13 +371,19 @@ and output arguments.
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **MEAN**      | 1 1   | Mean value of A                                                                                        |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
-| **MED**       | 1 1   | Median value of A                                                                                      |
+| **MEANW**     | 2 1   | Weighted mean value of A for weights in B                                                              |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **MEDIAN**    | 1 1   | Median value of A                                                                                      |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **MEDIANW**   | 2 1   | Weighted median value of A for weights in B                                                            |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **MIN**       | 2 1   | Minimum of A and B                                                                                     |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **MOD**       | 2 1   | A mod B (remainder after floored division)                                                             |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **MODE**      | 1 1   | Mode value (Least Median of Squares) of A                                                              |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **MODEW**     | 2 1   | Weighted mode value (Least Median of Squares) of A for weights in B                                    |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **MUL**       | 2 1   | A \* B                                                                                                 |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
@@ -413,6 +423,8 @@ and output arguments.
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **PQUANT**    | 2 1   | The B'th Quantile (0-100%) of A                                                                        |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **PQUANTW**   | 3 1   | The C'th weighted quantile (0-100%) of A for weights in B                                              |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **PSI**       | 1 1   | Psi (or Digamma) of A                                                                                  |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **PV**        | 3 1   | Legendre function Pv(A) of degree v = real(B) + imag(C)                                                |
@@ -430,6 +442,8 @@ and output arguments.
 | **RCRIT**     | 1 1   | Rayleigh distribution critical value for alpha = A                                                     |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **RINT**      | 1 1   | rint (A) (round to integral value nearest to A)                                                        |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **RMS**       | 1 1   | Root-mean-square of A                                                                                  |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **RPDF**      | 1 1   | Rayleigh probability density function for z = A                                                        |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
@@ -469,6 +483,8 @@ and output arguments.
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **STD**       | 1 1   | Standard deviation of A                                                                                |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **STDW**      | 2 1   | Weighted standard deviation of A for weights in B                                                      |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **STEP**      | 1 1   | Heaviside step function: H(A)                                                                          |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **STEPX**     | 1 1   | Heaviside step function in x: H(x-A)                                                                   |
@@ -496,6 +512,10 @@ and output arguments.
 | **TPDF**      | 2 1   | Student's t probability density function for t = A, and nu = B                                         |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **UPPER**     | 1 1   | The highest (maximum) value of A                                                                       |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **VAR**       | 1 1   | Variance of A                                                                                          |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **VARW**      | 2 1   | Weighted variance of A for weights in B                                                                |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **WCDF**      | 3 1   | Weibull cumulative distribution function for x = A, scale = B, and shape = C                           |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
@@ -574,6 +594,12 @@ The following symbols have special meaning:
 Notes On Operators
 ------------------
 
+#. For Cartesian grids the operators **MEAN**, **MEDIAN**, **MODE**,
+   **LMSSCL**, **MAD**, **OQUANT**, **STD**, and **VAR** return the
+   expected value from the given matrix.  However, for geographic grids
+   we perform a spherically weighted calculation where each node value
+   is weighted by the geographic area represented by that node.
+
 #. The operator **SDIST** calculates spherical distances in km between the
    (lon, lat) point on the stack and all node positions in the grid. The
    grid domain and the (lon, lat) point are expected to be in degrees.
@@ -586,8 +612,9 @@ Notes On Operators
    You can trade speed with accuracy by changing the algorithm used to
    compute the geodesic (see :ref:`PROJ_GEODESIC <Projection Parameters>`).
 
-   The operator **LDISTG** is a version of **LDIST** that operates on the GSHHG data. Instead of reading an ASCII file,
-   it directly accesses one of the GSHHG data sets as determined by the **-D** and **-A** options.
+   The operator **LDISTG** is a version of **LDIST** that operates on the
+   GSHHG data. Instead of reading an ASCII file, it directly accesses one of
+   the GSHHG data sets as determined by the **-D** and **-A** options.
 
 #. The operator **POINT** reads a ASCII table, computes the mean x and mean
    y values and places these on the stack.  If geographic data then we use
@@ -617,7 +644,7 @@ Notes On Operators
    as argument.
 
 #. All the derivatives are based on central finite differences, with
-   natural boundary conditions.
+   natural boundary conditions, and are Cartesian derivatives.
 
 #. Files that have the same names as some operators, e.g., **ADD**,
    **SIGN**, **=**, etc. should be identified by prepending the current
@@ -643,7 +670,7 @@ Notes On Operators
 
 .. include:: explain_float.rst_
 
-.. include:: explain_grd_inout.rst_
+.. include:: explain_grd_inout_short.rst_
 
 .. include:: explain_grd_coord.rst_
 
@@ -706,7 +733,7 @@ the imaginary amplitude 1.1:
 
    ::
 
-    gmt grdmath -R0/360/-90/90 -I1 8 4 YML 1.1 MUL EXCH 0.4 MUL ADD = harm.nc
+    gmt grdmath -R0/360/-90/90 -I1 8 4 YLM 1.1 MUL EXCH 0.4 MUL ADD = harm.nc
 
 To extract the locations of local maxima that exceed 100 mGal in the file faa.nc:
 

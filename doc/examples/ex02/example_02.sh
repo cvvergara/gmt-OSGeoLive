@@ -1,13 +1,13 @@
 #!/bin/bash
 #		GMT EXAMPLE 02
-#		$Id: example_02.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_02.sh 16750 2016-07-09 05:44:02Z pwessel $
 #
 # Purpose:	Make two color images based gridded data
-# GMT progs:	gmtset, grd2cpt, grdgradient, grdimage, makecpt, psscale, pstext
+# GMT modules:	gmtset, grd2cpt, grdgradient, grdimage, makecpt, psscale, pstext
 # Unix progs:	rm
 #
 ps=example_02.ps
-gmt gmtset FONT_TITLE 30p MAP_ANNOT_OBLIQUE 0
+gmt set FONT_TITLE 30p MAP_ANNOT_OBLIQUE 0
 gmt makecpt -Crainbow -T-2/14/2 > g.cpt
 gmt grdimage HI_geoid2.nc -R160/20/220/30r -JOc190/25.5/292/69/4.5i -E50 -K -P \
             -B10 -Cg.cpt -X1.5i -Y1.25i > $ps

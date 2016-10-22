@@ -1,9 +1,9 @@
 #!/bin/bash
 #               GMT EXAMPLE 44
-#               $Id$
+#               $Id: example_44.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:      Illustrate use of map inserts
-# GMT progs:    pscoast, psbasemap, mapproject
+# GMT modules:  pscoast, psbasemap, mapproject
 # Unix progs:   read
 #
 

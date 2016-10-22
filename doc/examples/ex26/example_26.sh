@@ -1,9 +1,9 @@
 #!/bin/bash
-#		$Id: example_26.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_26.sh 16652 2016-06-28 21:02:26Z pwessel $
 #		GMT EXAMPLE 26
 #
 # Purpose:	Demonstrate general vertical perspective projection
-# GMT progs:	pscoast
+# GMT modules:	pscoast
 # Unix progs:	rm
 #
 ps=example_26.ps

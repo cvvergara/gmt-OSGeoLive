@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: postscriptlight.h 16589 2016-06-21 01:06:47Z jluis $
  *
- *	Copyright (c) 2009-2015 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2016 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -20,8 +20,8 @@
  *			   pwessel@hawaii.edu
  *		Remko Scharroo, Altimetrics
  *			   remko@altimetrics.com
- * Version:	5.1 [64-bit enabled API edition]
- * Date:	28-JUL-2015
+ * Version:	5.2 [64-bit enabled API edition]
+ * Date:	13-NOV-2015
  */
 
 /*!
@@ -81,6 +81,9 @@ enum PSL_enum_vecattr {
 	PSL_VEC_TERMINAL	= 1,		/* Cross-bar normal to vector */
 	PSL_VEC_CIRCLE		= 2,		/* Circle as vector head */
 	PSL_VEC_SQUARE		= 3,		/* Square as vector head */
+	PSL_VEC_TAIL		= 4,		/* Vector tail */
+	PSL_VEC_ARROW_PLAIN	= 5,		/* Stylized vector head (just triangle lines; cannot be filled) */
+	PSL_VEC_TAIL_PLAIN	= 6,		/* Stylized vector tail (just inward triangle lines; cannot be filled) */
 	PSL_VEC_BEGIN		= 1,		/* Place vector head at beginning of vector. Add PSL_VEC_BEGIN_L for left only, PSL_VEC_BEGIN_R for right only */
 	PSL_VEC_END		= 2,		/* Place vector head at end of vector.  Add PSL_VEC_END_L for left only, and PSL_VEC_END_R for right only */
 	PSL_VEC_HEADS		= 3,		/* Mask for either head end */
@@ -118,6 +121,8 @@ enum PSL_enum_const {PSL_CM	= 0,
 	PSL_END			= 1,
 	PSL_FINALIZE		= 1,
 	PSL_OVERLAY		= 1,
+	PSL_MEMORY		= 2,
+	PSL_MEM_ALLOC		= 2097152, /* 2 Mb of memory */
 	PSL_INIT		= 0,
 	PSL_LANDSCAPE		= 0,
 	PSL_PORTRAIT		= 1,
@@ -137,7 +142,7 @@ enum PSL_enum_const {PSL_CM	= 0,
 	PSL_MAX_EPS_FONTS	= 6,
 	PSL_MAX_DIMS		= 12,		/* Max number of dim arguments to PSL_plot_symbol */
 	PSL_N_PATTERNS		= 91,		/* Current number of predefined patterns + 1, # 91 is user-supplied */
-	PSL_BUFSIZ		= 4096U};
+	PSL_BUFSIZ		= 256U};
 
 /* PSL codes for pen movements (used by PSL_plotpoint, PSL_plotline, PSL_plotarc) */
 
@@ -238,6 +243,7 @@ struct PSL_CTRL {
 		FILE *err;			/* Error stream (NULL means stderr)		*/
 		char *encoding;			/* The encoding name. e.g. ISO-8859-1		*/
 		char *session;			/* The session name (NULL)			*/
+		int runmode;			/* Nonzero if we are being called from a multi-module enviroment (0 for commandline)	*/
 		int unit;			/* 0 = cm, 1 = inch, 2 = meter			*/
 		int copies;			/* Number of copies for this plot		*/
 		double page_rgb[4];		/* RGB color for background paper [white]	*/
@@ -268,6 +274,7 @@ struct PSL_CTRL {
 	struct INTERNAL {	/* Variables used internally only */
 		char *SHAREDIR;			/* Pointer to path of directory with postscriptlight subdirectory */
 		char *USERDIR;			/* Pointer to path of directory with user definitions */
+		char *buffer;			/* Pointer to buffer where PS will be "writen" when memory == 1 */
 		char *user_image[PSL_N_PATTERNS];	/* Name of user patterns		*/
 		char origin[2];			/* 'r', 'a', 'f', 'c' depending on reference for new origin x and y coordinate */
 		double offset[2];		/* Origin offset [1/1]				*/
@@ -284,7 +291,8 @@ struct PSL_CTRL {
 		int verbose;			/* Verbosity level (0-4): see PSL_MSG_*	*/
 		int comments;			/* true for writing comments to output, false strips all comments */
 		int overlay;			/* true if overlay (-O)				*/
-		int landscape;			/* true = Landscape, false = Portrait		*/
+		int landscape;			/* 1 = Landscape, 0 = Portrait		*/
+		int memory;			/* 1 = write to memory, 0 = write to output	*/
 		int text_init;			/* true after PSL_text.ps has been loaded	*/
 		int image_format;		/* 0 writes images in ASCII, 2 uses binary	*/
 		int N_FONTS;			/* Total no of fonts;  To add more, modify the file PSL_custom_fonts.txt */
@@ -298,6 +306,9 @@ struct PSL_CTRL {
 		int ix, iy;			/* Absolute coordinates of last point		*/
 		int n_userimages;		/* Number of specified custom patterns		*/
 		int x0, y0;			/* x,y PS offsets				*/
+		int pmode;			/* Mode of buffer plot (1 = has header, 2 = has trailer, 3 = both) */
+		size_t n_alloc;			/* Allocation length of buffer			*/
+		size_t n;			/* Length of buffer				*/
 		FILE *fp;			/* PS output file pointer. NULL = stdout	*/
 		struct PSL_FONT {
 			double height;		/* Height of A for unit fontsize */
@@ -351,6 +362,10 @@ EXTERN_MSC int PSL_endclipping (struct PSL_CTRL *PSL, int mode);
 EXTERN_MSC int PSL_endlayer (struct PSL_CTRL *PSL);
 EXTERN_MSC int PSL_endplot (struct PSL_CTRL *PSL, int lastpage);
 EXTERN_MSC int PSL_endsession (struct PSL_CTRL *PSL);
+EXTERN_MSC char * PSL_getplot (struct PSL_CTRL *PSL);
+EXTERN_MSC char * PSL_makecolor (struct PSL_CTRL *PSL, double rgb[]);
+EXTERN_MSC char * PSL_makefont (struct PSL_CTRL *PSL, double size, double rgb[]);
+EXTERN_MSC char * PSL_makepen (struct PSL_CTRL *PSL, double linewidth, double rgb[], char *pattern, double offset);
 EXTERN_MSC int PSL_plotarc (struct PSL_CTRL *PSL, double x, double y, double radius, double az1, double az2, int type);
 EXTERN_MSC int PSL_plotaxis (struct PSL_CTRL *PSL, double annotation_int, char *label, double annotfontsize, int side);
 EXTERN_MSC int PSL_plotbitimage (struct PSL_CTRL *PSL, double x, double y, double xsize, double ysize, int justify, unsigned char *buffer, int nx, int ny, double f_rgb[], double b_rgb[]);
@@ -390,21 +405,12 @@ EXTERN_MSC int PSL_defpoints (struct PSL_CTRL *PSL, const char *param, double fo
 EXTERN_MSC int PSL_defcolor (struct PSL_CTRL *PSL, const char *param, double rgb[]);
 EXTERN_MSC int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char *text);
 EXTERN_MSC int PSL_defunits (struct PSL_CTRL *PSL, const char *param, double value);
+
 EXTERN_MSC unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
-EXTERN_MSC char * PSL_makepen (struct PSL_CTRL *PSL, double linewidth, double rgb[], char *pattern, double offset);
-
-/* Other deep level routines that are useful */
-EXTERN_MSC int psl_ix (struct PSL_CTRL *PSL, double value);
-EXTERN_MSC int psl_iy (struct PSL_CTRL *PSL, double value);
-EXTERN_MSC int psl_iz (struct PSL_CTRL *PSL, double value);
-EXTERN_MSC int psl_ip (struct PSL_CTRL *PSL, double value);
 EXTERN_MSC void psl_set_txt_array (struct PSL_CTRL *PSL, const char *param, char *array[], int n);
-EXTERN_MSC int psl_encodefont (struct PSL_CTRL *PSL, int font_no);
 EXTERN_MSC void psl_set_int_array (struct PSL_CTRL *PSL, const char *param, int *array, int n);
-EXTERN_MSC char *psl_putcolor (struct PSL_CTRL *PSL, double rgb[]);
-EXTERN_MSC char *psl_putdash (struct PSL_CTRL *PSL, char *pattern, double offset);
 
-/* Used indirectly by macro PSL_free and FORTRAN wrapper PSL_free_ . */
+/* Used indirectly by FORTRAN wrapper PSL_free_ . */
 EXTERN_MSC int PSL_free_nonmacro (void *addr);
 
 /* Definition for printing a message. When DEBUG is on, also print source file and line number.
@@ -417,7 +423,8 @@ EXTERN_MSC int PSL_initerr (struct PSL_CTRL *C, const char *format, ...);
 EXTERN_MSC int PSL_message (struct PSL_CTRL *C, int level, const char *format, ...);
 EXTERN_MSC FILE *PSL_fopen (char *file, char *mode);
 
-#define PSL_free(ptr) (PSL_free_nonmacro(ptr),(ptr)=NULL) /* Cleanly set the freed pointer to NULL */
+/*! Macro for free that excplicitly checks for NULL pointer and sets freed pointer to NULL */
+#define PSL_free(ptr) (free((void *)(ptr)),(ptr)=NULL)
 
 #ifdef __cplusplus
 }

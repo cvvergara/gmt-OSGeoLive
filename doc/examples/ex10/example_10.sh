@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 10
-#		$Id: example_10.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_10.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:	Make 3-D bar graph on top of perspective map
-# GMT progs:	pscoast, pstext, psxyz, pslegend
+# GMT modules:	pscoast, pstext, psxyz, pslegend
 # Unix progs:	$AWK
 #
 ps=example_10.ps

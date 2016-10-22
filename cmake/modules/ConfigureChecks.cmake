@@ -1,5 +1,5 @@
 #
-# $Id: ConfigureChecks.cmake 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: ConfigureChecks.cmake 15301 2015-12-04 13:59:07Z fwobbe $
 #
 
 if(NOT DEFINED _INCLUDED_CHECK_MACROS_)
@@ -172,6 +172,8 @@ if (WIN32)
 	check_function_exists (_popen         HAVE__POPEN)
 	check_function_exists (_stat          HAVE__STAT)
 	check_function_exists (_stati64       HAVE__STATI64)
+	check_function_exists (_fstat         HAVE__FSTAT)
+	check_function_exists (_fstati64      HAVE__FSTATI64)
 	check_function_exists (strtok_s       HAVE_STRTOK_S)
 endif (WIN32)
 

@@ -17,7 +17,7 @@ Synopsis
 |SYN_OPT-I|
 |SYN_OPT-R|
 [ |-A|\ *aspect_ratio* ]
-[ |-C|\ *convergence_limit* ]
+[ |-C|\ *convergence_limit*\ [%] ]
 [ |-L|\ **l**\ *lower* ] [ **-Lu**\ *upper* ]
 [ |-N|\ *max_iterations* ]
 [ |-Q| ]
@@ -31,6 +31,7 @@ Synopsis
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
+[ **-r** ]
 [ |SYN_OPT-:| ]
 
 |No-spaces|
@@ -102,7 +103,7 @@ Optional Arguments
     scaled to 1e-4 of the root-mean-square deviation of the data
     from a best-fit (least-squares) plane.].
     This is the final convergence limit at the desired grid spacing; for
-    intermediate (coarser) grids the effective convergence limit is scaled
+    intermediate (coarser) grids the effective convergence limit is divided
     by the grid spacing multiplier.
 
 .. _-L:
@@ -195,6 +196,9 @@ Optional Arguments
 .. include:: explain_-h.rst_
     
 .. include:: explain_-icols.rst_
+
+.. |Add_nodereg| unicode:: 0x20 .. just an invisible code
+.. include:: explain_nodereg.rst_
 
 .. include:: explain_colon.rst_
 

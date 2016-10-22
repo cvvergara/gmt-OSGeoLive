@@ -6,7 +6,7 @@ gmtspatial
 
 .. only:: not man
 
-    gmtspatial - Do geospatial operations on lines and polygons
+    gmtspatial - Geospatial operations on lines and polygons
 
 Synopsis
 --------
@@ -17,9 +17,10 @@ Synopsis
 [ |-C| ]
 [ |-D|\ [**+f**\ *file*][\ **+a**\ *amax*][\ **+d**\ *dmax*][\ **+c\|C**\ *cmax*][\ **+s**\ *fact*] ]
 [ |-E|\ **+**\ \|\ **-** ]
-[ |-F|\ [**l**] ] [ **-I**\ [**e**\ \|\ **i**] ]
+[ |-F|\ [**l**] ]
+[ |-I|\ [**e**\ \|\ **i**] ]
 [ |-N|\ *pfile*\ [**+a**][\ **+p**\ *start*][**+r**][**+z**] ]
-[ |-Q|\ [[**-**\ \|\ **+**\ ]*unit*\ ][**+h**\ ][**+l**\ ][**+p**\ ] ]
+[ |-Q|\ [[**-**\ \|\ **+**\ ]*unit*\ ][**+c**\ *min*\ [/*max*]][**+h**\ ][**+l**\ ][**+p**\ ][**+s**\ [**a**\ \|\ **d**]] ]
 [ |SYN_OPT-R| ]
 [ |-S|\ **i**\ \|\ **u**\ \|\ **s**\ \|\ **j** ]
 [ |-T|\ [*clippolygon*] ]
@@ -141,7 +142,7 @@ Optional Arguments
 
 .. _-Q:
 
-**-Q**\ [[**-**\ \|\ **+**\ ]*unit*\ ][**+h**\ ][**+l**\ ][**+p**\ ]
+**-Q**\ [[**-**\ \|\ **+**\ ]*unit*\ ][**+c**\ *min*\ [/*max*]][**+h**\ ][**+l**\ ][**+p**\ ][**+s**\ [**a**\ \|\ **d**]]
     Measure the area of all polygons or length of line segments. Use
     **-Q+h** to append the area to each polygons segment header [Default
     simply writes the area to stdout]. For polygons we also compute the
@@ -154,7 +155,12 @@ Optional Arguments
     vertices, while the area is obtained via an equal-area projection.
     For line lengths you may prepend **-**\ \|\ **+** to the unit and
     the calculation will use Flat Earth or Geodesic algorithms, respectively
-    [Default is great circle distances].
+    [Default is great circle distances].  Normally, all input segments
+    will be be reflected on output.  Use **c** to restrict processing to
+    those whose length (or area for polygons) fall inside the specified
+    range set by *min* and *max*.  If *max* is not set it defaults to infinity.
+    To sort the segments based on their lengths or area, use **s** and
+    append **a** for ascending and **d** for descending order [ascending]. 
     By default, we consider open polygons as lines.
     Append **+p** to close open polygons and thus consider all input
     as polygons, or append **+l** to consider all input as lines, even
@@ -244,11 +250,33 @@ their areas to the segment headers, run
 
     gmt spatial polygons.txt -Q+h -E+ > areas.txt
 
+To determine the areas of all the polygon segments in the file janmayen_land_full.txt,
+add this information to the segment headers, sort the segments from largest
+to smallest in area but only keep polygons with area larger than 1000 sq. meters, run
+
+   ::
+
+    gmt spatial -Qe+h+p+c1000+sd -V janmayen_land_full.txt > largest_pols.txt
+
 To determine the intersections between the polygons A.txt and B.txt, run
 
    ::
 
-    gmt spatial A.txt B.txt -Ce > crossovers.txt
+    gmt spatial A.txt B.txt -Ie > crossovers.txt
+
+To truncate polygons A.txt against polygon B.txt, resulting in an open line segment, run
+
+   ::
+
+    gmt gmtspatial A.txt -TB.txt > line.txt
+
+Notes
+-----
+
+OGR/GMT files are considered complete datasets and thus you cannot specify more than one
+at a given time. This causes problems if you want to examine the intersections of
+two OGR/GMT files.  The solution is to convert them to regular datasets via
+gmtconvert and then run gmtspatial on the converted files.
 
 See Also
 --------

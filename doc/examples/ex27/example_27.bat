@@ -1,9 +1,9 @@
 REM
 REM		GMT EXAMPLE 27
-REM		$Id: example_27.bat 15178 2015-11-06 10:45:03Z fwobbe $
+REM		$Id: example_27.bat 17012 2016-08-26 21:00:21Z pwessel $
 REM
 REM Purpose:	Illustrates how to plot Mercator img grids
-REM GMT progs:	makecpt, grdgradient, grdimage, grdinfo, pscoast
+REM GMT progs:	makecpt, grdgradient, grdimage, pscoast
 REM GMT supplement: img2grd (to read Sandwell/Smith img files)
 REM DOS calls:	del, grep
 REM
@@ -18,7 +18,7 @@ gmt grdgradient tasman_grav.nc -Nt1 -A45 -Gtasman_grav_i.nc
 
 REM Make a suitable cpt file for mGal
 
-gmt makecpt -T-120/120/240 -Z -Crainbow > grav.cpt
+gmt makecpt -T-120/120 -Crainbow > grav.cpt
 
 REM Since this is a Mercator grid we use a linear gmt projection
 

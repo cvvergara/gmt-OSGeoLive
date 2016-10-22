@@ -1,6 +1,6 @@
-/* $Id$
+/* $Id: gmt_core_module.h 17183 2016-10-12 21:26:47Z pwessel $
  *
- * Copyright (c) 2012-2015
+ * Copyright (c) 2012-2016
  * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
@@ -90,6 +90,7 @@ EXTERN_MSC int GMT_pslegend (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psmask (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psrose (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psscale (void *API, int mode, void *args);
+EXTERN_MSC int GMT_pssolar (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pstext (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pswiggle (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psxyz (void *API, int mode, void *args);
@@ -109,9 +110,9 @@ EXTERN_MSC int GMT_xyz2grd (void *API, int mode, void *args);
 
 /* Pretty print all modules in the GMT core library and their purposes */
 EXTERN_MSC void gmt_core_module_show_all (void *API);
+/* List all modules in the GMT core library to stdout */
 EXTERN_MSC void gmt_core_module_list_all (void *API);
-
-/* Undocumented API function for developers to get information about a module */
+/* Function called by GMT_Encode_Options so developers can get information about a module */
 EXTERN_MSC const char * gmt_core_module_info (void *API, char *candidate);
 
 #ifdef __cplusplus

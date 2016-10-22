@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: CMakeLists.txt 17175 2016-10-06 19:10:01Z fwobbe $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -39,14 +39,18 @@ message (STATUS "Searching dependent libraries. This may take a few minutes...")
 find_package (NETCDF REQUIRED)
 include_directories (${NETCDF_INCLUDE_DIR})
 
-find_package (GDAL)
+if (NOT DEFINED GMT_EXCLUDE_GDAL)
+	find_package (GDAL)
+endif (NOT DEFINED GMT_EXCLUDE_GDAL)
 if (GDAL_FOUND)
 	set (HAVE_GDAL TRUE CACHE INTERNAL "System has GDAL")
 	include_directories (${GDAL_INCLUDE_DIR})
 	list (APPEND GMT_OPTIONAL_LIBRARIES ${GDAL_LIBRARIES})
 endif (GDAL_FOUND)
 
-find_package (PCRE)
+if (NOT DEFINED GMT_EXCLUDE_PCRE)
+	find_package (PCRE)
+endif (NOT DEFINED GMT_EXCLUDE_PCRE)
 if (PCRE_FOUND)
 	set (HAVE_PCRE TRUE CACHE INTERNAL "System has PCRE")
 	set (GMT_CONFIG_REGEX_MESSAGE "PCRE (${PCRE_LIBRARIES})"
@@ -68,7 +72,9 @@ else (PCRE_FOUND)
 	endif (REGEX_FOUND)
 endif (PCRE_FOUND)
 
-find_package (FFTW3)
+if (NOT DEFINED GMT_EXCLUDE_FFTW3)
+	find_package (FFTW3)
+endif (NOT DEFINED GMT_EXCLUDE_FFTW3)
 if (FFTW3_FOUND)
 	set (HAVE_FFTW3F TRUE CACHE INTERNAL "System has single precision FFTW")
 	if (FFTW3F_THREADS_LIBRARY)
@@ -78,7 +84,9 @@ if (FFTW3_FOUND)
 	list (APPEND GMT_OPTIONAL_LIBRARIES ${FFTW3F_LIBRARIES})
 endif (FFTW3_FOUND)
 
-find_package (LAPACK)
+if (NOT DEFINED GMT_EXCLUDE_LAPACK)
+	find_package (LAPACK)
+endif (NOT DEFINED GMT_EXCLUDE_LAPACK)
 if (LAPACK_FOUND)
 	set (HAVE_LAPACK TRUE CACHE INTERNAL "System has LAPACK")
 	set (GMT_CONFIG_LAPACK_MESSAGE "yes" CACHE INTERNAL "LAPACK config message")
@@ -95,7 +103,9 @@ else (LAPACK_FOUND)
 	endif (LAPACK_LIBRARY)
 endif (LAPACK_FOUND)
 
-find_package (ZLIB)
+if (NOT DEFINED GMT_EXCLUDE_ZLIB)
+	find_package (ZLIB)
+endif (NOT DEFINED GMT_EXCLUDE_ZLIB)
 if (ZLIB_FOUND)
 	set (HAVE_ZLIB TRUE CACHE INTERNAL "System has ZLIB")
 	include_directories (${ZLIB_INCLUDE_DIRS})
@@ -108,7 +118,9 @@ if (APPLE)
 	list (APPEND GMT_OPTIONAL_LIBRARIES ${ACCELERATE_FRAMEWORK})
 endif (APPLE)
 
-set (GMT_OPENMP TRUE CACHE INTERNAL "Turn on GMT OpenMP")
+if (DEFINED GMT_ENABLE_OPENMP)
+	set (GMT_OPENMP TRUE CACHE INTERNAL "Turn on GMT OpenMP")
+endif (DEFINED GMT_ENABLE_OPENMP)
 find_package (OpenMP) # OpenMP not used; disabled for now
 if (OPENMP_FOUND AND GMT_OPENMP)
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -214,8 +226,10 @@ if (DO_EXAMPLES OR DO_TESTS AND NOT DCW_FOUND)
 		"Obtain dcw-gmt-<version>.tar.gz or dcw-gmt-<version>.zip from ftp.soest.hawaii.edu://gmt5 and make DCW_ROOT variable point to the directory where you unarchived the files")
 endif (DO_EXAMPLES OR DO_TESTS AND NOT DCW_FOUND)
 
-# These lines are temporarily here for the beta release
-set (GMT_DEMOS_SRCS testapi.c testgmt5.c testgmtio.c testgrdio.c testio.c)
+if (DO_API_TESTS)
+	# These lines are temporarily here for the beta release - comment to avoid in the build
+	set (GMT_DEMOS_SRCS testapi.c testpsl.c testgmt5.c testgmtio.c testgrdio.c testio.c testapiconv.c example1.c testapi_matrix.c testapi_vector.c test_JL.c test_walter.c)
+endif (DO_API_TESTS)
 
 if (NOT LICENSE_RESTRICTED) # off
 	# enable Shewchuk's triangle routine
@@ -227,6 +241,7 @@ else (NOT LICENSE_RESTRICTED) # on
 	set (GMT_TRIANGULATE "Watson" PARENT_SCOPE)
 endif (NOT LICENSE_RESTRICTED)
 
+# Note: Developers can set EXTRA_MODULES in ConfigUser.cmake to test new modules
 set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
 	fitcircle.c gmt2kml.c gmtconvert.c gmtlogo.c gmtmath.c gmtselect.c gmtsimplify.c
 	gmtspatial.c gmtconnect.c gmtregress.c gmtvector.c gmtwhich.c grd2cpt.c grd2rgb.c
@@ -239,7 +254,7 @@ set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
 	surface.c trend1d.c trend2d.c triangulate.c xyz2grd.c gmtdefaults.c gmtget.c
 	gmtset.c grdcontour.c grdimage.c grdvector.c grdview.c psbasemap.c psclip.c
 	pscoast.c pscontour.c pshistogram.c psimage.c psmask.c psrose.c psscale.c
-	pstext.c pswiggle.c psxy.c psxyz.c pslegend.c)
+	pssolar.c pstext.c pswiggle.c psxy.c psxyz.c pslegend.c ${EXTRA_MODULES})
 
 # Legacy modules for which to install compatibility links via
 # install_module_symlink
@@ -258,7 +273,7 @@ set (GMT_LIB_SRCS block_subs.h common_byteswap.h common_math.h
 	gmt_internals.h gmt_io.h gmt_macros.h gmt_media_name.h
 	gmt_media_size.h gmt_mgg_header2.h gmt_sharedlibs.h gmt_memory.h
 	gmt_core_module.h gmt_nan.h gmt_notposix.h gmt_pennames.h
-	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h
+	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_psl.h gmt_shore.h
 	gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
 	gmt_types.h gmt_unique.h gmt_version.h gshhg_version.h postscriptlight.h
 	s_rint.h triangle.h gmt.h gmt_resources.h gmt_private.h
@@ -623,10 +638,39 @@ if (BUILD_DEVELOPER)
 	install (FILES postscriptlight.h common_math.h common_string.h gmt_common.h gmt_constants.h gmt_contour.h
 		gmt_dcw.h gmt_decorate.h gmt_defaults.h gmt_error.h gmt_error_codes.h gmt_fft.h gmt_gdalread.h gmt_grd.h
 		gmt_grdio.h gmt_hash.h gmt_io.h gmt_macros.h gmt_memory.h gmt_nan.h gmt_notposix.h gmt_plot.h
-		gmt_private.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h gmt_symbol.h gmt_synopsis.h
+		gmt_private.h gmt_project.h gmt_prototypes.h gmt_psl.h gmt_shore.h gmt_symbol.h gmt_synopsis.h
 		gmt_texture.h gmt_time.h gmt_types.h gmt_dev.h gmt_customio.h
-		gmt_core_module.h gmt_supplements_module.h
+		gmt_core_module.h gmt_supplements_module.h compat/qsort.h
 		DESTINATION ${GMT_INCLUDEDIR}
+		COMPONENT Runtime)
+	install (FILES compat/qsort.h
+		DESTINATION ${GMT_INCLUDEDIR}/compat
+		COMPONENT Runtime)
+	# Install gshhg supplement headers in separate subdirectory [These have no #define HAVE_* configuration]
+	install (FILES gshhg/gshhg.h gshhg/gmt_gshhg.h
+		DESTINATION ${GMT_INCLUDEDIR}/gshhg
+		COMPONENT Runtime)
+	# Install meca supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
+	install (FILES meca/meca.h meca/utilmeca.h
+		DESTINATION ${GMT_INCLUDEDIR}/meca
+		COMPONENT Runtime)
+	# Install mgd77 supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
+	install (FILES mgd77/cm4_functions.h mgd77/mgd77_e77.h mgd77/mgd77_rls_coeffs.h mgd77/mgd77snifferdefaults.h
+		mgd77/mgd77.h mgd77/mgd77_functions.h mgd77/mgd77defaults.h mgd77/mgd77_IGF_coeffs.h mgd77/mgd77_init.h
+		mgd77/mgd77magref.h mgd77/mgd77_codes.h mgd77/mgd77_recalc.h mgd77/mgd77sniffer.h
+		DESTINATION ${GMT_INCLUDEDIR}/mgd77
+		COMPONENT Runtime)
+	# Install potential supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
+	install (FILES potential/okbfuns.h
+		DESTINATION ${GMT_INCLUDEDIR}/potential
+		COMPONENT Runtime)
+	# Install spotter supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
+	install (FILES spotter/spotter.h
+		DESTINATION ${GMT_INCLUDEDIR}/spotter
+		COMPONENT Runtime)
+	# Install x2sys supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
+	install (FILES x2sys/x2sys.h
+		DESTINATION ${GMT_INCLUDEDIR}/x2sys
 		COMPONENT Runtime)
 	# Install Configured Developer headers [These are produced by cmake from *.h.in files]
 	install (FILES ${PROJECT_BINARY_DIR}/src/config.h ${PROJECT_BINARY_DIR}/src/gmt_config.h

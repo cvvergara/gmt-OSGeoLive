@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: pscoupe.c 15213 2015-11-11 03:40:07Z pwessel $
+ *    $Id: pscoupe.c 16706 2016-07-04 02:52:44Z pwessel $
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Donated to the GMT project by G. Patau upon her retirement from IGPG
@@ -24,11 +24,11 @@ PostScript code is written to stdout.
 #define THIS_MODULE_NAME	"pscoupe"
 #define THIS_MODULE_LIB		"meca"
 #define THIS_MODULE_PURPOSE	"Plot cross-sections of focal mechanisms"
-#define THIS_MODULE_KEYS	"<DI,>XO,RG-"
+#define THIS_MODULE_KEYS	"<T{,>X}"
 
 #include "gmt_dev.h"
 
-#define GMT_PROG_OPTIONS "-:>BHJKOPRUVXYcdhixy"
+#define GMT_PROG_OPTIONS "-:>BHJKOPRUVXYcdhit"
 
 #include "meca.h"
 #include "utilmeca.h"
@@ -138,10 +138,10 @@ struct PSCOUPE_CTRL {
 	} T2;
 };
 
-void *New_pscoupe_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct PSCOUPE_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct PSCOUPE_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct PSCOUPE_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 
@@ -149,8 +149,8 @@ void *New_pscoupe_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new
 	/* Set width temporarily to -1. This will indicate later that we need to replace by W.pen */
 	C->L.pen.width = C->T.pen.width = C->P2.pen.width = C->T2.pen.width = -1.0;
 	C->L.active = true;
-	GMT_init_fill (GMT, &C->E.fill, 1.0, 1.0, 1.0);
-	GMT_init_fill (GMT, &C->G.fill, 0.0, 0.0, 0.0);
+	gmt_init_fill (GMT, &C->E.fill, 1.0, 1.0, 1.0);
+	gmt_init_fill (GMT, &C->G.fill, 0.0, 0.0, 0.0);
 	C->S.fontsize = DEFAULT_FONTSIZE;
 	C->S.offset = DEFAULT_OFFSET * GMT->session.u2u[GMT_PT][GMT_INCH];
 	C->S.justify = PSL_BC;
@@ -159,14 +159,13 @@ void *New_pscoupe_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new
 	return (C);
 }
 
-void Free_pscoupe_Ctrl (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->Z.file) free (C->Z.file);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->Z.file);
+	gmt_M_free (GMT, C);
 }
 
-void rot_axis (struct AXIS A, struct nodal_plane PREF, struct AXIS *Ar)
-{
+GMT_LOCAL void rot_axis (struct AXIS A, struct nodal_plane PREF, struct AXIS *Ar) {
 	/*
 	 * Change coordinates of axis from
 	 * north,east,down
@@ -181,7 +180,7 @@ void rot_axis (struct AXIS A, struct nodal_plane PREF, struct AXIS *Ar)
 	 *
 	 */
 
-	double xn, xe, xz, x1, x2, x3, zero_360();
+	double xn, xe, xz, x1, x2, x3, meca_zero_360();
 
 	xn = cosd (A.dip) * cosd (A.str);
 	xe = cosd (A.dip) * sind (A.str);
@@ -195,12 +194,11 @@ void rot_axis (struct AXIS A, struct nodal_plane PREF, struct AXIS *Ar)
 	Ar->str = atan2d (x2, x1);
 	if (Ar->dip < 0.0) {
 		Ar->dip += 180.0;
-		Ar->str = zero_360 ((Ar->str += 180.0));
+		Ar->str = meca_zero_360 ((Ar->str += 180.0));
 	}
 }
 
-void rot_tensor (struct M_TENSOR mt, struct nodal_plane PREF, struct M_TENSOR *mtr)
-{
+GMT_LOCAL void rot_tensor (struct M_TENSOR mt, struct nodal_plane PREF, struct M_TENSOR *mtr) {
 	/*
 	 *
 	 * Change coordinates from
@@ -236,8 +234,7 @@ void rot_tensor (struct M_TENSOR mt, struct nodal_plane PREF, struct M_TENSOR *m
 		sa*sd*mt.f[4] - c2a*cd*mt.f[5];
 }
 
-void rot_nodal_plane (struct nodal_plane PLAN, struct nodal_plane PREF, struct nodal_plane *PLANR)
-{
+GMT_LOCAL void rot_nodal_plane (struct nodal_plane PLAN, struct nodal_plane PREF, struct nodal_plane *PLANR) {
 /*
    Calcule l'azimut, le pendage, le glissement relatifs d'un
    mecanisme par rapport a un plan de reference PREF
@@ -263,7 +260,7 @@ void rot_nodal_plane (struct nodal_plane PLAN, struct nodal_plane PREF, struct n
 	sr = (sd * crd * cdfi - cd * srd);
 	PLANR->str = d_atan2d (sr, cr);
 	if (cdr < 0.)  PLANR->str += 180.0;
-	PLANR->str = zero_360 (PLANR->str);
+	PLANR->str = meca_zero_360 (PLANR->str);
 	PLANR->dip = acosd (fabs (cdr));
 	cr = cr * (sir * (cd * crd * cdfi + sd * srd) - cor * crd * sdfi) + sr * ( cor * cdfi + sir * cd * sdfi);
 	sr = (cor * srd * sdfi + sir * (sd * crd - cd * srd * cdfi));
@@ -274,8 +271,7 @@ void rot_nodal_plane (struct nodal_plane PLAN, struct nodal_plane PREF, struct n
 	}
 }
 
-void rot_meca (st_me meca, struct nodal_plane PREF, st_me *mecar)
-{
+GMT_LOCAL void rot_meca (st_me meca, struct nodal_plane PREF, st_me *mecar) {
 /*
    Projection d'un mecanisme sur un plan donne PREF.
    C'est la demi-sphere derriere le plan qui est representee.
@@ -287,7 +283,7 @@ void rot_meca (st_me meca, struct nodal_plane PREF, st_me *mecar)
 	if (fabs (meca.NP1.str - PREF.str) < EPSIL && fabs (meca.NP1.dip - PREF.dip) < EPSIL) {
 		mecar->NP1.str = 0.;
 		mecar->NP1.dip = 0.;
-		mecar->NP1.rake = zero_360 (270. - meca.NP1.rake);
+		mecar->NP1.rake = meca_zero_360 (270. - meca.NP1.rake);
 	}
 	else
 		rot_nodal_plane (meca.NP1, PREF, &mecar->NP1);
@@ -295,7 +291,7 @@ void rot_meca (st_me meca, struct nodal_plane PREF, st_me *mecar)
 	if (fabs (meca.NP2.str - PREF.str) < EPSIL && fabs (meca.NP2.dip - PREF.dip) < EPSIL) {
 		mecar->NP2.str = 0.;
 		mecar->NP2.dip = 0.;
-		mecar->NP2.rake = zero_360 (270. - meca.NP2.rake);
+		mecar->NP2.rake = meca_zero_360 (270. - meca.NP2.rake);
 	}
 	else
 		rot_nodal_plane (meca.NP2, PREF, &mecar->NP2);
@@ -303,7 +299,7 @@ void rot_meca (st_me meca, struct nodal_plane PREF, st_me *mecar)
 	if (cosd (mecar->NP2.dip) < EPSIL && fabs (mecar->NP1.rake - mecar->NP2.rake) < 90.0) {
 		mecar->NP1.str += 180.0;
 		mecar->NP1.rake += 180.0;
-		mecar->NP1.str = zero_360 (mecar->NP1.str);
+		mecar->NP1.str = meca_zero_360 (mecar->NP1.str);
 		if (mecar->NP1.rake > 180.0) mecar->NP1.rake -= 360.0;
 	}
 
@@ -312,8 +308,7 @@ void rot_meca (st_me meca, struct nodal_plane PREF, st_me *mecar)
 	mecar->moment.exponent = meca.moment.exponent;
 }
 
-int gutm (double lon, double lat, double *xutm, double *yutm, int fuseau)
-{
+GMT_LOCAL int gutm (double lon, double lat, double *xutm, double *yutm, int fuseau) {
 	double ccc = 6400057.7, eprim = 0.08276528;
 	double alfe = 0.00507613, bete = 0.429451e-4;
 	double game = 0.1696e-6;
@@ -346,8 +341,7 @@ int gutm (double lon, double lat, double *xutm, double *yutm, int fuseau)
 	return (fuseau);
 }
 
-int dans_coupe (double lon, double lat, double depth, double xlonref, double ylatref, int fuseau, double str, double dip, double p_length, double p_width, double *distance, double *n_dep)
-{
+GMT_LOCAL int dans_coupe (double lon, double lat, double depth, double xlonref, double ylatref, int fuseau, double str, double dip, double p_length, double p_width, double *distance, double *n_dep) {
 /* if fuseau < 0, cartesian coordinates */
 
 	double xlon, ylat, largeur, sd, cd, ss, cs;
@@ -373,8 +367,7 @@ int dans_coupe (double lon, double lat, double depth, double xlonref, double yla
 #define COORD_RAD 1
 #define COORD_KM 2
 
-void distaz (double lat1, double lon1, double lat2, double lon2, double *distkm, double *azdeg, int syscoord)
-{
+GMT_LOCAL void distaz (double lat1, double lon1, double lat2, double lon2, double *distkm, double *azdeg, int syscoord) {
  /*
   Coordinates in degrees  : syscoord = 0
   Coordinates in radians : syscoord = 1
@@ -429,11 +422,10 @@ void distaz (double lat1, double lon1, double lat2, double lon2, double *distkm,
 	return;
 }
 
-int GMT_pscoupe_usage (struct GMTAPI_CTRL *API, int level)
-{
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the pscoupe synopsis and optionally full usage information */
 
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: pscoupe [<table>] -A<params> %s %s [%s] [-E<fill>]\n", GMT_J_OPT, GMT_Rgeo_OPT, GMT_B_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Fa[<size>][/<Psymbol>[<Tsymbol>]] [-Fe<fill>] [-Fg<fill>] [-Fr<fill>] [-Fp[<pen>]] [-Ft[<pen>]]\n");
@@ -442,9 +434,9 @@ int GMT_pscoupe_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t[-S<format><scale>[/<fontsize>[/<justify>/<offset>/<angle>/<form>]]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-T<nplane>[/<pen>]] [%s] [%s] [-W<pen>] \n", GMT_U_OPT, GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-Z<cpt>]\n", GMT_X_OPT, GMT_Y_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_c_OPT, GMT_di_OPT, GMT_h_OPT, GMT_i_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_c_OPT, GMT_di_OPT, GMT_h_OPT, GMT_i_OPT, GMT_t_OPT, GMT_colon_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t-A Specify cross-section parameters. Choose between\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Aa<lon1/lat1/lon2/lat2/dip/p_width/dmin/dmax>[f]\n");
@@ -455,7 +447,7 @@ int GMT_pscoupe_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Option (API, "J-,R");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Option (API, "<,B-");
-	GMT_fill_syntax (API->GMT, 'E', "\tSet color used for extensive parts. [default is white]\n");
+	gmt_fill_syntax (API->GMT, 'E', "Set color used for extensive parts [Default is white]");
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Sets various attributes of symbols depending on <mode>:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   a Plot axis. Default symbols are circles.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   e Set color used for T_symbol [default as set by -E].\n");
@@ -466,7 +458,7 @@ int GMT_pscoupe_usage (struct GMTAPI_CTRL *API, int level)
 		API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
 	GMT_Message (API, GMT_TIME_NONE, "\t     st(a)r, (c)ircle, (d)iamond, (h)exagon, (i)nvtriangle, (s)quare, (t)riangle.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   t Draw T_symbol outline using the current pen (see -W) or sets pen attribute for outline.\n");
-	GMT_fill_syntax (API->GMT, 'G', "Set color used for compressive parts. [default is black]\n");
+	gmt_fill_syntax (API->GMT, 'G', "Set color used for compressive parts [Default is black]");
 	GMT_Option (API, "K");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Draw line or symbol outline using the current pen (see -W) or sets pen attribute for outline.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-M Set same size for any magnitude. Size is given with -S.\n");
@@ -474,31 +466,31 @@ int GMT_pscoupe_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Option (API, "O,P");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Do not print cross-section information to files\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Select format type and symbol size (in measure_unit).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Choose format between\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (c) Focal mechanisms in Harvard CMT convention\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, strike1, dip1, rake1, strike2, dip2, rake2, moment, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     with moment in 2 columns : mantissa and exponent corresponding to seismic moment in dynes-cm\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (a) Focal mechanism in Aki & Richard's convention:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, strike, dip, rake, mag, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (p) Focal mechanism defined with\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, strike1, dip1, strike2, fault, mag, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     fault = -1/+1 for a normal/inverse fault\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (m) Seismic moment tensor (Harvard CMT, with zero trace)\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (z) Anisotropic part of seismic moment tensor (Harvard CMT, with zero trace)\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (d) Best double couple defined from seismic moment tensor (Harvard CMT, with zero trace)\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (x) Principal axis\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X,Y,depth,T_value,T_azimuth,T_plunge,N_value,N_azimuth,N_plunge,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     P_value,P_azimuth,P_plunge,exp,event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (t) Zero trace moment tensor defined from principal axis\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X, Y, depth, T_value, T_azim, T_plunge, N_value, N_azim, N_plunge\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     P_value, P_azim, P_plunge, exp, newX, newY, event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t (y) Best double couple defined from principal axis\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     X,Y,depth,T_value,T_azimuth,T_plunge,N_value,N_azimuth,N_plunge,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     P_value,P_azimuth,P_plunge,exp,event_title\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t Optionally add /fontsize[/offset][u]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Choose format between:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   c  Focal mechanisms in Harvard CMT convention\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X, Y, depth, strike1, dip1, rake1, strike2, dip2, rake2, moment, event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      with moment in 2 columns : mantissa and exponent corresponding to seismic moment in dynes-cm\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   a  Focal mechanism in Aki & Richard's convention:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X, Y, depth, strike, dip, rake, mag, event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   p  Focal mechanism defined with\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X, Y, depth, strike1, dip1, strike2, fault, mag, event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      fault = -1/+1 for a normal/inverse fault\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   m  Seismic moment tensor (Harvard CMT, with zero trace)\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp, event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   z  Anisotropic part of seismic moment tensor (Harvard CMT, with zero trace)\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp, event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   d  Best double couple defined from seismic moment tensor (Harvard CMT, with zero trace)\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp, event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   x  Principal axis\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X,Y,depth,T_value,T_azimuth,T_plunge,N_value,N_azimuth,N_plunge,\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      P_value,P_azimuth,P_plunge,exp,event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   t  Zero trace moment tensor defined from principal axis\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X, Y, depth, T_value, T_azim, T_plunge, N_value, N_azim, N_plunge\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      P_value, P_azim, P_plunge, exp, newX, newY, event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   y  Best double couple defined from principal axis\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      X,Y,depth,T_value,T_azimuth,T_plunge,N_value,N_azimuth,N_plunge,\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      P_value,P_azimuth,P_plunge,exp,event_title\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally add /fontsize[/offset][u]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default values are /%g/%f.\n", DEFAULT_FONTSIZE, DEFAULT_OFFSET);
 	GMT_Message (API, GMT_TIME_NONE, "\t   fontsize < 0 : no label written;\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   offset is from the limit of the beach ball.\n");
@@ -510,16 +502,15 @@ int GMT_pscoupe_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   n = 0 both nodal planes are plotted.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If moment tensor is required, nodal planes overlay moment tensor.\n");
 	GMT_Option (API, "U,V");
-	GMT_Message (API, GMT_TIME_NONE, "\t-W Set pen attributes [%s]\n", GMT_putpen (API->GMT, API->GMT->current.setting.map_default_pen));
-	GMT_Message (API, GMT_TIME_NONE, "\t-Z Use CPT file to assign colors based on depth-value in 3rd column.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-W Set pen attributes [%s]\n", gmt_putpen (API->GMT, &API->GMT->current.setting.map_default_pen));
+	GMT_Message (API, GMT_TIME_NONE, "\t-Z Use CPT to assign colors based on depth-value in 3rd column.\n");
 
-	GMT_Option (API, "X,c,di,h,i,:,.");
+	GMT_Option (API, "X,c,di,h,i,t,:,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to pscoupe and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
 	 * Any GMT common options will override values set previously by other commands.
@@ -537,7 +528,7 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -576,8 +567,8 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 
 			case 'E':	/* Set color for extensive parts  */
 				Ctrl->E.active = true;
-				if (!opt->arg[0] || (opt->arg[0] && GMT_getfill (GMT, opt->arg, &Ctrl->E.fill))) {
-					GMT_fill_syntax (GMT, 'G', " ");
+				if (!opt->arg[0] || (opt->arg[0] && gmt_getfill (GMT, opt->arg, &Ctrl->E.fill))) {
+					gmt_fill_syntax (GMT, 'G', " ");
 					n_errors++;
 				}
 				Ctrl->A.polygon = true;
@@ -587,9 +578,9 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 				switch (opt->arg[0]) {
 					case 'a':	/* plot axis */
 						Ctrl->A2.active = true;
-						strncpy (txt, &opt->arg[2], GMT_LEN256);
+						strncpy (txt, &opt->arg[2], GMT_LEN256-1);
 						if ((p = strchr (txt, '/')) != NULL) p[0] = '\0';
-						if (txt[0]) Ctrl->A2.size = GMT_to_inch (GMT, txt);
+						if (txt[0]) Ctrl->A2.size = gmt_M_to_inch (GMT, txt);
 						if (p) {
 							p++;
 							switch (strlen (p)) {
@@ -604,29 +595,29 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 						break;
 					case 'e':	/* Set color for T axis symbol */
 						Ctrl->E2.active = true;
-						if (GMT_getfill (GMT, &opt->arg[1], &Ctrl->E2.fill)) {
-							GMT_fill_syntax (GMT, 'e', " ");
+						if (gmt_getfill (GMT, &opt->arg[1], &Ctrl->E2.fill)) {
+							gmt_fill_syntax (GMT, 'e', " ");
 							n_errors++;
 						}
 						break;
 					case 'g':	/* Set color for P axis symbol */
 						Ctrl->G2.active = true;
-						if (GMT_getfill (GMT, &opt->arg[1], &Ctrl->G2.fill)) {
-							GMT_fill_syntax (GMT, 'g', " ");
+						if (gmt_getfill (GMT, &opt->arg[1], &Ctrl->G2.fill)) {
+							gmt_fill_syntax (GMT, 'g', " ");
 							n_errors++;
 						}
 						break;
 					case 'p':	/* Draw outline of P axis symbol [set outline attributes] */
 						Ctrl->P2.active = true;
-						if (opt->arg[1] && GMT_getpen (GMT, &opt->arg[1], &Ctrl->P2.pen)) {
-							GMT_pen_syntax (GMT, 'p', " ", 0);
+						if (opt->arg[1] && gmt_getpen (GMT, &opt->arg[1], &Ctrl->P2.pen)) {
+							gmt_pen_syntax (GMT, 'p', " ", 0);
 							n_errors++;
 						}
 						break;
 					case 'r':	/* draw box around text */
 						Ctrl->R2.active = true;
-						if (opt->arg[1] && GMT_getfill (GMT, &opt->arg[1], &Ctrl->R2.fill)) {
-							GMT_fill_syntax (GMT, 'r', " ");
+						if (opt->arg[1] && gmt_getfill (GMT, &opt->arg[1], &Ctrl->R2.fill)) {
+							gmt_fill_syntax (GMT, 'r', " ");
 							n_errors++;
 						}
 						break;
@@ -636,15 +627,15 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 						if (opt->arg[strlen(opt->arg)-1] == 'u') Ctrl->S.justify = PSL_TC, opt->arg[strlen(opt->arg)-1] = '\0';
 						txt[0] = txt_b[0] = txt_c[0] = '\0';
 						sscanf (&opt->arg[2], "%[^/]/%[^/]/%s", txt, txt_b, txt_c);
-						if (txt[0]) Ctrl->S.scale = GMT_to_inch (GMT, txt);
-						if (txt_b[0]) Ctrl->S.fontsize = GMT_convert_units (GMT, txt_b, GMT_PT, GMT_PT);
-						if (txt_c[0]) Ctrl->S.offset = GMT_convert_units (GMT, txt_c, GMT_PT, GMT_INCH);
+						if (txt[0]) Ctrl->S.scale = gmt_M_to_inch (GMT, txt);
+						if (txt_b[0]) Ctrl->S.fontsize = gmt_convert_units (GMT, txt_b, GMT_PT, GMT_PT);
+						if (txt_c[0]) Ctrl->S.offset = gmt_convert_units (GMT, txt_c, GMT_PT, GMT_INCH);
 						if (Ctrl->S.fontsize < 0.0) Ctrl->S.no_label = true;
 						break;
 					case 't':	/* Draw outline of T axis symbol [set outline attributes] */
 						Ctrl->T2.active = true;
-						if (opt->arg[1] && GMT_getpen (GMT, &opt->arg[1], &Ctrl->T2.pen)) {
-							GMT_pen_syntax (GMT, 't', " ", 0);
+						if (opt->arg[1] && gmt_getpen (GMT, &opt->arg[1], &Ctrl->T2.pen)) {
+							gmt_pen_syntax (GMT, 't', " ", 0);
 							n_errors++;
 						}
 						break;
@@ -653,16 +644,16 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 				break;
 			case 'G':	/* Set color for compressive parts */
 				Ctrl->G.active = true;
-				if (!opt->arg[0] || (opt->arg[0] && GMT_getfill (GMT, opt->arg, &Ctrl->G.fill))) {
-					GMT_fill_syntax (GMT, 'G', " ");
+				if (!opt->arg[0] || (opt->arg[0] && gmt_getfill (GMT, opt->arg, &Ctrl->G.fill))) {
+					gmt_fill_syntax (GMT, 'G', " ");
 					n_errors++;
 				}
 				Ctrl->A.polygon = true;
 				break;
 			case 'L':	/* Draw outline [set outline attributes] */
 				Ctrl->L.active = true;
-				if (opt->arg[0] && GMT_getpen (GMT, opt->arg, &Ctrl->L.pen)) {
-					GMT_pen_syntax (GMT, 'L', " ", 0);
+				if (opt->arg[0] && gmt_getpen (GMT, opt->arg, &Ctrl->L.pen)) {
+					gmt_pen_syntax (GMT, 'L', " ", 0);
 					n_errors++;
 				}
 				break;
@@ -680,9 +671,9 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 				if (opt->arg[strlen(opt->arg)-1] == 'u') Ctrl->S.justify = PSL_TC, opt->arg[strlen(opt->arg)-1] = '\0';
 				txt[0] = txt_b[0] = txt_c[0] = '\0';
 				sscanf (&opt->arg[1], "%[^/]/%[^/]/%s", txt, txt_b, txt_c);
-				if (txt[0]) Ctrl->S.scale = GMT_to_inch (GMT, txt);
-				if (txt_b[0]) Ctrl->S.fontsize = GMT_convert_units (GMT, txt_b, GMT_PT, GMT_PT);
-				if (txt_c[0]) Ctrl->S.offset = GMT_convert_units (GMT, txt_c, GMT_PT, GMT_INCH);
+				if (txt[0]) Ctrl->S.scale = gmt_M_to_inch (GMT, txt);
+				if (txt_b[0]) Ctrl->S.fontsize = gmt_convert_units (GMT, txt_b, GMT_PT, GMT_PT);
+				if (txt_c[0]) Ctrl->S.offset = gmt_convert_units (GMT, txt_c, GMT_PT, GMT_INCH);
 				if (Ctrl->S.fontsize < 0.0) Ctrl->S.no_label = true;
 
 				switch (opt->arg[0]) {
@@ -734,15 +725,15 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 			case 'T':
 				Ctrl->T.active = true;
 				sscanf (opt->arg, "%d", &Ctrl->T.n_plane);
-				if (strlen (opt->arg) > 2 && GMT_getpen (GMT, &opt->arg[2], &Ctrl->T.pen)) {	/* Set transparent attributes */
-					GMT_pen_syntax (GMT, 'T', " ", 0);
+				if (strlen (opt->arg) > 2 && gmt_getpen (GMT, &opt->arg[2], &Ctrl->T.pen)) {	/* Set transparent attributes */
+					gmt_pen_syntax (GMT, 'T', " ", 0);
 					n_errors++;
 				}
 				break;
 			case 'W':	/* Set line attributes */
 				Ctrl->W.active = true;
-				if (opt->arg && GMT_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
-					GMT_pen_syntax (GMT, 'W', " ", 0);
+				if (opt->arg && gmt_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
+					gmt_pen_syntax (GMT, 'W', " ", 0);
 					n_errors++;
 				}
 				break;
@@ -752,16 +743,16 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
 	/* Check that the options selected are mutually consistent */
 
-	n_errors += GMT_check_condition (GMT, !Ctrl->A.active, "Syntax error: Must specify -A option\n");
-	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->S.symbol && GMT_IS_ZERO (Ctrl->S.scale), "Syntax error: -S must specify scale\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->A.active, "Syntax error: Must specify -A option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->S.symbol && gmt_M_is_zero (Ctrl->S.scale), "Syntax error: -S must specify scale\n");
 
 	/* Set to default pen where needed */
 
@@ -775,14 +766,13 @@ int GMT_pscoupe_parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct G
 	if (!Ctrl->E2.active) Ctrl->E2.fill = Ctrl->E.fill;
 	if (!Ctrl->G2.active) Ctrl->G2.fill = Ctrl->G.fill;
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_pscoupe_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_pscoupe (void *V_API, int mode, void *args)
-{
+int GMT_pscoupe (void *V_API, int mode, void *args) {
 	int ix, iy, n_rec = 0, n_plane_old = 0, form = 0, error, k, n_k;
 	int i, transparence_old = 0, not_defined = 0;
 	FILE *pnew = NULL, *pext = NULL;
@@ -802,32 +792,32 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
 	struct GMT_OPTION *options = NULL;
 	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_pscoupe_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_pscoupe_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_pscoupe_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_pscoupe_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_pscoupe_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the pscoupe main code ----------------------------*/
 
-	GMT_memset (&meca, 1, meca);
-	GMT_memset (&moment, 1, moment);
-	GMT_memset (col, GMT_LEN64*15, char);
+	gmt_M_memset (&meca, 1, meca);
+	gmt_M_memset (&moment, 1, moment);
+	gmt_M_memset (col, GMT_LEN64*15, char);
 
 	if (Ctrl->Z.active) {
-		if ((CPT = GMT_Read_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->Z.file, NULL)) == NULL) {
+		if ((CPT = GMT_Read_Data (API, GMT_IS_PALETTE, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->Z.file, NULL)) == NULL) {
 			Return (API->error);
 		}
 	}
@@ -837,25 +827,25 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 		GMT->common.R.wesn[XHI] = Ctrl->A.p_length;
 		GMT->common.R.wesn[YLO] = Ctrl->A.dmin;
 		GMT->common.R.wesn[YHI] = Ctrl->A.dmax;
-		if (GMT_IS_ZERO (Ctrl->A.PREF.dip)) Ctrl->A.PREF.dip = 1.0;
+		if (gmt_M_is_zero (Ctrl->A.PREF.dip)) Ctrl->A.PREF.dip = 1.0;
 	}
 
-	if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_PROJECTION_ERROR);
+	if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_PROJECTION_ERROR);
 
-	if ((PSL = GMT_plotinit (GMT, options)) == NULL) Return (GMT_RUNTIME_ERROR);
-	GMT_plotcanvas (GMT);	/* Fill canvas if requested */
+	if ((PSL = gmt_plotinit (GMT, options)) == NULL) Return (GMT_RUNTIME_ERROR);
+	gmt_plotcanvas (GMT);	/* Fill canvas if requested */
 
-	PSL_setfont (PSL, GMT->current.setting.font_annot[0].id);
+	PSL_setfont (PSL, GMT->current.setting.font_annot[GMT_PRIMARY].id);
 
-	GMT_setpen (GMT, &Ctrl->W.pen);
-	if (!Ctrl->N.active) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
+	gmt_setpen (GMT, &Ctrl->W.pen);
+	if (!Ctrl->N.active) gmt_map_clip_on (GMT, GMT->session.no_rgb, 3);
 
 	ix = (GMT->current.setting.io_lonlat_toggle[0]);    iy = 1 - ix;
 
-	if (GMT_Init_IO (API, GMT_IS_TEXTSET, GMT_IS_POINT, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Register data input */
+	if (GMT_Init_IO (API, GMT_IS_TEXTSET, GMT_IS_POINT, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Register data input */
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_IN, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
 
@@ -874,18 +864,18 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 		n_k = 15;
 	else if (Ctrl->S.readmode == READ_TENSOR)
 		n_k = 12;
-	else if (GMT_IS_ZERO (Ctrl->S.scale))
+	else if (gmt_M_is_zero (Ctrl->S.scale))
 		n_k = 4;
 	else
 		n_k = 3;
 
 	do {	/* Keep returning records until we reach EOF */
 		if ((line = GMT_Get_Record (API, GMT_READ_TEXT, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
-			if (GMT_REC_IS_ANY_HEADER (GMT)) 	/* Skip all table and segment headers */
+			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
 				continue;
-			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
 		}
 
@@ -924,16 +914,16 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 				col[8], col[9], col[10], col[11], event_title);
 			if (strlen (event_title) <= 0) sprintf (event_title,"\n");
 		}
-		else if (GMT_IS_ZERO (Ctrl->S.scale)) {
+		else if (gmt_M_is_zero (Ctrl->S.scale)) {
 			sscanf (line, "%s %s %s %s %[^\n]\n", col[0], col[1], col[2], col[3], event_title);
-			size = GMT_to_inch (GMT, col[3]);
+			size = gmt_M_to_inch (GMT, col[3]);
 		}
 		else
 			sscanf (line, "%s %s %s %[^\n]\n", col[0], col[1], col[2], event_title);
 
  		for (k = 0; k < n_k; k++) if ((p = strchr (col[k], ',')) != NULL) *p = '\0';	/* Chop of trailing command from input field deliminator */
 
-		if ((GMT_scanf (GMT, col[GMT_X], GMT->current.io.col_type[GMT_IN][GMT_X], &xy[ix]) == GMT_IS_NAN) || (GMT_scanf (GMT, col[GMT_Y], GMT->current.io.col_type[GMT_IN][GMT_Y], &xy[iy]) == GMT_IS_NAN)) {
+		if ((gmt_scanf (GMT, col[GMT_X], GMT->current.io.col_type[GMT_IN][GMT_X], &xy[ix]) == GMT_IS_NAN) || (gmt_scanf (GMT, col[GMT_Y], GMT->current.io.col_type[GMT_IN][GMT_Y], &xy[iy]) == GMT_IS_NAN)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Record %d had bad x and/or y coordinates, skip)\n", n_rec);
 			continue;
 		}
@@ -947,20 +937,20 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 		xy[1] = n_dep;
 
 		if (!Ctrl->N.active) {
-			GMT_map_outside (GMT, xy[GMT_X], xy[GMT_Y]);
+			gmt_map_outside (GMT, xy[GMT_X], xy[GMT_Y]);
 			if (abs (GMT->current.map.this_x_status) > 1 || abs (GMT->current.map.this_y_status) > 1) continue;
 		}
 
-		if (Ctrl->Z.active) GMT_get_fill_from_z (GMT, CPT, depth, &Ctrl->G.fill);
+		if (Ctrl->Z.active) gmt_get_fill_from_z (GMT, CPT, depth, &Ctrl->G.fill);
 
-		GMT_geo_to_xy (GMT, xy[GMT_X], xy[GMT_Y], &plot_x, &plot_y);
+		gmt_geo_to_xy (GMT, xy[GMT_X], xy[GMT_Y], &plot_x, &plot_y);
 
 		if (Ctrl->S.symbol) {
 			if (!Ctrl->Q.active) {
 				fprintf (pnew, "%f %f %f %s\n", distance, n_dep, depth, col[3]);
 				fprintf (pext, "%s\n", line);
 			}
-			GMT_setfill (GMT, &Ctrl->G.fill, Ctrl->L.active);
+			gmt_setfill (GMT, &Ctrl->G.fill, Ctrl->L.active);
 			PSL_plotsymbol (PSL, plot_x, plot_y, &size, Ctrl->S.symbol);
 		}
 		else if (Ctrl->S.readmode == READ_CMT) {
@@ -982,7 +972,7 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 			meca.magms = atof (col[6]);
 			moment.mant = meca.magms;
 			moment.exponent = 0;
-			define_second_plane (meca.NP1, &meca.NP2);
+			meca_define_second_plane (meca.NP1, &meca.NP2);
 			rot_meca (meca, Ctrl->A.PREF, &mecar);
 		}
 		else if (Ctrl->S.readmode == READ_PLANES) {
@@ -994,7 +984,7 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 
 			moment.exponent = 0;
 			moment.mant = meca.magms;
-			meca.NP2.dip = computed_dip2 (meca.NP1.str, meca.NP1.dip, meca.NP2.str);
+			meca.NP2.dip = meca_computed_dip2 (meca.NP1.str, meca.NP1.dip, meca.NP2.str);
 			if (meca.NP2.dip == 1000.0) {
 				not_defined = true;
 				transparence_old = Ctrl->T.active;
@@ -1005,8 +995,8 @@ int GMT_pscoupe (void *V_API, int mode, void *args)
 				GMT_Report (API, GMT_MSG_VERBOSE, "Warning: second plane is not defined for event %s only first plane is plotted.\n", line);
 			}
 			else
-				meca.NP1.rake = computed_rake2 (meca.NP2.str, meca.NP2.dip, meca.NP1.str, meca.NP1.dip, fault);
-			meca.NP2.rake = computed_rake2 (meca.NP1.str, meca.NP1.dip, meca.NP2.str, meca.NP2.dip, fault);
+				meca.NP1.rake = meca_computed_rake2 (meca.NP2.str, meca.NP2.dip, meca.NP1.str, meca.NP1.dip, fault);
+			meca.NP2.rake = meca_computed_rake2 (meca.NP1.str, meca.NP1.dip, meca.NP2.str, meca.NP2.dip, fault);
 			rot_meca (meca, Ctrl->A.PREF, &mecar);
 
 		}
@@ -1049,7 +1039,7 @@ Definition of scalar moment.
 			Nr.e = N.e;
 			Pr.e = P.e;
 
-			if (Ctrl->S.plotmode == PLOT_DC || Ctrl->T.active) axe2dc (Tr, Pr, &meca.NP1, &meca.NP2);
+			if (Ctrl->S.plotmode == PLOT_DC || Ctrl->T.active) meca_axe2dc (Tr, Pr, &meca.NP1, &meca.NP2);
 		}
 		else if (Ctrl->S.readmode == READ_TENSOR) {
 			for (i = 3; i < 9; i++) mt.f[i-3] = atof (col[i]);
@@ -1067,9 +1057,9 @@ Definition of scalar moment.
 			for (i = 0; i <= 5; i++) mt.f[i] /= moment.mant;
 
 			rot_tensor (mt, Ctrl->A.PREF, &mtr);
-			moment2axe (GMT, mtr, &T, &N, &P);
+			meca_moment2axe (GMT, mtr, &T, &N, &P);
 
-			if (Ctrl->S.plotmode == PLOT_DC || Ctrl->T.active) axe2dc (T, P, &meca.NP1, &meca.NP2);
+			if (Ctrl->S.plotmode == PLOT_DC || Ctrl->T.active) meca_axe2dc (T, P, &meca.NP1, &meca.NP2);
 		}
 
 		if (!Ctrl->S.symbol) {
@@ -1078,7 +1068,7 @@ Definition of scalar moment.
 				moment.exponent = 23;
 			}
 
-			size = (computed_mw (moment, meca.magms) / 5.0) * Ctrl->S.scale;
+			size = (meca_computed_mw (moment, meca.magms) / 5.0) * Ctrl->S.scale;
 
 			if (!Ctrl->Q.active) fprintf (pext, "%s\n", line);
 			if (Ctrl->S.readmode == READ_AXIS) {
@@ -1107,18 +1097,18 @@ Definition of scalar moment.
 			}
 
 			if (Ctrl->S.plotmode == PLOT_TENSOR) {
-				GMT_setpen (GMT, &Ctrl->L.pen);
-				ps_tensor (GMT, PSL, plot_x, plot_y, size, T, N, P, &Ctrl->G.fill, &Ctrl->E.fill, Ctrl->L.active, Ctrl->S.zerotrace, n_rec);
+				gmt_setpen (GMT, &Ctrl->L.pen);
+				meca_ps_tensor (GMT, PSL, plot_x, plot_y, size, T, N, P, &Ctrl->G.fill, &Ctrl->E.fill, Ctrl->L.active, Ctrl->S.zerotrace, n_rec);
 			}
 
 			if (Ctrl->S.zerotrace) {
-				GMT_setpen (GMT, &Ctrl->W.pen);
-				ps_tensor (GMT, PSL, plot_x, plot_y, size, T, N, P, NULL, NULL, true, true, n_rec);
+				gmt_setpen (GMT, &Ctrl->W.pen);
+				meca_ps_tensor (GMT, PSL, plot_x, plot_y, size, T, N, P, NULL, NULL, true, true, n_rec);
 			}
 
 			if (Ctrl->T.active) {
-				GMT_setpen (GMT, &Ctrl->T.pen);
-				ps_plan (GMT, PSL, plot_x, plot_y, meca, size, Ctrl->T.n_plane);
+				gmt_setpen (GMT, &Ctrl->T.pen);
+				meca_ps_plan (GMT, PSL, plot_x, plot_y, meca, size, Ctrl->T.n_plane);
 				if (not_defined) {
 					not_defined = false;
 					Ctrl->T.active = transparence_old;
@@ -1126,24 +1116,24 @@ Definition of scalar moment.
 				}
 			}
 			else if (Ctrl->S.plotmode == PLOT_DC) {
-				GMT_setpen (GMT, &Ctrl->L.pen);
-				ps_mechanism (GMT, PSL, plot_x, plot_y, meca, size, &Ctrl->G.fill, &Ctrl->E.fill, Ctrl->L.active);
+				gmt_setpen (GMT, &Ctrl->L.pen);
+				meca_ps_mechanism (GMT, PSL, plot_x, plot_y, meca, size, &Ctrl->G.fill, &Ctrl->E.fill, Ctrl->L.active);
 			}
 
 			if (Ctrl->A2.active) {
-				if (Ctrl->S.readmode != READ_TENSOR && Ctrl->S.readmode != READ_AXIS) dc2axe (meca, &T, &N, &P);
-				axis2xy (plot_x, plot_y, size, P.str, P.dip, T.str, T.dip, &P_x, &P_y, &T_x, &T_y);
-				GMT_setpen (GMT, &Ctrl->P2.pen);
-				GMT_setfill (GMT, &Ctrl->G2.fill, Ctrl->P2.active);
+				if (Ctrl->S.readmode != READ_TENSOR && Ctrl->S.readmode != READ_AXIS) meca_dc2axe (meca, &T, &N, &P);
+				meca_axis2xy (plot_x, plot_y, size, P.str, P.dip, T.str, T.dip, &P_x, &P_y, &T_x, &T_y);
+				gmt_setpen (GMT, &Ctrl->P2.pen);
+				gmt_setfill (GMT, &Ctrl->G2.fill, Ctrl->P2.active);
 				PSL_plotsymbol (PSL, P_x, P_y, &Ctrl->A2.size, Ctrl->A2.P_symbol);
-				GMT_setpen (GMT, &Ctrl->T2.pen);
-				GMT_setfill (GMT, &Ctrl->E2.fill, Ctrl->T2.active);
+				gmt_setpen (GMT, &Ctrl->T2.pen);
+				gmt_setfill (GMT, &Ctrl->E2.fill, Ctrl->T2.active);
 				PSL_plotsymbol (PSL, T_x, T_y, &Ctrl->A2.size, Ctrl->A2.T_symbol);
 			}
 		}
 
 		if (!Ctrl->S.no_label) {
-			GMT_setpen (GMT, &Ctrl->W.pen);
+			gmt_setpen (GMT, &Ctrl->W.pen);
 			i = (Ctrl->S.justify == PSL_BC ? 1 : -1);
 			PSL_setfill (PSL, Ctrl->R2.fill.rgb, false);
 			if (Ctrl->R2.active) PSL_plotbox (PSL, plot_x - size * 0.5, plot_y + i * (size * 0.5 + Ctrl->S.offset + Ctrl->S.fontsize / PSL_POINTS_PER_INCH), plot_x + size * 0.5, plot_y + i * (size * 0.5 + Ctrl->S.offset));
@@ -1152,21 +1142,18 @@ Definition of scalar moment.
 		}
 	} while (true);
 
-	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+	if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
 		Return (API->error);
 	}
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Number of records read: %li\n", n_rec);
 
-	if (!Ctrl->N.active) GMT_map_clip_off (GMT);
+	if (!Ctrl->N.active) gmt_map_clip_off (GMT);
 
 	PSL_setcolor (PSL, GMT->current.setting.map_frame_pen.rgb, PSL_IS_STROKE);
-
 	PSL_setdash (PSL, NULL, 0);
+	gmt_map_basemap (GMT);
+	gmt_plotend (GMT);
 
-	GMT_map_basemap (GMT);
-
-	GMT_plotend (GMT);
-
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

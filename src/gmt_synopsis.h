@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_synopsis.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_synopsis.h 16544 2016-06-14 00:15:52Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -120,6 +120,6 @@
 
 /*! Macro for tools that need to specify FFT information (prepend option flag, e.g., -N and put GMT_FFT_OPT inside [] ) */
 
-#define GMT_FFT_OPT "[f|q|s|<nx>/<ny>][+a|d|l][+e|m|n][+t<width>][+w<suffix>][+z[p]]"
+#define GMT_FFT_OPT "[f|q|s|<n_columns>/<n_rows>][+a|d|l][+e|m|n][+t<width>][+w<suffix>][+z[p]]"
 
 #endif /* GMT_SYNOPSIS_H */

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: testgmtio.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: testgmtio.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -47,9 +47,9 @@ int main (int argc, char *argv[]) {
 
 	/* 4. Initializing data input via stdin */
 	
-	if ((error = GMT_set_cols (GMT, GMT_IN, 0)) != 0) exit (EXIT_FAILURE);
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) exit (EXIT_FAILURE);	/* Establishes data input */
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) exit (EXIT_FAILURE);	/* Establishes data output */
+	if ((error = gmt_set_cols (GMT, GMT_IN, 0)) != 0) exit (EXIT_FAILURE);
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) exit (EXIT_FAILURE);	/* Establishes data input */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) exit (EXIT_FAILURE);	/* Establishes data output */
 	
 	/* 5. Read individual records until end of data set */
 	/*    The GMT_READ_FILEBREAK in GMT_Get_Record means we will return a special EOF marker at the end of each
@@ -57,45 +57,45 @@ int main (int argc, char *argv[]) {
 	 *    This lets us do special processing after a file has been fully read. */
 
 	/* Initialize the i/o for doing record-by-record reading/writing */
-	if ((error = GMT_Begin_IO (API, GMT_IS_DATASET,  GMT_IN, GMT_HEADER_ON)) != GMT_OK) exit (error);				/* Enables data input and sets access mode */
-	if ((error = GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON)) != GMT_OK) exit (error);				/* Enables data output and sets access mode */
+	if ((error = GMT_Begin_IO (API, GMT_IS_DATASET,  GMT_IN, GMT_HEADER_ON)) != GMT_NOERROR) exit (error);				/* Enables data input and sets access mode */
+	if ((error = GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON)) != GMT_NOERROR) exit (error);				/* Enables data output and sets access mode */
 	
 	do {	/* Keep returning records until we reach EOF */
 		mode = GMT_WRITE_DOUBLE;	/* Normally we treat data as double precision values */
 		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE | GMT_READ_FILEBREAK, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) {	/* This check kicks in if the data has bad formatting, text etc */
+			if (gmt_M_rec_is_error (GMT)) {	/* This check kicks in if the data has bad formatting, text etc */
 				GMT_Report (API, GMT_MSG_VERBOSE, "Error found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "E: ");
 				mode = GMT_WRITE_TEXT;	/* Switch to text so we can see the bad record as is */
 			}
-			if (GMT_REC_IS_FILE_BREAK (GMT)) {	/* End of a file but not end of all files */
+			if (gmt_M_rec_is_file_break (GMT)) {	/* End of a file but not end of all files */
 				GMT_Report (API, GMT_MSG_VERBOSE, "End of intermediate data file after record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "B: --- End of File except last one ---\n");
 				continue;	/* Since no actual data record was returned, just the intermediate "EOF" signal */
 			}
-			if (GMT_REC_IS_TABLE_HEADER (GMT)) {	/* Found a table header */
+			if (gmt_M_rec_is_table_header (GMT)) {	/* Found a table header */
 				GMT_Report (API, GMT_MSG_VERBOSE, "Table header found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "H: ");
 				mode = GMT_WRITE_TABLE_HEADER;	/* Special flag to report the table header */
 			}
-			if (GMT_REC_IS_SEGMENT_HEADER (GMT)) {	/* Found segment header */
+			if (gmt_M_rec_is_segment_header (GMT)) {	/* Found segment header */
 				GMT_Report (API, GMT_MSG_VERBOSE, "Segment header found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "S: ");
 				mode = GMT_WRITE_SEGMENT_HEADER;	/* Special flag to report the segment header */
 			}
-			if (GMT_REC_IS_NAN (GMT)) {	/* Found NaN record */
+			if (gmt_M_rec_is_nan (GMT)) {	/* Found NaN record */
 				GMT_Report (API, GMT_MSG_VERBOSE, "NaN data found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "N: ");
 				mode = GMT_WRITE_TEXT;	/* Switch to text so we can see the nan record as is */
 			}
-			if (GMT_REC_IS_GAP (GMT)) {	/* Found a gap */
+			if (gmt_M_rec_is_gap (GMT)) {	/* Found a gap */
 				GMT_Report (API, GMT_MSG_VERBOSE, "A gap found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "G: ");
 			}
 		}
-		if (GMT_REC_IS_DATA (GMT)) {	/* Found a data record */
-			if ((error = GMT_set_cols (GMT, GMT_IN, n_fields)) != 0) exit (EXIT_FAILURE);
-			if ((error = GMT_set_cols (GMT, GMT_OUT, n_fields)) != 0) exit (EXIT_FAILURE);
+		if (gmt_M_rec_is_data (GMT)) {	/* Found a data record */
+			if ((error = gmt_set_cols (GMT, GMT_IN, n_fields)) != 0) exit (EXIT_FAILURE);
+			if ((error = gmt_set_cols (GMT, GMT_OUT, n_fields)) != 0) exit (EXIT_FAILURE);
 			GMT_Report (API, GMT_MSG_VERBOSE, "Data found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 			API->print_func (stdout, "D: ");
 		}
@@ -103,8 +103,8 @@ int main (int argc, char *argv[]) {
 	} while (true);
 	
 	API->print_func (stdout, "B: --- End of All Files ---\n");
-	if ((error = GMT_End_IO (API, GMT_IN,  0)) != GMT_OK) exit (error);				/* Disables further data input */
-	if ((error = GMT_End_IO (API, GMT_OUT, 0)) != GMT_OK) exit (error);				/* Disables further data output */
+	if ((error = GMT_End_IO (API, GMT_IN,  0)) != GMT_NOERROR) exit (error);				/* Disables further data input */
+	if ((error = GMT_End_IO (API, GMT_OUT, 0)) != GMT_NOERROR) exit (error);				/* Disables further data output */
 	
 	/* 5. Destroy local linked option list */
 	if (GMT_Destroy_Options (API, &options)) exit (EXIT_FAILURE);
@@ -112,5 +112,5 @@ int main (int argc, char *argv[]) {
 	/* 6. Destroy GMT session */
 	if (GMT_Destroy_Session (API)) exit (EXIT_FAILURE);
 
-	exit (GMT_OK);		/* Return the status from this program */
+	exit (GMT_NOERROR);		/* Return the status from this program */
 }

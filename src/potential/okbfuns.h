@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: okbfuns.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: okbfuns.h 15819 2016-03-06 20:54:48Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -41,11 +41,11 @@ struct LOC_OR {
 
 struct MAG_PARAM {
 	double	rim[3];
-} *mag_param;
+} *okabe_mag_param;
 
 struct MAG_VAR {		/* Used when only the modulus of magnetization varies */
 	double	rk[3];
-} *mag_var;
+} *okabe_mag_var;
 
 EXTERN_MSC double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double rho, bool is_grav,
 		struct BODY_DESC bd_desc, struct BODY_VERTS *bd_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or);

@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 14522 2015-07-15 00:47:28Z pwessel $
+# $Id: CMakeLists.txt 17032 2016-08-30 05:00:34Z pwessel $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 #-------------------------------------------------------------------------------
 
 # Figure files
-set (_fig_fig GMT4_mode.png GMT5_Summit_2011.jpg GMT5_mode.png
+set (_fig_fig GMT4_mode.png GMT5_Summit_2016.jpg GMT5_mode.png GMT5_external.png
 	GMT_Environment.png gimp-sliders+panel.png hsv-cone.png
 	formatpicture.png formatting.png highres.png
 	noantialias.png rendering.png withantialias.png)

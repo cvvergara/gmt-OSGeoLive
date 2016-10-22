@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 23
-#		$Id: example_23.sh 12743 2014-01-10 23:02:33Z pwessel $
+#		$Id: example_23.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:	Plot distances from Rome and draw shortest paths
-# GMT progs:	grdmath, grdcontour, pscoast, psxy, pstext, grdtrack
+# GMT modules:	grdmath, grdcontour, pscoast, psxy, pstext, grdtrack
 # Unix progs:	echo, cat, awk
 #
 ps=example_23.ps

@@ -1,6 +1,6 @@
-/* $Id: gmt_sharedlibs.c 14129 2015-02-26 12:07:09Z remko $
+/* $Id: gmt_sharedlibs.c 17004 2016-08-24 18:04:44Z jluis $
  *
- *	Copyright (c) 2012-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2012-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
 
@@ -14,15 +14,14 @@
 #include "gmt_sharedlibs.h" 	/* Common shared libs structures */
 
 #if defined(_WIN32)
-void *dlopen (const char *module_name, int mode)
-{	/* Opens a dll file*/
+void *dlopen (const char *module_name, int mode) {	/* Opens a dll file*/
 	UINT err_code;
 	HINSTANCE dll_handle;
+	gmt_M_unused (mode);
   
 	err_code = SetErrorMode (SEM_FAILCRITICALERRORS);
 	dll_handle = LoadLibrary (module_name);
-	if (!dll_handle) 
-	{
+	if (!dll_handle) {
 		dll_handle = LoadLibraryEx (module_name, NULL, 0);
 		if (!dll_handle)
 			return (void *)dll_handle;
@@ -33,21 +32,21 @@ void *dlopen (const char *module_name, int mode)
 	return (void *)dll_handle;
 }
 
-int dlclose (void *handle)
-{	/* Closes handle */
+int dlclose (void *handle) {
+	/* Closes handle */
 	/* POSIX call returns zero for success, non-zero for failure */
 	return (!FreeLibrary (handle)); 
 }
 
-void *dlsym (void *handle, const char *name)
-{	/* Get a symbol from dll */
+void *dlsym (void *handle, const char *name) {
+	/* Get a symbol from dll */
 	return GetProcAddress (handle, name);
 }
 
-char *dlerror (void)
-{	/* Reports last error occured */
+char *dlerror (void) {
+	/* Reports last error occured */
 	int len, error_code;
-	static char errstr[128];
+	static char errstr[GMT_LEN128];
         
 	if ((error_code = GetLastError ()) == 0)
 		return NULL;
@@ -57,7 +56,7 @@ char *dlerror (void)
 	SetLastError (0); 
 
 	/* Format the error string */
-	len = sprintf (errstr, "Error <%d>: ", error_code);
+	len = snprintf (errstr, GMT_LEN128, "Error <%d>: ", error_code);
 	len += FormatMessage ( 
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL,
@@ -84,21 +83,22 @@ HINSTANCE GetMyModuleHandle() {
 	VirtualQuery(GetMyModuleHandle, &mbi, sizeof(mbi));
 	return (HINSTANCE) (mbi.AllocationBase);
 }
-void *dlopen_special(const char *name)
-{	/* Opens the dll file of the current process.  This is how it is done
+void *dlopen_special(const char *name) {
+	/* Opens the dll file of the current process.  This is how it is done
 	 * under Windows, per http://en.wikipedia.org/wiki/Dynamic_loading */
 	/*HMODULE this_process, this_process_again;
 	GetModuleHandleEx (0, 0, &this_process);
 	this_process_again = GetModuleHandle (NULL);
 	return (this_process_again);*/
+	gmt_M_unused (name);
 	HINSTANCE this_dll_process;
 	this_dll_process = GetMyModuleHandle();
 	return (this_dll_process);
 }
 #elif defined(__CYGWIN__)
 	/* Cygwin behaves differently than most Unix and we must use regular dlopen with library name */
-void *dlopen_special(const char *name)
-{	/* Opens the shared library file of the current process under *nix.
+void *dlopen_special(const char *name) {
+	/* Opens the shared library file of the current process under *nix.
 	 * Just call dlopen with NULL and RTLD_LAZY */
 	return (dlopen (name, RTLD_LAZY));
 }
@@ -106,10 +106,10 @@ void *dlopen_special(const char *name)
 
 /* Extra convenience function for opening shared library of current process */
 
-void *dlopen_special(const char *name)
-{	/* Opens the shared library file of the current process under *nix.
+void *dlopen_special(const char *name) {
+	/* Opens the shared library file of the current process under *nix.
 	 * Just call dlopen with NULL and RTLD_LAZY */
-	GMT_UNUSED(name);
+	gmt_M_unused(name);
 	return (dlopen (NULL, RTLD_LAZY));
 }
 #endif

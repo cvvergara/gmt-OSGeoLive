@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalread.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_gdalread.h 17110 2016-09-18 22:59:42Z jluis $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -29,40 +29,40 @@
 #include <cpl_string.h>
 #include <cpl_conv.h>
 
-/*! Structure to control which options are transmited to GMT_gdalwrite */
+/*! Structure to control which options are transmited to gmt_gdalwrite */
 struct GMT_GDALWRITE_CTRL {
-#ifdef HAVE_GDAL		/* Otherwise this is just an empty struct but that wont change ABI of structs including this */
-	char *driver;		/* The GDAL diver name */
-	char *type;			/* Data type */
-	char *command;		/* command line */
-	char *title;
-	char *remark;
-	int  geog;
-	int  nx, ny;		/* Number of columns & rows of the region to be saved */
-	int  nXSizeFull;	/* Total number of columns of the data array including padding */
-	int  n_bands;
-	int  pad[4];
-	int  flipud;
-	int  registration;		/* Registration type. 0 -> grid registration; 1 -> pixel reg */
-	double	ULx, ULy;		/* x_min & y_max */
-	double	x_inc, y_inc;	/* Grid/Image increments */
-	double	nan_value; /* unlike the nan_value in struct GMT_GRID_HEADER this one is of type double */
-	void	*data;
-	struct GW_C {	/* Color map */
-		int active;
-		int n_colors;
+	char   *driver;            /* The GDAL diver name */
+	char   *type;              /* Data type */
+	char   *command;           /* command line */
+	char   *title;
+	char   *remark;
+	unsigned char   *alpha;    /* In case this is used to transmit an image that has a transparency layer */
+	void   *data;              /* To store the grid/image array */
+	char    layout[4];         /* A 3 letter code specifying the image memory layout plus a A|a if alpha data in array */
+	int     geog;
+	int     n_columns, n_rows; /* Number of columns & rows of the region to be saved */
+	int     nXSizeFull;        /* Total number of columns of the data array including padding */
+	int     n_bands;
+	int     pad[4];
+	int     flipud;
+	int     registration;      /* Registration type. 0 -> grid registration; 1 -> pixel reg */
+	double	ULx, ULy;          /* x_min & y_max */
+	double	x_inc, y_inc;      /* Grid/Image increments */
+	double	nan_value;         /* unlike the nan_value in struct GMT_GRID_HEADER this one is of type double */
+	struct  GW_C {             /* Color map */
+		int    active;
+		int    n_colors;
 		float *cpt;
 	} C;
-	struct GW_P {			/* Proj4 string */
-		int	active;
-		char	*ProjectionRefPROJ4;
+	struct  GW_P {             /* Proj4/WKT string */
+		int    active;
+		char  *ProjRefPROJ4;
+		char  *ProjRefWKT;
 	} P;
-#endif
 };
 
-/*! Structure to control which options are transmited to GMT_gdalread */
+/*! Structure to control which options are transmited to gmt_gdalread */
 struct GMT_GDALREAD_IN_CTRL {
-#ifdef HAVE_GDAL		/* Otherwise this is just an empty struct but that wont change ABI of structs including this */
 	struct GD_B {	/* Band selection */
 		int active;
 		char *bands;
@@ -77,7 +77,7 @@ struct GMT_GDALREAD_IN_CTRL {
 		int active;
 	} M;
 	struct GD_O {	/* Three chars code to specify the array layout in memory */
-		/* first char T(op)|B(ot), second R(ow)|C(ol), third L(eft)|R(ight), fourth P(ix)|L(ine)|S(equencial) */
+		/* first char T(op)|B(ot), second R(ow)|C(ol), third P(ix)|L(ine)|S(equencial) */
 		char mem_layout[4];
 	} O;
 	struct GD_N {	/* For floats, replace this value by NaN */
@@ -124,7 +124,6 @@ struct GMT_GDALREAD_IN_CTRL {
 		char side[1];		/* If array is going to pasted (grdpaste), tell in what side 'lrtb' */
 		int offset;
 	} mini_hdr;
-#endif
 };
 
 /*! Structure to hold metadata info in a per bands basis read */
@@ -137,9 +136,8 @@ struct GDAL_BAND_FNAMES {
 	double  ScaleOffset[2];
 };
 
-/*! Structure with the output data transmited by GMT_gdalread */
+/*! Structure with the output data transmited by gmt_gdalread */
 struct GMT_GDALREAD_OUT_CTRL {
-#ifdef HAVE_GDAL		/* Otherwise this is just an empty struct but that wont change ABI of structs including this */
 	/* active is true if the option has been activated */
 	struct UInt8 {			/* Declare byte pointer */
 		int active;
@@ -173,11 +171,11 @@ struct GMT_GDALREAD_OUT_CTRL {
 	double	hdr[9];
 	double	GeoTransform[6];
 	double	nodata;
-	char	*ProjectionRefPROJ4;
-	char	*ProjectionRefWKT;
+	char	*ProjRefPROJ4;
+	char	*ProjRefWKT;
 	const char	*DriverShortName;
 	const char	*DriverLongName;
-	const char	*ColorInterp;
+	const char	*color_interp;
 	int	*ColorMap;
 	int nIndexedColors; /* Number of colors in a paletted image */
 	int	RasterXsize;
@@ -192,7 +190,6 @@ struct GMT_GDALREAD_OUT_CTRL {
 	} GEOGCorners;
 
 	struct GDAL_BAND_FNAMES *band_field_names;
-#endif
 };
 
 #endif  /* _GMT_GDALREAD_H */

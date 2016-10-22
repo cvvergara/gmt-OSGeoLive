@@ -1,7 +1,7 @@
 #
-#	$Id: CMakeLists.txt 15219 2015-11-12 00:48:26Z fwobbe $
+#	$Id: CMakeLists.txt 16913 2016-08-16 22:09:18Z remko $
 #
-#	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+#	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 #	See LICENSE.TXT file for copying and redistribution conditions.
 #
 #	This program is free software; you can redistribute it and/or modify
@@ -200,7 +200,7 @@ message(
 	"*  Build GMT core             : always [${GMT_CORE_LIB_NAME}]\n"
 	"*  Build PSL library          : always [${PSL_LIB_NAME}]\n"
 	"*  Build GMT supplements      : ${SUPPL}\n"
-	"*  Build GMT Developer        : ${DEVEL}\n"
+	"*  Build GMT for developers   : ${DEVEL}\n"
 	"*  Build proto supplements    : ${PROTO}\n"
 	"*\n"
 	"*  Locations:\n"

@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 08
-#		$Id: example_08.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_08.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:	Make a 3-D bar plot
-# GMT progs:	grd2xyz, pstext, psxyz
+# GMT modules:	grd2xyz, pstext, psxyz
 # Unix progs:	echo, rm
 #
 ps=example_08.ps

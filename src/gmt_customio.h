@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_customio.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_customio.h 15816 2016-03-06 01:24:53Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,6 @@ struct rasterfile {
 #define RMT_NONE	0		/* maplength is expected to be 0 */
 #define RMT_EQUAL_RGB	1		/* red[maplength/3], green[], blue[] follow */
 
-EXTERN_MSC char **GMT_grdformats_sorted (struct GMT_CTRL *Ctrl);
+EXTERN_MSC char **gmt_grdformats_sorted (struct GMT_CTRL *Ctrl);
 
 #endif /* GMT_CUSTOMIO_H */

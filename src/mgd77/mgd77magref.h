@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77magref.h 13846 2014-12-28 21:46:54Z pwessel $	
+ *	$Id: mgd77magref.h 16945 2016-08-19 02:40:15Z remko $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2005-2015 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2005-2016 by P. Wessel and M. T. Chandler
  *	File:	mgd77magref.h
  *
  *	MGD77 Magnetic Reference Fields for mgd77sniffer
@@ -40,4 +40,10 @@
 		{"IGRF-95",		14,		1900,		2000},
 		{"IGRF-00",     15,     1900,       2005},
 		{"IGRF-05",     16,     1900,       2010},
+		{"IGRF-10",     17,     1900,       2015},
+		{"IGRF-15",     18,     1900,       2020},
 		{"Other",       88,     9999,       9999}
+/* When updating this list, also update in mgd77.h:
+   MGD77_IGRF_LAST_ID = highest number of field code (not counting 88)
+   MGD77_N_MAG_RF = total number of field codes = MGD77_IGRF_LAST_ID + 2
+*/

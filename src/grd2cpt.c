@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2cpt.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: grd2cpt.c 16793 2016-07-13 23:30:30Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -17,14 +17,14 @@
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: grd2cpt reads a 2d binary gridded grdfile and creates a continuous-color-
- * palette CPT file, with a non-linear histogram-equalized mapping between
+ * palette CPT, with a non-linear histogram-equalized mapping between
  * hue and data value.  (The linear mapping can be made with grd2cpt.)
  *
  * Creates a cumulative distribution function f(z) describing the data
  * in the grdfile.  f(z) is sampled at z values supplied by the user
  * [with -S option] or guessed from the sample mean and standard deviation.
  * f(z) is then found by looping over the grd array for each z and counting
- * data values <= z.  Once f(z) is found then a master CPT file is resampled
+ * data values <= z.  Once f(z) is found then a master CPT is resampled
  * based on a normalized f(z).
  *
  * Author:	Walter H. F. Smith
@@ -36,7 +36,7 @@
 #define THIS_MODULE_NAME	"grd2cpt"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Make linear or histogram-equalized color palette table from grid"
-#define THIS_MODULE_KEYS	"<GI,>CO,RG-"
+#define THIS_MODULE_KEYS	"<G{+,>C}"
 
 #include "gmt_dev.h"
 
@@ -69,8 +69,9 @@ struct GRD2CPT_CTRL {
 		bool active;
 		unsigned int levels;
 	} E;
-	struct F {	/* -F[R|r|h|c] */
+	struct F {	/* -F[r|R|h|c][+c] */
 		bool active;
+		bool cat;
 		unsigned int model;
 	} F;
 	struct G {	/* -Glow/high for input CPT truncation */
@@ -113,43 +114,44 @@ struct GRD2CPT_CTRL {
 	} Z;
 };
 
-void *New_grd2cpt_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct GRD2CPT_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct GRD2CPT_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct GRD2CPT_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 	C->G.z_low = C->G.z_high = GMT->session.d_NaN;	/* No truncation */
 	return (C);
 }
 
-void Free_grd2cpt_Ctrl (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->Out.file) free (C->Out.file);
-	if (C->C.file) free (C->C.file);
-	if (C->S.file) free (C->S.file);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->Out.file);
+	gmt_M_str_free (C->C.file);
+	gmt_M_str_free (C->S.file);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_grd2cpt_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: grd2cpt <grid> [-A[+]<transparency>] [-C<cpt>] [-D[i|o]] [-E<nlevels>] [-F[R|r|h|c]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-G<zlo>/<zhi>] [-I] [-L<min_limit>/<max_limit>] [-M] [-N] [-Q[i|o]]\n\t[%s] [-S<z_start>/<z_stop>/<z_inc> or -S<n>]\n\t[-T<-|+|=|_>] [%s] [-Z]\n", GMT_Rgeo_OPT, GMT_V_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: grd2cpt <grid> [-A[+]<transparency>] [-C<cpt>] [-D[i|o]] [-E[<nlevels>]] [-F[R|r|h|c][+c]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-G<zlo>/<zhi>] [-I] [-L<min_limit>/<max_limit>] [-M] [-N] [-Q[i|o]]\n\t[%s] [-S<z_start>/<z_stop>/<z_inc> or -S<n>]\n\t[-T<-|+|=|_>] [%s] [-Z]\n\n", GMT_Rgeo_OPT, GMT_V_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<grid> is name of one or more grid files.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-A Set constant transparency for all colors; prepend + to also include back-, for-, and nan-colors [0].\n");
-	if (GMT_list_cpt (API->GMT, 'C')) return (EXIT_FAILURE);	/* Display list of available color tables */
+	if (gmt_list_cpt (API->GMT, 'C')) return (GMT_CPT_READ_ERROR);	/* Display list of available color tables */
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Set back- and foreground color to match the bottom/top limits\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   in the output CPT file [Default uses color table]. Append i to match the\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   bottom/top values in the input CPT file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Use <nlevels> equidistant color levels from zmin to zmax.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   in the output CPT [Default uses color table]. Append i to match the\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   bottom/top values in the input CPT.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-E Set CPT to go from grid zmin to zmax (i.e., a linear scale).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, append <nlevels> to sample equidistant color levels from zmin to zmax.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Select the color model for output (R for r/g/b or grayscale or colorname,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   r for r/g/b only, h for h-s-v, c for c/m/y/k)\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   r for r/g/b only, h for h-s-v, c for c/m/y/k) [Default uses the input model]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append +c to output a discrete CPT in categorical CPT format.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Truncate incoming CPT to be limited to the z-range <zlo>/<zhi>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   To accept one if the incoming limits, set to other to NaN.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Reverse the sense of the color table as well as back- and foreground color.\n");
@@ -175,11 +177,10 @@ int GMT_grd2cpt_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Create a continuous color palette [Default is discontinuous, i.e., constant color intervals].\n");
 	GMT_Option (API, "h,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_grd2cpt_parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to grdcut and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -199,7 +200,7 @@ int GMT_grd2cpt_parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct G
 			case '<':	/* Input files */
 				Ctrl->In.active = true;
 				n_files[GMT_IN]++;
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) n_errors++;
 				break;
 			case '>':	/* Got named output file */
 				if (n_files[GMT_OUT]++ == 0) Ctrl->Out.file = strdup (opt->arg);
@@ -212,7 +213,7 @@ int GMT_grd2cpt_parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct G
 				if (opt->arg[0] == '+') Ctrl->A.mode = 1;
 				Ctrl->A.value = 0.01 * atof (&opt->arg[Ctrl->A.mode]);
 				break;
-			case 'C':	/* Get CPT file */
+			case 'C':	/* Get CPT */
 				Ctrl->C.active = true;
 				Ctrl->C.file = strdup (opt->arg);
 				break;
@@ -223,14 +224,18 @@ int GMT_grd2cpt_parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct G
 				break;
 			case 'E':	/* Use n levels */
 				Ctrl->E.active = true;
-				if (sscanf (opt->arg, "%d", &Ctrl->E.levels) != 1) {
+				if (opt->arg[0] && sscanf (opt->arg, "%d", &Ctrl->E.levels) != 1) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -E option: Cannot decode value\n");
 					n_errors++;
 				}
 				break;
 			case 'F':	/* Set color model for output */
+				if (gmt_get_modifier (opt->arg, 'c', txt_a)) {
+					Ctrl->F.cat = true;
+					if (txt_a[0] == '\0') break;
+				}
 				Ctrl->F.active = true;
-				switch (opt->arg[0]) {
+				switch (txt_a[0]) {
 					case 'r': Ctrl->F.model = GMT_RGB + GMT_NO_COLORNAMES; break;
 					case 'h': Ctrl->F.model = GMT_HSV; break;
 					case 'c': Ctrl->F.model = GMT_CMYK; break;
@@ -240,10 +245,10 @@ int GMT_grd2cpt_parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct G
 			case 'G':	/* truncate incoming CPT */
 				Ctrl->G.active = true;
 				n = sscanf (opt->arg, "%[^/]/%s", txt_a, txt_b);
-				n_errors += GMT_check_condition (GMT, n < 2, "Syntax error -G option: Must specify z_low/z_high\n");
+				n_errors += gmt_M_check_condition (GMT, n < 2, "Syntax error -G option: Must specify z_low/z_high\n");
 				if (!(txt_a[0] == 'N' || txt_a[0] == 'n') || !strcmp (txt_a, "-")) Ctrl->G.z_low = atof (txt_a);
 				if (!(txt_b[0] == 'N' || txt_b[0] == 'n') || !strcmp (txt_b, "-")) Ctrl->G.z_high = atof (txt_b);
-				n_errors += GMT_check_condition (GMT, GMT_is_dnan (Ctrl->G.z_low) && GMT_is_dnan (Ctrl->G.z_high),
+				n_errors += gmt_M_check_condition (GMT, gmt_M_is_dnan (Ctrl->G.z_low) && gmt_M_is_dnan (Ctrl->G.z_high),
 								"Syntax error -G option: Both of z_low/z_high cannot be NaN\n");
 				break;
 			case 'I':	/* Reverse scale */
@@ -309,34 +314,46 @@ int GMT_grd2cpt_parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct G
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, n_files[GMT_IN] < 1, "Error: No grid name(s) specified.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->W.active && Ctrl->Z.active,
+	n_errors += gmt_M_check_condition (GMT, n_files[GMT_IN] < 1, "Error: No grid name(s) specified.\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->W.active && Ctrl->Z.active,
 					"Syntax error: -W and -Z cannot be used simultaneously\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->L.active && Ctrl->L.min >= Ctrl->L.max,
+	n_errors += gmt_M_check_condition (GMT, Ctrl->F.cat && Ctrl->Z.active,
+	                                "Syntax error: -F+c and -Z cannot be used simultaneously\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->L.active && Ctrl->L.min >= Ctrl->L.max,
 					"Syntax error -L option: min_limit must be less than max_limit.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.active && Ctrl->S.mode == 0 && (Ctrl->S.high <= Ctrl->S.low || Ctrl->S.inc <= 0.0),
+	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && Ctrl->S.mode == 0 && (Ctrl->S.high <= Ctrl->S.low || Ctrl->S.inc <= 0.0),
 					"Syntax error -S option: Bad arguments\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.active && Ctrl->S.mode == 1  && Ctrl->S.n_levels == 0,
+	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && Ctrl->S.mode == 1  && Ctrl->S.n_levels == 0,
 					"Syntax error -S option: Bad arguments\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.active && (Ctrl->T.active || Ctrl->E.active),
+	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && (Ctrl->T.active || Ctrl->E.active),
 					"Syntax error -S option: Cannot be combined with -E nor -T option.\n");
-	n_errors += GMT_check_condition (GMT, n_files[GMT_OUT] > 1, "Syntax error: Only one output destination can be specified\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->A.active && (Ctrl->A.value < 0.0 || Ctrl->A.value > 1.0),
+	n_errors += gmt_M_check_condition (GMT, n_files[GMT_OUT] > 1, "Syntax error: Only one output destination can be specified\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && (Ctrl->A.value < 0.0 || Ctrl->A.value > 1.0),
 					"Syntax error -A: Transparency must be n 0-100 range [0 or opaque]\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_grd2cpt_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+GMT_LOCAL int free_them_grids (struct GMTAPI_CTRL *API, struct GMT_GRID **G, char **grdfile, uint64_t n) {
+	/* Free what we are pointing to */
+	uint64_t k;
+	for (k = 0; k < n; k++) {
+		gmt_M_str_free (grdfile[k]);
+		if (GMT_Destroy_Data (API, &G[k]) != GMT_NOERROR)
+			return (API->error);
+	}
+	return (GMT_NOERROR);
+}
 
-int GMT_grd2cpt (void *V_API, int mode, void *args)
-{
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
+
+int GMT_grd2cpt (void *V_API, int mode, void *args) {
 	uint64_t ij, k, ngrd = 0, nxyg, nfound, ngood;
 	unsigned int row, col, j, cpt_flags = 0;
 	int signed_levels, error = 0;
@@ -357,23 +374,23 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 	struct GRD2CPT_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grd2cpt_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grd2cpt_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grd2cpt_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_grd2cpt_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_grd2cpt_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the grd2cpt main code ----------------------------*/
 
@@ -389,46 +406,52 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 	if (Ctrl->M.active) cpt_flags |= GMT_CPT_NO_BNF;		/* bit 0 controls if BFN is determined by parameters */
 	if (Ctrl->D.mode == 2) cpt_flags |= GMT_CPT_EXTEND_BNF;		/* bit 1 controls if BF will be set to equal bottom/top rgb value */
 
-	if ((Pin = GMT_Read_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->C.file, NULL)) == NULL) {
+	if ((Pin = GMT_Read_Data (API, GMT_IS_PALETTE, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->C.file, NULL)) == NULL) {
 		Return (API->error);
 	}
-	if (Ctrl->G.active) Pin = GMT_truncate_cpt (GMT, Pin, Ctrl->G.z_low, Ctrl->G.z_high);	/* Possibly truncate the CPT */
+	if (Ctrl->G.active) Pin = gmt_truncate_cpt (GMT, Pin, Ctrl->G.z_low, Ctrl->G.z_high);	/* Possibly truncate the CPT */
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid(s)\n");
 
-	GMT_memset (wesn, 4, double);
-	if (GMT->common.R.active) GMT_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Subset */
+	gmt_M_memset (wesn, 4, double);
+	if (GMT->common.R.active) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Subset */
 
-	G = GMT_memory (GMT, NULL, n_alloc, struct GMT_GRID *);	/* Potentially an array of grids */
-	grdfile = GMT_memory (GMT, NULL, n_alloc, char *);	/* Potentially an array of gridfile names */
+	G = gmt_M_memory (GMT, NULL, n_alloc, struct GMT_GRID *);	/* Potentially an array of grids */
+	grdfile = gmt_M_memory (GMT, NULL, n_alloc, char *);	/* Potentially an array of gridfile names */
 
 	for (opt = options, k = 0; opt; opt = opt->next) {
 		if (opt->option != '<') continue;	/* We are only processing input files here */
 
 		if ((G[k] = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, wesn, opt->arg, NULL)) == NULL) {
-			Return (API->error);
+			error = free_them_grids (API, G, grdfile, k);
+			gmt_M_free (GMT, G);
+			gmt_M_free (GMT, grdfile);
+			Return ((error) ? error : API->error);
 		}
 		grdfile[k] = strdup (opt->arg);
-		if (k && !(G[k]->header->nx == G[k-1]->header->nx && G[k]->header->ny == G[k-1]->header->ny)) {
+		if (k && !(G[k]->header->n_columns == G[k-1]->header->n_columns && G[k]->header->n_rows == G[k-1]->header->n_rows)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: Grids do not have the same domain!\n");
-			Return (GMT_RUNTIME_ERROR);
+			error = free_them_grids (API, G, grdfile, k);
+			gmt_M_free (GMT, G);
+			gmt_M_free (GMT, grdfile);
+			Return ((error) ? error : API->error);
 		}
 
 		k++;
 		if (k == n_alloc) {
 			size_t old_n_alloc = n_alloc;
 			n_alloc += GMT_TINY_CHUNK;
-			G = GMT_memory (GMT, G, n_alloc, struct GMT_GRID *);
-			GMT_memset (&(G[old_n_alloc]), n_alloc - old_n_alloc, struct GMT_GRID *);	/* Set to NULL */
-			grdfile = GMT_memory (GMT, grdfile, n_alloc, char *);
-			GMT_memset (&(grdfile[old_n_alloc]), n_alloc - old_n_alloc, char *);	/* Set to NULL */
+			G = gmt_M_memory (GMT, G, n_alloc, struct GMT_GRID *);
+			gmt_M_memset (&(G[old_n_alloc]), n_alloc - old_n_alloc, struct GMT_GRID *);	/* Set to NULL */
+			grdfile = gmt_M_memory (GMT, grdfile, n_alloc, char *);
+			gmt_M_memset (&(grdfile[old_n_alloc]), n_alloc - old_n_alloc, char *);	/* Set to NULL */
 		}
 	}
 
 	ngrd = k;
 	if (ngrd < n_alloc) {
-		G = GMT_memory (GMT, G, ngrd, struct GMT_GRID *);
-		grdfile = GMT_memory (GMT, grdfile, ngrd, char *);
+		G = gmt_M_memory (GMT, G, ngrd, struct GMT_GRID *);
+		grdfile = gmt_M_memory (GMT, grdfile, ngrd, char *);
 	}
 
 	nxyg = G[0]->header->nm * ngrd;
@@ -442,8 +465,8 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		G[0]->header->z_min = Ctrl->L.min;
 		G[0]->header->z_max = Ctrl->L.max;
 		for (k = 0; k < ngrd; k++) {	/* For each grid */
-			GMT_grd_loop (GMT, G[k], row, col, ij) {
-				if (GMT_is_fnan (G[k]->data[ij]))
+			gmt_M_grd_loop (GMT, G[k], row, col, ij) {
+				if (gmt_M_is_fnan (G[k]->data[ij]))
 					nfound++;
 				else {
 					if (G[k]->data[ij] < Ctrl->L.min || G[k]->data[ij] > Ctrl->L.max) {
@@ -462,8 +485,8 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		Ctrl->L.min = G[0]->header->z_max;	/* This is just to double check G[k]->header->z_min, G[k]->header->z_max  */
 		Ctrl->L.max = G[0]->header->z_min;
 		for (k = 0; k < ngrd; k++) {	/* For each grid */
-			GMT_grd_loop (GMT, G[k], row, col, ij) {
-				if (GMT_is_fnan (G[k]->data[ij]))
+			gmt_M_grd_loop (GMT, G[k], row, col, ij) {
+				if (gmt_M_is_fnan (G[k]->data[ij]))
 					nfound++;
 				else {
 					if (G[k]->data[ij] < Ctrl->L.min) Ctrl->L.min = G[k]->data[ij];
@@ -476,11 +499,32 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		G[0]->header->z_min = Ctrl->L.min;
 		G[0]->header->z_max = Ctrl->L.max;
 	}
+	
+	if (Ctrl->E.active && Ctrl->E.levels == 0) {	/* Use existing CPT structure, just linearly change z */
+		if ((Pout = GMT_Duplicate_Data (API, GMT_IS_PALETTE, GMT_DUPLICATE_ALLOC, Pin)) == NULL) return (API->error);
+		gmt_stretch_cpt (GMT, Pout, Ctrl->L.min, Ctrl->L.max, Ctrl->Z.active);
+		if (Ctrl->I.active)
+			gmt_invert_cpt (GMT, Pout);
+		cpt_flags = 0;
+		if (Ctrl->N.active) cpt_flags |= GMT_CPT_NO_BNF;	/* bit 0 controls if BFN will be written out */
+		if (Ctrl->D.mode == 1) cpt_flags |= GMT_CPT_EXTEND_BNF;	/* bit 1 controls if BF will be set to equal bottom/top rgb value */
+		if (Ctrl->F.active) Pout->model = Ctrl->F.model;
+		if (Ctrl->F.cat) Pout->categorical = 1;
+		if (GMT_Write_Data (API, GMT_IS_PALETTE, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->Out.file, Pout) != GMT_NOERROR) {
+			Return (API->error);
+		}
+		error = free_them_grids (API, G, grdfile, ngrd);
+		gmt_M_free (GMT, G);
+		gmt_M_free (GMT, grdfile);
+
+		Return (GMT_NOERROR);
+	}
+
 	ngood = nxyg - nfound;	/* This is the number of non-NaN points for the cdf function  */
 	mean /= ngood;
 	sd /= ngood;
 	sd = sqrt (sd - mean * mean);
-	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 		sprintf (format, "Mean and S.D. of data are %s %s\n",
 		         GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
 		GMT_Report (API, GMT_MSG_VERBOSE, format, mean, sd);
@@ -493,7 +537,7 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		Ctrl->E.levels = (G[0]->header->z_min < Ctrl->S.low) ? 1 : 0;
 		Ctrl->E.levels += urint (floor((Ctrl->S.high - Ctrl->S.low)/Ctrl->S.inc)) + 1;
 		if (G[0]->header->z_max > Ctrl->S.high) Ctrl->E.levels++;
-		cdf_cpt = GMT_memory (GMT, NULL, Ctrl->E.levels, struct CDF_CPT);
+		cdf_cpt = gmt_M_memory (GMT, NULL, Ctrl->E.levels, struct CDF_CPT);
 		if (G[0]->header->z_min < Ctrl->S.low) {
 			cdf_cpt[0].z = G[0]->header->z_min;
 			cdf_cpt[1].z = Ctrl->S.low;
@@ -534,33 +578,33 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		range *= (1.0 + GMT_CONV8_LIMIT);	/* To ensure the max grid values do not exceed the CPT limit due to round-off issues */
 		start -= fabs (start) * GMT_CONV8_LIMIT;	/* To ensure the start of cpt is less than min value due to roundoff  */
 		Ctrl->S.inc = range / (double)(Ctrl->E.levels - 1);
-		cdf_cpt = GMT_memory (GMT, NULL, Ctrl->E.levels, struct CDF_CPT);
+		cdf_cpt = gmt_M_memory (GMT, NULL, Ctrl->E.levels, struct CDF_CPT);
 		for (j = 0; j < Ctrl->E.levels; j++) cdf_cpt[j].z = start + j * Ctrl->S.inc;
 	}
 
 	else {	/* This is completely ad-hoc.  It chooses z based on equidistant steps [of 0.1 unless -Sn set] for a Gaussian CDF:  */
 		double z_inc = 1.0 / (Ctrl->E.levels - 1);		/* Increment between selected points [0.1] */
-		double zcrit_tail = GMT_zcrit (GMT, 1.0 - z_inc);	/* Get the +/- z-value containing bulk of distribution, with z_inc in each tail */
-		cdf_cpt = GMT_memory (GMT, NULL, Ctrl->E.levels, struct CDF_CPT);
+		double zcrit_tail = gmt_zcrit (GMT, 1.0 - z_inc);	/* Get the +/- z-value containing bulk of distribution, with z_inc in each tail */
+		cdf_cpt = gmt_M_memory (GMT, NULL, Ctrl->E.levels, struct CDF_CPT);
 		if ((mean - zcrit_tail*sd) <= G[0]->header->z_min || (mean + zcrit_tail*sd) >= G[0]->header->z_max) {
 			/* Adjust mean/std so that our critical locations are still inside the min/max of the data */
 			mean = 0.5 * (G[0]->header->z_min + G[0]->header->z_max);
 			sd = (G[0]->header->z_max - mean) / 1.5;	/* This factor of 1.5 probably needs to change since z_inc is no longer fixed at 0.1 */
 			if (sd <= 0.0) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Min and Max data values are equal.\n");
-				Return (EXIT_FAILURE);
+				Return (GMT_RUNTIME_ERROR);
 			}
 		}	/* End of stupid bug fix  */
 
 		/* So we go in steps of z_inc in the Gaussian CDF except we start and stop at actual min/max */
 		cdf_cpt[0].z = G[0]->header->z_min;
-		for (j = 1; j < (Ctrl->E.levels - 1); j++) cdf_cpt[j].z = mean + GMT_zcrit (GMT, j *z_inc) * sd;
+		for (j = 1; j < (Ctrl->E.levels - 1); j++) cdf_cpt[j].z = mean + gmt_zcrit (GMT, j *z_inc) * sd;
 		cdf_cpt[Ctrl->E.levels-1].z = G[0]->header->z_max;
 	}
 
 	/* Get here when we are ready to go.  cdf_cpt[].z contains the sample points.  */
 
-	if (GMT_is_verbose (GMT, GMT_MSG_LONG_VERBOSE)) sprintf (format, "z = %s and CDF(z) = %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+	if (gmt_M_is_verbose (GMT, GMT_MSG_LONG_VERBOSE)) sprintf (format, "z = %s and CDF(z) = %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
 	for (j = 0; j < Ctrl->E.levels; j++) {
 		if (cdf_cpt[j].z <= G[0]->header->z_min)
 			cdf_cpt[j].f = 0.0;
@@ -569,8 +613,8 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		else {
 			nfound = 0;
 			for (k = 0; k < ngrd; k++) {	/* For each grid */
-				GMT_grd_loop (GMT, G[k], row, col, ij) {
-					if (!GMT_is_fnan (G[k]->data[ij]) && G[k]->data[ij] <= cdf_cpt[j].z) nfound++;
+				gmt_M_grd_loop (GMT, G[k], row, col, ij) {
+					if (!gmt_M_is_fnan (G[k]->data[ij]) && G[k]->data[ij] <= cdf_cpt[j].z) nfound++;
 				}
 			}
 			cdf_cpt[j].f = (double)(nfound-1)/(double)(ngood-1);
@@ -578,37 +622,33 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		GMT_Report (API, GMT_MSG_LONG_VERBOSE, format, cdf_cpt[j].z, cdf_cpt[j].f);
 	}
 
-	/* Now the cdf function has been found.  We now resample the chosen CPT file  */
+	/* Now the cdf function has been found.  We now resample the chosen CPT  */
 
-	z = GMT_memory (GMT, NULL, Ctrl->E.levels, double);
+	z = gmt_M_memory (GMT, NULL, Ctrl->E.levels, double);
 	for (j = 0; j < Ctrl->E.levels; j++) z[j] = cdf_cpt[j].z;
 	if (Ctrl->Q.mode == 2) for (j = 0; j < Ctrl->E.levels; j++) z[j] = d_log10 (GMT, z[j]);	/* Make log10(z) values for interpolation step */
 
 	signed_levels = Ctrl->E.levels;
-	Pout = GMT_sample_cpt (GMT, Pin, z, -signed_levels, Ctrl->Z.active, Ctrl->I.active, Ctrl->Q.mode, Ctrl->W.active);	/* -ve to keep original colors */
+	Pout = gmt_sample_cpt (GMT, Pin, z, -signed_levels, Ctrl->Z.active, Ctrl->I.active, Ctrl->Q.mode, Ctrl->W.active);	/* -ve to keep original colors */
 
 	/* Determine mode flags for output */
 	cpt_flags = 0;
 	if (Ctrl->N.active) cpt_flags |= GMT_CPT_NO_BNF;	/* bit 0 controls if BFN will be written out */
 	if (Ctrl->D.mode == 1) cpt_flags |= GMT_CPT_EXTEND_BNF;	/* bit 1 controls if BF will be set to equal bottom/top rgb value */
 	if (Ctrl->F.active) Pout->model = Ctrl->F.model;
+	if (Ctrl->F.cat) Pout->categorical = 1;
 
-	if (Ctrl->A.active) GMT_cpt_transparency (GMT, Pout, Ctrl->A.value, Ctrl->A.mode);	/* Set transparency */
+	if (Ctrl->A.active) gmt_cpt_transparency (GMT, Pout, Ctrl->A.value, Ctrl->A.mode);	/* Set transparency */
 
-	if (GMT_Write_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->Out.file, Pout) != GMT_OK) {
+	if (GMT_Write_Data (API, GMT_IS_PALETTE, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->Out.file, Pout) != GMT_NOERROR) {
 		Return (API->error);
 	}
 
-	GMT_free (GMT, cdf_cpt);
-	GMT_free (GMT, z);
-	for (k = 0; k < ngrd; k++) {
-		free (grdfile[k]);
-		if (GMT_Destroy_Data (API, &G[k]) != GMT_OK) {
-			Return (API->error);
-		}
-	}
-	GMT_free (GMT, G);
-	GMT_free (GMT, grdfile);
+	gmt_M_free (GMT, cdf_cpt);
+	gmt_M_free (GMT, z);
+	error = free_them_grids (API, G, grdfile, ngrd);
+	gmt_M_free (GMT, G);
+	gmt_M_free (GMT, grdfile);
 
-	Return (EXIT_SUCCESS);
+	Return ((error) ? error : GMT_NOERROR);
 }

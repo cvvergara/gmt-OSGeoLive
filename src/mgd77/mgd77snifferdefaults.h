@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77snifferdefaults.h 15178 2015-11-06 10:45:03Z fwobbe $	
+ *	$Id: mgd77snifferdefaults.h 15757 2016-02-24 23:25:49Z pwessel $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2004-2015 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2004-2016 by P. Wessel and M. T. Chandler
  *	File:	mgd77snifferdefaults.h
  *
  *	Include file for mgd77sniffer

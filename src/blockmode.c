@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: blockmode.c 15213 2015-11-11 03:40:07Z pwessel $
+ *    $Id: blockmode.c 17124 2016-09-22 21:35:10Z jluis $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 #define THIS_MODULE_NAME	"blockmode"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Block average (x,y,z) data tables by mode estimation"
-#define THIS_MODULE_KEYS	"<DI,>DO,RG-"
+#define THIS_MODULE_KEYS	"<D{,>D}"
 
 #include "gmt_dev.h"
 #include "block_subs.h"
@@ -44,21 +44,20 @@ struct BIN_MODE_INFO {	/* Used for histogram binning */
 	double i_offset;	/* 0.5 if we are to bin using the center the bins on multiples of width, else 0.0 */
 	double o_offset;	/* 0.0 if we are to report center the bins on multiples of width, else 0.5 */
 	double i_width;		/* 1/width, to avoid divisions later */
-	int min, max;		/* The raw min,max bin numbers (min can be negative) */
-	unsigned int n_bins;	/* Number of bins required */
 	double *count;		/* The histogram counts (double to accomodate weighted data), to be reset before each spatial block */
+	int min, max;		/* The raw min,max bin numbers (min can be negative) */
 	int mode_choice;	/* For multiple modes: BLOCKMODE_LOW picks lowest, BLOCKMODE_AVE picks average, BLOCKMODE_HIGH picks highest */
+	unsigned int n_bins;/* Number of bins required */
 };
 
-int GMT_blockmode_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: blockmode [<table>] %s\n", GMT_I_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t%s [-C] [-D<width>[+c][+l|h]] [-E] [-Er|s[-]] [-Q]\n\t[%s] [-W[i][o]] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n\n",
+	GMT_Message (API, GMT_TIME_NONE, "\t%s [-C] [-D<width>[+c][+l|h]] [-E] [-Er|s[-]] [-Q]\n\t[%s] [-W[i][o][+s]] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n\n",
 		GMT_Rgeo_OPT, GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_colon_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Option (API, "I,R");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
@@ -80,15 +79,15 @@ int GMT_blockmode_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t     -Wi reads Weighted Input (4 cols: x,y,z,w) but writes only (x,y,z[,s,l,h]) Output.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     -Wo reads unWeighted Input (3 cols: x,y,z) but reports sum (x,y,z[,s,l,h],w) Output.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     -W with no modifier has both weighted Input and Output; Default is no weights used.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     Append +s read/write standard deviations instead, with w = 1/s.\n");
 	GMT_Option (API, "a,bi");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Default is 3 columns (or 4 if -W is set).\n");
+	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is 3 columns (or 4 if -W is set).\n");
 	GMT_Option (API, "bo,d,f,h,i,o,r,:,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_blockmode_parse (struct GMT_CTRL *GMT, struct BLOCKMODE_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct BLOCKMODE_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to blockmode and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -96,6 +95,8 @@ int GMT_blockmode_parse (struct GMT_CTRL *GMT, struct BLOCKMODE_CTRL *Ctrl, stru
 	 */
 
 	unsigned int n_errors = 0, pos = 0;
+	bool sigma;
+	char arg[GMT_LEN16] = {""};
 	struct GMT_OPTION *opt = NULL;
 	char p[GMT_BUFSIZ] = {""}, *c = NULL;
 
@@ -103,7 +104,7 @@ int GMT_blockmode_parse (struct GMT_CTRL *GMT, struct BLOCKMODE_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -115,7 +116,7 @@ int GMT_blockmode_parse (struct GMT_CTRL *GMT, struct BLOCKMODE_CTRL *Ctrl, stru
 				Ctrl->D.active = true;
 				Ctrl->D.width = atof (opt->arg);
 				if ((c = strchr (opt->arg, '+')) != NULL) {	/* Found modifiers */
-					while ((GMT_strtok (c, "+", &pos, p))) {
+					while ((gmt_strtok (c, "+", &pos, p))) {
 						switch (p[0]) {
 							case 'c': Ctrl->D.center = true; break;	/* Center the histogram */
 							case 'a': Ctrl->D.mode = BLOCKMODE_AVE; break;	/* Pick average mode */
@@ -143,8 +144,8 @@ int GMT_blockmode_parse (struct GMT_CTRL *GMT, struct BLOCKMODE_CTRL *Ctrl, stru
 				break;
 			case 'I':	/* Get block dimensions */
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
@@ -153,36 +154,43 @@ int GMT_blockmode_parse (struct GMT_CTRL *GMT, struct BLOCKMODE_CTRL *Ctrl, stru
 				break;
 			case 'W':	/* Use in|out weights */
 				Ctrl->W.active = true;
-				switch (opt->arg[0]) {
+				sigma = (gmt_get_modifier (opt->arg, 's', arg)) ? true : false;
+				switch (arg[0]) {
 					case '\0':
-						Ctrl->W.weighted[GMT_IN] = Ctrl->W.weighted[GMT_OUT] = true; break;
+						Ctrl->W.weighted[GMT_IN] = Ctrl->W.weighted[GMT_OUT] = true;
+						Ctrl->W.sigma[GMT_IN] = Ctrl->W.sigma[GMT_OUT] = sigma;
+						break;
 					case 'i': case 'I':
-						Ctrl->W.weighted[GMT_IN] = true; break;
+						Ctrl->W.weighted[GMT_IN] = true;
+						Ctrl->W.sigma[GMT_IN] = sigma;
+						break;
 					case 'o': case 'O':
-						Ctrl->W.weighted[GMT_OUT] = true; break;
+						Ctrl->W.weighted[GMT_OUT] = true;
+						Ctrl->W.sigma[GMT_OUT] = sigma;
+						break;
 					default:
-						n_errors++; break;
+						n_errors++;
+						break;
 				}
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);	/* If -R<grdfile> was given we may get incs unless -I was used */
+	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);	/* If -R<grdfile> was given we may get incs unless -I was used */
 
-	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->D.active && Ctrl->E.active, "Syntax error -D option: Cannot be combined with -E\n");
-	n_errors += GMT_check_binary_io (GMT, (Ctrl->W.weighted[GMT_IN]) ? 4 : 3);
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->D.active && Ctrl->E.active, "Syntax error -D option: Cannot be combined with -E\n");
+	n_errors += gmt_check_binary_io (GMT, (Ctrl->W.weighted[GMT_IN]) ? 4 : 3);
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-struct BIN_MODE_INFO *bin_setup (struct GMT_CTRL *GMT, struct BLK_DATA *d, double width, bool center, int mode_choice, bool is_integer, uint64_t n, uint64_t k)
-{
+GMT_LOCAL struct BIN_MODE_INFO *bin_setup (struct GMT_CTRL *GMT, struct BLK_DATA *d, double width, bool center, int mode_choice, bool is_integer, uint64_t n, uint64_t k) {
 	/* Estimate mode by finding a maximum in the histogram resulting
 	 * from binning the data with the specified width. Note that the
 	 * data array is already sorted on a[k]. We check if we find more
@@ -190,7 +198,7 @@ struct BIN_MODE_INFO *bin_setup (struct GMT_CTRL *GMT, struct BLK_DATA *d, doubl
 	 * This function sets up quantities needed as we loop over the
 	 * spatial bins */
 
-	struct BIN_MODE_INFO *B = GMT_memory (GMT, NULL, 1, struct BIN_MODE_INFO);
+	struct BIN_MODE_INFO *B = gmt_M_memory (GMT, NULL, 1, struct BIN_MODE_INFO);
 	char *mode = "lah";
 
 	if (is_integer) {	/* Special consideration for integers */
@@ -217,14 +225,13 @@ struct BIN_MODE_INFO *bin_setup (struct GMT_CTRL *GMT, struct BLK_DATA *d, doubl
 	B->min = irint (floor ((d[0].a[k]   * B->i_width) + B->i_offset));
 	B->max = irint (ceil  ((d[n-1].a[k] * B->i_width) + B->i_offset));
 	B->n_bins = B->max - B->min + 1;
-	B->count = GMT_memory (GMT, NULL, B->n_bins, double);
+	B->count = gmt_M_memory (GMT, NULL, B->n_bins, double);
 	B->mode_choice = (mode_choice == BLOCKMODE_DEF) ? BLOCKMODE_AVE : mode_choice;
 
 	return (B);
 }
 
-double bin_mode (struct GMT_CTRL *GMT, struct BLK_DATA *d, uint64_t n, uint64_t k, struct BIN_MODE_INFO *B)
-{
+GMT_LOCAL double bin_mode (struct GMT_CTRL *GMT, struct BLK_DATA *d, uint64_t n, uint64_t k, struct BIN_MODE_INFO *B) {
 	/* Estimate mode by finding a maximum in the histogram resulting
 	 * from binning the data with the specified width. Note that the
 	 * data array is already sorted on a[k]. We check if we find more
@@ -235,9 +242,9 @@ double bin_mode (struct GMT_CTRL *GMT, struct BLK_DATA *d, uint64_t n, uint64_t 
 	unsigned int n_modes = 0;
 	int bin, mode_bin = 0;
 	bool done;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
-	GMT_memset (B->count, B->n_bins, double);	/* Reset the counts */
+	gmt_M_memset (B->count, B->n_bins, double);	/* Reset the counts */
 	for (i = 0; i < n; i++) {	/* Loop over sorted data points */
 		bin = urint (floor ((d[i].a[k] * B->i_width) + B->i_offset)) - B->min;
 		B->count[bin] += d[i].a[BLK_W];		/* Add up counts or weights */
@@ -270,14 +277,13 @@ double bin_mode (struct GMT_CTRL *GMT, struct BLK_DATA *d, uint64_t n, uint64_t 
 				break;
 		}
 	}
-	if (B->mode_choice == BLOCKMODE_AVE) value /= n_modes;	/* The average of the multiple modes */
+	if (B->mode_choice == BLOCKMODE_AVE && n_modes > 0) value /= n_modes;	/* The average of the multiple modes */
 
 	return (value);
 }
 
 #if 0
-double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint64_t n, unsigned int k, uint64_t *index)
-{
+GMT_LOCAL double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint64_t n, unsigned int k, uint64_t *index) {
 	/* Estimate mode by finding a maximum in the estimated
 	   pdf of weighted data.  Estimate the pdf as the finite
 	   difference of the cumulative frequency distribution
@@ -342,8 +348,7 @@ double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint6
 }
 #endif
 
-double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint64_t n, unsigned int k, uint64_t *index)
-{
+GMT_LOCAL double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint64_t n, unsigned int k, uint64_t *index) {
 	/* Looks for the "shortest 50%". This means that when the cumulative weight
 	   (y) is plotted against the value (x) then the line between (xi,yi) and
 	   (xj,yj) should be the steepest for any combination where (yj-yi) is 50%
@@ -395,11 +400,10 @@ double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint6
 }
 
 /* Must free allocated memory before returning */
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {GMT_Destroy_Data (API, &Grid); Free_blockmode_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {GMT_Destroy_Data (API, &Grid); Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_blockmode (void *V_API, int mode, void *args)
-{
+int GMT_blockmode (void *V_API, int mode, void *args) {
 	bool mode_xy, do_extra = false, is_integer, duplicate_col;
 
 	int way, error = 0;
@@ -407,14 +411,14 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 	unsigned int row, col, emode = 0, n_input, n_output;
 
 	uint64_t node, first_in_cell, first_in_new_cell, n_lost, n_read;
-	uint64_t n_cells_filled, n_in_cell, nz, n_pitched, src_id;
+	uint64_t n_cells_filled, n_in_cell, nz, n_pitched, src_id = 0;
 	uint64_t w_col, i_col = 0, sid_col;
 
 	size_t n_alloc = 0, nz_alloc = 0;
 
 	double out[7], wesn[4], i_n_in_cell, d_intval, weight, half_dx, *in = NULL, *z_tmp = NULL;
 
-	char format[GMT_BUFSIZ] = {""}, *old_format = NULL;
+	char format[GMT_LEN256] = {""}, *old_format = NULL;
 
 	struct GMT_OPTION *options = NULL;
 	struct GMT_GRID *Grid = NULL;
@@ -422,22 +426,22 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 	struct BLK_DATA *data = NULL;
 	struct BLOCKMODE_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_blockmode_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_blockmode_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_blockmode_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_blockmode_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_blockmode_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the blockmode main code ----------------------------*/
 
@@ -451,20 +455,20 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
 		GMT_GRID_DEFAULT_REG, 0, NULL)) == NULL) Return (API->error);	/* Note: 0 for pad since no BC work needed */
 
-	duplicate_col = (GMT_360_RANGE (Grid->header->wesn[XLO], Grid->header->wesn[XHI]) && Grid->header->registration == GMT_GRID_NODE_REG);	/* E.g., lon = 0 column should match lon = 360 column */
+	duplicate_col = (gmt_M_360_range (Grid->header->wesn[XLO], Grid->header->wesn[XHI]) && Grid->header->registration == GMT_GRID_NODE_REG);	/* E.g., lon = 0 column should match lon = 360 column */
 	half_dx = 0.5 * Grid->header->inc[GMT_X];
 	mode_xy = !Ctrl->C.active;
 
-	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
-		sprintf (format, "W: %s E: %s S: %s N: %s nx: %%d ny: %%d\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out, GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
-		GMT_Report (API, GMT_MSG_VERBOSE, format, Grid->header->wesn[XLO], Grid->header->wesn[XHI], Grid->header->wesn[YLO], Grid->header->wesn[YHI], Grid->header->nx, Grid->header->ny);
+	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+		snprintf (format, GMT_LEN256, "W: %s E: %s S: %s N: %s n_columns: %%d n_rows: %%d\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out, GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+		GMT_Report (API, GMT_MSG_VERBOSE, format, Grid->header->wesn[XLO], Grid->header->wesn[XHI], Grid->header->wesn[YLO], Grid->header->wesn[YHI], Grid->header->n_columns, Grid->header->n_rows);
 	}
 
-	GMT_set_xy_domain (GMT, wesn, Grid->header);	/* May include some padding if gridline-registered */
+	gmt_set_xy_domain (GMT, wesn, Grid->header);	/* May include some padding if gridline-registered */
 
 	/* Specify input and output expected columns */
 	n_input = 3 + Ctrl->W.weighted[GMT_IN] + ((Ctrl->E.mode & BLK_DO_SRC_ID) ? 1 : 0);	/* 3 columns on output, plus 1 extra if -W and another if -Es  */
-	if ((error = GMT_set_cols (GMT, GMT_IN, n_input)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_IN, n_input)) != GMT_NOERROR) {
 		Return (error);
 	}
 	n_output = (Ctrl->W.weighted[GMT_OUT]) ? 4 : 3;
@@ -476,20 +480,20 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 		n_output++;
 		emode = Ctrl->E.mode & (BLK_DO_INDEX_LO + BLK_DO_INDEX_HI);
 	}
-	if ((error = GMT_set_cols (GMT, GMT_OUT, n_output)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_OUT, n_output)) != GMT_NOERROR) {
 		Return (error);
 	}
 
 	/* Register likely data sources unless the caller has already done so */
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default input sources, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default input sources, unless already set */
 		Return (API->error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
 		Return (API->error);
 	}
 
 	/* Initialize the i/o for doing record-by-record reading/writing */
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
 
@@ -503,27 +507,27 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
-			if (GMT_REC_IS_ANY_HEADER (GMT)) 	/* Skip all table and segment headers */
+			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
 				continue;
-			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
 		}
 
-		if (GMT_is_dnan (in[GMT_Z])) 		/* Skip if z = NaN */
+		if (gmt_M_is_dnan (in[GMT_Z])) 		/* Skip if z = NaN */
 			continue;
 
 		/* Data record to process */
 
 		n_read++;						/* Number of records read */
 
-		if (GMT_y_is_outside (GMT, in[GMT_Y], wesn[YLO], wesn[YHI])) continue;	/* Outside y-range */
-		if (GMT_x_is_outside (GMT, &in[GMT_X], wesn[XLO], wesn[XHI])) continue;	/* Outside x-range (or longitude) */
+		if (gmt_M_y_is_outside (GMT, in[GMT_Y], wesn[YLO], wesn[YHI])) continue;	/* Outside y-range */
+		if (gmt_x_is_outside (GMT, &in[GMT_X], wesn[XLO], wesn[XHI])) continue;	/* Outside x-range (or longitude) */
 
 		/* We appear to be inside: Get row and col indices of this block */
 
-		if (GMT_row_col_out_of_bounds (GMT, in, Grid->header, &row, &col)) continue;	/* Sorry, outside after all */
+		if (gmt_row_col_out_of_bounds (GMT, in, Grid->header, &row, &col)) continue;	/* Sorry, outside after all */
 		if (duplicate_col && (wesn[XHI]-in[GMT_X] < half_dx)) {	/* Only compute modal values for the west column and not the repeating east column with lon += 360 */
 			in[GMT_X] -= 360.0;	/* Make this point be considered for the western block mean value */
 			col = 0;
@@ -536,9 +540,9 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 			if (!doubleAlmostEqual (d_intval, in[GMT_Z])) is_integer = false;
 		}
 
-		node = GMT_IJP (Grid->header, row, col);		/* Bin node */
+		node = gmt_M_ijp (Grid->header, row, col);		/* Bin node */
 
-		if (n_pitched == n_alloc) data = GMT_malloc (GMT, data, n_pitched, &n_alloc, struct BLK_DATA);
+		if (n_pitched == n_alloc) data = gmt_M_malloc (GMT, data, n_pitched, &n_alloc, struct BLK_DATA);
 		data[n_pitched].ij = node;
 		data[n_pitched].src_id = (Ctrl->E.mode & BLK_DO_SRC_ID) ? (uint64_t)lrint (in[sid_col]) : n_read;
 		if (mode_xy) {	/* Need to store (x,y) so we can compute modal location later */
@@ -546,41 +550,42 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 			data[n_pitched].a[GMT_Y] = in[GMT_Y];
 		}
 		data[n_pitched].a[BLK_Z] = in[GMT_Z];
-		data[n_pitched].a[BLK_W] = (Ctrl->W.weighted[GMT_IN]) ? in[3] : 1.0;
+		data[n_pitched].a[BLK_W] = ((Ctrl->W.weighted[GMT_IN]) ? ((Ctrl->W.sigma[GMT_IN]) ? 1.0 / in[3] : in[3]) : 1.0);
 
 		n_pitched++;
 	} while (true);
 
 	GMT->session.min_meminc = GMT_MIN_MEMINC;		/* Reset to the default value */
 
-	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+	if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
 		Return (API->error);
 	}
 
 	if (n_read == 0) {	/* Blank/empty input files */
-		GMT_Report (API, GMT_MSG_VERBOSE, "No data records found; no output produced");
-		Return (EXIT_SUCCESS);
+		GMT_Report (API, GMT_MSG_VERBOSE, "No data records found; no output produced\n");
+		Return (GMT_NOERROR);
 	}
 	if (n_pitched == 0) {	/* No points inside region */
-		GMT_Report (API, GMT_MSG_VERBOSE, "No data points found inside the region; no output produced");
-		Return (EXIT_SUCCESS);
+		GMT_Report (API, GMT_MSG_VERBOSE, "No data points found inside the region; no output produced\n");
+		Return (GMT_NOERROR);
 	}
 	if (Ctrl->D.active && Ctrl->D.width == 0.0 && !is_integer) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error -D: No bin width specified and data are not integers\n");
-		Return (EXIT_FAILURE);
+		Return (GMT_PARSE_ERROR);
 	}
 	if (n_pitched < n_alloc) {
 		n_alloc = n_pitched;
-		data = GMT_malloc (GMT, data, 0, &n_alloc, struct BLK_DATA);
+		data = gmt_M_malloc (GMT, data, 0, &n_alloc, struct BLK_DATA);
 	}
 
 	/* Ready to go. */
 
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		gmt_M_free (GMT, data);
 		Return (API->error);
 	}
 
-	w_col = GMT_get_cols (GMT, GMT_OUT) - 1;	/* Weights always reported in last output column */
+	w_col = gmt_get_cols (GMT, GMT_OUT) - 1;	/* Weights always reported in last output column */
 	if (emode) {					/* Index column last, with weight col just before */
 		i_col = w_col--;
 		old_format = GMT->current.io.o_format[i_col];		/* Need to restore this at end */
@@ -602,15 +607,15 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 	while (first_in_cell < n_pitched) {
 		weight = data[first_in_cell].a[BLK_W];
 		if (do_extra) {
-			if (nz == nz_alloc) z_tmp = GMT_malloc (GMT, z_tmp, nz, &nz_alloc, double);
+			if (nz == nz_alloc) z_tmp = gmt_M_malloc (GMT, z_tmp, nz, &nz_alloc, double);
 			z_tmp[0] = data[first_in_cell].a[BLK_Z];
 			nz = 1;
 		}
 		if (Ctrl->C.active) {	/* Use block center */
-			row = (unsigned int)GMT_row (Grid->header, data[first_in_cell].ij);
-			col = (unsigned int)GMT_col (Grid->header, data[first_in_cell].ij);
-			out[GMT_X] = GMT_grd_col_to_x (GMT, col, Grid->header);
-			out[GMT_Y] = GMT_grd_row_to_y (GMT, row, Grid->header);
+			row = (unsigned int)gmt_M_row (Grid->header, data[first_in_cell].ij);
+			col = (unsigned int)gmt_M_col (Grid->header, data[first_in_cell].ij);
+			out[GMT_X] = gmt_M_grd_col_to_x (GMT, col, Grid->header);
+			out[GMT_Y] = gmt_M_grd_row_to_y (GMT, row, Grid->header);
 		}
 		else {
 			out[GMT_X] = data[first_in_cell].a[GMT_X];
@@ -624,7 +629,7 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 				out[GMT_Y] += data[first_in_new_cell].a[GMT_Y];
 			}
 			if (do_extra) {	/* Must get a temporary copy of the sorted z array */
-				if (nz == nz_alloc) z_tmp = GMT_malloc (GMT, z_tmp, nz, &nz_alloc, double);
+				if (nz == nz_alloc) z_tmp = gmt_M_malloc (GMT, z_tmp, nz, &nz_alloc, double);
 				z_tmp[nz] = data[first_in_new_cell].a[BLK_Z];
 				nz++;
 			}
@@ -709,14 +714,14 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 			/* Turn z_tmp into absolute deviations from the mode (out[GMT_Z]) */
 			if (nz > 1) {
 				for (node = 0; node < nz; node++) z_tmp[node] = fabs (z_tmp[node] - out[GMT_Z]);
-				GMT_sort_array (GMT, z_tmp, nz, GMT_DOUBLE);
+				gmt_sort_array (GMT, z_tmp, nz, GMT_DOUBLE);
 				out[3] = (nz%2) ? z_tmp[nz/2] : 0.5 * (z_tmp[(nz-1)/2] + z_tmp[nz/2]);
 				out[3] *= 1.4826;	/* This will be LMS MAD-based scale */
 			}
 			else
 				out[3] = GMT->session.d_NaN;
 		}
-		if (Ctrl->W.weighted[GMT_OUT]) out[w_col] = weight;
+		if (Ctrl->W.weighted[GMT_OUT]) out[w_col] = (Ctrl->W.sigma[GMT_OUT]) ? 1.0 / weight : weight;
 		if (emode) out[i_col] = (double)src_id;
 
 		GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
@@ -724,24 +729,24 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 		n_cells_filled++;
 		first_in_cell = first_in_new_cell;
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 		Return (API->error);
 	}
 
 	n_lost = n_read - n_pitched;	/* Number of points that did not get used */
 	GMT_Report (API, GMT_MSG_VERBOSE, "N read: %" PRIu64 " N used: %" PRIu64 " outside_area: %" PRIu64 " N cells filled: %" PRIu64 "\n", n_read, n_pitched, n_lost, n_cells_filled);
 
-	GMT_free (GMT, data);
-	if (do_extra) GMT_free (GMT, z_tmp);
+	gmt_M_free (GMT, data);
+	if (do_extra) gmt_M_free (GMT, z_tmp);
 
 	if (emode) {
-		free (GMT->current.io.o_format[i_col]);		/* Free the temporary integer format */
-		GMT->current.io.o_format[i_col] = old_format;	/* Restore previous format */
+		gmt_M_str_free (GMT->current.io.o_format[i_col]);	/* Free the temporary integer format */
+		GMT->current.io.o_format[i_col] = old_format;		/* Restore previous format */
 	}
 	if (Ctrl->D.active) {	/* Free histogram binning machinery */
-		GMT_free (GMT, B->count);
-		GMT_free (GMT, B);
+		gmt_M_free (GMT, B->count);
+		gmt_M_free (GMT, B);
 	}
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

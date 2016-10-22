@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: block_subs.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *    $Id: block_subs.h 16782 2016-07-12 02:08:14Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -27,16 +27,10 @@
 
 #if defined(BLOCKMEAN)
 #define BLOCKMEAN_CTRL BLOCK_CTRL
-#define NEW_BLK New_blockmean_Ctrl
-#define FREE_BLK Free_blockmean_Ctrl
 #elif defined(BLOCKMEDIAN)
 #define BLOCKMEDIAN_CTRL BLOCK_CTRL
-#define NEW_BLK New_blockmedian_Ctrl
-#define FREE_BLK Free_blockmedian_Ctrl
 #else
 #define BLOCKMODE_CTRL BLOCK_CTRL
-#define NEW_BLK New_blockmode_Ctrl
-#define FREE_BLK Free_blockmode_Ctrl
 #endif
 
 /*! All control options for this program (except common args) */
@@ -83,9 +77,10 @@ struct BLOCK_CTRL {
 		bool active;
 		unsigned int mode;
 	} S;
-	struct W {	/* -W[i][o] */
+	struct W {	/* -W[i][o][+s] */
 		bool active;
 		bool weighted[2];
+		bool sigma[2];
 	} W;
 };
 
@@ -115,7 +110,7 @@ static char *blk_name[BLK_N_ITEMS] =
 	"mode",
 	"min",
 	"max",
-	"quartile",
+	"quantile",
 	"range",
 	"n",
 	"sum_z",
@@ -177,10 +172,10 @@ struct BLK_DATA {
 /* Declaring the standard functions to allocate and free the program Ctrl structure */
 
 /*! Allocate and initialize a new control structure */
-void *NEW_BLK (struct GMT_CTRL *GMT) {
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {
 	struct BLOCK_CTRL *C;
 	
-	C = GMT_memory (GMT, NULL, 1, struct  BLOCK_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct  BLOCK_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 #if defined(BLOCKMODE)	/* Only used by blockmode */
@@ -193,16 +188,50 @@ void *NEW_BLK (struct GMT_CTRL *GMT) {
 }
 
 /*! Deallocate control structure */
-void FREE_BLK (struct GMT_CTRL *GMT, struct  BLOCK_CTRL *C) {
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct  BLOCK_CTRL *C) {
 	if (!C) return;
-	if (C->G.file) free (C->G.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->G.file);	
+	gmt_M_free (GMT, C);	
 }
 
-#if !defined(BLOCKMEAN)	/* Only used by blockmean */
-/* blockmedian and blockmode */
-EXTERN_MSC int BLK_compare_x (const void *point_1, const void *point_2);
-EXTERN_MSC int BLK_compare_y (const void *point_1, const void *point_2);
-EXTERN_MSC int BLK_compare_index_z (const void *point_1, const void *point_2);
-EXTERN_MSC int BLK_compare_sub (const void *point_1, const void *point_2, int item);
+#if !defined(BLOCKMEAN)	/* Not used by blockmean */
+/* These BLK functions are used in both blockmedian and blockmode and are
+ * thus defined here to avoid duplication of code.
+ * They are not used anywhere else.  PW, 25-FEB-2016].
+ */
+
+/*! . */
+enum GMT_enum_blockcases {BLK_CASE_X = 0,
+	BLK_CASE_Y	= 1,
+	BLK_CASE_Z	= 2};
+
+/*! Sort on index, then the specified item a[0,1,2] = x, y, z */
+GMT_LOCAL int BLK_compare_sub (const void *point_1, const void *point_2, int item) {
+	const struct BLK_DATA *p1 = point_1, *p2 = point_2;
+
+	/* First sort on bin index ij */
+	if (p1->ij < p2->ij) return (-1);
+	if (p1->ij > p2->ij) return (+1);
+	/* OK, comparing values in the same bin */
+	if (p1->a[item] < p2->a[item]) return (-1);
+	if (p1->a[item] > p2->a[item]) return (+1);
+	/* Values are the same, return 0 */
+	return (0);
+}
+
+/*! Sort on index, then x */
+GMT_LOCAL int BLK_compare_x (const void *point_1, const void *point_2) {
+	return (BLK_compare_sub (point_1, point_2, BLK_CASE_X));
+}
+
+/* Sort on index, then y */
+GMT_LOCAL int BLK_compare_y (const void *point_1, const void *point_2) {
+	return (BLK_compare_sub (point_1, point_2, BLK_CASE_Y));
+}
+
+/*! Sort on index, then z */
+GMT_LOCAL int BLK_compare_index_z (const void *point_1, const void *point_2) {
+	return (BLK_compare_sub (point_1, point_2, BLK_CASE_Z));
+}
+
 #endif

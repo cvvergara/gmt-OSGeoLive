@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: postscriptlight.c 16872 2016-07-27 21:36:11Z jluis $
  *
- *	Copyright (c) 2009-2015 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2016 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -50,6 +50,7 @@
  * PSL_endlayer		: Place end object group DSC comment.
  * PSL_endplot		: Close plotfile
  * PSL_endsession	: Terminates the PSL session
+ * PSL_getplot		: Return string with entire PS code
  * PSL_plotarc		: Plots a circular arc
  * PSL_plotaxis		: Plots an axis with tickmarks and annotation/label
  * PSL_plotbitimage	: Plots a 1-bit image or imagemask
@@ -68,6 +69,8 @@
  * PSL_loadimage	: Read image file of supported type
  * PSL_command		: Writes a given PostScript statement to the plot file
  * PSL_comment		: Writes a comment statement to the plot file
+ * PSL_makecolor	: Returns string with PostScript command to set a new color
+ * PSL_makepen		: Returns string with PostScript command to set a new pen
  * PSL_setcolor		: Sets the pen color or pattern
  * PSL_setdefaults	: Change several PSL session default values
  * PSL_setdash		: Specify pattern for dashed line
@@ -179,15 +182,17 @@
 #define PSL_SUB_DOWN		0.25	/* Baseline shift down in font size for subscript */
 #define PSL_SUP_UP_LC		0.35	/* Baseline shift up in font size for superscript after lowercase letter */
 #define PSL_SUP_UP_UC		0.35	/* Baseline shift up in font size for superscript after uppercase letter */
-//#define PSL_SUBSUP_SIZE		0.58	/* Relative size of sub/sup-script to normal size */
-//#define PSL_SCAPS_SIZE		0.80	/* Relative size of snall caps to normal size */
-//#define PSL_SUB_DOWN		0.25	/* Baseline shift down in font size for subscript */
-//#define PSL_SUP_UP_LC		0.35	/* Baseline shift up in font size for superscript after lowercase letter */
-//#define PSL_SUP_UP_UC		0.45	/* Baseline shift up in font size for superscript after uppercase letter */
-//#define PSL_SUBSUP_SIZE		0.58	/* Relative size of sub/sup-script to normal size */
-//#define PSL_SCAPS_SIZE		0.80	/* Relative size of snall caps to normal size */
-//#define PSL_SUB_DOWN		0.33	/* Baseline shift down in font size for subscript */
-//#define PSL_SUP_UP		0.33	/* Baseline shift up in font size for superscript */
+#if 0
+#define PSL_SUBSUP_SIZE		0.58	/* Relative size of sub/sup-script to normal size */
+#define PSL_SCAPS_SIZE		0.80	/* Relative size of snall caps to normal size */
+#define PSL_SUB_DOWN		0.25	/* Baseline shift down in font size for subscript */
+#define PSL_SUP_UP_LC		0.35	/* Baseline shift up in font size for superscript after lowercase letter */
+#define PSL_SUP_UP_UC		0.45	/* Baseline shift up in font size for superscript after uppercase letter */
+#define PSL_SUBSUP_SIZE		0.58	/* Relative size of sub/sup-script to normal size */
+#define PSL_SCAPS_SIZE		0.80	/* Relative size of snall caps to normal size */
+#define PSL_SUB_DOWN		0.33	/* Baseline shift down in font size for subscript */
+#define PSL_SUP_UP		0.33	/* Baseline shift up in font size for superscript */
+#endif
 
 /*--------------------------------------------------------------------
  *			PSL FUNCTION MACRO DEFINITIONS
@@ -256,71 +261,2909 @@ typedef struct {
 	unsigned char *buffer;
 } *psl_byte_stream_t;
 
-/* Define support functions called inside the public PSL functions */
-
-void *psl_memory (struct PSL_CTRL *PSL, void *prev_addr, size_t nelem, size_t size);
-char *psl_prepare_text (struct PSL_CTRL *PSL, char *text);
-void psl_def_font_encoding (struct PSL_CTRL *PSL);
-void psl_get_uppercase (char *new_c, char *old_c);
-void psl_rle_decode (struct PSL_CTRL *PSL, struct imageinfo *h, unsigned char **in);
-unsigned char *psl_cmyk_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
-unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
-unsigned char *psl_rle_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
-unsigned char *psl_lzw_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
-psl_byte_stream_t psl_lzw_putcode (psl_byte_stream_t stream, short int incode);
-unsigned char *psl_deflate_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
-void psl_stream_dump (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int depth, int compress, int encode, int mask);
-size_t psl_a85_encode (struct PSL_CTRL *PSL, const unsigned char *src_buf, size_t nbytes);
-int psl_shorten_path (struct PSL_CTRL *PSL, double *x, double *y, int n, int *ix, int *iy, int mode);
-int psl_comp_long_asc (const void *p1, const void *p2);
-int psl_comp_rgb_asc (const void *p1, const void *p2);
-static void psl_bulkcopy (struct PSL_CTRL *PSL, const char *fname);
-static void psl_init_fonts (struct PSL_CTRL *PSL);
-int psl_pattern_init (struct PSL_CTRL *PSL, int image_no, char *imagefile);
-void psl_rgb_to_cmyk_char (unsigned char rgb[], unsigned char cmyk[]);
-void psl_rgb_to_cmyk (double rgb[], double cmyk[]);
-void psl_rgb_to_hsv (double rgb[], double hsv[]);
-void psl_cmyk_to_rgb (double rgb[], double cmyk[]);
-char *psl_putdash (struct PSL_CTRL *PSL, char *pattern, double offset);
-void psl_defunits_array (struct PSL_CTRL *PSL, const char *param, double *array, int n);
-void psl_set_reducedpath_arrays (struct PSL_CTRL *PSL, double *x, double *y, int npath, int *n, int *m, int *node);
-void psl_set_path_arrays (struct PSL_CTRL *PSL, const char *prefix, double *x, double *y, int npath, int *n);
-void psl_set_attr_arrays (struct PSL_CTRL *PSL, int *node, double *angle, char **txt, int npath, int *m);
-void psl_set_real_array (struct PSL_CTRL *PSL, const char *param, double *array, int n);
-psl_indexed_image_t psl_makecolormap (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int nbits);
-int psl_bitreduce (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int ncolors);
-int psl_bitimage_cmap (struct PSL_CTRL *PSL, double f_rgb[], double b_rgb[]);
-int psl_colorimage_rgb (double x, double y, double xsize, double ysize, unsigned char *buffer, int nx, int ny, int nbits);
-int psl_colorimage_cmap (double x, double y, double xsize, double ysize, psl_indexed_image_t image, int nx, int ny, int nbits);
-int psl_load_raster (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *header, unsigned char **buffer);
-int psl_load_eps (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *header, unsigned char **buffer);
-int psl_get_boundingbox (struct PSL_CTRL *PSL, FILE *fp, int *llx, int *lly, int *trx, int *try,
-	double *hires_llx, double *hires_lly, double *hires_trx, double *hires_try);
-char *psl_getsharepath (struct PSL_CTRL *PSL, const char *subdir, const char *stem, const char *suffix, char *path);
-int psl_vector (struct PSL_CTRL *PSL, double x, double y, double param[]);
-int psl_matharc (struct PSL_CTRL *PSL, double x, double y, double param[]);
-int psl_patch (struct PSL_CTRL *PSL, double *x, double *y, int np);
-int psl_pattern_cleanup (struct PSL_CTRL *PSL);
-int psl_read_rasheader  (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *h, int i0, int i1);
-int psl_paragraphprocess (struct PSL_CTRL *PSL, double y, double fontsize, char *paragraph);
-int psl_putfont (struct PSL_CTRL *PSL, double fontsize);
-void psl_getorigin (double xt, double yt, double xr, double yr, double r, double *xo, double *yo, double *b1, double *b2);
-const char *psl_putusername ();
-
 /* These are used when the PDF pdfmark extension for transparency is used. */
 
 #define N_PDF_TRANSPARENCY_MODES	16
-const char *PDF_transparency_modes[N_PDF_TRANSPARENCY_MODES] = {
+static const char *PDF_transparency_modes[N_PDF_TRANSPARENCY_MODES] = {
 	"Color", "ColorBurn", "ColorDodge", "Darken",
 	"Difference", "Exclusion", "HardLight", "Hue",
 	"Lighten", "Luminosity", "Multiply", "Normal",
 	"Overlay", "Saturation", "SoftLight", "Screen"
 };
 
+
+/* ----------------------------------------------------------------------
+ * Support functions used in PSL_* functions.
+ * ----------------------------------------------------------------------
+ */
+
+static void *psl_memory (struct PSL_CTRL *PSL, void *prev_addr, size_t nelem, size_t size) {
+	/* Multi-functional memory allocation subroutine.
+	   If prev_addr is NULL, allocate new memory of nelem elements of size bytes.
+	   	Ignore when nelem == 0.
+	   If prev_addr exists, reallocate the memory to a larger or smaller chunk of nelem elements of size bytes.
+	   	When nelem = 0, free the memory.
+	*/
+
+	void *tmp = NULL;
+	const char *m_unit[4] = {"bytes", "kb", "Mb", "Gb"};
+	double mem;
+	int k;
+
+	if (prev_addr) {
+		if (nelem == 0) { /* Take care of n == 0 */
+			PSL_free (prev_addr);
+			return (NULL);
+		}
+		if ((tmp = realloc ( prev_addr, nelem * size)) == NULL) {
+			mem = (double)(nelem * size);
+			k = 0;
+			while (mem >= 1024.0 && k < 3) mem /= 1024.0, k++;
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not reallocate more memory [%.2f %s, %" PRIuS " items of %" PRIuS " bytes]\n",
+			             mem, m_unit[k], nelem, size);
+			return (NULL);
+		}
+	}
+	else {
+		if (nelem == 0) return (NULL); /* Take care of n = 0 */
+		if ((tmp = calloc (nelem, size)) == NULL) {
+			mem = (double)(nelem * size);
+			k = 0;
+			while (mem >= 1024.0 && k < 3) mem /= 1024.0, k++;
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not allocate memory [%.2f %s, %" PRIuS " items of %" PRIuS " bytes]\n",
+			             mem, m_unit[k], nelem, size);
+			return (NULL);
+		}
+	}
+	return (tmp);
+}
+
+/* This one is NOT static since needed in psimage, at least for now */
+
+unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input) {
+	/* Recode RGB stream as gray-scale stream */
+
+	int in, out, nout;
+	unsigned char *output = NULL;
+
+	nout = *nbytes / 3;
+	output = PSL_memory (PSL, NULL, nout, unsigned char);
+
+	for (in = out = 0; in < *nbytes; out++, in += 3) output[out] = (char) lrint (PSL_YIQ ((&input[in])));
+	*nbytes = nout;
+	return (output);
+}
+
+/* Define local (static) support functions called inside the public PSL functions */
+
+static int psl_ix (struct PSL_CTRL *PSL, double x) {
+	/* Convert user x to PS dots */
+	return (PSL->internal.x0 + (int)lrint (x * PSL->internal.x2ix));
+}
+
+static int psl_iy (struct PSL_CTRL *PSL, double y) {
+	/* Convert user y to PS dots */
+	return (PSL->internal.y0 + (int)lrint (y * PSL->internal.y2iy));
+}
+
+static int psl_iz (struct PSL_CTRL *PSL, double z) {
+	/* Convert user distances to PS dots */
+	return ((int)lrint (z * PSL->internal.dpu));
+}
+
+static int psl_ip (struct PSL_CTRL *PSL, double p) {
+	/* Convert PS points to PS dots */
+	return ((int)lrint (p * PSL->internal.dpp));
+}
+
+static int psl_shorten_path (struct PSL_CTRL *PSL, double *x, double *y, int n, int *ix, int *iy, int mode) {
+	/* Simplifies the (x,y) array by converting it to pixel coordinates (ix,iy)
+	 * and eliminating repeating points and intermediate points along straight
+	 * line segments.  The result is the fewest points needed to draw the path
+	 * and still look exactly like the original path.  However, if mode == 1 we do
+	 * no shortening. */
+
+	int i, k, dx, dy;
+#ifdef OLD_shorten_path
+	int old_dir = 0, new_dir;
+	double old_slope = 1.0e200, new_slope;
+	/* These seeds for old_slope and old_dir make sure that first point gets saved */
+#else
+	int d, db, bx, by, j, ij;
+#endif
+
+	if (n < 2) return (n);	/* Not a path to start with */
+
+	for (i = 0; i < n; i++) {	/* Convert all coordinates to integers at current scale */
+		ix[i] = psl_ix (PSL, x[i]);
+		iy[i] = psl_iy (PSL, y[i]);
+	}
+	if (mode == 1) return (n);
+
+#ifdef OLD_shorten_path
+	/* The only truly unique point is the starting point; all else must show increments
+	 * relative to the previous point */
+
+	/* First point is the anchor. We will find at least one point, unless all points are the same */
+	for (i = k = 0; i < n - 1; i++) {
+		dx = ix[i+1] - ix[i];
+		dy = iy[i+1] - iy[i];
+		if (dx == 0 && dy == 0) continue;	/* Skip duplicates */
+		new_slope = (dx == 0) ? copysign (1.0e100, (double)dy) : ((double)dy) / ((double)dx);
+		new_dir = (dx >= 0) ? 1 : -1;
+		if (new_slope != old_slope || new_dir != old_dir) {
+			ix[k] = ix[i];
+			iy[k] = iy[i];
+			k++;
+			old_slope = new_slope;
+			old_dir = new_dir;
+		}
+	}
+
+	/* If all points are the same, we get here with k = 0, so we can exit here now with 1 point */
+	if (k < 1) return (1);
+
+	/* Last point (k cannot be < 1 so k-1 >= 0) */
+	if (ix[k-1] != ix[n-1] || iy[k-1] != iy[n-1]) {	/* Do not do slope check on last point since we must end there */
+		ix[k] = ix[n-1];
+		iy[k] = iy[n-1];
+		k++;
+	}
+#else
+	/* Skip intermediate points that are "close" to the line between point i and point j, where
+	   "close" is defined as less than 1 "dot" (the PostScript resolution) in either direction.
+	   A point is always close when it coincides with one of the end points (i or j).
+	   An intermediate point is also considered "far" when it is beyond i or j.
+	   Algorithm requires that |dx by - bx dy| < max(|dx|,dy|).
+	*/
+	for (i = k = 0, j = 2; j < n; j++) {
+		dx = ix[j] - ix[i];
+		dy = iy[j] - iy[i];
+		d = MAX(abs((int)dx),abs((int)dy));
+		/* We know that d can be zero. That is OK, since it will only happen when (dx,dy) = (0,0).
+		   And in that cases all intermediate points will always be "far" */
+		for (ij = j - 1; ij > i; ij--) {
+			bx = ix[ij] - ix[i];
+			/* Check if the intermediate point is outside the x-range between points i and j.
+			   In case of a vertical line, any point with a different x-coordinate is "far" */
+			if (dx > 0) {
+				if (bx < 0 || bx > dx) break;
+			}
+			else {
+				if (bx > 0 || bx < dx) break;
+			}
+			by = iy[ij] - iy[i];
+			db = abs((int)(dx * by) - (int)(bx * dy));
+			if (db >= d) break; /* Point ij is "far" from line connecting i and j */
+		}
+		if (ij > i) {	/* Some intermediate point failed test */
+			i = j - 1;
+			k++;
+			ix[k] = ix[i];
+			iy[k] = iy[i];
+		}
+	}
+
+	/* We have gotten to the last point. If this is a duplicate, skip it */
+	if (ix[k] != ix[n-1] || iy[k] != iy[n-1]) {
+		k++;
+		ix[k] = ix[n-1];
+		iy[k] = iy[n-1];
+	}
+	k++;
+#endif
+
+	return (k);
+}
+
+static void psl_set_real_array (struct PSL_CTRL *PSL, const char *prefix, double *array, int n) {
+	/* These are raw and not scaled */
+	int i;
+	PSL_command (PSL, "/PSL_%s [ ", prefix);
+	for (i = 0; i < n; i++) {
+		PSL_command (PSL, "%.2f ", array[i]);
+		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
+	}
+	PSL_command (PSL, "] def\n");
+}
+
+void psl_set_int_array (struct PSL_CTRL *PSL, const char *prefix, int *array, int n) {
+	/* These are raw and not scaled */
+	int i;
+	PSL_command (PSL, "/PSL_%s [ ", prefix);
+	for (i = 0; i < n; i++) {
+		PSL_command (PSL, "%d ", array[i]);
+		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
+	}
+	PSL_command (PSL, "] def\n");
+}
+
+void psl_set_txt_array (struct PSL_CTRL *PSL, const char *prefix, char *array[], int n) {
+	int i;
+	PSL_command (PSL, "/PSL_%s [\n", prefix);
+	for (i = 0; i < n; i++) PSL_command (PSL, "\t(%s)\n", array[i]);
+	PSL_command (PSL, "] def\n", n);
+}
+
+static void psl_set_reducedpath_arrays (struct PSL_CTRL *PSL, double *x, double *y, int npath, int *n, int *m, int *node) {
+	/* These are used by PSL_plottextline.  We make sure there are no point pairs that would yield dx = dy = 0 (repeat point)
+	 * at the resolution we are using (0.01 DPI units), hence a new n (possibly shorter) is returned. */
+	int i, j, k, p, ii, kk, this_i, this_j, last_i, last_j, i_offset = 0, k_offset = 0, n_skipped, ntot = 0, new_tot = 0, *new_n = NULL;
+	char *use = NULL;
+	if (x == NULL || y == NULL) return;	/* No path */
+	for (p = 0; p < npath; p++) ntot += n[p];	/* Determine total number of points */
+	/* Since we need dx/dy from these we preprocess to avoid any nasty surprises with repeat points */
+	use = PSL_memory (PSL, NULL, ntot, char);
+	new_n = PSL_memory (PSL, NULL, npath, int);
+	for (p = 0; p < npath; p++) {
+		this_i = this_j = INT_MAX;
+		for (ii = j = n_skipped = k = 0; ii < n[p]; ii++) {
+			last_i = this_i;	last_j = this_j;
+			i = ii + i_offset;	/* Index into concatenated x,y arrays */
+			this_i = 100 * psl_ix (PSL, x[i]);	/* Simulates the digits written by a %.2lf format */
+			this_j = 100 * psl_iy (PSL, y[i]);
+			if (this_i == last_i && this_j == last_j)	/* Repeat point, skip it */
+				n_skipped++;
+			else {	/* Not a repeat point, use it */
+				use[i] = true;
+				j++;
+			}
+			kk = k + k_offset;	/* Index into concatenated node array */
+			if (k < m[p] && node[kk] == ii && n_skipped) {	/* Adjust node pointer since we are removing points and upsetting the node order */
+				node[kk++] -= n_skipped;
+				k++;
+			}
+		}
+		new_n[p] = j;
+		new_tot += j;
+		i_offset += n[p];
+		k_offset += m[p];
+
+	}
+
+	PSL_comment (PSL, "Set concatenated coordinate arrays for line segments:\n");
+	PSL_command (PSL, "/PSL_path_x [ ");
+	for (i = k = 0; i < ntot; i++) {
+		if (!use[i]) continue;
+		PSL_command (PSL, "%d ", psl_ix (PSL, x[i]));
+		k++;
+		if ((k%10) == 0) PSL_command (PSL, "\n\t");
+	}
+	PSL_command (PSL, "] def\n");
+	PSL_command (PSL, "/PSL_path_y [ ");
+	for (i = k = 0; i < ntot; i++) {
+		if (!use[i]) continue;
+		PSL_command (PSL, "%d ", psl_iy (PSL, y[i]));
+		k++;
+		if ((k%10) == 0) PSL_command (PSL, "\n\t");
+	}
+	PSL_command (PSL, "] def\n");
+	PSL_comment (PSL, "Set array with number of points per line segments:\n");
+	psl_set_int_array (PSL, "path_n", new_n, npath);
+	if (k > 100000) PSL_message (PSL, PSL_MSG_NORMAL, "Warning: PSL array placed has %d items - may exceed gs_init.ps MaxOpStack setting\n", k);
+
+	/* Free up temp arrays */
+	PSL_free (use);
+	PSL_free (new_n);
+	return;
+}
+
+static void psl_set_path_arrays (struct PSL_CTRL *PSL, const char *prefix, double *x, double *y, int npath, int *n) {
+	/* Set coordinates arrays in PS units */
+	int i, ntot = 0;
+	char txt[64] = {""};
+
+	if (x == NULL || y == NULL) return;		/* No path */
+	for (i = 0; i < npath; i++) ntot += n[i];	/* Determine total number of points */
+
+	PSL_comment (PSL, "Set coordinate arrays for text label placements:\n");
+	PSL_command (PSL, "/PSL_%s_x [ ", prefix);
+	for (i = 0; i < ntot; i++) {
+		PSL_command (PSL, "%d ", psl_ix (PSL, x[i]));
+		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
+	}
+	PSL_command (PSL, "] def\n");
+	PSL_command (PSL, "/PSL_%s_y [ ", prefix);
+	for (i = 0; i < ntot; i++) {
+		PSL_command (PSL, "%d ", psl_iy (PSL, y[i]));
+		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
+	}
+	PSL_command (PSL, "] def\n");
+	sprintf (txt, "%s_n", prefix);
+	psl_set_int_array (PSL, txt, n, npath);
+}
+
+static void psl_set_attr_arrays (struct PSL_CTRL *PSL, int *node, double *angle, char **txt, int npath, int m[]) {
+	/* This function sets PSL arrays for attributes needed to place contour labels and quoted text labels.
+	 * node:	specifies where along each segments there should be labels [NULL if not curved text]
+	 * angle:	specifies angle of text for each item
+	 * txt:		is the text labels for each item
+	 * npath:	the number of segments (curved text) or number of text items (straight text)
+	 * m:		array of length npath with number of labels per segment
+	 */
+	int i, nlab = 0;
+
+	for (i = 0; i < npath; i++) nlab += m[i];	/* Determine total number of labels */
+	if (node != NULL) {	/* Curved text has node array */
+		PSL_comment (PSL, "Set array with nodes of PSL_path_x|y for text placement:\n");
+		psl_set_int_array (PSL, "label_node", node, nlab);
+		PSL_comment (PSL, "Set array with number of labels per line segment:\n");
+		psl_set_int_array (PSL, "label_n", m, npath);
+	}
+	PSL_comment (PSL, "Set array with baseline angle for each text label:\n");
+	psl_set_real_array (PSL, "label_angle", angle, nlab);
+	PSL_comment (PSL, "Set array with the text labels:\n");
+	psl_set_txt_array (PSL, "label_str", txt, nlab);
+
+	return;
+}
+
+static void psl_rgb_to_hsv (double rgb[], double hsv[]) {
+	double diff;
+	int i, imax = 0, imin = 0;
+
+	/* This had checks using rgb value in doubles (e.g. (max_v == xr)), which failed always on some compilers.
+	   Changed to integer logic: 2009-02-05 by RS.
+	*/
+	for (i = 1; i < 3; i++) {
+		if (rgb[i] > rgb[imax]) imax = i;
+		if (rgb[i] < rgb[imin]) imin = i;
+	}
+	diff = rgb[imax] - rgb[imin];
+	hsv[0] = 0.0;
+	hsv[1] = (PSL_eq(rgb[imax],0.0)) ? 0.0 : diff / rgb[imax];
+	hsv[2] = rgb[imax];
+	if (PSL_eq(hsv[1],0.0)) return;	/* Hue is undefined */
+	hsv[0] = 120.0 * imax + 60.0 * (rgb[(imax + 1) % 3] - rgb[(imax + 2) % 3]) / diff;
+	if (hsv[0] < 0.0) hsv[0] += 360.0;
+	if (hsv[0] > 360.0) hsv[0] -= 360.0;
+}
+
+#if 0 /* Not used */
+static void psl_cmyk_to_rgb (double rgb[], double cmyk[]) {
+	/* Plain conversion; no undercolor removal or blackgeneration */
+	/* CMYK is in 0-1, RGB will be in 0-1 range */
+
+	int i;
+
+	for (i = 0; i < 3; i++) rgb[i] = 1.0 - cmyk[i] - cmyk[3];
+}
+#endif
+static void psl_rgb_to_cmyk_char (unsigned char rgb[], unsigned char cmyk[]) {
+	/* Plain conversion; no undercolor removal or blackgeneration */
+	/* RGB is in 0-255, CMYK will be in 0-255 range */
+
+	int i;
+
+	for (i = 0; i < 3; i++) cmyk[i] = 255 - rgb[i];
+	cmyk[3] = MIN (cmyk[0], MIN (cmyk[1], cmyk[2]));	/* Black */
+	for (i = 0; i < 3; i++) cmyk[i] -= cmyk[3];
+}
+
+static void psl_rgb_to_cmyk (double rgb[], double cmyk[]) {
+	/* Plain conversion; no undercolor removal or blackgeneration */
+	/* RGB is in 0-1, CMYK will be in 0-1 range */
+
+	int i;
+
+	for (i = 0; i < 3; i++) cmyk[i] = 1.0 - rgb[i];
+	cmyk[3] = MIN (cmyk[0], MIN (cmyk[1], cmyk[2]));	/* Black */
+	for (i = 0; i < 3; i++) cmyk[i] -= cmyk[3];
+	for (i = 0; i < 4; i++) {
+	    if (cmyk[i] < 0.0005) cmyk[i] = 0.0;	/* Needs some explanation... */
+	}
+}
+
+static unsigned char *psl_cmyk_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input) {
+	/* Recode RGB stream as CMYK stream */
+
+	int in, out, nout;
+	unsigned char *output = NULL;
+
+	nout = *nbytes / 3 * 4;
+	output = PSL_memory (PSL, NULL, nout, unsigned char);
+
+	for (in = out = 0; in < *nbytes; out += 4, in += 3) psl_rgb_to_cmyk_char (&input[in], &output[out]);
+	*nbytes = nout;
+	return (output);
+}
+
+static void psl_remove_spaces (char *label[], int n_labels, int m[]) {
+	int i, k, j, n_tot = n_labels;
+
+	if (m)
+		for (i = 0; i < n_labels; i++) n_tot += m[i];	/* Count number of labels */
+
+	for (i = 0; i < n_tot; i++) {	/* Strip leading and trailing blanks */
+		for (k = 0; label[i][k] == ' '; k++);	/* Count # of leading blanks */
+		if (k > 0) {	/* Shift text to start, eliminating spaces */
+			j = 0;
+			while (label[i][k]) {
+				label[i][j] = label[i][j+k];
+				j++;
+			}
+			label[i][j] = 0;
+		}
+		/* Then strip off trailing blanks, if any */
+		for (j = (int)strlen (label[i]) - 1; label[i][j] == ' '; j--) label[i][j] = 0;
+	}
+}
+
+static void psl_prepare_buffer (struct PSL_CTRL *C, size_t len) {
+	/* Ensure buffer is large enough to accept additional text of length len */
+	size_t new_len = C->internal.n + len;       /* Need a buffer at least this large */
+	if (new_len < C->internal.n_alloc) return;  /* Already have a buffer that is large enough */
+	while (new_len > C->internal.n_alloc)       /* Wind past what is needed, growing by 1.75 */
+		C->internal.n_alloc = (size_t)(C->internal.n_alloc * 1.75);
+	if ((C->internal.buffer = PSL_memory (C, C->internal.buffer, C->internal.n_alloc, char)) == NULL) {
+		PSL_message (C, PSL_MSG_NORMAL, "Error: Could not allocate %d additional buffer space - this will not end well\n", len);
+	}
+}
+
+static size_t psl_a85_encode (struct PSL_CTRL *PSL, const unsigned char *src_buf, size_t nbytes) {
+	/* Encode 4-byte binary data from src_buf to 5-byte ASCII85
+	 * Special cases: 0x00000000 is encoded as z
+	 * Encoded data is stored in dst_buf and written to file in
+	 * one go, which is faster than writing one char at a time.
+	 * The function returns the output buffer size. */
+	size_t dst_buf_size;
+	unsigned char *dst_buf, *dst_ptr;
+	const unsigned char *src_ptr = src_buf, *src_end = src_buf + nbytes;
+	const unsigned int max_line_len = 95; /* number of chars after which a newline is inserted */
+
+	if (!nbytes)
+		/* Ignore empty input */
+		return 0;
+
+	/* dst_buf has to be large enough to hold data + line endings */
+	dst_buf_size = (size_t)(nbytes * 1.25 + 1);      /* output buffer is at least 1.25 times larger */
+	dst_buf_size += dst_buf_size / max_line_len + 4; /* add more space for '\n' and delimiter */
+	dst_ptr = dst_buf = PSL_memory (PSL, NULL, dst_buf_size, unsigned char); /* output buffer */
+
+	do { /* for each quad in src_buf while src_ptr < src_end */
+		const size_t ilen = nbytes > 4 ? 4 : nbytes, olen = ilen + 1;
+		static unsigned int line_len = 0;
+		unsigned int i, n = 0, byte;
+		int j;
+		unsigned char quintuple[5] = { 0 };
+
+		/* Wrap 4 chars into a 4-byte integer */
+		for (i = 0; i < ilen; ++i) {
+			byte = *src_ptr++;
+			n += byte << (24 - 8*i);
+		}
+
+		if (n == 0 && ilen == 4) {
+			/* Set the only output byte to "z" */
+			*dst_ptr++ = 'z';
+			++line_len;
+			continue;
+		}
+
+		/* Else determine output 5-tuple */
+		for (j = 4; j >= 0; --j) {
+			quintuple[j] = (unsigned char) ((n % 85) + '!');
+			n = n / 85;
+		}
+
+		/* Copy olen bytes to dst_buf */
+		memcpy (dst_ptr, quintuple, olen);
+		line_len += (unsigned int)olen;
+		dst_ptr += olen;
+
+		/* Insert newline when line exceeds 95 characters */
+		if (line_len + 1 > max_line_len) {
+			*dst_ptr++ = '\n';
+			line_len = 0;
+		}
+	} while (nbytes -= 4, src_ptr < src_end); /* end do */
+
+	{
+		/* Mark the end of the Adobe ASCII85-encoded string: */
+		const unsigned char delimiter[] = "~>\n";
+		memcpy (dst_ptr, delimiter, 3);
+		dst_ptr += 3;
+	}
+
+	{
+		/* Write buffer to file and clean up */
+		const size_t buf_size = dst_ptr - dst_buf;
+		assert (buf_size <= dst_buf_size); /* check length */
+		if (PSL->internal.memory) {
+			psl_prepare_buffer (PSL, buf_size); /* Make sure we have enough memory to hold the entire EPS */
+			strncat (&(PSL->internal.buffer[PSL->internal.n]), (const char *)dst_buf, buf_size);
+			PSL->internal.n += buf_size;
+		}
+		else
+			fwrite (dst_buf, sizeof(char), buf_size, PSL->internal.fp);
+		PSL_free (dst_buf);
+		return buf_size;
+	}
+}
+
+#define ESC 128
+
+static void psl_rle_decode (struct PSL_CTRL *PSL, struct imageinfo *h, unsigned char **in) {
+	/* Function to undo RLE encoding in Sun rasterfiles
+	 *
+	 * RLE consists of ESCaped pairs of bytes.  This are started
+	 * when the ESC value is encountered.  The Next byte is the <count>,
+	 * the following is the <value>.  We then replicate <value>
+	 * the required number of times.  If count is 0 then ESC is output.
+	 * If bytes are not ESCaped they are simply copied to output.
+	 * This is implemented with the constraint that all scanlines must
+	 * be an even number of bytes (i.e., we are using 16-bit words
+	 */
+
+	int i, j, col, width, len;
+	int odd = false, count;
+	unsigned char mask_table[] = {0xff, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe};
+	unsigned char mask, *out = NULL, value = 0;
+
+	i = j = col = count = 0;
+
+	width = (int)lrint (ceil (h->width * h->depth / 8.0));	/* Scanline width in bytes */
+	if (width%2) odd = true, width++;	/* To ensure 16-bit words */
+	mask = mask_table[h->width%8];	/* Padding for 1-bit images */
+
+	len = width * ((int)h->height);		/* Length of output image */
+	out = PSL_memory (PSL, NULL, len, unsigned char);
+	if (odd) width--;
+
+	while (j < h->length || count > 0) {
+
+		if (count) {
+			out[i++] = value;
+			count--;
+			col++;
+		}
+		else {
+			switch ((int)(*in)[j]) {
+				case ESC:
+					count = (int)(*in)[++j];
+					j++;
+					if (count == 0) {
+						out[i++] = ESC;
+						col++;
+					}
+					else {
+						count++;
+						value = (*in)[j];
+						j++;
+					}
+					break;
+				default:
+					out[i++] = (*in)[j++];
+					col++;
+			}
+		}
+
+		if (col == width) {
+			if (h->depth == 1) out[width-1] &= mask;
+			if (odd) {out[i++] = 0; count = 0;}
+			col = 0;
+		}
+	}
+
+	if (i != len) PSL_message (PSL, PSL_MSG_FATAL, "Warning: psl_rle_decode has wrong # of outbytes (%d versus expected %d)\n", i, len);
+
+	PSL_free (*in);
+	*in = out;
+}
+
+static unsigned char *psl_rle_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input) {
+	/* Run Length Encode a buffer of nbytes. */
+
+	int count = 0, out = 0, in = 0, i;
+	unsigned char pixel, *output = NULL;
+
+	i = MAX (512, *nbytes) + 136;	/* Maximum output length */
+	output = PSL_memory (PSL, NULL, i, unsigned char);
+
+	/* Loop scanning all input bytes. Abort when inflating after processing at least 512 bytes */
+	while (count < *nbytes && (out < in || out < 512)) {
+		in = count;
+		pixel = input[in++];
+		while (in < *nbytes && in - count < 127 && input[in] == pixel) in++;
+		if (in - count == 1) {	/* No more duplicates. How many non-duplicates were there? */
+			while (in < *nbytes && (in - count) < 127 && ((input[in] != input[in-1] || in > 1) && input[in] != input[in-2])) in++;
+			while (in < *nbytes && input[in] == input[in-1]) in--;
+			output[out++] = (unsigned char)(in - count - 1);
+			for (i = count; i < in; i++) output[out++] = input[i];
+		}
+		else {		/* Write out a runlength */
+			output[out++] = (unsigned char)(count - in + 1);
+			output[out++] = pixel;
+		}
+		count = in;
+	}
+
+	/* Write end of data marker */
+	output[out++] = 128;
+
+	/* Drop the compression when end result is bigger than original */
+	if (out > in) {
+		PSL_message (PSL, PSL_MSG_NORMAL, "RLE inflated %d to %d bytes. No compression done.\n", in, out);
+		PSL_free (output);
+		return (NULL);
+	}
+
+	/* Return number of output bytes and output buffer */
+	PSL_message (PSL, PSL_MSG_NORMAL, "RLE compressed %d to %d bytes (%.1f%% savings)\n", in, out, 100.0f*(1.0f-(float)out/in));
+	*nbytes = out;
+	return (output);
+}
+
+static psl_byte_stream_t psl_lzw_putcode (psl_byte_stream_t stream, short int incode) {
+	static short int eod = 257;
+	static size_t bit_count = 0;
+	static size_t bit_buffer = 0;
+
+	/* Add incode to buffer and output 1 or 2 bytes */
+	bit_buffer |= (size_t) incode << (32 - stream->depth - bit_count);
+	bit_count += stream->depth;
+	while (bit_count >= 8) {
+		stream->buffer[stream->nbytes] = (unsigned char)(bit_buffer >> 24);
+		stream->nbytes++;
+		bit_buffer <<= 8;
+		bit_count -= 8;
+	}
+	if (incode == eod) {	/* Flush buffer */
+		stream->buffer[stream->nbytes] = (unsigned char)(bit_buffer >> 24);
+		stream->nbytes++;
+		bit_buffer = 0;
+		bit_count = 0;
+	}
+	return (stream);
+}
+
+static unsigned char *psl_lzw_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input) {
+	/* LZW compress a buffer of nbytes. */
+
+	static int ncode = 4096*256;
+	int i, index, in = 0;
+	static short int clear = 256, eod = 257;
+	short int table = 4095;	/* Initial value forces clearing of table on first byte */
+	short int bmax = 0, pre, oldpre, ext, *code = NULL;
+	psl_byte_stream_t output;
+	unsigned char *buffer = NULL;
+
+	i = MAX (512, *nbytes) + 8;	/* Maximum output length */
+	output = (psl_byte_stream_t)psl_memory (PSL, NULL, 1U, sizeof (*output));
+	output->buffer = PSL_memory (PSL, NULL, i, unsigned char);
+	code = PSL_memory (PSL, NULL, ncode, short int);
+
+	output->nbytes = 0;
+	output->depth = 9;
+	pre = input[in++];
+
+	/* Loop scanning all input bytes. Abort when inflating after processing at least 512 bytes */
+	while (in < *nbytes && (output->nbytes < in || output->nbytes < 512)) {
+		if (table >= 4095) {	/* Refresh code table */
+			output = psl_lzw_putcode (output, clear);
+			memset (code, 0, ncode * sizeof(*code));
+			table = eod + 1;
+			bmax = clear * 2;
+			output->depth = 9;
+		}
+
+		ext = input[in++];
+		oldpre = pre;
+		index = (pre << 8) + ext;
+		pre = code[index];
+
+		if (pre == 0) {		/* Add new entry to code table */
+			code[index] = table;
+			table++;
+			output = psl_lzw_putcode (output, oldpre);
+			pre = ext;
+			if (table == bmax) {
+				bmax <<= 1;
+				output->depth++;
+			}
+		}
+	}
+
+	/* Output last byte and End-of-Data */
+	output = psl_lzw_putcode (output, pre);
+	output = psl_lzw_putcode (output, eod);
+
+	/* Drop the compression when end result is bigger than original */
+	if (output->nbytes > in) {
+		PSL_message (PSL, PSL_MSG_NORMAL, "LZW inflated %d to %d bytes. No compression done.\n", in, output->nbytes);
+		PSL_free (code);
+		PSL_free (output->buffer);
+		PSL_free (output);
+		return (NULL);
+	}
+
+	/* Return number of output bytes and output buffer; release code table */
+	PSL_message (PSL, PSL_MSG_NORMAL, "LZW compressed %d to %d bytes (%.1f%% savings)\n", in, output->nbytes, 100.0f*(1.0f-(float)output->nbytes/in));
+	*nbytes = output->nbytes;
+	buffer = output->buffer;
+	PSL_free (code);
+	PSL_free (output);
+	return (buffer);
+}
+
+static unsigned char *psl_deflate_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input) {
+	/* DEFLATE a buffer of nbytes using ZLIB. */
+#ifdef HAVE_ZLIB
+	const unsigned int ilen = *nbytes;
+	unsigned int olen = *nbytes - 1; /* Output buffer is 1 smaller than input */
+	unsigned char *output;
+	int level = PSL->internal.deflate_level == 0 ? Z_DEFAULT_COMPRESSION : PSL->internal.deflate_level; /* Compression level */
+	int zstatus;
+	z_stream strm;
+
+	/* Initialize zlib for compression */
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	if (deflateInit (&strm, level) != Z_OK) {
+		PSL_message (PSL, PSL_MSG_NORMAL, "Error: Cannot initialize ZLIB stream: %s", strm.msg);
+		return NULL;
+	}
+
+	output = PSL_memory (PSL, NULL, olen, unsigned char); /* Allocate output buffer */
+
+	strm.avail_in  = ilen;   /* number of bytes in input buffer */
+	strm.next_in   = input;  /* input buffer */
+	strm.avail_out = olen;   /* number of bytes available in output buffer */
+	strm.next_out  = output; /* output buffer */
+
+	zstatus = deflate (&strm, Z_FINISH); /* deflate whole chunk */
+	deflateEnd (&strm);                  /* deallocate zlib memory */
+
+	if (zstatus != Z_STREAM_END) {
+		/* "compressed" size is larger or other failure */
+		PSL_message (PSL, PSL_MSG_NORMAL, "Warning: no deflate compression done.\n");
+		PSL_free (output);
+		return NULL;
+	}
+
+	/* Return number of output bytes and output buffer */
+	olen = olen - strm.avail_out; /* initial size - size left */
+	PSL_message (PSL, PSL_MSG_NORMAL, "DEFLATE compressed %u to %u bytes (%.1f%% savings at compression level %d)\n", ilen, olen, 100.0f*(1.0f-(float)olen/ilen), level == Z_DEFAULT_COMPRESSION ? 6 : level);
+	*nbytes = olen;
+	return output;
+
+#else /* HAVE_ZLIB */
+	/* ZLIB not available */
+	PSL_message (PSL, PSL_MSG_NORMAL, "Cannot DEFLATE because ZLIB is not available.\n");
+	return NULL;
+#endif /* HAVE_ZLIB */
+}
+
+static void psl_stream_dump (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int nbits, int compress, int encode, int mask) {
+	/* Writes a stream of bytes in ascii85 or hex, performs RGB to CMYK
+	 * conversion and compression.
+	 * buffer	= stream of bytes
+	 * nx, ny	= image dimensions in pixels
+	 * nbits	= depth of image pixels in bits
+	 * compress	= no (0), rle (1), lzw (2), or deflate (3) compression
+	 * encode	= ascii85 (0) or hex (1)
+	 * mask		= image (0), imagemask (1), or neither (2)
+	 */
+	int nbytes, i;
+	unsigned line_length = 0;
+	unsigned char *buffer1 = NULL, *buffer2 = NULL;
+	const char *kind_compress[] = {"", "/RunLengthDecode filter", "/LZWDecode filter", "/FlateDecode filter"};
+	const char *kind_mask[] = {"image", "imagemask"};
+
+	nx = abs (nx);
+	nbytes = ((int)nbits * (int)nx + 7) / (int)8 * (int)ny;
+
+	/* Transform RGB stream to CMYK or Gray stream */
+	if (PSL->internal.color_mode == PSL_CMYK && nbits == 24)
+		buffer1 = psl_cmyk_encode (PSL, &nbytes, buffer);
+	else if (PSL->internal.color_mode == PSL_GRAY && nbits == 24)
+		buffer1 = psl_gray_encode (PSL, &nbytes, buffer);
+	else
+		buffer1 = buffer;
+
+	/* Perform selected compression method */
+	if (compress == PSL_RLE)
+		buffer2 = psl_rle_encode (PSL, &nbytes, buffer1);
+	else if (compress == PSL_LZW)
+		buffer2 = psl_lzw_encode (PSL, &nbytes, buffer1);
+	else if (compress == PSL_DEFLATE)
+		buffer2 = psl_deflate_encode (PSL, &nbytes, buffer1);
+	else
+		buffer2 = NULL;
+
+	if (!buffer2)	{ /* If compression failed, or no compression requested */
+		compress = PSL_NONE;
+		buffer2 = buffer1;
+	}
+
+	/* Output image dictionary */
+	if (mask < 2) {
+		PSL_command (PSL, "/Width %d /Height %d /BitsPerComponent %d\n", nx, ny, MIN(nbits,8));
+		PSL_command (PSL, "   /ImageMatrix [%d 0 0 %d 0 %d] /DataSource currentfile", nx, -ny, ny);
+		if (encode == PSL_ASCII85) PSL_command (PSL, " /ASCII85Decode filter");
+		if (compress) PSL_command (PSL, " %s", kind_compress[compress]);
+		PSL_command (PSL, "\n>> %s\n", kind_mask[mask]);
+	}
+	if (encode == PSL_ASCII85) {
+		/* Convert 4-tuples to ASCII85 5-tuples and write buffer to file */
+		psl_a85_encode (PSL, buffer2, nbytes);
+	}
+	else {
+		/* Regular hexadecimal encoding */
+		for (i = 0; i < nbytes; i++) {
+			PSL_command (PSL, "%02X", buffer2[i]); line_length += 2;
+			if (line_length > 95) { PSL_command (PSL, "\n"); line_length = 0; }
+		}
+	}
+	if (mask == 2) PSL_command (PSL, "%s", kind_compress[compress]);
+
+	/* Clear newly created buffers, but maintain original */
+	if (buffer2 != buffer1) PSL_free (buffer2);
+	if (buffer1 != buffer ) PSL_free (buffer1);
+}
+
+static int psl_putfont (struct PSL_CTRL *PSL, double fontsize) {
+	if (fontsize == PSL->current.fontsize) return (PSL_NO_ERROR);
+	PSL->current.fontsize = fontsize;
+	PSL_command (PSL, "%d F%d\n", psl_ip (PSL, fontsize), PSL->current.font_no);
+	return (PSL_NO_ERROR);
+}
+
+static int psl_encodefont (struct PSL_CTRL *PSL, int font_no) {
+	if (PSL->init.encoding == NULL) return (PSL_NO_ERROR);		/* Already have StandardEncoding by default */
+	if (PSL->internal.font[font_no].encoded) return (PSL_NO_ERROR);	/* Already reencoded or should not be reencoded ever */
+
+	/* Reencode fonts with Standard+ or ISOLatin1[+] encodings */
+	PSL_command (PSL, "PSL_font_encode %d get 0 eq {%s_Encoding /%s /%s PSL_reencode PSL_font_encode %d 1 put} if", font_no, PSL->init.encoding, PSL->internal.font[font_no].name, PSL->internal.font[font_no].name, font_no);
+	(PSL->internal.comments) ? PSL_command (PSL, "\t%% Set this font\n") : PSL_command (PSL, "\n");
+	PSL->internal.font[font_no].encoded = true;
+	return (PSL_NO_ERROR);
+}
+
+static char *psl_prepare_text (struct PSL_CTRL *PSL, char *text) {
+
+/*	Adds escapes for misc parenthesis, brackets etc.
+	Will also translate to some European characters such as the @a, @e
+	etc escape sequences. Calling function must REMEMBER to free memory
+	allocated by string */
+	const char *psl_scandcodes[15][5] = {	/* Short-hand conversion for some European characters in both Undefined [0], Standard [1], Standard+ [2], ISOLatin1 [3], and ISOLatin1+ [4] encoding */
+		{ "AA", "AA"   , "\\375", "\\305", "\\305"},	/* Aring */
+		{ "AE", "\\341", "\\341", "\\306", "\\306"},	/* AE */
+		{ "OE", "\\351", "\\351", "\\330", "\\330"},	/* Oslash */
+		{ "aa", "aa"   , "\\376", "\\345", "\\345"},	/* aring */
+		{ "ae", "\\361", "\\361", "\\346", "\\346"},	/* ae */
+		{ "oe", "\\371", "\\371", "\\370", "\\370"},	/* oslash */
+		{ "C" , "C"    , "\\201", "\\307", "\\307"},	/* Ccedilla */
+		{ "N" , "N"    , "\\204", "\\321", "\\321"},	/* Ntilde */
+		{ "U" , "UE"   , "\\335", "\\334", "\\334"},	/* Udieresis */
+		{ "c" , "c"    , "\\215", "\\347", "\\347"},	/* ccedilla */
+		{ "n" , "n"    , "\\227", "\\361", "\\361"},	/* ntilde */
+		{ "ss", "\\373", "\\373", "\\337", "\\337"},	/* germandbls */
+		{ "u" , "ue"   , "\\370", "\\374", "\\374"},	/* udieresis */
+		{ "i" , "i"    , "\\354", "\\355", "\\355"},	/* iaccute */
+		{ "@" , "\\100", "\\100", "\\100", "\\100"}	/* atsign */
+	};
+	char *string = NULL;
+	int i=0, j=0, font;
+	int he = 0;		/* PSL Historical Encoding (if any) */
+
+	if (!text) return NULL;
+
+	psl_encodefont (PSL, PSL->current.font_no);
+
+	if (strcmp ("Standard+", PSL->init.encoding) == 0)
+		he = 2;
+	else if (strcmp ("Standard", PSL->init.encoding) == 0)
+		he = 1;
+	else if (strcmp ("ISOLatin1+", PSL->init.encoding) == 0)
+		he = 4;
+	else if (strcmp ("ISOLatin1", PSL->init.encoding) == 0)
+		he = 3;
+
+	string = PSL_memory (PSL, NULL, 2 * PSL_BUFSIZ, char);
+	while (text[i]) {
+		if (he && text[i] == '@') {
+			i++;
+			switch (text[i]) {
+				case 'A':
+					strcat (string, psl_scandcodes[0][he]);
+					j += (int)strlen(psl_scandcodes[0][he]); i++;
+					break;
+				case 'E':
+					strcat (string, psl_scandcodes[1][he]);
+					j += (int)strlen(psl_scandcodes[1][he]); i++;
+					break;
+				case 'O':
+					strcat (string, psl_scandcodes[2][he]);
+					j += (int)strlen(psl_scandcodes[2][he]); i++;
+					break;
+				case 'a':
+					strcat (string, psl_scandcodes[3][he]);
+					j += (int)strlen(psl_scandcodes[3][he]); i++;
+					break;
+				case 'e':
+					strcat (string, psl_scandcodes[4][he]);
+					j += (int)strlen(psl_scandcodes[4][he]); i++;
+					break;
+				case 'o':
+					strcat (string, psl_scandcodes[5][he]);
+					j += (int)strlen(psl_scandcodes[5][he]); i++;
+					break;
+				case 'C':
+					strcat (string, psl_scandcodes[6][he]);
+					j += (int)strlen(psl_scandcodes[6][he]); i++;
+					break;
+				case 'N':
+					strcat (string, psl_scandcodes[7][he]);
+					j += (int)strlen(psl_scandcodes[7][he]); i++;
+					break;
+				case 'U':
+					strcat (string, psl_scandcodes[8][he]);
+					j += (int)strlen(psl_scandcodes[8][he]); i++;
+					break;
+				case 'c':
+					strcat (string, psl_scandcodes[9][he]);
+					j += (int)strlen(psl_scandcodes[9][he]); i++;
+					break;
+				case 'n':
+					strcat (string, psl_scandcodes[10][he]);
+					j += (int)strlen(psl_scandcodes[10][he]); i++;
+					break;
+				case 's':
+					strcat (string, psl_scandcodes[11][he]);
+					j += (int)strlen(psl_scandcodes[11][he]); i++;
+					break;
+				case 'u':
+					strcat (string, psl_scandcodes[12][he]);
+					j += (int)strlen(psl_scandcodes[12][he]); i++;
+					break;
+				case 'i':
+					strcat (string, psl_scandcodes[13][he]);
+					j += (int)strlen(psl_scandcodes[13][he]); i++;
+					break;
+				case '@':
+					strcat (string, psl_scandcodes[14][he]);
+					j += (int)strlen(psl_scandcodes[14][he]); i++;
+					break;
+				case '%':	/* Font switcher */
+					if (isdigit ((int)text[i+1])) {	/* Got a font */
+						font = atoi (&text[i+1]);
+						psl_encodefont (PSL, font);
+					}
+					string[j++] = '@';
+					string[j++] = text[i++];	/* Just copy over the rest */
+					while (text[i] != '%') string[j++] = text[i++];
+					break;
+				case '~':	/* Symbol font toggle */
+					psl_encodefont (PSL, PSL_SYMBOL_FONT);
+				default:
+					string[j++] = '@';
+					string[j++] = text[i++];
+					break;
+			}
+		}
+		else {
+			switch (text[i]) {    /* NEED TO BE ESCAPED!!!! for PostScript*/
+				case '{':
+				case '}':
+				case '[':
+				case ']':
+				case '(':
+				case ')':
+				case '<':
+				case '>':
+					if (j > 0 && string[MAX(j-1,0)] == '\\')	/* ALREADY ESCAPED... */
+						string[j++] = text[i++];
+					else {
+						strcat(string, "\\"); j++;
+						string[j++] = text[i++];
+					}
+					break;
+				default:
+					string[j++] = text[i++];
+					break;
+			}
+		}
+	}
+	return (string);
+}
+
+static int psl_pattern_cleanup (struct PSL_CTRL *PSL) {
+	int image_no, k = 0;
+
+	for (image_no = 0; image_no < PSL_N_PATTERNS * 2; image_no++)
+		if (PSL->internal.pattern[image_no].status) k++;
+	if (k == 0) return (PSL_NO_ERROR);
+	PSL_comment (PSL, "Undefine patterns and images\n");
+	for (image_no = 0; image_no < PSL_N_PATTERNS * 2; image_no++) {
+		if (PSL->internal.pattern[image_no].status) {
+			PSL_command (PSL, "currentdict /image%d undef\n", image_no);
+			PSL_command (PSL, "currentdict /pattern%d undef\n", image_no);
+		}
+	}
+	return (PSL_NO_ERROR);
+}
+
+static int psl_patch (struct PSL_CTRL *PSL, double *x, double *y, int np) {
+	/* Like PSL_plotpolygon but intended for small polygons (< 20 points).  No checking for
+	 * shorter path by calling psl_shorten_path as in PSL_plotpolygon.
+	 */
+
+	int ix[20], iy[20], i, n, n1;
+
+	if (np > 20) return (PSL_plotpolygon (PSL, x, y, np));	/* Must call PSL_plotpolygon instead */
+
+	ix[0] = psl_ix (PSL, x[0]);	/* Convert inch to absolute pixel position for start of quadrilateral */
+	iy[0] = psl_iy (PSL, y[0]);
+
+	for (i = n = 1, n1 = 0; i < np; i++) {	/* Same but check if new point represent a different pixel */
+		ix[n] = psl_ix (PSL, x[i]);
+		iy[n] = psl_iy (PSL, y[i]);
+		if (ix[n] != ix[n1] || iy[n] != iy[n1]) n++, n1++;
+	}
+	if (ix[0] == ix[n1] && iy[0] == iy[n1]) n--, n1--;	/* Closepath will do this automatically */
+
+	if (n < 1) return (PSL_NO_POLYGON);	/* 0 points don't make a polygon */
+
+	n1 = --n;
+	for (i = n - 1; i >= 0; i--, n--) PSL_command (PSL, "%d %d ", ix[n] - ix[i], iy[n] - iy[i]);
+	PSL_command (PSL, "%d %d %d SP\n", n1, ix[0], iy[0]);
+	return (PSL_NO_ERROR);
+}
+
+static char *psl_getsharepath (struct PSL_CTRL *PSL, const char *subdir, const char *stem, const char *suffix, char *path) {
+	/* stem is the name of the file, e.g., PSL_custom_fonts.txt
+	 * subdir is an optional subdirectory name in the PSL->internal.SHAREDIR directory.
+	 * suffix is an optional suffix to append to name
+	 * path is the full path to the file in question
+	 * Returns the full pathname if a workable path was found
+	 * Looks for file stem in current directory, PSL->internal.USERDIR, and PSL->internal.SHAREDIR[/subdir]
+	 */
+
+	/* First look in the current working directory */
+
+	sprintf (path, "%s%s", stem, suffix);
+	if (!access (path, R_OK)) return (path);	/* Yes, found it in current directory */
+
+	/* Do not continue when full pathname is given */
+
+#ifdef WIN32
+	if (stem[0] == '\\' || stem[1] == ':') return (NULL);
+#else
+	if (stem[0] == '/') return (NULL);
+#endif
+
+	/* Not found, see if there is a file in the user's PSL->internal.USERDIR directory */
+
+	if (PSL->internal.USERDIR) {
+		sprintf (path, "%s/%s%s", PSL->internal.USERDIR, stem, suffix);
+		if (!access (path, R_OK)) return (path);
+	}
+
+	/* Try to get file from PSL->internal.SHAREDIR/subdir */
+
+	if (subdir) {
+		sprintf (path, "%s/%s/%s%s", PSL->internal.SHAREDIR, subdir, stem, suffix);
+		if (!access (path, R_OK)) return (path);
+	}
+
+	/* Finally try file in PSL->internal.SHAREDIR (for backward compatibility) */
+
+	sprintf (path, "%s/%s%s", PSL->internal.SHAREDIR, stem, suffix);
+	if (!access (path, R_OK)) return (path);
+
+	return (NULL);	/* No file found, give up */
+}
+
+/* This function copies a file called $PSL_SHAREDIR/postscriptlight/<fname>.ps
+ * to the postscript output verbatim.
+ */
+static void psl_bulkcopy (struct PSL_CTRL *PSL, const char *fname) {
+	FILE *in = NULL;
+	char buf[PSL_BUFSIZ], fullname[PSL_BUFSIZ];
+	int i;
+
+	psl_getsharepath (PSL, "postscriptlight", fname, ".ps", fullname);
+	if ((in = fopen (fullname, "r")) == NULL) {
+		PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: ");
+		perror (fullname);
+		PSL_exit (EXIT_FAILURE);
+	}
+
+	while (fgets (buf, PSL_BUFSIZ, in)) {
+		if (PSL->internal.comments) {
+			/* We copy every line, including the comments, except those starting '%-' */
+			if (buf[0] == '%' && buf[1] == '-') continue;
+			PSL_command (PSL, "%s", buf);
+		}
+		else {
+			/* Here we remove the comments */
+			i = 0;
+			while (buf[i] && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == '\n')) i++;	/* Find first non-blank character */
+			if (!buf[i]) continue;								/* Blank line, skip */
+			if (buf[i] == '%' && buf[i+1] != '%') continue;					/* Comment line, skip */
+			/* Output this line, but skip trailing comments (while watching for DSC %% comments) */
+			/* Find the end of important stuff on the line (i.e., look for start of trailing comments) */
+			for (i = 1; buf[i] && !(buf[i] == '%' && buf[i-1] != '%'); i++);
+			i--;										/* buf[i] is the last character to be output */
+			while (i && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == '\n')) i--;		/* Remove white-space prior to the comment */
+			buf[++i] = '\0';			/* Add end-line character and print */
+			PSL_command (PSL, "%s\n", buf);
+		}
+	}
+	fclose (in);
+}
+
+static struct PSL_WORD *psl_add_word_part (struct PSL_CTRL *PSL, char *word, int length, int fontno, double fontsize, int sub, int super, int small, int under, int space, double rgb[]) {
+	/* For flag: bits 1 and 2 give number of spaces to follow (0, 1, or 2)
+	 * bit 3 == 1 means leading TAB
+	 * bit 4 == 1 means Composite 1 character
+	 * bit 5 == 1 means Composite 2 character
+	 * bit 6 == 1 means underline word
+	 */
+
+	int i = 0;
+	int c;
+	int tab = false;
+	double fs;
+	struct PSL_WORD *new_word = NULL;
+
+	if (!length) length = (int)strlen (word);
+	while (word[i] && word[i] == '\t') {	/* Leading tab(s) means indent once */
+		tab = true;
+		i++;
+		length--;
+	}
+
+	new_word = PSL_memory (PSL, NULL, 1, struct PSL_WORD);
+	new_word->txt = PSL_memory (PSL, NULL, length+1, char);
+	fs = fontsize * PSL->internal.dpp;
+
+	strncpy (new_word->txt, &word[i], (size_t)length);
+	new_word->font_no = fontno;
+	if (small) {	/* Small caps is on */
+		new_word->fontsize = (int)lrint (PSL->current.scapssize * fs);
+		for (i = 0; new_word->txt[i]; i++) {
+			c = (int)new_word->txt[i];
+			new_word->txt[i] = (char) toupper (c);
+		}
+	}
+	else if (super) {
+		new_word->fontsize = (int)lrint (PSL->current.subsupsize * fs);
+		new_word->baseshift = (int)lrint (PSL->current.sup_up[PSL_LC] * fs);
+	}
+	else if (sub) {
+		new_word->fontsize = (int)lrint (PSL->current.subsupsize * fs);
+		new_word->baseshift = (int)lrint (-PSL->current.sub_down * fs);
+	}
+	else
+		new_word->fontsize = (int)lrint (fs);
+
+	new_word->flag = space;
+	if (tab) new_word->flag |= 4;	/* 3rd bit indicates tab, then add space after word */
+	if (under) new_word->flag |= 32;	/* 6rd bit indicates underline */
+	PSL_rgb_copy (new_word->rgb, rgb);
+
+	return (new_word);
+}
+
+static void psl_freewords (struct PSL_WORD **word, int n_words) {
+	/* Free all the words and their texts */
+	int k;
+	for (k = 0; k < n_words; k++) {
+		PSL_free (word[k]->txt);
+		PSL_free (word[k]);
+	}
+}
+
+static int psl_paragraphprocess (struct PSL_CTRL *PSL, double y, double fontsize, char *paragraph) {
+	/* Typeset one or more paragraphs.  Separate paragraphs by adding \r to end of last word in a paragraph.
+	 * This is a subfunction that simply place all the text attributes on the stack.
+	 */
+	int n, p, n_scan, last_k = -1, error = 0, old_font, font, after, len, n_alloc_txt;
+	int *font_unique = NULL;
+	unsigned int i, i1, i0, j, k, n_items, n_font_unique, n_rgb_unique;
+	size_t n_alloc, n_words = 0;
+	double old_size, last_rgb[4] = {0.0, 0.0, 0.0, 0.0}, rgb[4] = {0.0, 0.0, 0.0, 0.0};
+	int sub_on, super_on, scaps_on, symbol_on, font_on, size_on, color_on, under_on, plain_word = false, escape;
+	char *c = NULL, *clean = NULL, test_char, **text = NULL, *lastp = NULL, *copy = NULL;
+	const char *sep = " ";
+	struct PSL_WORD **word = NULL, **rgb_unique = NULL;
+
+	if (fontsize == 0.0) return (PSL_NO_ERROR);	/* Nothing to do if text has zero size */
+
+	sub_on = super_on = scaps_on = symbol_on = font_on = size_on = color_on = under_on = false;
+
+	/* Break input string into words (sorta based on old pstext) */
+	n_alloc = PSL_CHUNK;
+	text = (char **) PSL_memory (PSL, NULL, n_alloc, char *);
+	copy = strdup (paragraph);	/* Need copy since strtok_r will mess with the text */
+	c = strtok_r (copy, sep, &lastp);	/* Found first word */
+	while (c) {	/* Found another word */
+		text[n_words] = strdup (c);
+		len = (int)strlen(text[n_words]) - 1;
+		if (text[n_words][len] == '\r') {	/* New paragraph */
+			text[n_words][len] = '\0';	/* chop off CR */
+			n_words++;
+			if (n_words == n_alloc) {
+				n_alloc <<= 1;
+				text = (char **) PSL_memory (PSL, text, n_alloc, char *);
+			}
+			text[n_words] = strdup ("");	/* This adds an empty string */
+		}
+		n_words++;
+		if (n_words == n_alloc) {
+			n_alloc <<= 1;
+			text = (char **) PSL_memory (PSL, text, n_alloc, char *);
+		}
+		c = strtok_r (NULL, sep, &lastp);
+	}
+	text = (char **) PSL_memory (PSL, text, n_words, char *);
+	PSL_free (copy);
+
+	/* Now process the words into pieces we can typeset. */
+
+	n_alloc = PSL_CHUNK;
+	old_font = font = PSL->current.font_no;
+	old_size = fontsize;
+	PSL_rgb_copy (rgb, PSL->current.rgb[PSL_IS_STROKE]);	/* Initial font color is current color */
+
+	word = PSL_memory (PSL, NULL, n_alloc, struct PSL_WORD *);
+
+	for (i = k = 0; i < n_words; i++) {
+
+		clean = psl_prepare_text (PSL, text[i]);	/* Escape special characters and European character shorthands */
+
+		if ((c = strchr (clean, '@')) != NULL) {	/* Found a @ escape command */
+			i0 = 0;
+			i1 = (int) (c - clean);
+
+			if (i1 > i0)
+				word[k++] = psl_add_word_part (PSL, &clean[i0], i1 - i0, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_NO_SPACE, rgb);
+			if (k == n_alloc) {
+				n_alloc <<= 1;
+				word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
+			}
+
+			i1++;	/* Skip the @ */
+
+			while (clean[i1]) {
+
+				escape = (clean[i1-1] == '@');	/* i1 char is an escape argument */
+				test_char = (escape) ? clean[i1] : 'A';		/* Only use clean[i1] if it is an escape modifier */
+				plain_word = false;
+
+				switch (test_char) {
+
+					case '!':	/* 2 Composite characters */
+						i1++;
+						if (clean[i1] == '\\') { /* First char is Octal code character */
+							word[k++] = psl_add_word_part (PSL, &clean[i1], 4, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_1, rgb);
+							i1 += 4;
+						}
+						else {	/* Regular character */
+							word[k++] = psl_add_word_part (PSL, &clean[i1], 1, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_1, rgb);
+							i1++;
+						}
+						if (k == n_alloc) {
+							n_alloc <<= 1;
+							word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
+						}
+						if (clean[i1] == '\\') { /* 2nd char is Octal code character */
+							word[k] = psl_add_word_part (PSL, &clean[i1], 4, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_2, rgb);
+							i1 += 4;
+						}
+						else {	/* Regular character */
+							word[k] = psl_add_word_part (PSL, &clean[i1], 1, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_2, rgb);
+							i1++;
+						}
+						if (!clean[i1]) word[k]->flag++;	/* New word after this composite */
+						k++;
+						if (k == n_alloc) {
+							n_alloc <<= 1;
+							word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
+						}
+						break;
+
+					case '~':	/* Toggle symbol font */
+						i1++;
+						symbol_on = !symbol_on;
+						font = (font == PSL_SYMBOL_FONT) ? old_font : PSL_SYMBOL_FONT;
+						break;
+
+					case '%':	/* Switch font option */
+						i1++;
+						font_on = !font_on;
+						if (clean[i1] == '%') {
+							font = old_font;
+							i1++;
+						}
+						else {
+							old_font = font;
+							font = atoi (&clean[i1]);
+							while (clean[i1] != '%') i1++;
+							i1++;
+						}
+						break;
+
+					case '_':	/* Toggle Underline */
+						i1++;
+						under_on = !under_on;
+						break;
+
+					case '-':	/* Toggle Subscript */
+						i1++;
+						sub_on = !sub_on;
+						break;
+
+					case '+':	/* Toggle Subscript */
+						i1++;
+						super_on = !super_on;
+						break;
+
+					case '#':	/* Toggle Small caps */
+						i1++;
+						scaps_on = !scaps_on;
+						break;
+
+					case ':':	/* Change font size */
+						i1++;
+						size_on = !size_on;
+						if (clean[i1] == ':') {
+							fontsize = old_size;
+							i1++;
+						}
+						else {
+							fontsize = atof (&clean[i1]);
+							while (clean[i1] != ':') i1++;
+							i1++;
+						}
+						break;
+
+					case ';':	/* Change font color */
+						i1++;
+						color_on = !color_on;
+						if (clean[i1] == ';') {
+							PSL_rgb_copy (rgb, last_rgb);
+							i1++;
+						}
+						else {
+							PSL_rgb_copy (last_rgb, rgb);
+							j = i1;
+							while (clean[j] != ';') j++;
+							clean[j] = 0;
+							n_scan = sscanf (&clean[i1], "%lg/%lg/%lg", &rgb[0], &rgb[1], &rgb[2]);
+							if (n_scan == 1) {	/* Got gray shade */
+								rgb[0] /= 255.0;	/* Normalize to 0-1 range */
+								rgb[1] = rgb[2] = rgb[0];
+								if (rgb[0] < 0.0 || rgb[0] > 1.0) error++;
+							}
+							else if (n_scan == 3) {	/* Got r/g/b */
+								for (p = 0; p < 3; p++) {
+									rgb[p] /= 255.0;	/* Normalize to 0-1 range */
+									if (rgb[p] < 0.0 || rgb[p] > 1.0) error++;
+								}
+							}
+							else	/* Got crap */
+								error++;
+
+							clean[j] = ';';
+							i1 = j + 1;
+						}
+						break;
+
+					default:	/* Regular text to copy */
+
+						j = i1;
+						while (clean[j] && clean[j] != '@') j++;
+						after = (clean[j]) ? PSL_NO_SPACE : 1;
+						plain_word = true;
+						word[k++] = psl_add_word_part (PSL, &clean[i1], j-i1, font, fontsize, sub_on, super_on, scaps_on, under_on, after, rgb);
+						if (k == n_alloc) {
+							n_alloc <<= 1;
+							word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
+						}
+						i1 = (clean[j]) ? j + 1 : j;
+						break;
+				}
+				while (clean[i1] == '@') i1++;	/* SKip @ character */
+
+			} /* End loop over word with @ in it */
+
+			last_k = k - 1;
+			if (!plain_word && (last_k = k - 1) >= 0) {	/* Allow space if text ends with @ commands only */
+				word[last_k]->flag &= 60;
+				word[last_k]->flag |= 1;
+			}
+		}
+		else {	/* Plain word, no worries */
+			word[k++] = psl_add_word_part (PSL, clean, 0, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_ONE_SPACE, rgb);
+			if (k == n_alloc) {
+				n_alloc <<= 1;
+				word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
+			}
+		}
+
+		PSL_free (clean);	/* Reclaim this memory */
+		PSL_free (text[i]);	/* Since strdup created it */
+
+	} /* End of word loop */
+
+	if (sub_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Sub-scripting not terminated [%s]\n", paragraph);
+	if (super_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Super-scripting not terminated [%s]\n", paragraph);
+	if (scaps_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Small-caps not terminated [%s]\n", paragraph);
+	if (symbol_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Symbol font change not terminated [%s]\n", paragraph);
+	if (size_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Font-size change not terminated [%s]\n", paragraph);
+	if (color_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Font-color change not terminated [%s]\n", paragraph);
+	if (under_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Text underline not terminated [%s]\n", paragraph);
+
+	PSL_free (text);	/* Reclaim this memory */
+	n_alloc_txt = k;	/* Number of items in word array that might have text allocations */
+	k--;			/* Index of last word */
+	while (k && !word[k]->txt) k--;	/* Skip any blank lines at end */
+	n_items = k + 1;
+
+	for (i0 = 0, i1 = 1 ; i1 < n_items-1; i1++, i0++) {	/* Loop for periods ending sentences and indicate 2 spaces to follow */
+		size_t len = strlen(word[i0]->txt);
+		if (len > 0 && isupper ((int)word[i1]->txt[0]) && word[i0]->txt[len-1] == '.') {
+			word[i0]->flag &= 60;	/* Sets bits 1 & 2 to zero */
+			word[i0]->flag |= 2;	/* Specify 2 spaces */
+		}
+		if (!word[i1]->txt[0]) {	/* No space at end of paragraph */
+			word[i0]->flag &= 60;
+			word[i1]->flag &= 60;
+		}
+	}
+	if (i1 >= n_items) i1 = n_items - 1;	/* one-word fix */
+	word[i1]->flag &= 60;	/* Last word not followed by anything */
+
+	/* Set each word's index of the corresponding unique color entry */
+
+	rgb_unique = PSL_memory (PSL, NULL, n_items, struct PSL_WORD *);
+	for (n_rgb_unique = i = 0; i < n_items; i++) {
+		for (j = 0; j < n_rgb_unique && !PSL_same_rgb(word[i]->rgb,rgb_unique[j]->rgb); j++) {}
+		if (j == n_rgb_unique) rgb_unique[n_rgb_unique++] = word[i];
+		word[i]->index = j;
+	}
+
+	/* Replace each word's font with the index of the corresponding unique font entry */
+
+	font_unique = PSL_memory (PSL, NULL, n_items, int);
+	for (n_font_unique = i = 0; i < n_items; i++) {
+		for (j = 0; j < n_font_unique && word[i]->font_no != font_unique[j]; j++) {}
+		if (j == n_font_unique) font_unique[n_font_unique++] = word[i]->font_no;
+		word[i]->font_no = j;
+	}
+
+	/* Time to write out to PS file */
+
+	/* Load PSL_text procedures from file for now */
+
+	if (!PSL->internal.text_init) {
+		psl_bulkcopy (PSL, "PSL_text");
+		PSL->internal.text_init = true;
+	}
+
+	PSL_comment (PSL, "PSL_plotparagraph begin:\n");
+
+	PSL_comment (PSL, "Define array of fonts:\n");
+	PSL_command (PSL, "/PSL_fontname\n");
+	for (i = 0 ; i < n_font_unique; i++) PSL_command (PSL, "/%s\n", PSL->internal.font[font_unique[i]].name);
+	PSL_command (PSL, "%d array astore def\n", n_font_unique);
+	PSL_free (font_unique);
+
+	PSL_comment (PSL, "Initialize variables:\n");
+	PSL_command (PSL, "/PSL_n %d def\n", n_items);
+	PSL_command (PSL, "/PSL_n1 %d def\n", n_items - 1);
+	PSL_defunits (PSL, "PSL_y0", y);
+	PSL_command (PSL, "/PSL_spaces [() ( ) (  ) ] def\n");
+	PSL_command (PSL, "/PSL_lastfn -1 def\n/PSL_lastfz -1 def\n/PSL_lastfc -1 def\n");
+	PSL_command (PSL, "/PSL_UL 0 def\n/PSL_show {ashow} def\n");
+
+	PSL_comment (PSL, "Define array of words:\n");
+	PSL_command (PSL, "/PSL_word");
+	for (i = n = 0 ; i < n_items; i++) {
+		PSL_command (PSL, "%c(%s)", (n) ? ' ' : '\n', word[i]->txt);
+		n += (int)strlen (word[i]->txt) + 1; if (n >= 60) n = 0;
+	}
+	PSL_command (PSL, "\n%d array astore def\n", n_items);
+
+	PSL_comment (PSL, "Define array of word font numbers:\n");
+	PSL_command (PSL, "/PSL_fnt");
+	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->font_no);
+	PSL_command (PSL, "\n%d array astore def\n", n_items);
+
+	PSL_comment (PSL, "Define array of word fontsizes:\n");
+	PSL_command (PSL, "/PSL_size");
+	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%15) ? ' ' : '\n', word[i]->fontsize);
+	PSL_command (PSL, "\n%d array astore def\n", n_items);
+
+	PSL_comment (PSL, "Define array of word spaces to follow:\n");
+	PSL_command (PSL, "/PSL_flag");
+	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->flag);
+	PSL_command (PSL, "\n%d array astore def\n", n_items);
+
+	PSL_comment (PSL, "Define array of word baseline shifts:\n");
+	PSL_command (PSL, "/PSL_bshift");
+	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->baseshift);
+	PSL_command (PSL, "\n%d array astore def\n", n_items);
+
+	PSL_comment (PSL, "Define array of word colors indices:\n");
+	PSL_command (PSL, "/PSL_color");
+	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->index);
+	PSL_command (PSL, "\n%d array astore def\n", n_items);
+
+	PSL_comment (PSL, "Define array of word colors:\n");
+	PSL_command (PSL, "/PSL_rgb\n");
+	for (i = 0 ; i < n_rgb_unique; i++) PSL_command (PSL, "%.3g %.3g %.3g\n", rgb_unique[i]->rgb[0], rgb_unique[i]->rgb[1], rgb_unique[i]->rgb[2]);
+	PSL_command (PSL, "%d array astore def\n", 3 * n_rgb_unique);
+	PSL_free (rgb_unique);
+
+	PSL_comment (PSL, "Define array of word widths:\n");
+	PSL_command (PSL, "/PSL_width %d array def\n", n_items);
+	PSL_command (PSL, "/PSL_max_word_width 0 def\n");
+	PSL_command (PSL, "0 1 PSL_n1 {");
+	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Determine word width given the font and fontsize for each word\n" : "\n");
+	PSL_command (PSL, "  /i edef");
+	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Loop index i\n" : "\n");
+	PSL_command (PSL, "  PSL_size i get PSL_fontname PSL_fnt i get get Y");
+	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Get and set font and size\n" : "\n");
+	PSL_command (PSL, "  PSL_width i PSL_word i get stringwidth pop put");
+	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Calculate and store width\n": "\n");
+	PSL_command (PSL, "  PSL_width i get PSL_max_word_width gt { /PSL_max_word_width PSL_width i get def} if");
+	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Keep track of widest word\n": "\n");
+	PSL_command (PSL, "} for\n");
+	PSL_command (PSL, "PSL_max_word_width PSL_parwidth gt { /PSL_parwidth PSL_max_word_width def } if");
+	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Auto-widen paragraph width if widest word exceeds it\n": "\n");
+
+	PSL_comment (PSL, "Define array of word char counts:\n");
+	PSL_command (PSL, "/PSL_count %d array def\n", n_items);
+	PSL_command (PSL, "0 1 PSL_n1 {PSL_count exch dup PSL_word exch get length put} for\n");
+
+	PSL_comment (PSL, "For composite chars, set width and count to zero for 2nd char:\n");
+	PSL_command (PSL, "1 1 PSL_n1 {\n  /k edef\n  PSL_flag k get 16 and 16 eq {\n");
+	PSL_command (PSL, "    /k1 k 1 sub def\n    /w1 PSL_width k1 get def\n    /w2 PSL_width k get def\n");
+	PSL_command (PSL, "    PSL_width k1 w1 w2 gt {w1} {w2} ifelse put\n    PSL_width k 0 put\n");
+	PSL_command (PSL, "    PSL_count k 0 put\n  } if\n} for\n");
+
+	psl_freewords (word, n_alloc_txt);
+	PSL_free (word);
+	return (sub_on|super_on|scaps_on|symbol_on|font_on|size_on|color_on|under_on);
+}
+
+static void psl_get_origin (double xt, double yt, double xr, double yr, double r, double *xo, double *yo, double *b1, double *b2) {
+ /* finds origin so that distance is r to the two points given */
+	double a0, b0, c0, A, B, C, q, sx1, sx2, sy1, sy2;
+
+	a0 = (xt - xr) / (yr - yt);
+	b0 = 0.5 * (xr*xr + yr*yr - xt*xt - yt*yt)/(yr - yt);
+	c0 = b0 - yt;
+	A = 1 + a0*a0;
+	B = 2*(c0*a0 - xt);
+	C = xt*xt - r*r + c0*c0;
+	q = sqrt (B*B - 4*A*C);
+	sx1 = 0.5* (-B + q)/A;
+	sx2 = 0.5* (-B - q)/A;
+	sy1 = b0 + a0 * sx1;
+	sy2 = b0 + a0 * sx2;
+
+	if (hypot (sx1, sy1) < r) {
+	    *xo = sx1;
+	    *yo = sy1;
+	}
+	else {
+	    *xo = sx2;
+	    *yo = sy2;
+	}
+	*b1 = R2D * atan2 (yr - *yo, xr - *xo);
+	*b2 = R2D * atan2 (yt - *yo, xt - *xo);
+}
+
+static int psl_mathrightangle (struct PSL_CTRL *PSL, double x, double y, double param[]) {
+	/* Called from psl_matharc for the special case of right angle only; no heads involved */
+	double size, xx[3], yy[3];
+
+	PSL_command (PSL, "V %d %d T %lg R\n", psl_ix (PSL, x), psl_iy (PSL, y), param[1]);
+	size = param[0] / M_SQRT2;
+
+	xx[0] = xx[1] = size;	xx[2] = 0.0;
+	yy[0] = 0.0;	yy[1] = yy[2] = size;
+	PSL_plotline (PSL, xx, yy, 3, PSL_MOVE + PSL_STROKE);
+	PSL_command (PSL, "U \n");
+	return (PSL_NO_ERROR);
+}
+
+static int psl_matharc (struct PSL_CTRL *PSL, double x, double y, double param[]) {
+	/* psl_matharc draws a mathematical opening angle indicator with center at
+	 * (x,y), radius, and start,stop angles.  At the ends we may plot a vector
+	 * head that is composed of circular arcs. As a special case we can plot
+	 * the straight angle symbol when the angles subtend 90 degrees.
+	 *
+	 * param must hold up to 8 values:
+	 * param[0] = radius, param[1] = angle1, param[2] = angle2,
+	 * param[3] = headlength, param[4] = headwidth, param[5] = penwidth(inch)
+ 	 * param[6] = vector-shape (0-1), param[7] = status bit flags
+	 * param[8] = begin head type;	param[9] = end head type)
+	 * param[10] = begin trim (degrees);	param[11] = end trim (degrees)
+	 * add 4 to param[6] if you want to use a straight angle
+	 * symbol if the opening is 90.  */
+
+	int i, side[2], heads, outline, fill, sign[2] = {+1, -1};
+	unsigned int status, kind[2];
+	double head_arc_length, head_half_width, arc_width, da, da_c, xt, yt, sa, ca, sb, cb, r, r2, xr, yr, xl, yl, xo, yo, shape;
+	double angle[2], tangle[2], off[2], A, B, bo1, bo2, xi, yi, bi1, bi2, xv, yv, rshift[2] = {0.0, 0.0}, circ_r, xx[2], yy[2], trim[2];
+	char *line[2] = {"N", "P S"}, *dump[2] = {"", "fs"};
+
+	status = (unsigned int)lrint (param[7]);
+	if (status & PSL_VEC_MARC90 && fabs (90.0 - fabs (param[2]-param[1])) < 1.0e-8) {	/* Right angle */
+		return (psl_mathrightangle (PSL, x, y, param));
+	}
+	/* Make any adjustments caused by trim */
+	trim[PSL_BEGIN] = (status & PSL_VEC_OFF_BEGIN) ? param[10] : 0.0;
+	trim[PSL_END]   = (status & PSL_VEC_OFF_END)   ? param[11] : 0.0;
+	PSL_command (PSL, "V %d %d T\n", psl_ix (PSL, x), psl_iy (PSL, y));
+	kind[PSL_BEGIN] = (unsigned int)lrint (param[8]);
+	kind[PSL_END] = (unsigned int)lrint (param[9]);
+	r = param[0];				  /* Radius of arc in inch */
+	angle[PSL_BEGIN] = param[1] + trim[PSL_BEGIN]; angle[PSL_END] = param[2] - trim[PSL_END]; /* Start/stop angles of arc, possibly adjusted */
+	head_arc_length = param[3];		  /* Head length in inch */
+	head_half_width = 0.5 * param[4];	  /* Head half-width in inch */
+	arc_width = param[5];			  /* Arc width in inch */
+	shape = param[6];			  /* Vector head shape (0-1) */
+	heads = PSL_vec_head (status);		  /* 1 = at beginning, 2 = at end, 3 = both */
+	outline = ((status & PSL_VEC_OUTLINE) > 0);
+	fill = ((status & PSL_VEC_FILL) > 0);
+	circ_r = sqrt (head_arc_length * head_half_width / M_PI);	/* Same area as vector head */
+
+	da = head_arc_length * 180.0 / (M_PI * r);	/* Angle corresponding to the arc length */
+	da_c = circ_r * 180.0 / (M_PI * r);	/* Angle corresponding to the circle length */
+
+	for (i = 0; i < 2; i++) {	/* Possibly shorten angular arc if arrow heads take up space */
+		side[i] = PSL_vec_side (status, i);		  /* -1 = left-only, +1 = right-only, 0 = normal head for this end */
+		tangle[i] = angle[i];	/* Angle if no head is present */
+		off[i] = (kind[i] == PSL_VEC_ARROW) ? sign[i]*da*(1.0-0.5*shape) : 0.0;		/* Arc length from tip to backstop */
+		if ((heads & (i+1)) && side[i] && kind[i] == PSL_VEC_CIRCLE) off[i] -= 0.5 * sign[i] * da_c;
+		if (heads & (i+1)) tangle[i] += off[i];	/* Change arc angle by headlength or half-circle arc */
+	}
+	side[PSL_BEGIN] = -side[PSL_BEGIN];	/* Because of it was initially implemented */
+	/* rshift kicks in when we want a half-arrow head.  In that case we dont want it to be
+	 * exactly half since the vector line will then stick out 1/2 line thickness.  So we adjust
+	 * for this half-thickness by adding/subtracting from the radius accordingly, using r2,
+	 * but only if the two heads agree. */
+	rshift[PSL_BEGIN] = 0.5 * side[PSL_BEGIN] * arc_width;
+	rshift[PSL_END] = 0.5 * side[PSL_END] * arc_width;
+
+	PSL_setlinewidth (PSL, arc_width * PSL_POINTS_PER_INCH);
+	PSL_plotarc (PSL, 0.0, 0.0, r, tangle[PSL_BEGIN], tangle[PSL_END], PSL_MOVE | PSL_STROKE);	/* Draw the (possibly shortened) arc */
+	if (status & PSL_VEC_MID_FWD) {	/* Want forward-pointing mid-point head instead of at end */
+		angle[PSL_END] = 0.5 * (angle[PSL_BEGIN] + angle[PSL_END]);	heads = 2;
+		if (kind[PSL_END] == PSL_VEC_ARROW) angle[PSL_END] += 0.5 * da;
+		tangle[PSL_END] = angle[PSL_END] + off[PSL_END];
+	}
+	else if (status & PSL_VEC_MID_BWD) {	/* Want backwards-pointing mid-point head instead of at beginning */
+		angle[PSL_BEGIN] = 0.5 * (angle[PSL_BEGIN] + angle[PSL_END]);		heads = 1;
+		if (kind[PSL_BEGIN] == PSL_VEC_ARROW) angle[PSL_BEGIN] -= 0.5 * da;
+		tangle[PSL_BEGIN] = angle[PSL_BEGIN] + off[PSL_BEGIN];
+	}
+	if (heads) {	/* Will draw at least one head */
+		PSL_setfill (PSL, PSL->current.rgb[PSL_IS_FILL], true);	/* Set fill for head(s) */
+	}
+
+	for (i = 0; i < 2; i++) {	/* For both ends */
+		if ((heads & (i+1)) == 0) continue;	/* No arrow head at this angle */
+		A = D2R * angle[i];	sa = sin (A);	ca = cos (A);
+		r2 = r + sign[i] * rshift[i];
+		xt = r2 * ca;	yt = r2 * sa;	/* Tip coordinates */
+		switch (kind[i]) {
+			case PSL_VEC_ARROW:
+				B = D2R * (angle[i] + sign[i] * da);	sb = sin (B);	cb = cos (B);
+				PSL_command (PSL, "V\n");	/* Do this inside gsave/resore since we are clipping */
+				if (side[i] != +sign[i]) {	/* Need right side of arrow head */
+					xr = (r2 + head_half_width) * cb;	yr = (r2 + head_half_width) * sb;	/* Outer flank coordinates */
+					psl_get_origin (xt, yt, xr, yr, r2, &xo, &yo, &bo1, &bo2);
+					if (i == 0 && bo2 > bo1)
+						bo2 -= 360.0;
+					else if (i == 1 && bo1 > bo2)
+						bo1 -= 360.0;
+
+					PSL_plotarc (PSL, xo, yo, r2, bo2, bo1, PSL_MOVE);	/* Draw the arrow arc from tip to outside flank */
+					A = D2R * (tangle[i]);	sa = sin (A);	ca = cos (A);
+					xv = r2 * ca - xr;	yv = r2 * sa - yr;	/* Back point coordinates */
+					PSL_plotpoint (PSL, xv, yv, PSL_REL);		/* Connect to back point */
+				}
+				else {	/* Draw from tip to center back reduced by shape */
+					PSL_plotarc (PSL, 0.0, 0.0, r2, angle[i], tangle[i], PSL_MOVE);
+				}
+				if (side[i] != -sign[i]) {	/* Need left side of arrow head */
+					xl = (r2 - head_half_width) * cb;	yl = (r2 - head_half_width) * sb;	/* Inner flank coordinates */
+					psl_get_origin (xt, yt, xl, yl, r2, &xi, &yi, &bi1, &bi2);
+					if (i == 0 && bi1 < bi2)
+						bi1 += 360.0;
+					else if (i == 1 && bi1 > bi2)
+						bi1 -= 360.0;
+					PSL_plotarc (PSL, xi, yi, r2, bi1, bi2, PSL_DRAW);		/* Draw the arrow arc from tip to outside flank */
+				}
+				else {	/* Draw from center back reduced by shape to tip */
+					PSL_plotarc (PSL, 0.0, 0.0, r2, tangle[i], angle[i], PSL_DRAW);
+				}
+				PSL_command (PSL, "P clip %s %s U\n", dump[fill], line[outline]);
+				break;
+			case PSL_VEC_CIRCLE:
+				PSL_command (PSL, "V\n");	/* Do this inside gsave/restore since we are clipping */
+				if (side[i] == -1)	/* Need left side */
+					PSL_plotarc (PSL, xt, yt, circ_r, angle[i]+90.0, angle[i]+270.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				else if (side[i] == +1)	/* Need right side */
+					PSL_plotarc (PSL, xt, yt, circ_r, angle[i]-90.0, angle[i]+90.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				else
+					PSL_plotarc (PSL, xt, yt, circ_r, 0.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				PSL_command (PSL, "P clip %s %s U\n", dump[fill], line[outline]);
+				break;
+			case PSL_VEC_TERMINAL:
+				xt = r * ca;	yt = r * sa;	/* Tip coordinates */
+		 		xx[0] = xx[1] = xt;	yy[0] = yy[1] = yt;
+				if (side[i] == -1)	{	/* Need left side */
+				 	xx[0] = (r-head_half_width) * ca;	yy[0] = (r-head_half_width) * sa;
+				}
+				else if (side[i] == +1) {	/* Need right side */
+				 	xx[1] = (r+head_half_width) * ca;	yy[1] = (r+head_half_width) * sa;
+				}
+				else {
+				 	xx[0] = (r-head_half_width) * ca;	yy[0] = (r-head_half_width) * sa;
+				 	xx[1] = (r+head_half_width) * ca;	yy[1] = (r+head_half_width) * sa;
+				}
+				PSL_plotline (PSL, xx, yy, 2, PSL_MOVE+PSL_STROKE);	/* Set up path */
+				break;
+		}
+	}
+
+	PSL_command (PSL, "U \n");
+	return (PSL_NO_ERROR);
+}
+
+static int psl_pattern_init (struct PSL_CTRL *PSL, int image_no, char *imagefile) {
+	int i, status;
+	char name[PSL_BUFSIZ], file[PSL_BUFSIZ];
+	unsigned char *picture = NULL;
+	struct imageinfo h;
+	int found;
+
+	memset (&h, 0, sizeof(struct imageinfo)); /* initialize struct */
+
+	if ((image_no >= 0 && image_no < PSL_N_PATTERNS) && PSL->internal.pattern[image_no].status) return (image_no);	/* Already done this */
+
+	if ((image_no >= 0 && image_no < PSL_N_PATTERNS)) {	/* Premade pattern yet not used */
+		sprintf (name, "PSL_pattern_%02d", image_no);
+		psl_getsharepath (PSL, "postscriptlight", name, ".ras", file);
+	}
+	else {	/* User image, check to see if already used */
+
+		for (i = 0, found = false; !found && i < PSL->internal.n_userimages; i++) found = !strcmp (PSL->internal.user_image[i], imagefile);
+		if (found) return (PSL_N_PATTERNS + i - 1);
+		psl_getsharepath (PSL, NULL, imagefile, "", file);
+		PSL->internal.user_image[PSL->internal.n_userimages] = PSL_memory (PSL, NULL, strlen (imagefile)+1, char);
+		strcpy (PSL->internal.user_image[PSL->internal.n_userimages], imagefile);
+		image_no = PSL_N_PATTERNS + PSL->internal.n_userimages;
+		PSL->internal.n_userimages++;
+	}
+
+	/* Load image file. Store size, depth and bogus DPI setting */
+
+	if ((status = PSL_loadimage (PSL, file, &h, &picture)) != 0) return (0);
+    
+
+	PSL->internal.pattern[image_no].status = 1;
+	PSL->internal.pattern[image_no].nx = h.width;
+	PSL->internal.pattern[image_no].ny = h.height;
+	PSL->internal.pattern[image_no].depth = h.depth;
+	PSL->internal.pattern[image_no].dpi = -999;
+
+	PSL_comment (PSL, "Define pattern %d\n", image_no);
+
+	PSL_command (PSL, "/image%d {<~\n", image_no);
+	psl_stream_dump (PSL, picture, h.width, h.height, h.depth, PSL->internal.compress, PSL_ASCII85, 2);
+	PSL_command (PSL, "} def\n");
+
+	PSL_free (picture);
+
+	return (image_no);
+}
+
+#define FIN_SLANT_COS	0.707106781187	/* I.e., 45 degrees slant */
+#define FIN_LENGTH_SCALE	0.66666667	/* 2/3 the length of the vector */
+#define FIN_HEIGTH_SCALE	0.5	/* 1/2 the width of the vector */
+
+static int psl_vector (struct PSL_CTRL *PSL, double x, double y, double param[]) {
+	/* Will make sure that arrow has a finite width in PS coordinates.
+	 * param must hold up to 11 values:
+	 * param[0] = xtip;		param[1] = ytip;
+	 * param[2] = tailwidth;	param[3] = headlength;	param[4] = headwidth;
+	 * param[5] = headshape;	param[6] = status bit flags
+	 * param[7] = begin head type;	param[8] = end head type
+	 * param[9] = begin trim value;	param[10] = end trim value.
+	 */
+
+	double angle, xtip, ytip, r, s, tailwidth, headlength, headwidth, headshape, length_inch;
+	double xx[6], yy[6], xc[3], yc[3], off[2], yshift[2], trim[2], xp = 0.0;
+	int length, asymmetry[2], n, heads, outline, fill, status;
+	unsigned int kind[2];
+	char *line[2] = {"N", "P S"}, *dump[2] = {"", "fs"};
+
+	xtip = param[0];	ytip = param[1];
+	length_inch = hypot (x-xtip, y-ytip);					/* Vector length in inches */
+	length = psl_iz (PSL, length_inch);					/* Vector length in PS units */
+	if (length == 0) return (PSL_NO_ERROR);					/* NULL vector */
+	angle = atan2 (ytip-y, xtip-x) * R2D;					/* Angle vector makes with horizontal, in degrees */
+	status = lrint (param[6]);
+	/* Make any adjustments caused by trim */
+	trim[PSL_BEGIN] = (status & PSL_VEC_OFF_BEGIN) ? param[9]  : 0.0;
+	trim[PSL_END]   = (status & PSL_VEC_OFF_END)   ? param[10] : 0.0;
+	if (fabs (angle) == 90.0) {	/* Vertical segment; only adjust y coordinates */
+		y += copysign (trim[PSL_BEGIN], angle);	ytip -= copysign (trim[PSL_END], angle);
+	}
+	else {	/* General case, use trig */
+		double s, c, a = angle * D2R;
+		s = sin (a);		c = cos (a);
+		x += c * trim[PSL_BEGIN];	y += s * trim[PSL_BEGIN];
+		xtip -= c * trim[PSL_END];	ytip -= s * trim[PSL_END];
+	}
+	length_inch = hypot (x-xtip, y-ytip);					/* Recalculate vector length in inches */
+	length = psl_iz (PSL, length_inch);					/* Vector length in PS units */
+	if (length == 0) return (PSL_NO_ERROR);					/* NULL vector */
+	tailwidth = param[2];
+	headlength = param[3];	headwidth = 0.5 * param[4];	headshape = param[5];
+	kind[PSL_BEGIN] = (unsigned int)lrint (param[7]);
+	kind[PSL_END] = (unsigned int)lrint (param[8]);
+	off[PSL_BEGIN] = (kind[PSL_BEGIN] == PSL_VEC_ARROW) ? 0.5 * (2.0 - headshape) * headlength : 0.0;
+	off[PSL_END] = (kind[PSL_END] == PSL_VEC_ARROW) ? 0.5 * (2.0 - headshape) * headlength : 0.0;
+	if (kind[PSL_BEGIN] == PSL_VEC_ARROW_PLAIN) off[PSL_BEGIN] = 0.5 * tailwidth *  headlength / headwidth;
+	else if (kind[PSL_BEGIN] == PSL_VEC_TAIL) off[PSL_BEGIN] = FIN_SLANT_COS * headwidth + FIN_LENGTH_SCALE * headlength - tailwidth;
+	if (kind[PSL_END] == PSL_VEC_ARROW_PLAIN) off[PSL_END] = 0.5 * tailwidth *  headlength / headwidth;
+	else if (kind[PSL_END] == PSL_VEC_TAIL) off[PSL_END] = FIN_SLANT_COS * headwidth + FIN_LENGTH_SCALE * headlength - tailwidth;
+	heads = PSL_vec_head (status);		  /* 1 = at beginning, 2 = at end, 3 = both */
+	PSL_setlinewidth (PSL, tailwidth * PSL_POINTS_PER_INCH);
+	outline = ((status & PSL_VEC_OUTLINE) > 0);
+	fill = ((status & PSL_VEC_FILL) > 0);
+	asymmetry[PSL_BEGIN] = -PSL_vec_side (status, 0);	  /* -1 = left-only, +1 = right-only, 0 = normal head at beginning */
+	asymmetry[PSL_END] = PSL_vec_side (status, 1);		  /* -1 = left-only, +1 = right-only, 0 = normal head at beginning */
+	r = sqrt (headlength * headwidth / M_PI);	/* Same circle area as vector head */
+	s = sqrt (headlength * headwidth)/2;		/* Same square 	area as vector head */
+	PSL_command (PSL, "V %d %d T ", psl_ix (PSL, x), psl_iy (PSL, y));	/* Temporarily set tail point the local origin (0, 0) */
+	if (angle != 0.0) PSL_command (PSL, "%g R\n", angle);			/* Rotate so vector is horizontal in local coordinate system */
+	/* Make any adjustments caused by trim */
+	xx[0] = (heads & 1) ? off[PSL_BEGIN] : 0.0;
+	xx[1] = (heads & 2) ? length_inch - off[PSL_END] : length_inch;
+	if (heads & 1 && asymmetry[PSL_BEGIN] && kind[PSL_BEGIN] == PSL_VEC_CIRCLE) xx[0] = -r;
+	if (heads & 2 && asymmetry[PSL_END] && kind[PSL_END] == PSL_VEC_CIRCLE) xx[1] += r;
+	PSL_plotsegment (PSL, xx[0], 0.0, xx[1], 0.0);				/* Draw vector line body */
+
+	if (status & PSL_VEC_MID_FWD) {	/* Want forward-pointing mid-point head instead of at end */
+		xp = -0.5 * length_inch;	heads = 2;
+		if (kind[PSL_END] == PSL_VEC_ARROW) xp += 0.5 * headlength;
+	}
+	else if (status & PSL_VEC_MID_BWD) {	/* Want backwards-pointing mid-point head instead of at beginning */
+		xp = 0.5 * length_inch;	heads = 1;
+		if (kind[PSL_BEGIN] == PSL_VEC_ARROW) xp -= 0.5 * headlength;
+	}
+	if (heads == 0) {	/* No heads requested */
+		PSL_command (PSL, "U\n");
+		return (PSL_NO_ERROR);
+	}
+
+	/* Must switch asymmetry for start head since implemented backwards */
+	yshift[PSL_BEGIN] = 0.5 * asymmetry[PSL_BEGIN] * tailwidth;
+	yshift[PSL_END] = 0.5 * asymmetry[PSL_END] * tailwidth;
+
+	if (heads & 1) {	/* Need head at beginning, pointing backwards */
+		switch (kind[PSL_BEGIN]) {
+			case PSL_VEC_ARROW:
+				xx[0] = xp; yy[0] = -yshift[PSL_BEGIN];	n = 1;	/* Vector tip */
+				if (asymmetry[PSL_BEGIN] != +1) {	/* Need left side */
+					xx[n] = xp + headlength; yy[n++] = -headwidth;
+				}
+				if (asymmetry[PSL_BEGIN] || headshape != 0.0) {	/* Need center back of head */
+					xx[n] = xp + 0.5 * (2.0 - headshape) * headlength; yy[n++] = -yshift[PSL_BEGIN];
+				}
+				if (asymmetry[PSL_BEGIN] != -1) {	/* Need right side */
+					xx[n] = xp + headlength; yy[n++] = headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE);	/* Set up path */
+				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
+				break;
+			case PSL_VEC_ARROW_PLAIN:
+				/* Must set up clip path (xc,yc) to ensure tip is at end of vector, AND double
+				 * the pen thickness since half will be clipped. */
+				n = 0;
+				xc[0] = xp + headlength; yc[0] = -headwidth;
+				if (asymmetry[PSL_BEGIN] != +1) {	/* Need left side */
+					xx[n] = xp + headlength; yy[n++] = -headwidth;
+				}
+				xx[n] = xp; yy[n++] = -yshift[PSL_BEGIN];	/* Vector tip */
+				xc[1] = xp; yc[1] = -yshift[PSL_BEGIN];	/* Vector tip */
+				if (asymmetry[PSL_BEGIN] != -1) {	/* Need right side */
+					xx[n] = xp + headlength; yy[n++] = headwidth;
+				}
+				xc[2] = xp + headlength; yc[2] = headwidth;
+				PSL_command (PSL, "V "); /* Place under gsave/grestore since changing pen */
+				PSL_setlinewidth (PSL, 2.0*tailwidth * PSL_POINTS_PER_INCH);
+				PSL_plotline (PSL, xc, yc, 3, PSL_MOVE);	/* Set up clip path */
+				PSL_command (PSL, "P clip N ");
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE+PSL_STROKE);	/* Plot arrow head */
+				PSL_setlinewidth (PSL, tailwidth * PSL_POINTS_PER_INCH);
+				PSL_command (PSL, "U\n");
+				break;
+			case PSL_VEC_TAIL:
+				xx[0] = xp + tailwidth + off[PSL_BEGIN]; yy[0] = -yshift[PSL_BEGIN];	n = 1;	/* Vector tip */
+				if (asymmetry[PSL_BEGIN] != +1) {	/* Need left side */
+					xx[n] = xp + tailwidth - FIN_SLANT_COS * headwidth + off[PSL_BEGIN]; yy[n++] = -FIN_HEIGTH_SCALE * headwidth;
+					xx[n] = xx[n-1] - FIN_LENGTH_SCALE * headlength; yy[n++] = -FIN_HEIGTH_SCALE * headwidth;
+				}
+				xx[n] = xp + tailwidth - FIN_LENGTH_SCALE * headlength + off[PSL_BEGIN]; yy[n++] = -yshift[PSL_BEGIN];
+				if (asymmetry[PSL_BEGIN] != -1) {	/* Need right side */
+					xx[n] = xp + tailwidth - FIN_SLANT_COS * headwidth - FIN_LENGTH_SCALE * headlength + off[PSL_BEGIN]; yy[n++] = FIN_HEIGTH_SCALE * headwidth;
+					xx[n] = xx[n-1] + FIN_LENGTH_SCALE * headlength; yy[n++] = FIN_HEIGTH_SCALE * headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE);	/* Set up path */
+				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
+				if (asymmetry[PSL_BEGIN] == 0) {	/* Draw feather center */
+					PSL_command (PSL, "V 0 W ");
+					xx[1] = xp + tailwidth - headlength + off[PSL_BEGIN]; yy[1] = -yshift[PSL_BEGIN];
+					PSL_plotsegment (PSL, xx[0], yy[0], xx[1], yy[1]);				/* Draw vector line body */
+					PSL_command (PSL, "U\n");
+				}
+				break;
+			case PSL_VEC_TAIL_PLAIN:
+				n = 0;
+				if (asymmetry[PSL_BEGIN] != +1) {	/* Need left side */
+					xx[n] = xp - headlength; yy[n++] = -headwidth;
+				}
+				xx[n] = xp; yy[n++] = -yshift[PSL_BEGIN];	/* Vector tip */
+				if (asymmetry[PSL_BEGIN] != -1) {	/* Need right side */
+					xx[n] = xp - headlength; yy[n++] = headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE+PSL_STROKE);	/* Set up path */
+				break;
+			case PSL_VEC_CIRCLE:
+				if (asymmetry[PSL_BEGIN] == -1)	/* Need left side */
+					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 180.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				else if (asymmetry[PSL_BEGIN] == +1)	/* Need right side */
+					PSL_plotarc (PSL, xp, 0.0, r, 180.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				else
+					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
+				break;
+			case PSL_VEC_SQUARE:
+				xx[0] = xx[3] = xp - s;	xx[1] = xx[2] = xp + s;
+				if (asymmetry[PSL_BEGIN] == -1)	{	/* Left side */
+					yy[0] = yy[1] = s;
+					yy[2] = yy[3] = 0.0;
+				}
+				else if (asymmetry[PSL_BEGIN] == +1) {	/* Right side */
+					yy[0] = yy[1] = 0.0;
+					yy[2] = yy[3] = -s;
+				}
+				else {
+					yy[0] = yy[1] = +s;
+					yy[2] = yy[3] = -s;
+				}
+				PSL_plotline (PSL, xx, yy, 4, PSL_MOVE);	/* Set up path */
+				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
+				break;
+			case PSL_VEC_TERMINAL:
+				xx[0] = xx[1] = xp;	yy[0] = yy[1] = 0.0;	/* Terminal line */
+				if (asymmetry[PSL_BEGIN] == -1)	/* Left side */
+					yy[1] = headwidth;
+				else if (asymmetry[PSL_BEGIN] == +1)	/* Right side */
+					yy[1] = -headwidth;
+				else {
+					yy[0] = -headwidth;
+					yy[1] = +headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, 2, PSL_MOVE+PSL_STROKE);	/* Set up path */
+				break;
+		}
+
+	}
+	PSL_command (PSL, "U\n");
+	if (heads & 2) {	/* Need head at end, pointing forwards */
+		PSL_command (PSL, "V %d %d T ", psl_ix (PSL, xtip), psl_iy (PSL, ytip));	/* Temporarily set head point the local origin (0, 0) */
+		if (angle != 0.0) PSL_command (PSL, "%g R\n", angle);			/* Rotate so vector is horizontal in local coordinate system */
+		switch (kind[PSL_END]) {
+			case PSL_VEC_ARROW:
+				xx[0] = xp; yy[0] = yshift[PSL_END];	n = 1;	/* Vector tip */
+				if (asymmetry[PSL_END] != +1) {	/* Need left side */
+					xx[n] = xp - headlength; yy[n++] = headwidth;
+				}
+				if (asymmetry[PSL_END] || headshape != 0.0) {	/* Need center back of head */
+					xx[n] = xp -0.5 * (2.0 - headshape) * headlength; yy[n++] = yshift[PSL_END];
+				}
+				if (asymmetry[PSL_END] != -1) {	/* Need right side */
+					xx[n] = xp - headlength; yy[n++] = -headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE);	/* Set up path */
+				PSL_command (PSL, "P clip %s %s \n", dump[fill], line[outline]);
+				break;	/* Finalize, then reset outline parameter */
+			case PSL_VEC_ARROW_PLAIN:
+				n = 0;
+				xc[0] = xp - headlength; yc[0] = -headwidth;
+				if (asymmetry[PSL_END] != +1) {	/* Need left side */
+					xx[n] = xp - headlength; yy[n++] = -headwidth;
+				}
+				xx[n] = xp; yy[n++] = -yshift[PSL_END];	/* Vector tip */
+				xc[1] = xp; yc[1] = -yshift[PSL_END];	/* Vector tip */
+				if (asymmetry[PSL_END] != -1) {	/* Need right side */
+					xx[n] = xp - headlength; yy[n++] = headwidth;
+				}
+				xc[2] = xp - headlength; yc[2] = headwidth;
+				PSL_command (PSL, "V "); /* Place under gsave/grestore since changing pen */
+				PSL_setlinewidth (PSL, 2.0*tailwidth * PSL_POINTS_PER_INCH);
+				PSL_plotline (PSL, xc, yc, 3, PSL_MOVE);	/* Set up clip path */
+				PSL_command (PSL, "P clip N ");
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE+PSL_STROKE);	/* Plot arrow head */
+				PSL_setlinewidth (PSL, tailwidth * PSL_POINTS_PER_INCH);
+				PSL_command (PSL, "U\n");
+				break;
+			case PSL_VEC_TAIL:
+				xx[0] = xp - tailwidth - off[PSL_BEGIN]; yy[0] = -yshift[PSL_END];	n = 1;	/* Vector tip */
+				if (asymmetry[PSL_END] != +1) {	/* Need left side */
+					xx[n] = xp - tailwidth + FIN_SLANT_COS * headwidth - off[PSL_BEGIN]; yy[n++] = -FIN_HEIGTH_SCALE * headwidth;
+					xx[n] = xx[n-1] + FIN_LENGTH_SCALE * headlength; yy[n++] = -FIN_HEIGTH_SCALE * headwidth;
+				}
+				xx[n] = xp - tailwidth + FIN_LENGTH_SCALE * headlength - off[PSL_BEGIN]; yy[n++] = -yshift[PSL_END];
+				if (asymmetry[PSL_END] != -1) {	/* Need right side */
+					xx[n] = xp - tailwidth + FIN_SLANT_COS * headwidth + FIN_LENGTH_SCALE * headlength - off[PSL_BEGIN]; yy[n++] = FIN_HEIGTH_SCALE * headwidth;
+					xx[n] = xx[n-1] - FIN_LENGTH_SCALE * headlength; yy[n++] = FIN_HEIGTH_SCALE * headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE);	/* Set up path */
+				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
+				if (asymmetry[PSL_END] == 0) {	/* Draw feather center */
+					PSL_command (PSL, "V 0 W ");
+					xx[1] = xp - tailwidth + headlength - off[PSL_BEGIN]; yy[1] = -yshift[PSL_END];
+					PSL_plotsegment (PSL, xx[0], yy[0], xx[1], yy[1]);				/* Draw vector line body */
+					PSL_command (PSL, "U\n");
+				}
+				break;
+			case PSL_VEC_TAIL_PLAIN:
+				n = 0;
+				if (asymmetry[PSL_BEGIN] != +1) {	/* Need left side */
+					xx[n] = xp + headlength; yy[n++] = -headwidth;
+				}
+				xx[n] = xp; yy[n++] = -yshift[PSL_BEGIN];	/* Vector tip */
+				if (asymmetry[PSL_BEGIN] != -1) {	/* Need right side */
+					xx[n] = xp + headlength; yy[n++] = headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, n, PSL_MOVE+PSL_STROKE);	/* Set up path */
+				break;
+			case PSL_VEC_CIRCLE:
+				if (asymmetry[PSL_END] == -1)	/* Need left side */
+					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 180.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				else if (asymmetry[PSL_END] == +1)	/* Need right side */
+					PSL_plotarc (PSL, xp, 0.0, r, 180.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				else
+					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
+				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
+				break;
+			case PSL_VEC_SQUARE:
+				xx[0] = xx[3] = xp - s;	xx[1] = xx[2] = xp + s;
+				if (asymmetry[PSL_END] == -1)	{	/* Left side */
+					yy[0] = yy[1] = s;
+					yy[2] = yy[3] = 0.0;
+				}
+				else if (asymmetry[PSL_END] == +1) {	/* Right side */
+					yy[0] = yy[1] = 0.0;
+					yy[2] = yy[3] = -s;
+				}
+				else {
+					yy[0] = yy[1] = +s;
+					yy[2] = yy[3] = -s;
+				}
+				PSL_plotline (PSL, xx, yy, 4, PSL_MOVE);	/* Set up path */
+				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
+				break;
+			case PSL_VEC_TERMINAL:
+				xx[0] = xx[1] = xp;	yy[0] = yy[1] = 0.0;	/* Terminal line */
+				if (asymmetry[PSL_END] == -1)	/* Left side */
+					yy[1] = headwidth;
+				else if (asymmetry[PSL_END] == +1)	/* Right side */
+					yy[1] = -headwidth;
+				else {
+					yy[0] = -headwidth;
+					yy[1] = +headwidth;
+				}
+				PSL_plotline (PSL, xx, yy, 2, PSL_MOVE+PSL_STROKE);	/* Set up path */
+				break;
+		}
+		PSL_command (PSL, "U\n");
+	}
+	return (PSL_NO_ERROR);
+}
+
+static int psl_wedge (struct PSL_CTRL *PSL, double x, double y, double param[]) {
+	/* Takes care of plotting a wedge.
+	 * param must hold up to 11 values:
+	 * param[0] = radius;
+	 * param[1] = start angle;	param[2] = end angle;
+	 * param[3] = status bit flags
+	 */
+
+	double xx[3], yy[3];
+	int status = lrint (param[3]);
+	switch (status) {
+		case 1:		/* Just draw arc */
+			PSL_plotarc (PSL, x, y, param[0], param[1], param[2], PSL_MOVE | PSL_STROKE);	/* Draw the arc */
+			break;
+		case 2:		/* Just draw radial lines */
+			xx[0] = x + param[0] * cos (D2R * param[1]);	yy[0] = y + param[0] * sin (D2R * param[1]);
+			xx[1] = x;				yy[1] = y;
+			xx[2] = x + param[0] * cos (D2R * param[2]);	yy[2] = y + param[0] * sin (D2R * param[2]);
+			PSL_plotline (PSL, xx, yy, 3, PSL_MOVE+PSL_STROKE);	/* Plot jaw */
+			break;
+		default:	/* Standard wedge operation */
+			PSL_command (PSL, "%d %g %g %d %d Sw\n", psl_iz (PSL, param[0]), param[1], param[2], psl_ix (PSL, x), psl_iy (PSL, y));
+			break;
+	}
+
+	return (PSL_NO_ERROR);
+}
+
+static void psl_get_uppercase (char *new_c, char *old_c) {
+	int i = 0, c;
+	while (old_c[i]) {
+	 	c = toupper ((int)old_c[i]);
+		new_c[i++] = (char)c;
+	}
+	new_c[i] = 0;
+}
+
+static void psl_freeplot (struct PSL_CTRL *PSL) {
+	/* Simply eliminate any buffer for memory-writing PS */
+	if (PSL->internal.buffer) PSL_free (PSL->internal.buffer);	/* Remove any previous plot buffer */
+	PSL->internal.n_alloc = PSL->internal.n = 0;
+	PSL->internal.pmode = 0;
+}
+
+#if 0 /* Not used */
+static void psl_defunits_array (struct PSL_CTRL *PSL, const char *param, double *array, int n) {
+	/* These are used by PSL_plottextline */
+	int i;
+	PSL_command (PSL, "/%s\n", param);
+	for (i = 0; i < n; i++) PSL_command (PSL, "%.2f\n", array[i] * PSL->internal.dpu);
+	PSL_command (PSL, "%d array astore def\n", n);
+}
+#endif
+
+static void psl_def_font_encoding (struct PSL_CTRL *PSL) {
+	/* Initialize book-keeping for font encoding and write font macros */
+
+	int i;
+
+	/* Initialize T/F array for font reencoding so that we only do it once
+	 * for each font that is used */
+
+	PSL_command (PSL, "/PSL_font_encode ");
+	for (i = 0; i < PSL->internal.N_FONTS; i++) PSL_command (PSL, "0 ");
+	PSL_command (PSL, "%d array astore def", PSL->internal.N_FONTS);
+	(PSL->internal.comments) ? PSL_command (PSL, "\t%% Initially zero\n") : PSL_command (PSL, "\n");
+
+	/* Define font macros (see postscriptlight.h for details on how to add fonts) */
+
+	for (i = 0; i < PSL->internal.N_FONTS; i++) PSL_command (PSL, "/F%d {/%s Y}!\n", i, PSL->internal.font[i].name);
+}
+
+static int psl_bitreduce (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int ncolors) {
+	/* Reduce an 8-bit stream to 1-, 2- or 4-bit stream */
+	int in, out, i, j, nout, nbits;
+
+	/* Number of colors determines number of bits */
+	if (ncolors <= 2)
+		nbits = 1;
+	else if (ncolors <= 4)
+		nbits = 2;
+	else if (ncolors <= 16)
+		nbits = 4;
+	else
+		return (8);
+
+	/* "Compress" bytes line-by-line. The number of bits per line should be multiple of 8
+	   But when it isn't overflow is prevent by extra size allocation done in psl_makecolormap */
+	out = 0;
+	nx = abs (nx);
+	nout = (nx * nbits + 7) / 8;
+	for (j = 0; j < ny; j++) {
+		in = j * nx;
+		if (nbits == 1) {
+			for (i = 0; i < nout; i++) {
+				buffer[out++] = (buffer[in] << 7) + (buffer[in+1] << 6) + (buffer[in+2] << 5) + (buffer[in+3] << 4) + (buffer[in+4] << 3) + (buffer[in+5] << 2) + (buffer[in+6] << 1) + buffer[in+7];
+				in += 8;
+			}
+		}
+		else if (nbits == 2) {
+			for (i = 0; i < nout; i++) {
+				buffer[out++] = (buffer[in] << 6) + (buffer[in+1] << 4) + (buffer[in+2] << 2) + buffer[in+3];
+				in += 4;
+			}
+		}
+		else if (nbits == 4) {
+			for (i = 0; i < nout; i++) {
+				buffer[out++] = (buffer[in] << 4) + buffer[in+1];
+				in += 2;
+			}
+		}
+	}
+
+	PSL_message (PSL, PSL_MSG_NORMAL, "Image depth reduced to %d bits\n", nbits);
+	return (nbits);
+}
+
+static int psl_bitimage_cmap (struct PSL_CTRL *PSL, double f_rgb[], double b_rgb[]) {
+	/* Print colormap for 1-bit image or imagemask. Returns value of "polarity":
+	 * 0 = Paint 0 bits foreground color, leave 1 bits transparent
+	 * 1 = Paint 1 bits background color, leave 0 bits transparent
+	 * 2 = Paint 0 bits foreground color, paint 1 bits background color
+	 * ! Note that odd return values indicate that the bitmap has to be
+	 * ! inverted before plotting, either explicitly, or through a mapping
+	 * ! function in the PostScript image definition.
+	 */
+	int polarity;
+	double f_cmyk[4], b_cmyk[4];
+
+	PSL_command (PSL, " [/Indexed /Device");
+	if (b_rgb[0] < 0.0) {
+		/* Backgound is transparent */
+		polarity = 0;
+		if (PSL_is_gray (f_rgb))
+			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(f_rgb[0]));
+		else if (PSL->internal.color_mode == PSL_GRAY)
+			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(PSL_YIQ(f_rgb)));
+		else if (PSL->internal.color_mode == PSL_CMYK) {
+			psl_rgb_to_cmyk (f_rgb, f_cmyk);
+			PSL_command (PSL, "CMYK 0 <%02X%02X%02X%02X>", PSL_q255(f_cmyk));
+		}
+		else
+			PSL_command (PSL, "RGB 0 <%02X%02X%02X>", PSL_t255(f_rgb));
+	}
+	else if (f_rgb[0] < 0.0) {
+		/* Foreground is transparent */
+		polarity = 1;
+		if (PSL_is_gray (b_rgb))
+			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(b_rgb[0]));
+		else if (PSL->internal.color_mode == PSL_GRAY)
+			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(PSL_YIQ(b_rgb)));
+		else if (PSL->internal.color_mode == PSL_CMYK) {
+			psl_rgb_to_cmyk (b_rgb, b_cmyk);
+			PSL_command (PSL, "CMYK 0 <%02X%02X%02X%02X>", PSL_q255(b_cmyk));
+		}
+		else
+			PSL_command (PSL, "RGB 0 <%02X%02X%02X>", PSL_t255(b_rgb));
+	}
+	else {
+		/* Colored foreground and background */
+		polarity = 2;
+		if (PSL_is_gray (b_rgb) && PSL_is_gray (f_rgb))
+			PSL_command (PSL, "Gray 1 <%02X%02X>", PSL_u255(f_rgb[0]), PSL_u255(b_rgb[0]));
+		else if (PSL->internal.color_mode == PSL_GRAY)
+			PSL_command (PSL, "Gray 1 <%02X%02X>", PSL_u255(PSL_YIQ(f_rgb)), PSL_u255(PSL_YIQ(b_rgb)));
+		else if (PSL->internal.color_mode == PSL_CMYK) {
+			psl_rgb_to_cmyk (f_rgb, f_cmyk);
+			psl_rgb_to_cmyk (b_rgb, b_cmyk);
+			PSL_command (PSL, "CMYK 1 <%02X%02X%02X%02X%02X%02X%02X%02X>", PSL_q255(f_cmyk), PSL_q255(b_cmyk));
+		}
+		else
+			PSL_command (PSL, "RGB 1 <%02X%02X%02X%02X%02X%02X>", PSL_t255(f_rgb), PSL_t255(b_rgb));
+	}
+	PSL_command (PSL, "] setcolorspace");
+
+	return (polarity);
+}
+
+static int psl_read_rasheader (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *h, int i0, int i1) {
+	/* Reads the header of a Sun rasterfile (or any other).
+	   Since the byte order is defined as Big Endian, the bytes are
+		 swapped on Little Endian platforms.
+	 */
+
+	int i;
+	int32_t value;
+
+	for (i = i0; i <= i1; i++) {
+
+		if (fread (&value, sizeof (int32_t), 1, fp) != 1) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Failure reading rasterfile header\n");
+			return (-1);
+		}
+#ifndef WORDS_BIGENDIAN
+		value = bswap32 (value);
+#endif
+
+		switch (i) {
+			case 0:
+				h->magic = (int)value;
+				break;
+			case 1:
+				h->width = (int)value;
+				break;
+			case 2:
+				h->height = (int)value;
+				break;
+			case 3:
+				h->depth = (int)value;
+				break;
+			case 4:
+				h->length = (int)value;
+				break;
+			case 5:
+				h->type = (int)value;
+				break;
+			case 6:
+				h->maptype = (int)value;
+				break;
+			case 7:
+				h->maplength = (int)value;
+				break;
+		}
+	}
+
+	if (h->type == RT_OLD && h->length == 0)
+		h->length = 2 * ((int)lrint (ceil (h->width * h->depth / 16.0))) * h->height;
+
+	return (0);
+}
+
+/* Make sure that all memory is freed upon return.
+   This way is simpler than freeing buffer, red, green, blue, entry individually at every return
+ */
+#define Return(code) {PSL_free (buffer); PSL_free (entry); PSL_free (red); PSL_free (green); PSL_free (blue); return (code);}
+
+static int psl_load_raster (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *header, unsigned char **picture) {
+	/* psl_load_raster reads a Sun standard rasterfile of depth 1, 8, 24, or 32 into memory */
+
+	int mx_in, mx, j, k, i, ij, n = 0, ny, get, odd, oddlength, r_off, b_off;
+	unsigned char *buffer = NULL, *entry = NULL, *red = NULL, *green = NULL, *blue = NULL;
+
+	if (psl_read_rasheader (PSL, fp, header, 0, 7)) {
+		PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading Sun rasterfile header!\n");
+		return (PSL_READ_FAILURE);
+	}
+
+	if (header->magic != RAS_MAGIC) {	/* Not a Sun rasterfile */
+		PSL_message (PSL, PSL_MSG_FATAL, "Error: Raster is not a Sun rasterfile (Magic # = 0x%x)!\n", header->magic);
+		return (PSL_READ_FAILURE);
+	}
+	if (header->type < RT_OLD || header->type > RT_FORMAT_RGB) {
+		PSL_message (PSL, PSL_MSG_FATAL, "Error: Can only read Sun rasterfiles types %d - %d (your type = %d)!\n", RT_OLD, RT_FORMAT_RGB, header->type);
+		return (PSL_READ_FAILURE);
+	}
+
+	if (header->depth == 1) {	/* 1 bit black and white image */
+		mx_in = (int) (2 * ceil (header->width / 16.0));	/* Because Sun images are written in multiples of 2 bytes */
+		mx = (int) (ceil (header->width / 8.0));		/* However, PS wants only the bytes that matters, so mx may be one less */
+		ny = header->height;
+		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
+		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading 1-bit Sun rasterfile!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
+
+		if (mx < mx_in) {	/* OK, here we must shuffle image to get rid of the superfluous last byte per line */
+			for (j = k = ij = 0; j < ny; j++) {
+				for (i = 0; i < mx; i++) buffer[k++] = buffer[ij++];
+				ij++;	/* Skip the extra byte */
+			}
+		}
+	}
+	else if (header->depth == 8 && header->maplength) {	/* 8-bit with color table */
+		get = header->maplength / 3;
+		/* Create 256-item array to make sure that red[i], green[i], blue[i] always have a value for 0 <= i <= 255 */
+		red   = PSL_memory (PSL, NULL, 256, unsigned char);
+		green = PSL_memory (PSL, NULL, 256, unsigned char);
+		blue  = PSL_memory (PSL, NULL, 256, unsigned char);
+		n  = (int)fread (red,   1U, (size_t)get, fp);
+		n += (int)fread (green, 1U, (size_t)get, fp);
+		n += (int)fread (blue,  1U, (size_t)get, fp);
+		if (n != header->maplength) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading colormap!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		odd = (int)header->width%2;
+		entry = PSL_memory (PSL, NULL, header->length, unsigned char);
+		if (fread (entry, 1U, (size_t)header->length, fp) != (size_t)header->length) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading 8-bit Sun rasterfile!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &entry);
+		buffer = PSL_memory (PSL, NULL, 3 * header->width * header->height, unsigned char);
+		for (j = k = ij = 0; j < header->height; j++) {
+			for (i = 0; i < header->width; i++) {
+				buffer[k++] = red[entry[ij]];
+				buffer[k++] = green[entry[ij]];
+				buffer[k++] = blue[entry[ij]];
+				ij++;
+			}
+			if (odd) ij++;
+		}
+		header->depth = 24;
+	}
+	else if (header->depth == 8U) {	/* 8-bit without color table (implicit grayramp) */
+		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
+		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading 8-bit Sun rasterfile!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
+	}
+	else if (header->depth == 24 && header->maplength) {	/* 24-bit raster with colormap */
+		unsigned char r, b;
+		get = header->maplength / 3;
+		/* Create 256-item array to make sure that red[i], green[i], blue[i] always have a value for 0 <= i <= 255 */
+		red   = PSL_memory (PSL, NULL, 256, unsigned char);
+		green = PSL_memory (PSL, NULL, 256, unsigned char);
+		blue  = PSL_memory (PSL, NULL, 256, unsigned char);
+		n  = (int)fread (red,   1U, (size_t)get, fp);
+		n += (int)fread (green, 1U, (size_t)get, fp);
+		n += (int)fread (blue,  1U, (size_t)get, fp);
+		if ((size_t)n != (size_t)header->maplength) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading colormap!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
+		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading 24-bit Sun rasterfile!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
+		oddlength = 3 * header->width;
+		odd = (3 * header->width) % 2;
+		r_off = (header->type == RT_FORMAT_RGB) ? 0 : 2;
+		b_off = (header->type == RT_FORMAT_RGB) ? 2 : 0;
+		for (i = j = 0; i < header->length; i += 3, j += 3) {	/* BGR -> RGB */
+			r =  red[buffer[i+r_off]];
+			b = blue[buffer[i+b_off]];
+			buffer[j] = r;
+			buffer[j+1] = green[buffer[i+1]];
+			buffer[j+2] = b;
+			if (odd && (j+3)%oddlength == 0) i++;
+		}
+	}
+	else if (header->depth == 24U) {	/* 24-bit raster, no colormap */
+		unsigned char r, b;
+		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
+		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading 24-bit Sun rasterfile!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
+		oddlength = 3 * header->width;
+		odd = (3 * header->width) % 2;
+		r_off = (header->type == RT_FORMAT_RGB) ? 0 : 2;
+		b_off = (header->type == RT_FORMAT_RGB) ? 2 : 0;
+		for (i = j = 0; i < header->length; i += 3, j += 3) {	/* BGR -> RGB */
+			r = buffer[i+r_off];
+			b = buffer[i+b_off];
+			buffer[j] = r;
+			buffer[j+1] = buffer[i+1];
+			buffer[j+2] = b;
+			if (odd && (j+3)%oddlength == 0) i++;
+		}
+	}
+	else if (header->depth == 32 && header->maplength) {	/* 32-bit raster with colormap */
+		unsigned char b;
+		get = header->maplength / 3;
+		/* Create 256-item array to make sure that red[i], green[i], blue[i] always have a value for 0 <= i <= 255 */
+		red   = PSL_memory (PSL, NULL, 256, unsigned char);
+		green = PSL_memory (PSL, NULL, 256, unsigned char);
+		blue  = PSL_memory (PSL, NULL, 256, unsigned char);
+		n  = (int)fread (red,   1U, (size_t)get, fp);
+		n += (int)fread (green, 1U, (size_t)get, fp);
+		n += (int)fread (blue,  1U, (size_t)get, fp);
+		if ((size_t)n != (size_t)header->maplength) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading colormap!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
+		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading 32-bit Sun rasterfile!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
+		r_off = (header->type == RT_FORMAT_RGB) ? 1 : 3;
+		b_off = (header->type == RT_FORMAT_RGB) ? 3 : 1;
+		b = blue[buffer[b_off]];
+		buffer[0] = red[buffer[r_off]];
+		buffer[1] = green[buffer[2]];
+		buffer[2] = b;
+		for (i = 3, j = 4; j < header->length; i += 3, j += 4) {	/* _BGR -> RGB */
+			buffer[i] = red[buffer[j+r_off]];
+			buffer[i+1] = green[buffer[j+2]];
+			buffer[i+2] = blue[buffer[j+b_off]];
+		}
+		header->depth = 24;
+	}
+	else if (header->depth == 32U) {	/* 32-bit raster, no colormap */
+		unsigned char b;
+		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
+		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading 32-bit Sun rasterfile!\n");
+			Return (PSL_READ_FAILURE);
+		}
+		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
+		r_off = (header->type == RT_FORMAT_RGB) ? 1 : 3;
+		b_off = (header->type == RT_FORMAT_RGB) ? 3 : 1;
+		b = buffer[b_off];
+		buffer[0] = buffer[r_off];
+		buffer[1] = buffer[2];
+		buffer[2] = b;
+		for (i = 3, j = 4; j < header->length; i += 3, j += 4) {	/* _BGR -> RGB */
+			buffer[i] = buffer[j+r_off];
+			buffer[i+1] = buffer[j+2];
+			buffer[i+2] = buffer[j+b_off];
+		}
+		header->depth = 24;
+	}
+	else {	/* Unrecognized format */
+		PSL_message (PSL, PSL_MSG_FATAL, "Error: Unrecognized file format!\n");
+		Return (PSL_READ_FAILURE);
+	}
+
+	PSL_free (entry);
+	PSL_free (red);
+	PSL_free (green);
+	PSL_free (blue);
+
+	*picture = buffer;
+	return (PSL_NO_ERROR);
+}
+
+static int psl_get_boundingbox (struct PSL_CTRL *PSL, FILE *fp, int *llx, int *lly, int *trx, int *try,
+	double *hires_llx, double *hires_lly, double *hires_trx, double *hires_try) {
+
+	int nested = 0;
+	char buf[PSL_BUFSIZ];
+
+	/* Set default BoundingBox and HiResBoundingBox */
+
+	*hires_llx = *llx = 0; *hires_trx = *trx = 720; *hires_lly = *lly = 0; *hires_try = *try = 720;
+
+	/* Fish for the BoundingBox and the HiResBoundingBox. It assumes the line with HiResBoundingBox
+	   always follows the BoundingBox line. */
+
+	while (fgets(buf, PSL_BUFSIZ, fp) != NULL) {
+		if (!strncmp(buf, "%%Begin", 7U))
+			++nested;
+		else if (nested && !strncmp(buf, "%%End", 5U))
+			--nested;
+		else if (!nested) {
+			if  (!strncmp(buf, "%%BoundingBox:", 14U) && !strstr(buf, "(atend)")) {
+				if (sscanf(strchr(buf, ':') + 1, "%d %d %d %d", llx, lly, trx, try) < 4) return 1;
+				*hires_llx = *llx;
+				*hires_lly = *lly;
+				*hires_trx = *trx;
+				*hires_try = *try;
+				if (fgets(buf, PSL_BUFSIZ, fp) != NULL) {
+					if  (!strncmp(buf, "%%HiResBoundingBox:", 19U) && !strstr(buf, "(atend)")) {
+						if (sscanf(strchr(buf, ':') + 1, "%lg %lg %lg %lg", hires_llx, hires_lly, hires_trx, hires_try) < 4) return -1;
+					}
+				}
+				return 0;
+			}
+		}
+	}
+
+	PSL_message (PSL, PSL_MSG_NORMAL, "Warning: No proper BoundingBox, defaults assumed: %d %d %d %d\n", *llx, *lly, *trx, *try);
+	return 1;
+}
+
+static int psl_load_eps (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *h, unsigned char **picture) {
+	/* psl_load_eps reads an Encapsulated PostScript file */
+
+	int n, p, llx, lly, trx, try, BLOCKSIZE=4096;
+	unsigned char *buffer = NULL;
+
+	/* Scan for BoundingBox */
+
+	psl_get_boundingbox (PSL, fp, &llx, &lly, &trx, &try, &h->llx, &h->lly, &h->trx, &h->try);
+
+	/* Rewind and load into buffer */
+
+	n=0;
+	fseek (fp, (off_t)0, SEEK_SET);
+	buffer = PSL_memory (PSL, NULL, BLOCKSIZE, unsigned char);
+	while ((p = (int)fread ((unsigned char *)buffer + n, 1U, (size_t)BLOCKSIZE, fp)) == BLOCKSIZE)
+	{
+		n+=BLOCKSIZE;
+		buffer = PSL_memory (PSL, buffer, n+BLOCKSIZE, unsigned char);
+	}
+	n+=p;
+
+	/* Fill header struct with appropriate values */
+	h->magic = EPS_MAGIC;
+	h->width = (int)(trx - llx);
+	h->height = (int)(try - lly);
+	h->depth = 0;
+	h->length = (int)n;
+	h->type = RT_EPS;
+	h->maptype = RMT_NONE;
+	h->maplength = 0;
+	h->xorigin = (int)llx;
+	h->yorigin = (int)lly;
+
+	*picture = buffer;
+	return (0);
+}
+
+
+static void psl_init_fonts (struct PSL_CTRL *PSL) {
+	FILE *in = NULL;
+	int n_PSL_fonts;
+	unsigned int i = 0;
+	size_t n_alloc = 64;
+	char buf[PSL_BUFSIZ];
+	char fullname[PSL_BUFSIZ];
+
+	/* Loads the available fonts for this installation */
+
+	/* First the standard 35 PostScript fonts from Adobe */
+
+	psl_getsharepath (PSL, "postscriptlight", "PSL_standard_fonts", ".txt", fullname);
+	if ((in = fopen (fullname, "r")) == NULL) {
+		PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: ");
+		perror (fullname);
+		PSL_exit (EXIT_FAILURE);
+	}
+
+	PSL->internal.font = PSL_memory (PSL, NULL, n_alloc, struct PSL_FONT);
+
+	while (fgets (buf, PSL_BUFSIZ, in)) {
+		if (buf[0] == '#' || buf[0] == '\n' || buf[0] == '\r') continue;
+		if (sscanf (buf, "%s %lf %d", fullname, &PSL->internal.font[i].height, &PSL->internal.font[i].encoded) != 3) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: Trouble decoding font info for font %d\n", i);
+			PSL_exit (EXIT_FAILURE);
+		}
+		PSL->internal.font[i].name = PSL_memory (PSL, NULL, strlen (fullname)+1, char);
+		strcpy (PSL->internal.font[i].name, fullname);
+		i++;
+		if (i == n_alloc) {
+			n_alloc <<= 1;
+			PSL->internal.font = PSL_memory (PSL, PSL->internal.font, n_alloc, struct PSL_FONT);
+		}
+	}
+	fclose (in);
+	PSL->internal.N_FONTS = n_PSL_fonts = i;
+
+	/* Then any custom fonts */
+
+	psl_getsharepath (PSL, "postscriptlight", "PSL_custom_fonts", ".txt", fullname);
+	if (!access (fullname, R_OK)) {	/* Decode Custom font file */
+
+		if ((in = fopen (fullname, "r")) == NULL)
+		{
+			PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: ");
+			perror (fullname);
+			PSL_exit (EXIT_FAILURE);
+		}
+
+		while (fgets (buf, PSL_BUFSIZ, in)) {
+			if (buf[0] == '#' || buf[0] == '\n' || buf[0] == '\r') continue;
+			PSL->internal.font[i].name = PSL_memory (PSL, NULL, strlen (buf), char);
+			if (sscanf (buf, "%s %lf %d", PSL->internal.font[i].name, &PSL->internal.font[i].height, &PSL->internal.font[i].encoded) != 3) {
+				PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: Trouble decoding custom font info for font %d\n", i - n_PSL_fonts);
+				PSL_exit (EXIT_FAILURE);
+			}
+			i++;
+			if (i == n_alloc) {
+				n_alloc <<= 1;
+				PSL->internal.font = PSL_memory (PSL, PSL->internal.font, n_alloc, struct PSL_FONT);
+			}
+		}
+		fclose (in);
+		PSL->internal.N_FONTS = i;
+	}
+	PSL->internal.font = PSL_memory (PSL, PSL->internal.font, PSL->internal.N_FONTS, struct PSL_FONT);
+}
+
+static char *psl_putdash (struct PSL_CTRL *PSL, char *pattern, double offset) {
+	/* Writes the dash pattern */
+	static char text[PSL_BUFSIZ];
+	char mark = '[';
+	size_t len = 0;
+	if (pattern && pattern[0]) {
+		while (*pattern) {
+			sprintf (&text[len], "%c%d", mark, psl_ip (PSL, atof(pattern)));
+			while (*pattern && *pattern != ' ') pattern++;
+			while (*pattern && *pattern == ' ') pattern++;
+			mark = ' ';
+			len = strlen(text);
+		}
+		sprintf (&text[len], "] %d B", psl_ip (PSL, offset));
+	}
+	else
+		sprintf (text, "[] 0 B");	/* Reset to continuous line */
+	return (text);
+}
+
+static void psl_computeBezierControlPoints (struct PSL_CTRL *PSL, double *K, int n, double **P1, double **P2) {
+	/* Translated from https://www.particleincell.com/wp-content/uploads/2012/06/bezier-spline.js */
+	int i;
+	double *p1 = NULL, *p2 = NULL, *a = NULL, *b = NULL, *c = NULL, *r = NULL;
+	double m;
+	p1 = PSL_memory (PSL, NULL, n, double);
+	p2 = PSL_memory (PSL, NULL, n, double);
+	a = PSL_memory (PSL, NULL, n, double);
+	b = PSL_memory (PSL, NULL, n, double);
+	c = PSL_memory (PSL, NULL, n, double);
+	r = PSL_memory (PSL, NULL, n, double);
+
+	n--;	/* Now id of last knot */
+
+	/* left most segment*/
+	a[0] = 0.0;
+	b[0] = 2.0;
+	c[0] = 1.0;
+	r[0] = K[0] + 2.0 * K[1];
+
+	/* internal segments*/
+	for (i = 1; i < n - 1; i++)
+	{
+		a[i] = 1.0;
+		b[i] = 4.0;
+		c[i] = 1.0;
+		r[i] = 4.0 * K[i] + 2.0 * K[i+1];
+	}
+
+	/* right segment*/
+	a[n-1] = 2.0;
+	b[n-1] = 7.0;
+	c[n-1] = 0.0;
+	r[n-1] = 8.0 * K[n-1] + K[n];
+
+	/* solves Ax=b with the Thomas algorithm (from Wikipedia)*/
+	for (i = 1; i < n; i++)
+	{
+		m = a[i] / b[i-1];
+		b[i] = b[i] - m * c[i - 1];
+		r[i] = r[i] - m*r[i-1];
+	}
+
+	/* Evaluate p1 */
+	p1[n-1] = r[n-1] / b[n-1];
+	for (i = n - 2; i >= 0; --i)
+		p1[i] = (r[i] - c[i] * p1[i+1]) / b[i];
+
+	/* we have p1, now compute p2*/
+	for (i = 0; i < n-1; i++)
+		p2[i] = 2.0 * K[i+1] - p1[i+1];
+
+	p2[n-1] = 0.5 * (K[n] + p1[n-1]);
+
+	*P1 = p1;	*P2 = p2;
+	PSL_free (a);	PSL_free (b);	PSL_free (c);	PSL_free (r);
+}
+
+static psl_indexed_image_t psl_makecolormap (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int nbits) {
+	/* When image consists of less than PSL_MAX_COLORS colors, the image can be
+	 * indexed to safe a significant amount of space.
+	 * The image and colormap are returned as a struct psl_indexed_image_t.
+	 *
+	 * It is important that the first RGB tuple is mapped to index 0.
+	 * This is used for color masked images.
+	 */
+	int i, j, npixels;
+	psl_colormap_t colormap;
+	psl_indexed_image_t image;
+
+	if (abs (nbits) != 24) return (NULL);		/* We only index into the RGB colorspace. */
+
+	npixels = abs (nx) * ny;
+
+	colormap = psl_memory (PSL, NULL, 1U, sizeof (*colormap));
+	colormap->ncolors = 0;
+	image = psl_memory (PSL, NULL, 1U, sizeof (*image));
+	image->buffer = psl_memory (PSL, NULL, npixels+8, sizeof (*image->buffer));	/* Add 8 to avoid overflow access in psl_bitreduce() */
+	image->colormap = colormap;
+
+	if (nx < 0) {
+		/* Copy the colour mask value into index 0 */
+		colormap->colors[0][0] = buffer[0];
+		colormap->colors[0][1] = buffer[1];
+		colormap->colors[0][2] = buffer[2];
+		colormap->ncolors++;
+		buffer += 3;		/* Skip to start of image */
+	}
+
+	for (i = 0; i < npixels; i++) {
+		for (j = 0; j < colormap->ncolors; j++)
+			if (colormap->colors[j][0] == buffer[0] && colormap->colors[j][1] == buffer[1] && colormap->colors[j][2] == buffer[2]) {
+				image->buffer[i] = (unsigned char)j;
+				break;
+			}
+
+		if (j == colormap->ncolors) {
+			if (colormap->ncolors == PSL_MAX_COLORS) {	/* Too many colors to index. */
+				PSL_free (image->buffer);
+				PSL_free (image);
+				PSL_free (colormap);
+				PSL_message (PSL, PSL_MSG_NORMAL, "Warning: Too many colors to make colormap - using 24-bit direct color instead.\n");
+				return (NULL);
+			}
+			image->buffer[i] = (unsigned char)j;
+			colormap->colors[j][0] = buffer[0];
+			colormap->colors[j][1] = buffer[1];
+			colormap->colors[j][2] = buffer[2];
+			colormap->ncolors++;
+		}
+		buffer += 3;
+	}
+
+	/* There's no need for a color map when the number of colors is the same as the number of pixels.
+	   Then you're better off with a compressed 24-bit color image instead. */
+	if (colormap->ncolors >= npixels)  {
+		PSL_free (image->buffer);
+		PSL_free (image);
+		PSL_free (colormap);
+		PSL_message (PSL, PSL_MSG_NORMAL, "Warning: Use of colormap is inefficient - using 24-bit direct color instead.\n");
+		return (NULL);
+	}
+
+	PSL_message (PSL, PSL_MSG_NORMAL, "Colormap of %d colors created\n", colormap->ncolors);
+	return (image);
+}
+
+static char *psl_putcolor (struct PSL_CTRL *PSL, double rgb[]) {
+	static char text[PSL_BUFSIZ];
+
+	if (PSL_eq (rgb[0], -1.0)) {
+		/* Ignore, no color set */
+		text[0] = '\0';
+	}
+	else if (PSL_eq (rgb[0], -3.0)) {
+		/* Pattern fill */
+		sprintf (text, "pattern%ld I", lrint(rgb[1]));
+	}
+	else if (PSL_is_gray (rgb)) {
+		/* Gray scale, since R==G==B */
+		sprintf (text, PSL->current.bw_format, rgb[0]);
+	}
+	else if (PSL->internal.color_mode == PSL_GRAY) {
+		/* Gray scale, forced by user */
+		sprintf (text, PSL->current.bw_format, PSL_YIQ(rgb));
+	}
+	else if (PSL->internal.color_mode == PSL_RGB) {
+		/* Full color, RGB mode */
+		sprintf (text, PSL->current.rgb_format, rgb[0], rgb[1], rgb[2]);
+	}
+	else if (PSL->internal.color_mode == PSL_CMYK) {
+		/* CMYK mode */
+		double cmyk[4];
+		psl_rgb_to_cmyk (rgb, cmyk);
+		sprintf (text, PSL->current.cmyk_format, cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
+	}
+	else {
+		/* HSV mode */
+		double hsv[3];
+		psl_rgb_to_hsv (rgb, hsv);
+		sprintf (text, PSL->current.hsv_format, hsv[0], hsv[1], hsv[2]);
+	}
+	if (!PSL_eq (rgb[3], 0.0)) {
+		/* Transparency */
+		sprintf (&text[strlen(text)], " %g /%s PSL_transp", 1.0 - rgb[3], PSL->current.transparency_mode);
+	}
+	return (text);
+}
+
+static const char *psl_putusername () {
+	const char *unknown = "unknown";
+#ifdef HAVE_GETPWUID
+#include <pwd.h>
+	struct passwd *pw = NULL;
+	pw = getpwuid (getuid ());
+	if (pw) return (pw->pw_name);
+#endif
+	return (unknown);
+}
+
 /*------------------- PUBLIC PSL API FUNCTIONS--------------------- */
 
-struct PSL_CTRL *New_PSL_Ctrl (char *session)
-{
+struct PSL_CTRL *New_PSL_Ctrl (char *session) {
 	struct PSL_CTRL *PSL = NULL;
 	unsigned int i;
 
@@ -338,25 +3181,23 @@ struct PSL_CTRL *New_PSL_Ctrl (char *session)
 	return (PSL);
 }
 
-int PSL_beginsession (struct PSL_CTRL *PSL, unsigned int search, char *sharedir, char *userdir)
-{	/* Allocate a new common control structure and initialize PSL session
-	 * err:		Stream pointer to send error messages to (usually stderr = NULL).
-	 * unit:	The unit used for lengths (0 = cm, 1 = inch, 2 = m, 3 = points).
-	 * verbose:	The PS verbosity level (0 = silence, 1 = fatal errors, 2 = warnings and progress, 3 = extensive progress reports, 4 = debugging)
-	 * comments:	Whether PS comments should be written (1) or not (0).
-	 * compression:	Compression level (0 = none, 1 = RLE, 2 = LZW, 3 = DEFLATE)
-	 * encoding:	The character encoding used
-	 * If sharedir, userdir are NULL and search == 1 then we look for environmental parameters
+int PSL_beginsession (struct PSL_CTRL *PSL, unsigned int flags, char *sharedir, char *userdir) {
+	/* Allocate a new common control structure and initialize PSL session
+	 * If sharedir, userdir are NULL and flags&1 == 1 then we look for environmental parameters
 	 * 		PSL_SHAREDIR and PSL_USERDIR; otherwise we assign then from the args (even if NULL).
+	 * If flags&2 == 2 then PSL is being called from an external interface so some things will live
+	 *	beyond the end of a module.
 	 */
-	unsigned int i;
+	unsigned int i, search;
 	char *this_c = NULL;
 
+	search = (flags & 1);	/* If 1 then we look for environmental parameters */
+	PSL->init.runmode = (flags & 2);	/* If 2 then we are being called from an environment where many modules can be called during a session */
 	/* Initialize the PSL structure to default values unless already set */
 
 	if (PSL->init.err == NULL) PSL->init.err = stderr;		/* Possible redirect of error messages */
 	if (PSL->init.unit < 0 || PSL->init.unit > 3) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Measure unit %d is not in valid range (0-3)! Using 0 (cm)\n", PSL->init.unit);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Measure unit %d is not in valid range (0-3)! Using 0 (cm)\n", PSL->init.unit);
 		PSL->init.unit = PSL_CM;
 	}
 	if (PSL->init.copies == 0) PSL->init.copies = 1;		/* Once copy of each plot */
@@ -366,29 +3207,30 @@ int PSL_beginsession (struct PSL_CTRL *PSL, unsigned int search, char *sharedir,
 
 	/* Determine SHAREDIR (directory containing the postscriptlight subdirectory)
 	 * but only if not passed via argument list */
-	if ((this_c = sharedir) == NULL) {
-		if (search && (this_c = getenv ("PSL_SHAREDIR")) == NULL) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not locate PSL_SHAREDIR.\n");
+
+	if ((this_c = sharedir) == NULL && search) this_c = getenv ("PSL_SHAREDIR");
+	if (this_c) {	/* Did find a sharedir */
+		PSL->internal.SHAREDIR = strdup (this_c);
+		gmt_dos_path_fix (PSL->internal.SHAREDIR);
+		if (access(PSL->internal.SHAREDIR, R_OK)) {
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not access PSL_SHAREDIR %s.\n", PSL->internal.SHAREDIR);
 			PSL_exit (EXIT_FAILURE);
 		}
 	}
-	PSL->internal.SHAREDIR = strdup (this_c);
-	DOS_path_fix (PSL->internal.SHAREDIR);
-	if (PSL->internal.SHAREDIR == NULL || access(PSL->internal.SHAREDIR, R_OK)) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not access PSL_SHAREDIR %s.\n", PSL->internal.SHAREDIR);
+	else {	/* No sharedir found */
+		PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not locate PSL_SHAREDIR.\n");
 		PSL_exit (EXIT_FAILURE);
 	}
 
 	/* Determine USERDIR (directory containing user replacements contents in SHAREDIR) */
 
 	if ((this_c = userdir) == NULL && search) this_c = getenv ("PSL_USERDIR");
-	if (this_c) {	/* Did find a user dir */
+	if (this_c) {	/* Did find a userdir */
 		PSL->internal.USERDIR = strdup (this_c);
-		DOS_path_fix (PSL->internal.USERDIR);
+		gmt_dos_path_fix (PSL->internal.USERDIR);
 		if (access (PSL->internal.USERDIR, R_OK)) {
 			PSL_message (PSL, PSL_MSG_FATAL, "Warning: Could not access PSL_USERDIR %s.\n", PSL->internal.USERDIR);
-			free (PSL->internal.USERDIR);
-			PSL->internal.USERDIR = NULL;
+			PSL_free (PSL->internal.USERDIR);
 		}
 	}
 
@@ -397,38 +3239,37 @@ int PSL_beginsession (struct PSL_CTRL *PSL, unsigned int search, char *sharedir,
 	return (PSL_NO_ERROR);
 }
 
-int PSL_endsession (struct PSL_CTRL *PSL)
-{	/* Free up memory used by the PSL control structure */
+int PSL_endsession (struct PSL_CTRL *PSL) {
+	/* Free up memory used by the PSL control structure */
 	int i;
 	if (!PSL) return (PSL_NO_SESSION);	/* Never was allocated */
 
+	psl_freeplot (PSL);
 	for (i = 0; i < PSL->internal.N_FONTS; i++) PSL_free (PSL->internal.font[i].name);
 	PSL_free (PSL->internal.font);
 	for (i = 0; i < PSL->internal.n_userimages; i++) PSL_free (PSL->internal.user_image[i]);
-	if (PSL->internal.SHAREDIR)
-		free (PSL->internal.SHAREDIR);
-	if (PSL->internal.USERDIR)
-		free (PSL->internal.USERDIR);
+	PSL_free (PSL->internal.SHAREDIR);
+	PSL_free (PSL->internal.USERDIR);
 	PSL_free (PSL->init.encoding);
 	PSL_free (PSL->init.session);
 	PSL_free (PSL);
 	return (PSL_NO_ERROR);
 }
 
-int PSL_beginlayer (struct PSL_CTRL *PSL, int layer)
-{	/* Issue begin group command */
+int PSL_beginlayer (struct PSL_CTRL *PSL, int layer) {
+ 	/* Issue begin group command */
 	PSL_command (PSL, "%%%%BeginObject PSL_Layer_%d\n", layer);
 	return (PSL_NO_ERROR);
 }
 
-int PSL_endlayer (struct PSL_CTRL *PSL)
-{	/* Issue end group command */
+int PSL_endlayer (struct PSL_CTRL *PSL) {
+	/* Issue end group command */
 	PSL_command (PSL, "%%%%EndObject\n");
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotarc (struct PSL_CTRL *PSL, double x, double y, double radius, double az1, double az2, int type)
-{	/* Plot an arc with radius running in azimuth from az1 to az2.
+int PSL_plotarc (struct PSL_CTRL *PSL, double x, double y, double radius, double az1, double az2, int type) {
+	/* Plot an arc with radius running in azimuth from az1 to az2.
 	 * Type is a combination of the following:
 	 * PSL_DRAW   (0) : Draw a line segment
 	 * PSL_MOVE   (1) : Move to the new anchor point (x,y) first
@@ -446,8 +3287,8 @@ int PSL_plotarc (struct PSL_CTRL *PSL, double x, double y, double radius, double
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotaxis (struct PSL_CTRL *PSL, double annotation_int, char *label, double annotfontsize, int side)
-{	/* Expects PSL_beginaxes to have been called first */
+int PSL_plotaxis (struct PSL_CTRL *PSL, double annotation_int, char *label, double annotfontsize, int side) {
+	/* Expects PSL_beginaxes to have been called first */
 	int annot_justify, label_justify, i, j, ndig = 0, k, reverse = false;
 	double angle, dy, scl, val, annot_off, label_off, xx, sign, x, y, length, val0, val1;
 	char text[PSL_BUFSIZ], format[PSL_BUFSIZ];
@@ -506,8 +3347,7 @@ int PSL_plotaxis (struct PSL_CTRL *PSL, double annotation_int, char *label, doub
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotbitimage (struct PSL_CTRL *PSL, double x, double y, double xsize, double ysize, int justify, unsigned char *buffer, int nx, int ny, double f_rgb[], double b_rgb[])
-{
+int PSL_plotbitimage (struct PSL_CTRL *PSL, double x, double y, double xsize, double ysize, int justify, unsigned char *buffer, int nx, int ny, double f_rgb[], double b_rgb[]) {
 	/* Plots a 1-bit image or imagemask.
 	 * x, y		: Position of image (in units)
 	 * xsize, ysize	: image size in units (if 0, adjust to keep the original aspect ratio)
@@ -546,8 +3386,7 @@ int PSL_plotbitimage (struct PSL_CTRL *PSL, double x, double y, double xsize, do
 	return (PSL_NO_ERROR);
 }
 
-int PSL_endclipping (struct PSL_CTRL *PSL, int n)
-{
+int PSL_endclipping (struct PSL_CTRL *PSL, int n) {
 	/* n > 0 means restore clipping n times
 	 * n == PSL_ALL_CLIP restores all current clippings.
 	 */
@@ -570,8 +3409,7 @@ int PSL_endclipping (struct PSL_CTRL *PSL, int n)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_beginclipping (struct PSL_CTRL *PSL, double *x, double *y, int n, double rgb[], int flag)
-{
+int PSL_beginclipping (struct PSL_CTRL *PSL, double *x, double *y, int n, double rgb[], int flag) {
 	/* Any plotting outside the path defined by x,y will be clipped.
 	 * use PSL_endclipping to restore the original clipping path.
 	 * n    : number of x,y pairs (i.e. path length)
@@ -599,8 +3437,7 @@ int PSL_beginclipping (struct PSL_CTRL *PSL, double *x, double *y, int n, double
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotcolorimage (struct PSL_CTRL *PSL, double x, double y, double xsize, double ysize, int justify, unsigned char *buffer, int nx, int ny, int nbits)
-{
+int PSL_plotcolorimage (struct PSL_CTRL *PSL, double x, double y, double xsize, double ysize, int justify, unsigned char *buffer, int nx, int ny, int nbits) {
 	/* Plots a 24-bit color image in Grayscale, RGB or CMYK mode.
 	 * When the number of unique colors does not exceed PSL_MAX_COLORS, the routine will index
 	 * 24-bit RGB images and then attempt to reduce the depth of the indexed image to 1, 2 or 4 bits.
@@ -686,15 +3523,13 @@ int PSL_plotcolorimage (struct PSL_CTRL *PSL, double x, double y, double xsize, 
 	return (PSL_NO_ERROR);
 }
 
-int PSL_free_nonmacro (void *addr)
-{
-	if (addr)
-		free (addr);
+int PSL_free_nonmacro (void *addr) {
+	PSL_free (addr);
 	return (PSL_NO_ERROR);
 }
 
-int PSL_beginaxes (struct PSL_CTRL *PSL, double llx, double lly, double width, double height, double x0, double y0, double x1, double y1)
-{	/* Set the box location and user x and y ranges */
+int PSL_beginaxes (struct PSL_CTRL *PSL, double llx, double lly, double width, double height, double x0, double y0, double x1, double y1) {
+	/* Set the box location and user x and y ranges */
 	double range;
 	PSL->internal.axis_limit[0] = x0;	PSL->internal.axis_limit[1] = x1;
 	PSL->internal.axis_limit[2] = y0;	PSL->internal.axis_limit[3] = y1;
@@ -709,16 +3544,16 @@ int PSL_beginaxes (struct PSL_CTRL *PSL, double llx, double lly, double width, d
 	return (PSL_NO_ERROR);
 }
 
-int PSL_endaxes (struct PSL_CTRL *PSL)
-{	/* Turn off user coordinates to PS coordinates scaling */
+int PSL_endaxes (struct PSL_CTRL *PSL) {
+	/* Turn off user coordinates to PS coordinates scaling */
 	memset (PSL->internal.axis_limit, 0, 4 * sizeof (double));
 	PSL->internal.x0 = PSL->internal.y0 = 0;
 	PSL->internal.x2ix = PSL->internal.y2iy = PSL->internal.dpu;
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotsymbol (struct PSL_CTRL *PSL, double x, double y, double size[], int symbol)
-{	/* Plotting standard symbols
+int PSL_plotsymbol (struct PSL_CTRL *PSL, double x, double y, double size[], int symbol) {
+	/* Plotting standard symbols
 	 * A) 6 non-fillable symbols +-mpxy,
 	 * B) 9 fillable symbol codes acdhignst, and
 	 * C) The 7 fillable and multi-parameter symbols ejmrRwv.
@@ -755,7 +3590,10 @@ int PSL_plotsymbol (struct PSL_CTRL *PSL, double x, double y, double size[], int
 		/* Multi-parameter fillable symbols */
 
 		case PSL_WEDGE:		/* A wedge or pie-slice. size[0] = radius, size[1..2] = azimuth range of arc */
+			psl_wedge (PSL, x, y, size);
+#if 0
 			PSL_command (PSL, "%d %g %g %d %d Sw\n", psl_iz (PSL, size[0]), size[1], size[2], psl_ix (PSL, x), psl_iy (PSL, y));
+#endif
 			break;
 		case PSL_MARC:		/* An arc with optional arrows. size[0] = radius, size[1..2] = azimuth range of arc, size[3] = shape, size[4] = arrows (0 = none, 1 = backward, 2 = foreward, 3 = both) */
 			psl_matharc (PSL, x, y, size);
@@ -777,14 +3615,14 @@ int PSL_plotsymbol (struct PSL_CTRL *PSL, double x, double y, double size[], int
 			break;
 		default:
 			status = PSL_BAD_SYMBOL;
-			PSL_message (PSL, PSL_MSG_FATAL, "Unknown symbol code %c\n", (int)symbol);
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Unknown symbol code %c\n", (int)symbol);
 			break;
 	}
 	return (status);
 }
 
-int PSL_plotsegment (struct PSL_CTRL *PSL, double x0, double y0, double x1, double y1)
-{	/* Short line segment */
+int PSL_plotsegment (struct PSL_CTRL *PSL, double x0, double y0, double x1, double y1) {
+	/* Short line segment */
 	int ix, iy;
 
 	ix = psl_ix (PSL, x0);
@@ -795,19 +3633,19 @@ int PSL_plotsegment (struct PSL_CTRL *PSL, double x0, double y0, double x1, doub
 	return (PSL_NO_ERROR);
 }
 
-int PSL_settransparencymode (struct PSL_CTRL *PSL, const char *mode)
-{	/* Updates the current PDF transparency mode */
+int PSL_settransparencymode (struct PSL_CTRL *PSL, const char *mode) {
+	/* Updates the current PDF transparency mode */
 	int k, ok;
 	if (!mode || !mode[0]) return (PSL_NO_ERROR);	/* Quietly returned if not given an argument */
-	for (k = ok = 0; !ok && k < N_PDF_TRANSPARENCY_MODES; k++) if (!strcmp (PDF_transparency_modes[k], mode)) ok = 1;
-	if (!ok) PSL_message (PSL, PSL_MSG_FATAL, "Unknown PDF transparency mode %s - ignored\n", mode);
+	for (k = ok = 0; !ok && k < N_PDF_TRANSPARENCY_MODES; k++)
+		if (!strcmp (PDF_transparency_modes[k], mode)) ok = 1;
+	if (!ok) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Unknown PDF transparency mode %s - ignored\n", mode);
 
-	strncpy (PSL->current.transparency_mode, mode, 16U);
+	strncpy (PSL->current.transparency_mode, mode, 15U);	/* Keep one character for null terminator */
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setfill (struct PSL_CTRL *PSL, double rgb[], int outline)
-{
+int PSL_setfill (struct PSL_CTRL *PSL, double rgb[], int outline) {
 	/* Set fill style for polygons and switch outline on or off.
 	 * rgb[0] = -3: set fill pattern, rgb[1] is pattern number
 	 * rgb[0] = -2: ignore. Do not change fill. Leave untouched.
@@ -847,8 +3685,7 @@ int PSL_setfill (struct PSL_CTRL *PSL, double rgb[], int outline)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setpattern (struct PSL_CTRL *PSL, int image_no, char *imagefile, int image_dpi, double f_rgb[], double b_rgb[])
-{
+int PSL_setpattern (struct PSL_CTRL *PSL, int image_no, char *imagefile, int image_dpi, double f_rgb[], double b_rgb[]) {
 	/* Set up pattern fill, either by using image number or imagefile name
 	 * image_no:	Number of the standard PSL fill pattern (use negative when file name used instead)
 	 * imagefile:	Name of image file
@@ -902,8 +3739,11 @@ int PSL_setpattern (struct PSL_CTRL *PSL, int image_no, char *imagefile, int ima
 		}
 		else
 			PSL_command (PSL, " /Device%s setcolorspace\n<< /ImageType 1 /Decode [%s]", colorspace[id], decode[id]);
-		PSL_command (PSL, " /Width %d /Height %d /BitsPerComponent %d", PSL->internal.pattern[image_no].nx, PSL->internal.pattern[image_no].ny, MIN(PSL->internal.pattern[image_no].depth,8));
-		PSL_command (PSL, "\n   /ImageMatrix [%d 0 0 %d 0 %d] /DataSource image%d\n>> %s end}\n>> matrix makepattern U} def\n", PSL->internal.pattern[image_no].nx, -PSL->internal.pattern[image_no].ny, PSL->internal.pattern[image_no].ny, image_no, kind_mask[mask]);
+		PSL_command (PSL, " /Width %d /Height %d /BitsPerComponent %d",
+		             PSL->internal.pattern[image_no].nx, PSL->internal.pattern[image_no].ny, MIN(PSL->internal.pattern[image_no].depth,8));
+		PSL_command (PSL, "\n   /ImageMatrix [%d 0 0 %d 0 %d] /DataSource image%d\n>> %s end}\n>> matrix makepattern U} def\n",
+		             PSL->internal.pattern[image_no].nx, -PSL->internal.pattern[image_no].ny, PSL->internal.pattern[image_no].ny,
+		             image_no, kind_mask[mask]);
 
 		PSL->internal.pattern[image_no].dpi = image_dpi;
 		PSL_rgb_copy (PSL->internal.pattern[image_no].f_rgb, f_rgb);
@@ -913,8 +3753,7 @@ int PSL_setpattern (struct PSL_CTRL *PSL, int image_no, char *imagefile, int ima
 	return (image_no);
 }
 
-int PSL_plotepsimage (struct PSL_CTRL *PSL, double x, double y, double xsize, double ysize, int justify, unsigned char *buffer, struct imageinfo *h)
-{
+int PSL_plotepsimage (struct PSL_CTRL *PSL, double x, double y, double xsize, double ysize, int justify, unsigned char *buffer, struct imageinfo *h) {
 	/* Plots an EPS image
 	 * x,y		: Position of image (in plot coordinates)
 	 * xsize, ysize	: Size of image (in user units)
@@ -947,14 +3786,20 @@ int PSL_plotepsimage (struct PSL_CTRL *PSL, double x, double y, double xsize, do
 	PSL_command (PSL, "%g %g T\n", -h->llx, -h->lly);
 	PSL_command (PSL, "N %g %g M %g %g L %g %g L %g %g L P clip N\n", h->llx, h->lly, h->trx, h->lly, h->trx, h->try, h->llx, h->try);
 	PSL_command (PSL, "%%%%BeginDocument: psimage.eps\n");
-	fwrite (buffer, 1U, (size_t)h->length, PSL->internal.fp);
+	if (PSL->internal.memory) {
+		psl_prepare_buffer (PSL, h->length); /* Make sure we have enough memory to hold the EPS */
+		strncat (&(PSL->internal.buffer[PSL->internal.n]), (char *)buffer, h->length);
+		PSL->internal.n += h->length;
+	}
+	else
+		fwrite (buffer, 1U, (size_t)h->length, PSL->internal.fp);
 	PSL_command (PSL, "%%%%EndDocument\n");
 	PSL_command (PSL, "PSL_eps_end\n");
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotline (struct PSL_CTRL *PSL, double *x, double *y, int n, int type)
-{	/* Plot a (portion of a) line. This can be a line from start to finish, or a portion of it, depending
+int PSL_plotline (struct PSL_CTRL *PSL, double *x, double *y, int n, int type) {
+	/* Plot a (portion of a) line. This can be a line from start to finish, or a portion of it, depending
 	 * on the type argument. Optionally, the line can be stroked (using the current pen), closed.
 	 * Type is a combination of the following:
 	 * PSL_DRAW   (0) : Draw a line segment
@@ -990,7 +3835,8 @@ int PSL_plotline (struct PSL_CTRL *PSL, double *x, double *y, int n, int type)
 	}
 
 	for (i = i0; i < n; i++) {
-		if (ix[i] != PSL->internal.ix || iy[i] != PSL->internal.iy) PSL_command (PSL, "%d %d D\n", ix[i] - PSL->internal.ix, iy[i] - PSL->internal.iy);
+		if (ix[i] != PSL->internal.ix || iy[i] != PSL->internal.iy)
+			PSL_command (PSL, "%d %d D\n", ix[i] - PSL->internal.ix, iy[i] - PSL->internal.iy);
 		PSL->internal.ix = ix[i];
 		PSL->internal.iy = iy[i];
 	}
@@ -1007,66 +3853,8 @@ int PSL_plotline (struct PSL_CTRL *PSL, double *x, double *y, int n, int type)
 	return (PSL_NO_ERROR);
 }
 
-void psl_computeBezierControlPoints (struct PSL_CTRL *PSL, double *K, int n, double **P1, double **P2)
-{	/* Translated from https://www.particleincell.com/wp-content/uploads/2012/06/bezier-spline.js */
-	int i;
-	double *p1 = NULL, *p2 = NULL, *a = NULL, *b = NULL, *c = NULL, *r = NULL;
-	double m;
-	p1 = PSL_memory (PSL, NULL, n, double);
-	p2 = PSL_memory (PSL, NULL, n, double);
-	a = PSL_memory (PSL, NULL, n, double);
-	b = PSL_memory (PSL, NULL, n, double);
-	c = PSL_memory (PSL, NULL, n, double);
-	r = PSL_memory (PSL, NULL, n, double);
-
-	n--;	/* Now id of last knot */
-
-	/* left most segment*/
-	a[0] = 0.0;
-	b[0] = 2.0;
-	c[0] = 1.0;
-	r[0] = K[0] + 2.0 * K[1];
-
-	/* internal segments*/
-	for (i = 1; i < n - 1; i++)
-	{
-		a[i] = 1.0;
-		b[i] = 4.0;
-		c[i] = 1.0;
-		r[i] = 4.0 * K[i] + 2.0 * K[i+1];
-	}
-
-	/* right segment*/
-	a[n-1] = 2.0;
-	b[n-1] = 7.0;
-	c[n-1] = 0.0;
-	r[n-1] = 8.0 * K[n-1] + K[n];
-
-	/* solves Ax=b with the Thomas algorithm (from Wikipedia)*/
-	for (i = 1; i < n; i++)
-	{
-		m = a[i] / b[i-1];
-		b[i] = b[i] - m * c[i - 1];
-		r[i] = r[i] - m*r[i-1];
-	}
-
-	/* Evalute p1 */
-	p1[n-1] = r[n-1] / b[n-1];
-	for (i = n - 2; i >= 0; --i)
-		p1[i] = (r[i] - c[i] * p1[i+1]) / b[i];
-
-	/* we have p1, now compute p2*/
-	for (i = 0; i < n-1; i++)
-		p2[i] = 2.0 * K[i+1] - p1[i+1];
-
-	p2[n-1] = 0.5 * (K[n] + p1[n-1]);
-
-	*P1 = p1;	*P2 = p2;
-	PSL_free (a);	PSL_free (b);	PSL_free (c);	PSL_free (r);
-}
-
-int PSL_plotcurve (struct PSL_CTRL *PSL, double *x, double *y, int n, int type)
-{	/* Plot a (portion of a) Bezier curve. This can be a line from start to finish, or a portion of it, depending
+int PSL_plotcurve (struct PSL_CTRL *PSL, double *x, double *y, int n, int type) {
+	/* Plot a (portion of a) Bezier curve. This can be a line from start to finish, or a portion of it, depending
 	 * on the type argument. Optionally, the line can be stroked (using the current pen), closed.
 	 * Type is a combination of the following:
 	 * PSL_DRAW   (0) : Draw a line segment
@@ -1123,8 +3911,7 @@ int PSL_plotcurve (struct PSL_CTRL *PSL, double *x, double *y, int n, int type)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotpoint (struct PSL_CTRL *PSL, double x, double y, int pen)
-{
+int PSL_plotpoint (struct PSL_CTRL *PSL, double x, double y, int pen) {
 	int ix, iy, idx, idy;
 
 	/* Convert user coordinates to dots */
@@ -1170,15 +3957,22 @@ int PSL_plotpoint (struct PSL_CTRL *PSL, double x, double y, int pen)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_endplot (struct PSL_CTRL *PSL, int lastpage)
-{	/* Finalizes the current plot layer; see PSL_endsession for terminating PSL session. */
+int PSL_endplot (struct PSL_CTRL *PSL, int lastpage) {
+	/* Finalizes the current plot layer; see PSL_endsession for terminating PSL session. */
 
-	psl_pattern_cleanup (PSL);
+	if (PSL->init.runmode == 0) {
+		psl_pattern_cleanup (PSL);
+		memset (PSL->internal.pattern, 0, 2*PSL_N_PATTERNS*sizeof (struct PSL_PATTERN));	/* Reset all pattern info since the file is now closed */
+	}
 	PSL_setdash (PSL, NULL, 0.0);
 	if (!PSL_eq (PSL->current.rgb[PSL_IS_STROKE][3], 0.0)) PSL_command (PSL, "1 /Normal PSL_transp\n");
 
 	if (lastpage) {
 		PSL_command (PSL, "%%%%PageTrailer\n");
+		if (PSL->init.runmode) {
+			psl_pattern_cleanup (PSL);
+			memset (PSL->internal.pattern, 0, 2*PSL_N_PATTERNS*sizeof (struct PSL_PATTERN));	/* Reset all pattern info since the file is now closed */
+		}
 		PSL_comment (PSL, "Reset transformations and call showpage\n");
 		PSL_command (PSL, "U\nshowpage\n");
 		PSL_command (PSL, "\n%%%%Trailer\n");
@@ -1188,15 +3982,37 @@ int PSL_endplot (struct PSL_CTRL *PSL, int lastpage)
 	else if (PSL->internal.origin[0] == 'a' || PSL->internal.origin[1] == 'a')	/* Restore the origin of the plotting */
 		PSL_command (PSL, "%d %d TM\n", PSL->internal.origin[0] == 'a' ? -psl_iz(PSL, PSL->internal.offset[0]) : 0,
 			PSL->internal.origin[1] == 'a' ? -psl_iz(PSL, PSL->internal.offset[1]) : 0);
-	if (PSL->internal.fp != stdout && PSL->internal.call_level == 1) fclose (PSL->internal.fp);	/* Only level 1 can close the file (if not stdout) */
-	memset (PSL->internal.pattern, 0, 2*PSL_N_PATTERNS*sizeof (struct PSL_PATTERN));	/* Reset all pattern info since the file is now closed */
+
+	if (PSL->internal.memory) {	/* Finalize memory buffer allocation */
+		memset (&PSL->internal.buffer[PSL->internal.n], 0, (PSL->internal.n_alloc-PSL->internal.n)*sizeof (char));	/* Wipe the unused stuff */
+		PSL->internal.n_alloc = PSL->internal.n;	/* Shrink allocated memory to what is needed to hold the PS */
+		PSL->internal.buffer  = PSL_memory (PSL, PSL->internal.buffer, PSL->internal.n_alloc, char);
+		if (lastpage) PSL->internal.pmode |= 2;	/* We provided a trailer */
+	}
+	else {	/* Dealing with files or stdout */
+		if (PSL->internal.fp != stdout && PSL->internal.call_level == 1)
+			fclose (PSL->internal.fp);	/* Only level 1 can close the file (if not stdout) */
+	}
 	PSL->internal.call_level--;	/* Done with this module call */
 	return (PSL_NO_ERROR);
 }
 
-int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay, int color_mode, char origin[], double offset[], double page_size[], char *title, int font_no[])
+char * PSL_getplot (struct PSL_CTRL *PSL) {
+	/* Simply pass the plot back to caller  */
+	if (!PSL->internal.memory) {
+		PSL_message (PSL, PSL_MSG_NORMAL, "Error: Cannot get a plot since memory output was not activated!\n");
+		return (NULL);
+	}
+	if (!PSL->internal.buffer) {
+		PSL_message (PSL, PSL_MSG_NORMAL, "Error: No plot in memory available!\n");
+		return (NULL);
+	}
+	return (PSL->internal.buffer);
+}
+
+int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay, int color_mode, char origin[], double offset[], double page_size[], char *title, int font_no[]) {
 /* fp:		Output stream or NULL for standard output
-   orientation:	0 = landscape, 1 = portrait
+   orientation:	0 = landscape, 1 = portrait.  If orientation &2 then we write to memory array [Default is to fp]
    overlay:	true if this is an overlay plot [false means print headers and macros first]
    color_mode:	0 = RGB color, 1 = CMYK color, 2 = HSV color, 3 = Gray scale
    origin:	Two characters indicating origin of new position for x and y respectively:
@@ -1209,7 +4025,6 @@ int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay,
    title:	Title of the plot (or NULL if not specified)
    font_no:	Array of font numbers used in the document (or NULL if not determined)
 */
-{
 	int i, manual_feed = false;
 	double no_rgb[4] = {-1.0, -1.0, -1.0, 0.0}, dummy_rgb[4] = {-2.0, -2.0, -2.0, 0.0}, black[4] = {0.0, 0.0, 0.0, 0.0}, scl;
 	time_t right_now;
@@ -1218,10 +4033,14 @@ int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay,
 
 	if (!PSL) return (PSL_NO_SESSION);	/* Never was allocated */
 
+	PSL->internal.memory = (orientation & PSL_MEMORY);	/* true if we wish to write PS to memory instead of to file */
+	if (PSL->internal.memory) orientation -= PSL_MEMORY;
+
 	/* Save original initialization settings */
 
 	PSL->internal.call_level++;	/* Becomes 1 for first module calling it, 2 if that module calls for plotting, etc */
-	if (PSL->internal.call_level == 1) PSL->internal.fp = (fp == NULL) ? stdout : fp;	/* For higher levels we reuse existing file pointer */
+	if (PSL->internal.call_level == 1)
+		PSL->internal.fp = (fp == NULL) ? stdout : fp;	/* For higher levels we reuse existing file pointer */
 
 	PSL->internal.overlay = overlay;
 	memcpy (PSL->init.page_size, page_size, 2 * sizeof(double));
@@ -1262,14 +4081,24 @@ int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay,
 
 	/* In case this is the last overlay, set the Bounding box coordinates to be used atend */
 
-	if (!overlay) {	/* Must issue PSL header */
+	if (!overlay) {	/* Must issue PSL header - this is the start of a new plot */
 		char PSL_encoding[64] = {""};
+
+		if (PSL->internal.memory) {	/* Will be writing to memory so need to set that up */
+			psl_freeplot (PSL);	/* Free any previous plot laying around */
+			PSL->internal.buffer  = PSL_memory (PSL, NULL, PSL_MEM_ALLOC, char);
+			PSL->internal.n_alloc = PSL_MEM_ALLOC;
+			PSL->internal.n	      = 0;
+			PSL->internal.pmode   = 1;	/*	Header of plot will be written below */
+		}
+
 		PSL_command (PSL, "%%!PS-Adobe-3.0\n");
 
 		/* Write definitions of macros to plotfile */
 
 		PSL_command (PSL, "%%%%BoundingBox: 0 0 %d %d\n", lrint (PSL->internal.p_width), lrint (PSL->internal.p_height));
-		PSL_command (PSL, "%%%%HiResBoundingBox: 0 0 %g %g\n", PSL->internal.p_width, PSL->internal.p_height);
+		/* The spaces below are to accommodate eventual need by psconvert when working with in-memory-PS */
+		PSL_command (PSL, "%%%%HiResBoundingBox: 0 0 %g %g             \n", PSL->internal.p_width, PSL->internal.p_height);
 		if (title) {
 			PSL_command (PSL, "%%%%Title: %s\n", title);
 			PSL_command (PSL, "%%%%Creator: %s\n", PSL->init.session);
@@ -1310,7 +4139,8 @@ int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay,
 		if (manual_feed)	/* Manual media feed requested */
 			PSL_command (PSL, "PSLevel 1 gt { << /ManualFeed true >> setpagedevice } if\n");
 		else if (PSL->internal.p_width > 0.0 && PSL->internal.p_height > 0.0)	/* Specific media selected */
-			PSL_command (PSL, "PSLevel 1 gt { << /PageSize [%g %g] /ImagingBBox null >> setpagedevice } if\n", PSL->internal.p_width, PSL->internal.p_height);
+			PSL_command (PSL, "PSLevel 1 gt { << /PageSize [%g %g] /ImagingBBox null >> setpagedevice } if\n",
+			             PSL->internal.p_width, PSL->internal.p_height);
 		if (PSL->init.copies > 1) PSL_command (PSL, "/#copies %d def\n", PSL->init.copies);
 		PSL_command (PSL, "%%%%EndSetup\n\n");
 
@@ -1357,8 +4187,7 @@ int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay,
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setlinecap (struct PSL_CTRL *PSL, int cap)
-{
+int PSL_setlinecap (struct PSL_CTRL *PSL, int cap) {
 	if (cap != PSL->internal.line_cap) {
 		PSL_command (PSL, "%d setlinecap\n", cap);
 		PSL->internal.line_cap = cap;
@@ -1366,8 +4195,7 @@ int PSL_setlinecap (struct PSL_CTRL *PSL, int cap)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setlinejoin (struct PSL_CTRL *PSL, int join)
-{
+int PSL_setlinejoin (struct PSL_CTRL *PSL, int join) {
 	if (join != PSL->internal.line_join) {
 		PSL_command (PSL, "%d setlinejoin\n", join);
 		PSL->internal.line_join = join;
@@ -1375,8 +4203,7 @@ int PSL_setlinejoin (struct PSL_CTRL *PSL, int join)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setmiterlimit (struct PSL_CTRL *PSL, int limit)
-{
+int PSL_setmiterlimit (struct PSL_CTRL *PSL, int limit) {
 	if (limit != PSL->internal.miter_limit) {
 		PSL_command (PSL, "%g setmiterlimit\n", (limit == 0) ? 10.0 : 1.0 / sin (0.5 * limit * D2R));
 		PSL->internal.miter_limit = limit;
@@ -1384,8 +4211,8 @@ int PSL_setmiterlimit (struct PSL_CTRL *PSL, int limit)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotbox (struct PSL_CTRL *PSL, double x0, double y0, double x1, double y1)
-{	/* Draw rectangle with corners (x0,y0) and (x1,y1) */
+int PSL_plotbox (struct PSL_CTRL *PSL, double x0, double y0, double x1, double y1) {
+	/* Draw rectangle with corners (x0,y0) and (x1,y1) */
 	int llx, lly;
 	llx = psl_ix (PSL, x0);
 	lly = psl_iy (PSL, y0);
@@ -1393,8 +4220,7 @@ int PSL_plotbox (struct PSL_CTRL *PSL, double x0, double y0, double x1, double y
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotpolygon (struct PSL_CTRL *PSL, double *x, double *y, int n)
-{
+int PSL_plotpolygon (struct PSL_CTRL *PSL, double *x, double *y, int n) {
 	/* Draw and optionally fill polygons. If 20 or fewer points we use
 	 * the more expedited psl_patch function
 	 */
@@ -1409,8 +4235,7 @@ int PSL_plotpolygon (struct PSL_CTRL *PSL, double *x, double *y, int n)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setdash (struct PSL_CTRL *PSL, char *style, double offset)
-{
+int PSL_setdash (struct PSL_CTRL *PSL, char *style, double offset) {
 	/* Line structure in points
 	 * offset from currentpoint in points
 	 * style = "1 2", offset = 0:
@@ -1439,39 +4264,43 @@ int PSL_setdash (struct PSL_CTRL *PSL, char *style, double offset)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setfont (struct PSL_CTRL *PSL, int font_no)
-{
+int PSL_setfont (struct PSL_CTRL *PSL, int font_no) {
 	if (font_no == PSL->current.font_no) return (PSL_NO_ERROR);	/* Already set */
 	if (font_no < 0 || font_no >= PSL->internal.N_FONTS) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Selected font (%d) out of range (0-%d); reset to 0\n", font_no, PSL->internal.N_FONTS-1);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Selected font (%d) out of range (0-%d); reset to 0\n", font_no, PSL->internal.N_FONTS-1);
 		font_no = 0;
 	}
 	PSL->current.font_no = font_no;
 	PSL->current.fontsize = 0.0;	/* Forces "%d F%d" to be written on next call to psl_putfont */
-	/* Encoding will be done by subsequent calls inside the text-producing routines though calls to psl_encodefont */
+	/* Encoding will be done by subsequent calls inside the text-producing routines through calls to psl_encodefont [PS: testing line below] */
+	psl_encodefont (PSL, PSL->current.font_no);
+
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setfontdims (struct PSL_CTRL *PSL, double supsub, double scaps, double sup_lc, double sup_uc, double sdown)
-{	/* Adjust settings of sub/super/small caps attributes */
+int PSL_setfontdims (struct PSL_CTRL *PSL, double supsub, double scaps, double sup_lc, double sup_uc, double sdown) {
+	/* Adjust settings of sub/super/small caps attributes */
 	if (supsub <= 0.0 || supsub >= 1.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Size of sub/super-script (%g) exceed allowable range, reset to %^g\n", supsub, PSL_SUBSUP_SIZE);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Size of sub/super-script (%g) exceed allowable range, reset to %^g\n", supsub, PSL_SUBSUP_SIZE);
 		supsub = PSL_SUBSUP_SIZE;
 	}
 	if (scaps <= 0.0 || scaps >= 1.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Size of small caps text (%g) exceed allowable range, reset to %^g\n", scaps, PSL_SCAPS_SIZE);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Size of small caps text (%g) exceed allowable range, reset to %^g\n", scaps, PSL_SCAPS_SIZE);
 		scaps = PSL_SUBSUP_SIZE;
 	}
 	if (sup_lc <= 0.0 || sup_lc >= 1.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Amount of baseline shift for lower-case super-scripts (%g) exceed allowable range, reset to %^g\n", sup_lc, PSL_SUP_UP_LC);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Amount of baseline shift for lower-case super-scripts (%g) exceed allowable range, reset to %^g\n",
+		             sup_lc, PSL_SUP_UP_LC);
 		sup_lc = PSL_SUBSUP_SIZE;
 	}
 	if (sup_uc <= 0.0 || sup_uc >= 1.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Amount of baseline shift for upper-case super-scripts (%g) exceed allowable range, reset to %^g\n", sup_uc, PSL_SUP_UP_UC);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Amount of baseline shift for upper-case super-scripts (%g) exceed allowable range, reset to %^g\n",
+		             sup_uc, PSL_SUP_UP_UC);
 		sup_uc = PSL_SUBSUP_SIZE;
 	}
 	if (sdown <= 0.0 || sdown >= 1.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Amount of baseline shift for sub-scripts (%g) exceed allowable range, reset to %^g\n", sdown, PSL_SUB_DOWN);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Amount of baseline shift for sub-scripts (%g) exceed allowable range, reset to %^g\n",
+		             sdown, PSL_SUB_DOWN);
 		sdown = PSL_SUBSUP_SIZE;
 	}
 	PSL->current.subsupsize = supsub;
@@ -1483,11 +4312,10 @@ int PSL_setfontdims (struct PSL_CTRL *PSL, double supsub, double scaps, double s
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setformat (struct PSL_CTRL *PSL, int n_decimals)
-{
+int PSL_setformat (struct PSL_CTRL *PSL, int n_decimals) {
 	/* Sets nmber of decimals used for rgb/gray specifications [3] */
 	if (n_decimals < 1 || n_decimals > 3)
-		PSL_message (PSL, PSL_MSG_FATAL, "Selected decimals for color out of range (%d), ignored\n", n_decimals);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Selected decimals for color out of range (%d), ignored\n", n_decimals);
 	else {
 		sprintf (PSL->current.bw_format, "%%.%df A", n_decimals);
 		sprintf (PSL->current.rgb_format, "%%.%df %%.%df %%.%df C", n_decimals, n_decimals, n_decimals);
@@ -1497,10 +4325,9 @@ int PSL_setformat (struct PSL_CTRL *PSL, int n_decimals)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setlinewidth (struct PSL_CTRL *PSL, double linewidth)
-{
+int PSL_setlinewidth (struct PSL_CTRL *PSL, double linewidth) {
 	if (linewidth < 0.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Selected linewidth is negative (%g), ignored\n", linewidth);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Selected linewidth is negative (%g), ignored\n", linewidth);
 		return (PSL_BAD_WIDTH);
 	}
 	if (linewidth == PSL->current.linewidth) return (PSL_NO_ERROR);
@@ -1510,8 +4337,7 @@ int PSL_setlinewidth (struct PSL_CTRL *PSL, double linewidth)
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setcolor (struct PSL_CTRL *PSL, double rgb[], int mode)
-{
+int PSL_setcolor (struct PSL_CTRL *PSL, double rgb[], int mode) {
 	/* Set the pen (PSL_IS_STROKE) color or fill (PSL_IS_FILL) color or pattern
 	 * rgb[0] = -3: set pattern, rgb[1] is pattern number setup by PSL_setpattern
 	 * rgb[0] = -2: ignore. Do not change pen color. Leave untouched.
@@ -1538,16 +4364,28 @@ int PSL_setcolor (struct PSL_CTRL *PSL, double rgb[], int mode)
 	return (PSL_NO_ERROR);
 }
 
-char * PSL_makepen (struct PSL_CTRL *PSL, double linewidth, double rgb[], char *pattern, double offset)
-{
-	/* Creates a text string with the corresponding PS command */
+char * PSL_makepen (struct PSL_CTRL *PSL, double linewidth, double rgb[], char *pattern, double offset) {
+	/* Creates a text string with the corresponding PS command to set the pen */
 	static char buffer[PSL_BUFSIZ];
 	sprintf (buffer, "%d W %s %s", psl_ip (PSL, linewidth), psl_putcolor (PSL, rgb), psl_putdash (PSL, pattern, offset));
 	return (buffer);
 }
 
-int PSL_setdefaults (struct PSL_CTRL *PSL, double xyscales[], double page_rgb[], char *encoding)
-{
+char * PSL_makefont (struct PSL_CTRL *PSL, double size, double rgb[]) {
+	/* Creates a text string with the corresponding PS command to set the font (current font) */
+	static char buffer[PSL_BUFSIZ];
+	sprintf (buffer, "%s %d F%d", psl_putcolor (PSL, rgb), psl_ip (PSL, size), PSL->current.font_no);
+	return (buffer);
+}
+
+char * PSL_makecolor (struct PSL_CTRL *PSL, double rgb[]) {
+	/* Creates a text string with the corresponding PS command to set the color */
+	static char buffer[PSL_BUFSIZ];
+	sprintf (buffer, "%s", psl_putcolor (PSL, rgb));
+	return (buffer);
+}
+
+int PSL_setdefaults (struct PSL_CTRL *PSL, double xyscales[], double page_rgb[], char *encoding) {
 	/* Changes the standard PSL defaults for:
 	 * xyscales:	Global x- and y-scale magnifier [1.0, 1.0]
 	 * page_rgb:	Page color [white = 1/1/1]; give NULL to leave unchanged.
@@ -1566,8 +4404,7 @@ int PSL_setdefaults (struct PSL_CTRL *PSL, double xyscales[], double page_rgb[],
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plottextbox (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *text, double angle, int justify, double offset[], int mode)
-{
+int PSL_plottextbox (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *text, double angle, int justify, double offset[], int mode) {
 	/* Plot a box to be later filled with text. The box is
 	 * filled according to the current fill style (set by PSL_setfill).
 	 * Note that this routine does not actually show the text. Use
@@ -1587,7 +4424,9 @@ int PSL_plottextbox (struct PSL_CTRL *PSL, double x, double y, double fontsize, 
 	 *   |----------------|
 	 *   1       2        3
 	 */
-	const char *align[3] = {"0", "-2 div", "neg"};
+
+	/* PS strings to be used dependent on "justify%4". Empty string added for unused value. */
+	const char *align[4] = {"0", "-2 div", "neg", ""};
 	int i = 0, j, x_just, y_just, new_anchor;
 	double dx, dy;
 
@@ -1596,7 +4435,7 @@ int PSL_plottextbox (struct PSL_CTRL *PSL, double x, double y, double fontsize, 
 	fontsize = fabs (fontsize);
 
 	if (strlen (text) >= (PSL_BUFSIZ-1)) {
-		PSL_message (PSL, PSL_MSG_FATAL, "text_item > %d long!\n", PSL_BUFSIZ);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: text_item > %d long!\n", PSL_BUFSIZ);
 		return (PSL_BAD_TEXT);
 	}
 
@@ -1641,12 +4480,11 @@ int PSL_plottextbox (struct PSL_CTRL *PSL, double x, double y, double fontsize, 
 		PSL_command (PSL, "PSL_dim_x0 PSL_dx sub PSL_dim_d PSL_dy sub Sb\n");
 	PSL_command (PSL, "U\n");
 	PSL_comment (PSL, "PSL_plottextbox end:\n");
-	strncpy (PSL->current.string, &text[i], PSL_BUFSIZ);	/* Save the string */
+	strncpy (PSL->current.string, &text[i], PSL_BUFSIZ - 1);	/* Save the string with one left for null terminator */
 	return (PSL_NO_ERROR);
 }
 
-int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char *text)
-{
+int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char *text) {
 	/* Will calculate the dimension of the given text string.
 	 * Because of possible escape sequences we need to examine the string
 	 * carefully.  The dimensions will be set in PostScript as dim_w, dim_h, dim_d
@@ -1666,7 +4504,7 @@ int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char
 	double orig_size, small_size, size, scap_size, ustep[2], dstep;
 
 	if (strlen (text) >= (PSL_BUFSIZ-1)) {
-		PSL_message (PSL, PSL_MSG_FATAL, "text_item > %d long!\n", PSL_BUFSIZ);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: text_item > %d long!\n", PSL_BUFSIZ);
 		return (PSL_BAD_TEXT);
 	}
 
@@ -1679,7 +4517,8 @@ int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char
 		if (dim[0] == '-')
 			PSL_command (PSL, "(%s) s%c ", string, dim[1]);
 		else
-			PSL_command (PSL, "(%s) V MU 0 0 M E /%s_w edef FP pathbbox N /%s_h edef /%s_x1 edef /%s_d edef /%s_x0 edef U\n", string, dim, dim, dim, dim, dim);
+			PSL_command (PSL, "(%s) V MU 0 0 M E /%s_w edef FP pathbbox N /%s_h edef /%s_x1 edef /%s_d edef /%s_x0 edef U\n",
+			             string, dim, dim, dim, dim, dim);
 		PSL_free (string);
 		return (PSL_NO_ERROR);
 	}
@@ -1715,7 +4554,6 @@ int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char
 		last_chr = ptr[strlen(ptr)-1];
 		ptr = strtok_r (NULL, "@", &plast);
 		kase = ((last_chr > 0 && last_chr < 255) && islower (last_chr)) ? PSL_LC : PSL_UC;
-		//fprintf (stderr, "text = %s kase = %d\n", ptr, kase);
 	}
 
 	while (ptr) {
@@ -1840,26 +4678,26 @@ int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char
 	else if (dim[0] == '-' && dim[1] == 'b')
 		PSL_command (PSL, "pathbbox N 4 1 roll exch pop add exch U ");
 	else
-		PSL_command (PSL, "pathbbox N /%s_h edef /%s_x1 edef /%s_d edef /%s_x0 edef /%s_w %s_x1 %s_x0 add def U\n", dim, dim, dim, dim, dim, dim, dim);
+		PSL_command (PSL, "pathbbox N /%s_h edef /%s_x1 edef /%s_d edef /%s_x0 edef /%s_w %s_x1 %s_x0 add def U\n",
+		             dim, dim, dim, dim, dim, dim, dim);
 
 	PSL_free (tempstring);
 	PSL_free (piece);
 	PSL_free (piece2);
 	PSL_free (string);
 
-	if (sub_on) PSL_message (PSL, PSL_MSG_FATAL, "Sub-scripting not terminated [%s]\n", text);
-	if (super_on) PSL_message (PSL, PSL_MSG_FATAL, "Super-scripting not terminated [%s]\n", text);
-	if (scaps_on) PSL_message (PSL, PSL_MSG_FATAL, "Small-caps not terminated [%s]\n", text);
-	if (symbol_on) PSL_message (PSL, PSL_MSG_FATAL, "Symbol font change not terminated [%s]\n", text);
-	if (size_on) PSL_message (PSL, PSL_MSG_FATAL, "Font-size change not terminated [%s]\n", text);
-	if (color_on) PSL_message (PSL, PSL_MSG_FATAL, "Font-color change not terminated [%s]\n", text);
-	if (under_on) PSL_message (PSL, PSL_MSG_FATAL, "Text underline not terminated [%s]\n", text);
+	if (sub_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Sub-scripting not terminated [%s]\n", text);
+	if (super_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Super-scripting not terminated [%s]\n", text);
+	if (scaps_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Small-caps not terminated [%s]\n", text);
+	if (symbol_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Symbol font change not terminated [%s]\n", text);
+	if (size_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Font-size change not terminated [%s]\n", text);
+	if (color_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Font-color change not terminated [%s]\n", text);
+	if (under_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Text underline not terminated [%s]\n", text);
 
 	return (sub_on|super_on|scaps_on|symbol_on|font_on|size_on|color_on|under_on);
 }
 
-int PSL_plottext (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *text, double angle, int justify, int mode)
-{
+int PSL_plottext (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *text, double angle, int justify, int mode) {
 	/* General purpose text plotter for single line of text.  For paragraphs, see PSL_plotparagraph.
 	* PSL_plottext positions and justifies the text string according to the parameters given.
 	* The adjustments requires knowledge of font metrics and characteristics; hence all such
@@ -1873,7 +4711,7 @@ int PSL_plottext (struct PSL_CTRL *PSL, double x, double y, double fontsize, cha
 	*		If NULL is given then we assume PSL_plottextbox has just been called.
 	* angle:	angle between text baseline and the horizontal.
 	* justify:	indicates where on the textstring the x,y point refers to, see fig below.
-	*		If negative then we string leading and trailing blanks from the text.
+	*		If negative then we strip leading and trailing blanks from the text.
 	*		0 means no justification (already done separately).
 	* mode:	0 = normal text filled with solid color; 1 = draw outline of text using
 	*		the current line width and color; the text is filled with the current fill
@@ -1890,14 +4728,17 @@ int PSL_plottext (struct PSL_CTRL *PSL, double x, double y, double fontsize, cha
 	*   1	    2	     3
 	*/
 
-	char *piece = NULL, *piece2 = NULL, *ptr = NULL, *string = NULL, previous[BUFSIZ] = {""};
-	const char *op[4] = {"Z", "false charpath fs", "false charpath fs", "false charpath V S U fs"}, *align[3] = {"0", "-2 div", "neg"};
-	char *plast = NULL;
-	const char *justcmd[12] = {"", "", "bc ", "br ", "", "ml ", "mc ", "mr ", "", "tl ", "tc ", "tr "};
+	char *piece = NULL, *piece2 = NULL, *ptr = NULL, *string = NULL, previous[BUFSIZ] = {""}, *plast = NULL;
+	/* PS strings to be used dependent on "mode" */
+	const char *op[4] = {"Z", "false charpath fs", "false charpath fs", "false charpath V S U fs"};
+	/* PS strings to be used dependent on "justify". Empty strings added for unused values. */
+	const char *justcmd[12] = {"", "bl ", "bc ", "br ", "", "ml ", "mc ", "mr ", "", "tl ", "tc ", "tr "};
+	/* PS strings to be used dependent on "justify%4". Empty string added for unused value. */
+	const char *align[4] = {"0", "-2 div", "neg", ""};
 	int dy, i = 0, j, font, x_just, y_just, upen, ugap;
 	int sub_on, super_on, scaps_on, symbol_on, font_on, size_on, color_on, under_on, old_font, n_uline, start_uline, stop_uline, last_chr, kase = PSL_LC;
 	bool last_sub = false, last_sup = false, supersub;
-	double orig_size, small_size, size, scap_size, ustep[2], dstep, last_rgb[4];
+	double orig_size, small_size, size, scap_size, ustep[2], dstep, last_rgb[4] = {0.0, 0.0, 0.0, 0.0};
 
 	if (fontsize == 0.0) return (PSL_NO_ERROR);	/* Nothing to do if text has zero size */
 
@@ -1913,7 +4754,7 @@ int PSL_plottext (struct PSL_CTRL *PSL, double x, double y, double fontsize, cha
 
 	if (text) {
 		if (strlen (text) >= (PSL_BUFSIZ-1)) {	/* We gotta have some limit on how long a single string can be... */
-			PSL_message (PSL, PSL_MSG_FATAL, "text_item > %d long - text not plotted!\n", PSL_BUFSIZ);
+			PSL_message (PSL, PSL_MSG_FATAL, "Warning: text_item > %d long - text not plotted!\n", PSL_BUFSIZ);
 			return (PSL_BAD_TEXT);
 		}
 		if (justify < 0)  {	/* Strip leading and trailing blanks */
@@ -2132,7 +4973,7 @@ int PSL_plottext (struct PSL_CTRL *PSL, double x, double y, double fontsize, cha
 					}
 				}
 				else {	/* Got crap */
-					PSL_message (PSL, PSL_MSG_FATAL, "Bad color change (%s) - ignored\n", ptr);
+					PSL_message (PSL, PSL_MSG_FATAL, "Warning: Bad color change (%s) - ignored\n", ptr);
 					error++;
 				}
 
@@ -2184,41 +5025,19 @@ int PSL_plottext (struct PSL_CTRL *PSL, double x, double y, double fontsize, cha
 	PSL_free (piece2);
 	PSL_free (string);
 
-	if (sub_on) PSL_message (PSL, PSL_MSG_FATAL, "Sub-scripting not terminated [%s]\n", text);
-	if (super_on) PSL_message (PSL, PSL_MSG_FATAL, "Super-scripting not terminated [%s]\n", text);
-	if (scaps_on) PSL_message (PSL, PSL_MSG_FATAL, "Small-caps not terminated [%s]\n", text);
-	if (symbol_on) PSL_message (PSL, PSL_MSG_FATAL, "Symbol font change not terminated [%s]\n", text);
-	if (size_on) PSL_message (PSL, PSL_MSG_FATAL, "Font-size change not terminated [%s]\n", text);
-	if (color_on) PSL_message (PSL, PSL_MSG_FATAL, "Font-color change not terminated [%s]\n", text);
-	if (under_on) PSL_message (PSL, PSL_MSG_FATAL, "Text underline not terminated [%s]\n", text);
+	if (sub_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Sub-scripting not terminated [%s]\n", text);
+	if (super_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Super-scripting not terminated [%s]\n", text);
+	if (scaps_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Small-caps not terminated [%s]\n", text);
+	if (symbol_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Symbol font change not terminated [%s]\n", text);
+	if (size_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Font-size change not terminated [%s]\n", text);
+	if (color_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Font-color change not terminated [%s]\n", text);
+	if (under_on) PSL_message (PSL, PSL_MSG_FATAL, "Warning: Text underline not terminated [%s]\n", text);
 
 	return (sub_on|super_on|scaps_on|symbol_on|font_on|size_on|color_on|under_on);
 }
 
-void psl_remove_spaces (char *label[], int n_labels, int m[])
-{
-	int i, k, j, n_tot = n_labels;
-
-	if (m)
-		for (i = 0; i < n_labels; i++) n_tot += m[i];	/* Count number of labels */
-
-	for (i = 0; i < n_tot; i++) {	/* Strip leading and trailing blanks */
-		for (k = 0; label[i][k] == ' '; k++);	/* Count # of leading blanks */
-		if (k > 0) {	/* Shift text to start, eliminating spaces */
-			j = 0;
-			while (label[i][k]) {
-				label[i][j] = label[i][j+k];
-				j++;
-			}
-			label[i][j] = 0;
-		}
-		/* Then strip off trailing blanks, if any */
-		for (j = (int)strlen (label[i]) - 1; label[i][j] == ' '; j--) label[i][j] = 0;
-	}
-}
-
-int PSL_plottextline (struct PSL_CTRL *PSL, double x[], double y[], int np[], int n_segments, void *arg1, void *arg2, char *label[], double angle[], int nlabel_per_seg[], double fontsize, int justify, double offset[], int mode)
-{	/* Placing text along lines, setting up text clippaths, and drawing the lines */
+int PSL_plottextline (struct PSL_CTRL *PSL, double x[], double y[], int np[], int n_segments, void *arg1, void *arg2, char *label[], double angle[], int nlabel_per_seg[], double fontsize, int justify, double offset[], int mode) {
+	/* Placing text along lines, setting up text clippaths, and drawing the lines */
 	/* x,y		Array containing the concatenated label path of all segments
 	 * np		Array containing length of each label path segment in concatenated path
 	 * n_segments	Number of line segments
@@ -2311,8 +5130,7 @@ int PSL_plottextline (struct PSL_CTRL *PSL, double x[], double y[], int np[], in
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setorigin (struct PSL_CTRL *PSL, double x, double y, double angle, int mode)
-{
+int PSL_setorigin (struct PSL_CTRL *PSL, double x, double y, double angle, int mode) {
 	/* mode = PSL_FWD: Translate origin, then rotate axes.
 	 * mode = PSL_INV: Rotate axes, then translate origin. */
 
@@ -2322,19 +5140,19 @@ int PSL_setorigin (struct PSL_CTRL *PSL, double x, double y, double angle, int m
 	return (PSL_NO_ERROR);
 }
 
-int PSL_setparagraph (struct PSL_CTRL *PSL, double line_space, double par_width, int par_just)
-{	/* Initializes PSL parameters used to typeset paragraphs with PSL_plotparagraph */
+int PSL_setparagraph (struct PSL_CTRL *PSL, double line_space, double par_width, int par_just) {
+	/* Initializes PSL parameters used to typeset paragraphs with PSL_plotparagraph */
 
 	if (par_just < PSL_BL || par_just > PSL_JUST) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Bad paragraph justification (%d)\n", par_just);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Bad paragraph justification (%d)\n", par_just);
 		return (PSL_BAD_JUST);
 	}
 	if (line_space <= 0.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Bad line spacing (%g)\n", line_space);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Bad line spacing (%g)\n", line_space);
 		return (PSL_BAD_VALUE);
 	}
 	if (par_width <= 0.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Bad paragraph width (%g)\n", par_width);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Bad paragraph width (%g)\n", par_width);
 		return (PSL_BAD_VALUE);
 	}
 
@@ -2345,18 +5163,17 @@ int PSL_setparagraph (struct PSL_CTRL *PSL, double line_space, double par_width,
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotparagraphbox (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *paragraph, double angle, int justify, double offset[], int mode)
-{
+int PSL_plotparagraphbox (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *paragraph, double angle, int justify, double offset[], int mode) {
 	/* Determines the text box that fits the given typeset paragraph and fills/strokes with current fill/pen.
 	 * mode = 0 (PSL_RECT_STRAIGHT), 1 (PSL_RECT_ROUNDED), 2 (PSL_RECT_CONVEX) or 3 (PSL_RECT_CONCAVE).
 	 */
 	int error = 0;
 	if (offset[0] < 0.0 || offset[1] < 0.0) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Bad paragraphbox text offset (%g/%g)\n", offset[0], offset[1]);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Bad paragraphbox text offset (%g/%g)\n", offset[0], offset[1]);
 		return (PSL_BAD_VALUE);
 	}
 	if (mode < PSL_RECT_STRAIGHT || mode > PSL_RECT_CONCAVE) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Bad paragraphbox mode (%d)\n", mode);
+		PSL_message (PSL, PSL_MSG_FATAL, "Warning: Bad paragraphbox mode (%d)\n", mode);
 		return (PSL_BAD_VALUE);
 	}
 
@@ -2443,8 +5260,8 @@ int PSL_plotparagraphbox (struct PSL_CTRL *PSL, double x, double y, double fonts
 	return (PSL_NO_ERROR);
 }
 
-int PSL_plotparagraph (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *paragraph, double angle, int justify)
-{	/* Typeset one or more paragraphs.  Separate paragraphs by adding \r to end of last word in a paragraph.
+int PSL_plotparagraph (struct PSL_CTRL *PSL, double x, double y, double fontsize, char *paragraph, double angle, int justify) {
+	/* Typeset one or more paragraphs.  Separate paragraphs by adding \r to end of last word in a paragraph.
  	 * To lay down a text box first, see PSL_plotparagraphbox. */
 	int error = 0;
 
@@ -2487,477 +5304,37 @@ int PSL_plotparagraph (struct PSL_CTRL *PSL, double x, double y, double fontsize
 	return (PSL_NO_ERROR);
 }
 
-struct PSL_WORD *psl_add_word_part (struct PSL_CTRL *PSL, char *word, int length, int fontno, double fontsize, int sub, int super, int small, int under, int space, double rgb[])
-{
-	/* For flag: bits 1 and 2 give number of spaces to follow (0, 1, or 2)
-	 * bit 3 == 1 means leading TAB
-	 * bit 4 == 1 means Composite 1 character
-	 * bit 5 == 1 means Composite 2 character
-	 * bit 6 == 1 means underline word
-	 */
-
-	int i = 0;
-	int c;
-	int tab = false;
-	double fs;
-	struct PSL_WORD *new_word = NULL;
-
-	if (!length) length = (int)strlen (word);
-	while (word[i] && word[i] == '\t') {	/* Leading tab(s) means indent once */
-		tab = true;
-		i++;
-		length--;
-	}
-
-	new_word = PSL_memory (PSL, NULL, 1, struct PSL_WORD);
-	new_word->txt = PSL_memory (PSL, NULL, length+1, char);
-	fs = fontsize * PSL->internal.dpp;
-
-	strncpy (new_word->txt, &word[i], (size_t)length);
-	new_word->font_no = fontno;
-	if (small) {	/* Small caps is on */
-		new_word->fontsize = (int)lrint (PSL->current.scapssize * fs);
-		for (i = 0; new_word->txt[i]; i++) {
-			c = (int)new_word->txt[i];
-			new_word->txt[i] = (char) toupper (c);
-		}
-	}
-	else if (super) {
-		new_word->fontsize = (int)lrint (PSL->current.subsupsize * fs);
-		new_word->baseshift = (int)lrint (PSL->current.sup_up[PSL_LC] * fs);
-	}
-	else if (sub) {
-		new_word->fontsize = (int)lrint (PSL->current.subsupsize * fs);
-		new_word->baseshift = (int)lrint (-PSL->current.sub_down * fs);
-	}
-	else
-		new_word->fontsize = (int)lrint (fs);
-
-	new_word->flag = space;
-	if (tab) new_word->flag |= 4;	/* 3rd bit indicates tab, then add space after word */
-	if (under) new_word->flag |= 32;	/* 6rd bit indicates underline */
-	PSL_rgb_copy (new_word->rgb, rgb);
-
-	return (new_word);
-}
-
-void psl_freewords (struct PSL_WORD **word, int n_words)
-{
-	/* Free all the words and their texts */
-	int k;
-	for (k = 0; k < n_words; k++) {
-		if (word[k]->txt) PSL_free (word[k]->txt);
-		PSL_free (word[k]);
-	}
-}
-
-int psl_paragraphprocess (struct PSL_CTRL *PSL, double y, double fontsize, char *paragraph)
-{	/* Typeset one or more paragraphs.  Separate paragraphs by adding \r to end of last word in a paragraph.
-	 * This is a subfunction that simply place all the text attributes on the stack.
-	 */
-	int n, p, n_scan, last_k = -1, error = 0, old_font, font, after, len, n_alloc_txt;
-	int *font_unique = NULL;
-	unsigned int i, i1, i0, j, k, n_items, n_font_unique, n_rgb_unique;
-	size_t n_alloc, n_words = 0;
-	double old_size, last_rgb[4], rgb[4];
-	int sub_on, super_on, scaps_on, symbol_on, font_on, size_on, color_on, under_on, plain_word = false, escape;
-	char *c = NULL, *clean = NULL, test_char, **text = NULL, *lastp = NULL, *copy = NULL;
-	const char *sep = " ";
-	struct PSL_WORD **word = NULL, **rgb_unique = NULL;
-
-	if (fontsize == 0.0) return (PSL_NO_ERROR);	/* Nothing to do if text has zero size */
-
-	sub_on = super_on = scaps_on = symbol_on = font_on = size_on = color_on = under_on = false;
-
-	/* Break input string into words (sorta based on old pstext) */
-	n_alloc = PSL_CHUNK;
-	text = (char **) PSL_memory (PSL, NULL, n_alloc, char *);
-	copy = strdup (paragraph);	/* Need copy since strtok_r will mess with the text */
-	c = strtok_r (copy, sep, &lastp);	/* Found first word */
-	while (c) {	/* Found another word */
-		text[n_words] = strdup (c);
-		len = (int)strlen(text[n_words]) - 1;
-		if (text[n_words][len] == '\r') {	/* New paragraph */
-			text[n_words][len] = '\0';	/* chop off CR */
-			n_words++;
-			if (n_words == n_alloc) {
-				n_alloc <<= 1;
-				text = (char **) PSL_memory (PSL, text, n_alloc, char *);
-			}
-			text[n_words] = strdup ("");	/* This adds an empty string */
-		}
-		n_words++;
-		if (n_words == n_alloc) {
-			n_alloc <<= 1;
-			text = (char **) PSL_memory (PSL, text, n_alloc, char *);
-		}
-		c = strtok_r (NULL, sep, &lastp);
-	}
-	text = (char **) PSL_memory (PSL, text, n_words, char *);
-	free (copy);
-
-	/* Now process the words into pieces we can typeset. */
-
-	n_alloc = PSL_CHUNK;
-	old_font = font = PSL->current.font_no;
-	old_size = fontsize;
-	PSL_rgb_copy (rgb, PSL->current.rgb[PSL_IS_STROKE]);	/* Initial font color is current color */
-
-	word = PSL_memory (PSL, NULL, n_alloc, struct PSL_WORD *);
-
-	for (i = k = 0; i < n_words; i++) {
-
-		clean = psl_prepare_text (PSL, text[i]);	/* Escape special characters and European character shorthands */
-
-		if ((c = strchr (clean, '@')) != NULL) {	/* Found a @ escape command */
-			i0 = 0;
-			i1 = (int) (c - clean);
-
-			if (i1 > i0) word[k++] = psl_add_word_part (PSL, &clean[i0], i1 - i0, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_NO_SPACE, rgb);
-			if (k == n_alloc) {
-				n_alloc <<= 1;
-				word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
-			}
-
-			i1++;	/* Skip the @ */
-
-			while (clean[i1]) {
-
-				escape = (clean[i1-1] == '@');	/* i1 char is an escape argument */
-				test_char = (escape) ? clean[i1] : 'A';		/* Only use clean[i1] if it is an escape modifier */
-				plain_word = false;
-
-				switch (test_char) {
-
-					case '!':	/* 2 Composite characters */
-						i1++;
-						if (clean[i1] == '\\') { /* First char is Octal code character */
-							word[k++] = psl_add_word_part (PSL, &clean[i1], 4, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_1, rgb);
-							i1 += 4;
-						}
-						else {	/* Regular character */
-							word[k++] = psl_add_word_part (PSL, &clean[i1], 1, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_1, rgb);
-							i1++;
-						}
-						if (k == n_alloc) {
-							n_alloc <<= 1;
-							word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
-						}
-						if (clean[i1] == '\\') { /* 2nd char is Octal code character */
-							word[k] = psl_add_word_part (PSL, &clean[i1], 4, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_2, rgb);
-							i1 += 4;
-						}
-						else {	/* Regular character */
-							word[k] = psl_add_word_part (PSL, &clean[i1], 1, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_COMPOSITE_2, rgb);
-							i1++;
-						}
-						if (!clean[i1]) word[k]->flag++;	/* New word after this composite */
-						k++;
-						if (k == n_alloc) {
-							n_alloc <<= 1;
-							word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
-						}
-						break;
-
-					case '~':	/* Toggle symbol font */
-						i1++;
-						symbol_on = !symbol_on;
-						font = (font == PSL_SYMBOL_FONT) ? old_font : PSL_SYMBOL_FONT;
-						break;
-
-					case '%':	/* Switch font option */
-						i1++;
-						font_on = !font_on;
-						if (clean[i1] == '%') {
-							font = old_font;
-							i1++;
-						}
-						else {
-							old_font = font;
-							font = atoi (&clean[i1]);
-							while (clean[i1] != '%') i1++;
-							i1++;
-						}
-						break;
-
-					case '_':	/* Toggle Underline */
-						i1++;
-						under_on = !under_on;
-						break;
-
-					case '-':	/* Toggle Subscript */
-						i1++;
-						sub_on = !sub_on;
-						break;
-
-					case '+':	/* Toggle Subscript */
-						i1++;
-						super_on = !super_on;
-						break;
-
-					case '#':	/* Toggle Small caps */
-						i1++;
-						scaps_on = !scaps_on;
-						break;
-
-					case ':':	/* Change font size */
-						i1++;
-						size_on = !size_on;
-						if (clean[i1] == ':') {
-							fontsize = old_size;
-							i1++;
-						}
-						else {
-							fontsize = atof (&clean[i1]);
-							while (clean[i1] != ':') i1++;
-							i1++;
-						}
-						break;
-
-					case ';':	/* Change font color */
-						i1++;
-						color_on = !color_on;
-						if (clean[i1] == ';') {
-							PSL_rgb_copy (rgb, last_rgb);
-							i1++;
-						}
-						else {
-							PSL_rgb_copy (last_rgb, rgb);
-							j = i1;
-							while (clean[j] != ';') j++;
-							clean[j] = 0;
-							n_scan = sscanf (&clean[i1], "%lg/%lg/%lg", &rgb[0], &rgb[1], &rgb[2]);
-							if (n_scan == 1) {	/* Got gray shade */
-								rgb[0] /= 255.0;	/* Normalize to 0-1 range */
-								rgb[1] = rgb[2] = rgb[0];
-								if (rgb[0] < 0.0 || rgb[0] > 1.0) error++;
-							}
-							else if (n_scan == 3) {	/* Got r/g/b */
-								for (p = 0; p < 3; p++) {
-									rgb[p] /= 255.0;	/* Normalize to 0-1 range */
-									if (rgb[p] < 0.0 || rgb[p] > 1.0) error++;
-								}
-							}
-							else	/* Got crap */
-								error++;
-
-							clean[j] = ';';
-							i1 = j + 1;
-						}
-						break;
-
-					default:	/* Regular text to copy */
-
-						j = i1;
-						while (clean[j] && clean[j] != '@') j++;
-						after = (clean[j]) ? PSL_NO_SPACE : 1;
-						plain_word = true;
-						word[k++] = psl_add_word_part (PSL, &clean[i1], j-i1, font, fontsize, sub_on, super_on, scaps_on, under_on, after, rgb);
-						if (k == n_alloc) {
-							n_alloc <<= 1;
-							word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
-						}
-						i1 = (clean[j]) ? j + 1 : j;
-						break;
-				}
-				while (clean[i1] == '@') i1++;	/* SKip @ character */
-
-			} /* End loop over word with @ in it */
-
-			last_k = k - 1;
-			if (!plain_word && (last_k = k - 1) >= 0) {	/* Allow space if text ends with @ commands only */
-				word[last_k]->flag &= 60;
-				word[last_k]->flag |= 1;
-			}
-		}
-		else {	/* Plain word, no worries */
-			word[k++] = psl_add_word_part (PSL, clean, 0, font, fontsize, sub_on, super_on, scaps_on, under_on, PSL_ONE_SPACE, rgb);
-			if (k == n_alloc) {
-				n_alloc <<= 1;
-				word = PSL_memory (PSL, word, n_alloc, struct PSL_WORD *);
-			}
-		}
-
-		PSL_free (clean);	/* Reclaim this memory */
-		free (text[i]);	/* since strdup created it */
-
-	} /* End of word loop */
-
-	if (sub_on) PSL_message (PSL, PSL_MSG_FATAL, "Sub-scripting not terminated [%s]\n", paragraph);
-	if (super_on) PSL_message (PSL, PSL_MSG_FATAL, "Super-scripting not terminated [%s]\n", paragraph);
-	if (scaps_on) PSL_message (PSL, PSL_MSG_FATAL, "Small-caps not terminated [%s]\n", paragraph);
-	if (symbol_on) PSL_message (PSL, PSL_MSG_FATAL, "Symbol font change not terminated [%s]\n", paragraph);
-	if (size_on) PSL_message (PSL, PSL_MSG_FATAL, "Font-size change not terminated [%s]\n", paragraph);
-	if (color_on) PSL_message (PSL, PSL_MSG_FATAL, "Font-color change not terminated [%s]\n", paragraph);
-	if (under_on) PSL_message (PSL, PSL_MSG_FATAL, "Text underline not terminated [%s]\n", paragraph);
-
-	PSL_free (text);	/* Reclaim this memory */
-	n_alloc_txt = k;	/* Number of items in word array that might have text allocations */
-	k--;			/* Index of last word */
-	while (k && !word[k]->txt) k--;	/* Skip any blank lines at end */
-	n_items = k + 1;
-
-	for (i0 = 0, i1 = 1 ; i1 < n_items-1; i1++, i0++) {	/* Loop for periods ending sentences and indicate 2 spaces to follow */
-		size_t len = strlen(word[i0]->txt);
-		if (len > 0 && isupper ((int)word[i1]->txt[0]) && word[i0]->txt[len-1] == '.') {
-			word[i0]->flag &= 60;	/* Sets bits 1 & 2 to zero */
-			word[i0]->flag |= 2;	/* Specify 2 spaces */
-		}
-		if (!word[i1]->txt[0]) {	/* No space at end of paragraph */
-			word[i0]->flag &= 60;
-			word[i1]->flag &= 60;
-		}
-	}
-	if (i1 >= n_items) i1 = n_items - 1;	/* one-word fix */
-	word[i1]->flag &= 60;	/* Last word not followed by anything */
-
-	/* Set each word's index of the corresponding unique color entry */
-
-	rgb_unique = PSL_memory (PSL, NULL, n_items, struct PSL_WORD *);
-	for (n_rgb_unique = i = 0; i < n_items; i++) {
-		for (j = 0; j < n_rgb_unique && !PSL_same_rgb(word[i]->rgb,rgb_unique[j]->rgb); j++) {}
-		if (j == n_rgb_unique) rgb_unique[n_rgb_unique++] = word[i];
-		word[i]->index = j;
-	}
-
-	/* Replace each word's font with the index of the corresponding unique font entry */
-
-	font_unique = PSL_memory (PSL, NULL, n_items, int);
-	for (n_font_unique = i = 0; i < n_items; i++) {
-		for (j = 0; j < n_font_unique && word[i]->font_no != font_unique[j]; j++) {}
-		if (j == n_font_unique) font_unique[n_font_unique++] = word[i]->font_no;
-		word[i]->font_no = j;
-	}
-
-	/* Time to write out to PS file */
-
-	/* Load PSL_text procedures from file for now */
-
-	if (!PSL->internal.text_init) {
-		psl_bulkcopy (PSL, "PSL_text");
-		PSL->internal.text_init = true;
-	}
-
-	PSL_comment (PSL, "PSL_plotparagraph begin:\n");
-
-	PSL_comment (PSL, "Define array of fonts:\n");
-	PSL_command (PSL, "/PSL_fontname\n");
-	for (i = 0 ; i < n_font_unique; i++) PSL_command (PSL, "/%s\n", PSL->internal.font[font_unique[i]].name);
-	PSL_command (PSL, "%d array astore def\n", n_font_unique);
-	PSL_free (font_unique);
-
-	PSL_comment (PSL, "Initialize variables:\n");
-	PSL_command (PSL, "/PSL_n %d def\n", n_items);
-	PSL_command (PSL, "/PSL_n1 %d def\n", n_items - 1);
-	PSL_defunits (PSL, "PSL_y0", y);
-	PSL_command (PSL, "/PSL_spaces [() ( ) (  ) ] def\n");
-	PSL_command (PSL, "/PSL_lastfn -1 def\n/PSL_lastfz -1 def\n/PSL_lastfc -1 def\n");
-	PSL_command (PSL, "/PSL_UL 0 def\n/PSL_show {ashow} def\n");
-
-	PSL_comment (PSL, "Define array of words:\n");
-	PSL_command (PSL, "/PSL_word");
-	for (i = n = 0 ; i < n_items; i++) {
-		PSL_command (PSL, "%c(%s)", (n) ? ' ' : '\n', word[i]->txt);
-		n += (int)strlen (word[i]->txt) + 1; if (n >= 60) n = 0;
-	}
-	PSL_command (PSL, "\n%d array astore def\n", n_items);
-
-	PSL_comment (PSL, "Define array of word font numbers:\n");
-	PSL_command (PSL, "/PSL_fnt");
-	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->font_no);
-	PSL_command (PSL, "\n%d array astore def\n", n_items);
-
-	PSL_comment (PSL, "Define array of word fontsizes:\n");
-	PSL_command (PSL, "/PSL_size");
-	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%15) ? ' ' : '\n', word[i]->fontsize);
-	PSL_command (PSL, "\n%d array astore def\n", n_items);
-
-	PSL_comment (PSL, "Define array of word spaces to follow:\n");
-	PSL_command (PSL, "/PSL_flag");
-	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->flag);
-	PSL_command (PSL, "\n%d array astore def\n", n_items);
-
-	PSL_comment (PSL, "Define array of word baseline shifts:\n");
-	PSL_command (PSL, "/PSL_bshift");
-	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->baseshift);
-	PSL_command (PSL, "\n%d array astore def\n", n_items);
-
-	PSL_comment (PSL, "Define array of word colors indices:\n");
-	PSL_command (PSL, "/PSL_color");
-	for (i = 0 ; i < n_items; i++) PSL_command (PSL, "%c%d", (i%25) ? ' ' : '\n', word[i]->index);
-	PSL_command (PSL, "\n%d array astore def\n", n_items);
-
-	PSL_comment (PSL, "Define array of word colors:\n");
-	PSL_command (PSL, "/PSL_rgb\n");
-	for (i = 0 ; i < n_rgb_unique; i++) PSL_command (PSL, "%.3g %.3g %.3g\n", rgb_unique[i]->rgb[0], rgb_unique[i]->rgb[1], rgb_unique[i]->rgb[2]);
-	PSL_command (PSL, "%d array astore def\n", 3 * n_rgb_unique);
-	PSL_free (rgb_unique);
-
-	PSL_comment (PSL, "Define array of word widths:\n");
-	PSL_command (PSL, "/PSL_width %d array def\n", n_items);
-	PSL_command (PSL, "/PSL_max_word_width 0 def\n");
-	PSL_command (PSL, "0 1 PSL_n1 {");
-	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Determine word width given the font and fontsize for each word\n" : "\n");
-	PSL_command (PSL, "  /i edef");
-	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Loop index i\n" : "\n");
-	PSL_command (PSL, "  PSL_size i get PSL_fontname PSL_fnt i get get Y");
-	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Get and set font and size\n" : "\n");
-	PSL_command (PSL, "  PSL_width i PSL_word i get stringwidth pop put");
-	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Calculate and store width\n": "\n");
-	PSL_command (PSL, "  PSL_width i get PSL_max_word_width gt { /PSL_max_word_width PSL_width i get def} if");
-	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Keep track of widest word\n": "\n");
-	PSL_command (PSL, "} for\n");
-	PSL_command (PSL, "PSL_max_word_width PSL_parwidth gt { /PSL_parwidth PSL_max_word_width def } if");
-	PSL_command (PSL, (PSL->internal.comments) ? "\t%% Auto-widen paragraph width if widest word exceeds it\n": "\n");
-
-	PSL_comment (PSL, "Define array of word char counts:\n");
-	PSL_command (PSL, "/PSL_count %d array def\n", n_items);
-	PSL_command (PSL, "0 1 PSL_n1 {PSL_count exch dup PSL_word exch get length put} for\n");
-
-	PSL_comment (PSL, "For composite chars, set width and count to zero for 2nd char:\n");
-	PSL_command (PSL, "1 1 PSL_n1 {\n  /k edef\n  PSL_flag k get 16 and 16 eq {\n");
-	PSL_command (PSL, "    /k1 k 1 sub def\n    /w1 PSL_width k1 get def\n    /w2 PSL_width k get def\n");
-	PSL_command (PSL, "    PSL_width k1 w1 w2 gt {w1} {w2} ifelse put\n    PSL_width k 0 put\n");
-	PSL_command (PSL, "    PSL_count k 0 put\n  } if\n} for\n");
-
-	psl_freewords (word, n_alloc_txt);
-	PSL_free (word);
-	return (sub_on|super_on|scaps_on|symbol_on|font_on|size_on|color_on|under_on);
-}
-
-int PSL_defunits (struct PSL_CTRL *PSL, const char *param, double value)
-{
+int PSL_defunits (struct PSL_CTRL *PSL, const char *param, double value) {
 	PSL_command (PSL, "/%s %d def\n", param, psl_iz (PSL, value));
 	return (PSL_NO_ERROR);
 }
 
-int PSL_defpoints (struct PSL_CTRL *PSL, const char *param, double fontsize)
-{
+int PSL_defpoints (struct PSL_CTRL *PSL, const char *param, double fontsize) {
 	PSL_command (PSL, "/%s %d def\n", param, psl_ip (PSL, fontsize));
 	return (PSL_NO_ERROR);
 }
 
-int PSL_definteger (struct PSL_CTRL *PSL, const char *param, int value)
-{
+int PSL_definteger (struct PSL_CTRL *PSL, const char *param, int value) {
 	PSL_command (PSL, "/%s %d def\n", param, value);
 	return (PSL_NO_ERROR);
 }
 
-int PSL_defpen (struct PSL_CTRL *PSL, const char *param, double linewidth, char *style, double offset, double rgb[])
-{
+int PSL_defpen (struct PSL_CTRL *PSL, const char *param, double linewidth, char *style, double offset, double rgb[]) {
 	/* Function to set line pen attributes */
 	PSL_command (PSL, "/%s {%d W %s %s} def\n", param, psl_ip (PSL, linewidth), psl_putcolor (PSL, rgb), psl_putdash (PSL, style, offset));
 	return (PSL_NO_ERROR);
 }
 
-int PSL_defcolor (struct PSL_CTRL *PSL, const char *param, double rgb[])
-{
+int PSL_defcolor (struct PSL_CTRL *PSL, const char *param, double rgb[]) {
 	PSL_command (PSL, "/%s {%s} def\n", param, psl_putcolor (PSL, rgb));
 	return (PSL_NO_ERROR);
 }
 
-int PSL_loadimage (struct PSL_CTRL *PSL, char *file, struct imageinfo *h, unsigned char **picture)
-{
+/* Helpers to make sure fp is closed and tmp_file is removed on return. */
+#define Return1(x) {code = x; fclose (fp); return (code);}
+#define Return2(x) {code = x; fclose (fp); remove (tmp_file); return (code);}
+
+int PSL_loadimage (struct PSL_CTRL *PSL, char *file, struct imageinfo *h, unsigned char **picture) {
 	/* PSL_loadimage loads an image of any recognized type into memory
 	 *
 	 * Supported image types are:
@@ -2966,2327 +5343,69 @@ int PSL_loadimage (struct PSL_CTRL *PSL, char *file, struct imageinfo *h, unsign
 	 */
 
 	FILE *fp = NULL;
+	int code = PSL_NO_ERROR;
 
 	/* Open PostScript or Sun raster file */
 
 	if ((fp = fopen (file, "rb")) == NULL) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Cannot open image file %s!\n", file);
+		PSL_message (PSL, PSL_MSG_FATAL, "Error: Cannot open image file %s!\n", file);
 		return (PSL_READ_FAILURE);
 	}
 
 	/* Read magic number to determine image type */
 
 	if (psl_read_rasheader (PSL, fp, h, 0, 0)) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Error reading magic number of image file %s!\n", file);
-		return (PSL_READ_FAILURE);
+		PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading magic number of image file %s!\n", file);
+		Return1 (PSL_READ_FAILURE);
 	}
 	fseek (fp, (off_t)0, SEEK_SET);
 
 	/* Which file type */
 
 	if (h->magic == RAS_MAGIC) {
-		return (psl_load_raster (PSL, fp, h, picture));
-	} else if (h->magic == EPS_MAGIC) {
-		return (psl_load_eps (PSL, fp, h, picture));
+		Return1 (psl_load_raster (PSL, fp, h, picture));
+	}
+	else if (h->magic == EPS_MAGIC) {
+		Return1 (psl_load_eps (PSL, fp, h, picture));
 	}
 	else if (!strstr (file, ".ras")) {	/* Not a .ras file; convert to ras */
-		int code;
 		char cmd[PSL_BUFSIZ], tmp_file[32];
 #ifdef WIN32
 		char *null_dev = "nul";
 #else
 		char *null_dev = "/dev/null";
 #endif
+		fclose (fp);
 		sprintf (tmp_file, "PSL_TMP_%d.ras", (int)getpid());
 		/* Try GraphicsMagick's "gm convert" */
 		sprintf (cmd, "gm convert %s %s 2> %s", file, tmp_file, null_dev);
 		if (system (cmd)) {	/* convert failed, try ImageMagic's "convert" */
 			sprintf (cmd, "convert %s %s 2> %s", file, tmp_file, null_dev);
 			if (system (cmd)) {	/* convert failed, give up */
-				PSL_message (PSL, PSL_MSG_FATAL, "Automatic conversion of file %s to Sun rasterfile failed\n", file);
+				PSL_message (PSL, PSL_MSG_FATAL, "Error: Automatic conversion of file %s to Sun rasterfile failed\n", file);
 				remove (tmp_file);	/* Remove the temp file */
 				return (PSL_READ_FAILURE);
 			}
 		}
 		if ((fp = fopen (tmp_file, "rb")) == NULL) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Cannot open image file %s!\n", tmp_file);
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Cannot open image file %s!\n", tmp_file);
+			remove (tmp_file);
 			return (PSL_READ_FAILURE);
 		}
 		if (psl_read_rasheader (PSL, fp, h, 0, 0)) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Error reading magic number of image file %s!\n", tmp_file);
-			return (PSL_READ_FAILURE);
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Trouble reading magic number of image file %s!\n", tmp_file);
+			Return2 (PSL_READ_FAILURE);
 		}
 		fseek (fp, (off_t)0, SEEK_SET);
 		if (h->magic != RAS_MAGIC) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Unrecognised magic number 0x%x in file %s!\n", h->magic, tmp_file);
-			return (PSL_READ_FAILURE);
+			PSL_message (PSL, PSL_MSG_FATAL, "Error: Unrecognised magic number 0x%x in file %s!\n", h->magic, tmp_file);
+			Return2 (PSL_READ_FAILURE);
 		}
-		code = psl_load_raster (PSL, fp, h, picture);
-		remove (tmp_file);	/* Remove the temp file */
-		return (code);
+		Return2 (psl_load_raster (PSL, fp, h, picture));
 	}
-	else {
-		PSL_message (PSL, PSL_MSG_FATAL, "Unrecognised magic number 0x%x in file %s!\n", h->magic, file);
-		return (PSL_READ_FAILURE);
-	}
-
-	return (PSL_NO_ERROR);	/* Dummy return to satisfy some compilers */
-}
-
-int psl_read_rasheader (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *h, int i0, int i1)
-{
-	/* Reads the header of a Sun rasterfile (or any other).
-	   Since the byte order is defined as Big Endian, the bytes are
-		 swapped on Little Endian platforms.
-	 */
-
-	int i;
-	int32_t value;
-
-	for (i = i0; i <= i1; i++) {
-
-		if (fread (&value, sizeof (int32_t), 1, fp) != 1) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Error reading rasterfile header\n");
-			return (-1);
-		}
-#ifndef WORDS_BIGENDIAN
-		value = bswap32 (value);
-#endif
-
-		switch (i) {
-			case 0:
-				h->magic = (int)value;
-				break;
-			case 1:
-				h->width = (int)value;
-				break;
-			case 2:
-				h->height = (int)value;
-				break;
-			case 3:
-				h->depth = (int)value;
-				break;
-			case 4:
-				h->length = (int)value;
-				break;
-			case 5:
-				h->type = (int)value;
-				break;
-			case 6:
-				h->maptype = (int)value;
-				break;
-			case 7:
-				h->maplength = (int)value;
-				break;
-		}
-	}
-
-	if (h->type == RT_OLD && h->length == 0)
-		h->length = 2 * ((int)lrint (ceil (h->width * h->depth / 16.0))) * h->height;
-
-	return (0);
-}
-
-/* ----------------------------------------------------------------------
- * Support functions used in PSL_* functions.
- * ----------------------------------------------------------------------
- */
-
-void psl_get_origin (double xt, double yt, double xr, double yr, double r, double *xo, double *yo, double *b1, double *b2)
-{ /* finds origin so that distance is r to the two points given */
-	double a0, b0, c0, A, B, C, q, sx1, sx2, sy1, sy2;
-
-	a0 = (xt - xr) / (yr - yt);
-	b0 = 0.5 * (xr*xr + yr*yr - xt*xt - yt*yt)/(yr - yt);
-	c0 = b0 - yt;
-	A = 1 + a0*a0;
-	B = 2*(c0*a0 - xt);
-	C = xt*xt - r*r + c0*c0;
-	q = sqrt (B*B - 4*A*C);
-	sx1 = 0.5* (-B + q)/A;
-	sx2 = 0.5* (-B - q)/A;
-	sy1 = b0 + a0 * sx1;
-	sy2 = b0 + a0 * sx2;
-
-	if (hypot (sx1, sy1) < r) {
-	    *xo = sx1;
-	    *yo = sy1;
-	}
-	else {
-	    *xo = sx2;
-	    *yo = sy2;
-	}
-	*b1 = R2D * atan2 (yr - *yo, xr - *xo);
-	*b2 = R2D * atan2 (yt - *yo, xt - *xo);
-}
-
-int psl_mathrightangle (struct PSL_CTRL *PSL, double x, double y, double param[])
-{	/* Called from psl_matharc for the special case of right angle only; no heads involved */
-	double size, xx[3], yy[3];
-
-	PSL_command (PSL, "V %d %d T %lg R\n", psl_ix (PSL, x), psl_iy (PSL, y), param[1]);
-	size = param[0] / M_SQRT2;
-
-	xx[0] = xx[1] = size;	xx[2] = 0.0;
-	yy[0] = 0.0;	yy[1] = yy[2] = size;
-	PSL_plotline (PSL, xx, yy, 3, PSL_MOVE + PSL_STROKE);
-	PSL_command (PSL, "U \n");
-	return (PSL_NO_ERROR);
-}
-
-int psl_matharc (struct PSL_CTRL *PSL, double x, double y, double param[])
-{
-	/* psl_matharc draws a mathematical opening angle indicator with center at
-	 * (x,y), radius, and start,stop angles.  At the ends we may plot a vector
-	 * head that is composed of circular arcs. As a special case we can plot
-	 * the straight angle symbol when the angles subtend 90 degrees.
-	 *
-	 * param must hold up to 8 values:
-	 * param[0] = radius, param[1] = angle1, param[2] = angle2,
-	 * param[3] = headlength, param[4] = headwidth, param[5] = penwidth(inch)
- 	 * param[6] = vector-shape (0-1), param[7] = status bit flags
-	 * param[8] = begin head type;	param[9] = end head type)
-	 * param[10] = begin trim (degrees);	param[11] = end trim (degrees)
-	 * add 4 to param[6] if you want to use a straight angle
-	 * symbol if the opening is 90.  */
-
-	int i, side[2], heads, outline, fill, sign[2] = {+1, -1};
-	unsigned int status, kind[2];
-	double head_arc_length, head_half_width, arc_width, da, da_c, xt, yt, sa, ca, sb, cb, r, r2, xr, yr, xl, yl, xo, yo, shape;
-	double angle[2], tangle[2], off[2], A, B, bo1, bo2, xi, yi, bi1, bi2, xv, yv, rshift[2] = {0.0, 0.0}, circ_r, xx[2], yy[2], trim[2];
-	char *line[2] = {"N", "P S"}, *dump[2] = {"", "fs"};
-
-	status = (unsigned int)lrint (param[7]);
-	if (status & PSL_VEC_MARC90 && fabs (90.0 - fabs (param[2]-param[1])) < 1.0e-8) {	/* Right angle */
-		return (psl_mathrightangle (PSL, x, y, param));
-	}
-	/* Make any adjustments caused by trim */
-	trim[PSL_BEGIN] = (status & PSL_VEC_OFF_BEGIN) ? param[10] : 0.0;
-	trim[PSL_END]   = (status & PSL_VEC_OFF_END)   ? param[11] : 0.0;
-	PSL_command (PSL, "V %d %d T\n", psl_ix (PSL, x), psl_iy (PSL, y));
-	kind[PSL_BEGIN] = (unsigned int)lrint (param[8]);
-	kind[PSL_END] = (unsigned int)lrint (param[9]);
-	r = param[0];				  /* Radius of arc in inch */
-	angle[PSL_BEGIN] = param[1] + trim[PSL_BEGIN]; angle[PSL_END] = param[2] - trim[PSL_END]; /* Start/stop angles of arc, possibly adjusted */
-	head_arc_length = param[3];		  /* Head length in inch */
-	head_half_width = 0.5 * param[4];	  /* Head half-width in inch */
-	arc_width = param[5];			  /* Arc width in inch */
-	shape = param[6];			  /* Vector head shape (0-1) */
-	heads = PSL_vec_head (status);		  /* 1 = at beginning, 2 = at end, 3 = both */
-	outline = ((status & PSL_VEC_OUTLINE) > 0);
-	fill = ((status & PSL_VEC_FILL) > 0);
-	circ_r = sqrt (head_arc_length * head_half_width / M_PI);	/* Same area as vector head */
-
-	da = head_arc_length * 180.0 / (M_PI * r);	/* Angle corresponding to the arc length */
-	da_c = circ_r * 180.0 / (M_PI * r);	/* Angle corresponding to the circle length */
-
-	for (i = 0; i < 2; i++) {	/* Possibly shorten angular arc if arrow heads take up space */
-		side[i] = PSL_vec_side (status, i);		  /* -1 = left-only, +1 = right-only, 0 = normal head for this end */
-		tangle[i] = angle[i];	/* Angle if no head is present */
-		off[i] = (kind[i] == PSL_VEC_ARROW) ? sign[i]*da*(1.0-0.5*shape) : 0.0;		/* Arc length from tip to backstop */
-		if ((heads & (i+1)) && side[i] && kind[i] == PSL_VEC_CIRCLE) off[i] -= 0.5 * sign[i] * da_c;
-		if (heads & (i+1)) tangle[i] += off[i];	/* Change arc angle by headlength or half-circle arc */
-	}
-	side[PSL_BEGIN] = -side[PSL_BEGIN];	/* Because of it was initially implemented */
-	/* rshift kicks in when we want a half-arrow head.  In that case we dont want it to be
-	 * exactly half since the vector line will then stick out 1/2 line thickness.  So we adjust
-	 * for this half-thickness by adding/subtracting from the radius accordingly, using r2,
-	 * but only if the two heads agree. */
-	rshift[PSL_BEGIN] = 0.5 * side[PSL_BEGIN] * arc_width;
-	rshift[PSL_END] = 0.5 * side[PSL_END] * arc_width;
-
-	PSL_setlinewidth (PSL, arc_width * PSL_POINTS_PER_INCH);
-	PSL_plotarc (PSL, 0.0, 0.0, r, tangle[PSL_BEGIN], tangle[PSL_END], PSL_MOVE | PSL_STROKE);	/* Draw the (possibly shortened) arc */
-	if (status & PSL_VEC_MID_FWD) {	/* Want forward-pointing mid-point head instead of at end */
-		angle[PSL_END] = 0.5 * (angle[PSL_BEGIN] + angle[PSL_END]);	heads = 2;
-		if (kind[PSL_END] == PSL_VEC_ARROW) angle[PSL_END] += 0.5 * da;
-		tangle[PSL_END] = angle[PSL_END] + off[PSL_END];
-	}
-	else if (status & PSL_VEC_MID_BWD) {	/* Want backwards-pointing mid-point head instead of at beginning */
-		angle[PSL_BEGIN] = 0.5 * (angle[PSL_BEGIN] + angle[PSL_END]);		heads = 1;
-		if (kind[PSL_BEGIN] == PSL_VEC_ARROW) angle[PSL_BEGIN] -= 0.5 * da;
-		tangle[PSL_BEGIN] = angle[PSL_BEGIN] + off[PSL_BEGIN];
-	}
-	if (heads) {	/* Will draw at least one head */
-		PSL_setfill (PSL, PSL->current.rgb[PSL_IS_FILL], true);	/* Set fill for head(s) */
-	}
-
-	for (i = 0; i < 2; i++) {	/* For both ends */
-		if ((heads & (i+1)) == 0) continue;	/* No arrow head at this angle */
-		A = D2R * angle[i];	sa = sin (A);	ca = cos (A);
-		r2 = r + sign[i] * rshift[i];
-		xt = r2 * ca;	yt = r2 * sa;	/* Tip coordinates */
-		switch (kind[i]) {
-			case PSL_VEC_ARROW:
-				B = D2R * (angle[i] + sign[i] * da);	sb = sin (B);	cb = cos (B);
-				PSL_command (PSL, "V\n");	/* Do this inside gsave/resore since we are clipping */
-				if (side[i] != +sign[i]) {	/* Need right side of arrow head */
-					xr = (r2 + head_half_width) * cb;	yr = (r2 + head_half_width) * sb;	/* Outer flank coordinates */
-					psl_get_origin (xt, yt, xr, yr, r2, &xo, &yo, &bo1, &bo2);
-					if (i == 0 && bo2 > bo1)
-						bo2 -= 360.0;
-					else if (i == 1 && bo1 > bo2)
-						bo1 -= 360.0;
-
-					PSL_plotarc (PSL, xo, yo, r2, bo2, bo1, PSL_MOVE);	/* Draw the arrow arc from tip to outside flank */
-					A = D2R * (tangle[i]);	sa = sin (A);	ca = cos (A);
-					xv = r2 * ca - xr;	yv = r2 * sa - yr;	/* Back point coordinates */
-					PSL_plotpoint (PSL, xv, yv, PSL_REL);		/* Connect to back point */
-				}
-				else {	/* Draw from tip to center back reduced by shape */
-					PSL_plotarc (PSL, 0.0, 0.0, r2, angle[i], tangle[i], PSL_MOVE);
-				}
-				if (side[i] != -sign[i]) {	/* Need left side of arrow head */
-					xl = (r2 - head_half_width) * cb;	yl = (r2 - head_half_width) * sb;	/* Inner flank coordinates */
-					psl_get_origin (xt, yt, xl, yl, r2, &xi, &yi, &bi1, &bi2);
-					if (i == 0 && bi1 < bi2)
-						bi1 += 360.0;
-					else if (i == 1 && bi1 > bi2)
-						bi1 -= 360.0;
-					PSL_plotarc (PSL, xi, yi, r2, bi1, bi2, PSL_DRAW);		/* Draw the arrow arc from tip to outside flank */
-				}
-				else {	/* Draw from center back reduced by shape to tip */
-					PSL_plotarc (PSL, 0.0, 0.0, r2, tangle[i], angle[i], PSL_DRAW);
-				}
-				PSL_command (PSL, "P clip %s %s U\n", dump[fill], line[outline]);
-				break;
-			case PSL_VEC_CIRCLE:
-				PSL_command (PSL, "V\n");	/* Do this inside gsave/restore since we are clipping */
-				if (side[i] == -1)	/* Need left side */
-					PSL_plotarc (PSL, xt, yt, circ_r, angle[i]+90.0, angle[i]+270.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				else if (side[i] == +1)	/* Need right side */
-					PSL_plotarc (PSL, xt, yt, circ_r, angle[i]-90.0, angle[i]+90.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				else
-					PSL_plotarc (PSL, xt, yt, circ_r, 0.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				PSL_command (PSL, "P clip %s %s U\n", dump[fill], line[outline]);
-				break;
-			case PSL_VEC_TERMINAL:
-				xt = r * ca;	yt = r * sa;	/* Tip coordinates */
-		 		xx[0] = xx[1] = xt;	yy[0] = yy[1] = yt;
-				if (side[i] == -1)	{	/* Need left side */
-				 	xx[0] = (r-head_half_width) * ca;	yy[0] = (r-head_half_width) * sa;
-				}
-				else if (side[i] == +1) {	/* Need right side */
-				 	xx[1] = (r+head_half_width) * ca;	yy[1] = (r+head_half_width) * sa;
-				}
-				else {
-				 	xx[0] = (r-head_half_width) * ca;	yy[0] = (r-head_half_width) * sa;
-				 	xx[1] = (r+head_half_width) * ca;	yy[1] = (r+head_half_width) * sa;
-				}
-				PSL_plotline (PSL, xx, yy, 2, PSL_MOVE+PSL_STROKE);	/* Set up path */
-				break;
-		}
-	}
-
-	PSL_command (PSL, "U \n");
-	return (PSL_NO_ERROR);
-}
-
-int psl_vector (struct PSL_CTRL *PSL, double x, double y, double param[])
-{
-	/* Will make sure that arrow has a finite width in PS coordinates.
-	 * param must hold up to 11 values:
-	 * param[0] = xtip;		param[1] = ytip;
-	 * param[2] = tailwidth;	param[3] = headlength;	param[4] = headwidth;
-	 * param[5] = headshape;	param[6] = status bit flags
-	 * param[7] = begin head type;	param[8] = end head type
-	 * param[9] = begin trim value;	param[10] = end trim value.
-	 */
-
-	double angle, xtip, ytip, r, s, tailwidth, headlength, headwidth, headshape, length_inch;
-	double xx[4], yy[4], off[2], yshift[2], trim[2], xp = 0.0;
-	int length, asymmetry[2], n, heads, outline, fill, status;
-	unsigned int kind[2];
-	char *line[2] = {"N", "P S"}, *dump[2] = {"", "fs"};
-
-	xtip = param[0];	ytip = param[1];
-	length_inch = hypot (x-xtip, y-ytip);					/* Vector length in inches */
-	length = psl_iz (PSL, length_inch);					/* Vector length in PS units */
-	if (length == 0) return (PSL_NO_ERROR);					/* NULL vector */
-	angle = atan2 (ytip-y, xtip-x) * R2D;					/* Angle vector makes with horizontal, in degrees */
-	status = lrint (param[6]);
-	/* Make any adjustments caused by trim */
-	trim[PSL_BEGIN] = (status & PSL_VEC_OFF_BEGIN) ? param[9]  : 0.0;
-	trim[PSL_END]   = (status & PSL_VEC_OFF_END)   ? param[10] : 0.0;
-	if (fabs (angle) == 90.0) {	/* Vertical segment; only adjust y coordinates */
-		y += copysign (trim[PSL_BEGIN], angle);	ytip -= copysign (trim[PSL_END], angle);
-	}
-	else {	/* General case, use trig */
-		double s, c, a = angle * D2R;
-		s = sin (a);		c = cos (a);
-		x += c * trim[PSL_BEGIN];	y += s * trim[PSL_BEGIN];
-		xtip -= c * trim[PSL_END];	ytip -= s * trim[PSL_END];
-	}
-	length_inch = hypot (x-xtip, y-ytip);					/* Recalculate vector length in inches */
-	length = psl_iz (PSL, length_inch);					/* Vector length in PS units */
-	if (length == 0) return (PSL_NO_ERROR);					/* NULL vector */
-	tailwidth = param[2];
-	headlength = param[3];	headwidth = 0.5 * param[4];	headshape = param[5];
-	kind[PSL_BEGIN] = (unsigned int)lrint (param[7]);
-	kind[PSL_END] = (unsigned int)lrint (param[8]);
-	off[PSL_BEGIN] = (kind[PSL_BEGIN] == PSL_VEC_ARROW) ? 0.5 * (2.0 - headshape) * headlength : 0.0;
-	off[PSL_END] = (kind[PSL_END] == PSL_VEC_ARROW) ? 0.5 * (2.0 - headshape) * headlength : 0.0;
-	heads = PSL_vec_head (status);		  /* 1 = at beginning, 2 = at end, 3 = both */
-	PSL_setlinewidth (PSL, tailwidth * PSL_POINTS_PER_INCH);
-	outline = ((status & PSL_VEC_OUTLINE) > 0);
-	fill = ((status & PSL_VEC_FILL) > 0);
-	asymmetry[PSL_BEGIN] = -PSL_vec_side (status, 0);	  /* -1 = left-only, +1 = right-only, 0 = normal head at beginning */
-	asymmetry[PSL_END] = PSL_vec_side (status, 1);		  /* -1 = left-only, +1 = right-only, 0 = normal head at beginning */
-	r = sqrt (headlength * headwidth / M_PI);	/* Same circle area as vector head */
-	s = sqrt (headlength * headwidth)/2;		/* Same square 	area as vector head */
-	PSL_command (PSL, "V %d %d T ", psl_ix (PSL, x), psl_iy (PSL, y));	/* Temporarily set tail point the local origin (0, 0) */
-	if (angle != 0.0) PSL_command (PSL, "%g R\n", angle);			/* Rotate so vector is horizontal in local coordinate system */
-	/* Make any adjustments caused by trim */
-	xx[0] = (heads & 1) ? off[PSL_BEGIN] : 0.0;
-	xx[1] = (heads & 2) ? length_inch - off[PSL_END] : length_inch;
-	if (heads & 1 && asymmetry[PSL_BEGIN] && kind[PSL_BEGIN] == PSL_VEC_CIRCLE) xx[0] = -r;
-	if (heads & 2 && asymmetry[PSL_END] && kind[PSL_END] == PSL_VEC_CIRCLE) xx[1] += r;
-	PSL_plotsegment (PSL, xx[0], 0.0, xx[1], 0.0);				/* Draw vector line body */
-
-	if (status & PSL_VEC_MID_FWD) {	/* Want forward-pointing mid-point head instead of at end */
-		xp = -0.5 * length_inch;	heads = 2;
-		if (kind[PSL_END] == PSL_VEC_ARROW) xp += 0.5 * headlength;
-	}
-	else if (status & PSL_VEC_MID_BWD) {	/* Want backwards-pointing mid-point head instead of at beginning */
-		xp = 0.5 * length_inch;	heads = 1;
-		if (kind[PSL_BEGIN] == PSL_VEC_ARROW) xp -= 0.5 * headlength;
-	}
-	if (heads == 0) {	/* No heads requested */
-		PSL_command (PSL, "U\n");
-		return (PSL_NO_ERROR);
-	}
-
-	/* Must switch asymmetry for start head since implemented backwards */
-	yshift[PSL_BEGIN] = 0.5 * asymmetry[PSL_BEGIN] * tailwidth;
-	yshift[PSL_END] = 0.5 * asymmetry[PSL_END] * tailwidth;
-
-	if (heads & 1) {	/* Need head at beginning, pointing backwards */
-		switch (kind[PSL_BEGIN]) {
-			case PSL_VEC_ARROW:
-				xx[0] = xp; yy[0] = -yshift[PSL_BEGIN];	n = 1;	/* Vector tip */
-				if (asymmetry[PSL_BEGIN] != +1) {	/* Need left side */
-					xx[n] = xp + headlength; yy[n++] = -headwidth;
-				}
-				if (asymmetry[PSL_BEGIN] || headshape != 0.0) {	/* Need center back of head */
-					xx[n] = xp + 0.5 * (2.0 - headshape) * headlength; yy[n++] = -yshift[PSL_BEGIN];
-				}
-				if (asymmetry[PSL_BEGIN] != -1) {	/* Need right side */
-					xx[n] = xp + headlength; yy[n++] = headwidth;
-				}
-				PSL_plotline (PSL, xx, yy, n, PSL_MOVE);	/* Set up path */
-				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
-				break;
-			case PSL_VEC_CIRCLE:
-				if (asymmetry[PSL_BEGIN] == -1)	/* Need left side */
-					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 180.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				else if (asymmetry[PSL_BEGIN] == +1)	/* Need right side */
-					PSL_plotarc (PSL, xp, 0.0, r, 180.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				else
-					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
-				break;
-			case PSL_VEC_SQUARE:
-				xx[0] = xx[3] = xp - s;	xx[1] = xx[2] = xp + s;
-				if (asymmetry[PSL_BEGIN] == -1)	{	/* Left side */
-					yy[0] = yy[1] = s;
-					yy[2] = yy[3] = 0.0;
-				}
-				else if (asymmetry[PSL_BEGIN] == +1) {	/* Right side */
-					yy[0] = yy[1] = 0.0;
-					yy[2] = yy[3] = -s;
-				}
-				else {
-					yy[0] = yy[1] = +s;
-					yy[2] = yy[3] = -s;
-				}
-				PSL_plotline (PSL, xx, yy, 4, PSL_MOVE);	/* Set up path */
-				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
-				break;
-			case PSL_VEC_TERMINAL:
-				xx[0] = xx[1] = xp;	yy[0] = yy[1] = 0.0;	/* Terminal line */
-				if (asymmetry[PSL_BEGIN] == -1)	/* Left side */
-					yy[1] = headwidth;
-				else if (asymmetry[PSL_BEGIN] == +1)	/* Right side */
-					yy[1] = -headwidth;
-				else {
-					yy[0] = -headwidth;
-					yy[1] = +headwidth;
-				}
-				PSL_plotline (PSL, xx, yy, 2, PSL_MOVE+PSL_STROKE);	/* Set up path */
-				break;
-		}
-
-	}
-	PSL_command (PSL, "U\n");
-	if (heads & 2) {	/* Need head at end, pointing forwards */
-		PSL_command (PSL, "V %d %d T ", psl_ix (PSL, xtip), psl_iy (PSL, ytip));	/* Temporarily set head point the local origin (0, 0) */
-		if (angle != 0.0) PSL_command (PSL, "%g R\n", angle);			/* Rotate so vector is horizontal in local coordinate system */
-		switch (kind[PSL_END]) {
-			case PSL_VEC_ARROW:
-				xx[0] = xp; yy[0] = yshift[PSL_END];	n = 1;	/* Vector tip */
-				if (asymmetry[PSL_END] != +1) {	/* Need left side */
-					xx[n] = xp -headlength; yy[n++] = headwidth;
-				}
-				if (asymmetry[PSL_END] || headshape != 0.0) {	/* Need center back of head */
-					xx[n] = xp -0.5 * (2.0 - headshape) * headlength; yy[n++] = yshift[PSL_END];
-				}
-				if (asymmetry[PSL_END] != -1) {	/* Need right side */
-					xx[n] = xp -headlength; yy[n++] = -headwidth;
-				}
-				PSL_plotline (PSL, xx, yy, n, PSL_MOVE);	/* Set up path */
-				PSL_command (PSL, "P clip %s %s \n", dump[fill], line[outline]);
-				break;	/* Finalize, then reset outline parameter */
-			case PSL_VEC_CIRCLE:
-				if (asymmetry[PSL_END] == -1)	/* Need left side */
-					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 180.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				else if (asymmetry[PSL_END] == +1)	/* Need right side */
-					PSL_plotarc (PSL, xp, 0.0, r, 180.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				else
-					PSL_plotarc (PSL, xp, 0.0, r, 0.0, 360.0, PSL_MOVE);	/* Draw the (possibly shortened) arc */
-				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
-				break;
-			case PSL_VEC_SQUARE:
-				xx[0] = xx[3] = xp - s;	xx[1] = xx[2] = xp + s;
-				if (asymmetry[PSL_END] == -1)	{	/* Left side */
-					yy[0] = yy[1] = s;
-					yy[2] = yy[3] = 0.0;
-				}
-				else if (asymmetry[PSL_END] == +1) {	/* Right side */
-					yy[0] = yy[1] = 0.0;
-					yy[2] = yy[3] = -s;
-				}
-				else {
-					yy[0] = yy[1] = +s;
-					yy[2] = yy[3] = -s;
-				}
-				PSL_plotline (PSL, xx, yy, 4, PSL_MOVE);	/* Set up path */
-				PSL_command (PSL, "P clip %s %s ", dump[fill], line[outline]);
-				break;
-			case PSL_VEC_TERMINAL:
-				xx[0] = xx[1] = xp;	yy[0] = yy[1] = 0.0;	/* Terminal line */
-				if (asymmetry[PSL_END] == -1)	/* Left side */
-					yy[1] = headwidth;
-				else if (asymmetry[PSL_END] == +1)	/* Right side */
-					yy[1] = -headwidth;
-				else {
-					yy[0] = -headwidth;
-					yy[1] = +headwidth;
-				}
-				PSL_plotline (PSL, xx, yy, 2, PSL_MOVE+PSL_STROKE);	/* Set up path */
-				break;
-		}
-		PSL_command (PSL, "U\n");
-	}
-	return (PSL_NO_ERROR);
-}
-
-int psl_shorten_path (struct PSL_CTRL *PSL, double *x, double *y, int n, int *ix, int *iy, int mode)
-{
-	/* Simplifies the (x,y) array by converting it to pixel coordinates (ix,iy)
-	 * and eliminating repeating points and intermediate points along straight
-	 * line segments.  The result is the fewest points needed to draw the path
-	 * and still look exactly like the original path.  However, if mode == 1 we do
-	 * no shortening. */
-
-	int i, k, dx, dy;
-#ifdef OLD_shorten_path
-	int old_dir = 0, new_dir;
-	double old_slope = 1.0e200, new_slope;
-	/* These seeds for old_slope and old_dir make sure that first point gets saved */
-#else
-	int d, db, bx, by, j, ij;
-#endif
-
-	if (n < 2) return (n);	/* Not a path to start with */
-
-	for (i = 0; i < n; i++) {	/* Convert all coordinates to integers at current scale */
-		ix[i] = psl_ix (PSL, x[i]);
-		iy[i] = psl_iy (PSL, y[i]);
-	}
-	if (mode == 1) return (n);
-
-#ifdef OLD_shorten_path
-	/* The only truly unique point is the starting point; all else must show increments
-	 * relative to the previous point */
-
-	/* First point is the anchor. We will find at least one point, unless all points are the same */
-	for (i = k = 0; i < n - 1; i++) {
-		dx = ix[i+1] - ix[i];
-		dy = iy[i+1] - iy[i];
-		if (dx == 0 && dy == 0) continue;	/* Skip duplicates */
-		new_slope = (dx == 0) ? copysign (1.0e100, (double)dy) : ((double)dy) / ((double)dx);
-		new_dir = (dx >= 0) ? 1 : -1;
-		if (new_slope != old_slope || new_dir != old_dir) {
-			ix[k] = ix[i];
-			iy[k] = iy[i];
-			k++;
-			old_slope = new_slope;
-			old_dir = new_dir;
-		}
-	}
-
-	/* If all points are the same, we get here with k = 0, so we can exit here now with 1 point */
-	if (k < 1) return (1);
-
-	/* Last point (k cannot be < 1 so k-1 >= 0) */
-	if (ix[k-1] != ix[n-1] || iy[k-1] != iy[n-1]) {	/* Do not do slope check on last point since we must end there */
-		ix[k] = ix[n-1];
-		iy[k] = iy[n-1];
-		k++;
-	}
-#else
-	/* Skip intermediate points that are "close" to the line between point i and point j, where
-	   "close" is defined as less than 1 "dot" (the PostScript resolution) in either direction.
-	   A point is always close when it coincides with one of the end points (i or j).
-	   An intermediate point is also considered "far" when it is beyond i or j.
-	   Algorithm requires that |dx by - bx dy| < max(|dx|,dy|).
-	*/
-	for (i = k = 0, j = 2; j < n; j++) {
-		dx = ix[j] - ix[i];
-		dy = iy[j] - iy[i];
-		d = MAX(abs((int)dx),abs((int)dy));
-		/* We know that d can be zero. That is OK, since it will only happen when (dx,dy) = (0,0).
-		   And in that cases all intermediate points will always be "far" */
-		for (ij = j - 1; ij > i; ij--) {
-			bx = ix[ij] - ix[i];
-			/* Check if the intermediate point is outside the x-range between points i and j.
-			   In case of a vertical line, any point with a different x-coordinate is "far" */
-			if (dx > 0) {
-				if (bx < 0 || bx > dx) break;
-			}
-			else {
-				if (bx > 0 || bx < dx) break;
-			}
-			by = iy[ij] - iy[i];
-			db = abs((int)(dx * by) - (int)(bx * dy));
-			if (db >= d) break; /* Point ij is "far" from line connecting i and j */
-		}
-		if (ij > i) {	/* Some intermediate point failed test */
-			i = j - 1;
-			k++;
-			ix[k] = ix[i];
-			iy[k] = iy[i];
-		}
-	}
-
-	/* We have gotten to the last point. If this is a duplicate, skip it */
-	if (ix[k] != ix[n-1] || iy[k] != iy[n-1]) {
-		k++;
-		ix[k] = ix[n-1];
-		iy[k] = iy[n-1];
-	}
-	k++;
-#endif
-
-	return (k);
-}
-
-void psl_get_uppercase (char *new_c, char *old_c)
-{
-	int i = 0, c;
-	while (old_c[i]) {
-	 	c = toupper ((int)old_c[i]);
-		new_c[i++] = (char)c;
-	}
-	new_c[i] = 0;
-}
-
-int psl_encodefont (struct PSL_CTRL *PSL, int font_no)
-{
-	if (PSL->init.encoding == NULL) return (PSL_NO_ERROR);		/* Already have StandardEncoding by default */
-	if (PSL->internal.font[font_no].encoded) return (PSL_NO_ERROR);	/* Already reencoded or should not be reencoded ever */
-
-	/* Reencode fonts with Standard+ or ISOLatin1[+] encodings */
-	PSL_command (PSL, "PSL_font_encode %d get 0 eq {%s_Encoding /%s /%s PSL_reencode PSL_font_encode %d 1 put} if", font_no, PSL->init.encoding, PSL->internal.font[font_no].name, PSL->internal.font[font_no].name, font_no);
-	(PSL->internal.comments) ? PSL_command (PSL, "\t%% Set this font\n") : PSL_command (PSL, "\n");
-	PSL->internal.font[font_no].encoded = true;
-	return (PSL_NO_ERROR);
-}
-
-int psl_putfont (struct PSL_CTRL *PSL, double fontsize)
-{
-	if (fontsize == PSL->current.fontsize) return (PSL_NO_ERROR);
-	PSL->current.fontsize = fontsize;
-	PSL_command (PSL, "%d F%d\n", psl_ip (PSL, fontsize), PSL->current.font_no);
-	return (PSL_NO_ERROR);
-}
-
-void psl_def_font_encoding (struct PSL_CTRL *PSL)
-{
-	/* Initialize book-keeping for font encoding and write font macros */
-
-	int i;
-
-	/* Initialize T/F array for font reencoding so that we only do it once
-	 * for each font that is used */
-
-	PSL_command (PSL, "/PSL_font_encode ");
-	for (i = 0; i < PSL->internal.N_FONTS; i++) PSL_command (PSL, "0 ");
-	PSL_command (PSL, "%d array astore def", PSL->internal.N_FONTS);
-	(PSL->internal.comments) ? PSL_command (PSL, "\t%% Initially zero\n") : PSL_command (PSL, "\n");
-
-	/* Define font macros (see postscriptlight.h for details on how to add fonts) */
-
-	for (i = 0; i < PSL->internal.N_FONTS; i++) PSL_command (PSL, "/F%d {/%s Y}!\n", i, PSL->internal.font[i].name);
-}
-
-char *psl_prepare_text (struct PSL_CTRL *PSL, char *text)
-
-/*	Adds escapes for misc parenthesis, brackets etc.
-	Will also translate to some European characters such as the @a, @e
-	etc escape sequences. Calling function must REMEMBER to free memory
-	allocated by string */
-{
-	const char *psl_scandcodes[15][5] = {	/* Short-hand conversion for some European characters in both Undefined [0], Standard [1], Standard+ [2], ISOLatin1 [3], and ISOLatin1+ [4] encoding */
-		{ "AA", "AA"   , "\\375", "\\305", "\\305"},	/* Aring */
-		{ "AE", "\\341", "\\341", "\\306", "\\306"},	/* AE */
-		{ "OE", "\\351", "\\351", "\\330", "\\330"},	/* Oslash */
-		{ "aa", "aa"   , "\\376", "\\345", "\\345"},	/* aring */
-		{ "ae", "\\361", "\\361", "\\346", "\\346"},	/* ae */
-		{ "oe", "\\371", "\\371", "\\370", "\\370"},	/* oslash */
-		{ "C" , "C"    , "\\201", "\\307", "\\307"},	/* Ccedilla */
-		{ "N" , "N"    , "\\204", "\\321", "\\321"},	/* Ntilde */
-		{ "U" , "UE"   , "\\335", "\\334", "\\334"},	/* Udieresis */
-		{ "c" , "c"    , "\\215", "\\347", "\\347"},	/* ccedilla */
-		{ "n" , "n"    , "\\227", "\\361", "\\361"},	/* ntilde */
-		{ "ss", "\\373", "\\373", "\\337", "\\337"},	/* germandbls */
-		{ "u" , "ue"   , "\\370", "\\374", "\\374"},	/* udieresis */
-		{ "i" , "i"    , "\\354", "\\355", "\\355"},	/* iaccute */
-		{ "@" , "\\100", "\\100", "\\100", "\\100"}	/* atsign */
-	};
-	char *string = NULL;
-	int i=0, j=0, font;
-	int he = 0;		/* PSL Historical Encoding (if any) */
-
-	if (!text) return NULL;
-
-	psl_encodefont (PSL, PSL->current.font_no);
-
-	if (strcmp ("Standard+", PSL->init.encoding) == 0)
-		he = 2;
-	else if (strcmp ("Standard", PSL->init.encoding) == 0)
-		he = 1;
-	else if (strcmp ("ISOLatin1+", PSL->init.encoding) == 0)
-		he = 4;
-	else if (strcmp ("ISOLatin1", PSL->init.encoding) == 0)
-		he = 3;
-
-	string = PSL_memory (PSL, NULL, 2 * PSL_BUFSIZ, char);
-	while (text[i]) {
-		if (he && text[i] == '@') {
-			i++;
-			switch (text[i]) {
-				case 'A':
-					strcat (string, psl_scandcodes[0][he]);
-					j += (int)strlen(psl_scandcodes[0][he]); i++;
-					break;
-				case 'E':
-					strcat (string, psl_scandcodes[1][he]);
-					j += (int)strlen(psl_scandcodes[1][he]); i++;
-					break;
-				case 'O':
-					strcat (string, psl_scandcodes[2][he]);
-					j += (int)strlen(psl_scandcodes[2][he]); i++;
-					break;
-				case 'a':
-					strcat (string, psl_scandcodes[3][he]);
-					j += (int)strlen(psl_scandcodes[3][he]); i++;
-					break;
-				case 'e':
-					strcat (string, psl_scandcodes[4][he]);
-					j += (int)strlen(psl_scandcodes[4][he]); i++;
-					break;
-				case 'o':
-					strcat (string, psl_scandcodes[5][he]);
-					j += (int)strlen(psl_scandcodes[5][he]); i++;
-					break;
-				case 'C':
-					strcat (string, psl_scandcodes[6][he]);
-					j += (int)strlen(psl_scandcodes[6][he]); i++;
-					break;
-				case 'N':
-					strcat (string, psl_scandcodes[7][he]);
-					j += (int)strlen(psl_scandcodes[7][he]); i++;
-					break;
-				case 'U':
-					strcat (string, psl_scandcodes[8][he]);
-					j += (int)strlen(psl_scandcodes[8][he]); i++;
-					break;
-				case 'c':
-					strcat (string, psl_scandcodes[9][he]);
-					j += (int)strlen(psl_scandcodes[9][he]); i++;
-					break;
-				case 'n':
-					strcat (string, psl_scandcodes[10][he]);
-					j += (int)strlen(psl_scandcodes[10][he]); i++;
-					break;
-				case 's':
-					strcat (string, psl_scandcodes[11][he]);
-					j += (int)strlen(psl_scandcodes[11][he]); i++;
-					break;
-				case 'u':
-					strcat (string, psl_scandcodes[12][he]);
-					j += (int)strlen(psl_scandcodes[12][he]); i++;
-					break;
-				case 'i':
-					strcat (string, psl_scandcodes[13][he]);
-					j += (int)strlen(psl_scandcodes[13][he]); i++;
-					break;
-				case '@':
-					strcat (string, psl_scandcodes[14][he]);
-					j += (int)strlen(psl_scandcodes[14][he]); i++;
-					break;
-				case '%':	/* Font switcher */
-					if (isdigit ((int)text[i+1])) {	/* Got a font */
-						font = atoi (&text[i+1]);
-						psl_encodefont (PSL, font);
-					}
-					string[j++] = '@';
-					string[j++] = text[i++];	/* Just copy over the rest */
-					while (text[i] != '%') string[j++] = text[i++];
-					break;
-				case '~':	/* Symbol font toggle */
-					psl_encodefont (PSL, PSL_SYMBOL_FONT);
-				default:
-					string[j++] = '@';
-					string[j++] = text[i++];
-					break;
-			}
-		}
-		else {
-			switch (text[i]) {    /* NEED TO BE ESCAPED!!!! for PostScript*/
-				case '{':
-				case '}':
-				case '[':
-				case ']':
-				case '(':
-				case ')':
-				case '<':
-				case '>':
-					if (j > 0 && string[MAX(j-1,0)] == '\\')	/* ALREADY ESCAPED... */
-						string[j++] = text[i++];
-					else {
-						strcat(string, "\\"); j++;
-						string[j++] = text[i++];
-					}
-					break;
-				default:
-					string[j++] = text[i++];
-					break;
-			}
-		}
-	}
-	return (string);
-}
-
-int psl_load_eps (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *h, unsigned char **picture)
-{
-	/* psl_load_eps reads an Encapsulated PostScript file */
-
-	int n, p, llx, lly, trx, try, BLOCKSIZE=4096;
-	unsigned char *buffer = NULL;
-
-	/* Scan for BoundingBox */
-
-	psl_get_boundingbox (PSL, fp, &llx, &lly, &trx, &try, &h->llx, &h->lly, &h->trx, &h->try);
-
-	/* Rewind and load into buffer */
-
-	n=0;
-	fseek (fp, (off_t)0, SEEK_SET);
-	buffer = PSL_memory (PSL, NULL, BLOCKSIZE, unsigned char);
-	while ((p = (int)fread ((unsigned char *)buffer + n, 1U, (size_t)BLOCKSIZE, fp)) == BLOCKSIZE)
-	{
-		n+=BLOCKSIZE;
-		buffer = PSL_memory (PSL, buffer, n+BLOCKSIZE, unsigned char);
-	}
-	n+=p;
-
-	/* Fill header struct with appropriate values */
-	h->magic = EPS_MAGIC;
-	h->width = (int)(trx - llx);
-	h->height = (int)(try - lly);
-	h->depth = 0;
-	h->length = (int)n;
-	h->type = RT_EPS;
-	h->maptype = RMT_NONE;
-	h->maplength = 0;
-	h->xorigin = (int)llx;
-	h->yorigin = (int)lly;
-
-	*picture = buffer;
-	return (0);
-}
-
-int psl_load_raster (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *header, unsigned char **picture)
-{
-	/* psl_load_raster reads a Sun standard rasterfile of depth 1, 8, 24, or 32 into memory */
-
-	int mx_in, mx, j, k, i, ij, n = 0, ny, get, odd, oddlength, r_off, b_off;
-	unsigned char *buffer = NULL, *entry = NULL, *red = NULL, *green = NULL, *blue = NULL;
-
-	if (psl_read_rasheader (PSL, fp, header, 0, 7)) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading Sun rasterfile header!\n");
-		return (PSL_READ_FAILURE);
-	}
-
-	if (header->magic != RAS_MAGIC) {	/* Not a Sun rasterfile */
-		PSL_message (PSL, PSL_MSG_FATAL, "Raster is not a Sun rasterfile (Magic # = 0x%x)!\n", header->magic);
-		return (PSL_READ_FAILURE);
-	}
-	if (header->type < RT_OLD || header->type > RT_FORMAT_RGB) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Can only read Sun rasterfiles types %d - %d (your type = %d)!\n", RT_OLD, RT_FORMAT_RGB, header->type);
-		return (PSL_READ_FAILURE);
-	}
-
-	buffer = entry = red = green = blue = (unsigned char *)NULL;
-
-	if (header->depth == 1) {	/* 1 bit black and white image */
-		mx_in = (int) (2 * ceil (header->width / 16.0));	/* Because Sun images are written in multiples of 2 bytes */
-		mx = (int) (ceil (header->width / 8.0));		/* However, PS wants only the bytes that matters, so mx may be one less */
-		ny = header->height;
-		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
-		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading 1-bit Sun rasterfile!\n");
-			return (PSL_READ_FAILURE);
-		}
-		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
-
-		if (mx < mx_in) {	/* OK, here we must shuffle image to get rid of the superfluous last byte per line */
-			for (j = k = ij = 0; j < ny; j++) {
-				for (i = 0; i < mx; i++) buffer[k++] = buffer[ij++];
-				ij++;	/* Skip the extra byte */
-			}
-		}
-	}
-	else if (header->depth == 8 && header->maplength) {	/* 8-bit with color table */
-		get = header->maplength / 3;
-		red   = PSL_memory (PSL, NULL, get, unsigned char);
-		green = PSL_memory (PSL, NULL, get, unsigned char);
-		blue  = PSL_memory (PSL, NULL, get, unsigned char);
-		n  = (int)fread (red,   1U, (size_t)get, fp);
-		n += (int)fread (green, 1U, (size_t)get, fp);
-		n += (int)fread (blue,  1U, (size_t)get, fp);
-		if (n != header->maplength) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Error reading colormap!\n");
-			return (PSL_READ_FAILURE);
-		}
-		odd = (int)header->width%2;
-		entry = PSL_memory (PSL, NULL, header->length, unsigned char);
-		if (fread (entry, 1U, (size_t)header->length, fp) != (size_t)header->length) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading 8-bit Sun rasterfile!\n");
-			return (PSL_READ_FAILURE);
-		}
-		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &entry);
-		buffer = PSL_memory (PSL, NULL, 3 * header->width * header->height, unsigned char);
-		for (j = k = ij = 0; j < header->height; j++) {
-			for (i = 0; i < header->width; i++) {
-				buffer[k++] = red[entry[ij]];
-				buffer[k++] = green[entry[ij]];
-				buffer[k++] = blue[entry[ij]];
-				ij++;
-			}
-			if (odd) ij++;
-		}
-		header->depth = 24;
-	}
-	else if (header->depth == 8U) {	/* 8-bit without color table (implicit grayramp) */
-		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
-		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading 8-bit Sun rasterfile!\n");
-			return (PSL_READ_FAILURE);
-		}
-		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
-	}
-	else if (header->depth == 24 && header->maplength) {	/* 24-bit raster with colormap */
-		unsigned char r, b;
-		get = header->maplength / 3;
-		red   = PSL_memory (PSL, NULL, get, unsigned char);
-		green = PSL_memory (PSL, NULL, get, unsigned char);
-		blue  = PSL_memory (PSL, NULL, get, unsigned char);
-		n  = (int)fread (red,   1U, (size_t)get, fp);
-		n += (int)fread (green, 1U, (size_t)get, fp);
-		n += (int)fread (blue,  1U, (size_t)get, fp);
-		if ((size_t)n != (size_t)header->maplength) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Error reading colormap!\n");
-			return (PSL_READ_FAILURE);
-		}
-		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
-		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading 24-bit Sun rasterfile!\n");
-			return (PSL_READ_FAILURE);
-		}
-		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
-		oddlength = 3 * header->width;
-		odd = (3 * header->width) % 2;
-		r_off = (header->type == RT_FORMAT_RGB) ? 0 : 2;
-		b_off = (header->type == RT_FORMAT_RGB) ? 2 : 0;
-		for (i = j = 0; i < header->length; i += 3, j += 3) {	/* BGR -> RGB */
-			r =  red[buffer[i+r_off]];
-			b = blue[buffer[i+b_off]];
-			buffer[j] = r;
-			buffer[j+1] = green[buffer[i+1]];
-			buffer[j+2] = b;
-			if (odd && (j+3)%oddlength == 0) i++;
-		}
-	}
-	else if (header->depth == 24U) {	/* 24-bit raster, no colormap */
-		unsigned char r, b;
-		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
-		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading 24-bit Sun rasterfile!\n");
-			return (PSL_READ_FAILURE);
-		}
-		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
-		oddlength = 3 * header->width;
-		odd = (3 * header->width) % 2;
-		r_off = (header->type == RT_FORMAT_RGB) ? 0 : 2;
-		b_off = (header->type == RT_FORMAT_RGB) ? 2 : 0;
-		for (i = j = 0; i < header->length; i += 3, j += 3) {	/* BGR -> RGB */
-			r = buffer[i+r_off];
-			b = buffer[i+b_off];
-			buffer[j] = r;
-			buffer[j+1] = buffer[i+1];
-			buffer[j+2] = b;
-			if (odd && (j+3)%oddlength == 0) i++;
-		}
-	}
-	else if (header->depth == 32 && header->maplength) {	/* 32-bit raster with colormap */
-		unsigned char b;
-		get = header->maplength / 3;
-		red   = PSL_memory (PSL, NULL, get, unsigned char);
-		green = PSL_memory (PSL, NULL, get, unsigned char);
-		blue  = PSL_memory (PSL, NULL, get, unsigned char);
-		n  = (int)fread (red,   1U, (size_t)get, fp);
-		n += (int)fread (green, 1U, (size_t)get, fp);
-		n += (int)fread (blue,  1U, (size_t)get, fp);
-		if ((size_t)n != (size_t)header->maplength) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Error reading colormap!\n");
-			return (PSL_READ_FAILURE);
-		}
-		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
-		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading 32-bit Sun rasterfile!\n");
-			return (PSL_READ_FAILURE);
-		}
-		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
-		r_off = (header->type == RT_FORMAT_RGB) ? 1 : 3;
-		b_off = (header->type == RT_FORMAT_RGB) ? 3 : 1;
-		b = blue[buffer[b_off]];
-		buffer[0] = red[buffer[r_off]];
-		buffer[1] = green[buffer[2]];
-		buffer[2] = b;
-		for (i = 3, j = 4; j < header->length; i += 3, j += 4) {	/* _BGR -> RGB */
-			buffer[i] = red[buffer[j+r_off]];
-			buffer[i+1] = green[buffer[j+2]];
-			buffer[i+2] = blue[buffer[j+b_off]];
-		}
-		header->depth = 24;
-	}
-	else if (header->depth == 32U) {	/* 32-bit raster, no colormap */
-		unsigned char b;
-		buffer = PSL_memory (PSL, NULL, header->length, unsigned char);
-		if (fread (buffer, 1U, (size_t)header->length, fp) != (size_t)header->length) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Trouble reading 32-bit Sun rasterfile!\n");
-			return (PSL_READ_FAILURE);
-		}
-		if (header->type == RT_BYTE_ENCODED) psl_rle_decode (PSL, header, &buffer);
-		r_off = (header->type == RT_FORMAT_RGB) ? 1 : 3;
-		b_off = (header->type == RT_FORMAT_RGB) ? 3 : 1;
-		b = buffer[b_off];
-		buffer[0] = buffer[r_off];
-		buffer[1] = buffer[2];
-		buffer[2] = b;
-		for (i = 3, j = 4; j < header->length; i += 3, j += 4) {	/* _BGR -> RGB */
-			buffer[i] = buffer[j+r_off];
-			buffer[i+1] = buffer[j+2];
-			buffer[i+2] = buffer[j+b_off];
-		}
-		header->depth = 24;
-	}
-	else {	/* Unrecognized format */
-		PSL_message (PSL, PSL_MSG_FATAL, "Unrecognized file format!\n");
-		return (PSL_READ_FAILURE);
-	}
-
-	fclose (fp);
-
-	if (entry) PSL_free (entry);
-	if (red) PSL_free (red);
-	if (green) PSL_free (green);
-	if (blue) PSL_free (blue);
-
-	*picture = buffer;
-	return (PSL_NO_ERROR);
-}
-
-psl_indexed_image_t psl_makecolormap (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int nbits)
-{
-	/* When image consists of less than PSL_MAX_COLORS colors, the image can be
-	 * indexed to safe a significant amount of space.
-	 * The image and colormap are returned as a struct psl_indexed_image_t.
-	 *
-	 * It is important that the first RGB tuple is mapped to index 0.
-	 * This is used for color masked images.
-	 */
-	int i, j, npixels;
-	psl_colormap_t colormap;
-	psl_indexed_image_t image;
-
-	if (abs (nbits) != 24) return (NULL);		/* We only index into the RGB colorspace. */
-
-	npixels = abs (nx) * ny;
-
-	colormap = psl_memory (PSL, NULL, 1U, sizeof (*colormap));
-	colormap->ncolors = 0;
-	image = psl_memory (PSL, NULL, 1U, sizeof (*image));
-	image->buffer = psl_memory (PSL, NULL, npixels+8, sizeof (*image->buffer));	/* Add 8 to avoid overflow access in psl_bitreduce() */
-	image->colormap = colormap;
-
-	if (nx < 0) {
-		/* Copy the colour mask value into index 0 */
-		colormap->colors[0][0] = buffer[0];
-		colormap->colors[0][1] = buffer[1];
-		colormap->colors[0][2] = buffer[2];
-		colormap->ncolors++;
-		buffer += 3;		/* Skip to start of image */
-	}
-
-	for (i = 0; i < npixels; i++) {
-		for (j = 0; j < colormap->ncolors; j++)
-			if (colormap->colors[j][0] == buffer[0] && colormap->colors[j][1] == buffer[1] && colormap->colors[j][2] == buffer[2]) {
-				image->buffer[i] = (unsigned char)j;
-				break;
-			}
-
-		if (j == colormap->ncolors) {
-			if (colormap->ncolors == PSL_MAX_COLORS) {	/* Too many colors to index. */
-				PSL_free (image->buffer);
-				PSL_free (image);
-				PSL_free (colormap);
-				PSL_message (PSL, PSL_MSG_NORMAL, "Too many colors to make colormap - using 24-bit direct color instead.\n");
-				return (NULL);
-			}
-			image->buffer[i] = (unsigned char)j;
-			colormap->colors[j][0] = buffer[0];
-			colormap->colors[j][1] = buffer[1];
-			colormap->colors[j][2] = buffer[2];
-			colormap->ncolors++;
-		}
-		buffer += 3;
-	}
-
-	/* There's no need for a color map when the number of colors is the same as the number of pixels.
-	   Then you're better off with a compressed 24-bit color image instead. */
-	if (colormap->ncolors >= npixels)  {
-		PSL_free (image->buffer);
-		PSL_free (image);
-		PSL_free (colormap);
-		PSL_message (PSL, PSL_MSG_NORMAL, "Use of colormap is inefficient - using 24-bit direct color instead.\n");
-		return (NULL);
-	}
-
-	PSL_message (PSL, PSL_MSG_NORMAL, "Colormap of %d colors created\n", colormap->ncolors);
-	return (image);
-}
-
-void psl_stream_dump (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int nbits, int compress, int encode, int mask)
-{
-	/* Writes a stream of bytes in ascii85 or hex, performs RGB to CMYK
-	 * conversion and compression.
-	 * buffer	= stream of bytes
-	 * nx, ny	= image dimensions in pixels
-	 * nbits	= depth of image pixels in bits
-	 * compress	= no (0), rle (1), lzw (2), or deflate (3) compression
-	 * encode	= ascii85 (0) or hex (1)
-	 * mask		= image (0), imagemask (1), or neither (2)
-	 */
-	int nbytes, i;
-	unsigned line_length = 0;
-	unsigned char *buffer1 = NULL, *buffer2 = NULL;
-	const char *kind_compress[] = {"", "/RunLengthDecode filter", "/LZWDecode filter", "/FlateDecode filter"};
-	const char *kind_mask[] = {"image", "imagemask"};
-
-	nx = abs (nx);
-	nbytes = ((int)nbits * (int)nx + 7) / (int)8 * (int)ny;
-
-	/* Transform RGB stream to CMYK or Gray stream */
-	if (PSL->internal.color_mode == PSL_CMYK && nbits == 24)
-		buffer1 = psl_cmyk_encode (PSL, &nbytes, buffer);
-	else if (PSL->internal.color_mode == PSL_GRAY && nbits == 24)
-		buffer1 = psl_gray_encode (PSL, &nbytes, buffer);
-	else
-		buffer1 = buffer;
-
-	/* Perform selected compression method */
-	if (compress == PSL_RLE)
-		buffer2 = psl_rle_encode (PSL, &nbytes, buffer1);
-	else if (compress == PSL_LZW)
-		buffer2 = psl_lzw_encode (PSL, &nbytes, buffer1);
-	else if (compress == PSL_DEFLATE)
-		buffer2 = psl_deflate_encode (PSL, &nbytes, buffer1);
-	else
-		buffer2 = NULL;
-
-	if (!buffer2)	{ /* If compression failed, or no compression requested */
-		compress = PSL_NONE;
-		buffer2 = buffer1;
-	}
-
-	/* Output image dictionary */
-	if (mask < 2) {
-		PSL_command (PSL, "/Width %d /Height %d /BitsPerComponent %d\n", nx, ny, MIN(nbits,8));
-		PSL_command (PSL, "   /ImageMatrix [%d 0 0 %d 0 %d] /DataSource currentfile", nx, -ny, ny);
-		if (encode == PSL_ASCII85) PSL_command (PSL, " /ASCII85Decode filter");
-		if (compress) PSL_command (PSL, " %s", kind_compress[compress]);
-		PSL_command (PSL, "\n>> %s\n", kind_mask[mask]);
-	}
-	if (encode == PSL_ASCII85) {
-		/* Convert 4-tuples to ASCII85 5-tuples and write buffer to file */
-		psl_a85_encode (PSL, buffer2, nbytes);
-	}
-	else {
-		/* Regular hexadecimal encoding */
-		for (i = 0; i < nbytes; i++) {
-			PSL_command (PSL, "%02X", buffer2[i]); line_length += 2;
-			if (line_length > 95) { PSL_command (PSL, "\n"); line_length = 0; }
-		}
-	}
-	if (mask == 2) PSL_command (PSL, "%s", kind_compress[compress]);
-
-	/* Clear newly created buffers, but maintain original */
-	if (buffer2 != buffer1) PSL_free (buffer2);
-	if (buffer1 != buffer ) PSL_free (buffer1);
-}
-
-size_t psl_a85_encode (struct PSL_CTRL *PSL, const unsigned char *src_buf, size_t nbytes) {
-	/* Encode 4-byte binary data from src_buf to 5-byte ASCII85
-	 * Special cases: 0x00000000 is encoded as z
-	 * Encoded data is stored in dst_buf and written to file in
-	 * one go, which is faster than writing one char at a time.
-	 * The function returns the output buffer size. */
-	size_t dst_buf_size;
-	unsigned char *dst_buf, *dst_ptr;
-	const unsigned char *src_ptr = src_buf, *src_end = src_buf + nbytes;
-	const unsigned int max_line_len = 95; /* number of chars after which a newline is inserted */
-
-	if (!nbytes)
-		/* Ignore empty input */
-		return 0;
-
-	/* dst_buf has to be large enough to hold data + line endings */
-	dst_buf_size = (size_t)(nbytes * 1.25 + 1);      /* output buffer is at least 1.25 times larger */
-	dst_buf_size += dst_buf_size / max_line_len + 4; /* add more space for '\n' and delimiter */
-	dst_ptr = dst_buf = PSL_memory (PSL, NULL, dst_buf_size, unsigned char); /* output buffer */
-
-	do { /* for each quad in src_buf while src_ptr < src_end */
-		const size_t ilen = nbytes > 4 ? 4 : nbytes, olen = ilen + 1;
-		static unsigned int line_len = 0;
-		unsigned int i, n = 0;
-		int j;
-		unsigned char quintuple[5] = { 0 };
-
-		/* Wrap 4 chars into a 4-byte integer */
-		for (i = 0; i < ilen; ++i)
-			n += *src_ptr++ << (24 - 8*i);
-
-		if (n == 0 && ilen == 4) {
-			/* Set the only output byte to "z" */
-			*dst_ptr++ = 'z';
-			++line_len;
-			continue;
-		}
-
-		/* Else determine output 5-tuple */
-		for (j = 4; j >= 0; --j) {
-			quintuple[j] = (unsigned char) ((n % 85) + '!');
-			n = n / 85;
-		}
-
-		/* Copy olen bytes to dst_buf */
-		memcpy (dst_ptr, quintuple, olen);
-		line_len += (unsigned int)olen;
-		dst_ptr += olen;
-
-		/* Insert newline when line exceeds 95 characters */
-		if (line_len + 1 > max_line_len) {
-			*dst_ptr++ = '\n';
-			line_len = 0;
-		}
-	} while (nbytes -= 4, src_ptr < src_end); /* end do */
-
-	{
-		/* Mark the end of the Adobe ASCII85-encoded string: */
-		const unsigned char delimiter[] = "~>\n";
-		memcpy (dst_ptr, delimiter, 3);
-		dst_ptr += 3;
-	}
-
-	{
-		/* Write buffer to file and clean up */
-		const size_t buf_size = dst_ptr - dst_buf;
-		assert (buf_size <= dst_buf_size); /* check length */
-		fwrite (dst_buf, sizeof(char), buf_size, PSL->internal.fp);
-		PSL_free (dst_buf);
-		return buf_size;
-	}
-}
-
-#define ESC 128
-
-void psl_rle_decode (struct PSL_CTRL *PSL, struct imageinfo *h, unsigned char **in)
-{
-	/* Function to undo RLE encoding in Sun rasterfiles
-	 *
-	 * RLE consists of ESCaped pairs of bytes.  This are started
-	 * when the ESC value is encountered.  The Next byte is the <count>,
-	 * the following is the <value>.  We then replicate <value>
-	 * the required number of times.  If count is 0 then ESC is output.
-	 * If bytes are not ESCaped they are simply copied to output.
-	 * This is implemented with the constraint that all scanlines must
-	 * be an even number of bytes (i.e., we are using 16-bit words
-	 */
-
-	int i, j, col, width, len;
-	int odd = false, count;
-	unsigned char mask_table[] = {0xff, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe};
-	unsigned char mask, *out = NULL, value = 0;
-
-	i = j = col = count = 0;
-
-	width = (int)lrint (ceil (h->width * h->depth / 8.0));	/* Scanline width in bytes */
-	if (width%2) odd = true, width++;	/* To ensure 16-bit words */
-	mask = mask_table[h->width%8];	/* Padding for 1-bit images */
-
-	len = width * ((int)h->height);		/* Length of output image */
-	out = PSL_memory (PSL, NULL, len, unsigned char);
-	if (odd) width--;
-
-	while (j < h->length || count > 0) {
-
-		if (count) {
-			out[i++] = value;
-			count--;
-			col++;
-		}
-		else {
-			switch ((int)(*in)[j]) {
-				case ESC:
-					count = (int)(*in)[++j];
-					j++;
-					if (count == 0) {
-						out[i++] = ESC;
-						col++;
-					}
-					else {
-						count++;
-						value = (*in)[j];
-						j++;
-					}
-					break;
-				default:
-					out[i++] = (*in)[j++];
-					col++;
-			}
-		}
-
-		if (col == width) {
-			if (h->depth == 1) out[width-1] &= mask;
-			if (odd) {out[i++] = 0; count = 0;}
-			col = 0;
-		}
-	}
-
-	if (i != len) PSL_message (PSL, PSL_MSG_FATAL, "psl_rle_decode has wrong # of outbytes (%d versus expected %d)\n", i, len);
-
-	PSL_free (*in);
-	*in = out;
-}
-
-unsigned char *psl_cmyk_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input)
-{
-	/* Recode RGB stream as CMYK stream */
-
-	int in, out, nout;
-	unsigned char *output = NULL;
-
-	nout = *nbytes / 3 * 4;
-	output = PSL_memory (PSL, NULL, nout, unsigned char);
-
-	for (in = out = 0; in < *nbytes; out += 4, in += 3) psl_rgb_to_cmyk_char (&input[in], &output[out]);
-	*nbytes = nout;
-	return (output);
-}
-
-unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input)
-{
-	/* Recode RGB stream as gray-scale stream */
-
-	int in, out, nout;
-	unsigned char *output = NULL;
-
-	nout = *nbytes / 3;
-	output = PSL_memory (PSL, NULL, nout, unsigned char);
-
-	for (in = out = 0; in < *nbytes; out++, in += 3) output[out] = (char) lrint (PSL_YIQ ((&input[in])));
-	*nbytes = nout;
-	return (output);
-}
-
-unsigned char *psl_rle_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input)
-{
-	/* Run Length Encode a buffer of nbytes. */
-
-	int count = 0, out = 0, in = 0, i;
-	unsigned char pixel, *output = NULL;
-
-	i = MAX (512, *nbytes) + 136;	/* Maximum output length */
-	output = PSL_memory (PSL, NULL, i, unsigned char);
-
-	/* Loop scanning all input bytes. Abort when inflating after processing at least 512 bytes */
-	while (count < *nbytes && (out < in || out < 512)) {
-		in = count;
-		pixel = input[in++];
-		while (in < *nbytes && in - count < 127 && input[in] == pixel) in++;
-		if (in - count == 1) {	/* No more duplicates. How many non-duplicates were there? */
-			while (in < *nbytes && (in - count) < 127 && ((input[in] != input[in-1] || in > 1) && input[in] != input[in-2])) in++;
-			while (in < *nbytes && input[in] == input[in-1]) in--;
-			output[out++] = (unsigned char)(in - count - 1);
-			for (i = count; i < in; i++) output[out++] = input[i];
-		}
-		else {		/* Write out a runlength */
-			output[out++] = (unsigned char)(count - in + 1);
-			output[out++] = pixel;
-		}
-		count = in;
-	}
-
-	/* Write end of data marker */
-	output[out++] = 128;
-
-	/* Drop the compression when end result is bigger than original */
-	if (out > in) {
-		PSL_message (PSL, PSL_MSG_NORMAL, "RLE inflated %d to %d bytes. No compression done.\n", in, out);
-		PSL_free (output);
-		return (NULL);
-	}
-
-	/* Return number of output bytes and output buffer */
-	PSL_message (PSL, PSL_MSG_NORMAL, "RLE compressed %d to %d bytes (%.1f%% savings)\n", in, out, 100.0f*(1.0f-(float)out/in));
-	*nbytes = out;
-	return (output);
-}
-
-unsigned char *psl_lzw_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input)
-{
-	/* LZW compress a buffer of nbytes. */
-
-	static int ncode = 4096*256;
-	int i, index, in = 0;
-	static short int clear = 256, eod = 257;
-	short int table = 4095;	/* Initial value forces clearing of table on first byte */
-	short int bmax = 0, pre, oldpre, ext, *code = NULL;
-	psl_byte_stream_t output;
-	unsigned char *buffer = NULL;
-
-	i = MAX (512, *nbytes) + 8;	/* Maximum output length */
-	output = (psl_byte_stream_t)psl_memory (PSL, NULL, 1U, sizeof (*output));
-	output->buffer = PSL_memory (PSL, NULL, i, unsigned char);
-	code = PSL_memory (PSL, NULL, ncode, short int);
-
-	output->nbytes = 0;
-	output->depth = 9;
-	pre = input[in++];
-
-	/* Loop scanning all input bytes. Abort when inflating after processing at least 512 bytes */
-	while (in < *nbytes && (output->nbytes < in || output->nbytes < 512)) {
-		if (table >= 4095) {	/* Refresh code table */
-			output = psl_lzw_putcode (output, clear);
-			memset (code, 0, ncode * sizeof(*code));
-			table = eod + 1;
-			bmax = clear * 2;
-			output->depth = 9;
-		}
-
-		ext = input[in++];
-		oldpre = pre;
-		index = (pre << 8) + ext;
-		pre = code[index];
-
-		if (pre == 0) {		/* Add new entry to code table */
-			code[index] = table;
-			table++;
-			output = psl_lzw_putcode (output, oldpre);
-			pre = ext;
-			if (table == bmax) {
-				bmax <<= 1;
-				output->depth++;
-			}
-		}
-	}
-
-	/* Output last byte and End-of-Data */
-	output = psl_lzw_putcode (output, pre);
-	output = psl_lzw_putcode (output, eod);
-
-	/* Drop the compression when end result is bigger than original */
-	if (output->nbytes > in) {
-		PSL_message (PSL, PSL_MSG_NORMAL, "LZW inflated %d to %d bytes. No compression done.\n", in, output->nbytes);
-		PSL_free (code);
-		PSL_free (output->buffer);
-		PSL_free (output);
-		return (NULL);
-	}
-
-	/* Return number of output bytes and output buffer; release code table */
-	PSL_message (PSL, PSL_MSG_NORMAL, "LZW compressed %d to %d bytes (%.1f%% savings)\n", in, output->nbytes, 100.0f*(1.0f-(float)output->nbytes/in));
-	*nbytes = output->nbytes;
-	buffer = output->buffer;
-	PSL_free (code);
-	PSL_free (output);
-	return (buffer);
-}
-
-psl_byte_stream_t psl_lzw_putcode (psl_byte_stream_t stream, short int incode)
-{
-	static short int eod = 257;
-	static size_t bit_count = 0;
-	static size_t bit_buffer = 0;
-
-	/* Add incode to buffer and output 1 or 2 bytes */
-	bit_buffer |= (size_t) incode << (32 - stream->depth - bit_count);
-	bit_count += stream->depth;
-	while (bit_count >= 8) {
-		stream->buffer[stream->nbytes] = (unsigned char)(bit_buffer >> 24);
-		stream->nbytes++;
-		bit_buffer <<= 8;
-		bit_count -= 8;
-	}
-	if (incode == eod) {	/* Flush buffer */
-		stream->buffer[stream->nbytes] = (unsigned char)(bit_buffer >> 24);
-		stream->nbytes++;
-		bit_buffer = 0;
-		bit_count = 0;
-	}
-	return (stream);
-}
-
-unsigned char *psl_deflate_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input)
-{
-	/* DEFLATE a buffer of nbytes using ZLIB. */
-#ifdef HAVE_ZLIB
-	const unsigned int ilen = *nbytes;
-	unsigned int olen = *nbytes - 1; /* Output buffer is 1 smaller than input */
-	unsigned char *output;
-	int level = PSL->internal.deflate_level == 0 ? Z_DEFAULT_COMPRESSION : PSL->internal.deflate_level; /* Compression level */
-	int zstatus;
-	z_stream strm;
-
-	/* Initialize zlib for compression */
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	if (deflateInit (&strm, level) != Z_OK) {
-		PSL_message (PSL, PSL_MSG_NORMAL, "DEFLATE: cannot initialize ZLIB stream: %s", strm.msg);
-		return NULL;
-	}
-
-	output = PSL_memory (PSL, NULL, olen, unsigned char); /* Allocate output buffer */
-
-	strm.avail_in  = ilen;   /* number of bytes in input buffer */
-	strm.next_in   = input;  /* input buffer */
-	strm.avail_out = olen;   /* number of bytes available in output buffer */
-	strm.next_out  = output; /* output buffer */
-
-	zstatus = deflate (&strm, Z_FINISH); /* deflate whole chunk */
-	deflateEnd (&strm);                  /* deallocate zlib memory */
-
-	if (zstatus != Z_STREAM_END) {
-		/* "compressed" size is larger or other failure */
-		PSL_message (PSL, PSL_MSG_NORMAL, "DEFLATE: no compression done.\n");
-		PSL_free (output);
-		return NULL;
-	}
-
-	/* Return number of output bytes and output buffer */
-	olen = olen - strm.avail_out; /* initial size - size left */
-	PSL_message (PSL, PSL_MSG_NORMAL, "DEFLATE compressed %u to %u bytes (%.1f%% savings at compression level %d)\n", ilen, olen, 100.0f*(1.0f-(float)olen/ilen), level == Z_DEFAULT_COMPRESSION ? 6 : level);
-	*nbytes = olen;
-	return output;
-
-#else /* HAVE_ZLIB */
-	/* ZLIB not available */
-	PSL_message (PSL, PSL_MSG_NORMAL, "Cannot DEFLATE because ZLIB is not available.\n");
-	return NULL;
-#endif /* HAVE_ZLIB */
-}
-
-int psl_bitimage_cmap (struct PSL_CTRL *PSL, double f_rgb[], double b_rgb[])
-{
-	/* Print colormap for 1-bit image or imagemask. Returns value of "polarity":
-	 * 0 = Paint 0 bits foreground color, leave 1 bits transparent
-	 * 1 = Paint 1 bits background color, leave 0 bits transparent
-	 * 2 = Paint 0 bits foreground color, paint 1 bits background color
-	 * ! Note that odd return values indicate that the bitmap has to be
-	 * ! inverted before plotting, either explicitly, or through a mapping
-	 * ! function in the PostScript image definition.
-	 */
-	int polarity;
-	double f_cmyk[4], b_cmyk[4];
-
-	PSL_command (PSL, " [/Indexed /Device");
-	if (b_rgb[0] < 0.0) {
-		/* Backgound is transparent */
-		polarity = 0;
-		if (PSL_is_gray (f_rgb))
-			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(f_rgb[0]));
-		else if (PSL->internal.color_mode == PSL_GRAY)
-			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(PSL_YIQ(f_rgb)));
-		else if (PSL->internal.color_mode == PSL_CMYK) {
-			psl_rgb_to_cmyk (f_rgb, f_cmyk);
-			PSL_command (PSL, "CMYK 0 <%02X%02X%02X%02X>", PSL_q255(f_cmyk));
-		}
-		else
-			PSL_command (PSL, "RGB 0 <%02X%02X%02X>", PSL_t255(f_rgb));
-	}
-	else if (f_rgb[0] < 0.0) {
-		/* Foreground is transparent */
-		polarity = 1;
-		if (PSL_is_gray (b_rgb))
-			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(b_rgb[0]));
-		else if (PSL->internal.color_mode == PSL_GRAY)
-			PSL_command (PSL, "Gray 0 <%02X>", PSL_u255(PSL_YIQ(b_rgb)));
-		else if (PSL->internal.color_mode == PSL_CMYK) {
-			psl_rgb_to_cmyk (b_rgb, b_cmyk);
-			PSL_command (PSL, "CMYK 0 <%02X%02X%02X%02X>", PSL_q255(b_cmyk));
-		}
-		else
-			PSL_command (PSL, "RGB 0 <%02X%02X%02X>", PSL_t255(b_rgb));
-	}
-	else {
-		/* Colored foreground and background */
-		polarity = 2;
-		if (PSL_is_gray (b_rgb) && PSL_is_gray (f_rgb))
-			PSL_command (PSL, "Gray 1 <%02X%02X>", PSL_u255(f_rgb[0]), PSL_u255(b_rgb[0]));
-		else if (PSL->internal.color_mode == PSL_GRAY)
-			PSL_command (PSL, "Gray 1 <%02X%02X>", PSL_u255(PSL_YIQ(f_rgb)), PSL_u255(PSL_YIQ(b_rgb)));
-		else if (PSL->internal.color_mode == PSL_CMYK) {
-			psl_rgb_to_cmyk (f_rgb, f_cmyk);
-			psl_rgb_to_cmyk (b_rgb, b_cmyk);
-			PSL_command (PSL, "CMYK 1 <%02X%02X%02X%02X%02X%02X%02X%02X>", PSL_q255(f_cmyk), PSL_q255(b_cmyk));
-		}
-		else
-			PSL_command (PSL, "RGB 1 <%02X%02X%02X%02X%02X%02X>", PSL_t255(f_rgb), PSL_t255(b_rgb));
-	}
-	PSL_command (PSL, "] setcolorspace");
-
-	return (polarity);
-}
-
-void psl_defunits_array (struct PSL_CTRL *PSL, const char *param, double *array, int n)
-{	/* These are used by PSL_plottextline */
-	int i;
-	PSL_command (PSL, "/%s\n", param);
-	for (i = 0; i < n; i++) PSL_command (PSL, "%.2f\n", array[i] * PSL->internal.dpu);
-	PSL_command (PSL, "%d array astore def\n", n);
-}
-
-void psl_set_reducedpath_arrays (struct PSL_CTRL *PSL, double *x, double *y, int npath, int *n, int *m, int *node)
-{	/* These are used by PSL_plottextline.  We make sure there are no point pairs that would yield dx = dy = 0 (repeat point)
-	 * at the resolution we are using (0.01 DPI units), hence a new n (possibly shorter) is returned. */
-	int i, j, k, p, ii, kk, this_i, this_j, last_i, last_j, i_offset = 0, k_offset = 0, n_skipped, ntot = 0, new_tot = 0, *new_n = NULL;
-	char *use = NULL;
-	if (x == NULL && y == NULL) return;	/* No path */
-	for (p = 0; p < npath; p++) ntot += n[p];	/* Determine total number of points */
-	/* Since we need dx/dy from these we preprocess to avoid any nasty surprises with repeat points */
-	use = PSL_memory (PSL, NULL, ntot, char);
-	new_n = PSL_memory (PSL, NULL, npath, int);
-	for (p = 0; p < npath; p++) {
-		this_i = this_j = INT_MAX;
-		for (ii = j = n_skipped = k = 0; ii < n[p]; ii++) {
-			last_i = this_i;	last_j = this_j;
-			i = ii + i_offset;	/* Index into concatenated x,y arrays */
-			this_i = 100 * psl_ix (PSL, x[i]);	/* Simulates the digits written by a %.2lf format */
-			this_j = 100 * psl_iy (PSL, y[i]);
-			if (this_i == last_i && this_j == last_j)	/* Repeat point, skip it */
-				n_skipped++;
-			else {	/* Not a repeat point, use it */
-				use[i] = true;
-				j++;
-			}
-			kk = k + k_offset;	/* Index into concatenated node array */
-			if (k < m[p] && node[kk] == ii && n_skipped) {	/* Adjust node pointer since we are removing points and upsetting the node order */
-				node[kk++] -= n_skipped;
-				k++;
-			}
-		}
-		new_n[p] = j;
-		new_tot += j;
-		i_offset += n[p];
-		k_offset += m[p];
-
-	}
-
-	PSL_comment (PSL, "Set concatenated coordinate arrays for line segments:\n");
-	PSL_command (PSL, "/PSL_path_x [ ");
-	for (i = k = 0; i < ntot; i++) {
-		if (!use[i]) continue;
-		PSL_command (PSL, "%d ", psl_ix (PSL, x[i]));
-		k++;
-		if ((k%10) == 0) PSL_command (PSL, "\n\t");
-	}
-	PSL_command (PSL, "] def\n");
-	PSL_command (PSL, "/PSL_path_y [ ");
-	for (i = k = 0; i < ntot; i++) {
-		if (!use[i]) continue;
-		PSL_command (PSL, "%d ", psl_iy (PSL, y[i]));
-		k++;
-		if ((k%10) == 0) PSL_command (PSL, "\n\t");
-	}
-	PSL_command (PSL, "] def\n");
-	PSL_comment (PSL, "Set array with number of points per line segments:\n");
-	psl_set_int_array (PSL, "path_n", new_n, npath);
-	if (k > 100000) PSL_message (PSL, PSL_MSG_NORMAL, "Warning: PSL array placed has %d items - may exceed gs_init.ps MaxOpStack setting\n", k);
-
-	/* Free up temp arrays */
-	PSL_free (use);
-	PSL_free (new_n);
-	return;
-}
-
-void psl_set_path_arrays (struct PSL_CTRL *PSL, const char *prefix, double *x, double *y, int npath, int *n)
-{	/* Set coordinates arrays in PS units */
-	int i, ntot = 0;
-	char txt[64] = {""};
-
-	if (x == NULL && y == NULL) return;		/* No path */
-	for (i = 0; i < npath; i++) ntot += n[i];	/* Determine total number of points */
-
-	PSL_comment (PSL, "Set coordinate arrays for text label placements:\n");
-	PSL_command (PSL, "/PSL_%s_x [ ", prefix);
-	for (i = 0; i < ntot; i++) {
-		PSL_command (PSL, "%d ", psl_ix (PSL, x[i]));
-		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
-	}
-	PSL_command (PSL, "] def\n");
-	PSL_command (PSL, "/PSL_%s_y [ ", prefix);
-	for (i = 0; i < ntot; i++) {
-		PSL_command (PSL, "%d ", psl_iy (PSL, y[i]));
-		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
-	}
-	PSL_command (PSL, "] def\n");
-	sprintf (txt, "%s_n", prefix);
-	psl_set_int_array (PSL, txt, n, npath);
-}
-
-void psl_set_attr_arrays (struct PSL_CTRL *PSL, int *node, double *angle, char **txt, int npath, int *m)
-{	/* This function sets PSL arrays for attributes needed to place contour labels and quoted text labels.
-	 * node:	specifies where along each segments there should be labels [NULL if not curved text]
-	 * angle:	specifies angle of text for each item.
-	 * txt:		is the text labels for each item.
-	 * npath:	the number of segments (curved text) or number of text items (straight text)
-	 * m:		array of length npath with number of labels per curved segment or NULL if straight text.
-	 */
-	int i, nlab = 0;
-	bool curved = (node != NULL && m != NULL);
-
-	for (i = 0; i < npath; i++) nlab += m[i];	/* Determine total number of labels */
-	if (curved) {	/* Curved text has node array and m[] array */
-		PSL_comment (PSL, "Set array with nodes of PSL_path_x|y for text placement:\n");
-		psl_set_int_array (PSL, "label_node", node, nlab);
-		PSL_comment (PSL, "Set array with number of labels per line segment:\n");
-		psl_set_int_array (PSL, "label_n", m, npath);
-	}
-	PSL_comment (PSL, "Set array with baseline angle for each text label:\n");
-	psl_set_real_array (PSL, "label_angle", angle, nlab);
-	PSL_comment (PSL, "Set array with the text labels:\n");
-	psl_set_txt_array (PSL, "label_str", txt, nlab);
-
-	return;
-}
-
-void psl_set_real_array (struct PSL_CTRL *PSL, const char *prefix, double *array, int n)
-{	/* These are raw and not scaled */
-	int i;
-	PSL_command (PSL, "/PSL_%s [ ", prefix);
-	for (i = 0; i < n; i++) {
-		PSL_command (PSL, "%.2f ", array[i]);
-		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
-	}
-	PSL_command (PSL, "] def\n");
-}
-
-void psl_set_int_array (struct PSL_CTRL *PSL, const char *prefix, int *array, int n)
-{	/* These are raw and not scaled */
-	int i;
-	PSL_command (PSL, "/PSL_%s [ ", prefix);
-	for (i = 0; i < n; i++) {
-		PSL_command (PSL, "%d ", array[i]);
-		if (((i+1)%10) == 0) PSL_command (PSL, "\n\t");
-	}
-	PSL_command (PSL, "] def\n");
-}
-
-void psl_set_txt_array (struct PSL_CTRL *PSL, const char *prefix, char *array[], int n)
-{
-	int i;
-	PSL_command (PSL, "/PSL_%s [\n", prefix);
-	for (i = 0; i < n; i++) PSL_command (PSL, "\t(%s)\n", array[i]);
-	PSL_command (PSL, "] def\n", n);
-}
-
-void *psl_memory (struct PSL_CTRL *PSL, void *prev_addr, size_t nelem, size_t size)
-{
-	/* Multi-functional memory allocation subroutine.
-	   If prev_addr is NULL, allocate new memory of nelem elements of size bytes.
-	   	Ignore when nelem == 0.
-	   If prev_addr exists, reallocate the memory to a larger or smaller chunk of nelem elements of size bytes.
-	   	When nelem = 0, free the memory.
-	*/
-
-	void *tmp = NULL;
-	const char *m_unit[4] = {"bytes", "kb", "Mb", "Gb"};
-	double mem;
-	int k;
-
-	if (prev_addr) {
-		if (nelem == 0) { /* Take care of n == 0 */
-			PSL_free (prev_addr);
-			return (NULL);
-		}
-		if ((tmp = realloc ( prev_addr, nelem * size)) == NULL) {
-			mem = (double)(nelem * size);
-			k = 0;
-			while (mem >= 1024.0 && k < 3) mem /= 1024.0, k++;
-			PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not reallocate more memory [%.2f %s, %" PRIuS " items of %" PRIuS " bytes]\n", mem, m_unit[k], nelem, size);
-			return (NULL);
-		}
-	}
-	else {
-		if (nelem == 0) return (NULL); /* Take care of n = 0 */
-		if ((tmp = calloc (nelem, size)) == NULL) {
-			mem = (double)(nelem * size);
-			k = 0;
-			while (mem >= 1024.0 && k < 3) mem /= 1024.0, k++;
-			PSL_message (PSL, PSL_MSG_FATAL, "Error: Could not allocate memory [%.2f %s, %" PRIuS " items of %" PRIuS " bytes]\n", mem, m_unit[k], nelem, size);
-			return (NULL);
-		}
-	}
-	return (tmp);
-}
-
-int psl_comp_rgb_asc (const void *p1, const void *p2)
-{
-	/* Returns -1 if rgb1 is < than rgb2,
-	   +1 if rgb2 > rgb1, and 0 if they are equal.
-	   We decide based on r, then g, then b.
-	*/
-	const double *point_1 = p1, *point_2 = p2;
-	int k;
-
-	for (k = 0; k < 3; k++) {
-		if (point_1[k] < point_2[k]) return (-1);
-		if (point_1[k] > point_2[k]) return (+1);
-	}
-	return (0);	/* Same color */
-}
-
-int psl_comp_long_asc (const void *p1, const void *p2)
-{
-	/* Returns -1 if point_1 is < that point_2,
-	   +1 if point_2 > point_1, and 0 if they are equal
-	*/
-	const int *point_1 = p1, *point_2 = p2;
-
-	if ( (*point_1) < (*point_2) )
-		return (-1);
-	else if ( (*point_1) > (*point_2) )
-		return (1);
-	else
-		return (0);
-}
-
-/* This function copies a file called $PSL_SHAREDIR/postscriptlight/<fname>.ps
- * to the postscript output verbatim.
- */
-static void psl_bulkcopy (struct PSL_CTRL *PSL, const char *fname)
-{
-	FILE *in = NULL;
-	char buf[PSL_BUFSIZ], fullname[PSL_BUFSIZ];
-	int i;
-
-	psl_getsharepath (PSL, "postscriptlight", fname, ".ps", fullname);
-	if ((in = fopen (fullname, "r")) == NULL) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: ");
-		perror (fullname);
-		PSL_exit (EXIT_FAILURE);
-	}
-
-	while (fgets (buf, PSL_BUFSIZ, in)) {
-		if (PSL->internal.comments) {
-			/* We copy every line, including the comments, except those starting '%-' */
-			if (buf[0] == '%' && buf[1] == '-') continue;
-			PSL_command (PSL, "%s", buf);
-		}
-		else {
-			/* Here we remove the comments */
-			i = 0;
-			while (buf[i] && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == '\n')) i++;	/* Find first non-blank character */
-			if (!buf[i]) continue;								/* Blank line, skip */
-			if (buf[i] == '%' && buf[i+1] != '%') continue;					/* Comment line, skip */
-			/* Output this line, but skip trailing comments (while watching for DSC %% comments) */
-			/* Find the end of important stuff on the line (i.e., look for start of trailing comments) */
-			for (i = 1; buf[i] && !(buf[i] == '%' && buf[i-1] != '%'); i++);
-			i--;										/* buf[i] is the last character to be output */
-			while (i && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == '\n')) i--;		/* Remove white-space prior to the comment */
-			buf[++i] = '\0';			/* Add end-line character and print */
-			PSL_command (PSL, "%s\n", buf);
-		}
-	}
-	fclose (in);
-}
-
-static void psl_init_fonts (struct PSL_CTRL *PSL)
-{
-	FILE *in = NULL;
-	int n_PSL_fonts;
-	unsigned int i = 0;
-	size_t n_alloc = 64;
-	char buf[PSL_BUFSIZ];
-	char fullname[PSL_BUFSIZ];
-
-	/* Loads the available fonts for this installation */
-
-	/* First the standard 35 PostScript fonts from Adobe */
-
-	psl_getsharepath (PSL, "postscriptlight", "PSL_standard_fonts", ".txt", fullname);
-	if ((in = fopen (fullname, "r")) == NULL) {
-		PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: ");
-		perror (fullname);
-		PSL_exit (EXIT_FAILURE);
-	}
-
-	PSL->internal.font = PSL_memory (PSL, NULL, n_alloc, struct PSL_FONT);
-
-	while (fgets (buf, PSL_BUFSIZ, in)) {
-		if (buf[0] == '#' || buf[0] == '\n' || buf[0] == '\r') continue;
-		if (sscanf (buf, "%s %lf %d", fullname, &PSL->internal.font[i].height, &PSL->internal.font[i].encoded) != 3) {
-			PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: Trouble decoding font info for font %d\n", i);
-			PSL_exit (EXIT_FAILURE);
-		}
-		PSL->internal.font[i].name = PSL_memory (PSL, NULL, strlen (fullname)+1, char);
-		strcpy (PSL->internal.font[i].name, fullname);
-		i++;
-		if (i == n_alloc) {
-			n_alloc <<= 1;
-			PSL->internal.font = PSL_memory (PSL, PSL->internal.font, n_alloc, struct PSL_FONT);
-		}
-	}
-	fclose (in);
-	PSL->internal.N_FONTS = n_PSL_fonts = i;
-
-	/* Then any custom fonts */
-
-	psl_getsharepath (PSL, "postscriptlight", "PSL_custom_fonts", ".txt", fullname);
-	if (!access (fullname, R_OK)) {	/* Decode Custom font file */
-
-		if ((in = fopen (fullname, "r")) == NULL)
-		{
-			PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: ");
-			perror (fullname);
-			PSL_exit (EXIT_FAILURE);
-		}
-
-		while (fgets (buf, PSL_BUFSIZ, in)) {
-			if (buf[0] == '#' || buf[0] == '\n' || buf[0] == '\r') continue;
-			PSL->internal.font[i].name = PSL_memory (PSL, NULL, strlen (buf), char);
-			if (sscanf (buf, "%s %lf %d", PSL->internal.font[i].name, &PSL->internal.font[i].height, &PSL->internal.font[i].encoded) != 3) {
-				PSL_message (PSL, PSL_MSG_FATAL, "Fatal Error: Trouble decoding custom font info for font %d\n", i - n_PSL_fonts);
-				PSL_exit (EXIT_FAILURE);
-			}
-			i++;
-			if (i == n_alloc) {
-				n_alloc <<= 1;
-				PSL->internal.font = PSL_memory (PSL, PSL->internal.font, n_alloc, struct PSL_FONT);
-			}
-		}
-		fclose (in);
-		PSL->internal.N_FONTS = i;
-	}
-	PSL->internal.font = PSL_memory (PSL, PSL->internal.font, PSL->internal.N_FONTS, struct PSL_FONT);
-}
-
-int psl_pattern_init (struct PSL_CTRL *PSL, int image_no, char *imagefile) {
-	int i, status;
-	char name[PSL_BUFSIZ], file[PSL_BUFSIZ];
-	unsigned char *picture = NULL;
-	struct imageinfo h;
-	int found;
-
-	memset (&h, 0, sizeof(struct imageinfo)); /* initialize struct */
-
-	if ((image_no >= 0 && image_no < PSL_N_PATTERNS) && PSL->internal.pattern[image_no].status) return (image_no);	/* Already done this */
-
-	if ((image_no >= 0 && image_no < PSL_N_PATTERNS)) {	/* Premade pattern yet not used */
-		sprintf (name, "PSL_pattern_%02d", image_no);
-		psl_getsharepath (PSL, "postscriptlight", name, ".ras", file);
-	}
-	else {	/* User image, check to see if already used */
-
-		for (i = 0, found = false; !found && i < PSL->internal.n_userimages; i++) found = !strcmp (PSL->internal.user_image[i], imagefile);
-		if (found) return (PSL_N_PATTERNS + i - 1);
-		psl_getsharepath (PSL, NULL, imagefile, "", file);
-		PSL->internal.user_image[PSL->internal.n_userimages] = PSL_memory (PSL, NULL, strlen (imagefile)+1, char);
-		strcpy (PSL->internal.user_image[PSL->internal.n_userimages], imagefile);
-		image_no = PSL_N_PATTERNS + PSL->internal.n_userimages;
-		PSL->internal.n_userimages++;
-	}
-
-	/* Load image file. Store size, depth and bogus DPI setting */
-
-	if ((status = PSL_loadimage (PSL, file, &h, &picture)) != 0) return (0);
-
-	PSL->internal.pattern[image_no].status = 1;
-	PSL->internal.pattern[image_no].nx = h.width;
-	PSL->internal.pattern[image_no].ny = h.height;
-	PSL->internal.pattern[image_no].depth = h.depth;
-	PSL->internal.pattern[image_no].dpi = -999;
-
-	PSL_comment (PSL, "Define pattern %d\n", image_no);
-
-	PSL_command (PSL, "/image%d {<~\n", image_no);
-	psl_stream_dump (PSL, picture, h.width, h.height, h.depth, PSL->internal.compress, PSL_ASCII85, 2);
-	PSL_command (PSL, "} def\n");
-
-	PSL_free (picture);
-
-	return (image_no);
-}
-
-int psl_pattern_cleanup (struct PSL_CTRL *PSL) {
-	int image_no;
-
-	for (image_no = 0; image_no < PSL_N_PATTERNS * 2; image_no++) {
-		if (PSL->internal.pattern[image_no].status) {
-			PSL_command (PSL, "currentdict /image%d undef\n", image_no);
-			PSL_command (PSL, "currentdict /pattern%d undef\n", image_no);
-		}
-	}
-	return (PSL_NO_ERROR);
-}
-
-int psl_patch (struct PSL_CTRL *PSL, double *x, double *y, int np)
-{
-	/* Like PSL_plotpolygon but intended for small polygons (< 20 points).  No checking for
-	 * shorter path by calling psl_shorten_path as in PSL_plotpolygon.
-	 */
-
-	int ix[20], iy[20], i, n, n1;
-
-	if (np > 20) return (PSL_plotpolygon (PSL, x, y, np));	/* Must call PSL_plotpolygon instead */
-
-	ix[0] = psl_ix (PSL, x[0]);	/* Convert inch to absolute pixel position for start of quadrilateral */
-	iy[0] = psl_iy (PSL, y[0]);
-
-	for (i = n = 1, n1 = 0; i < np; i++) {	/* Same but check if new point represent a different pixel */
-		ix[n] = psl_ix (PSL, x[i]);
-		iy[n] = psl_iy (PSL, y[i]);
-		if (ix[n] != ix[n1] || iy[n] != iy[n1]) n++, n1++;
-	}
-	if (ix[0] == ix[n1] && iy[0] == iy[n1]) n--, n1--;	/* Closepath will do this automatically */
-
-	if (n < 1) return (PSL_NO_POLYGON);	/* 0 points don't make a polygon */
-
-	n1 = --n;
-	for (i = n - 1; i >= 0; i--, n--) PSL_command (PSL, "%d %d ", ix[n] - ix[i], iy[n] - iy[i]);
-	PSL_command (PSL, "%d %d %d SP\n", n1, ix[0], iy[0]);
-	return (PSL_NO_ERROR);
-}
-
-char *psl_putdash (struct PSL_CTRL *PSL, char *pattern, double offset)
-{	/* Writes the dash pattern */
-	static char text[PSL_BUFSIZ];
-	char mark = '[';
-	size_t len = 0;
-	if (pattern && pattern[0]) {
-		while (*pattern) {
-			sprintf (&text[len], "%c%d", mark, psl_ip (PSL, atof(pattern)));
-			while (*pattern && *pattern != ' ') pattern++;
-			while (*pattern && *pattern == ' ') pattern++;
-			mark = ' ';
-			len = strlen(text);
-		}
-		sprintf (&text[len], "] %d B", psl_ip (PSL, offset));
-	}
-	else
-		sprintf (text, "[] 0 B");	/* Reset to continuous line */
-	return (text);
-}
-
-char *psl_putcolor (struct PSL_CTRL *PSL, double rgb[])
-{
-	static char text[PSL_BUFSIZ];
-
-	if (PSL_eq (rgb[0], -1.0)) {
-		/* Ignore, no color set */
-		text[0] = '\0';
-	}
-	else if (PSL_eq (rgb[0], -3.0)) {
-		/* Pattern fill */
-		sprintf (text, "pattern%ld I", lrint(rgb[1]));
-	}
-	else if (PSL_is_gray (rgb)) {
-		/* Gray scale, since R==G==B */
-		sprintf (text, PSL->current.bw_format, rgb[0]);
-	}
-	else if (PSL->internal.color_mode == PSL_GRAY) {
-		/* Gray scale, forced by user */
-		sprintf (text, PSL->current.bw_format, PSL_YIQ(rgb));
-	}
-	else if (PSL->internal.color_mode == PSL_RGB) {
-		/* Full color, RGB mode */
-		sprintf (text, PSL->current.rgb_format, rgb[0], rgb[1], rgb[2]);
-	}
-	else if (PSL->internal.color_mode == PSL_CMYK) {
-		/* CMYK mode */
-		double cmyk[4];
-		psl_rgb_to_cmyk (rgb, cmyk);
-		sprintf (text, PSL->current.cmyk_format, cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
-	}
-	else {
-		/* HSV mode */
-		double hsv[3];
-		psl_rgb_to_hsv (rgb, hsv);
-		sprintf (text, PSL->current.hsv_format, hsv[0], hsv[1], hsv[2]);
-	}
-	if (!PSL_eq (rgb[3], 0.0)) {
-		/* Transparency */
-		sprintf (&text[strlen(text)], " %g /%s PSL_transp", 1.0 - rgb[3], PSL->current.transparency_mode);
-	}
-	return (text);
-}
-
-void psl_rgb_to_cmyk_char (unsigned char rgb[], unsigned char cmyk[])
-{
-	/* Plain conversion; no undercolor removal or blackgeneration */
-	/* RGB is in 0-255, CMYK will be in 0-255 range */
-
-	int i;
-
-	for (i = 0; i < 3; i++) cmyk[i] = 255 - rgb[i];
-	cmyk[3] = MIN (cmyk[0], MIN (cmyk[1], cmyk[2]));	/* Black */
-	for (i = 0; i < 3; i++) cmyk[i] -= cmyk[3];
-}
-
-void psl_rgb_to_cmyk (double rgb[], double cmyk[])
-{
-	/* Plain conversion; no undercolor removal or blackgeneration */
-	/* RGB is in 0-1, CMYK will be in 0-1 range */
-
-	int i;
-
-	for (i = 0; i < 3; i++) cmyk[i] = 1.0 - rgb[i];
-	cmyk[3] = MIN (cmyk[0], MIN (cmyk[1], cmyk[2]));	/* Black */
-	for (i = 0; i < 3; i++) cmyk[i] -= cmyk[3];
-	for (i = 0; i < 4; i++) {
-	    if (cmyk[i] < 0.0005) cmyk[i] = 0.0;	/* Needs some explanation... */
-	}
-}
-
-void psl_rgb_to_hsv (double rgb[], double hsv[])
-{
-	double diff;
-	int i, imax = 0, imin = 0;
-
-	/* This had checks using rgb value in doubles (e.g. (max_v == xr)), which failed always on some compilers.
-	   Changed to integer logic: 2009-02-05 by RS.
-	*/
-	for (i = 1; i < 3; i++) {
-		if (rgb[i] > rgb[imax]) imax = i;
-		if (rgb[i] < rgb[imin]) imin = i;
-	}
-	diff = rgb[imax] - rgb[imin];
-	hsv[0] = 0.0;
-	hsv[1] = (PSL_eq(rgb[imax],0.0)) ? 0.0 : diff / rgb[imax];
-	hsv[2] = rgb[imax];
-	if (PSL_eq(hsv[1],0.0)) return;	/* Hue is undefined */
-	hsv[0] = 120.0 * imax + 60.0 * (rgb[(imax + 1) % 3] - rgb[(imax + 2) % 3]) / diff;
-	if (hsv[0] < 0.0) hsv[0] += 360.0;
-	if (hsv[0] > 360.0) hsv[0] -= 360.0;
-}
-
-void psl_cmyk_to_rgb (double rgb[], double cmyk[])
-{
-	/* Plain conversion; no undercolor removal or blackgeneration */
-	/* CMYK is in 0-1, RGB will be in 0-1 range */
-
-	int i;
-
-	for (i = 0; i < 3; i++) rgb[i] = 1.0 - cmyk[i] - cmyk[3];
-}
-
-int psl_bitreduce (struct PSL_CTRL *PSL, unsigned char *buffer, int nx, int ny, int ncolors)
-{
-	/* Reduce an 8-bit stream to 1-, 2- or 4-bit stream */
-	int in, out, i, j, nout, nbits;
-
-	/* Number of colors determines number of bits */
-	if (ncolors <= 2)
-		nbits = 1;
-	else if (ncolors <= 4)
-		nbits = 2;
-	else if (ncolors <= 16)
-		nbits = 4;
-	else
-		return (8);
-
-	/* "Compress" bytes line-by-line. The number of bits per line should be multiple of 8
-	   But when it isn't overflow is prevent by extra size allocation done in psl_makecolormap */
-	out = 0;
-	nx = abs (nx);
-	nout = (nx * nbits + 7) / 8;
-	for (j = 0; j < ny; j++) {
-		in = j * nx;
-		if (nbits == 1) {
-			for (i = 0; i < nout; i++) {
-				buffer[out++] = (buffer[in] << 7) + (buffer[in+1] << 6) + (buffer[in+2] << 5) + (buffer[in+3] << 4) + (buffer[in+4] << 3) + (buffer[in+5] << 2) + (buffer[in+6] << 1) + buffer[in+7];
-				in += 8;
-			}
-		}
-		else if (nbits == 2) {
-			for (i = 0; i < nout; i++) {
-				buffer[out++] = (buffer[in] << 6) + (buffer[in+1] << 4) + (buffer[in+2] << 2) + buffer[in+3];
-				in += 4;
-			}
-		}
-		else if (nbits == 4) {
-			for (i = 0; i < nout; i++) {
-				buffer[out++] = (buffer[in] << 4) + buffer[in+1];
-				in += 2;
-			}
-		}
-	}
-
-	PSL_message (PSL, PSL_MSG_NORMAL, "Image depth reduced to %d bits\n", nbits);
-	return (nbits);
-}
-
-int psl_get_boundingbox (struct PSL_CTRL *PSL, FILE *fp, int *llx, int *lly, int *trx, int *try,
-	double *hires_llx, double *hires_lly, double *hires_trx, double *hires_try)
-{
-	int nested = 0;
-	char buf[PSL_BUFSIZ];
-
-	/* Set default BoundingBox and HiResBoundingBox */
-
-	*hires_llx = *llx = 0; *hires_trx = *trx = 720; *hires_lly = *lly = 0; *hires_try = *try = 720;
-
-	/* Fish for the BoundingBox and the HiResBoundingBox. It assumes the line with HiResBoundingBox
-	   always follows the BoundingBox line. */
-
-	while (fgets(buf, PSL_BUFSIZ, fp) != NULL) {
-		if (!nested) {
-			if  (!strncmp(buf, "%%BoundingBox:", 14U) && !strstr(buf, "(atend)")) {
-				if (sscanf(strchr(buf, ':') + 1, "%d %d %d %d", llx, lly, trx, try) < 4) return 1;
-				*hires_llx = *llx;
-				*hires_lly = *lly;
-				*hires_trx = *trx;
-				*hires_try = *try;
-				if (fgets(buf, PSL_BUFSIZ, fp) != NULL) {
-					if  (!strncmp(buf, "%%HiResBoundingBox:", 19U) && !strstr(buf, "(atend)")) {
-						if (sscanf(strchr(buf, ':') + 1, "%lg %lg %lg %lg", hires_llx, hires_lly, hires_trx, hires_try) < 4) return -1;
-					}
-				}
-				return 0;
-			}
-		}
-		else if (!strncmp(buf, "%%Begin", 7U)) {
-			++nested;
-		}
-		else if (nested && !strncmp(buf, "%%End", 5U)) {
-			--nested;
-		}
-	}
-
-	PSL_message (PSL, PSL_MSG_NORMAL, "No proper BoundingBox, defaults assumed: %d %d %d %d\n", *llx, *lly, *trx, *try);
-	return 1;
-}
-
-char *psl_getsharepath (struct PSL_CTRL *PSL, const char *subdir, const char *stem, const char *suffix, char *path)
-{
-	/* stem is the name of the file, e.g., PSL_custom_fonts.txt
-	 * subdir is an optional subdirectory name in the PSL->internal.SHAREDIR directory.
-	 * suffix is an optional suffix to append to name
-	 * path is the full path to the file in question
-	 * Returns the full pathname if a workable path was found
-	 * Looks for file stem in current directory, PSL->internal.USERDIR, and PSL->internal.SHAREDIR[/subdir]
-	 */
-
-	/* First look in the current working directory */
-
-	sprintf (path, "%s%s", stem, suffix);
-	if (!access (path, R_OK)) return (path);	/* Yes, found it in current directory */
-
-	/* Do not continue when full pathname is given */
-
-#ifdef WIN32
-	if (stem[0] == '\\' || stem[1] == ':') return (NULL);
-#else
-	if (stem[0] == '/') return (NULL);
-#endif
-
-	/* Not found, see if there is a file in the user's PSL->internal.USERDIR directory */
-
-	if (PSL->internal.USERDIR) {
-		sprintf (path, "%s/%s%s", PSL->internal.USERDIR, stem, suffix);
-		if (!access (path, R_OK)) return (path);
-	}
-
-	/* Try to get file from PSL->internal.SHAREDIR/subdir */
-
-	if (subdir) {
-		sprintf (path, "%s/%s/%s%s", PSL->internal.SHAREDIR, subdir, stem, suffix);
-		if (!access (path, R_OK)) return (path);
-	}
-
-	/* Finally try file in PSL->internal.SHAREDIR (for backward compatibility) */
-
-	sprintf (path, "%s/%s%s", PSL->internal.SHAREDIR, stem, suffix);
-	if (!access (path, R_OK)) return (path);
-
-	return (NULL);	/* No file found, give up */
-}
-
-int psl_ix (struct PSL_CTRL *PSL, double x)
-{	/* Convert user x to PS dots */
-	return (PSL->internal.x0 + (int)lrint (x * PSL->internal.x2ix));
-}
-
-int psl_iy (struct PSL_CTRL *PSL, double y)
-{	/* Convert user y to PS dots */
-	return (PSL->internal.y0 + (int)lrint (y * PSL->internal.y2iy));
-}
-
-int psl_iz (struct PSL_CTRL *PSL, double z)
-{	/* Convert user distances to PS dots */
-	return ((int)lrint (z * PSL->internal.dpu));
-}
-
-int psl_ip (struct PSL_CTRL *PSL, double p)
-{	/* Convert PS points to PS dots */
-	return ((int)lrint (p * PSL->internal.dpp));
-}
 
-const char *psl_putusername ()
-{
-	const char *unknown = "unknown";
-#ifdef HAVE_GETPWUID
-#include <pwd.h>
-	struct passwd *pw = NULL;
-	pw = getpwuid (getuid ());
-	if (pw) return (pw->pw_name);
-#endif
-	return (unknown);
+	PSL_message (PSL, PSL_MSG_FATAL, "Error: Unrecognised magic number 0x%x in file %s!\n", h->magic, file);
+	Return1 (PSL_READ_FAILURE);
 }
 
 /* Due to the DLL boundary cross problem on Windows we are forced to have the following, otherwise
@@ -5295,7 +5414,15 @@ const char *psl_putusername ()
 int PSL_command (struct PSL_CTRL *C, const char *format, ...) {
 	va_list args;
 	va_start (args, format);
-	vfprintf (C->internal.fp, format, args);
+	if (C->internal.memory) {	/* Send command to memory buffer */
+		char tmp_buffer[PSL_BUFSIZ] = {""};
+		size_t len = vsnprintf (tmp_buffer, PSL_BUFSIZ, format, args);
+		psl_prepare_buffer (C, len);
+		strncat (&(C->internal.buffer[C->internal.n]), tmp_buffer, len);
+		C->internal.n += len;
+	}
+	else	/* Write command to stream */
+		vfprintf (C->internal.fp, format, args);
 	va_end (args);
 	return (0);
 }
@@ -5303,10 +5430,23 @@ int PSL_command (struct PSL_CTRL *C, const char *format, ...) {
 int PSL_comment (struct PSL_CTRL *C, const char *format, ...) {
 	va_list args;
 	if (!C->internal.comments) return (0);
-	fprintf (C->internal.fp, "%%\n%% ");
 	va_start (args, format);
-	vfprintf (C->internal.fp, format, args);
-	fprintf (C->internal.fp, "%%\n");
+	if (C->internal.memory) {	/* Send comments to memory buffer */
+		char tmp_buffer[PSL_BUFSIZ] = {""};
+		size_t len = vsnprintf (tmp_buffer, PSL_BUFSIZ, format, args);
+		psl_prepare_buffer (C, len + 6); /* The string plus the leading 4 and trailing 2 chars */
+		strncat (&(C->internal.buffer[C->internal.n]), "%\n% ", 4U);
+		C->internal.n += 4;
+		strncat (&(C->internal.buffer[C->internal.n]), tmp_buffer, len);
+		C->internal.n += len;
+		strncat (&(C->internal.buffer[C->internal.n]), "%\n", 2U);
+		C->internal.n += 2;
+	}
+	else {	/* Write comments to stream */
+		fprintf (C->internal.fp, "%%\n%% ");
+		vfprintf (C->internal.fp, format, args);
+		fprintf (C->internal.fp, "%%\n");
+	}
 	va_end (args);
 	return (0);
 }

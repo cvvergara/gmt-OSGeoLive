@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: testgmt5.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: testgmt5.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *	Copyright (c) 1991-$year by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -54,13 +54,13 @@ int main () {
 
 	/* 4. Create linked options for GMT_grdcut equivalent to "grdcut t.nc -R2/4/2/4 -Gnew.nc -V" */
 
-	if (GMT_Encode_ID (API, string, in_grdcut_ID) != GMT_OK) exit (EXIT_FAILURE);	/* Make filename with embedded object ID */
+	if (GMT_Encode_ID (API, string, in_grdcut_ID) != GMT_NOERROR) exit (EXIT_FAILURE);	/* Make filename with embedded object ID */
 	if ((new_opt = GMT_Make_Option (API, '<', string)) == NULL) exit (EXIT_FAILURE);
 	if ((head = GMT_Append_Option (API, new_opt, NULL)) == NULL) exit (EXIT_FAILURE);
 	sprintf (string, "%g/%g/%g/%g", w, e, s, n);		/* Create argument for -R option */
 	if ((new_opt = GMT_Make_Option (API, 'R', string)) == NULL) exit (EXIT_FAILURE);
 	if ((head = GMT_Append_Option (API, new_opt, head)) == NULL) exit (EXIT_FAILURE);
-	if (GMT_Encode_ID (API, string, out_grdcut_ID) != GMT_OK) exit (EXIT_FAILURE);	/* Make -Gfilename with embedded object ID */
+	if (GMT_Encode_ID (API, string, out_grdcut_ID) != GMT_NOERROR) exit (EXIT_FAILURE);	/* Make -Gfilename with embedded object ID */
 	if ((new_opt = GMT_Make_Option (API, 'G', string)) == NULL) exit (EXIT_FAILURE);
 	if ((head = GMT_Append_Option (API, new_opt, head)) == NULL) exit (EXIT_FAILURE);
 	if ((new_opt = GMT_Make_Option (API, 'V', NULL)) == NULL) exit (EXIT_FAILURE);	/* Add -V*/
@@ -78,10 +78,10 @@ int main () {
 	if (GMT_Destroy_Options (API, &head)) exit (EXIT_FAILURE);
 
 	/* 7. WRITING THE RESULT TO FILE */
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, out_grid, Gout) != GMT_OK) exit (EXIT_FAILURE);
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, out_grid, Gout) != GMT_NOERROR) exit (EXIT_FAILURE);
 
 	/* 8. Destroy GMT session */
 	if (GMT_Destroy_Session (API)) exit (EXIT_FAILURE);
 
-	exit (GMT_OK);		/* Return the status from this program */
+	exit (GMT_NOERROR);		/* Return the status from this program */
 }

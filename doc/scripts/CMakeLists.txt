@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: CMakeLists.txt 16665 2016-06-29 01:52:54Z pwessel $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 # Scripts which have to be converted to verbatim (with comments)
 set (_scr_nostrip GMT_App_M_2.sh GMT_App_P_1.sh GMT_App_P_2.sh)
 
-# Scripts which have to be cobnverted to verbatim (without comments)
+# Scripts which have to be converted to verbatim (without comments)
 set (_scr_strip GMT_-B_custom.sh GMT_-B_time1.sh GMT_-B_time2.sh
 	GMT_-B_time3.sh GMT_-B_time4.sh GMT_-B_time5.sh GMT_-B_time6.sh
 	GMT_-B_time7.sh GMT_albers.sh GMT_App_K_1.sh GMT_App_K_2.sh GMT_App_K_3.sh
@@ -48,7 +48,7 @@ set (_scr_other GMT_-B_geo_1.sh GMT_-B_geo_2.sh GMT_-B_linear.sh GMT_-B_log.sh
 	GMT_bezier.sh GMT_linecap.sh GMT_lineoffset.sh GMT_nearneighbor.sh GMT_anchor.sh
 	GMT_pstext_clearance.sh GMT_pstext_justify.sh GMT_registration.sh GMT_obl_nz.sh
 	GMT_utm_zones.sh GMT_volcano.sh GMT_panel.sh GMT_mapscale.sh GMT_insert.sh GMT_linearrow.sh
-	GMT_dir_rose.sh GMT_images.sh GMT_colorbar.sh GMT_legend.sh GMT_mag_rose.sh
+	GMT_dir_rose.sh GMT_images.sh GMT_colorbar.sh GMT_legend.sh GMT_mag_rose.sh GMT_hinge.sh
 	GMT_tut_1.sh GMT_tut_2.sh GMT_tut_3.sh GMT_tut_4.sh GMT_tut_5.sh
 	GMT_tut_6.sh GMT_tut_7.sh GMT_tut_8.sh GMT_tut_9.sh GMT_tut_10.sh
 	GMT_tut_11.sh GMT_tut_12.sh GMT_tut_13.sh GMT_tut_14.sh GMT_tut_15.sh
@@ -56,7 +56,7 @@ set (_scr_other GMT_-B_geo_1.sh GMT_-B_geo_2.sh GMT_-B_linear.sh GMT_-B_log.sh
 
 # Scripts that are only used for testing, figures are not in the documentation
 set (_scr_test GMT_RGBchart.sh)
-# This is no test: GMT_encoding.sh
+# This is no test: GMT_encoding.sh func_F_iso+.sh func_F_stand+.sh
 
 set (_scripts_tests ${_scr_nostrip} ${_scr_strip} ${_scr_other} ${_scr_test})
 

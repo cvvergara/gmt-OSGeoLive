@@ -15,7 +15,7 @@ Synopsis
 
 **grdtrack** [ *xyfile* ] |-G|\ *grd1* |-G|\ *grd2* ...
 [ |-A|\ **f**\ \|\ **p**\ \|\ **m**\ \|\ **r**\ \|\ **R**\ [**+l**] ]
-[ |-C|\ *length*\ [**u**]/\ *ds*\ [*spacing*][**+a**] ] [|-D|\ *dfile* ]
+[ |-C|\ *length*\ [**u**]/\ *ds*\ [*/spacing*][**+a**][**+v**] ] [|-D|\ *dfile* ]
 [ |-E|\ *line*\ [,\ *line*,...][**+a**\ *az*][**+d**][**+i**\ *inc*\ [**u**]][**+l**\ *length*\ [**u**]][**+n**\ *np*][**+o**\ *az*][**+r**\ *radius*\ [**u**] ]
 [ |-N| ] 
 [ |SYN_OPT-R| ]
@@ -82,8 +82,8 @@ Optional Arguments
 
 .. _-A:
 
-**-A**\ **f**\ \|\ **p**\ **m**\ \|\ **r**\ \|\ **R**
-    For track resampling (if **-C** is set) we can select how this is to
+**-A**\ **f**\ \|\ **p**\ **m**\ \|\ **r**\ \|\ **R**\ [**+l**]
+    For track resampling (if **-C** or **-E** are set) we can select how this is to
     be performed. Append **f** to keep original points, but add
     intermediate points if needed [Default], **m** as **f**, but first
     follow meridian (along y) then parallel (along x), **p** as **f**,
@@ -96,7 +96,7 @@ Optional Arguments
 
 .. _-C:
 
-**-C**\ *length*\ [**u**]/\ *ds*\ [*spacing*][**+a**]
+**-C**\ *length*\ [**u**]/\ *ds*\ [*/spacing*][**+a**][**+v**]
     Use input line segments to create an equidistant and (optionally)
     equally-spaced set of crossing profiles along which we sample the
     grid(s) [Default simply samples the grid(s) at the input locations].
@@ -105,8 +105,10 @@ Optional Arguments
     the sampling spacing along each cross-profile. Optionally, append
     **/**\ *spacing* for an equidistant spacing between cross-profiles
     [Default erects cross-profiles at the input coordinates]. By
-    default, all cross-profiles have the same direction. Append **+a**
-    to alternate the direction of cross-profiles. Append suitable units
+    default, all cross-profiles have the same direction (left to right
+    as we look in the direction of the input line segment). Append **+a**
+    to alternate the direction of cross-profiles, or **v** to enforce
+    either a "west-to-east" or "south-to-north" view. Append suitable units
     to *length*; it sets the unit used for *ds* [and *spacing*] (See
     UNITS below). The default unit for geographic grids is meter while
     Cartesian grids implies the user unit.  The output columns will be
@@ -176,16 +178,16 @@ Optional Arguments
     envelope on stacked profile as +/- *fact* \*\ *deviation* [2].
     Notes: (1) Deviations depend on *method* and are st.dev (**a**), L1
     scale (**m** and **p**), or half-range (upper-lower)/2. (2) The
-    stacked profile file contains 1 plus groups of 4-6 columns, one
-    group for each sampled grid. The first column holds cross distance,
-    while the first 4 in a group hold stacked value, deviation, min
-    value, and max value. If *method* is one of
+    stacked profile file contains a leading column plus groups of 4-6 columns, with one
+    group for each sampled grid. The leading column holds cross distance,
+    while the first four columns in a group hold stacked value, deviation, min
+    value, and max value, respectively. If *method* is one of
     **a**\ \|\ **m**\ \|\ **p** then we also write the lower and upper
     confidence bounds (see **+c**). When one or more of **+a**, **+d**,
-    and **+r** are used then we append the results to the end of each
-    row for all cross-profiles. The order is always stacked value
-    (**+a**), followed by deviations (**+d**) and residuals (**+r**).
-    When more than one grid is sampled this sequence of 1-3 columns are
+    and **+r** are used then we also append the stacking results to the end of each
+    row, for all cross-profiles. The order is always stacked value
+    (**+a**), followed by deviations (**+d**) and finally residuals (**+r**).
+    When more than one grid is sampled this sequence of 1-3 columns is
     repeated for each grid.
 
 .. _-T:
@@ -245,7 +247,7 @@ Optional Arguments
 
 .. include:: explain_precision.rst_
 
-.. include:: explain_grd_inout.rst_
+.. include:: explain_grd_inout_short.rst_
 
 .. include:: explain_grdresample2.rst_
 

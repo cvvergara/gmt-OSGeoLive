@@ -1,8 +1,8 @@
-/*	$Id: gmt_gshhg.h 15178 2015-11-06 10:45:03Z fwobbe $
+/*	$Id: gmt_gshhg.h 16206 2016-04-12 23:14:54Z pwessel $
  *
  * Include file defining macros, functions and structures used in gshhg.c
  *
- *	Copyright (c) 1996-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1996-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  *
  *	Contact info: www.soest.hawaii.edu/pwessel
  *
- *	1-JAN-2015.  For use with GSHHG version 2.3.4
+ *	12-APR-2016.  For use with GSHHG version 2.3.5
  */
 
 /*!

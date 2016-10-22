@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: x2sys.h 15828 2016-03-08 23:40:48Z jluis $
  *
- *      Copyright (c) 1999-2015 by P. Wessel
+ *      Copyright (c) 1999-2016 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -156,7 +156,7 @@ struct X2SYS_FILE_INFO {
 	uint64_t n_rows;	/* Number of rows */
 	uint64_t n_segments;	/* Number of segments in this file */
 	uint64_t *ms_rec;	/* Pointer to array with start record for each segment */
-	char name[32];		/* Name of cruise or agency */
+	char name[64];		/* Name of cruise or agency */
 };
 
 struct X2SYS_BIX {
@@ -220,7 +220,6 @@ struct X2SYS_COE_PAIR {	/* Holds the information for COE between a pair of track
 
 /* Global variables used by x2sys functions */
 
-EXTERN_MSC char *X2SYS_program;
 EXTERN_MSC char *X2SYS_HOME;
 EXTERN_MSC double *x2sys_Y;
 EXTERN_MSC struct MGD77_CONTROL M;

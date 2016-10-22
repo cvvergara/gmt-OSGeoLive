@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: mgd77_codes.sh 9857 2012-03-13 10:55:26Z fwobbe $
+#	$Id: mgd77_codes.sh 15819 2016-03-06 20:54:48Z pwessel $
 #
 #	Convert the trkdas.cod file into two useable files:
 #	1. mgd77_codes.h for inclusion by mgd77info.c
@@ -36,7 +36,7 @@ struct MGD77_AGENCY {
 	char name[80];
 };
 
-struct MGD77_AGENCY MGD77_agency[MGD77_N_AGENCIES] = {
+static struct MGD77_AGENCY MGD77_agency[MGD77_N_AGENCIES] = {
 EOF
 cat $$.1 >> mgd77_codes.h
 cat << EOF >> mgd77_codes.h
@@ -48,7 +48,7 @@ struct MGD77_VESSEL {
 	char name[80];
 };
 
-struct MGD77_VESSEL MGD77_vessel[MGD77_N_VESSELS] = {
+static struct MGD77_VESSEL MGD77_vessel[MGD77_N_VESSELS] = {
 EOF
 cat $$.2 >> mgd77_codes.h
 echo "};"  >> mgd77_codes.h

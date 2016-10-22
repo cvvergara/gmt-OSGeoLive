@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 25
-#		$Id: example_25.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_25.sh 16792 2016-07-13 21:12:21Z pwessel $
 #
 # Purpose:	Display distribution of antipode types
-# GMT progs:	gmtset, grdlandmask, grdmath, grd2xyz, gmtmath, grdimage, pscoast, pslegend
+# GMT modules:	gmtset, grdlandmask, grdmath, grd2xyz, gmtmath, grdimage, pscoast, pslegend
 # Unix progs:	cat
 #
 # Create D minutes global grid with -1 over oceans and +1 over land
@@ -16,21 +16,17 @@ gmt grdmath -fg wetdry.nc DUP 180 ROTX FLIPUD ADD 2 DIV = key.nc
 gmt grdmath -Rg -I${D}m -r Y COSD 60 $D DIV 360 MUL DUP MUL PI DIV DIV 100 MUL = scale.nc
 gmt grdmath -fg key.nc -1 EQ 0 NAN scale.nc MUL = tmp.nc
 gmt grd2xyz tmp.nc -s -ZTLf > key.b
-ocean=`gmt gmtmath -bi1f -Ca -S key.b SUM UPPER RINT =`
+ocean=`gmt math -bi1f -Ca -S key.b SUM UPPER RINT =`
 gmt grdmath -fg key.nc 1 EQ 0 NAN scale.nc MUL = tmp.nc
 gmt grd2xyz tmp.nc -s -ZTLf > key.b
-land=`gmt gmtmath -bi1f -Ca -S key.b SUM UPPER RINT =`
+land=`gmt math -bi1f -Ca -S key.b SUM UPPER RINT =`
 gmt grdmath -fg key.nc 0 EQ 0 NAN scale.nc MUL = tmp.nc
 gmt grd2xyz tmp.nc -s -ZTLf > key.b
-mixed=`gmt gmtmath -bi1f -Ca -S key.b SUM UPPER RINT =`
+mixed=`gmt math -bi1f -Ca -S key.b SUM UPPER RINT =`
 # Generate corresponding color table
-cat << END > key.cpt
--1.5	blue	-0.5	blue
--0.5	gray	0.5	gray
-0.5	red	1.5	red
-END
+gmt makecpt -Cblue,gray,red -T-1.5/1.5/1 -N > key.cpt
 # Create the final plot and overlay coastlines
-gmt gmtset FONT_ANNOT_PRIMARY +10p FORMAT_GEO_MAP dddF
+gmt set FONT_ANNOT_PRIMARY +10p FORMAT_GEO_MAP dddF
 gmt grdimage key.nc -JKs180/9i -Bx60 -By30 -BWsNE+t"Antipodal comparisons" -K -Ckey.cpt -Y1.2i -nn > $ps
 gmt pscoast -R -J -O -K -Wthinnest -Dc -A500 >> $ps
 # Place an explanatory legend below

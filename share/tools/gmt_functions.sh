@@ -1,7 +1,7 @@
 #!/bin/bash
-# $Id: gmt_functions.sh 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: gmt_functions.sh 15757 2016-02-24 23:25:49Z pwessel $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo,
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo,
 # J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #

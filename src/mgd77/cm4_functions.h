@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- *  $Id: cm4_functions.h 12822 2014-01-31 23:39:56Z remko $
+ *  $Id: cm4_functions.h 16977 2016-08-19 23:51:52Z remko $
  *
  *
  *  File:       cm4_functions.h
@@ -29,14 +29,14 @@ struct MGD77_CM4 {
 	} CM4_L;
 	struct CM4_D {	/*  */
 		int active;
-		int index; 
+		int index;
 		int load;
 		double *dst;
 		char *path;
 	} CM4_D;
 	struct CM4_I {	/*  */
 		int active;
-		int index; 
+		int index;
 		int load;
 		double F107;
 		char *path;
@@ -60,7 +60,7 @@ struct MGD77_CM4 {
 		int n_times;
 		int n_altitudes;
 		int coef;
-		double	gmdl[1];
+		double	gmdl[20000];
 		double	*out_field;
 	} CM4_DATA;
 	struct CM4_S {	/*  */

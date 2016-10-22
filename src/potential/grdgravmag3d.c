@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdgravmag3d.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: grdgravmag3d.c 17121 2016-09-21 23:07:26Z jluis $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -26,14 +26,14 @@
  * Author:	Joaquim Luis
  * Date:	1-Apr-2012
  *
- *          Removed #if 0 code that dealt with side faces in rev r12620 
+ *          Removed #if 0 code that dealt with side faces in rev r12620
  *
  */
 
 #define THIS_MODULE_NAME	"grdgravmag3d"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Computes the gravity effect of one (or two) grids by the method of Okabe"
-#define THIS_MODULE_KEYS	"<GI,FDi,GGO"
+#define THIS_MODULE_KEYS	"<G{+,FD(,GG}"
 
 #include "gmt_dev.h"
 #include "okbfuns.h"
@@ -117,7 +117,7 @@ struct GRDOKB_CTRL {
 struct THREAD_STRUCT {
 	unsigned int row, r_start, r_stop, n_pts, thread_num;
 	double *x_grd, *x_grd_geo, *y_grd, *y_grd_geo, *x_obs, *y_obs, *cos_vec, *g;
-	struct MAG_VAR *mag_var;
+	struct MAG_VAR *okabe_mag_var;
 	struct LOC_OR *loc_or;
 	struct BODY_DESC *body_desc;
 	struct BODY_VERTS *body_verts;
@@ -128,43 +128,44 @@ struct THREAD_STRUCT {
 	struct GMT_CTRL *GMT;
 };
 
-void set_center (unsigned int n_triang);
-int grdgravmag3d_body_set_tri (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
+GMT_LOCAL int grdgravmag3d_body_set_tri (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
 	struct BODY_DESC *body_desc, struct BODY_VERTS *body_verts, double *x, double *y,
 	double *cos_vec, unsigned int j, unsigned int i, unsigned int inc_j, unsigned int inc_i);
-int grdgravmag3d_body_set_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
+GMT_LOCAL int grdgravmag3d_body_set_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
 	struct BODY_DESC *body_desc, struct BODY_VERTS *body_verts, double *x, double *y,
 	double *cos_vec, unsigned int j, unsigned int i, unsigned int inc_j, unsigned int inc_i);
-int grdgravmag3d_body_desc_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
+GMT_LOCAL int grdgravmag3d_body_desc_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
 	struct BODY_VERTS **body_verts, unsigned int face);
-int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
+GMT_LOCAL int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
 	struct BODY_VERTS **body_verts, unsigned int face);
-void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid, struct GMT_GRID *Gout,
+GMT_LOCAL void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid, struct GMT_GRID *Gout,
 	struct GMT_GRID *Gsource, double *g, unsigned int n_pts, double *x_grd, double *y_grd, double *x_grd_geo, double *y_grd_geo,
-	double *x_obs, double *y_obs, double *cos_vec, struct MAG_VAR *mag_var, struct LOC_OR *loc_or,
+	double *x_obs, double *y_obs, double *cos_vec, struct MAG_VAR *okabe_mag_var, struct LOC_OR *loc_or,
 	struct BODY_DESC *body_desc, struct BODY_VERTS *body_verts);
-double mprism (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
+GMT_LOCAL  double mprism (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
 	struct BODY_DESC bd_desc, struct BODY_VERTS *body_verts, unsigned int km, unsigned int i_comp, struct LOC_OR *loc_or);
-double bhatta (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
+GMT_LOCAL  double bhatta (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
 	struct BODY_DESC bd_desc, struct BODY_VERTS *body_verts, unsigned int km, unsigned int i_comp, struct LOC_OR *loc_or);
-void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t);
-double nucleox(double u, double v, double w, double rl, double rm, double rn);
-double nucleoy(double u, double v, double w, double rl, double rm, double rn);
-double nucleoz(double u, double v, double w, double rl, double rm, double rn);
-void dircos(double incl, double decl, double azim, double *a, double *b, double *c);
+GMT_LOCAL void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t);
+GMT_LOCAL double nucleox(double u, double v, double w, double rl, double rm, double rn);
+GMT_LOCAL double nucleoy(double u, double v, double w, double rl, double rm, double rn);
+GMT_LOCAL double nucleoz(double u, double v, double w, double rl, double rm, double rn);
+GMT_LOCAL void dircos(double incl, double decl, double azim, double *a, double *b, double *c);
 
-double fast_atan(double x) {
+#if 0
+GMT_LOCAL double fast_atan(double x) {
 	/* http://nghiaho.com/?p=997 */
 	/* Efficient approximations for the arctangent function, Rajan, S. Sichun Wang Inkol, R. Joyal, A., May 2006 */
 	return M_PI_4*x - x*(fabs(x) - 1)*(0.2447 + 0.0663*fabs(x));
 }
+#endif
 
 #define FATAN(x) (fabs(x) > 1) ? atan(x) : (M_PI_4*x - x*(fabs(x) - 1)*(0.2447 + 0.0663*fabs(x)))
 
-void *New_grdgravmag3d_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct GRDOKB_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct GRDOKB_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct GRDOKB_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 	C->E.thickness = 500;
@@ -175,27 +176,27 @@ void *New_grdgravmag3d_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize 
 	return (C);
 }
 
-void Free_grdgravmag3d_Ctrl (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->In.file[0]) free (C->In.file[0]);
-	if (C->In.file[1]) free (C->In.file[1]);
-	if (C->F.file) free (C->F.file);
-	if (C->G.file) free (C->G.file);
-	if (C->H.magfile) free (C->H.magfile);
-	if (C->H.decfile) free (C->H.decfile);
-	if (C->H.incfile) free (C->H.incfile);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->In.file[0]);
+	gmt_M_str_free (C->In.file[1]);
+	gmt_M_str_free (C->F.file);
+	gmt_M_str_free (C->G.file);
+	gmt_M_str_free (C->H.magfile);
+	gmt_M_str_free (C->H.decfile);
+	gmt_M_str_free (C->H.incfile);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_grdgravmag3d_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdgravmag3d grdfile_top [grdfile_bot] [-C<density>] [-D] [-E<thick>] [-F<xy_file>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-G<outfile>] [-H<...>] [%s] [-L<z_obs>]\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Q[n<n_pad>]|[pad_dist]|[<w/e/s/n>]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-S<radius>] [%s] [-Z[<level>]|[t|p]] [-fg] [%s]\n\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_x_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\tgrdfile_top is the grdfile whose gravity effect is to be computed.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If two grids are provided then the gravity/magnetic efect of the\n");
@@ -241,10 +242,10 @@ int GMT_grdgravmag3d_usage (struct GMTAPI_CTRL *API, int level) {
 #endif
 	GMT_Option (API, ":,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_grdgravmag3d_parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_OPTION *options) {
 
 	/* This parses the options provided to grdgravmag3d and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
@@ -309,8 +310,8 @@ int GMT_grdgravmag3d_parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, stru
 					}
 					else {
 						Ctrl->H.do_igrf = true;                     /* Case when -H+i to mean use IGRF */
-						if (!GMT_is_geographic(GMT, GMT_IN))
-							GMT_parse_common_options (GMT, "f", 'f', "g"); /* Set -fg unless already set */
+						if (!gmt_M_is_geographic(GMT, GMT_IN))
+							gmt_parse_common_options (GMT, "f", 'f', "g"); /* Set -fg unless already set */
 					}
 					break;
 				}
@@ -321,8 +322,8 @@ int GMT_grdgravmag3d_parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, stru
 				}
 				else if (opt->arg[0] == '+' && (opt->arg[1] == 'g' || opt->arg[1] == 'r' || opt->arg[1] == 'f' || opt->arg[1] == 'n')) {
 					Ctrl->H.do_igrf = true;                         /* Anny of -H+i|+g|+r|+f|+n is allowed to mean use IGRF */
-					if (!GMT_is_geographic(GMT, GMT_IN))
-						GMT_parse_common_options(GMT, "f", 'f', "g"); /* Set -fg unless already set */
+					if (!gmt_M_is_geographic(GMT, GMT_IN))
+						gmt_parse_common_options(GMT, "f", 'f', "g"); /* Set -fg unless already set */
 					break;
 				}
 
@@ -356,8 +357,8 @@ int GMT_grdgravmag3d_parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, stru
 				break;
 			case 'I':
 				Ctrl->I.active = true;
-				if (GMT_getinc(GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc(GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
@@ -365,13 +366,13 @@ int GMT_grdgravmag3d_parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, stru
 				Ctrl->L.zobs = atof (opt->arg);
 				break;
 			case 'M':
-				if (GMT_compat_check(GMT, 4)) {
+				if (gmt_M_compat_check(GMT, 4)) {
 					GMT_Report(API, GMT_MSG_COMPAT, "Warning: Option -M is deprecated; -fg was set instead, use this in the future.\n");
-					if (!GMT_is_geographic(GMT, GMT_IN))
-						GMT_parse_common_options(GMT, "f", 'f', "g"); /* Set -fg unless already set */
+					if (!gmt_M_is_geographic(GMT, GMT_IN))
+						gmt_parse_common_options(GMT, "f", 'f', "g"); /* Set -fg unless already set */
 				}
 				else
-					n_errors += GMT_default_error(GMT, opt->option);
+					n_errors += gmt_default_error(GMT, opt->option);
 				break;
 			case 'Q':
 				Ctrl->Q.active = true;
@@ -411,35 +412,35 @@ int GMT_grdgravmag3d_parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, stru
 				Ctrl->H.bhatta = true;
 				break;
 			default:
-				n_errors += GMT_default_error(GMT, opt->option);
+				n_errors += gmt_default_error(GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition(GMT, !Ctrl->In.file[0], "Syntax error: Must specify input file\n");
-	n_errors += GMT_check_condition(GMT, Ctrl->S.active && (Ctrl->S.radius <= 0.0 || GMT_is_dnan(Ctrl->S.radius)),
+	n_errors += gmt_M_check_condition(GMT, !Ctrl->In.file[0], "Syntax error: Must specify input file\n");
+	n_errors += gmt_M_check_condition(GMT, Ctrl->S.active && (Ctrl->S.radius <= 0.0 || gmt_M_is_dnan(Ctrl->S.radius)),
 	                                "Syntax error: -S Radius is NaN or negative\n");
-	n_errors += GMT_check_condition(GMT, !Ctrl->G.active && !Ctrl->F.active,
+	n_errors += gmt_M_check_condition(GMT, !Ctrl->G.active && !Ctrl->F.active,
 	                                "Error: Must specify either -G or -F options\n");
-	n_errors += GMT_check_condition(GMT, !GMT->common.R.active && Ctrl->Q.active && !Ctrl->Q.n_pad,
+	n_errors += gmt_M_check_condition(GMT, !GMT->common.R.active && Ctrl->Q.active && !Ctrl->Q.n_pad,
 	                                "Error: Cannot specify -Q<pad>|<region> without -R option\n");
-	n_errors += GMT_check_condition(GMT, Ctrl->C.rho == 0.0 && !Ctrl->H.active,
+	n_errors += gmt_M_check_condition(GMT, Ctrl->C.rho == 0.0 && !Ctrl->H.active,
 	                                "Error: Must specify either -Cdensity or -H<stuff>\n");
-	n_errors += GMT_check_condition(GMT, Ctrl->C.active && Ctrl->H.active, 
+	n_errors += gmt_M_check_condition(GMT, Ctrl->C.active && Ctrl->H.active,
 	                                "Syntax error Cannot specify both -C and -H options\n");
-	n_errors += GMT_check_condition(GMT, Ctrl->G.active && !Ctrl->G.file,
+	n_errors += gmt_M_check_condition(GMT, Ctrl->G.active && !Ctrl->G.file,
 	                                "Syntax error -G option: Must specify output file\n");
-	n_errors += GMT_check_condition(GMT, Ctrl->H.got_maggrid && !Ctrl->H.magfile,
+	n_errors += gmt_M_check_condition(GMT, Ctrl->H.got_maggrid && !Ctrl->H.magfile,
 	                                "Syntax error -H+m option: Must specify source file\n");
-	n_errors += GMT_check_condition(GMT, Ctrl->F.active && GMT_access(GMT, Ctrl->F.file, R_OK),
+	n_errors += gmt_M_check_condition(GMT, Ctrl->F.active && gmt_access(GMT, Ctrl->F.file, R_OK),
 	                                "Syntax error -F: Cannot read file %s!\n", Ctrl->F.file);
-	i += GMT_check_condition(GMT, Ctrl->G.active && Ctrl->F.active, "Warning: -F overrides -G\n");
+	i += gmt_M_check_condition(GMT, Ctrl->G.active && Ctrl->F.active, "Warning: -F overrides -G\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_grdgravmag3d_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
@@ -463,34 +464,34 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 	struct  GMT_DATATABLE *point = NULL;
 	struct  GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct  GMT_OPTION *options = NULL;
-	struct  GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct  GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
-	mag_var = NULL, mag_param = NULL;
+	okabe_mag_var = NULL, okabe_mag_param = NULL;
 	body_desc.n_v = NULL, body_desc.ind = NULL;
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdgravmag3d_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);
 	if (API->error) return (API->error);	/* Set or get option list */
 
 	if (!options || options->option == GMT_OPT_USAGE)
-		bailout (GMT_grdgravmag3d_usage (API, GMT_USAGE));		/* Return the usage message */
+		bailout (usage (API, GMT_USAGE));		/* Return the usage message */
 	if (options->option == GMT_OPT_SYNOPSIS)
-		bailout (GMT_grdgravmag3d_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+		bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	GMT->common.x.n_threads = 1;        /* Default to use only one core (we may change this to max cores) */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_grdgravmag3d_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_grdgravmag3d_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the grdgravmag3d main code ---------------------*/
 
-	if (GMT_is_geographic(GMT, GMT_IN)) Ctrl->box.is_geog = true;
+	if (gmt_M_is_geographic(GMT, GMT_IN)) Ctrl->box.is_geog = true;
 
 	if (!Ctrl->box.is_geog)
 		Ctrl->box.d_to_m = 1.;
@@ -504,7 +505,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		if (Cin->n_columns < 2) {	/* Trouble */
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -F option: %s does not have at least 2 columns with coordinates\n",
 			            Ctrl->F.file);
-			Return (EXIT_FAILURE);
+			Return (GMT_PARSE_ERROR);
 		}
 		point = Cin->table[0];	/* Can only be one table since we read a single file */
 		ndata = (unsigned int)point->n_records;
@@ -521,8 +522,8 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 	if (Ctrl->G.active) {
 		double wesn[4], inc[2];
 		/* Use the -R region for output if set; otherwise match grid domain */
-		GMT_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : GridA->header->wesn), 4, double);
-		GMT_memcpy (inc, (Ctrl->I.active ? Ctrl->I.inc : GridA->header->inc), 2, double);
+		gmt_M_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : GridA->header->wesn), 4, double);
+		gmt_M_memcpy (inc, (Ctrl->I.active ? Ctrl->I.inc : GridA->header->inc), 2, double);
 		if (wesn[XLO] < GridA->header->wesn[XLO]) error = true;
 		if (wesn[XHI] > GridA->header->wesn[XHI]) error = true;
 
@@ -531,22 +532,22 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 		if (error) {
 			GMT_Report(API, GMT_MSG_NORMAL, "New WESN incompatible with old.\n");
-			Return(EXIT_FAILURE);
+			Return(GMT_RUNTIME_ERROR);
 		}
 
 		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc,
 			GridA->header->registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
-		GMT_Report(API, GMT_MSG_VERBOSE, "Grid dimensions are nx = %d, ny = %d\n",
-		           Gout->header->nx, Gout->header->ny);
+		GMT_Report(API, GMT_MSG_VERBOSE, "Grid dimensions are n_columns = %d, n_rows = %d\n",
+		           Gout->header->n_columns, Gout->header->n_rows);
 	}
 
 	GMT_Report(API, GMT_MSG_VERBOSE, "Allocates memory and read data file\n");
 
 	if (!GMT->common.R.active)
-		GMT_memcpy(wesn_new, GridA->header->wesn, 4, double);
+		gmt_M_memcpy(wesn_new, GridA->header->wesn, 4, double);
 	else
-		GMT_memcpy(wesn_new, GMT->common.R.wesn,  4, double);
+		gmt_M_memcpy(wesn_new, GMT->common.R.wesn,  4, double);
 
 	/* Process Padding request */
 	if (Ctrl->Q.active && !Ctrl->Q.n_pad) {
@@ -556,9 +557,9 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 			        wesn_new[YHI] + Ctrl->Q.pad_dist);
 
 		GMT->common.R.active = false;
-		GMT_parse_common_options(GMT, "R", 'R', Ctrl->Q.region);	/* Use the -R parsing machinery to handle this */
-		GMT_memcpy(wesn_padded, GMT->common.R.wesn, 4, double);
-		GMT_memcpy(GMT->common.R.wesn, wesn_new, 4, double);		/* Reset previous WESN */
+		gmt_parse_common_options(GMT, "R", 'R', Ctrl->Q.region);	/* Use the -R parsing machinery to handle this */
+		gmt_M_memcpy(wesn_padded, GMT->common.R.wesn, 4, double);
+		gmt_M_memcpy(GMT->common.R.wesn, wesn_new, 4, double);		/* Reset previous WESN */
 		GMT->common.R.active = true;
 
 		if (wesn_padded[XLO] < GridA->header->wesn[XLO]) {
@@ -579,7 +580,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		}
 	}
 	else
-		GMT_memcpy (wesn_padded, GridA->header->wesn, 4, double);
+		gmt_M_memcpy (wesn_padded, GridA->header->wesn, 4, double);
 
 	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_padded,
 	                   Ctrl->In.file[0], GridA) == NULL) {			/* Get subset, or all */
@@ -591,14 +592,14 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		if (Gout->header->wesn[XLO] < GridA->header->wesn[XLO] ||
 		    Gout->header->wesn[XHI] > GridA->header->wesn[XHI]) {
 			GMT_Report (API, GMT_MSG_NORMAL, " Selected region exceeds the X-boundaries of the grid file!\n");
-			return (EXIT_FAILURE);
+			return (GMT_RUNTIME_ERROR);
 		}
 		else if (Gout->header->wesn[YLO] < GridA->header->wesn[YLO] ||
 		         Gout->header->wesn[YHI] > GridA->header->wesn[YHI]) {
 			GMT_Report (API, GMT_MSG_NORMAL, " Selected region exceeds the Y-boundaries of the grid file!\n");
-			return (EXIT_FAILURE);
+			return (GMT_RUNTIME_ERROR);
 		}
-		GMT_RI_prepare (GMT, Gout->header);	/* Ensure -R -I consistency and set nx, ny */
+		gmt_RI_prepare (GMT, Gout->header);	/* Ensure -R -I consistency and set n_columns, n_rows */
 	}
 
 	Ctrl->box.lon_0 = (GridA->header->wesn[XLO] + GridA->header->wesn[XHI]) / 2;
@@ -631,7 +632,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 		if(GridA->header->registration != GridB->header->registration) {
 			GMT_Report(API, GMT_MSG_NORMAL, "Up and bottom grids have different registrations!\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 
 		if (GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_padded,
@@ -655,19 +656,19 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 		if(GridA->header->registration != GridS->header->registration) {
 			GMT_Report(API, GMT_MSG_NORMAL, "Up surface and source grids have different registrations!\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 
 		if ((GridA->header->z_scale_factor != GridS->header->z_scale_factor) ||
 		    (GridA->header->z_add_offset != GridS->header->z_add_offset)) {
 			GMT_Report(API, GMT_MSG_NORMAL, "Up surface and source grid scale/offset not compatible!\n");
-			Return(EXIT_FAILURE);
+			Return(GMT_RUNTIME_ERROR);
 		}
 
 		if (fabs (GridA->header->inc[GMT_X] - GridS->header->inc[GMT_X]) > 1.0e-6 ||
 		          fabs(GridA->header->inc[GMT_Y] - GridS->header->inc[GMT_Y]) > 1.0e-6) {
 			GMT_Report(API, GMT_MSG_NORMAL, "Up surface and source grid increments do not match!\n");
-			Return(EXIT_FAILURE);
+			Return(GMT_RUNTIME_ERROR);
 		}
 
 		if (GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_padded,
@@ -685,29 +686,29 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		Ctrl->E.active = false;		/* But in future we may have a second grid with variable magnetization and cte thickness */
 	}
 
-	nx_p = !Ctrl->F.active ? Gout->header->nx : ndata;
-	ny_p = !Ctrl->F.active ? Gout->header->ny : ndata;
-	x_grd = GMT_memory (GMT, NULL, GridA->header->nx + Ctrl->H.pirtt, double);
-	y_grd = GMT_memory (GMT, NULL, GridA->header->ny + Ctrl->H.pirtt, double);
-	x_obs = GMT_memory (GMT, NULL, nx_p, double);
-	y_obs = GMT_memory (GMT, NULL, ny_p, double);
-	if (Ctrl->F.active) g = GMT_memory (GMT, NULL, ndata, double);
+	nx_p = !Ctrl->F.active ? Gout->header->n_columns : ndata;
+	ny_p = !Ctrl->F.active ? Gout->header->n_rows : ndata;
+	x_grd = gmt_M_memory (GMT, NULL, GridA->header->n_columns + Ctrl->H.pirtt, double);
+	y_grd = gmt_M_memory (GMT, NULL, GridA->header->n_rows + Ctrl->H.pirtt, double);
+	x_obs = gmt_M_memory (GMT, NULL, nx_p, double);
+	y_obs = gmt_M_memory (GMT, NULL, ny_p, double);
+	if (Ctrl->F.active) g = gmt_M_memory (GMT, NULL, ndata, double);
 
 	d = GridA->header->xy_off;		/*  0.5 : 0.0 */
 
 	/* ----------------------- Build observation point vectors ---------------------------------- */
 	if (Ctrl->G.active) {
-		for (i = 0; i < Gout->header->nx; i++)
-			x_obs[i] = (i == (Gout->header->nx-1)) ? Gout->header->wesn[XHI] - d * Gout->header->inc[GMT_X] :
+		for (i = 0; i < Gout->header->n_columns; i++)
+			x_obs[i] = (i == (Gout->header->n_columns-1)) ? Gout->header->wesn[XHI] - d * Gout->header->inc[GMT_X] :
 					Gout->header->wesn[XLO] + (i + d) * Gout->header->inc[GMT_X];
 		if (Ctrl->H.pirtt) {
-			for (j = 0; j < Gout->header->ny; j++)
-				y_obs[j] = (j == (Gout->header->ny-1)) ? (Gout->header->wesn[YLO] - d*Gout->header->inc[GMT_Y]) :
+			for (j = 0; j < Gout->header->n_rows; j++)
+				y_obs[j] = (j == (Gout->header->n_rows-1)) ? (Gout->header->wesn[YLO] - d*Gout->header->inc[GMT_Y]) :
 						(Gout->header->wesn[YHI] - (j + d) * Gout->header->inc[GMT_Y]);
 		}
 		else {
-			for (j = 0; j < Gout->header->ny; j++)
-				y_obs[j] = (j == (Gout->header->ny-1)) ? -(Gout->header->wesn[YLO] + d * Gout->header->inc[GMT_Y]) :
+			for (j = 0; j < Gout->header->n_rows; j++)
+				y_obs[j] = (j == (Gout->header->n_rows-1)) ? -(Gout->header->wesn[YLO] + d * Gout->header->inc[GMT_Y]) :
 						-(Gout->header->wesn[YHI] - (j + d) * Gout->header->inc[GMT_Y]);
 		}
 	}
@@ -715,20 +716,20 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 	if (Ctrl->H.pirtt) d -= 0.5;		/* because for prisms we want all corner coords to be in pixel registration */
 
-	for (i = 0; i < GridA->header->nx; i++)
-		x_grd[i] = (i == (GridA->header->nx-1)) ? GridA->header->wesn[XHI] + d*GridA->header->inc[GMT_X] :
+	for (i = 0; i < GridA->header->n_columns; i++)
+		x_grd[i] = (i == (GridA->header->n_columns-1)) ? GridA->header->wesn[XHI] + d*GridA->header->inc[GMT_X] :
 				GridA->header->wesn[XLO] + (i + d) * GridA->header->inc[GMT_X];
 	if (Ctrl->H.pirtt) {
-		for (j = 0; j < GridA->header->ny; j++)
-			y_grd[j] = (j == (GridA->header->ny-1)) ? (GridA->header->wesn[YLO] - d*GridA->header->inc[GMT_Y]) :
+		for (j = 0; j < GridA->header->n_rows; j++)
+			y_grd[j] = (j == (GridA->header->n_rows-1)) ? (GridA->header->wesn[YLO] - d*GridA->header->inc[GMT_Y]) :
 					(GridA->header->wesn[YHI] - (j + d) * GridA->header->inc[GMT_Y]);
 
 		x_grd[i] = x_grd[i - 1] + GridA->header->inc[GMT_X];		/* We need this extra pt because we went from grid to pix reg */
 		y_grd[j] = y_grd[j - 1] - GridA->header->inc[GMT_Y];
 	}
 	else {
-		for (j = 0; j < GridA->header->ny; j++)
-			y_grd[j] = (j == (GridA->header->ny-1)) ? -(GridA->header->wesn[YLO] + d*GridA->header->inc[GMT_Y]) :
+		for (j = 0; j < GridA->header->n_rows; j++)
+			y_grd[j] = (j == (GridA->header->n_rows-1)) ? -(GridA->header->wesn[YLO] + d*GridA->header->inc[GMT_Y]) :
 					-(GridA->header->wesn[YHI] - (j + d) * GridA->header->inc[GMT_Y]);
 	}
 
@@ -736,34 +737,34 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		d = GridB->header->xy_off;		/*  0.5 : 0.0 */
 		if (Ctrl->H.pirtt)
 			d -= 0.5;			/* because for prisms we want all corner coords to be in pixel registration */
-		x_grd2 = GMT_memory (GMT, NULL, GridB->header->nx + Ctrl->H.pirtt, double);
-		y_grd2 = GMT_memory (GMT, NULL, GridB->header->ny + Ctrl->H.pirtt, double);
-		for (i = 0; i < GridB->header->nx; i++)
-			x_grd2[i] = (i == (GridB->header->nx-1)) ? GridB->header->wesn[XHI] + d*GridB->header->inc[GMT_X] :
+		x_grd2 = gmt_M_memory (GMT, NULL, GridB->header->n_columns + Ctrl->H.pirtt, double);
+		y_grd2 = gmt_M_memory (GMT, NULL, GridB->header->n_rows + Ctrl->H.pirtt, double);
+		for (i = 0; i < GridB->header->n_columns; i++)
+			x_grd2[i] = (i == (GridB->header->n_columns-1)) ? GridB->header->wesn[XHI] + d*GridB->header->inc[GMT_X] :
 					GridB->header->wesn[XLO] + (i + d) * GridB->header->inc[GMT_X];
 		if (Ctrl->H.pirtt) {
-			for (j = 0; j < GridB->header->ny; j++)
-				y_grd2[j] = (j == (GridB->header->ny-1)) ? (GridB->header->wesn[YHI] - d*GridB->header->inc[GMT_Y]) :
+			for (j = 0; j < GridB->header->n_rows; j++)
+				y_grd2[j] = (j == (GridB->header->n_rows-1)) ? (GridB->header->wesn[YHI] - d*GridB->header->inc[GMT_Y]) :
 						(GridB->header->wesn[YHI] - (j + d) * GridB->header->inc[GMT_Y]);
 
 			x_grd2[i] = x_grd2[i - 1] + GridB->header->inc[GMT_X];		/* We need this extra pt because we went from grid to pix reg */
 			y_grd2[j] = y_grd2[j - 1] - GridB->header->inc[GMT_Y];
 		}
 		else {
-			for (j = 0; j < GridB->header->ny; j++)
-				y_grd2[j] = (j == (GridB->header->ny-1)) ? -(GridB->header->wesn[YLO] + d*GridB->header->inc[GMT_Y]) :
+			for (j = 0; j < GridB->header->n_rows; j++)
+				y_grd2[j] = (j == (GridB->header->n_rows-1)) ? -(GridB->header->wesn[YLO] + d*GridB->header->inc[GMT_Y]) :
 						-(GridB->header->wesn[YHI] - (j + d) * GridB->header->inc[GMT_Y]);
 		}
 	}
 	/* --------------------------------------------------------------------------------------------- */
 
 	/* ---------- Pre-compute a vector of cos(lat) to use in the Geog cases ------------------------ */
-	cos_vec = GMT_memory (GMT, NULL, GridA->header->ny, double);
-	for (j = 0; j < GridA->header->ny; j++)
+	cos_vec = gmt_M_memory (GMT, NULL, GridA->header->n_rows, double);
+	for (j = 0; j < GridA->header->n_rows; j++)
 		cos_vec[j] = (Ctrl->box.is_geog) ? cos(y_grd[j]*D2R): 1;
 	if (two_grids) {
-		cos_vec2 = GMT_memory (GMT, NULL, GridB->header->ny, double);
-		for (j = 0; j < GridB->header->ny; j++)
+		cos_vec2 = gmt_M_memory (GMT, NULL, GridB->header->n_rows, double);
+		for (j = 0; j < GridB->header->n_rows; j++)
 			cos_vec2[j] = (Ctrl->box.is_geog) ? cos(y_grd2[j]*D2R): 1;
 	}
 	/* --------------------------------------------------------------------------------------------- */
@@ -771,20 +772,20 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 	/* ------ Convert distances to arc distances at Earth surface *** NEEDS CONFIRMATION *** ------- */
 	if (Ctrl->box.is_geog) {
 		if (Ctrl->H.do_igrf) {          /* We need a copy in Geogs to use in IGRF */
-			x_grd_geo = GMT_memory (GMT, NULL, GridA->header->nx + Ctrl->H.pirtt, double);
-			y_grd_geo = GMT_memory (GMT, NULL, GridA->header->ny + Ctrl->H.pirtt, double);
-			GMT_memcpy(x_grd_geo, x_grd, GridA->header->nx + Ctrl->H.pirtt, double);
-			GMT_memcpy(y_grd_geo, y_grd, GridA->header->ny + Ctrl->H.pirtt, double);
+			x_grd_geo = gmt_M_memory (GMT, NULL, GridA->header->n_columns + Ctrl->H.pirtt, double);
+			y_grd_geo = gmt_M_memory (GMT, NULL, GridA->header->n_rows + Ctrl->H.pirtt, double);
+			gmt_M_memcpy(x_grd_geo, x_grd, GridA->header->n_columns + Ctrl->H.pirtt, double);
+			gmt_M_memcpy(y_grd_geo, y_grd, GridA->header->n_rows + Ctrl->H.pirtt, double);
 		}
-		for (i = 0; i < GridA->header->nx; i++)
+		for (i = 0; i < GridA->header->n_columns; i++)
 			x_grd[i] = (x_grd[i] - Ctrl->box.lon_0) * Ctrl->box.d_to_m;
-		for (j = 0; j < GridA->header->ny; j++)
+		for (j = 0; j < GridA->header->n_rows; j++)
 			y_grd[j] = (y_grd[j] + Ctrl->box.lat_0) * Ctrl->box.d_to_m;
 
 		if (two_grids) {
-			for (i = 0; i < GridB->header->nx; i++)
+			for (i = 0; i < GridB->header->n_columns; i++)
 				x_grd2[i] = (x_grd[i] - Ctrl->box.lon_0) * Ctrl->box.d_to_m;
-			for (j = 0; j < GridB->header->ny; j++)
+			for (j = 0; j < GridB->header->n_rows; j++)
 				y_grd2[j] = (y_grd[j] + Ctrl->box.lat_0) * Ctrl->box.d_to_m;
 		}
 	}
@@ -793,39 +794,39 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 	if (Ctrl->Q.n_pad) {
 		x_grd[0] = x_grd[1] - Ctrl->Q.n_pad * (x_grd[2] - x_grd[1]);
 		y_grd[0] = y_grd[1] - Ctrl->Q.n_pad * fabs(y_grd[2] - y_grd[1]);
-		x_grd[GridA->header->nx-1] = x_grd[GridA->header->nx-1] + Ctrl->Q.n_pad * (x_grd[2] - x_grd[1]);
-		y_grd[GridA->header->ny-1] = y_grd[GridA->header->ny-1] + Ctrl->Q.n_pad * fabs(y_grd[2] - y_grd[1]);
+		x_grd[GridA->header->n_columns-1] = x_grd[GridA->header->n_columns-1] + Ctrl->Q.n_pad * (x_grd[2] - x_grd[1]);
+		y_grd[GridA->header->n_rows-1] = y_grd[GridA->header->n_rows-1] + Ctrl->Q.n_pad * fabs(y_grd[2] - y_grd[1]);
 		if (two_grids) {	/* Do the extension using top grid's increments so that top and bot extensions are equal */
 			x_grd2[0] = x_grd2[1] - Ctrl->Q.n_pad * (x_grd[2] - x_grd[1]);		/* Why not use the x|y_inc ? */
 			y_grd2[0] = y_grd2[1] - Ctrl->Q.n_pad * fabs(y_grd[2] - y_grd[1]);
-			x_grd2[GridA->header->nx-1] += Ctrl->Q.n_pad * (x_grd[2] - x_grd[1]);
-			y_grd2[GridA->header->ny-1] += Ctrl->Q.n_pad * fabs(y_grd[2] - y_grd[1]);
+			x_grd2[GridA->header->n_columns-1] += Ctrl->Q.n_pad * (x_grd[2] - x_grd[1]);
+			y_grd2[GridA->header->n_rows-1] += Ctrl->Q.n_pad * fabs(y_grd[2] - y_grd[1]);
 		}
 	}
 
 	if (Ctrl->F.active) { 	/* Need to compute observation coords only once */
 		size_t row;
 		for (row = 0; row < ndata; row++) {
-			x_obs[row] = (Ctrl->box.is_geog) ? (point->segment[0]->coord[GMT_X][row] - Ctrl->box.lon_0) *
-				Ctrl->box.d_to_m*cos(point->segment[0]->coord[GMT_Y][row] * D2R) : point->segment[0]->coord[GMT_X][row];
-			y_obs[row] = (Ctrl->box.is_geog) ? -(point->segment[0]->coord[GMT_Y][row] - Ctrl->box.lat_0) *
-				Ctrl->box.d_to_m : -point->segment[0]->coord[GMT_Y][row]; /* - because y positive 'south' */
+			x_obs[row] = (Ctrl->box.is_geog) ? (point->segment[0]->data[GMT_X][row] - Ctrl->box.lon_0) *
+				Ctrl->box.d_to_m*cos(point->segment[0]->data[GMT_Y][row] * D2R) : point->segment[0]->data[GMT_X][row];
+			y_obs[row] = (Ctrl->box.is_geog) ? -(point->segment[0]->data[GMT_Y][row] - Ctrl->box.lat_0) *
+				Ctrl->box.d_to_m : -point->segment[0]->data[GMT_Y][row]; /* - because y positive 'south' */
 		}
 	}
 
 	if (Ctrl->H.active) { /* 1e2 is a factor to obtain nT from magnetization in A/m */
-		mag_param = GMT_memory (GMT, NULL, 1, struct MAG_PARAM);
-		mag_param[0].rim[0] = 1e2 * cos(Ctrl->H.t_dip*D2R) * cos((Ctrl->H.t_dec - 90.)*D2R);
-		mag_param[0].rim[1] = 1e2 * cos(Ctrl->H.t_dip*D2R) * sin((Ctrl->H.t_dec - 90.)*D2R);
-		mag_param[0].rim[2] = 1e2 * sin(Ctrl->H.t_dip*D2R);
+		okabe_mag_param = gmt_M_memory (GMT, NULL, 1, struct MAG_PARAM);
+		okabe_mag_param[0].rim[0] = 1e2 * cos(Ctrl->H.t_dip*D2R) * cos((Ctrl->H.t_dec - 90.)*D2R);
+		okabe_mag_param[0].rim[1] = 1e2 * cos(Ctrl->H.t_dip*D2R) * sin((Ctrl->H.t_dec - 90.)*D2R);
+		okabe_mag_param[0].rim[2] = 1e2 * sin(Ctrl->H.t_dip*D2R);
 		cc_t = cos(Ctrl->H.m_dip*D2R) * cos((Ctrl->H.m_dec - 90.)*D2R);
 		cs_t = cos(Ctrl->H.m_dip*D2R) * sin((Ctrl->H.m_dec - 90.)*D2R);
 		s_t  = sin(Ctrl->H.m_dip*D2R);
 		/* Case of constant magnetization */
-		mag_var = GMT_memory (GMT, NULL, 1, struct MAG_VAR);
-		mag_var[0].rk[0] = Ctrl->H.m_int * cc_t;
-		mag_var[0].rk[1] = Ctrl->H.m_int * cs_t;
-		mag_var[0].rk[2] = Ctrl->H.m_int * s_t;
+		okabe_mag_var = gmt_M_memory (GMT, NULL, 1, struct MAG_VAR);
+		okabe_mag_var[0].rk[0] = Ctrl->H.m_int * cc_t;
+		okabe_mag_var[0].rk[1] = Ctrl->H.m_int * cs_t;
+		okabe_mag_var[0].rk[2] = Ctrl->H.m_int * s_t;
 	}
 
 	/* Decompose a paralelogram into two triangular prisms */
@@ -842,7 +843,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 	for (i = 1; i < body_desc.n_f; i++)
 		n_vert_max = MAX(body_desc.n_v[i], n_vert_max);
 
-	loc_or = GMT_memory (GMT, NULL, (n_vert_max+1), struct LOC_OR);
+	loc_or = gmt_M_memory (GMT, NULL, (n_vert_max+1), struct LOC_OR);
 
 	if (Ctrl->H.bhatta) {
 		dircos(Ctrl->H.m_dip, Ctrl->H.m_dec, 0, &loc_or[0].x, &loc_or[0].y, &loc_or[0].z);
@@ -852,12 +853,12 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		/* This retains several of the original FORTRAN code variable names (easy to tell) */
 		double sa, si, ci, si0, sa0, ca0, cisa, cica, h1, h2, h3;
 
-		sa = -Ctrl->H.t_dec * D2R;		// Earth field declination
-		si =  Ctrl->H.t_dip * D2R;		// Earth field dip (inclination)
-		ci = cos(si);					// cos of field INC
-		si0= sin(si);					// sin of field INC
-		sa0= sin(sa);					// sin of field DEC
-		ca0= cos(sa);					// cos of field DEC
+		sa = -Ctrl->H.t_dec * D2R;		/* Earth field declination */
+		si =  Ctrl->H.t_dip * D2R;		/* Earth field dip (inclination) */
+		ci = cos(si);					/* cos of field INC */
+		si0= sin(si);					/* sin of field INC */
+		sa0= sin(sa);					/* sin of field DEC */
+		ca0= cos(sa);					/* cos of field DEC */
 		cisa= ci * sa0;
 		cica= ci * ca0;
 
@@ -866,8 +867,8 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		h3 = si0;
 
 		if (Ctrl->H.koningsberg != 0) {		/* This option is not currently implemented */
-			sa = (-Ctrl->H.t_dec - Ctrl->H.m_dec) * D2R;	// Earth field DEC - Mag DEC 
-			ci = cos(Ctrl->H.m_dip * D2R);					// cos of mag INC
+			sa = (-Ctrl->H.t_dec - Ctrl->H.m_dec) * D2R;	/* Earth field DEC - Mag DEC */
+			ci = cos(Ctrl->H.m_dip * D2R);					/* cos of mag INC */
 			h1 += Ctrl->H.koningsberg * ci * sin(sa);
 			h2 += Ctrl->H.koningsberg * ci * cos(sa);
 			h3 += Ctrl->H.koningsberg * sin(Ctrl->H.m_dip * D2R);
@@ -883,7 +884,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 	if (Ctrl->G.active) {               /* grid output */
 		grdgravmag3d_calc_surf(GMT, Ctrl, GridA, Gout, GridS, NULL, 0, x_grd, y_grd, x_grd_geo, y_grd_geo, x_obs, y_obs, cos_vec,
-		                       mag_var, loc_or, &body_desc, body_verts);
+		                       okabe_mag_var, loc_or, &body_desc, body_verts);
 
 		if (Ctrl->H.pirtt) goto L1;                            /* Uggly, I know but the 2-grids case is not Bhattacharya implemented */
 
@@ -892,34 +893,34 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 			if (!Ctrl->E.active) {                              /* NOT constant thickness. That is, a surface and a BASE plane */
 				grdgravmag3d_body_set_tri(GMT, Ctrl, GridA, &body_desc, body_verts, x_grd, y_grd, cos_vec, 0, 0,
-				                          GridA->header->ny-1, GridA->header->nx-1);
+				                          GridA->header->n_rows-1, GridA->header->n_columns-1);
 
-				for (k = 0; k < Gout->header->ny; k++) {        /* Loop over input grid rows */
+				for (k = 0; k < Gout->header->n_rows; k++) {        /* Loop over input grid rows */
 					y_o = (Ctrl->box.is_geog) ? (y_obs[k] + Ctrl->box.lat_0) * Ctrl->box.d_to_m : y_obs[k];	 /* +lat_0 because y was already *= -1 */
 
-					for (i = 0; i < Gout->header->nx; i++) {    /* Loop over input grid cols */
+					for (i = 0; i < Gout->header->n_columns; i++) {    /* Loop over input grid cols */
 						x_o = (Ctrl->box.is_geog) ? (x_obs[i] - Ctrl->box.lon_0) * Ctrl->box.d_to_m * cos(y_obs[k]*D2R) : x_obs[i];
 						a = okabe(GMT, x_o, y_o, Ctrl->L.zobs, Ctrl->C.rho, Ctrl->C.active, body_desc, body_verts, km, 0, loc_or);
-						Gout->data[GMT_IJP(Gout->header, k, i)] += (float)a;
+						Gout->data[gmt_M_ijp(Gout->header, k, i)] += (float)a;
 					}
 				}
 			}
 			else {      /* A Constant thickness layer */
 				for (ij = 0; ij < Gout->header->size; ij++) GridA->data[ij] += (float)Ctrl->E.thickness;	/* Shift by thickness */
 				grdgravmag3d_calc_surf(GMT, Ctrl, GridA, Gout, GridS, NULL, 0, x_grd, y_grd, x_grd_geo, y_grd_geo, x_obs, y_obs, cos_vec,
-				                       mag_var, loc_or, &body_desc, body_verts);
+				                       okabe_mag_var, loc_or, &body_desc, body_verts);
 				for (ij = 0; ij < Gout->header->size; ij++) GridA->data[ij] -= (float)Ctrl->E.thickness;	/* Remove because grid may be used outside GMT */
 			}
 		}
 		else {          /* "two_grids". One at the top and the other at the base */
 			grdgravmag3d_body_desc_tri(GMT, Ctrl, &body_desc, &body_verts, clockwise_type[1]);		/* Set CW or CCW of top triangles */
 			grdgravmag3d_calc_surf(GMT, Ctrl, GridB, Gout, GridS, NULL, 0, x_grd2, y_grd2, x_grd_geo, y_grd_geo, x_obs, y_obs,
-			                       cos_vec2, mag_var, loc_or, &body_desc, body_verts);
+			                       cos_vec2, okabe_mag_var, loc_or, &body_desc, body_verts);
 		}
 	}
 	else {              /* polyline output */
 		grdgravmag3d_calc_surf(GMT, Ctrl, GridA, GridS, NULL, g, ndata, x_grd, y_grd, x_grd_geo, y_grd_geo, x_obs, y_obs, cos_vec,
-		                       mag_var, loc_or, &body_desc, body_verts);
+		                       okabe_mag_var, loc_or, &body_desc, body_verts);
 
 		if (Ctrl->H.pirtt) goto L1;     /* Uggly,I know but the 2-grids case is not Bhattacharya implemented */
 
@@ -928,7 +929,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 			if (!Ctrl->E.active) {      /* NOT constant thickness. That is, a surface and a BASE plane */
 				grdgravmag3d_body_set_tri(GMT, Ctrl, GridA, &body_desc, body_verts, x_grd, y_grd, cos_vec, 0, 0,
-				                          GridA->header->ny-1, GridA->header->nx-1);
+				                          GridA->header->n_rows-1, GridA->header->n_columns-1);
 			}
 			else {                      /* A Constant thickness layer */
 				for (ij = 0; ij < Gout->header->size; ij++) GridA->data[ij] += (float)Ctrl->E.thickness;	/* Shift by thickness */
@@ -942,7 +943,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		else {                          /* "two_grids". One at the top and the other at the base */
 			grdgravmag3d_body_desc_tri(GMT, Ctrl, &body_desc, &body_verts, clockwise_type[1]);		/* Set CW or CCW of top triangles */
 			grdgravmag3d_calc_surf(GMT, Ctrl, GridB, NULL, GridS, g, ndata, x_grd2, y_grd2, x_grd_geo, y_grd_geo, x_obs, y_obs,
-			                        cos_vec2, mag_var, loc_or, &body_desc, body_verts);
+			                        cos_vec2, okabe_mag_var, loc_or, &body_desc, body_verts);
 		}
 	}
 	/*---------------------------------------------------------------------------------------------*/
@@ -960,58 +961,58 @@ L1:
 		}
 
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Gout)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_OK)
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_NOERROR)
 			Return (API->error);
 	}
 	else {
 		double out[3];
-		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) 	/* Establishes data output */
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) 	/* Establishes data output */
 			Return (API->error);
 
-		if ((error = GMT_set_cols (GMT, GMT_OUT, 3)) != GMT_OK)
+		if ((error = gmt_set_cols (GMT, GMT_OUT, 3)) != GMT_NOERROR)
 			Return (API->error);
 
-		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) 	/* Enables data output and sets access mode */
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) 	/* Enables data output and sets access mode */
 			Return (API->error);
 
 		for (k = 0; k < ndata; k++) {
-			out[GMT_X] = point->segment[0]->coord[GMT_X][k];
-			out[GMT_Y] = point->segment[0]->coord[GMT_Y][k];
+			out[GMT_X] = point->segment[0]->data[GMT_X][k];
+			out[GMT_Y] = point->segment[0]->data[GMT_Y][k];
 			out[GMT_Z] = g[k];
 			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
 		}
 
-		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) 	/* Disables further data input */
+		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) 	/* Disables further data input */
 			Return (API->error);
 	}
 
-	GMT_free (GMT, x_grd);
-	GMT_free (GMT, y_grd);
-	if (x_grd2) GMT_free (GMT, x_grd2);
-	if (y_grd2) GMT_free (GMT, y_grd2);
-	if (cos_vec2) GMT_free (GMT, cos_vec2);
-	if (g) GMT_free (GMT, g);
-	GMT_free (GMT, x_obs);
-	GMT_free (GMT, y_obs);
-	GMT_free (GMT, cos_vec);
-	GMT_free (GMT, loc_or);
-	GMT_free (GMT, body_desc.n_v);
-	GMT_free (GMT, body_desc.ind);
-	GMT_free (GMT, body_verts);
-	if (mag_param) GMT_free (GMT, mag_param);
-	if (mag_var) GMT_free (GMT, mag_var);
+	gmt_M_free (GMT, x_grd);
+	gmt_M_free (GMT, y_grd);
+	gmt_M_free (GMT, x_grd2);
+	gmt_M_free (GMT, y_grd2);
+	gmt_M_free (GMT, cos_vec2);
+	gmt_M_free (GMT, g);
+	gmt_M_free (GMT, x_obs);
+	gmt_M_free (GMT, y_obs);
+	gmt_M_free (GMT, cos_vec);
+	gmt_M_free (GMT, loc_or);
+	gmt_M_free (GMT, body_desc.n_v);
+	gmt_M_free (GMT, body_desc.ind);
+	gmt_M_free (GMT, body_verts);
+	gmt_M_free (GMT, okabe_mag_param);
+	gmt_M_free (GMT, okabe_mag_var);
 	if (Ctrl->H.do_igrf) {
-		GMT_free(GMT, x_grd_geo);		GMT_free(GMT, y_grd_geo);
+		gmt_M_free (GMT, x_grd_geo);		gmt_M_free (GMT, y_grd_geo);
 	}
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }
 
 
 /* -----------------------------------------------------------------*/
-int grdgravmag3d_body_desc_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
-                               struct BODY_VERTS **body_verts, unsigned int face) {
-	GMT_UNUSED(Ctrl);
+GMT_LOCAL int grdgravmag3d_body_desc_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
+                                         struct BODY_VERTS **body_verts, unsigned int face) {
+	gmt_M_unused(Ctrl);
 /*
 		__________________________________________
 		|                                        |
@@ -1033,42 +1034,42 @@ int grdgravmag3d_body_desc_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, s
 	if (face == 0) {			/* Decompose the TOP square surface in 2 triangles using CW order */
 		body_desc->n_f = 2;
 		if (body_desc->n_v == NULL)
-			body_desc->n_v = GMT_memory (GMT, NULL, body_desc->n_f, unsigned int);
+			body_desc->n_v = gmt_M_memory (GMT, NULL, body_desc->n_f, unsigned int);
 		body_desc->n_v[0] = body_desc->n_v[1] = 3;
 		if (body_desc->ind == NULL)
-			body_desc->ind = GMT_memory (GMT, NULL, body_desc->n_v[0] + body_desc->n_v[1], unsigned int);
+			body_desc->ind = gmt_M_memory (GMT, NULL, body_desc->n_v[0] + body_desc->n_v[1], unsigned int);
 		body_desc->ind[0] = 0;	body_desc->ind[1] = 1; 	body_desc->ind[2] = 2;	/* 1st top triang (0 1 3)*/
 		body_desc->ind[3] = 0;	body_desc->ind[4] = 2; 	body_desc->ind[5] = 3;	/* 2nd top triang (1 2 3) */
-		if (*body_verts == NULL) *body_verts = GMT_memory (GMT, NULL, 4, struct BODY_VERTS);
+		if (*body_verts == NULL) *body_verts = gmt_M_memory (GMT, NULL, 4, struct BODY_VERTS);
 	}
 	else if (face == 5) {			/* Decompose the BOT square surface in 2 triangles using CCW order */
 		body_desc->n_f = 2;
 		if (body_desc->n_v == NULL)
-			body_desc->n_v = GMT_memory (GMT, NULL, body_desc->n_f, unsigned int);
+			body_desc->n_v = gmt_M_memory (GMT, NULL, body_desc->n_f, unsigned int);
 		body_desc->n_v[0] = body_desc->n_v[1] = 3;
 		if (body_desc->ind == NULL)
-			body_desc->ind = GMT_memory (GMT, NULL, body_desc->n_v[0] + body_desc->n_v[1], unsigned int);
+			body_desc->ind = gmt_M_memory (GMT, NULL, body_desc->n_v[0] + body_desc->n_v[1], unsigned int);
 		body_desc->ind[0] = 0;	body_desc->ind[1] = 2; 	body_desc->ind[2] = 1;	/* 1st bot triang */
 		body_desc->ind[3] = 0;	body_desc->ind[4] = 3; 	body_desc->ind[5] = 2;	/* 2nd bot triang */
-		if (*body_verts == NULL) *body_verts = GMT_memory (GMT, NULL, 4, struct BODY_VERTS);
+		if (*body_verts == NULL) *body_verts = gmt_M_memory (GMT, NULL, 4, struct BODY_VERTS);
 	}
 	/* Other face cases will go here */
 	return 0;
 }
 
 /* -----------------------------------------------------------------------------------*/
-int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
-                                 struct BODY_VERTS **body_verts, unsigned int face) {
-	GMT_UNUSED(Ctrl);
+GMT_LOCAL int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
+                                           struct BODY_VERTS **body_verts, unsigned int face) {
+	gmt_M_unused(Ctrl);
 	if (face != 0 && face != 5) return(0);
 
 	body_desc->n_f = 1;
 	if (body_desc->n_v == NULL)		/* First time this function is called */
-		body_desc->n_v = GMT_memory (GMT, NULL, body_desc->n_f, unsigned int);
+		body_desc->n_v = gmt_M_memory (GMT, NULL, body_desc->n_f, unsigned int);
 	body_desc->n_v[0] = 2;
 	if (body_desc->ind == NULL)
-		body_desc->ind = GMT_memory (GMT, NULL, body_desc->n_v[0], unsigned int);
-	if (*body_verts == NULL) *body_verts = GMT_memory (GMT, NULL, 2, struct BODY_VERTS);
+		body_desc->ind = gmt_M_memory (GMT, NULL, body_desc->n_v[0], unsigned int);
+	if (*body_verts == NULL) *body_verts = gmt_M_memory (GMT, NULL, 2, struct BODY_VERTS);
 
 	body_desc->ind[0] = 0;	body_desc->ind[1] = 1;	/* NOT USED REALY AREN'T THEY? */
 
@@ -1076,7 +1077,7 @@ int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl,
 }
 
 /* -----------------------------------------------------------------------------------*/
-int grdgravmag3d_body_set_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
+GMT_LOCAL int grdgravmag3d_body_set_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
 		struct BODY_DESC *body_desc, struct BODY_VERTS *body_verts, double *x, double *y,
 		double *cos_vec, unsigned int j, unsigned int i, unsigned int inc_j, unsigned int inc_i) {
 
@@ -1088,8 +1089,8 @@ int grdgravmag3d_body_set_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, st
 	float *z = Grid->data;
 	double cosj, cosj1;
 	struct GMT_GRID_HEADER *h = Grid->header;
-	GMT_UNUSED(GMT);
-	GMT_UNUSED(body_desc);
+	gmt_M_unused(GMT);
+	gmt_M_unused(body_desc);
 
 	j1 = j + inc_j;         i1 = i + inc_i;
 	cosj = cos_vec[j];      cosj1 = cos_vec[j1];
@@ -1103,12 +1104,12 @@ int grdgravmag3d_body_set_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, st
 	body_verts[2].y = y[j1];
 	body_verts[3].y = body_verts[2].y;
 	if (inc_i == 1) {
-		ij = GMT_IJP(h,j,i);
+		ij = gmt_M_ijp(h,j,i);
 		body_verts[0].z = z[ij];
-		body_verts[1].z = z[ij + 1];  /* z[GMT_IJP(h,j,i1)];  */
-		ij = GMT_IJP(h,j1,i1);
-		body_verts[2].z = z[ij];      /* z[GMT_IJP(h,j1,i1)]; */
-		body_verts[3].z = z[ij - 1];  /* z[GMT_IJP(h,j1,i)];  */
+		body_verts[1].z = z[ij + 1];  /* z[gmt_M_ijp(h,j,i1)];  */
+		ij = gmt_M_ijp(h,j1,i1);
+		body_verts[2].z = z[ij];      /* z[gmt_M_ijp(h,j1,i1)]; */
+		body_verts[3].z = z[ij - 1];  /* z[gmt_M_ijp(h,j1,i)];  */
 	}
 	else {		/* Base surface */
 		body_verts[0].z = body_verts[1].z = body_verts[2].z = body_verts[3].z = Ctrl->Z.z0;
@@ -1125,7 +1126,7 @@ int grdgravmag3d_body_set_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, st
 }
 
 /* -----------------------------------------------------------------------------------*/
-int grdgravmag3d_body_set_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
+GMT_LOCAL int grdgravmag3d_body_set_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid,
 		struct BODY_DESC *body_desc, struct BODY_VERTS *body_verts, double *x, double *y,
 		double *cos_vec, unsigned int j, unsigned int i, unsigned int inc_j, unsigned int inc_i) {
 
@@ -1137,8 +1138,8 @@ int grdgravmag3d_body_set_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, 
 	float *z = Grid->data;
 	double cosj, cosj1;
 	struct GMT_GRID_HEADER *h = Grid->header;
-	GMT_UNUSED(GMT);
-	GMT_UNUSED(body_desc);
+	gmt_M_unused(GMT);
+	gmt_M_unused(body_desc);
 
 	j1 = j + inc_j;         i1 = i + inc_i;
 	cosj = cos_vec[j];      cosj1 = cos_vec[j1];
@@ -1149,21 +1150,21 @@ int grdgravmag3d_body_set_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, 
 	body_verts[0].y = y[j1];	/* Reverse order because y[] starts from y_max and decreases */
 	body_verts[1].y = y[j];
 
-	body_verts[0].z = z[GMT_IJP(h,j,i)];
-	body_verts[1].z = (Ctrl->E.active) ? z[GMT_IJP(h,j,i)] + Ctrl->E.thickness : Ctrl->Z.z0;
+	body_verts[0].z = z[gmt_M_ijp(h,j,i)];
+	body_verts[1].z = (Ctrl->E.active) ? z[gmt_M_ijp(h,j,i)] + Ctrl->E.thickness : Ctrl->Z.z0;
 	return(0);
 }
 
 
 /* -----------------------------------------------------------------------------------*/
 #ifdef HAVE_GLIB_GTHREAD
-static void *thread_function (void *args) {
+GMT_LOCAL void *thread_function (void *args) {
 	grdgravmag3d_calc_surf_ ((struct THREAD_STRUCT *)args);
 	return NULL;
 }
 #endif
 
-void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
+GMT_LOCAL void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
 	/* Do the actual work. This function is called in either threaded and non-threaded cases. */
 
 	char   tabs[16] = {""}, frmt[64] = {""};
@@ -1190,13 +1191,13 @@ void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
     unsigned int r_stop         = t->r_stop;
 
 	int (*v_func[3])(struct GMT_CTRL *, struct GRDOKB_CTRL *, struct GMT_GRID *, struct BODY_DESC *, struct BODY_VERTS *,
-	      double *, double *, double *, unsigned int, unsigned int, unsigned int, unsigned int); 
+	      double *, double *, double *, unsigned int, unsigned int, unsigned int, unsigned int);
 	double (*d_func[3])(struct GMT_CTRL *, double, double, double, double, bool, struct BODY_DESC, struct BODY_VERTS *,
 	        unsigned int, unsigned int, struct LOC_OR *);
 
 	/* IDEALY THIS SHOULD BE A MUTEX. BUT FIRST: HOW? AND SECOND, WOULDN'T IT BREAK THE WHOLE TREADING MECHANICS? */
 	if (body_verts == NULL)
-		body_verts = GMT_memory (GMT, NULL, 4, struct BODY_VERTS);		/* 4 is good enough for Okabe (tri = 4) and Mprism (prism = 2) cases */
+		body_verts = gmt_M_memory (GMT, NULL, 4, struct BODY_VERTS);		/* 4 is good enough for Okabe (tri = 4) and Mprism (prism = 2) cases */
 
 	v_func[0] = grdgravmag3d_body_set_tri;
 	v_func[1] = grdgravmag3d_body_set_prism;
@@ -1214,7 +1215,7 @@ void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
 
 	s_rad2 = Ctrl->S.radius * Ctrl->S.radius;
 
-	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 		for (i = 0; i < MIN((unsigned)(t->thread_num + 1), 5); i++) {
 			tabs[i] = '\t';
 		}
@@ -1222,31 +1223,30 @@ void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
 	}
 
 	if (Ctrl->H.do_igrf) {
-		igrf_dip = GMT_memory (GMT, NULL, (size_t)(Grid->header->nx + 1), double);
-		igrf_dec = GMT_memory (GMT, NULL, (size_t)(Grid->header->nx + 1), double);
+		igrf_dip = gmt_M_memory (GMT, NULL, (size_t)(Grid->header->n_columns + 1), double);
+		igrf_dec = gmt_M_memory (GMT, NULL, (size_t)(Grid->header->n_columns + 1), double);
 	}
 
 	for (row = r_start; row < r_stop; row++) {                     /* Loop over input grid rows */
 
-		if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE))
+		if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE))
 			GMT_Message(GMT->parent, GMT_TIME_NONE, frmt, t->thread_num + 1, row + 1, r_stop);
-			//GMT_Message (GMT->parent, GMT_TIME_NONE, "Thread %d\tRow = %d\t of = %.3d\r", t->thread_num+1, row+1, Grid->header->ny - !indf);
 
 		if (Ctrl->H.do_igrf) {                                     /* Compute a row of IGRF dec & dip */
-			for (col = 0; col < Grid->header->nx - 1 + MIN(indf,1); col++) { 
-				MGD77_igrf10syn(GMT, 0, 2000, 1, 0, t->x_grd_geo[col], t->y_grd_geo[row], out_igrf); 
+			for (col = 0; col < Grid->header->n_columns - 1 + MIN(indf,1); col++) {
+				MGD77_igrf10syn(GMT, 0, 2000, 1, 0, t->x_grd_geo[col], t->y_grd_geo[row], out_igrf);
 				igrf_dec[col] = out_igrf[5] * D2R;
 				igrf_dip[col] = out_igrf[6] * D2R;
 			}
 		}
 
-		for (col = 0; col < Grid->header->nx - 1 + MIN(indf,1); col++) {   /* Loop over input grid cols */
+		for (col = 0; col < Grid->header->n_columns - 1 + MIN(indf,1); col++) {   /* Loop over input grid cols */
 
 			v_func[indf](GMT, Ctrl, Grid, body_desc, body_verts, x_grd, y_grd, cos_vec, row, col, 1, 1);	/* Call the body_set function */
 			if (Ctrl->H.pirtt && fabs(body_verts[1].z - body_verts[0].z) < 1e-2) continue;
 
 			if (Gsource)                                            /* If we have a variable source grid */
-				rho_or_mag = Gsource->data[GMT_IJP(Gsource->header, row, col)];
+				rho_or_mag = Gsource->data[gmt_M_ijp(Gsource->header, row, col)];
 
 			if (Ctrl->H.do_igrf) {                                  /* Here we have a constantly varying dec and dip */
 				loc_or[0].x = cos(igrf_dip[col]) * sin(-igrf_dec[col]);
@@ -1260,7 +1260,7 @@ void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
 			}
 
 			if (Ctrl->G.active) {
-				for (k = 0; k < Gout->header->ny; k++) {            /* Loop over output grid rows */
+				for (k = 0; k < Gout->header->n_rows; k++) {            /* Loop over output grid rows */
 					y_o = (Ctrl->box.is_geog) ? (y_obs[k] + Ctrl->box.lat_0) * Ctrl->box.d_to_m : y_obs[k]; /* +lat_0 because y was already *= -1 */
 					if (Ctrl->S.active) {
 						DY = body_verts[0].y - y_o;
@@ -1269,14 +1269,14 @@ void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
 					}
 
 					if (Ctrl->box.is_geog) tmp = Ctrl->box.d_to_m * cos(y_obs[k]*D2R);
-					for (i = 0; i < Gout->header->nx; i++) {        /* Loop over output grid cols */
+					for (i = 0; i < Gout->header->n_columns; i++) {        /* Loop over output grid cols */
 						x_o = (Ctrl->box.is_geog) ? (x_obs[i] - Ctrl->box.lon_0) * tmp : x_obs[i];
 						if (Ctrl->S.active) {
 							DX = body_verts[0].x - x_o;             /* Use the first vertex to estimate distance. Approximate but good enough */
 							if ((DX*DX + DY) > s_rad2) continue;    /* Remember that DY was already squared above */
 						}
 						a = d_func[indf](GMT, x_o, y_o, Ctrl->L.zobs, rho_or_mag, Ctrl->C.active, *body_desc, body_verts, km, pm, loc_or);
-						Gout->data[GMT_IJP(Gout->header, k, i)] += (float)a;
+						Gout->data[gmt_M_ijp(Gout->header, k, i)] += (float)a;
 					}
 				}
 			}
@@ -1288,16 +1288,16 @@ void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
 		}
 	}
 
-	GMT_free (GMT, body_verts);
+	gmt_M_free (GMT, body_verts);
 	if (Ctrl->H.do_igrf) {
-		GMT_free (GMT, igrf_dip);		GMT_free (GMT, igrf_dec);
+		gmt_M_free (GMT, igrf_dip);		gmt_M_free (GMT, igrf_dec);
 	}
 }
 
 /* -----------------------------------------------------------------------------------*/
-void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid, struct GMT_GRID *Gout,
+GMT_LOCAL void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_GRID *Grid, struct GMT_GRID *Gout,
 		struct GMT_GRID *Gsource, double *g, unsigned int n_pts, double *x_grd, double *y_grd, double *x_grd_geo, double *y_grd_geo,
-		double *x_obs, double *y_obs, double *cos_vec, struct MAG_VAR *mag_var, struct LOC_OR *loc_or,
+		double *x_obs, double *y_obs, double *cos_vec, struct MAG_VAR *okabe_mag_var, struct LOC_OR *loc_or,
 		struct BODY_DESC *body_desc, struct BODY_VERTS *body_verts) {
 
 	/* Send g = NULL for grid computations (e.g. -G) or Gout = NULL otherwise (-F).
@@ -1308,14 +1308,14 @@ void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, str
 #ifdef HAVE_GLIB_GTHREAD
 	GThread **threads = NULL;
 	if (GMT->common.x.n_threads > 1)
-		threads = GMT_memory (GMT, NULL, GMT->common.x.n_threads, GThread *);
+		threads = gmt_M_memory (GMT, NULL, GMT->common.x.n_threads, GThread *);
 #endif
 
-	GMT_tic(GMT);
+	gmt_M_tic(GMT);
 
 	indf = (Ctrl->H.pirtt) ? 1 : 0;
 
-	threadArg = GMT_memory (GMT, NULL, GMT->common.x.n_threads, struct THREAD_STRUCT);
+	threadArg = gmt_M_memory (GMT, NULL, GMT->common.x.n_threads, struct THREAD_STRUCT);
 
 	for (i = 0; i < GMT->common.x.n_threads; i++) {
 		threadArg[i].GMT        = GMT;
@@ -1325,7 +1325,7 @@ void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, str
 		threadArg[i].Gsource    = Gsource;
    		threadArg[i].body_verts = body_verts;
    		threadArg[i].body_desc  = body_desc;
-   		threadArg[i].mag_var    = mag_var;
+   		threadArg[i].okabe_mag_var    = okabe_mag_var;
    		threadArg[i].loc_or     = loc_or;
    		threadArg[i].x_grd      = x_grd;
    		threadArg[i].x_grd_geo  = x_grd_geo;
@@ -1336,34 +1336,33 @@ void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, str
    		threadArg[i].g          = g;
    		threadArg[i].cos_vec    = cos_vec;
    		threadArg[i].n_pts      = n_pts;
-   		threadArg[i].r_start    = i * irint((Grid->header->ny - 1 - indf) / GMT->common.x.n_threads);
+   		threadArg[i].r_start    = i * irint((Grid->header->n_rows - 1 - indf) / GMT->common.x.n_threads);
    		threadArg[i].thread_num = i;
 
 		if (GMT->common.x.n_threads == 1) {		/* Independently of WITH_THREADS, if only one don't call the threading machine */
-   			threadArg[i].r_stop = Grid->header->ny - 1 + indf;
+   			threadArg[i].r_stop = Grid->header->n_rows - 1 + indf;
 			grdgravmag3d_calc_surf_ (&threadArg[0]);
 			break;		/* Make sure we don't go through the threads lines below */
 		}
 #ifndef HAVE_GLIB_GTHREAD
 	}
 #else
-   		threadArg[i].r_stop = (i + 1) * irint((Grid->header->ny - 1 - indf) / GMT->common.x.n_threads);
-   		if (i == GMT->common.x.n_threads - 1) threadArg[i].r_stop = Grid->header->ny - 1 + indf;	/* Make sure last row is not left behind */
+   		threadArg[i].r_stop = (i + 1) * irint((Grid->header->n_rows - 1 - indf) / GMT->common.x.n_threads);
+   		if (i == GMT->common.x.n_threads - 1) threadArg[i].r_stop = Grid->header->n_rows - 1 + indf;	/* Make sure last row is not left behind */
 		threads[i] = g_thread_new(NULL, thread_function, (void*)&(threadArg[i]));
 	}
 
-	if (GMT->common.x.n_threads > 1) {		/* Otherwise g_thread_new was never called aand so no need to "join" */
+	if (GMT->common.x.n_threads > 1) {		/* Otherwise g_thread_new was never called and so no need to "join" */
 		for (i = 0; i < GMT->common.x.n_threads; i++)
 			g_thread_join(threads[i]);
-	}
 
-	if (GMT->common.x.n_threads > 1)
-		GMT_free (GMT, threads);
+		gmt_M_free (GMT, threads);
+	}
 #endif
 
-	GMT_free (GMT, threadArg);
+	gmt_M_free (GMT, threadArg);
 
-	GMT_toc(GMT,"");
+	gmt_M_toc(GMT,"");
 }
 
 /* -----------------------------------------------------------------------------------*/
@@ -1373,26 +1372,26 @@ void grdgravmag3d_calc_surf (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, str
    consider different dec/dip for magnetization vector and Earth field, but here we do.
 */
 
-double mprism (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
+GMT_LOCAL double mprism (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
 		struct BODY_DESC bd_desc, struct BODY_VERTS *body_verts, unsigned int km, unsigned int i_comp, struct LOC_OR *mag_par) {
 
 	/* The MAG_PAR struct is used here to transmit the Ctrl->H members (components actually) */
 
 	int i, j, k, ijk;
-	double a[3][2], eps1, eps2, hx, hy, hz, tr, sc, xc, yc; 
+	double a[3][2], eps1, eps2, hx, hy, hz, tr, sc, xc, yc;
 	double xn, yn, f11, f12, f13, f21, f22, f23, u, v, w, r, c4, c5, c6;
-	GMT_UNUSED(GMT);
-	GMT_UNUSED(z_o);
-	GMT_UNUSED(is_grav);
-	GMT_UNUSED(bd_desc);
-	GMT_UNUSED(km);
+	gmt_M_unused(GMT);
+	gmt_M_unused(z_o);
+	gmt_M_unused(is_grav);
+	gmt_M_unused(bd_desc);
+	gmt_M_unused(km);
 
 	eps1 = 1.0e-12;
 	eps2 = 5.0e-3;
 
-	a[0][0] = (body_verts[1].y - body_verts[0].y) / 2;		// thickness (arbitrary, could also be the 'length')
+	a[0][0] = (body_verts[1].y - body_verts[0].y) / 2;		/* thickness (arbitrary, could also be the 'length') */
 	a[0][1] = -a[0][0];
-	a[1][0] = (body_verts[1].x - body_verts[0].x) / 2;		// length
+	a[1][0] = (body_verts[1].x - body_verts[0].x) / 2;		/* length */
 	a[1][1] = -a[1][0];
 	a[2][0] =  body_verts[1].z;
 	a[2][1] =  body_verts[0].z;
@@ -1511,7 +1510,7 @@ https://wiki.oulu.fi/display/~mpi/Magnetic+field+of+a+prism+model
 !      2...the amplitude of earth's magnetic field (t0/nanoTeslas)
 !      3...inclination of earth's magnetic field (i0/degrees)
 !      4...declination of earth's magnetic field (d0/degrees)
-!         -> strike angle is taken clockwise from magnetic north 
+!         -> strike angle is taken clockwise from magnetic north
 !      5...K?ningsbergs ratio (Q)
 !      6...inclination of the prism magnetization (ir/degrees)
 !      7...azimuth of the prism magnetization (ar/degrees)
@@ -1534,7 +1533,7 @@ https://wiki.oulu.fi/display/~mpi/Magnetic+field+of+a+prism+model
 !   The strike and the azimuth of prism magnetization are taken
 !   clockwise from magnetic north (and the field declination, of course)
 !   Dip angle is taken from horizontal plate
-!   K?ningsberg's ratio is the ratio between the remanent and induced 
+!   K?ningsberg's ratio is the ratio between the remanent and induced
 !   magnetization (Mr/Mi)
 !   Demagnetization coefficients are computed outside this subroutine
 !
@@ -1555,7 +1554,7 @@ https://wiki.oulu.fi/display/~mpi/Magnetic+field+of+a+prism+model
     real :: cirsa,circa,sir,sf,cf,ctf,dx,si1,si2,si3,h1,h2,h3,zn,xn,yn
     real :: f11,f12,f13,f21,f22,f23,u,v,w,sc,p,q,r,c4,c5,c6,tr,hx,hy,hz
     real :: eps= 1.e-5, eps2= 5.e-3
-      
+
 ! set up computation
 
     pii= 4.*atan(1.)
@@ -1679,7 +1678,7 @@ https://wiki.oulu.fi/display/~mpi/Magnetic+field+of+a+prism+model
 
 */
 
-double bhatta (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
+GMT_LOCAL double bhatta (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double mag, bool is_grav,
 		struct BODY_DESC bd_desc, struct BODY_VERTS *body_verts, unsigned int km, unsigned int i_comp, struct LOC_OR *loc_or) {
 
 	/* x_o, y_o, z_o are the coordinates of the observation point
@@ -1690,10 +1689,10 @@ double bhatta (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double 
 
 	double x111, x011, x101, x001, x110, x010, x100, x000, u0, u1, v0, v1, w0, w1, tx;
 	double (*d_func[3])(double, double, double, double, double, double);       /* function pointer */
-	GMT_UNUSED(GMT);
-	GMT_UNUSED(is_grav);
-	GMT_UNUSED(bd_desc);
-	GMT_UNUSED(km);
+	gmt_M_unused(GMT);
+	gmt_M_unused(is_grav);
+	gmt_M_unused(bd_desc);
+	gmt_M_unused(km);
 
 	d_func[0] = nucleoy;
 	d_func[1] = nucleox;
@@ -1721,7 +1720,7 @@ double bhatta (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double 
 	return (tx);
 }
 
-double nucleox(double u, double v, double w, double rl, double rm, double rn) {
+GMT_LOCAL double nucleox(double u, double v, double w, double rl, double rm, double rn) {
 	double r, t1, t2, t3, rnum, rden;
 	r = sqrt(u*u + v*v + w*w);
 	t1 = rn / 2.0 * log((r+v)/(r-v));
@@ -1732,7 +1731,7 @@ double nucleox(double u, double v, double w, double rl, double rm, double rn) {
 	return (t1 + t2 + t3);
 }
 
-double nucleoy(double u, double v, double w, double rl, double rm, double rn) {
+GMT_LOCAL double nucleoy(double u, double v, double w, double rl, double rm, double rn) {
 	/* Multiply output by -1 because ... not sure but related to the fact that y vector is up-side down */
 	double r, t1, t2, t3, rnum, rden;
 	r = sqrt(u*u + v*v + w*w);
@@ -1744,7 +1743,7 @@ double nucleoy(double u, double v, double w, double rl, double rm, double rn) {
 	return (-(t1 + t2 + t3));
 }
 
-double nucleoz(double u, double v, double w, double rl, double rm, double rn) {
+GMT_LOCAL double nucleoz(double u, double v, double w, double rl, double rm, double rn) {
 	double r, t1, t2, t3, rnum, rden;
 	r = sqrt(u*u + v*v + w*w);
 	t1 = rm / 2.0 * log((r+u)/(r-u));
@@ -1755,14 +1754,14 @@ double nucleoz(double u, double v, double w, double rl, double rm, double rn) {
 	return (t1 + t2 + t3);
 }
 
-void dircos(double incl, double decl, double azim, double *a, double *b, double *c) {
+GMT_LOCAL void dircos(double incl, double decl, double azim, double *a, double *b, double *c) {
 /*
 c  Subroutine DIRCOS computes direction cosines from inclination
 c  and declination.
 c
 c  Input parameters:
-c    incl:  inclination in degrees positive below horizontal.  
-c    decl:  declination in degrees positive east of true north.  
+c    incl:  inclination in degrees positive below horizontal.
+c    decl:  declination in degrees positive east of true north.
 c    azim:  azimuth of x axis in degrees positive east of north.
 c
 c  Output parameters:

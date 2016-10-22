@@ -1,4 +1,4 @@
-#	$Id: README.gshhg 13853 2014-12-30 20:49:01Z pwessel $
+#	$Id: README.gshhg 16843 2016-07-21 04:01:37Z pwessel $
 
 			G S H H G
 
@@ -6,6 +6,18 @@ Global Self-consistent Hierarchical High-resolution Geography
 Distributed under the GNU Lesser Public License; see file
 LICENSE.TXT in main GMT directory. It was formerly called
 GSHHS (... Shorelines instead of Geography).
+
+Version August 17, 2016
+
+No source code changes but expected to work with the latest GSHHG
+data set version 2.3.6 which fixed 11 crossings in Antarctica
+grounding line and one in the Antarctica ice front line.
+
+Version April 12, 2016
+
+No source code changes but expected to work with the latest GSHHG
+data set version 2.3.5 which added missing boundary between Sudan and South Sudan.
+Fixed non-closure of the Slovenia, Croatia and Hungary borders.
 
 Version January 1, 2015
 

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_nan.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_nan.h 15810 2016-03-05 00:33:55Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -41,15 +41,15 @@
 #include "gmt_notposix.h"
 
 #ifdef NO_IEEE
-#	define GMT_make_fnan(x) (x = FLT_MAX)
-#	define GMT_make_dnan(x) (x = DBL_MAX)
-#	define GMT_is_fnan(x) ((x) == FLT_MAX)
-#	define GMT_is_dnan(x) ((x) == DBL_MAX)
+#	define gmt_M_make_fnan(x) (x = FLT_MAX)
+#	define gmt_M_make_dnan(x) (x = DBL_MAX)
+#	define gmt_M_is_fnan(x) ((x) == FLT_MAX)
+#	define gmt_M_is_dnan(x) ((x) == DBL_MAX)
 #else
-#	define GMT_make_fnan(x) (x = (float) NAN)
-#	define GMT_make_dnan(x) (x = NAN)
-#	define GMT_is_fnan isnan
-#	define GMT_is_dnan isnan
+#	define gmt_M_make_fnan(x) (x = (float) NAN)
+#	define gmt_M_make_dnan(x) (x = NAN)
+#	define gmt_M_is_fnan isnan
+#	define gmt_M_is_dnan isnan
 #endif
 
 #endif /* _GMT_NAN_H */

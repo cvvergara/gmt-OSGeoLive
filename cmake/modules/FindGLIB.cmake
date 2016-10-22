@@ -1,5 +1,5 @@
 #
-# $Id: FindGLIB.cmake 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: FindGLIB.cmake 16156 2016-04-08 11:10:23Z remko $
 #
 # - Try to find Glib and its components (gio, gobject etc)
 # Once done, this will define
@@ -97,7 +97,7 @@ foreach (_component ${GLIB_FIND_COMPONENTS})
     elseif (${_component} STREQUAL "gmodule")
         find_library(GLIB_GMODULE_LIBRARIES NAMES gmodule-2.0 HINTS ${_GLIB_LIBRARY_DIR})
         set(ADDITIONAL_REQUIRED_VARS ${ADDITIONAL_REQUIRED_VARS} GLIB_GMODULE_LIBRARIES)
-    elseif (${_component} STREQUAL "gthread")
+    elseif (${_component} STREQUAL "gthread" AND "${GLIB_VERSION}" VERSION_GREATER "2.31.999")
         find_library(GLIB_GTHREAD_LIBRARIES NAMES gthread-2.0 HINTS ${_GLIB_LIBRARY_DIR})
         set(ADDITIONAL_REQUIRED_VARS ${ADDITIONAL_REQUIRED_VARS} GLIB_GTHREAD_LIBRARIES)
     elseif (${_component} STREQUAL "gio-unix")

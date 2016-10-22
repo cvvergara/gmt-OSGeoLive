@@ -14,9 +14,10 @@ Synopsis
 .. include:: common_SYN_OPTs.rst_
 
 **greenspline** [ *table* ]
-[ |-A|\ [**1**\ \|\ **2**\ \|\ **3**\ \|\ **4**\ \|\ **5**,]\ *gradfile* ]
-[ |-C|\ [**n**\ \|\ **v**]\ *cut*\ [/*file*] ]
+[ |-A|\ *gradfile*\ **+f**\ **1**\ \|\ **2**\ \|\ **3**\ \|\ **4**\ \|\ **5** ]
+[ |-C|\ [**n**\ \|\ **r**\ \|\ **v**]\ *value*\ [**+f**\ *file*] ]
 [ |-D|\ *mode* ]
+[ |-E|\ [*misfitfile*] ]
 [ |-G|\ *grdfile* ]
 [ |-I|\ *xinc*\ [/*yinc*\ [/*zinc*]] ]
 [ |-L| ]
@@ -25,7 +26,7 @@ Synopsis
 [ |SYN_OPT-Rz| ]
 [ |-S|\ **c\|t\|l\|r\|p\|q**\ [*pars*] ] [ |-T|\ *maskgrid* ]
 [ |SYN_OPT-V| ]
-[ |-W| ]
+[ |-W|\ [**w**]]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
 [ |SYN_OPT-f| ]
@@ -74,13 +75,14 @@ Optional Arguments
 
 .. _-A:
 
-**-A**\ [**1**\ \|\ **2**\ \|\ **3**\ \|\ **4**\ \|\ **5**,]\ *gradfile*
+**-A**\ *gradfile*\ **+f**\ **1**\ \|\ **2**\ \|\ **3**\ \|\ **4**\ \|\ **5**
     The solution will partly be constrained by surface gradients **v** =
     *v*\ \*\ **n**, where *v* is the gradient magnitude and **n** its
     unit vector direction. The gradient direction may be specified
     either by Cartesian components (either unit vector **n** and
     magnitude *v* separately or gradient components **v** directly) or
-    angles w.r.t. the coordinate axes. Specify one of five input
+    angles w.r.t. the coordinate axes. Append name of ASCII file with
+    the surface gradients.  Use **+f** to select one of five input
     formats: **0**: For 1-D data there is no direction, just gradient
     magnitude (slope) so the input format is *x*, *gradient*. Options
     1-2 are for 2-D data sets: **1**: records contain *x*, *y*,
@@ -91,24 +93,25 @@ Optional Arguments
     or 3-D data: **3**: records contain **x**, *direction(s)*, *v*
     (*direction(s)* in degrees are measured counter-clockwise from the
     horizontal (and for 3-D the vertical axis). **4**: records contain
-    **x**, **v**. **5**: records contain **x**, **n**, *v*. Append name
-    of ASCII file with the surface gradients (following a comma if a
-    format is specified).
+    **x**, **v**. **5**: records contain **x**, **n**, *v*. 
 
 .. _-C:
 
-**-C**\ [**n**\ \|\ **v**]\ *cut*\ [/*file*]
+**-C**\ [**n**\ \|\ **r**\ \|\ **v**]\ *value*\ [**+f**\ *file*]
     Find an approximate surface fit: Solve the linear system for the
     spline coefficients by SVD and eliminate the contribution from all
-    eigenvalues whose ratio to the largest eigenvalue is less than *cut*
+    eigenvalues whose ratio to the largest eigenvalue is less than *value*
     [Default uses Gauss-Jordan elimination to solve the linear system
-    and fit the data exactly]. Optionally, append /*file* to save the
+    and fit the data exactly]. Optionally, append **+f**\ *file* to save the
     eigenvalue ratios to the specified file for further analysis.
-    Finally, if a negative *cut* is given then /*file* is required and
+    Finally, if a negative *value* is given then **+f**\ *file* is required and
     execution will stop after saving the eigenvalues, i.e., no surface
     output is produced.  Specify **-Cv** to use the
-    largest eigenvalues needed to explain *cut* % of the data variance.
-    Alternatively, use **-Cn** to select the *cut* largest eigenvalues.
+    largest eigenvalues needed to explain approximately *value* % of the data variance.
+    Specify **-Cr** to use the largest eigenvalues needed to leave approximately *value*
+    as the model misfit.  If *value* is not given then **-W** is required and we
+    compute *value* as the rms of the data uncertainties. 
+    Alternatively, use **-Cn** to select the *value* largest eigenvalues.
     If a *file* is given with **-Cv** then we save the eigenvalues instead
     of the ratios.
 
@@ -129,6 +132,15 @@ Optional Arguments
     arcs. Select *mode* 5 for Cartesian 3-D surface spline
     interpolation: **-D**\ 5 means (*x*,\ *y*,\ *z*) in user units,
     Cartesian distances.
+
+.. _-E:
+
+**E**\ [*misfitfile*]
+
+    Evaluate the spline exactly at the input data locations and report
+    statistics of the misfit (mean, standard deviation, and rms).  Optionally,
+    append a filename and we will write the data table, augmented by
+    two extra columns holding the spline estimate and the misfit.
 
 .. _-G:
 
@@ -237,10 +249,12 @@ Optional Arguments
 
 .. _-W:
 
-**-W**
-   Expect data weights in the final input column, typically given as
-   weight = 1 / sigma, the data uncertainty.  This results in a weighted
-   least squares fit.  Note that this only has an effect if **-CC** is used.
+**-W**\ [**w**]
+   Data one-sigma uncertainties are provided in the last column.
+   We then compute weights that are inversely proportional to the uncertainties.
+   Append **w** if weights are given instead of uncertainties.  This results in
+   a weighted least squares fit.  Note that this only has an effect if **-C** is used.
+   [Default uses no weights or uncertainties].
 
 .. |Add_-bi| replace:: [Default is 2-4 input
    columns (**x**,\ *w*); the number depends on the chosen dimension].
@@ -317,13 +331,13 @@ of the surface slope in the NW direction, try
     gmt greenspline table_5.11 -R0/6.5/-0.2/6.5 -I0.1 -Sr0.95 -V -D1 -Q-45 -Gslopes.nc
 
 Finally, to use Cartesian minimum curvature splines in recovering a
-surface where the input data is a single surface value (pt.d) and the
+surface where the input data is a single surface value (pt.txt) and the
 remaining constraints specify only the surface slope and direction
-(slopes.d), use
+(slopes.txt), use
 
    ::
 
-    gmt greenspline pt.d -R-3.2/3.2/-3.2/3.2 -I0.1 -Sc -V -D1 -A1,slopes.d -Gslopes.nc
+    gmt greenspline pt.txt -R-3.2/3.2/-3.2/3.2 -I0.1 -Sc -V -D1 -Aslopes.txt+f1 -Gslopes.nc
 
 3-d Examples
 ------------
@@ -340,17 +354,17 @@ a measure of uranium oxide concentrations (in percent), try
 ------------------------------
 
 To recreate Parker's [1994] example on a global 1x1 degree grid,
-assuming the data are in file mag_obs_1990.d, try
+assuming the data are in file mag_obs_1990.txt, try
 
    ::
 
-    greenspline -V -Rg -Sp -D3 -I1 -GP1994.nc mag_obs_1990.d
+    greenspline -V -Rg -Sp -D3 -I1 -GP1994.nc mag_obs_1990.txt
 
 To do the same problem but applying tension of 0.85, use
 
    ::
 
-    greenspline -V -Rg -Sq0.85 -D3 -I1 -GWB2008.nc mag_obs_1990.d
+    greenspline -V -Rg -Sq0.85 -D3 -I1 -GWB2008.nc mag_obs_1990.txt
 
 Considerations
 --------------

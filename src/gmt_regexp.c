@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_regexp.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gmt_regexp.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
  *
  * PUBLIC functions:
  *
- * gmt_regexp_match:	Match a string against an extended regular expression
+ * gmtlib_regexp_match:	Match a string against an extended regular expression
  *
  */
 
@@ -42,8 +42,7 @@
 #define MAX_ERR_LENGTH 80   /* max error message length */
 #endif
 
-int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pattern, bool caseless)
-{
+int gmtlib_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pattern, bool caseless) {
 /* Match string against the extended regular expression in pattern. Return 1 for match, 0 for no match. */
 
 #ifdef HAVE_PCRE
@@ -76,8 +75,8 @@ int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pat
 	/* Compilation failed: print the error message and exit */
 
 	if (re == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: PCRE compilation failed at offset %d: %s.\n", erroffset, error);
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmtlib_regexp_match: PCRE compilation failed at offset %d: %s.\n", erroffset, error);
+		GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 	}
 	
 	/*************************************************************************
@@ -103,8 +102,8 @@ int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pat
 			case PCRE_ERROR_NOMATCH: break;
 			/* Handle other special cases if you like */
 			default: 
-				 GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: PCRE matching error %d.\n", rc);
-				 GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				 GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmtlib_regexp_match: PCRE matching error %d.\n", rc);
+				 GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 				 break;
 		}
 		return (0);	/* Match failed */
@@ -127,8 +126,8 @@ int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pat
 	/* compile the RE */
 	if ( (status = regcomp(&re, pattern, cflags)) != 0) {
 		regerror(status, &re, err_msg, MAX_ERR_LENGTH);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: POSIX ERE compilation failed: %s\n", err_msg);
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmtlib_regexp_match: POSIX ERE compilation failed: %s\n", err_msg);
+		GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 	}
 
 	/* execute the RE against the subject string */
@@ -139,16 +138,16 @@ int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pat
 	else if ( status != REG_NOMATCH ) {
 		/* this is when errors have been encountered */
 		regerror(status, &re, err_msg, MAX_ERR_LENGTH);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: POSIX ERE matching error: %s\n", err_msg); /* Report error. */
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmtlib_regexp_match: POSIX ERE matching error: %s\n", err_msg); /* Report error. */
+		GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 	}
 	return (0); /* No match */
 
 #else
 
 	/* disable ERE support */
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: this GMT version was compiled without regular expression support.\n");
-	GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmtlib_regexp_match: this GMT version was compiled without regular expression support.\n");
+	GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 
 #endif
 }

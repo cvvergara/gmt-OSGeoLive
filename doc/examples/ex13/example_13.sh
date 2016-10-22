@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 13
-#		$Id: example_13.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_13.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:	Illustrate vectors and contouring
-# GMT progs:	grdmath, grdcontour, grdvector, pstext
+# GMT modules:	grdmath, grdcontour, grdvector, pstext
 # Unix progs:	echo, rm
 #
 ps=example_13.ps

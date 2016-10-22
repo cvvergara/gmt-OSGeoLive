@@ -1,4 +1,4 @@
-/*	$Id: utilmeca.c 15205 2015-11-09 06:08:07Z pwessel $
+/*	$Id: utilmeca.c 16933 2016-08-18 21:54:44Z remko $
  *    Copyright (c) 1996-2012 by G. Patau
  *    Donated to the GMT project by G. Patau upon her retirement from IGPG
  *    Distributed under the Lesser GNU Public Licence
@@ -8,13 +8,11 @@
 #include "gmt_dev.h"	/* to have gmt dev environment */
 #include "meca.h"
 #include "utilmeca.h"
-#include "nrutil.h"
 
 #define squared(x) ((x) * (x))
 
 /************************************************************************/
-void get_trans (struct GMT_CTRL *GMT, double slon, double slat, double *t11, double *t12, double *t21, double *t22)
-{
+void meca_get_trans (struct GMT_CTRL *GMT, double slon, double slat, double *t11, double *t12, double *t21, double *t22) {
 	/* determine local transformation between (lon,lat) and (x,y) */
 	/* return this in the 2 x 2 matrix t */
 	/* this is useful for drawing velocity vectors in X,Y coordinates */
@@ -38,14 +36,14 @@ void get_trans (struct GMT_CTRL *GMT, double slon, double slat, double *t11, dou
 	int flip = 0;
 
 	/* how much does x,y change for a 1 degree change in lon,lon ? */
-	GMT_geo_to_xy (GMT, slon,     slat,     &su,    &sv );
+	gmt_geo_to_xy (GMT, slon,     slat,     &su,    &sv );
 	if ((slat+1.0) >= 90.0) {	/* PW: Must do something different at/near NP */
-	        GMT_geo_to_xy (GMT, slon,     slat-1.0, &udlat, &vdlat);
+	        gmt_geo_to_xy (GMT, slon,     slat-1.0, &udlat, &vdlat);
 		flip = 1;
 	}
 	else
-		GMT_geo_to_xy (GMT, slon,     slat+1.0, &udlat, &vdlat);
-	GMT_geo_to_xy (GMT, slon+1.0, slat    , &udlon, &vdlon);
+		gmt_geo_to_xy (GMT, slon,     slat+1.0, &udlat, &vdlat);
+	gmt_geo_to_xy (GMT, slon+1.0, slat    , &udlon, &vdlon);
 
 	/* Compute dudlat, dudlon, dvdlat, dvdlon */
 	dudlat = udlat - su;
@@ -69,8 +67,7 @@ void get_trans (struct GMT_CTRL *GMT, double slon, double slat, double *t11, dou
 	*t22 = (dl == 0.0) ? 0.0 : dvdlat/dl;
 }
 
-double null_axis_dip (double str1, double dip1, double str2, double dip2)
-{
+static double null_axis_dip (double str1, double dip1, double str2, double dip2) {
 	/*
 	   compute null axis dip when strike and dip are given
 	   for each nodal plane.  Angles are in degrees.
@@ -85,8 +82,7 @@ double null_axis_dip (double str1, double dip1, double str2, double dip2)
 	return (den);
 }
 
-double null_axis_strike (double str1, double dip1, double str2, double dip2)
-{
+static double null_axis_strike (double str1, double dip1, double str2, double dip2) {
 	/*
 	   Compute null axis strike when strike and dip are given
 	   for each nodal plane.   Angles are in degrees.
@@ -112,8 +108,7 @@ double null_axis_strike (double str1, double dip1, double str2, double dip2)
 	return (phn);
 }
 
-double proj_radius(double str1, double dip1, double str)
-{
+static double proj_radius(double str1, double dip1, double str) {
 	/*
 	   Compute the vector radius for a given strike,
 	   equal area projection, inferior sphere.
@@ -129,8 +124,8 @@ double proj_radius(double str1, double dip1, double str)
 }
 
 /***********************************************************************************************************/
-double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, struct GMT_FILL *F, struct GMT_FILL *E, int outline)
-{	/* By Genevieve Patau */
+double meca_ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, struct GMT_FILL *F, struct GMT_FILL *E, int outline) {
+	/* By Genevieve Patau */
 
 	double x[1000], y[1000];
 	double pos_NP1_NP2 = sind (meca.NP1.str - meca.NP2.str);
@@ -150,10 +145,10 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 
 	/*  argument is DIAMETER!!*/
 	ssize[0] = size;
-	GMT_setfill (GMT, E, outline);
+	gmt_setfill (GMT, E, outline);
 	PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 
-	GMT_setfill (GMT, F, outline);
+	gmt_setfill (GMT, F, outline);
 	if (fabs (pos_NP1_NP2) < EPSIL) {
 		/* pure normal or inverse fault (null axis strike is determined
 		   with + or - 180 degrees. */
@@ -264,8 +259,8 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 		}
 
 		/* close the first compressing part */
-		meca.NP1.str = zero_360(meca.NP1.str);
-		meca.NP2.str = zero_360(meca.NP2.str);
+		meca.NP1.str = meca_zero_360(meca.NP1.str);
+		meca.NP2.str = meca_zero_360(meca.NP2.str);
 		increment = pos_NP1_NP2 >= 0. ? -fault : fault;
 		if (increment * (meca.NP1.str - meca.NP2.str) < - EPSIL) meca.NP1.str += increment * 360.;
 		str = meca.NP2.str;
@@ -281,7 +276,7 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 
 		/* first nodal plane till null axis */
 		i = 0;
-		meca.NP1.str = zero_360 (meca.NP1.str + 180.);
+		meca.NP1.str = meca_zero_360 (meca.NP1.str + 180.);
 		if (meca.NP1.str - N_axis.str < - EPSIL) meca.NP1.str += 360.;
 		increment = -1.;
 		str = meca.NP1.str;
@@ -295,7 +290,7 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 		}
 
 		/* second nodal plane from null axis */
-		meca.NP2.str = zero_360(meca.NP2.str + 180.);
+		meca.NP2.str = meca_zero_360(meca.NP2.str + 180.);
 		increment = -fault;
 		if (fault * (N_axis.str - meca.NP2.str) < - EPSIL) meca.NP2.str -= fault * 360.;
 		str = fabs (90. - meca.NP2.dip) < EPSIL ? meca.NP2.str : N_axis.str;
@@ -309,8 +304,8 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 		}
 
 		/* close the second compressing part */
-		meca.NP1.str = zero_360(meca.NP1.str);
-		meca.NP2.str = zero_360(meca.NP2.str);
+		meca.NP1.str = meca_zero_360(meca.NP1.str);
+		meca.NP2.str = meca_zero_360(meca.NP2.str);
 		increment = pos_NP1_NP2 >= 0. ? -fault : fault;
 		if (increment * (meca.NP1.str - meca.NP2.str) < - EPSIL) meca.NP1.str += increment * 360.;
 		str = meca.NP2.str;
@@ -328,8 +323,8 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 }
 
 /*********************************************************************/
-double ps_plan (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, int num_of_plane)
-{	/* By Genevieve Patau */
+double meca_ps_plan (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, int num_of_plane) {
+	/* By Genevieve Patau */
 
 	int i;
 
@@ -368,8 +363,8 @@ double ps_plan (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0
 }
 
 /*********************************************************************/
-double zero_360 (double str)
-{	/* By Genevieve Patau: put an angle between 0 and 360 degrees */
+double meca_zero_360 (double str) {
+	/* By Genevieve Patau: put an angle between 0 and 360 degrees */
 	if (str >= 360.0)
 		str -= 360.0;
 	else if (str < 0.0)
@@ -378,8 +373,7 @@ double zero_360 (double str)
 }
 
 /**********************************************************************/
-double computed_mw (struct MOMENT moment, double ms)
-{
+double meca_computed_mw (struct MOMENT moment, double ms) {
 	/* Compute mw-magnitude from seismic moment or MS magnitude. */
 
 	/* Genevieve Patau from
@@ -399,8 +393,7 @@ double computed_mw (struct MOMENT moment, double ms)
 }
 
 /*********************************************************************/
-double computed_strike1 (struct nodal_plane NP1)
-{
+static double computed_strike1 (struct nodal_plane NP1) {
 	/*
 	   Compute the strike of the decond nodal plane when are given
 	   strike, dip and rake for the first nodal plane with AKI & RICHARD's
@@ -410,7 +403,7 @@ double computed_strike1 (struct nodal_plane NP1)
 
 	double str2, temp, cp2, sp2, ss, cs, sr, cr;
 	double cd1 = cosd (NP1.dip);
-	double am = (GMT_IS_ZERO (NP1.rake) ? 1. : NP1.rake /fabs (NP1.rake));
+	double am = (gmt_M_is_zero (NP1.rake) ? 1. : NP1.rake /fabs (NP1.rake));
 
 	sincosd (NP1.rake, &sr, &cr);
 	sincosd (NP1.str, &ss, &cs);
@@ -431,14 +424,13 @@ double computed_strike1 (struct nodal_plane NP1)
 		temp -= sr *  cs * cd1;
 		cp2 = am * temp;
 		str2 = d_atan2d(sp2, cp2);
-		str2 = zero_360(str2);
+		str2 = meca_zero_360(str2);
 	}
 	return (str2);
 }
 
 /*********************************************************************/
-double computed_dip1 (struct nodal_plane NP1)
-{
+static double computed_dip1 (struct nodal_plane NP1) {
 	/*
 	   Compute second nodal plane dip when are given strike,
 	   dip and rake for the first nodal plane with AKI & RICHARD's
@@ -446,7 +438,7 @@ double computed_dip1 (struct nodal_plane NP1)
 	   Genevieve Patau
 	*/
 
-	double am = (GMT_IS_ZERO (NP1.rake) ? 1.0 : NP1.rake / fabs (NP1.rake));
+	double am = (gmt_M_is_zero (NP1.rake) ? 1.0 : NP1.rake / fabs (NP1.rake));
 	double dip2;
 
 	dip2 = acosd (am * sind (NP1.rake) * sind (NP1.dip));
@@ -455,8 +447,7 @@ double computed_dip1 (struct nodal_plane NP1)
 }
 
 /*********************************************************************/
-double computed_rake1 (struct nodal_plane NP1)
-{
+static double computed_rake1 (struct nodal_plane NP1) {
 	/*
 	   Compute rake in the second nodal plane when strike ,dip
 	   and rake are given for the first nodal plane with AKI &
@@ -465,11 +456,10 @@ double computed_rake1 (struct nodal_plane NP1)
 	   Genevieve Patau
 	*/
 
-	double computed_strike1(), computed_dip1();
 	double rake2, sinrake2;
 	double str2 = computed_strike1(NP1);
 	double dip2 = computed_dip1(NP1);
-	double am = (GMT_IS_ZERO (NP1.rake) ? 1.0 : NP1.rake / fabs (NP1.rake));
+	double am = (gmt_M_is_zero (NP1.rake) ? 1.0 : NP1.rake / fabs (NP1.rake));
 	double sd, cd, ss, cs;
 	sincosd (NP1.dip, &sd, &cd);
 	sincosd (NP1.str - str2, &ss, &cs);
@@ -485,8 +475,7 @@ double computed_rake1 (struct nodal_plane NP1)
 }
 
 /*********************************************************************/
-double computed_dip2 (double str1, double dip1, double str2)
-{
+double meca_computed_dip2 (double str1, double dip1, double str2) {
 	/*
 	   Compute second nodal plane dip when are given
 	   strike and dip for the first plane and strike for
@@ -508,8 +497,7 @@ double computed_dip2 (double str1, double dip1, double str2)
 }
 
 /*********************************************************************/
-double computed_rake2 (double str1, double dip1, double str2, double dip2, double fault)
-{
+double meca_computed_rake2 (double str1, double dip1, double str2, double dip2, double fault) {
 	/*
 	   Compute rake in the second nodal plane when strike and dip
 	   for first and second nodal plane are given with a double
@@ -536,8 +524,7 @@ double computed_rake2 (double str1, double dip1, double str2, double dip2, doubl
 }
 
 /*********************************************************************/
-void define_second_plane (struct nodal_plane NP1, struct nodal_plane *NP2)
-{
+void meca_define_second_plane (struct nodal_plane NP1, struct nodal_plane *NP2) {
 	/*
 	    Compute strike, dip, slip for the second nodal plane
 	    when are given strike, dip and rake for the first one.
@@ -550,24 +537,23 @@ void define_second_plane (struct nodal_plane NP1, struct nodal_plane *NP2)
 }
 
 /***************************************************************************************/
-void moment2axe (struct GMT_CTRL *GMT, struct M_TENSOR mt, struct AXIS *T, struct AXIS *N, struct AXIS *P)
-{
-	/* This version uses GMT_jacobi and does not suffer from the convert_matrix bug */
+void meca_moment2axe (struct GMT_CTRL *GMT, struct M_TENSOR mt, struct AXIS *T, struct AXIS *N, struct AXIS *P) {
+	/* This version uses gmt_jacobi and does not suffer from the convert_matrix bug */
 	unsigned int j, nrots, np = 3;
 	double *a, *d, *b, *z, *v;
 	double az[3], pl[3];
 
-	a = GMT_memory (GMT, NULL, np*np, double);
-	d = GMT_memory (GMT, NULL, np, double);
-	b = GMT_memory (GMT, NULL, np, double);
-	z = GMT_memory (GMT, NULL, np, double);
-	v = GMT_memory (GMT, NULL, np*np, double);
+	a = gmt_M_memory (GMT, NULL, np*np, double);
+	d = gmt_M_memory (GMT, NULL, np, double);
+	b = gmt_M_memory (GMT, NULL, np, double);
+	z = gmt_M_memory (GMT, NULL, np, double);
+	v = gmt_M_memory (GMT, NULL, np*np, double);
 
 	a[0]=mt.f[0];	a[1]=mt.f[3];	a[2]=mt.f[4];
 	a[3]=mt.f[3];	a[4]=mt.f[1];	a[5]=mt.f[5];
 	a[6]=mt.f[4];	a[7]=mt.f[5];	a[8]=mt.f[2];
 
-	if (GMT_jacobi (GMT, a, np, np, d, v, b, z, &nrots))
+	if (gmt_jacobi (GMT, a, np, np, d, v, b, z, &nrots))
 		fprintf(GMT->session.std[GMT_ERR],"%s: Eigenvalue routine failed to converge in 50 sweeps.\n", GMT->init.module_name);
 
 	for (j = 0; j < np; j++) {
@@ -588,30 +574,28 @@ void moment2axe (struct GMT_CTRL *GMT, struct M_TENSOR mt, struct AXIS *T, struc
 	N->val = d[1];	N->e = mt.expo; N->str = az[1]; N->dip = pl[1];
 	P->val = d[2];	P->e = mt.expo; P->str = az[2]; P->dip = pl[2];
 
-	GMT_free (GMT, a);	GMT_free (GMT, d);
-	GMT_free (GMT, b);	GMT_free (GMT, z);
-	GMT_free (GMT, v);
+	gmt_M_free (GMT, a);	gmt_M_free (GMT, d);
+	gmt_M_free (GMT, b);	gmt_M_free (GMT, z);
+	gmt_M_free (GMT, v);
 }
 
 /***************************************************************************************/
-double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, double size, struct AXIS T, struct AXIS N, struct AXIS P, struct GMT_FILL *C, struct GMT_FILL *E, int outline, int plot_zerotrace, int recno)
-{
-	int d, b = 1, m, i, ii, n = 0, j = 1, j2 = 0, j3 = 0;
+double meca_ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, double size, struct AXIS T, struct AXIS N, struct AXIS P, struct GMT_FILL *C, struct GMT_FILL *E, int outline, int plot_zerotrace, int recno) {
+	int d, b = 1, m, i, ii, n = 0, j1 = 1, j2 = 0, j3 = 0;
 	int big_iso = 0;
-	int djp, mjp, jp_flag;
 
 	double a[3], p[3], v[3], azi[3][2];
 	double vi, iso, f, fir, s2alphan, alphan;
 	double cfi, sfi, can, san, xz, xn, xe;
 	double cpd, spd, cpb, spb, cpm, spm;
 	double cad, sad, cab, sab, cam, sam;
-	double az = 0., azp = 0., takeoff, r;
-	double x[400], y[400], x2[400], y2[400], x3[400], y3[400];
+	double az = 0., azp = 0., takeoff, r, xc, yc;
+	double x1[400], y1[400], x2[400], y2[400], x3[400], y3[400];
 	double xp1[800], yp1[800], xp2[400], yp2[400];
 	double radius_size, si, co, ssize[1];
 
 	struct GMT_FILL *F1 = NULL, *F2 = NULL;
-	GMT_UNUSED(outline);
+	gmt_M_unused(outline);
 
 	a[0] = T.str; a[1] = N.str; a[2] = P.str;
 	p[0] = T.dip; p[1] = N.dip; p[2] = P.dip;
@@ -628,33 +612,27 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 		ssize[0] = radius_size*2.0;
 		if (vi > 0.) {
 			ssize[0] = radius_size*2.0;
-			GMT_setfill (GMT, C, true);
+			gmt_setfill (GMT, C, true);
 			PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		}
 		if (vi < 0.) {
 			ssize[0] = radius_size*2.0;
-			GMT_setfill (GMT, E, true);
+			gmt_setfill (GMT, E, true);
 			PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		}
 		return (radius_size*2.);
 	}
 
-	if (fabs (v[0]) >= fabs (v[2])) {
+	if (fabs (v[0]) >= fabs (v[2]))
 		d = 0;
-		m = 2;
-	}
-	else {
+	else
 		d = 2;
-		m = 0;
-	}
+	m = 2 - d;
 
 	if (plot_zerotrace) vi = 0.;
 
 	f = - v[1] / v[d];
 	iso = vi / v[d];
-	jp_flag = 0;
-	djp = -1;
-	mjp = -1;
 
 	/* Cliff Frohlich, Seismological Research letters,
  	 * Vol 7, Number 1, January-February, 1996
@@ -662,12 +640,12 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
  	 * between -1 and 1 - f there will be no nodes whatsoever */
 
 	if (iso < -1) {
-		GMT_setfill (GMT, E, true);
+		gmt_setfill (GMT, E, true);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		return (size);
 	}
 	else if (iso > 1 - f) {
-		GMT_setfill (GMT, C, true);
+		gmt_setfill (GMT, C, true);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		return (size);
 	}
@@ -681,158 +659,85 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 
 	for (i = 0; i < 360; i++) {
 		fir = (double) i * D2R;
-		s2alphan = (2. + 2. * iso) / (3. + (1. - 2. * f) * cos(2. * fir));
-		if (s2alphan > 1.) {
+		s2alphan = (2 + 2 * iso) / (3 + (1 - 2 * f) * cos(2 * fir));
+		if (s2alphan > 1) {
 			big_iso++;
 /* below pieces added as patch to fix big_iso case plotting problems. Not well done, but works
    Jeremy Pesicek Nov. 2010.
 
    second case added Dec. 2010 */
 
-			if (d == 0 && m == 2) {
-				jp_flag = 1;
-				djp = 2;
-				mjp = 0;
-			}
-			if (d == 2 && m == 0) {
-				jp_flag = 2;
-				djp = 0;
-				mjp = 2;
-			}
-
-			d = djp;
-			m = mjp;
+   			d = m;
+   			m = 2 - d;
 
 			f = - v[1] / v[d];
 			iso = vi / v[d];
-			s2alphan = (2. + 2. * iso) / (3. + (1. - 2. * f) * cos(2. * fir));
+			s2alphan = (2 + 2 * iso) / (3 + (1 - 2 * f) * cos(2 * fir));
 			sincosd (p[d], &spd, &cpd);
 			sincosd (p[b], &spb, &cpb);
 			sincosd (p[m], &spm, &cpm);
 			sincosd (a[d], &sad, &cad);
 			sincosd (a[b], &sab, &cab);
 			sincosd (a[m], &sam, &cam);
-
-			alphan = asin(sqrt(s2alphan));
-			sincos (fir, &sfi, &cfi);
-			sincos (alphan, &san, &can);
-
-			xz = can * spd + san * sfi * spb + san * cfi * spm;
-			xn = can * cpd * cad + san * sfi * cpb * cab + san * cfi * cpm * cam;
-			xe = can * cpd * sad + san * sfi * cpb * sab + san * cfi * cpm * sam;
-
-			if (fabs(xn) < EPSIL && fabs(xe) < EPSIL) {
-				takeoff = 0.;
-				az = 0.;
-			}
-			else {
-				az = atan2(xe, xn);
-				if (az < 0.) az += M_PI * 2.;
-				takeoff = acos(xz / sqrt(xz * xz + xn * xn + xe * xe));
-			}
-			if (takeoff > M_PI_2) {
-				takeoff = M_PI - takeoff;
-				az += M_PI;
-				if (az > M_PI * 2.) az -= M_PI * 2.;
-			}
-			r = M_SQRT2 * sin(takeoff / 2.);
-			sincos (az, &si, &co);
-			if (i == 0) {
-				azi[i][0] = az;
-				x[i] = x0 + radius_size * r * si;
-				y[i] = y0 + radius_size * r * co;
-				azp = az;
-			}
-			else {
-				if (fabs(fabs(az - azp) - M_PI) < D2R * 10.) {
-					azi[n][1] = azp;
-					azi[++n][0] = az;
-				}
-				if (fabs(fabs(az -azp) - M_PI * 2.) < D2R * 2.) {
-					if (azp < az) azi[n][0] += M_PI * 2.;
-					else azi[n][0] -= M_PI * 2.;
-				}
-				switch (n) {
-					case 0 :
-						x[j] = x0 + radius_size * r * si;
-						y[j] = y0 + radius_size * r * co;
-						j++;
-						break;
-					case 1 :
-						x2[j2] = x0 + radius_size * r * si;
-						y2[j2] = y0 + radius_size * r * co;
-						j2++;
-						break;
-					case 2 :
-						x3[j3] = x0 + radius_size * r * si;
-						y3[j3] = y0 + radius_size * r * co;
-						j3++;
-						break;
-				}
-				azp = az;
-			}
 		}
+
 /* end patch to fix big_iso case plotting problems. Jeremy Pesicek, Nov., Dec. 2010 */
+
+		alphan = asin(sqrt(s2alphan));
+		sincos (fir, &sfi, &cfi);
+		sincos (alphan, &san, &can);
+
+		xz = can * spd + san * sfi * spb + san * cfi * spm;
+		xn = can * cpd * cad + san * sfi * cpb * cab + san * cfi * cpm * cam;
+		xe = can * cpd * sad + san * sfi * cpb * sab + san * cfi * cpm * sam;
+
+		if (fabs (xn) < EPSIL && fabs (xe) < EPSIL) {
+			takeoff = 0.;
+			az = 0.;
+		}
 		else {
-			alphan = asin(sqrt(s2alphan));
-			sincos (fir, &sfi, &cfi);
-			sincos (alphan, &san, &can);
+			az = atan2(xe, xn);
+			if (az < 0.) az += M_PI * 2.;
+			takeoff = acos(xz / sqrt(xz * xz + xn * xn + xe * xe));
+		}
+		if (takeoff > M_PI_2) {
+			takeoff = M_PI - takeoff;
+			az += M_PI;
+			if (az > M_PI * 2.) az -= M_PI * 2.;
+		}
+		r = M_SQRT2 * sin(takeoff / 2.);
+		sincos (az, &si, &co);
+		xc = x0 + radius_size * r * si;
+		yc = y0 + radius_size * r * co;
 
-			xz = can * spd + san * sfi * spb + san * cfi * spm;
-			xn = can * cpd * cad + san * sfi * cpb * cab + san * cfi * cpm * cam;
-			xe = can * cpd * sad + san * sfi * cpb * sab + san * cfi * cpm * sam;
-
-			if (fabs (xn) < EPSIL && fabs (xe) < EPSIL) {
-				takeoff = 0.;
-				az = 0.;
+		if (i == 0) {
+			azi[i][0] = az;
+			x1[i] = xc; y1[i] = yc;
+		}
+		else {
+			if (fabs (fabs (az - azp) - M_PI) < D2R * 10.) {
+				azi[n][1] = azp;
+				azi[++n][0] = az;
 			}
-			else {
-				az = atan2(xe, xn);
-				if (az < 0.) az += M_PI * 2.;
-				takeoff = acos(xz / sqrt(xz * xz + xn * xn + xe * xe));
+			if (fabs (fabs (az - azp) - M_PI * 2.) < D2R * 2.) {
+				if (azp < az)
+					azi[n][0] += M_PI * 2.;
+				else
+					azi[n][0] -= M_PI * 2.;
 			}
-			if (takeoff > M_PI_2) {
-				takeoff = M_PI - takeoff;
-				az += M_PI;
-				if (az > M_PI * 2.) az -= M_PI * 2.;
-			}
-			r = M_SQRT2 * sin(takeoff / 2.);
-			sincos (az, &si, &co);
-			if (i == 0) {
-				azi[i][0] = az;
-				x[i] = x0 + radius_size * r * si;
-				y[i] = y0 + radius_size * r * co;
-				azp = az;
-			}
-			else {
-				if (fabs (fabs (az - azp) - M_PI) < D2R * 10.) {
-					azi[n][1] = azp;
-					azi[++n][0] = az;
-				}
-				if (fabs (fabs (az -azp) - M_PI * 2.) < D2R * 2.) {
-					if (azp < az) azi[n][0] += M_PI * 2.;
-					else azi[n][0] -= M_PI * 2.;
-				}
-				switch (n) {
-					case 0 :
-						x[j] = x0 + radius_size * r * si;
-						y[j] = y0 + radius_size * r * co;
-						j++;
-						break;
-					case 1 :
-						x2[j2] = x0 + radius_size * r * si;
-						y2[j2] = y0 + radius_size * r * co;
-						j2++;
-						break;
-					case 2 :
-						x3[j3] = x0 + radius_size * r * si;
-						y3[j3] = y0 + radius_size * r * co;
-						j3++;
-						break;
-				}
-				azp = az;
+			switch (n) {
+				case 0 :
+					x1[j1] = xc; y1[j1++] = yc;
+					break;
+				case 1 :
+					x2[j2] = xc; y2[j2++] = yc;
+					break;
+				case 2 :
+					x3[j3] = xc; y3[j3++] = yc;
+					break;
 			}
 		}
+		azp = az;
 	}
 	azi[n][1] = az;
 
@@ -842,61 +747,74 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 		F1 = E,	F2 = C;
 
 	if (!big_iso) {
-		GMT_setfill (GMT, F2, true);
+		gmt_setfill (GMT, F2, true);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 	}
-	else if (jp_flag == 1) {
+	else if (d == 2) {
 		fprintf (stderr, "Warning: big isotropic component for record %d, case not fully tested! \n", recno);
-		GMT_setfill (GMT, F1, true);
+		gmt_setfill (GMT, F1, true);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		F1 = E, F2 = C;
 	}
-	else if (jp_flag == 2) {
+	else if (d == 0) {
 		fprintf (stderr, "Warning: big isotropic component for record %d, case not fully tested! \n", recno);
-		GMT_setfill (GMT, F1, true);
+		gmt_setfill (GMT, F1, true);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		F2 = E, F1 = C;
 	}
 
-	GMT_setfill (GMT, F1, false);
+	gmt_setfill (GMT, F1, false);
+
 	switch (n) {
 		case 0 :
 			for (i = 0; i < 360; i++) {
-				xp1[i] = x[i]; yp1[i] = y[i];
+				xp1[i] = x1[i]; yp1[i] = y1[i];
 			}
 			PSL_plotpolygon (PSL, xp1, yp1, i);
 			break;
 		case 1 :
-			for (i = 0; i < j; i++) {
-				xp1[i] = x[i]; yp1[i] = y[i];
+			for (i = 0; i < j1; i++) {
+				xp1[i] = x1[i]; yp1[i] = y1[i];
 			}
-			if (azi[0][0] - azi[0][1] > M_PI) azi[0][0] -= M_PI * 2.;
-			else if (azi[0][1] - azi[0][0] > M_PI) azi[0][0] += M_PI * 2.;
-			if (azi[0][0] < azi[0][1]) for (az = azi[0][1] - D2R; az > azi[0][0]; az -= D2R) {
-				sincos (az, &si, &co);
-				xp1[i] = x0 + radius_size * si;
-				yp1[i++] = y0 + radius_size * co;
+			if (azi[0][0] - azi[0][1] > M_PI)
+				azi[0][0] -= M_PI * 2.;
+			else if (azi[0][1] - azi[0][0] > M_PI)
+				azi[0][0] += M_PI * 2.;
+			if (azi[0][0] < azi[0][1]) {
+				for (az = azi[0][1] - D2R; az > azi[0][0]; az -= D2R) {
+					sincos (az, &si, &co);
+					xp1[i] = x0 + radius_size * si;
+					yp1[i++] = y0 + radius_size * co;
+				}
 			}
-			else for (az = azi[0][1] + D2R; az < azi[0][0]; az += D2R) {
-				sincos (az, &si, &co);
-				xp1[i] = x0 + radius_size * si;
-				yp1[i++] = y0 + radius_size * co;
+			else {
+				for (az = azi[0][1] + D2R; az < azi[0][0]; az += D2R) {
+					sincos (az, &si, &co);
+					xp1[i] = x0 + radius_size * si;
+					yp1[i++] = y0 + radius_size * co;
+				}
 			}
 			PSL_plotpolygon (PSL, xp1, yp1, i);
-			for (i=0; i<j2; i++) {
+			for (i = 0; i < j2; i++) {
 				xp2[i] = x2[i]; yp2[i] = y2[i];
 			}
-			if (azi[1][0] - azi[1][1] > M_PI) azi[1][0] -= M_PI * 2.;
-			else if (azi[1][1] - azi[1][0] > M_PI) azi[1][0] += M_PI * 2.;
-			if (azi[1][0] < azi[1][1]) for (az = azi[1][1] - D2R; az > azi[1][0]; az -= D2R) {
-				sincos (az, &si, &co);
-				xp2[i] = x0 + radius_size * si;
-				yp2[i++] = y0 + radius_size * co;
+			if (azi[1][0] - azi[1][1] > M_PI)
+				azi[1][0] -= M_PI * 2.;
+			else if (azi[1][1] - azi[1][0] > M_PI)
+				azi[1][0] += M_PI * 2.;
+			if (azi[1][0] < azi[1][1]) {
+				for (az = azi[1][1] - D2R; az > azi[1][0]; az -= D2R) {
+					sincos (az, &si, &co);
+					xp2[i] = x0 + radius_size * si;
+					yp2[i++] = y0 + radius_size * co;
+				}
 			}
-			else for (az = azi[1][1] + D2R; az < azi[1][0]; az += D2R) {
-				sincos (az, &si, &co);
-				xp2[i] = x0 + radius_size * si;
-				yp2[i++] = y0 + radius_size * co;
+			else {
+				for (az = azi[1][1] + D2R; az < azi[1][0]; az += D2R) {
+					sincos (az, &si, &co);
+					xp2[i] = x0 + radius_size * si;
+					yp2[i++] = y0 + radius_size * co;
+				}
 			}
 			PSL_plotpolygon (PSL, xp2, yp2, i);
 			break;
@@ -904,8 +822,8 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 			for (i = 0; i < j3; i++) {
 				xp1[i] = x3[i]; yp1[i] = y3[i];
 			}
-			for (ii = 0; ii < j; ii++) {
-				xp1[i] = x[ii]; yp1[i++] = y[ii];
+			for (ii = 0; ii < j1; ii++) {
+				xp1[i] = x1[ii]; yp1[i++] = y1[ii];
 			}
 
 			if (azi[2][0] - azi[0][1] > M_PI)
@@ -954,8 +872,7 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 	return (size);
 }
 
-void axe2dc (struct AXIS T, struct AXIS P, struct nodal_plane *NP1, struct nodal_plane *NP2)
-{
+void meca_axe2dc (struct AXIS T, struct AXIS P, struct nodal_plane *NP1, struct nodal_plane *NP2) {
 	/*
 	  Calculate double couple from principal axes.
 	  Angles are in degrees.
@@ -998,12 +915,11 @@ void axe2dc (struct AXIS T, struct AXIS P, struct nodal_plane *NP1, struct nodal
 
 	im = 1;
 	if (P.dip > T.dip) im = -1;
-	NP1->rake = computed_rake2 (NP2->str, NP2->dip, NP1->str, NP1->dip, im);
-	NP2->rake = computed_rake2 (NP1->str, NP1->dip, NP2->str, NP2->dip, im);
+	NP1->rake = meca_computed_rake2 (NP2->str, NP2->dip, NP1->str, NP1->dip, im);
+	NP2->rake = meca_computed_rake2 (NP1->str, NP1->dip, NP2->str, NP2->dip, im);
 }
 
-void dc2axe (st_me meca, struct AXIS *T, struct AXIS *N, struct AXIS *P)
-{
+void meca_dc2axe (st_me meca, struct AXIS *T, struct AXIS *N, struct AXIS *P) {
 	/*
 	From FORTRAN routines of Anne Deschamps :
 	compute azimuth and plungement of P-T axis
@@ -1058,8 +974,7 @@ void dc2axe (st_me meca, struct AXIS *T, struct AXIS *N, struct AXIS *P)
 	N->dip = null_axis_dip (T->str, T->dip, P->str, P->dip);
 }
 
-void axis2xy (double x0, double y0, double size, double pp, double dp, double pt, double dt, double *xp,double *yp, double *xt, double *yt)
-{
+void meca_axis2xy (double x0, double y0, double size, double pp, double dp, double pt, double dt, double *xp,double *yp, double *xt, double *yt) {
 	/* angles are in degrees */
 	double radius, spp, cpp, spt, cpt;
 
@@ -1077,8 +992,7 @@ void axis2xy (double x0, double y0, double size, double pp, double dp, double pt
 	*yt = radius * cpt * size + y0;
 }
 
-void transform_local (double x0, double y0, double dxp, double dyp, double scale, double t11, double t12, double t21, double t22, double *x1, double *y1)
-{
+static void transform_local (double x0, double y0, double dxp, double dyp, double scale, double t11, double t12, double t21, double t22, double *x1, double *y1) {
 	/* perform local transformation on offsets (dxp,dyp) from */
 	/* "origin point" x0,y0 given transformation matrix T */
 
@@ -1107,8 +1021,7 @@ void transform_local (double x0, double y0, double dxp, double dyp, double scale
 
 }
 
-void trace_arrow (struct GMT_CTRL *GMT, double slon, double slat, double dxp, double dyp, double scale, double *x1, double *y1, double *x2, double *y2)
-{
+void meca_trace_arrow (struct GMT_CTRL *GMT, double slon, double slat, double dxp, double dyp, double scale, double *x1, double *y1, double *x2, double *y2) {
 	/* convert a vector arrow (delx,dely) arrow from (lat,lon) */
 
 	/* Kurt Feigl, from code by T. Herring */
@@ -1129,10 +1042,10 @@ void trace_arrow (struct GMT_CTRL *GMT, double slon, double slat, double dxp, do
 
 	/* determine local transformation between (lon, lat) and (x, y) */
 	/* return this in the 2 x 2 matrix t */
-	get_trans (GMT, slon, slat, &t11, &t12, &t21, &t22);
+	meca_get_trans (GMT, slon, slat, &t11, &t12, &t21, &t22);
 
 	/* map start of arrow from lat, lon to x, y */
-	GMT_geo_to_xy (GMT, slon, slat, &xt, &yt);
+	gmt_geo_to_xy (GMT, slon, slat, &xt, &yt);
 
 	/* perform the transformation */
 	transform_local (xt, yt, dxp, dyp, scale, t11, t12, t21, t22, x2, y2);
@@ -1143,8 +1056,8 @@ void trace_arrow (struct GMT_CTRL *GMT, double slon, double slat, double dxp, do
 	*y1 = yt;
 }
 
-void trace_ellipse (double angle, double major, double minor, int npoints, double *x, double *y)
-{	/* Given specs for an ellipse, return it in x,y */
+static void trace_ellipse (double angle, double major, double minor, int npoints, double *x, double *y) {
+	/* Given specs for an ellipse, return it in x,y */
 	double phi = 0.0, sd, cd, s, c;
 	int i;
 
@@ -1158,8 +1071,7 @@ void trace_ellipse (double angle, double major, double minor, int npoints, doubl
 	}
 }
 
-void ellipse_convert (double sigx, double sigy, double rho, double conrad, double *eigen1, double *eigen2, double *ang)
-{
+void meca_ellipse_convert (double sigx, double sigy, double rho, double conrad, double *eigen1, double *eigen2, double *ang) {
 	/* convert from one parameterization of an ellipse to another
 
 	 * Kurt Feigl, from code by T. Herring
@@ -1206,8 +1118,8 @@ void ellipse_convert (double sigx, double sigy, double rho, double conrad, doubl
 	/*    that is all */
 }
 
-void paint_ellipse (struct GMT_CTRL *GMT, double x0, double y0, double angle, double major, double minor, double scale, double t11, double t12, double t21, double t22, int polygon, struct GMT_FILL *fill, int outline)
-{	/* Make an ellipse at center x0,y0  */
+void meca_paint_ellipse (struct GMT_CTRL *GMT, double x0, double y0, double angle, double major, double minor, double scale, double t11, double t12, double t21, double t22, int polygon, struct GMT_FILL *fill, int outline) {
+	/* Make an ellipse at center x0,y0  */
 #define NPOINTS_ELLIPSE 362
 
 	int npoints = NPOINTS_ELLIPSE, i;
@@ -1220,7 +1132,7 @@ void paint_ellipse (struct GMT_CTRL *GMT, double x0, double y0, double angle, do
 
 	for (i = 0; i < npoints - 2; i++) transform_local (x0, y0, dxe[i], dye[i], scale, t11, t12, t21, t22, &axe[i], &aye[i]);
 	if (polygon) {
-		GMT_setfill (GMT, fill, outline);
+		gmt_setfill (GMT, fill, outline);
 		PSL_plotpolygon (GMT->PSL, axe, aye, npoints - 2);
 	}
 	else
@@ -1228,8 +1140,7 @@ void paint_ellipse (struct GMT_CTRL *GMT, double x0, double y0, double angle, do
 }
 
 /************************************************************************/
-int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, double eps2, double theta, double sscale, double v_width, double h_length, double h_width, double vector_shape, int outline, struct GMT_PEN pen)
-{
+int meca_trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, double eps2, double theta, double sscale, double v_width, double h_length, double h_width, double vector_shape, int outline, struct GMT_PEN *pen) {
 	/* make a Strain rate cross at(slat,slon) */
 
 	/* Kurt Feigl, from code by D. Dong */
@@ -1244,11 +1155,11 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 
 	/* local */
 	double dx, dy, x1, x2, y1, y2, hl, hw, vw, s, c, dim[PSL_MAX_DIMS];
-	GMT_UNUSED(outline);
+	gmt_M_unused(outline);
 
-	GMT_memset (dim, PSL_MAX_DIMS, double);
-	GMT_setpen (GMT, &pen);			/* Pen for segment line */
-	PSL_setfill (GMT->PSL, pen.rgb, 0);	/* Same color for arrow head fill with no outline */
+	gmt_M_memset (dim, PSL_MAX_DIMS, double);
+	gmt_setpen (GMT, pen);			/* Pen for segment line */
+	PSL_setfill (GMT->PSL, pen->rgb, 0);	/* Same color for arrow head fill with no outline */
 	sincosd (theta, &s, &c);
 
 	/*  extension component */
@@ -1256,7 +1167,7 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	dy = -eps1 * s;
 
 	/* arrow is outward from slat,slon */
-	trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
+	meca_trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps1 < 0.0) {
 		double_swap (x1, x2);
@@ -1282,7 +1193,7 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 
 	/* second, extensional arrow in opposite direction */
 
-	trace_arrow (GMT, slon, slat, -dx, -dy, sscale, &x1, &y1, &x2, &y2);
+	meca_trace_arrow (GMT, slon, slat, -dx, -dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps1 < 0.0) {
 		double_swap (x1, x2);
@@ -1309,7 +1220,7 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	dx = eps2 * s;
 	dy = eps2 * c;
 	dim[6] = GMT_VEC_BEGIN | GMT_VEC_FILL;
-	trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
+	meca_trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps2 > 0.0) {
 		double_swap (x1, x2);
@@ -1335,7 +1246,7 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 
 	/* second, compressional arrow in opposite direction */
 
-	trace_arrow (GMT, slon, slat, -dx, -dy, sscale, &x1, &y1, &x2, &y2);
+	meca_trace_arrow (GMT, slon, slat, -dx, -dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps2 > 0.0) {
 		double_swap (x1, x2);
@@ -1363,7 +1274,7 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	return 0;
 }
 
-int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double *x, double *y) {
+static int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double *x, double *y) {
 	/* make a rotation rate wedge and return in x,y */
 
 	/* Kurt Feigl, from code by D. Dong */
@@ -1424,8 +1335,7 @@ int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double
 	return nump;
 }
 
-int trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp, double *x, double *y)
-{
+static int trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp, double *x, double *y) {
 	/* make a rotation rate uncertainty wedge and return in x,y */
 
 	/* Kurt Feigl, from code by D. Dong */
@@ -1472,8 +1382,7 @@ int trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp
 	return nump;
 }
 
-void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, double spinsig, double sscale, double wedge_amp, double t11, double t12, double t21, double t22, int polygon, double *rgb, int epolygon, double *ergb, int outline)
-{
+void meca_paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, double spinsig, double sscale, double wedge_amp, double t11, double t12, double t21, double t22, int polygon, double *rgb, int epolygon, double *ergb, int outline) {
 
 	/* Make a wedge at center x0,y0  */
 
@@ -1485,7 +1394,7 @@ void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, doubl
 	double dxe[NPOINTS], dye[NPOINTS];
 	/* absolute paper coordinates */
 	double axe[NPOINTS], aye[NPOINTS];
-	GMT_UNUSED(outline);
+	gmt_M_unused(outline);
 
 	/* draw wedge */
 
@@ -1515,12 +1424,14 @@ void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, doubl
 		PSL_plotline (PSL, axe, aye, npoints - 1, PSL_MOVE + PSL_STROKE + PSL_CLOSE);
 }
 
+#if 0	/* Currently not used but saved in case of debug operations */
 #ifdef DEBUG
-int dump_meca (st_me meca) {
+GMT_LOCAL int dump_meca (st_me meca) {
 	fprintf (stderr, "\nNodal plane NP1: str = %g dip = %g rake = %g\n", meca.NP1.str, meca.NP1.dip, meca.NP1.rake);
 	fprintf (stderr, "Nodal plane NP2: str = %g dip = %g rake = %g\n", meca.NP2.str, meca.NP2.dip, meca.NP2.rake);
 	fprintf (stderr, "Magnitude = %g exponent = %d\n", meca.moment.mant, meca.moment.exponent);
 	fprintf (stderr, "magms = %g\n", meca.magms);
 	return (0);
 }
+#endif
 #endif

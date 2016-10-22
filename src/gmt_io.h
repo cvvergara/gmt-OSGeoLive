@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_io.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_io.h 16811 2016-07-15 23:02:04Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -66,7 +66,7 @@ enum GMT_ogr_status {
 	GMT_OGR_FALSE,		/* This is NOT a GMT/OGR file */
 	GMT_OGR_TRUE};		/* This is a GMT/OGR file */
 
-#define GMT_polygon_is_hole(S) (S->pol_mode == GMT_IS_HOLE || (S->ogr && S->ogr->pol_mode == GMT_IS_HOLE))
+#define gmt_M_polygon_is_hole(S) (S->pol_mode == GMT_IS_HOLE || (S->ogr && S->ogr->pol_mode == GMT_IS_HOLE))
 
 /* Specific feature geometries as obtained from OGR */
 /* Note: As far as registering or reading data, GMT only needs to know if data type is POINT, LINE, or POLY */
@@ -89,26 +89,23 @@ enum GMT_enum_segopt {
 	/*! -Z */	GMT_IS_Z = -7};
 
 /* Macros to simplify check for return status */
-#define GMT_REC_IS_TABLE_HEADER(C)	(C->current.io.status & GMT_IO_TABLE_HEADER)
-#define GMT_REC_IS_SEGMENT_HEADER(C)	(C->current.io.status & GMT_IO_SEGMENT_HEADER)
-#define GMT_REC_IS_ANY_HEADER(C)	(C->current.io.status & GMT_IO_ANY_HEADER)
-#define GMT_REC_IS_ERROR(C)		(C->current.io.status & GMT_IO_MISMATCH)
-#define GMT_REC_IS_EOF(C)		(C->current.io.status & GMT_IO_EOF)
-#define GMT_REC_IS_NAN(C)		(C->current.io.status & GMT_IO_NAN)
-#define GMT_REC_IS_GAP(C)		(C->current.io.status & GMT_IO_GAP)
-#define GMT_REC_IS_NEW_SEGMENT(C)	(C->current.io.status & GMT_IO_NEW_SEGMENT)
-#define GMT_REC_IS_LINE_BREAK(C)	(C->current.io.status & GMT_IO_LINE_BREAK)
-#define GMT_REC_IS_FILE_BREAK(C)	(C->current.io.status & GMT_IO_NEXT_FILE)
-#define GMT_REC_IS_DATA(C)		(C->current.io.status == 0 || C->current.io.status == GMT_IO_NAN)
+#define gmt_M_rec_is_table_header(C)	(C->current.io.status & GMT_IO_TABLE_HEADER)
+#define gmt_M_rec_is_segment_header(C)	(C->current.io.status & GMT_IO_SEGMENT_HEADER)
+#define gmt_M_rec_is_any_header(C)	(C->current.io.status & GMT_IO_ANY_HEADER)
+#define gmt_M_rec_is_error(C)		(C->current.io.status & GMT_IO_MISMATCH)
+#define gmt_M_rec_is_eof(C)		(C->current.io.status & GMT_IO_EOF)
+#define gmt_M_rec_is_nan(C)		(C->current.io.status & GMT_IO_NAN)
+#define gmt_M_rec_is_gap(C)		(C->current.io.status & GMT_IO_GAP)
+#define gmt_M_rec_is_new_segment(C)	(C->current.io.status & GMT_IO_NEW_SEGMENT)
+#define gmt_M_rec_is_line_break(C)	(C->current.io.status & GMT_IO_LINE_BREAK)
+#define gmt_M_rec_is_file_break(C)	(C->current.io.status & GMT_IO_NEXT_FILE)
+#define gmt_M_rec_is_data(C)		(C->current.io.status == 0 || C->current.io.status == GMT_IO_NAN)
 
 /* Get current setting for in/out columns */
 
-/* Determine if current binary table has header */
-#define GMT_binary_header(GMT,dir) (GMT->common.b.active[dir] && GMT->current.setting.io_header[dir] && GMT->current.setting.io_n_header_items)
-
 /*! Types of possible column entries in a file: */
-enum GMT_col_enum {
-	GMT_IS_NAN   =   0,	/* Returned by GMT_scanf routines when read fails */
+enum gmt_M_col_enum {
+	GMT_IS_NAN   =   0,	/* Returned by gmt_scanf routines when read fails */
 	GMT_IS_FLOAT	=   1,	/* Generic (double) data type, no special format */
 	GMT_IS_LAT		=   2,
 	GMT_IS_LON		=   4,
@@ -116,11 +113,12 @@ enum GMT_col_enum {
 	GMT_IS_RELTIME		=   8,	/* For I/O of data in user units */
 	GMT_IS_ABSTIME		=  16,	/* For I/O of data in calendar+clock units */
 	GMT_IS_RATIME		=  24,	/* To see if time is either Relative or Absolute */
-	GMT_IS_ARGTIME		=  32,	/* To invoke GMT_scanf_argtime()  */
+	GMT_IS_ARGTIME		=  32,	/* To invoke gmt_scanf_argtime()  */
 	GMT_IS_DIMENSION	=  64,	/* A float with [optional] unit suffix, e.g., 7.5c, 0.4i; convert to inch  */
-	GMT_IS_GEOANGLE		= 128,	/* An angle to be converted via map projection to angle on map  */
-	GMT_IS_STRING		= 256,	/* An text argument [internally used, not via -f]  */
-	GMT_IS_UNKNOWN		= 512};	/* Input type is not knowable without -f */
+	GMT_IS_GEODIMENSION	= 128,	/* A float with [optional] geo-distance unit suffix, e.g., 7.5n, 0.4d; convert to km  */
+	GMT_IS_GEOANGLE		= 256,	/* An angle to be converted via map projection to angle on map  */
+	GMT_IS_STRING		= 512,	/* An text argument [internally used, not via -f]  */
+	GMT_IS_UNKNOWN		= 1024};	/* Input type is not knowable without -f */
 
 /*! Various ways to report longitudes */
 enum GMT_lon_enum {
@@ -163,13 +161,10 @@ enum GMT_io_nan_enum {
 	typedef long off_t;
 #endif /* HAVE__FSEEKI64 && HAVE__FTELLI64 */
 
-#define GMT_fdopen(handle, mode) fdopen(handle, mode)
-#define GMT_fgetc(stream) fgetc(stream)
-#define GMT_ungetc(c, stream) ungetc(c, stream)
-#define GMT_fputs(line,fp) fputs(line,fp)
-#define GMT_fread(ptr,size,nmemb,stream) fread(ptr,size,nmemb,stream)
-#define GMT_fwrite(ptr,size,nmemb,stream) fwrite(ptr,size,nmemb,stream)
-#define GMT_rewind(stream) rewind(stream)
+#define gmt_M_fputs(line,fp) fputs(line,fp)
+#define gmt_M_fread(ptr,size,nmemb,stream) fread(ptr,size,nmemb,stream)
+#define gmt_M_fwrite(ptr,size,nmemb,stream) fwrite(ptr,size,nmemb,stream)
+#define gmt_M_rewind(stream) rewind(stream)
 
 /* Low-level structures used internally */
 
@@ -247,6 +242,7 @@ struct GMT_IO {				/* Used to process input data records */
 	struct GMT_GRID_INFO grd_info;
 
 	bool multi_segments[2];	/* true if current ASCII input/output file has multiple segments */
+	bool skip_headers_on_outout;	/* true when gmtconvert -T is set [or possibly other similar actions in the future] */
 	bool skip_bad_records;	/* true if records where x and/or y are NaN or Inf */
 	bool give_report;		/* true if functions should report how many bad records were skipped */
 	bool skip_duplicates;	/* true if we should ignore duplicate x,y records */
@@ -269,13 +265,13 @@ struct GMT_IO {				/* Used to process input data records */
 	uint64_t rec_no;		/* Number of current records (counts headers etc) in entire data set */
 	uint64_t rec_in_tbl_no;		/* Number of current record (counts headers etc) in current table */
 	uint64_t pt_no;			/* Number of current valid points in a row  */
-	uint64_t curr_pos[2][4];	/* Keep track of current input/output table, segment, row, and table headers (for rec-by-rec action) */
+	int64_t curr_pos[2][4];		/* Keep track of current input/output table, segment, row, and table headers (for rec-by-rec action) */
 	char r_mode[4];			/* Current file opening mode for reading (r or rb) */
 	char w_mode[4];			/* Current file opening mode for writing (w or wb) */
 	char a_mode[4];			/* Current file append mode for writing (a+ or ab+) */
-	char current_record[GMT_BUFSIZ];	/* Current ASCII record */
+	char record[GMT_BUFSIZ];	/* Current ASCII record */
 	char segment_header[GMT_BUFSIZ];	/* Current ASCII segment header */
-	char current_filename[2][GMT_BUFSIZ];	/* Current filenames (or <stdin>/<stdout>) */
+	char filename[2][GMT_BUFSIZ];	/* Current filenames (or <stdin>/<stdout>) */
 	char *o_format[GMT_MAX_COLUMNS];	/* Custom output ASCII format to overrule format_float_out */
 	int ncid;			/* NetCDF file ID (when opening netCDF file) */
 	int nvars;			/* Number of requested variablesin netCDF file */
@@ -312,8 +308,8 @@ struct GMT_Z_IO {		/* Used when processing z(x,y) table input when (x,y) is impl
 	unsigned int x_missing;	/* 1 if a periodic (right) column is implicit (i.e., not stored) */
 	unsigned int y_missing;	/* 1 if a periodic (top) row is implicit (i.e., not stored) */
 	unsigned int format;	/* Either GMT_IS_COL_FORMAT or GMT_IS_ROW_FORMAT */
-	unsigned int x_period;	/* length of a row in the input data ( <= nx, see x_missing) */
-	unsigned int y_period;	/* length of a col in the input data ( <= ny, see y_missing) */
+	unsigned int x_period;	/* length of a row in the input data ( <= n_columns, see x_missing) */
+	unsigned int y_period;	/* length of a col in the input data ( <= n_rows, see y_missing) */
 	unsigned int start_col;	/* First logical column in file */
 	unsigned int start_row;	/* First logical row in file */
 	unsigned int gmt_i;		/* Current column number in the GMT registered grid */

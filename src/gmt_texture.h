@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_texture.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_texture.h 16618 2016-06-23 03:18:12Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,7 @@ struct GMT_PEN {
 	char style[GMT_PEN_LEN];	/* Uses points as unit internally */
 	/* For line modifications: */
 	unsigned int mode;		/* Line-type: PSL_LINEAR [0; default] or PSL_BEZIER [1] */
+	unsigned int cptmode;		/* How a cpt affects pens and fills: 0-none, 1=use CPT for line, 2 = use CPT for fill, 3 = both */
 	struct GMT_LINE_END end[2];	/* What happens at each end of the line (see above) */
 };
 

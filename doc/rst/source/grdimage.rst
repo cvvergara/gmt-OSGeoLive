@@ -14,13 +14,14 @@ Synopsis
 .. include:: common_SYN_OPTs.rst_
 
 **grdimage** *grd_z* \| *grd_r grd_g grd_b*
-[ |-A|\ *out_img*\ **=**\ *driver* ] [ |-C|\ *cpt* ]
+[ |-A|\ *out_img*\ [**=**\ *driver*] ] [ |-C|\ *cpt* ]
 [ |-D|\ [**r**\ ] ] [ |-E|\ **i**\ [\|\ *dpi*] ] |-J|\ *parameters*
-[ |-G|\ [**f**\ \|\ **b**]\ *color* ] [ |-I|\ *intensfile*\ \|\ *intensity* ]
-[ |-J|\ **z**\ \|\ **-Z**\ *parameters* ] [ |-K| ] [ |-M| ] [ |-N| ]
+[ |-G|\ [**f**\ \|\ **b**]\ *color* ]
+[ |-I|\ [*intensfile*\ \|\ *intensity*] ]
+[ |-J|\ **z**\ \|\ **-Z**\ *parameters* ]
+[ |-K| ] [ |-M| ] [ |-N| ]
 [ |-O| ] [ |-P| ] [ |-Q| ]
 [ |SYN_OPT-Rz| ]
-[ |-T| ]
 [ |SYN_OPT-U| ]
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-X| ]
@@ -65,14 +66,14 @@ value. Interpolation and aliasing is controlled with the **-n** option.
 The **-R** option can be used to select a map region larger or smaller
 than that implied by the extent of the grid.
 
-A (color) PostScript file is output. 
+A (color) PostScript file is output.
 
 Required Arguments
 ------------------
 
 *grd_z* \| *grd_r grd_g grd_b*
     2-D gridded data set (or red, green, blue grids) to be imaged (See
-    GRID FILE FORMATS below.) 
+    GRID FILE FORMATS below.)
 
 .. _-J:
 
@@ -84,27 +85,31 @@ Optional Arguments
 
 .. _-A:
 
-**-A**\ *out_img*\ **=**\ *driver*
-    With GDAL aware versions: save image in a raster format instead of
-    PostScript. Append *out_img*\ **=**\ *driver* to select the file
-    name and image format. The *driver* is the driver code name used by
-    GDAL. For example, **-A**\ img.tif=GTiff will write a GeoTiff image
-    if the subset of GMT syntax projections that is currently possible
-    to translate into the PROJ4 syntax allows it, or a plain tiff file
-    otherwise. Note: any vector elements are lost. 
+**-A**\ *out_img*\ [**=**\ *driver*]
+    Save an image in a raster format instead of PostScript. Use extension
+    .ppm for a Portable Pixel Map format.  For GDAL-aware versions there are more choices:
+    Append *out_img* to select the image file name and extension.
+    If the extension is one of .bmp, .gif, .jpg, .png, or .tif then no driver
+    information is required.  For other output formats you must append the
+    required GDAL driver.  The *driver* is the driver code name used by
+    GDAL; see your GDAL installation's documentation for available drivers.
+    Notes: (1) If a tiff file (.tif) is selected then we will write a GeoTiff image
+    if the GMT projection syntax translates into a PROJ4 syntax, otherwise
+    a plain tiff file is produced. (2) Any vector elements will be lost.
 
 .. include:: explain_-B.rst_
 
 .. _-C:
 
 **-C**\ *cpt*
-    Name of the CPT file (for *grd_z* only). Alternatively,
-    supply the name of a GMT color master CPT [rainbow] and let
-    **grdimage** automatically determine a 16-level continuous CPT from
-    the grid's z-range.
-    Yet another option is to specify -Ccolor1,color2[,color3,...]
-    to build a linear continuous CPT from those colors automatically.  
-    In this case *color*\ **n** can be a r/g/b triplet, a color name,
+    Name of the CPT (for *grd_z* only). Alternatively,
+    supply the name of a GMT color master dynamic CPT [rainbow] to
+    automatically determine a continuous CPT from
+    the grid's z-range.  If the dynamic CPT has a default range then
+    that range will be imposed instead.
+    Yet another option is to specify **-C**\ *color1*\ ,\ *color2*\ [,\ *color3*\ ,...]
+    to build a linear continuous CPT from those colors automatically.
+    In this case *color1* etc can be a r/g/b triplet, a color name,
     or an HTML hexadecimal color (e.g. #aabbcc ).
 
 .. _-D:
@@ -144,10 +149,14 @@ Optional Arguments
 
 .. _-I:
 
-**-I**\ *intensfile*\ \|\ *intensity*
+**-I**\ [*intensfile*\ \|\ *intensity*]
     Gives the name of a grid file with intensities in the (-1,+1) range,
-    or a constant intensity to apply everywhere.
-    [Default is no illumination]. 
+    or a constant intensity to apply everywhere; this simply affects the
+    ambient light.  If no argument is given then we derive an intensity
+    grid from the input data grid *grd_z* via a call to :doc:`grdgradient`
+    using the arguments **-A-45** and **-Nt1** for that module. If you want
+    other settings then run :doc:`grdgradient` separately first.
+    [Default is no illumination].
 
 .. include:: explain_-Jz.rst_
 
@@ -165,7 +174,7 @@ Optional Arguments
 
 **-N**
     Do not clip the image at the map boundary (only relevant for
-    non-rectangular maps). 
+    non-rectangular maps).
 
 .. _-O:
 
@@ -179,7 +188,7 @@ Optional Arguments
 
 **-Q**
     Make grid nodes with z = NaN transparent, using the colormasking
-    feature in PostScript Level 3 (the PS device must support PS Level 3). 
+    feature in PostScript Level 3 (the PS device must support PS Level 3).
 
 .. _-R:
 
@@ -219,7 +228,7 @@ Optional Arguments
 
 .. include:: explain_help.rst_
 
-.. include:: explain_grd_inout.rst_
+.. include:: explain_grd_inout_short.rst_
 
 
 Imaging Grids With Nans
@@ -238,12 +247,12 @@ linear projection, or (b) use :doc:`grdview` **-Ts** instead.
 Examples
 --------
 
-For a quick-and-dirty color map of the data in the file stuff.nc, with
+For a quick-and-dirty illuminated color map of the data in the file stuff.nc, with
 the maximum map dimension limited to be 6 inches, try
 
    ::
 
-    gmt grdimage stuff.nc -JX6i+ > quick.ps
+    gmt grdimage stuff.nc -JX6i+ -I > quick.ps
 
 To gray-shade the file hawaii_grav.nc with shades given in shades.cpt
 on a Lambert map at 1.5 cm/degree along the standard parallels 18 and
@@ -275,7 +284,7 @@ remotely located Jessica Rabbit
 
    ::
 
-    gmt grdimage -JI15c -Rd -Dr
+    gmt grdimage -JI15c -Rd -Dr \
         http://larryfire.files.wordpress.com/2009/07/untooned_jessicarabbit.jpg \
         -P > jess.ps
 
