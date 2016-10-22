@@ -1,12 +1,3 @@
 disable-triangle.patch
 disable-examples.patch
 manpage-section.patch
-hppa-sighandler.patch
-alpha-sighandler.patch
-supported-typo.patch
-overridden-typo.patch
-written-typo.patch
-sparc-sighandler.patch
-spelling-errors.patch
-source_date_epoch.patch
-glibc-2.23-ftbfs.patch

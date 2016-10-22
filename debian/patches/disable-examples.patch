@@ -47,7 +47,7 @@ Forwarded: not-needed
  +------------------+--------------------+---------------------+
  |:ref:`example_25` | :ref:`example_26`  | :ref:`example_27`   |
  |                  |                    |                     |
-@@ -141,9 +141,6 @@ complex illustration.
+@@ -149,9 +149,6 @@ complex illustration.
  .. |ex22| image:: /_images/example_22.*
     :width: 150 px
  
@@ -57,7 +57,7 @@ Forwarded: not-needed
  .. |ex24| image:: /_images/example_24.*
     :width: 150 px
  
-@@ -235,7 +232,6 @@ complex illustration.
+@@ -258,7 +255,6 @@ complex illustration.
     gallery/ex20.rst
     gallery/ex21.rst
     gallery/ex22.rst
