@@ -26,8 +26,11 @@
       <arg choice='opt'><option>--has-fftw</option></arg>
       <arg choice='opt'><option>--has-gdal</option></arg>
       <arg choice='opt'><option>--has-pcre</option></arg>
+      <arg choice='opt'><option>--has-lapack</option></arg>
+      <arg choice='opt'><option>--has-openmp</option></arg>
       <arg choice='opt'><option>--includedir</option></arg>
       <arg choice='opt'><option>--libs</option></arg>
+      <arg choice='opt'><option>--plugindir</option></arg>
       <arg choice='opt'><option>--prefix</option></arg>
       <arg choice='opt'><option>--version</option></arg>
     </cmdsynopsis>
@@ -69,7 +72,7 @@
       <varlistentry>
         <term><option>--datadir</option></term>
         <listitem>
-          <para>GMT's data directory</para>
+          <para>GMT's data directories</para>
         </listitem>
       </varlistentry>
 
@@ -116,6 +119,20 @@
       </varlistentry>
 
       <varlistentry>
+        <term><option>--has-lapack</option></term>
+        <listitem>
+          <para>whether LAPACK is used in build</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--has-openmp</option></term>
+        <listitem>
+          <para>whether GMT was built with OpenMP support</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><option>--includedir</option></term>
         <listitem>
           <para>include directory</para>
@@ -126,6 +143,13 @@
         <term><option>--libs</option></term>
         <listitem>
           <para>library linking information</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--plugindir</option></term>
+        <listitem>
+          <para>GMT's plugin directory</para>
         </listitem>
       </varlistentry>
 
