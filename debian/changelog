@@ -1,8 +1,9 @@
-gmt (5.2.1+dfsg-8) UNRELEASED; urgency=medium
+gmt (5.3.1+dfsg-1) UNRELEASED; urgency=medium
 
+  * New upstream release.
   * Update Homepage URL to not include 'projects/gmt' path.
 
- -- Bas Couwenberg <sebastic@debian.org>  Mon, 03 Oct 2016 20:05:14 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Sat, 22 Oct 2016 10:16:26 +0200
 
 gmt (5.2.1+dfsg-7) unstable; urgency=medium
 
