@@ -9,6 +9,7 @@ gmt (5.3.1+dfsg-1) UNRELEASED; urgency=medium
   * Drop custom coastline.conf, not installed.
   * Update gmt-config manpage for upstream changes.
   * Update symbols for version 5.3.1.
+  * Add patch to fix spelling errors.
 
  -- Bas Couwenberg <sebastic@debian.org>  Sat, 22 Oct 2016 10:16:26 +0200
 
