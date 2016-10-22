@@ -1,10 +1,10 @@
 #!/bin/bash
 #		GMT EXAMPLE 32
-#		$Id: example_32.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_32.sh 16792 2016-07-13 21:12:21Z pwessel $
 #
 # Purpose:	Illustrate draping of an image over topography
-# GMT progs:	grdcut, grdedit, grdgradient, grdconvert, grdtrack, grdview
-# GMT progs:	pscoast, pstext, psxyz
+# GMT modules:	grdcut, grdedit, grdgradient, grdconvert, grdtrack, grdview
+# GMT modules:	pscoast, pstext, psxyz
 # Unix progs:	cat, rm
 # Credits:	Original by Stephan Eickschen
 #
@@ -24,17 +24,14 @@ Rflag=-R3/9/50/54
 
 # Now get the topography for the same area from GTOPO30 and store it as topo.nc.
 # The DEM file comes from http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/w020n90
-# We make an gradient grid as well, which we will use to "illuminate" the flag.
+# We make a gradient grid as well, which we will use to "illuminate" the flag.
 
 # gmt grdcut W020N90.DEM $Rflag -Gtopo.nc=ns
 gmt grdgradient topo.nc -A0/270 -Gillum.nc -Ne0.6
 
 # The color map assigns "Reflex Blue" to the lower half of the 0-255 range and
 # "Yellow" to the upper half.
-cat << EOF > euflag.cpt
-0	0/51/153	127	0/51/153
-127	255/204/0	255	255/204/0
-EOF
+gmt makecpt -C0/51/153,255/204/0 -T0,127,255 -N > euflag.cpt
 
 # The next step is the plotting of the image.
 # We use gmt grdview to plot the topography, euflag.nc to give the color, and illum.nc to give

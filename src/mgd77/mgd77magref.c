@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77magref.c 15213 2015-11-11 03:40:07Z pwessel $
+ *	$Id: mgd77magref.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *    Copyright (c) 2009-2015 by J. Luis and P. Wessel
+ *    Copyright (c) 2009-2016 by J. Luis and P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -17,7 +17,7 @@
 #define THIS_MODULE_NAME	"mgd77magref"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Evaluate the IGRF or CM4 magnetic field models"
-#define THIS_MODULE_KEYS	"<DI,>DO"
+#define THIS_MODULE_KEYS	"<D{,>D}"
 
 #include "gmt_dev.h"
 #include "mgd77.h"
@@ -60,10 +60,10 @@ struct MGD77MAGREF_CTRL {	/* All control options for this program (except common
 	} S;
 };
 
-void *New_mgd77magref_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct MGD77MAGREF_CTRL *C = NULL;
 
-	C = GMT_memory (GMT, NULL, 1, struct MGD77MAGREF_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct MGD77MAGREF_CTRL);
 	C->CM4 = calloc (1U, sizeof (struct MGD77_CM4));
 
 	/* Initialize values whose defaults are not 0/false/NULL */
@@ -72,24 +72,23 @@ void *New_mgd77magref_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a
 	return (C);
 }
 
-void Free_mgd77magref_Ctrl (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->CM4->CM4_M.path) free(C->CM4->CM4_M.path);
-	if (C->CM4->CM4_D.path) free(C->CM4->CM4_D.path);
-	if (C->CM4->CM4_I.path) free(C->CM4->CM4_I.path);
-	free (C->CM4);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->CM4->CM4_M.path);
+	gmt_M_str_free (C->CM4->CM4_D.path);
+	gmt_M_str_free (C->CM4->CM4_I.path);
+	gmt_M_str_free (C->CM4);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_mgd77magref_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: mgd77magref [<table>] [-A+y+a<alt>+t<date>] [-C<cm4file>] [-D<dstfile>] [-E<f107file>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F<rthxyzdi[/[0|9]1234567]>] [-G] [-L<rtxyz[/1234]>] [-Sc|l<low>/<high>] [%s]\n", GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\n", GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_colon_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t<table> contains records that must contain lon, lat, alt, time[, other cols].\n");
@@ -155,11 +154,10 @@ int GMT_mgd77magref_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   be in the unix time-system (unless -A+y is used).\n");
 	GMT_Option (API, "bo,d,h,:,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to mgd77magref and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -184,7 +182,7 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 			case 'A':
 				Ctrl->A.active = true;
 				pos = 0;
-				while ((GMT_strtok (opt->arg, "+", &pos, p))) {
+				while ((gmt_strtok (opt->arg, "+", &pos, p))) {
 					switch (p[0]) {
 						case 'a':
 							Ctrl->A.fixed_alt = true;
@@ -192,7 +190,7 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 							break;
 						case 't':
 							Ctrl->A.fixed_time = true;
-							strncpy (tfixed, &p[1], GMT_LEN64);
+							strncpy (tfixed, &p[1], GMT_LEN64-1);
 							GMT->current.io.col_type[GMT_OUT][3] = GMT_IS_FLOAT;
 							break;
 						case 'y':
@@ -210,12 +208,12 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 					if (Ctrl->A.years)
 						Ctrl->A.time = atof (tfixed);
 					else
-						GMT_scanf_arg (GMT, tfixed, GMT_IS_ABSTIME, &Ctrl->A.time);
+						gmt_scanf_arg (GMT, tfixed, GMT_IS_ABSTIME, &Ctrl->A.time);
 				}
 				break;
 			case 'C':	/* Alternate CM4 coefficient file */
 				Ctrl->C.active = true;
-				if (Ctrl->CM4->CM4_M.path) free (Ctrl->CM4->CM4_M.path);
+				gmt_M_str_free (Ctrl->CM4->CM4_M.path);
 				Ctrl->CM4->CM4_M.path = strdup (opt->arg);
 				break;
 			case 'D':
@@ -226,7 +224,7 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 					Ctrl->CM4->CM4_D.index = false;
 				}
 				else {
-					if (Ctrl->CM4->CM4_D.path) free (Ctrl->CM4->CM4_D.path);
+					gmt_M_str_free (Ctrl->CM4->CM4_D.path);
 					Ctrl->CM4->CM4_D.path = strdup (opt->arg);
 					Ctrl->CM4->CM4_D.load = true;
 				}
@@ -237,7 +235,7 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 					Ctrl->CM4->CM4_I.index = false;
 				}
 				else {
-					if (Ctrl->CM4->CM4_I.path) free (Ctrl->CM4->CM4_I.path);
+					gmt_M_str_free (Ctrl->CM4->CM4_I.path);
 					Ctrl->CM4->CM4_I.path = strdup (opt->arg);
 					Ctrl->CM4->CM4_I.load = true;
 				}
@@ -389,7 +387,7 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 				}
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
@@ -397,21 +395,20 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 	n_out = 4 - (Ctrl->A.fixed_alt + Ctrl->A.fixed_time);	/* Minimum input columns (could be more) */
 	if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0)
 		GMT->common.b.ncol[GMT_IN] = n_out;
-	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0, 
+	n_errors += gmt_M_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0, 
 			"Syntax error: Binary input data (-bi) must have at least %d columns\n", n_out);
-	n_errors += GMT_check_condition (GMT, Ctrl->CM4->CM4_F.active && Ctrl->CM4->CM4_L.curr, 
+	n_errors += gmt_M_check_condition (GMT, Ctrl->CM4->CM4_F.active && Ctrl->CM4->CM4_L.curr, 
 			"Syntax error: You cannot select both -F and -L options\n");
-	n_errors += GMT_check_condition (GMT, (do_CM4core && Ctrl->do_IGRF) || (do_CM4core && Ctrl->joint_IGRF_CM4),
+	n_errors += gmt_M_check_condition (GMT, (do_CM4core && Ctrl->do_IGRF) || (do_CM4core && Ctrl->joint_IGRF_CM4),
 			"Syntax error: You cannot select both CM4 core (1) and IGRF as they are both core fields.\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_mgd77magref_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_mgd77magref (void *V_API, int mode, void *args)
-{
+int GMT_mgd77magref (void *V_API, int mode, void *args) {
 	unsigned int j, nval = 0, nfval = 0, error = 0;
 	unsigned int lval = 0, lfval = 0, n_field_components, tbl;
 	unsigned int n_out = 0, n_in, t_col = 3;
@@ -428,25 +425,25 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_mgd77magref_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_mgd77magref_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_mgd77magref_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_mgd77magref_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	MGD77_Init (GMT, &M);			/* Initialize MGD77 Machinery */
 	MGD77_CM4_init (GMT, &M, Ctrl->CM4);	/* Presets path using strdup */
-	if ((error = GMT_mgd77magref_parse (GMT, Ctrl, options)) != 0) {
+	if ((error = parse (GMT, Ctrl, options)) != 0) {
 		MGD77_end (GMT, &M);
 		Return (error);
 	}
@@ -483,7 +480,7 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 			}
 			else if ( !((nval == 3) && (Ctrl->CM4->CM4_F.field_components[0] == 2) && (Ctrl->CM4->CM4_F.field_components[1] == 3) && 
 						(Ctrl->CM4->CM4_F.field_components[2] == 4)) ) {
-				GMT_Report (API, GMT_MSG_NORMAL, "GMT ERROR. In mix CM4/IGRF mode -F option can oly be -Ft[r]/... or -Fxyz[r]/...\n");
+				GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: In mix CM4/IGRF mode -F option can oly be -Ft[r]/... or -Fxyz[r]/...\n");
 				error++;
 			}
 
@@ -493,7 +490,7 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 	}
 	/* ----------------------------------------------------------------------------------------------------- */
 
-	if (error) Return (EXIT_FAILURE);
+	if (error) Return (GMT_RUNTIME_ERROR);
 
 	if (!Ctrl->CM4->CM4_F.active && !Ctrl->CM4->CM4_L.curr) Ctrl->CM4->CM4_F.active = true;
 
@@ -541,28 +538,32 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 	GMT->current.io.col_type[GMT_IN][t_col+1] = GMT->current.io.col_type[GMT_OUT][t_col+1] = GMT_IS_FLOAT;		/* Override any previous t_col = 3 settings */
 	if (!Ctrl->copy_input) GMT->current.io.col_type[GMT_OUT][2] = GMT->current.io.col_type[GMT_OUT][3] = GMT_IS_FLOAT;	/* No time on output */
 
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default input sources, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default input sources, unless already set */
 		Return (API->error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
 		Return (API->error);
 	}
 
 	if ((Din = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, 0, GMT_READ_NORMAL, NULL, NULL, NULL)) == NULL) {
 		Return (API->error);
 	}
+	if (Din->n_columns < 4) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Input data have %d column(s) but at least 4 are needed\n", (int)Din->n_columns);
+		Return (GMT_DIM_TOO_SMALL);
+	}
 	n_out = n_field_components + ((Ctrl->copy_input) ? (unsigned int)Din->n_columns : 0);
 	if (cm4_igrf_T) n_out -= 2;	/* Decrease by 2 because the x,y,z were imposed internaly only. i.e not for output */
-	if ((error = GMT_set_cols (GMT, GMT_OUT, n_out)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_OUT, n_out)) != GMT_NOERROR) {
 		Return (error);
 	}
 
 	if (GMT->common.b.active[GMT_OUT] && GMT->common.b.ncol[GMT_OUT] > 0 && n_out > GMT->common.b.ncol[GMT_OUT]) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Binary output must have at least %d columns (your -bo option only set %d)\n", n_out, GMT->common.b.ncol[GMT_OUT]);
-		Return (EXIT_FAILURE);
+		Return (GMT_RUNTIME_ERROR);
 	}
 
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
 
@@ -580,26 +581,26 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 			need = T->segment[s]->n_rows;   /* Size of output array needed in MGD77_cm4field */
 			if (need > n_alloc) {           /* Need to reallocate */
 				n_alloc = need;
-				Ctrl->CM4->CM4_DATA.out_field = GMT_memory (GMT, Ctrl->CM4->CM4_DATA.out_field, n_alloc * n_field_components, double);
+				Ctrl->CM4->CM4_DATA.out_field = gmt_M_memory (GMT, Ctrl->CM4->CM4_DATA.out_field, n_alloc * n_field_components, double);
 				if (!(Ctrl->A.years || Ctrl->A.fixed_time))
-					time_years = GMT_memory (GMT, time_years, n_alloc, double);
+					time_years = gmt_M_memory (GMT, time_years, n_alloc, double);
 
 				if (Ctrl->joint_IGRF_CM4)
-					igrf_xyz = GMT_memory (GMT, igrf_xyz, n_alloc * 3, double);
+					igrf_xyz = gmt_M_memory (GMT, igrf_xyz, n_alloc * 3, double);
 			}
 
 			if (!Ctrl->A.fixed_alt) {	/* Assign the alt_array to the provided altitude array */
-				alt_array = T->segment[s]->coord[GMT_Z];
+				alt_array = T->segment[s]->data[GMT_Z];
 				Ctrl->CM4->CM4_DATA.n_altitudes = (int)T->segment[s]->n_rows;
 			}
 
 			if (!Ctrl->A.fixed_time) {	/* Assign the time_array to the provided time array */
 				Ctrl->CM4->CM4_DATA.n_times = (int)T->segment[s]->n_rows;
 				if (Ctrl->A.years)
-					time_array = T->segment[s]->coord[t_col];
+					time_array = T->segment[s]->data[t_col];
 				else {	/* Must convert internal GMT time to decimal years first */
 					for (i = 0; i < T->segment[s]->n_rows; i++)
-						time_years[i] = MGD77_time_to_fyear (GMT, &M, T->segment[s]->coord[t_col][i]);
+						time_years[i] = MGD77_time_to_fyear (GMT, &M, T->segment[s]->data[t_col][i]);
 					time_array = time_years;
 				}
 			}
@@ -618,8 +619,8 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 					the_altitude = (Ctrl->A.fixed_alt) ? alt_array[0] : alt_array[i];
 					the_time = (Ctrl->A.fixed_time) ? time_array[0] : time_array[i];
 					if (type == 2) the_altitude += 6371.2;
-					MGD77_igrf10syn (GMT, 0, the_time, type, the_altitude, T->segment[s]->coord[GMT_X][i],
-							T->segment[s]->coord[GMT_Y][i], IGRF);
+					MGD77_igrf10syn (GMT, 0, the_time, type, the_altitude, T->segment[s]->data[GMT_X][i],
+							T->segment[s]->data[GMT_Y][i], IGRF);
 					if (!Ctrl->joint_IGRF_CM4) {		/* IGRF only */
 						int jj;
 						for (jj = 0; jj < Ctrl->CM4->CM4_F.n_field_components; jj++)
@@ -634,8 +635,8 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 
 			if (Ctrl->do_CM4) {				/* DO CM4 only. Eval CM4 at all points */
 				int err;
-				if ((err = MGD77_cm4field (GMT, Ctrl->CM4, T->segment[s]->coord[GMT_X],
-							T->segment[s]->coord[GMT_Y], alt_array, time_array)) != 0) {
+				if ((err = MGD77_cm4field (GMT, Ctrl->CM4, T->segment[s]->data[GMT_X],
+							T->segment[s]->data[GMT_Y], alt_array, time_array)) != 0) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Error: this segment has a record generating an error.\n"
 						"Unfortunately, this means all other eventually good\n"
 						"records are also ignored. Fix the bad record and rerun the command.\n");
@@ -646,7 +647,7 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 			if ((Ctrl->do_CM4 || Ctrl->do_IGRF) && !Ctrl->joint_IGRF_CM4) {	/* DID CM4 or (exclusive) IGRF only. */
 				for (i = 0; i < T->segment[s]->n_rows; i++) {	/* Output the requested columns */
 					n_out = 0;
-					if (Ctrl->copy_input) for (j = 0; j < T->segment[s]->n_columns; j++) out[n_out++] = T->segment[s]->coord[j][i];
+					if (Ctrl->copy_input) for (j = 0; j < T->segment[s]->n_columns; j++) out[n_out++] = T->segment[s]->data[j][i];
 					for (j = 0; j < n_field_components; j++)
 						out[n_out++] = Ctrl->CM4->CM4_DATA.out_field[i*n_field_components+j];
 
@@ -657,7 +658,7 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 				double x, y, z;
 				for (i = 0; i < T->segment[s]->n_rows; i++) {	/* Output the requested columns */
 					n_out = 0;
-					if (Ctrl->copy_input) for (j = 0; j < T->segment[s]->n_columns; j++) out[n_out++] = T->segment[s]->coord[j][i];
+					if (Ctrl->copy_input) for (j = 0; j < T->segment[s]->n_columns; j++) out[n_out++] = T->segment[s]->data[j][i];
 					if (cm4_igrf_T) {
 						x = Ctrl->CM4->CM4_DATA.out_field[i*3  ] + igrf_xyz[i*3  ];
 						y = Ctrl->CM4->CM4_DATA.out_field[i*3+1] + igrf_xyz[i*3+1];
@@ -675,16 +676,16 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 
 		}
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data input */
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data input */
 		Return (API->error);
 	}
 
-	free(Ctrl->CM4->CM4_D.dst);
-	GMT_free (GMT, Ctrl->CM4->CM4_DATA.out_field);
-	if (!(Ctrl->A.years || Ctrl->A.fixed_time)) GMT_free (GMT, time_years);
-	if (Ctrl->joint_IGRF_CM4) GMT_free (GMT, igrf_xyz);
+	gmt_M_str_free (Ctrl->CM4->CM4_D.dst);
+	gmt_M_free (GMT, Ctrl->CM4->CM4_DATA.out_field);
+	if (!(Ctrl->A.years || Ctrl->A.fixed_time)) gmt_M_free (GMT, time_years);
+	if (Ctrl->joint_IGRF_CM4) gmt_M_free (GMT, igrf_xyz);
 
 	MGD77_end (GMT, &M);
 
-	Return (EXIT_SUCCESS);
+	Return (GMT_NOERROR);
 }

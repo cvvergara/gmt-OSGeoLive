@@ -1,9 +1,9 @@
 #!/bin/bash
 #               GMT EXAMPLE 42
-#               $Id: example_42.sh 14430 2015-06-30 02:35:07Z pwessel $
+#               $Id: example_42.sh 16673 2016-06-29 20:54:35Z pwessel $
 #
 # Purpose:      Illustrate Antarctica and stereographic projection
-# GMT progs:    makecpt, grdimage, pscoast, pslegend, psscale, pstext, psxy
+# GMT modules:  makecpt, grdimage, pscoast, pslegend, psscale, pstext, psxy
 # Unix progs:   [curl grdreformat]
 #
 ps=example_42.ps
@@ -13,8 +13,7 @@ gmt set FONT_ANNOT_PRIMARY 12p FONT_LABEL 12p PROJ_ELLIPSOID WGS-84 FORMAT_GEO_M
 # curl http://www.antarctica.ac.uk//bas_research/data/access/bedmap/download/bedelev.asc.gz
 # gunzip bedelev.asc.gz
 # grdreformat bedelev.asc BEDMAP_elevation.nc=ns -V
-gmt makecpt -Cbathy -T-7000/0/200 -N -Z > t.cpt
-gmt makecpt -Cdem4 -T0/4000/200 -N -Z >> t.cpt
+gmt makecpt -Cearth -T-7000/4000 > t.cpt
 gmt grdimage -Ct.cpt BEDMAP_elevation.nc -Jx1:60000000 -Q -P -K > $ps
 gmt pscoast -R-180/180/-90/-60 -Js0/-90/-71/1:60000000 -Bafg -Di -W0.25p -O -K >> $ps
 gmt psscale -Ct.cpt -DjRM+w2.5i/0.2i+o0.5i/0+jLM+mc -R -J -O -K -F+p+i -Bxa1000+lELEVATION -By+lm >> $ps

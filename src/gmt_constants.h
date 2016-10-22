@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_constants.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_constants.h 16803 2016-07-14 23:45:35Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -67,6 +67,7 @@
 #endif
 
 #define GMT_CONV15_LIMIT 1.0e-15	/* Very tight convergence limit or "close to zero" limit */
+#define GMT_CONV12_LIMIT 1.0e-12	/* Tight limit for gaps/overlaps in CPT z-values */
 #define GMT_CONV8_LIMIT	 1.0e-8		/* Fairly tight convergence limit or "close to zero" limit */
 #define GMT_CONV6_LIMIT	 1.0e-6		/* 1 ppm */
 #define GMT_CONV4_LIMIT	 1.0e-4		/* Less tight convergence limit or "close to zero" limit */
@@ -84,6 +85,7 @@ enum GMT_enum_length {
 	GMT_LEN64  = 64U,          /* Intermediate length of texts */
 	GMT_LEN128 = 128U,         /* Double of 64 */
 	GMT_LEN256 = 256U,         /* Max size of some text items */
+	GMT_LEN512 = 512U,         /* Max size of other text items */
 	GMT_MAX_COLUMNS = 4096U,        /* Limit on number of columns in data tables (not grids) */
 	GMT_BUFSIZ      = 4096U,        /* Size of char record for i/o */
 	GMT_MIN_MEMINC  = 1U,        /* E.g., 16 kb of 8-byte doubles */
@@ -146,18 +148,29 @@ enum GMT_swap_direction {
 
 #define GMT_N_MAX_MODEL	20	/* No more than 20 basis functions in a trend model */
 
-#define GMT_PAIR_COORD		0	/* Tell GMT_get_pair to get both x and y as coordinates */
-#define GMT_PAIR_DIM_EXACT	1	/* Tell GMT_get_pair to get BOTH x and y as separate dimensions */
-#define GMT_PAIR_DIM_DUP	2	/* Tell GMT_get_pair to get both x and y as dimensions, and if only x then set y = x */
-#define GMT_PAIR_DIM_NODUP	3	/* Tell GMT_get_pair to get both x and y as dimensions, and if only x then leave y alone */
+#define GMT_PAIR_COORD		0	/* Tell gmt_get_pair to get both x and y as coordinates */
+#define GMT_PAIR_DIM_EXACT	1	/* Tell gmt_get_pair to get BOTH x and y as separate dimensions */
+#define GMT_PAIR_DIM_DUP	2	/* Tell gmt_get_pair to get both x and y as dimensions, and if only x then set y = x */
+#define GMT_PAIR_DIM_NODUP	3	/* Tell gmt_get_pair to get both x and y as dimensions, and if only x then leave y alone */
 
-/*! Return codes from GMT_inonout */
+#define GMT_GRID_LAYOUT		"TRS"	/* Standard GMT scanline single-item grid */
+#define GMT_IMAGE_LAYOUT	"TRBa"	/* Standard GMT scanline band-interleaved image */
+
+#define GMT_CPT_TEMPORARY	16	/* CPT was built from list of colors, e.g., red,green,255,blue,... */
+
+/*! Codes for grdtrack */
+enum GMT_enum_tracklayout {
+	GMT_LEFT_RIGHT = 0,
+	GMT_EW_SN,
+	GMT_ALTERNATE};
+
+/*! Return codes from gmt_inonout */
 enum GMT_enum_inside {
 	GMT_OUTSIDE = 0,
 	GMT_ONEDGE,
 	GMT_INSIDE};
 
-/*! Return codes from GMT_get_refpoint */
+/*! Return codes from gmt_get_refpoint */
 enum GMT_enum_refpoint {
 	GMT_REFPOINT_NOTSET = -1,	/* -D */
 	GMT_REFPOINT_MAP,		/* -Dg */
@@ -177,6 +190,11 @@ enum GMT_enum_rose {
 /*! Various types of trend model */
 enum GMT_enum_model {
 	GMT_POLYNOMIAL = 0, GMT_CHEBYSHEV, GMT_COSINE, GMT_SINE, GMT_FOURIER
+	};
+
+/*! Various array indeces of fonts and pens */
+enum GMT_enum_index {
+	GMT_PRIMARY = 0, GMT_SECONDARY = 1
 	};
 
 /*! Various options for FFT calculations [Default is 0] */
@@ -243,7 +261,7 @@ enum GMT_enum_bc {
 	GMT_BC_IS_NOTSET = 0, /* BC not yet set */
 	GMT_BC_IS_NATURAL,    /* Use natural BC */
 	GMT_BC_IS_PERIODIC,   /* Use periodic BC */
-	GMT_BC_IS_GEO,        /* Geographic BC condition */
+	GMT_BC_IS_GEO,        /* Geographic BC condition at N or S pole */
 	GMT_BC_IS_DATA};      /* Fill in BC with actual data */
 
 enum GMT_enum_anchors {	/* Various anchor strings */

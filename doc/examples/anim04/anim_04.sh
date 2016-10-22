@@ -1,9 +1,9 @@
 #!/bin/bash
 #               GMT ANIMATION 04
-#               $Id: anim_04.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#               $Id: anim_04.sh 16750 2016-07-09 05:44:02Z pwessel $
 #
 # Purpose:      Make DVD-res movie of NY to Miami flight
-# GMT progs:    gmt gmtset, gmt gmtmath, gmt pstext, gmt psxy, gmt psconvert
+# GMT modules:  gmtset, grdgradient, grdimage, makecpt, project, pstext, psxy, psconvert
 # Unix progs:   awk, mkdir, rm, mv, echo, qt_export, cat
 # Note:         Run with any argument to build movie; otherwise 1st frame is plotted only.
 #
@@ -28,7 +28,7 @@ gmt project -C-73.8333/40.75 -E-80.133/25.75 -G5 -Q > $$.path.d
 frame=0
 mkdir -p $$
 gmt grdgradient USEast_Coast.nc -A90 -Nt1 -Gint_$$.nc
-gmt makecpt -Cglobe -Z > globe_$$.cpt
+gmt makecpt -Cglobe > globe_$$.cpt
 function make_frame () {
 	local frame file ID lon lat dist
 	frame=$1; lon=$2; lat=$3; dist=$4

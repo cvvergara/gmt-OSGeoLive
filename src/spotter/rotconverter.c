@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: rotconverter.c 15213 2015-11-11 03:40:07Z pwessel $
+ *	$Id: rotconverter.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *   Copyright (c) 1999-2015 by P. Wessel
+ *   Copyright (c) 1999-2016 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -65,7 +65,7 @@
 #define THIS_MODULE_NAME	"rotconverter"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Manipulate total reconstruction and stage rotations"
-#define THIS_MODULE_KEYS	">DO"
+#define THIS_MODULE_KEYS	">D}"
 
 #include "spotter.h"
 
@@ -104,10 +104,10 @@ struct ROTCONVERTER_CTRL {	/* All control options for this program (except commo
 	} W;
 };
 
-void *New_rotconverter_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct ROTCONVERTER_CTRL *C;
 	
-	C = GMT_memory (GMT, NULL, 1, struct ROTCONVERTER_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct ROTCONVERTER_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 	
@@ -116,19 +116,18 @@ void *New_rotconverter_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize 
 	return (C);
 }
 
-void Free_rotconverter_Ctrl (struct GMT_CTRL *GMT, struct ROTCONVERTER_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct ROTCONVERTER_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	GMT_free (GMT, C);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_rotconverter_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: rotconverter [+][-] <rotA> [[+][-] <rotB>] [[+][-] <rotC>] ... [-A] [-D] [-E[<factor>]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F<out>] [-G] [-N] [-S] [-T] [%s] [-W]\n\t[%s] > outfile\n\n", GMT_V_OPT, GMT_h_OPT);
 	
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<rotA>, <rotB>, etc. are total reconstruction or stage rotation pole files.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, give two plate IDs separated by a hyphen (e.g., PAC-MBL)\n");
@@ -151,11 +150,10 @@ int GMT_rotconverter_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   Only one of -N, -S, -W may be used at the same time.\n");
 	GMT_Option (API, "h,.");
 	
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_rotconverter_parse (struct GMT_CTRL *GMT, struct ROTCONVERTER_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct ROTCONVERTER_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to rotconverter and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -195,7 +193,7 @@ int GMT_rotconverter_parse (struct GMT_CTRL *GMT, struct ROTCONVERTER_CTRL *Ctrl
 				}
 				switch (opt->arg[0]) {	/* Output format */
 					case 'f':
-						if (GMT_compat_check (GMT, 4)) /* Warn and fall through */
+						if (gmt_M_compat_check (GMT, 4)) /* Warn and fall through */
 							GMT_Report (API, GMT_MSG_COMPAT, "Warning: -Ff is deprecated; use -Ft instead.\n");
 						else {
 							GMT_Report (API, GMT_MSG_NORMAL, "Error: Must specify t|s\n");
@@ -240,23 +238,22 @@ int GMT_rotconverter_parse (struct GMT_CTRL *GMT, struct ROTCONVERTER_CTRL *Ctrl
 				break;	/* Probably a rotation lon/lat/angle with negative longitude */
 				
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, (Ctrl->S.active + Ctrl->N.active + Ctrl->W.active) > 1, "Syntax error: Specify only one of -N, -S, and -W!\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->E.active && Ctrl->F.mode, "Syntax error: -E requires stage rotations on output\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->G.active && !Ctrl->F.mode, "Syntax error: -G requires total reconstruction rotations on output\n");
+	n_errors += gmt_M_check_condition (GMT, (Ctrl->S.active + Ctrl->N.active + Ctrl->W.active) > 1, "Syntax error: Specify only one of -N, -S, and -W!\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->E.active && Ctrl->F.mode, "Syntax error: -E requires stage rotations on output\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->G.active && !Ctrl->F.mode, "Syntax error: -G requires total reconstruction rotations on output\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_rotconverter_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_rotconverter (void *V_API, int mode, void *args)
-{
+int GMT_rotconverter (void *V_API, int mode, void *args) {
 	struct EULER *p = NULL;			/* Pointer to array of stage poles */
 	struct EULER *a = NULL, *b = NULL;	/* Pointer to arrays of stage poles */
 
@@ -285,12 +282,12 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 	struct ROTCONVERTER_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_rotconverter_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);
 	if (API->error) bailout (API->error);	/* Set or get option list */
 
@@ -304,12 +301,12 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 			case '0': case '1': case '2': case '3': case '4': case '5': 
 			case '6': case '7': case '8': case '9': case '.':
 				sprintf (record, "-%c%s", opt->option, opt->arg);
-				free (opt->arg);
+				gmt_M_str_free (opt->arg);
 				opt->arg = strdup (record);
 				opt->option = GMT_OPT_INFILE;
 				break;
 			case GMT_OPT_SYNOPSIS:
-				free (opt->arg);
+				gmt_M_str_free (opt->arg);
 				opt->arg = strdup ("-");
 				opt->option = GMT_OPT_INFILE;
 				confusion = true;	/* Since we don't know if just a single - was given */
@@ -318,20 +315,20 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 				break;
 		}
 	}
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_rotconverter_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (n_opt == 1 && confusion) bailout (GMT_rotconverter_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (n_opt == 1 && confusion) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
-	Ctrl = New_rotconverter_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_rotconverter_parse (GMT, Ctrl, options)) != 0) Return (error);
+	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the rotconverter main code ----------------------------*/
 
-	GMT_memset (out, 20, double);
+	gmt_M_memset (out, 20, double);
 	if (Ctrl->G.active) {
 		GMT->current.io.col_type[GMT_OUT][0] = GMT->current.io.col_type[GMT_OUT][1] = GMT_IS_FLOAT;
 		GMT->current.io.col_type[GMT_OUT][2] = GMT_IS_LAT;
@@ -357,11 +354,12 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 		if (spotter_GPlates_pair (opt->arg)) {	/* A GPlates plate pair to look up in the rotation table */
 			online_rot = false;
 		}
-		else if (GMT_access (GMT, opt->arg, R_OK)) {	/* Not a readable file, is it a lon/lat/t0[/t1]/omega specification? */
+		else if (gmt_access (GMT, opt->arg, R_OK)) {	/* Not a readable file, is it a lon/lat/t0[/t1]/omega specification? */
 			for (k = n_slash = 0; opt->arg[k]; k++) if (opt->arg[k] == '/') n_slash++;
 			if (n_slash < 2 || n_slash > 4) {	/* No way it can be a online rotation, cry foul */
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Cannot read file %s\n", opt->arg);
-				Return (EXIT_FAILURE);
+				gmt_M_free (GMT, a);
+				Return (GMT_RUNTIME_ERROR);
 			}
 			else {	/* Try to decode as a single rotation */
 
@@ -370,11 +368,11 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 				if (n_slash == 2) angle = t0, t0 = 1.0, t1 = 0.0, no_time = true;	/* Quick lon/lat/angle total reconstruction rotation, no time */
 				if (t0 < t1) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Error: Online rotation has t_start (%g) younger than t_stop (%g)\n", t0, t1);
-					Return (EXIT_FAILURE);
+					Return (GMT_RUNTIME_ERROR);
 				}
 				if (angle == 0.0) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Error: Online rotation has zero opening angle\n");
-					Return (EXIT_FAILURE);
+					Return (GMT_RUNTIME_ERROR);
 				}
 				online_rot = true;
 				online_stage = (k == 5);
@@ -386,7 +384,7 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 		if (first) {	/* First time loading a rotation model */
 			if (online_rot) {
 				n_a = 1;
-				a = GMT_memory (GMT, NULL, 1, struct EULER);
+				a = gmt_M_memory (GMT, NULL, 1, struct EULER);
 				a[0].lon = lon;	a[0].lat = lat;
 				a[0].t_start = t0;	a[0].t_stop = t1;
 				a[0].duration = t0 - t1;
@@ -408,7 +406,7 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 		else {			/* For additional times, load a second model and add/subtract them */
 			if (online_rot) {
 				n_b = 1;
-				b = GMT_memory (GMT, NULL, 1, struct EULER);
+				b = gmt_M_memory (GMT, NULL, 1, struct EULER);
 				b[0].lon = lon;	b[0].lat = lat;
 				b[0].t_start = t0;	b[0].t_stop = t1;
 				b[0].duration = t0 - t1;
@@ -419,8 +417,8 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 				n_b = spotter_init (GMT, opt->arg, &b, false, true, false, &zero);	/* Return total reconstruction rotations */
 			zero = 0.0;
 			spotter_add_rotations (GMT, a, n_a, b, last_sign * n_b, &p, &n_p);		/* Add the two total reconstruction rotations sets, returns total reconstruction rotations in p */
-			GMT_free (GMT, a);
-			GMT_free (GMT, b);
+			gmt_M_free (GMT, a);
+			gmt_M_free (GMT, b);
 			a = p;
 			n_a = n_p;
 		}
@@ -431,13 +429,16 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 	if (a[0].has_cov) n_out += 9;
 	if (Ctrl->G.active) n_out = 6;
 	
-	if ((error = GMT_set_cols (GMT, GMT_OUT, n_out)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_OUT, n_out)) != GMT_NOERROR) {
+		gmt_M_free (GMT, a);
 		Return (error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
+		gmt_M_free (GMT, a);
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		gmt_M_free (GMT, a);
 		Return (API->error);
 	}
 
@@ -484,9 +485,6 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 			out[col++] = a[stage].t_stop;
 			out[col++] = a[stage].omega * a[stage].duration;
 		}
-		if (out[4] > 0.0) {
-			k = 9;
-		}
 		if (a[stage].has_cov) {
 			double K[9];
 			spotter_covar_to_record (GMT, &a[stage], K);
@@ -494,11 +492,12 @@ int GMT_rotconverter (void *V_API, int mode, void *args)
 		}
 		GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {		/* Disables further data output */
+	
+	gmt_M_free (GMT, a);
+
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {		/* Disables further data output */
 		Return (API->error);
 	}
-
-	GMT_free (GMT, a);
 	
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

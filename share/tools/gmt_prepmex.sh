@@ -1,7 +1,7 @@
 #!/bin/bash
-# $Id: gmt_prepmex.sh 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: gmt_prepmex.sh 17187 2016-10-13 20:54:29Z pwessel $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo,
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo,
 # J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
@@ -20,18 +20,20 @@
 # This will require sudo privileges.
 #
 #-------------------------------------------------------------------------
-printf "gmt_prepmex.sh will convert a GMT 5.2.x bundle so libraries are suitable for building the MATLAB interface\n" >&2
+Rel=`gmt --version | awk '{print substr($1,1,3)}'`
+printf "\ngmt_prepmex.sh will convert a GMT %s.x bundle so libraries are suitable for building the MATLAB interface.\n" $Rel >&2
 printf "You must have sudo privileges on this computer.\n\nContinue? (y/n) [y]:" >&2
 read answer
 if [ "X$answer" = "Xn" ]; then
 	exit 0
 fi
+here=`pwd`
 # First get a reliable absolute path to the bundle's top directory
 pushd `dirname $0` > /dev/null
 BUNDLEDIR=`pwd | sed -e sB/Contents/Resources/share/toolsBBg`
 popd > /dev/null
 # Set path to the new gmt installation
-MEXGM5TDIR=/opt/gmt
+MEXGM5TDIR=/tmp/$$/gmt
 # Set path to additional subdirectories
 MEXLIBDIR=$MEXGM5TDIR/lib
 MEXINCDIR=$MEXGM5TDIR/include
@@ -39,21 +41,18 @@ MEXSHADIR=$MEXGM5TDIR/share
 MEXBINDIR=$MEXGM5TDIR/bin
 MEXSUPDIR=$MEXLIBDIR/gmt/plugins
 # Create install directory [remove first if exist]
-sudo rm -rf $MEXGM5TDIR
-printf "gmt_prepmex.sh: Create /opt/gmt and copy files\n" >&2
-sudo mkdir -p $MEXBINDIR $MEXSUPDIR $MEXINCDIR
-# Find user's group and use that to set ownership
-grp=`id -gn`
-sudo chown -R ${USER}:${grp} $MEXGM5TDIR
+rm -rf $MEXGM5TDIR
+printf "gmt_prepmex.sh: Create $MEXGM5TDIR and copy files\n" >&2
+mkdir -p $MEXBINDIR $MEXSUPDIR $MEXINCDIR
 # Copy the share files
 cd $BUNDLEDIR/Contents/Resources
-scp -r share $MEXSHADIR
+cp -r share $MEXSHADIR
 # Copy the include files
 cd $BUNDLEDIR/Contents/Resources/include
-scp -r gmt $MEXINCDIR
+cp -r gmt $MEXINCDIR
 # Copy the bin files
 cd $BUNDLEDIR/Contents/Resources/bin
-scp -r * $MEXBINDIR
+cp -r * $MEXBINDIR
 # Now copy the lib files
 printf "gmt_prepmex.sh: Copy and rename libraries\n" >&2
 cd $BUNDLEDIR/Contents/Resources/lib
@@ -77,35 +76,39 @@ while read lib; do
 		new=`echo $old | awk -F/ '{printf "libX%s\n", substr($NF,4)}'`
 		if [ $k -eq 1 ]; then # Do the id change
 			was=`echo $lib | awk -F/ '{print substr($1,4)}'`
-			install_name_tool -id $MEXLIBDIR/$new $lib
+			install_name_tool -id /opt/gmt/lib/$new $lib
 		else
-			install_name_tool -change $old $MEXLIBDIR/$new $lib
+			install_name_tool -change $old /opt/gmt/lib/$new $lib
 		fi
 		let k=k+1
 	done < /tmp/t.lis
 done < /tmp/l.lis
 # Set links to the new libs
 ln -s libXgmt.dylib libgmt.dylib
+ln -s libXpostscriptlight.dylib libpostscriptlight.dylib
 ln -s libXgmt.5.dylib libXgmt.dylib
 ln -s libXpostscriptlight.5.dylib libXpostscriptlight.dylib
-# This is not necessary it seems, at least for fink and homebrew
-# Comment out for now.
-# Same stuff for gs which is called by psconvert as a system call.
-# Here we must determine from where to copy...
-#GSV=`gs --version`
-#if [ -d /sw/lib ]; then			# Fink
-#	FROM=/sw/lib
-#elif [ -d /opt/local/lib ]; then	# Macports
-#	FROM=/opt/local/lib
-#	cp $FROM/libgs.${GSV}.dylib libXgs.${GSV}.dylib 
-#	cp $FROM/libfreetype.6.dylib libXfreetype.6.dylib
-#	sudo install_name_tool -id $MEXLIBDIR/libXgs.${GSV}.dylib libXgs.${GSV}.dylib 
-#	sudo install_name_tool -id $MEXLIBDIR/libXfreetype.6.dylib libXfreetype.6.dylib
-#	sudo install_name_tool -change $FROM/libtiff.5.dylib $MEXLIBDIR/libXtiff.5.dylib libXgs.${GSV}.dylib 
-#	sudo install_name_tool -change $FROM/libfreetype.6.dylib $MEXLIBDIR/libXfreetype.6.dylib libXgs.${GSV}.dylib 
-#elif [ -d /usr/local/lib ]; then		# Brew
-#	FROM=/usr/local/lib
-#fi
+# If argument gs is given then we also do the same to the GS library.
+if [ "$1" == "gs" ]; then
+	# Same stuff for gs which is called by psconvert as a system call.
+	# Here we must determine from where to copy...
+	GSV=`gs --version`
+	if [ -d /sw/lib ]; then			# Fink has no shared lib yet...
+		FROM=/sw/lib
+		echo "Sorry, no libgs.dylib under fink yet"
+	elif [ -d /opt/local/lib ]; then	# Macports
+		FROM=/opt/local/lib
+		cp $FROM/libgs.${GSV}.dylib libXgs.${GSV}.dylib 
+		cp $FROM/libfreetype.6.dylib libXfreetype.6.dylib
+		install_name_tool -id /opt/gmt/lib/libXgs.${GSV}.dylib libXgs.${GSV}.dylib 
+		install_name_tool -id /opt/gmt/lib/libXfreetype.6.dylib libXfreetype.6.dylib
+		install_name_tool -change $FROM/libtiff.5.dylib /opt/gmt/lib/libXtiff.5.dylib libXgs.${GSV}.dylib 
+		install_name_tool -change $FROM/libfreetype.6.dylib /opt/gmt/lib/libXfreetype.6.dylib libXgs.${GSV}.dylib 
+	elif [ -d /usr/local/lib ]; then		# Brew
+		FROM=/usr/local/lib
+		echo "Sorry, no libgs.dylib under HomeBrew yet"
+	fi
+fi
 
 # Do plugin supplement separately since not called lib*
 cd gmt/plugins
@@ -113,7 +116,7 @@ otool -L supplements.so | grep executable_path | awk '{print $1}' > /tmp/t.lis
 let k=1
 while read old; do
 	new=`echo $old | awk -F/ '{printf "libX%s\n", substr($NF,4)}'`
-	install_name_tool -change $old $MEXLIBDIR/$new supplements.so
+	install_name_tool -change $old /opt/gmt/lib/$new supplements.so
 	let k=k+1
 done < /tmp/t.lis
 
@@ -123,33 +126,18 @@ otool -L gmt | grep executable_path | awk '{print $1}' > /tmp/t.lis
 let k=1
 while read old; do
 	new=`echo $old | awk -F/ '{printf "libX%s\n", substr($NF,4)}'`
-	install_name_tool -change $old $MEXLIBDIR/$new gmt
+	install_name_tool -change $old /opt/gmt/lib/$new gmt
 	let k=k+1
 done < /tmp/t.lis
-
-# Fix gmt-config so it returns correct paths
-cat << EOF > /tmp/skip
-GMT_EXEDIR=
-CONFIG_CFLAGS=
-CONFIG_INCLUDEDIR=
-CONFIG_LIBS=
-CONFIG_PREFIX=
-EOF
-sed '/GMT_EXEDIR/q' gmt-config > /tmp/new
-cat << EOF >> /tmp/new
-CONFIG_CFLAGS="-I/opt/gmt/include/gmt"
-CONFIG_DATA=\$(\$GMT_EXEDIR/gmt --show-datadir)
-CONFIG_INCLUDEDIR="/opt/gmt/include/gmt"
-CONFIG_LIBS="-L/opt/gmt/lib -lgmt"
-CONFIG_PREFIX="/opt/gmt"
-EOF
-sed -n '/GMT_EXEDIR/,$p' gmt-config | grep -v -f/tmp/skip >> /tmp/new
-mv -f /tmp/new gmt-config
-chmod +x gmt-config
-version=`gmt-config --version`
+chmod -R ugo+r $MEXGM5TDIR
+printf "gmt_prepmex.sh: Install /opt/gmt\n" >&2
+sudo cp -fpR $MEXGM5TDIR /opt
+rm -rf /tmp/$$
+cd $here
+version=`/opt/gmt/bin/gmt-config --version`
 # Report
 cat << EOF >&2
 gmt_prepmex.sh: Made updated GMT $version installation in /opt/gmt
 gmt_prepmex.sh: Add /opt/gmt to your .gmtversions and run gmtswitch to select this version
-gmt_prepmex.sh: MATLAB needs a gmt.conf file with GMT_CUSTOM_LIBS=/opt/gmt/lib/gmt/plugins/supplements.so
+gmt_prepmex.sh: MATLAB may need a gmt.conf file with GMT_CUSTOM_LIBS=/opt/gmt/lib/gmt/plugins/supplements.so in the startup directory
 EOF

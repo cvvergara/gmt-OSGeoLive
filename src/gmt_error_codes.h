@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error_codes.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_error_codes.h 16683 2016-07-01 16:05:52Z jluis $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 
 #include "declspec.h"
 /* external array with error descriptions */
-EXTERN_MSC const char* g_api_error_string[];
+EXTERN_MSC const char* gmt_api_error_string[];
 
 enum Gmt_api_error_code {
 	GMT_OK = 0,
@@ -60,6 +60,7 @@ enum Gmt_api_error_code {
 	GMT_ID_TOO_LARGE,
 	GMT_IMAGE_BC_ERROR,
 	GMT_IMAGE_READ_ERROR,
+	GMT_IMAGE_WRITE_ERROR,
 	GMT_MEMORY_ERROR,
 	GMT_FREE_EXTERNAL_NOT_ALLOWED,
 	GMT_FREE_WRONG_LEVEL,

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_types.h 15188 2015-11-07 02:12:40Z pwessel $
+ *	$Id: gmt_types.h 16884 2016-08-06 23:38:05Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -37,17 +37,17 @@
  * GMT TYPE DEFINITIONS
  *--------------------------------------------------------------------*/
 
-/*! Definition of MATH_MACRO used by grdmath and gmtmath */
-struct MATH_MACRO {
+/*! Definition of GMT_MATH_MACRO used by grdmath and gmtmath */
+struct GMT_MATH_MACRO {
 	unsigned int n_arg;	/* How many commands this macro represents */
 	char *name;	/* The macro name */
 	char **arg;	/* List of those commands */
 };
 
-/*! Definition of structure use for finding optimal nx.ny for surface */
+/*! Definition of structure use for finding optimal n_columns/n_rows for surface */
 struct GMT_SURFACE_SUGGESTION {	/* Used to find top ten list of faster grid dimensions  */
-	unsigned int nx;
-	unsigned int ny;
+	unsigned int n_columns;
+	unsigned int n_rows;
 	double factor;	/* Speed up by a factor of factor  */
 };
 
@@ -92,9 +92,15 @@ struct GMT_MODEL {	/* A model consists of n_terms */
 	unsigned int dim;	/* 1 or 2 */
 	unsigned int type;	/* 1 = poly, 2 = Fourier, 3 = both */
 	unsigned int n_terms;	/* Terms in model */
+	unsigned int n_poly;	/* The first n_poly terms contain the Polynomial/Chebyshev portion (if any) */
 	double origin[2];	/* x (or t) and y origins */
 	double period[2];	/* x (or t) and y periods */
 	struct GMT_MODEL_TERM term[GMT_N_MAX_MODEL];
+};
+
+struct GMT_ORDER {	/* Used to sort some item (e.g., structure) based on a value */
+	double value;		/* The value to sort on */
+	uint64_t order;		/* Original position of item in the array */
 };
 
 /*! For segments */
@@ -105,7 +111,7 @@ struct GMT_SEGMENTIZE {	/* Information about segmentation */
 };
 
 struct GMT_DIST {	/* Holds info for a particular distance calculation */
-	bool init;	/* true if we have initialized settings for this type via GMT_init_distaz */
+	bool init;	/* true if we have initialized settings for this type via gmt_init_distaz */
 	bool arc;	/* true if distances are in deg/min/sec or arc; otherwise they are e|f|k|M|n or Cartesian */
 	double (*func) (struct GMT_CTRL *, double, double, double, double);	/* pointer to function returning distance between two points points */
 	double scale;	/* Scale to convert function output to desired unit */
@@ -129,7 +135,7 @@ struct GMT_MAP {		/* Holds all map-related parameters */
 	unsigned int parallel_straight;		/* 1 if parallels plot as straight lines, 2 for special case */
 	unsigned int n_lon_nodes;		/* Somewhat arbitrary # of nodes for lines in longitude (may be reset in gmt_map.c) */
 	unsigned int n_lat_nodes;		/* Somewhat arbitrary # of nodes for lines in latitude (may be reset in gmt_map.c) */
-	unsigned int path_mode;		/* 0 if we should call GMT_fix_up_path to resample across gaps > path_step, 1 to leave alone */
+	unsigned int path_mode;		/* 0 if we should call gmt_fix_up_path to resample across gaps > path_step, 1 to leave alone */
 	double width;				/* Full width in inches of this world map */
 	double height;				/* Full height in inches of this world map */
 	double half_width;			/* Half width in inches of this world map */
@@ -219,7 +225,7 @@ struct GMT_INIT { /* Holds misc run-time parameters */
 struct GMT_PLOT {		/* Holds all plotting-related parameters */
 	uint64_t n;			/* Number of such points */
 	size_t n_alloc;			/* Size of allocated plot arrays */
-	bool r_theta_annot;		/* true for special r-theta map annotation (see GMT_get_annot_label) */
+	bool r_theta_annot;		/* true for special r-theta map annotation (see gmtlib_get_annot_label) */
 	unsigned int mode_3D;		/* Determines if we draw fore and/or back 3-D box lines [Default is both] */
 	unsigned int *pen;		/* Pen (PSL_MOVE = up, PSL_DRAW = down) for these points */
 	struct GMT_PLOT_CALCLOCK calclock;
@@ -239,12 +245,14 @@ struct GMT_CURRENT {
 	struct GMT_PLOT plot;		/* Holds all plotting-related parameters */
 	struct GMT_TIME_CONV time;	/* Holds all time-related parameters */
 	struct GMT_LANGUAGE language;	/* Holds all language-related parameters */
-	struct GMT_PS ps;		/* Hold parameters related to PS setup */
+	struct GMT_PSL ps;		/* Hold parameters related to PSL setup */
 	struct GMT_OPTION *options;	/* Pointer to current program's options */
 	struct GMT_FFT_HIDDEN fft;	/* Structure with info that must survive between FFT calls */
+#ifdef HAVE_GDAL
 	struct GMT_GDALREAD_IN_CTRL  gdal_read_in;  /* Hold parameters related to options transmitted to gdalread */ 
 	struct GMT_GDALREAD_OUT_CTRL gdal_read_out; /* Hold parameters related to options transmitted from gdalread */ 
 	struct GMT_GDALWRITE_CTRL    gdal_write;    /* Hold parameters related to options transmitted to gdalwrite */ 
+#endif
 };
 
 struct GMT_INTERNAL {
@@ -254,7 +262,10 @@ struct GMT_INTERNAL {
 	unsigned int func_level;	/* Keeps track of what level in a nested GMT_func calling GMT_func etc we are.  0 is top function */
 	size_t mem_cols;		/* Current number of allocated columns for temp memory */
 	size_t mem_rows;		/* Current number of allocated rows for temp memory */
+	size_t mem_txt_alloc;
+	size_t mem_txt_dup;
 	double **mem_coord;		/* Columns of temp memory */
+	char **mem_txt;			/* For temp text */
 	struct MEMORY_TRACKER *mem_keeper;	/* Only filled when #ifdef MEMDEBUG  */
 #ifdef DEBUG
 	bool gridline_debug;
@@ -274,8 +285,8 @@ struct GMT_SESSION {
 	FILE *std[3];			/* Pointers for standard input, output, and error */
 	void * (*input_ascii) (struct GMT_CTRL *, FILE *, uint64_t *, int *);	/* Pointer to function reading ASCII tables only */
 	int (*output_ascii) (struct GMT_CTRL *, FILE *, uint64_t, double *);	/* Pointer to function writing ASCII tables only */
-	unsigned int n_fonts;		/* Total number of fonts returned by GMT_init_fonts */
-	unsigned int n_user_media;	/* Total number of user media returned by gmt_load_user_media */
+	unsigned int n_fonts;		/* Total number of fonts returned by gmtinit_init_fonts */
+	unsigned int n_user_media;	/* Total number of user media returned by gmtinit_load_user_media */
 	size_t min_meminc;		/* with -DMEMDEBUG, sets min/max memory increments */
 	size_t max_meminc;
 	float f_NaN;			/* Holds the IEEE NaN for floats */
@@ -321,7 +332,7 @@ struct GMT_CTRL {
 };
 
 /* p_to_io_func is used as a pointer to functions such as GMT_read_d in assignments
- * and is used to declare GMT_get_io_ptr in gmt_io.c and gmt_prototypes.h */
+ * and is used to declare gmtlib_get_io_ptr in gmt_io.c and gmt_prototypes.h */
 typedef int (*p_to_io_func) (struct GMT_CTRL *, FILE *, uint64_t, double *);
 
 /* Exit or return:  For some environments (e.g., Matlab) we do not

@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: CMakeLists.txt 16974 2016-08-19 23:03:49Z pwessel $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -21,8 +21,8 @@
 
 # source files
 set (SUPPL_LIB_SRCS spotter.h libspotter.c)
-set (SUPPL_PROGS_SRCS backtracker.c grdpmodeler.c grdrotater.c
-	grdspotter.c hotspotter.c originator.c rotconverter.c)
+set (SUPPL_PROGS_SRCS backtracker.c gmtpmodeler.c grdpmodeler.c grdrotater.c
+	grdspotter.c hotspotter.c originator.c rotconverter.c rotsmoother.c)
 
 # example files
 set (SUPPL_EXAMPLE_FILES README.spotter

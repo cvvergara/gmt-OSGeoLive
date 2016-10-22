@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_error.h 16983 2016-08-20 01:06:03Z remko $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -35,7 +35,7 @@
 /* Grid i/o error codes */
 
 /* external array with error descriptions */
-EXTERN_MSC const char* g_error_string[];
+EXTERN_MSC const char* gmt_error_string[];
 
 enum Gmt_error_code {
 	GMT_NOERROR_UNUSED=0,	/* The real GMT_NOERROR is declared in gmt_resources.h and is part of API */
@@ -62,6 +62,7 @@ enum Gmt_error_code {
 	GMT_GRDIO_NO_VAR,
 	GMT_GRDIO_BAD_DIM,
 	GMT_GRDIO_NC_NO_PIPE,
+	GMT_GRDIO_NC_NOT_COARDS,
 	GMT_GRDIO_NOT_RAS,
 	GMT_GRDIO_NOT_8BIT_RAS,
 	GMT_GRDIO_NOT_SURFER,
@@ -88,19 +89,12 @@ enum Gmt_error_code {
 	GMT_MAP_BAD_MEASURE_UNIT
 };
 
-/* Definition for an error trap */
-#ifdef DEBUG
-#define GMT_err_trap(func_call) if ((err = (func_call)) != GMT_NOERROR) {GMT_Report(GMT->parent,GMT_MSG_NORMAL,"GMT_err_trap: %d\n", err);return(err);}
-#else
-#define GMT_err_trap(func_call) if ((err = (func_call)) != GMT_NOERROR) return(err)
-#endif
-
 EXTERN_MSC const char * GMT_strerror (int err);
 
-#define GMT_is_verbose(C,level) (C->current.setting.verbose >= level)
+#define gmt_M_is_verbose(C,level) (MAX(C->parent->verbose, C->current.setting.verbose) >= level)
 
 /* Check condition and report error if true */
-#define GMT_check_condition(C,condition,...) ((condition) ? 1+GMT_Report(C->parent,GMT_MSG_NORMAL,__VA_ARGS__) : 0)
+#define gmt_M_check_condition(C,condition,...) ((condition) ? 1+GMT_Report(C->parent,GMT_MSG_NORMAL,__VA_ARGS__) : 0)
 
 /* Set __func__ identifier */
 #ifndef HAVE___FUNC__
@@ -132,13 +126,13 @@ static inline char* __source_line_func (const char* src_line, const char* func) 
 }
 #define __SOURCE_LINE_FUNC __source_line_func (__FILE__ ":" TOSTRING(__LINE__), __func__)
 
-/* Convenience functions to GMT_err_func */
+/* Convenience functions to gmt_err_func */
 #ifdef DEBUG
-#	define GMT_err_pass(C,err,file) GMT_err_func(C,err,false,file,__SOURCE_LINE_FUNC)
-#	define GMT_err_fail(C,err,file) GMT_err_func(C,err,true,file,__SOURCE_LINE_FUNC)
+#	define gmt_M_err_pass(C,err,file) gmt_err_func(C,err,false,file,__SOURCE_LINE_FUNC)
+#	define gmt_M_err_fail(C,err,file) gmt_err_func(C,err,true,file,__SOURCE_LINE_FUNC)
 #else
-#	define GMT_err_pass(C,err,file) GMT_err_func(C,err,false,file,__func__)
-#	define GMT_err_fail(C,err,file) GMT_err_func(C,err,true,file,__func__)
+#	define gmt_M_err_pass(C,err,file) gmt_err_func(C,err,false,file,__func__)
+#	define gmt_M_err_fail(C,err,file) gmt_err_func(C,err,true,file,__func__)
 #endif
 
 #endif /* GMT_ERROR_H */

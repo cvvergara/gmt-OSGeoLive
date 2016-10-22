@@ -30,14 +30,13 @@
 
 **Alfred Wegener Institute, Germany**
 
-.. figure:: /_images/GMT5_Summit_2011.jpg
-   :height: 599 px
-   :width: 1013 px
+.. figure:: /_images/GMT5_Summit_2016.jpg
+   :width: 1200 px
    :align: center
-   :scale: 50 %
 
-   The four horsemen of the GMT apocalypse: Remko Scharroo, Paul Wessel, Walter H.F. Smith,
-   and Joaquim Luis at the GMT Developer Summit in Honolulu, Hawaii during February 14--18, 2011.
+   The five horsemen of the GMT apocalypse:
+   Joaquim Luis, Walter H.F. Smith, Remko Scharroo, Florian Wobbe, and Paul Wessel
+   at the GMT Developer Summit in La Jolla, Cailifornia, during August 15--19, 2016.
 
 
 Acknowledgments
@@ -69,16 +68,17 @@ Schmidt, Dirk Stoecker, Eduardo Suárez, Mikhail Tchernychev, Malte
 Thoma, David Townsend, Garry Vaughan, William Weibel, and many others,
 including their advice on how to make GMT portable to a wide range of
 platforms. John Lillibridge and Stephan Eickschen provided the original
-examples 11 and 32, respectively; Hanno von Lom helped resolve early
+Examples :ref:`(11) <example_11>` and :ref:`(32) <example_32>`,
+respectively; Hanno von Lom helped resolve early
 problems with DLL libraries for Win32; Lloyd Parkes enabled indexed
-color images in PostScript; Kurt Schwehr maintains the packages; Wayne
+color images in *PostScript*; Kurt Schwehr maintains the packages; Wayne
 Wilson implemented the full general perspective projection; and William
 Yip helped translate GMT to POSIX ANSI C and incorporate netCDF 3. The
 SOEST RCF staff (Ross Ishida, Pat Townsend, and Sharon Stahl) provided
 valuable help on Linux and web server support.
 
-Honolulu, HI, College Park, MD, Faro, Portugal, Darmstadt and
-Bremerhaven, Germany, November 2015
+Honolulu, HI; College Park, MD; Faro, Portugal; Darmstadt and
+Bremerhaven, Germany; September 2016
 
 
 A Reminder
@@ -159,7 +159,7 @@ such decisions by supporting the GMT project.
 Copyright and Caveat Emptor!
 ============================
 
-Copyright ©1991--2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J.
+Copyright ©1991--2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J.
 Luis and F. Wobbe
 
 The Generic Mapping Tools (GMT) is free software; you can
@@ -215,6 +215,171 @@ an issue in the bug tracker
 (see `<http://gmt.soest.hawaii.edu/projects/gmt/issues/>`_).
 
 
+New Features in GMT 5.3
+=======================
+
+Between 5.2 and 5.3 we spent much time working on the underlying API
+needed to support the modules and especially the external interfaces
+we are building toward MATLAB and Python.  Nevertheless, there have
+been many user-level enhancements as well.
+Here is a summary of these changes in three key areas:
+
+New modules
+-----------
+
+We have added a new module to the GMT core called
+:doc:`pssolar`.
+This module plots various day-light terminators and other sunlight parameters.
+
+Two new modules have been added to the *spotter* supplement:
+The first is :doc:`gmtpmodeler<supplements/spotter/gmtpmodeler>`.
+Like :doc:`grdpmodeler<supplements/spotter/grdpmodeler>` it evaluates plate
+tectonic model predictions but at given point locations locations instead of
+on a grid.  The second is :doc:`rotsmoother<supplements/spotter/rotsmoother>`
+which smooths estimated rotations using quaternions.
+
+Also, the *meca* supplement has gained a new tool :doc:`pssac <supplements/meca/pssac>`
+for the plotting of seismograms in SAC format.
+
+Finally, we have added :doc:`gpsgridder<supplements/potential/gpsgridder>`
+to the *potential* supplement.  This tool is a Green's function gridding module
+that grids vector data assumed to be coupled via an elastic model.  The prime
+usage is for gridding GPS velocity components.
+
+General improvements
+--------------------
+
+There are many changes to GMT, mostly under the hood, but also changes that
+affect users directly.  We have added four new examples and one new animation
+to highlight recently added capabilities.  There have been many bug fixes
+as well. For specific enhancements, we have:
+
+*  All GMT-distributed color palette tables (CPTs, now a total of 40) are
+   *dynamic* and many have a *hinge* and a default *range*.  What this means
+   is that the range of all CPTs have been normalized to 0-1, expect that
+   those with a hinge are normalized to -1/+1, with 0 being the normalized
+   hinge location.  CPTs with a hinge are interpolated separately on either
+   side of the hinge, since a hinge typically signifies a dramatic color
+   change (e.g., at sea-level) and we do not want that color change to be
+   shifted to some other *z*-value when an asymmetrical range is being
+   requested.  In situations where no range is specified then some CPTs
+   will have a default range and that will be substituted instead.  The
+   tools :doc:`makecpt` and :doc:`grd2cpt` now displays more meta-data
+   about the various CPTs, including values for hinge, range, and the
+   color-model used.
+
+*  We have consolidated how map embellishments are specified.  This group
+   includes map scales, color bars, legends, map roses, map inserts,
+   image overlays, the GMT logo, and a background panel.  A new section in the Cookbook is
+   dedicated to these items and how they are specified.  Common to all is
+   the concept of a *reference point* relative to which the item is
+   *justified* and *offset*.
+
+*  We continue to extend support for OpenMP in GMT.  New modules that are
+   OpenMP-enabled are :doc:`grdgradient`, :doc:`grdlandmask`, and :doc:`sph2grd`.
+
+*  :doc:`blockmean`, :doc:`blockmedian` and :doc:`blockmode` have a new 
+   modifier **+s** to the **-W** option.  When used we expect 1-sigma
+   uncertainties instead of weights and compute weight = 1/sigma. 
+
+*  :doc:`filter1d`: can now compute high-pass filtered output via a new
+   **+h** modifier to the filter settings, similar to existing capability
+   in :doc:`grdfilter`.
+
+*  :doc:`gmtconvert` has a new option (**-F**) for line segmentation and
+   network configuration. Also, the **-D** option has a new modifier **+o**
+   that sets the origin used for the numbering of tables and segments.
+
+*  :doc:`gmtinfo` has a new option **-L** for finding the common bounds
+   across multiple files or segments.  Also, the **-T** option has been
+   modified (while still being backwards compatible) to allow *dz* to be
+   optional, with modifiers **+s** forcing a symmetric range and **+a**
+   offering *alpha*-trimming of the tails before estimating the range.
+
+*  :doc:`gmtmath` has gained new operators **VAR**, 
+   **RMS**, **DENAN**, as well as the weighted statistical operators
+   **LMSSCLW**, **MADW**, **MEANW**, **MEDIANW**, **MODEW**, **PQUANTW**,
+   **STDW**, and **VARW**.  Finally, we added a **SORT** operator that lets
+   you sort an entire table in ascending or descending order based on the
+   values in a selected column.
+
+*  :doc:`gmtselect` has a new option **-G** for selecting based on a mask grid.
+   Points falling in bins whose grid nodes are non-zero are selected (or not if **-Ig**)
+
+*  :doc:`gmtspatial` has two new modifiers for the **-Q** option that allow
+   output segments to be limited based on the segment length (or area for
+   polygons) as well as sorting the output in ascending or descending order.
+
+*  :doc:`grd2cpt` existing **-F** option now takes a new modifier **+c**
+   for writing a discrete palette using the categorical format.
+
+*  :doc:`grdedit` can now reset text items in the header via **-D** by
+   specifying '-'.  Also, new **-C** option can be used to reset the
+   command history in the header.
+
+*  :doc:`grdfft` has a new modifier to the **-E** option that allows for more
+   control of the power normalization for radial spectra.
+
+*  :doc:`grdmath` also has the new operators **VAR**, 
+   **RMS**, **DENAN**, as well as the weighted statistical operators
+   **LMSSCLW**, **MADW**, **MEANW**, **MEDIANW**, **MODEW**, **PQUANTW**,
+   **STDW**, and **VARW**.  In addition it gains a new
+   **AREA** operator which computes the gridcell area (in km^2 if the
+   grid is geographic).  Finally, operators **MEAN**, **MEDIAN**, etc.,
+   when working on a geographic grid, will weight the result using the
+   **AREA** function for proper spherical statistics.
+
+*  :doc:`grdvolume` can now accept **-Cr**\ *cval* which will evaluate
+   the volume between *cval* and the grid's minimum value.
+
+*  :doc:`greenspline` now offers a new **-E** option that evaluates the
+   model fit at the input data locations and optionally saves the model
+   misfits to a secondary output file.
+
+*  :doc:`makecpt` can also let you build either a discrete or continuous custom
+   color palette table from a comma-separated list of colors and
+   *z*-values provided via a file, an equidistant setup, or comma-separated list.
+   The **-F** option now takes a new modifier **+c** for writing a discrete
+   palette using the categorical format.
+
+*  :doc:`pstext` has new modifiers to its **-F** option that allows users
+   to generate automatic labels such as record numbers of formatting of a
+   third data column into a textual representation.  We also allow any
+   baseline angles to be interpreted as *orientations*, i.e., they will be
+   modified to fall in the -90/+90 range when **-F**\ ...\ **+A** is set.
+
+*  :doc:`psrose` can now control the attributes of vectors in a windrose
+   diagram via **-M**.
+
+*  :doc:`psxy` have seen numerous enhancements.  New features include
+   *decorated* lines, which are similar to quoted lines except we place
+   symbols rather than text along the line.  Users also gain new controls
+   over the plotting of lines, including the ability to add vector heads
+   to the line endings, to trim back lines by specified amounts, and to
+   request a Bezier spline interpolation in *PostScript* (see enhanced
+   **-W** option).  A new option (**-F**) for line segmentation and networks
+   have also been added. Various geographic symbols (such as ellipses; **-SE**,
+   rotatable rectangles **-SJ**; and geo-vectors **-S=**) can now take size in geographic
+   dimensions, including a new geo-wedge symbol.  We also offer one more
+   type of fault-slip symbol, using curved arrow heads.  Also the arrow
+   head selections now include inward-pointing arrows.  Custom symbols
+   may now simply be a preexisting EPS figure.  Many of these enhancements
+   are also available in :doc:`psxyz`.
+
+*  The spotter supplement now comes with the latest rotation files from
+   EarthByte, U. of Sydney.
+
+
+The API
+-------
+
+We have spend most of our time strengthening the API, in particular in support
+of the GMT/MATLAB toolbox.  A few new API functions have been added since the
+initial release, including GMT_Get_Pixel, GMT_Set_Index, GMT_Open_VirtualFile,
+GMT_Close_VirtualFile, GMT_Read_VirtualFile, GMT_Read_Group, and GMT_Convert_Data;
+see the API :doc:`GMT_API` for details.
+
+
 New Features in GMT 5.2
 =======================
 
@@ -224,7 +389,7 @@ of new programs, new options, and enhancements) have been implemented.
 Here is a summary of these changes in six key areas:
 
 New modules
-------------
+-----------
 
 There are two new modules in the core system:
 
@@ -261,11 +426,11 @@ In addition, two established modules have been given more suitable names
     when GMT is running in compatibility mode).
 
 :doc:`psconvert`
-    Converts from PostScript to PDF, SVG, or various raster image formats.
+    Converts from *PostScript* to PDF, SVG, or various raster image formats.
     Previously known as ps2raster (this name is recognized
     when GMT is running in compatibility mode).
 
-Finally, we have renamed our PostScript Light (PSL) library from psl
+Finally, we have renamed our *PostScript* Light (PSL) library from psl
 to PostScriptLight to avoid package name conflicts.  This library will eventually
 become decoupled from GMT and end up as a required prerequisite.
 
@@ -344,8 +509,8 @@ Several changes have affects across GMT; these are:
    now very fast, as is true for the regular Gauss-Jordan solution via a
    new multi-processor enabled algorithm.
 
-*  Allow comma-separated colors instead of CPT files in options that are
-   used to pass a CPT file (typically this means the **-C** option).
+*  Allow comma-separated colors instead of CPTs in options that are
+   used to pass a CPT (typically this means the **-C** option).
 
 *  Faster netCDF reading for COARDS table data (i.e., not grids).
 
@@ -483,7 +648,7 @@ changes to existing syntax will be backwards compatible:
    reporting dimensions of the plot when **-A** and **-V** are used,
    scaling the output plots via **-A+s**\ [**m**]\ *width*\ [**u**][/\ *height*\ [**u**]],
    paint and outline the bounding box via **-A** modifiers **g**\ *fill* and **+p**\ *pen*,
-   and **-Z** for removing the PostScript file on exit.  In addition, we have
+   and **-Z** for removing the *PostScript* file on exit.  In addition, we have
    added SVG as a new output vector graphics format and now handle transparency even if
    non-PDF output formats are requested.
 
@@ -571,9 +736,9 @@ New Features in GMT 5
 
 GMT 5 represents a new branch of GMT development that mostly preserves the
 capabilities of the previous versions while adding over 200 new features
-to an already extensive bag of tricks.  Our PostScript library
+to an already extensive bag of tricks.  Our *PostScript* library
 :doc:`PSL <postscriptlight>` has seen a complete rewrite as well
-and produce shorter and more compact PostScript. However, the big news
+and produce shorter and more compact *PostScript*. However, the big news
 is aimed for developers who wish to leverage GMT in their own applications.
 We have completely revamped the code base so that high-level
 GMT functionality is now accessible via GMT "modules". These are
@@ -726,7 +891,7 @@ implemented by a series of new lower-case GMT common options:
    handled with the new **-s** option.
 
 *  All plot programs can take a new **-t** option to modify the PDF
-   transparency level for that layer. However, as PostScript has no provision for
+   transparency level for that layer. However, as *PostScript* has no provision for
    transparency you can only see the effect if you convert it to PDF.
 
 Updated common options
@@ -840,9 +1005,9 @@ ways, such as
    option **+U**\ *unit*, which can be used to convert your grid
    coordinates *from* meters *to* the specified unit.
 
-*  CPT files also support the **+u**\ \|\ **U**\ *unit* mechanism.  Here, the scaling
-   applies to the z values.  By appending these modifiers to your CPT filenames you
-   can avoid having two CPT files (one for meter and one for km) since only one is needed.
+*  CPTs also support the **+u**\ \|\ **U**\ *unit* mechanism.  Here, the scaling
+   applies to the z values.  By appending these modifiers to your CPT names you
+   can avoid having two CPTs (one for meter and one for km) since only one is needed.
 
 *  Programs that read grids can now directly handle Arc/Info float binary
    files (GRIDFLOAT) and ESRI .hdr formats.
@@ -998,10 +1163,10 @@ Finally, here is a list of numerous enhancements to individual programs:
    in the fitting, and **-Sl** adds a linear (or bilinear) spline.
 
 *  :doc:`makecpt` has a new **-F** option to
-   specify output color representation, e.g., to output the CPT table in
+   specify output color representation, e.g., to output the CPT in
    h-s-v format despite originally being given in r/g/b, and **-G** to
    truncate incoming CPT to be limited to a given range.  It also adds **Di**
-   to match the bottom/top values in the input CPT file.
+   to match the bottom/top values in the input CPT.
 
 *  :doc:`mapproject` has a new **-N**
    option to do geodetic/geocentric conversions; it combines with **-I**
@@ -1026,7 +1191,7 @@ Finally, here is a list of numerous enhancements to individual programs:
 
 *  :doc:`pscontour` is now similar to :doc:`grdcontour` in the options it
    takes, e.g., **-C** in particular. In GMT 4, the program could only
-   read a CPT file and not take a specific contour interval.
+   read a CPT and not take a specific contour interval.
 
 *  :doc:`pshistogram` now takes **-D** to place histogram count labels on top of each bar
    and **-N** to draw the equivalent normal distributions.
@@ -1084,11 +1249,11 @@ Several supplements have new features as well:
    :doc:`rotconverter <supplements/spotter/rotconverter>` can extract plate
    circuit rotations on-the-fly from the GPlates rotation file.
 
-Note: GMT 5 only produces PostScript and no longer has a setting for
-Encapsulated PostScript (EPS). We made this decision since (a) our EPS determination
+Note: GMT 5 only produces *PostScript* and no longer has a setting for
+Encapsulated *PostScript* (EPS). We made this decision since (a) our EPS determination
 was always very approximate (no consideration of font metrics, etc.) and quite often wrong,
 and (b) :doc:`psconvert` handles it exactly.  Hence, users who need EPS plots should
-simply process their PostScript files via :doc:`psconvert`.
+simply process their *PostScript* files via :doc:`psconvert`.
 
 .. _command-line-completion:
 
@@ -1168,7 +1333,7 @@ with a warning under compatibility mode:
    In addition, a few defaults are no longer recognized,
    such as N_COPIES, PS_COPIES, DOTS_PR_INCH, GMT_CPTDIR, PS_DPI, and PS_EPS,
    TRANSPARENCY. This also means the old common option **-c** for specifying
-   PostScript copies is no longer available.
+   *PostScript* copies is no longer available.
 
 *  **Units**: The unit abbreviation for arc seconds is finally **s**
    instead of **c**, with the same change for upper case in some clock
@@ -1698,11 +1863,11 @@ package that can be used to manipulate columns of tabular data,
 time-series, and gridded data sets, and display these data in a variety
 of forms ranging from simple *x*--*y* plots to maps and color,
 perspective, and shaded-relief illustrations. GMT uses the
-PostScript page description language [*Adobe Systems Inc.*, 1990].
-With PostScript, multiple plot files can easily be superimposed to
+*PostScript* page description language [*Adobe Systems Inc.*, 1990].
+With *PostScript*, multiple plot files can easily be superimposed to
 create arbitrarily complex images in gray tones or 24-bit true color.
 Line drawings, bitmapped images, and text can be easily combined in one
-illustration. PostScript plot files are device-independent: The same
+illustration. *PostScript* plot files are device-independent: The same
 file can be printed at 300 dots per inch (dpi) on an ordinary
 laserwriter or at 2470 dpi on a phototypesetter when ultimate quality is
 needed. GMT software is written as a set of UNIX tools [3]_ and is
@@ -1754,15 +1919,15 @@ data extraction tool which will put out data in a form readable by
 GMT (discussed below). After writing the extractor, all other
 GMT modules will work as they are.
 
-GMT makes full use of the PostScript page description language, and
-can produce color illustrations if a color PostScript device is
+GMT makes full use of the *PostScript* page description language, and
+can produce color illustrations if a color *PostScript* device is
 available. One does not necessarily have to have access to a
 top-of-the-line color printer to take advantage of the color
 capabilities offered by GMT: Several companies offer imaging services
-where the customer provides a PostScript plot file and gets color
+where the customer provides a *PostScript* plot file and gets color
 slides or hardcopies in return. Furthermore, general-purpose
-PostScript raster image processors (RIPs) are now becoming available,
-letting the user create raster images from PostScript and plot these
+*PostScript* raster image processors (RIPs) are now becoming available,
+letting the user create raster images from *PostScript* and plot these
 bitmaps on raster devices like computer screens, dot-matrix printers,
 large format raster plotters, and film writers [4]_. Because the
 publication costs of color illustrations are high, GMT offers 90
@@ -1777,7 +1942,7 @@ cookbook which explains the purpose of the package and its many
 features, and provides numerous examples to help new users quickly
 become familiar with the operation and philosophy of the system. The
 cookbook contains the shell scripts that were used for each example;
-PostScript\ files of each illustration are also provided. All programs
+*PostScript* files of each illustration are also provided. All programs
 have individual manual pages which can be installed as part of the
 on-line documentation under the UNIX **man** utility or as web
 pages. In addition, the programs offer friendly help messages which make
@@ -1826,7 +1991,7 @@ these types of output:
    ASCII (*x,y,z*) data or operate on existing grid files produce
    this type of output.
 
-*  PostScript -- The plotting programs all use the PostScript\ page
+*  *PostScript* -- The plotting programs all use the *PostScript* page
    description language to define plots. These commands are stored as
    ASCII text and can be edited should you want to customize the plot
    beyond the options available in the programs themselves.
@@ -2729,6 +2894,8 @@ labeled 1, 4, 9, ... will appear.
    (bottom) Here, intervals refer to projected values, although the annotation
    uses the corresponding unprojected values, as in -Ba3f2g1p.
 
+.. _cartesian_time_axes:
+
 Cartesian time axes
 ^^^^^^^^^^^^^^^^^^^
 
@@ -2970,14 +3137,14 @@ Plot overlays: The **-K** **-O** options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The **-K** and **-O** options control the generation of
-PostScript code for multiple overlay plots. All PostScript files
+*PostScript* code for multiple overlay plots. All *PostScript* files
 must have a header (for initializations), a body (drawing the figure),
 and a trailer (printing it out) (see Figure :ref:`Multiple overlay plots
 <OK_options>`). Thus, when overlaying
 several GMT plots we must make sure that the first plot call omits the
 trailer, that all intermediate calls omit both header and trailer, and
 that the final overlay omits the header. The **-K** omits the trailer
-which implies that more PostScript code will be appended later
+which implies that more *PostScript* code will be appended later
 [Default terminates the plot system]. The **-O** selects Overlay plot
 mode and omits the header information [Default initializes a new plot
 system]. Most unexpected results for multiple overlay plots can be
@@ -2991,7 +3158,7 @@ when stacking plots.
    :width: 500 px
    :align: center
 
-   A final PostScript file consists of any number of individual pieces.
+   A final *PostScript* file consists of any number of individual pieces.
 
 
 Timestamps on plots: The **-U** option
@@ -3150,7 +3317,7 @@ Number of Copies: The **-c** option
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The **-c** option specifies the number of plot copies [Default is 1].
-This value is embedded in the PostScript file and will make a printer
+This value is embedded in the *PostScript* file and will make a printer
 issue the chosen number of copies without respooling.
 
 Missing data conversion: The **-d** option
@@ -3385,8 +3552,8 @@ consider for this NaN test.
 Layer PDF transparency: The **-t** option
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-While the PostScript language does not support transparency, PDF does,
-and via PostScript extensions one can manipulate the transparency
+While the *PostScript* language does not support transparency, PDF does,
+and via *PostScript* extensions one can manipulate the transparency
 levels of objects. The **-t** option allows you to change the
 transparency level for the current overlay by appending a percentage in
 the 0--100 range; the default is 0, or opaque. Transparency may also be
@@ -3518,7 +3685,7 @@ The verbosity is cumulative, i.e., mode **l** means all messages of mode
 Program output
 --------------
 
-Most programs write their results, including PostScript\ plots, to
+Most programs write their results, including *PostScript* plots, to
 standard output. The exceptions are those which may create binary netCDF
 grid files such as :doc:`surface` (due to the
 design of netCDF a filename must be provided; however, alternative
@@ -3596,29 +3763,29 @@ to create limited FORTRAN-style card records by setting
 :ref:`FORMAT_FLOAT_OUT <FORMAT_FLOAT_OUT>` to %7.3lf and :ref:`IO_COL_SEPARATOR <IO_COL_SEPARATOR>` to none
 [Default is tab].
 
-PostScript features
+*PostScript* features
 ---------------------
 
-PostScript is a command language for driving graphics devices such as
+*PostScript* is a command language for driving graphics devices such as
 laser printers. It is ASCII text which you can read and edit as you wish
 (assuming you have some knowledge of the syntax). We prefer this to
 binary metafile plot systems since such files cannot easily be modified
 after they have been created. GMT programs also write many comments to
 the plot file which make it easier for users to orient themselves should
 they need to edit the file (e.g., % Start of x-axis) [16]_. All
-GMT programs create PostScript code by calling the :doc:`PSL <postscriptlight>` plot
+GMT programs create *PostScript* code by calling the :doc:`PSL <postscriptlight>` plot
 library (The user may call these functions from his/her own C or FORTRAN
 plot programs. See the manual pages for :doc:`PSL <postscriptlight>` syntax). Although
 GMT programs can create very individualized plot code, there will
 always be cases not covered by these programs. Some knowledge of
-PostScript will enable the user to add such features directly into the
-plot file. By default, GMT will produce freeform PostScript output
+*PostScript* will enable the user to add such features directly into the
+plot file. By default, GMT will produce freeform *PostScript* output
 with embedded printer directives. To produce Encapsulated
-PostScript (EPS) that can be imported into graphics programs such as
+*PostScript* (EPS) that can be imported into graphics programs such as
 **CorelDraw**, **Illustrator** or **InkScape** for further
 embellishment, simply run :doc:`psconvert`
 **-Te**. See Chapter `Including GMT Graphics into your Documents`_ for an extensive discussion of converting
-PostScript to other formats.
+*PostScript* to other formats.
 
 .. _-Wpen_attrib:
 
@@ -3719,7 +3886,7 @@ suitable for, say, :doc:`psxy`.
 +-------------------------------+-----------------------------------------------------+
 
 In addition to these pen settings there are several
-PostScript settings that can affect the appearance of lines. These are
+*PostScript* settings that can affect the appearance of lines. These are
 controlled via the GMT defaults settings :ref:`PS_LINE_CAP <PS_LINE_CAP>`,
 :ref:`PS_LINE_JOIN <PS_LINE_JOIN>`, and :ref:`PS_MITER_LIMIT <PS_MITER_LIMIT>`. They determine how a line
 segment ending is rendered, be it at the termination of a solid line or
@@ -3846,14 +4013,14 @@ pattern:
     fore- or background colors to - yields a *transparent* image where
     only the back- *or* foreground pixels will be painted.
 
-Due to PostScript implementation limitations the raster images used
+Due to *PostScript* implementation limitations the raster images used
 with **-G** must be less than 146 x 146 pixels in size; for larger
 images see :doc:`psimage`. The format of Sun
 raster files is outlined in Chapter `GMT file formats`_. Note that under
-PostScript Level 1 the patterns are filled by using the polygon as a
+*PostScript* Level 1 the patterns are filled by using the polygon as a
 *clip path*. Complex clip paths may require more memory than the
-PostScript interpreter has been assigned. There is therefore the
-possibility that some PostScript interpreters (especially those
+*PostScript* interpreter has been assigned. There is therefore the
+possibility that some *PostScript* interpreters (especially those
 supplied with older laserwriters) will run out of memory and abort.
 Should that occur we recommend that you use a regular gray-shade fill
 instead of the patterns. Installing more memory in your printer *may or
@@ -3906,8 +4073,8 @@ Chapter `PostScript fonts used by GMT`_ for a list of all fonts recognized by GM
 Stroke, Fill and Font Transparency
 ----------------------------------
 
-The PostScript language has no built-in mechanism for transparency.
-However, PostScript\ extensions make it possible to request
+The *PostScript* language has no built-in mechanism for transparency.
+However, *PostScript* extensions make it possible to request
 transparency, and tools that can render such extensions will produce
 transparency effects. We specify transparency in percent: 0 is opaque
 [Default] while 100 is fully transparent (i.e., nothing will show). As
@@ -3921,7 +4088,7 @@ Normal but you can choose among Color, ColorBurn, ColorDodge, Darken,
 Difference, Exclusion, HardLight, Hue, Lighten, Luminosity, Multiply,
 Normal, Overlay, Saturation, SoftLight, and Screen. For more
 information, see for instance (search online for) the Adobe pdfmark
-Reference Manual. Most printers and many PostScript viewers can
+Reference Manual. Most printers and many *PostScript* viewers can
 neither print nor show transparency. They will simply ignore your
 attempt to create transparency and will plot any material as opaque.
 Ghostscript and its derivatives such as GMT's
@@ -3985,39 +4152,55 @@ as illustrated in Figure :ref:`Text clearance <Text_clearance>`.
 Color palette tables
 --------------------
 
-Several programs, such as those which read 2-D gridded data sets and
-create colored images or shaded reliefs, need to be told what colors to
-use and over what *z*-range each color applies. This is the purpose of
-the color palette table (CPT file). These files may also be used by
-:doc:`psxy` and
-:doc:`psxyz` to plot color-filled symbols. For
-most applications, you will simply create a CPT file using the tool
-:doc:`makecpt` which will take an existing
-color table and resample it to fit your chosen data range, or use
-:doc:`grd2cpt` to build a CPT file based on
-the data distribution in one or more given grid files. However, in some
-situations you will need to make a CPT file by hand or using text tools
-like **awk** or **perl**.
+Several programs need to relate user data to colors, shades, or even patterns.
+For instance, programs that read 2-D gridded data sets and
+create colored images or shaded reliefs  need to be told what colors to
+use and over what *z*-range each color applies. Other programs may need
+to associate a user value with a color to be applied to a symbol, line,
+or polygon.  This is the purpose of the color palette table (CPT).  For
+most applications, you will simply create a CPT using the tool
+:doc:`makecpt` which will take an existing *dynamic* master
+color table and stretch it to fit your chosen data range, or use
+:doc:`grd2cpt` to build a CPT based on
+the data distribution in one or more given grid files. However, in rare
+situations you may need to make a CPT by hand or using text tools
+like **awk** or **perl**. Finally, if you have your own preferred color
+table you can convert it into a dynamic CPT and place it in your GMT
+user directory and it will be found and behave like other GMT master CPTs.
 
 Color palette tables (CPT) comes in two flavors: (1) Those designed to
 work with categorical data (e.g., data where interpolation of values is
 undefined) and (2) those designed for regular, continuously-varying
 data. In both cases the *fill* information follows the format given in
-Section `Specifying area fill attributes`_. The z-values in CPT files can
+Section `Specifying area fill attributes`_. The z-values in CPTs can
 be scaled by using the **+u**\ \|\ **U**\ *unit* mechanism.  Append these
-modifiers to your CPT filenames when used in GMT commands.  The **+u**\ *unit*
+modifiers to your CPT names when used in GMT commands.  The **+u**\ *unit*
 modifier will scale z *from unit to* meters, while **+U**\ *unit* does
 the inverse (scale z *from meters to unit*).
 
-Categorical CPT files
-~~~~~~~~~~~~~~~~~~~~~
+Since GMT supports several coordinate systems for color specification,
+many master (or user) CPTs will contain the special comment
+
+| ``# COLOR_MODEL = model``
+
+where *model* specifies how the color-values in the CPT should be interpreted.
+By default we assume colors are given as red/green/blue triplets (each in the
+0-255 range) separated by
+slashes (model = *rgb*), but alternative representations are the HSV system
+of specifying hue-saturation-value triplets (with hue in 0-360 range and
+saturation and value ranging from 0-1) separated by hyphens (model = *hsv*),
+or the CMYK system of specifying cyan/magenta/yellow/black quadruples in percent,
+separated by slashes (model = *cmyk*).
+
+Categorical CPTs
+~~~~~~~~~~~~~~~~
 
 Categorical data are information on which normal numerical operations
 are not defined. As an example, consider various land classifications
 (desert, forest, glacier, etc.) and it is clear that even if we assigned
 a numerical value to these categories (e.g., desert = 1, forest = 2,
 etc) it would be meaningless to compute average values (what would 1.5
-mean?). For such data a special format of the CPT files are provided.
+mean?). For such data a special format of the CPTs are provided.
 Here, each category is assigned a unique key, a color or pattern, and an
 optional label (usually the category name) marked by a leading
 semi-colon. Keys must be monotonically increasing but do not need to be
@@ -4046,11 +4229,11 @@ overridden by the statements
 | N   | Fill\ :sub:`nan`    |
 +-----+---------------------+
 
-Regular CPT files
-~~~~~~~~~~~~~~~~~
+Regular CPTs
+~~~~~~~~~~~~
 
 Suitable for continuous data types and allowing for color
-interpolations, the format of the regular CPT files is:
+interpolations, the format of the regular CPTs is:
 
 +---------------+-------------------+---------------+-------------------+----------+--------------+
 | z\ :sub:`0`   | Color\ :sub:`min` | z\ :sub:`1`   | Color\ :sub:`max` | [**A**]  | [;\ *label*] |
@@ -4092,7 +4275,7 @@ statements
 | N   | Fill\ :sub:`nan`    |
 +-----+---------------------+
 
-which can be inserted into the beginning or end of the CPT file. If you
+which can be inserted into the beginning or end of the CPT. If you
 prefer the HSV system, set the :doc:`gmt.conf` parameter accordingly and replace red,
 green, blue with hue, saturation, value. Color palette tables that
 contain gray-shades only may replace the *r/g/b* triplets with a single
@@ -4131,7 +4314,7 @@ to achieve shaded relief maps. This is typically done by finding the
 directional gradient in the direction of the artificial light source and
 scaling the gradients to have approximately a normal distribution on the
 interval [-1,+1]. These intensities are used to add "white" or "black"
-to the color as defined by the *z*-values and the CPT file. An intensity
+to the color as defined by the *z*-values and the CPT. An intensity
 of zero leaves the color unchanged. Higher values will brighten the
 color, lower values will darken it, all without changing the original
 hue of the color (see Chapter `Color Space: The Final Frontier`_ for more details). The
@@ -4145,6 +4328,50 @@ bathymetry and backscatter intensities, and one may want to use the
 latter information to specify the illumination of the colors defined by
 the former. Similarly, one could portray magnetic anomalies superimposed
 on topography by using the former for colors and the latter for shading.
+
+Master (dynamic) CPTs
+~~~~~~~~~~~~~~~~~~~~~
+
+The CPTs distributed with GMT are *dynamic*.  This means they have several
+special properties that modify the behavior of programs that use them.
+All dynamic CPTs are normalized in one of two ways: If a CPT was designed
+to behave differently across a *hinge* value (e.g., a CPT designed specifically
+for topographic relief may include a discontinuity in color across the the
+coastline at *z = 0*) then the CPT's *z*-values will range from -1, via 0
+at the hinge, to +1 at the end.  The hinge value is specified via the special
+comment
+
+| ``# HINGE = <hinge-value>``
+
+CPTs without a hinge are instead normalized with *z*-values from 0 to 1.
+Dynamic CPTs will need to be stretched to the user's preferred range, and there
+are two modes of such scaling: Some CPTs designed for a specific application
+(again, the topographic relief is a good example) have a *default range*
+specified in the master table via the special comment
+
+
+| ``# RANGE = <zmin/zmax>``
+
+and when used by applications the normalized *z*-values will be stretched to reflect
+this natural range.  In contrast, CPTs without a natural range are instead
+stretched to fit the range of the data in question (e.g., a grid's range).
+Exceptions to these rules are implemented in the two CPT-producing modules
+:doc:`makecpt` and :doc:`grd2cpt`, both of which can read dynamic CPTs
+and produce *static* CPTs satisfying a user's specific range needs.  These
+tools can also read static CPTs where the new range must be specified (or computed
+from data), reversing the order of colors, and even isolating a section
+of an incoming CPT.  Here, :doc:`makecpt` can be told the range of compute it from data tables
+while :doc:`grd2cpt` can derive the range from one or more grids.
+
+.. figure:: /_images/GMT_hinge.*
+   :width: 500 px
+   :align: center
+
+   The top color bar is a dynamic master CPT (globe) with a hinge at sea level and
+   a natural range from -10,000 to +10,000 meters. However, our data range
+   is asymmetrical, going from -8,000 meter depths up to +3,000 meter elevations.
+   Because of the hinge, the two sides of the CPT will be stretched separately
+   to honor the desired range.
 
 The Drawing of Vectors
 ----------------------
@@ -4194,7 +4421,9 @@ relevant manual pages.
    Examples of different vector heads and attributes.  The default is the standard
    triangular arrow head, which can be modified by adjusting the apex angle [30] or
    changing its shape via the :ref:`MAP_VECTOR_SHAPE <MAP_VECTOR_SHAPE>` setting.
-   Other vector heads are the circle (**c**) and the terminal line (**t**).
+   Other vector heads are the circle (**c**), the terminal line (**t**), the
+   arrow fin (**i**) and the plain head (**A**) and tail (**I**); the last two
+   are line-drawings only and cannot be filled.
 
 .. _Char-esc-seq:
 
@@ -4259,7 +4488,7 @@ you must use the full octal code):
 | @s       | ß          | @i       | í          |
 +----------+------------+----------+------------+
 
-PostScript fonts used in GMT may be re-encoded to include several
+*PostScript* fonts used in GMT may be re-encoded to include several
 accented characters used in many European languages. To access these,
 you must specify the full octal code \\xxx allowed for
 your choice of character encodings determined by the
@@ -4467,7 +4696,7 @@ Here is a list of the attributes that is under your control:
 
 #. Map scale origin.  Required modifier given with **+c**\ [*slon*/]\ *slat*, where the longitude
    of the scale origin is optional for projections with constant scale along parallels.  For
-   a Mercator projection it may look like +**+c**\ 30N while an oblique projection may have **+c**\ 100W/23N,
+   a Mercator projection it may look like **+c**\ 30N while an oblique projection may have **+c**\ 100W/23N,
    for instance.
 
 #. Fancy scale bar.  By default a plain-looking scale bar is plotted.  Upgrade to a fancier bar
@@ -4491,11 +4720,13 @@ Here is a list of the attributes that is under your control:
 
    Example of two map scales for a Mercator projection evaluated at 53 degrees north.
    The left-most scale was placed with **-Lj**\ *ML*\ **+c**\ 53\ **+w**\ 1000k\ **+f+l**\ "Scale at 53\\232N"
-   while the scale on the right was placed with **-Lj**\ *BR\ **+c**\ 53\ **+w**\ 1000k\ **+l+f**.
+   while the scale on the right was placed with **-Lj**\ *BR*\ **+c**\ 53\ **+w**\ 1000k\ **+l+f**.
 
 Note that for the purpose of anchor justification (**+j**) the footprint of the map scale is
 considered the rectangle that contains the scale and all selected labels and annotations, i.e.,
 the map scale's *bounding box*.
+
+.. _Placing-dir-map-roses:
 
 Placing directional map roses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4531,6 +4762,8 @@ there is one required and two optional modifiers:
    Plain and fancy directional map roses. (left) Bare-bones plain rose showing arrow towards north
    and a cross indicating the cardinal directions, specified by **-Tdg**\ 0/0\ **+w**\ 1i. (middle) Fancy rose
    obtained by adding **+f**.  (right) Fancy directional rose at level 3 with labels by adding **+f**\ 3\ **+l**.
+
+.. _Placing-mag-map-roses:
 
 Placing magnetic map roses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4753,19 +4986,24 @@ instead (similar to how the **-R** option works).  Some optional modifiers are a
    right area with **-Dj**\ TR\ **+w**\ 1.5i\ **+o**\ 0.15i\ **+s**\ tmp and then read in the coordinates
    of the lower-right corner of the insert and its dimension with UNIX ("read x0 y0 w h < tmp").
    Knowing the placement (we know the size of the circular global map) we can correctly position it
-   in the insert with **-X$x0** and **-Y$y0**.  See gallery example 44 for more details.
+   in the insert with **-X$x0** and **-Y$y0**.
+   See Example :ref:`example_44` for more details.
 
 .. _grid-file-format:
 
 Grid file format specifications
 -------------------------------
 
-GMT has the ability to read and write grids using
-more than one grid file format (see Table :ref:`grdformats <tbl-grdformats>` for supported
-format and their IDs). For reading, GMT will automatically determine
-the format of grid files, while for writing you will normally have to
-append *=ID* to the filename if you want GMT to use a different format
-than the default.
+GMT has the ability to read and write grids using more than one grid file format
+(see Table :ref:`grdformats <tbl-grdformats>` for supported format and their IDs).
+For reading, GMT will automatically determine the format of grid files, while for
+writing you will normally have to append *=ID* to the filename if you want GMT to
+use a different format than the default. The automatic reading procedure follows an heuristic
+where certain formats are tentatively decoded with GMT internal drivers and if they fail than
+we resort to use the GDAL library to do the readings. This normally works pretty well but in case
+of failure (e.g. a GMT driver failed to read binary file with a separate header that also could
+have been stored in an ASCII file with embed header) the user should explicitly try to force a
+reading via GDAL. That is, to append a *=gd* suffix to file name. 
 
 By default, GMT will create new grid files using the **nf** format;
 however, this behavior can be overridden by setting the
@@ -4904,6 +5142,9 @@ Everything looks clearer after a few examples:
 *  To write an 8-bit integer netCDF grid file with an auto-adjusted
    offset, give filename as ``=nb//a``.
 
+*  To read a short integer *.bil* grid file stored in binary and and force
+   the reading via GDAL, add suffix *=gd* as in ``n45_e008_1arc_v3.bil=gd``
+
 Programs that both read and/or write more than one grid file may specify
 different formats and/or scaling for the files involved. The only
 restriction with the embedded grid specification mechanism is that no
@@ -4978,7 +5219,7 @@ the coordinates of the grid passed to such programs:
 
 For convenience, we also support the inverse translation, i.e.,
 **+U**\ *unit*. This modifier can be used to convert your grid
-coordinates *from* meters *to* the specified unit. Example 28 shows a
+coordinates *from* meters *to* the specified unit. Example :ref:`example_28` shows a
 case where this is being used to change an UTM grid in meters to km.
 These modifiers are only allowed when map projections are not selected
 (or are Cartesian).
@@ -5306,7 +5547,7 @@ then the parameter setting will take precedence over the environment variable.
 Variable $GMT_SHAREDIR
     was sometimes required in previous GMT versions to locate the GMT
     share directory where all run-time support files such as coastlines,
-    custom symbols, PostScript macros, color tables, and much more reside.
+    custom symbols, *PostScript* macros, color tables, and much more reside.
     If this parameter is not set (default), GMT will make a reasonable
     guess of the location of its share folder. Setting this variable is
     usually not required and recommended only under special circumstances.
@@ -7028,12 +7269,13 @@ meca: seismology and geodesy symbols
 This package contains the programs
 :doc:`pscoupe <supplements/meca/pscoupe>`,
 :doc:`psmeca <supplements/meca/psmeca>`,
-:doc:`pspolar <supplements/meca/pspolar>`, and
-:doc:`psvelo <supplements/meca/psvelo>` which are used by seismologists
+:doc:`pspolar <supplements/meca/pspolar>`,
+:doc:`psvelo <supplements/meca/psvelo>`, and
+:doc:`pssac <supplements/meca/pssac>` which are used by seismologists
 and geodesists for plotting focal mechanisms (including cross-sections
 and polarities), error ellipses, velocity arrows, rotational wedges, and
 more. The package was developed by Kurt Feigl and Genevieve
-Patau but is now maintained by the GMT team.
+Patau with contributions from Dongdong Tian but is now maintained by the GMT team.
 
 mgd77: MGD77 extractor and plotting tools
 -----------------------------------------
@@ -7185,7 +7427,7 @@ override that by modifying the :ref:`IO_SEGMENT_MARKER <IO_SEGMENT_MARKER>` defa
 Programs can examine the segment headers to see if they contain **-D**
 for a distance value, **-W** and **-G** options for specifying pen and
 fill attributes for individual segments, **-Z** to change color via a
-CPT file, **-L** for label specifications, or **-T** for general-purpose
+CPT, **-L** for label specifications, or **-T** for general-purpose
 text descriptions. These settings (and occasionally others) will
 override the corresponding command line options. GMT also provides for
 two special values for :ref:`IO_SEGMENT_MARKER <IO_SEGMENT_MARKER>` that can make
@@ -7461,49 +7703,49 @@ to read this header correctly (see our code for details).
 
 .. _tbl-grdheader:
 
-+---------------------------------+--------------------------------------------------------+
-| **Parameter**                   | **Description**                                        |
-+=================================+========================================================+
-| **int** *nx*                    | Number of nodes in the *x*-dimension                   |
-+---------------------------------+--------------------------------------------------------+
-| **int** *ny*                    | Number of nodes in the *y*-dimension                   |
-+---------------------------------+--------------------------------------------------------+
-| **int** *registration*          | 0 for grid line registration, 1 for pixel registration |
-+---------------------------------+--------------------------------------------------------+
-| **double** *x_min*              | Minimum *x*-value of region                            |
-+---------------------------------+--------------------------------------------------------+
-| **double** *x_max*              | Maximum *x*-value of region                            |
-+---------------------------------+--------------------------------------------------------+
-| **double** *y_min*              | Minimum *y*-value of region                            |
-+---------------------------------+--------------------------------------------------------+
-| **double** *y_max*              | Maximum *y*-value of region                            |
-+---------------------------------+--------------------------------------------------------+
-| **double** *z_min*              | Minimum *z*-value in data set                          |
-+---------------------------------+--------------------------------------------------------+
-| **double** *z_max*              | Maximum *z*-value in data set                          |
-+---------------------------------+--------------------------------------------------------+
-| **double** *x_inc*              | Node spacing in *x*-dimension                          |
-+---------------------------------+--------------------------------------------------------+
-| **double** *y_inc*              | Node spacing in *y*-dimension                          |
-+---------------------------------+--------------------------------------------------------+
-| **double** *z_scale_factor*     | Factor to multiply *z*-values after read               |
-+---------------------------------+--------------------------------------------------------+
-| **double** *z_add_offset*       | Offset to add to scaled *z*-values                     |
-+---------------------------------+--------------------------------------------------------+
-| **char** *x_units*\ [80]        | Units of the *x*-dimension                             |
-+---------------------------------+--------------------------------------------------------+
-| **char** *y_units*\ [80]        | Units of the *y*-dimension                             |
-+---------------------------------+--------------------------------------------------------+
-| **char** *z_units*\ [80]        | Units of the *z*-dimension                             |
-+---------------------------------+--------------------------------------------------------+
-| **char** *title*\ [80]          | Descriptive title of the data set                      |
-+---------------------------------+--------------------------------------------------------+
-| **char** *command*\ [320]       | Command line that produced the grid file               |
-+---------------------------------+--------------------------------------------------------+
-| **char** *remark*\ [160]        | Any additional comments                                |
-+---------------------------------+--------------------------------------------------------+
-| **TYPE** *z*\ [nx\*ny]          | 1-D array with *z*-values in scanline format           |
-+---------------------------------+--------------------------------------------------------+
++-----------------------------------+--------------------------------------------------------+
+| **Parameter**                     | **Description**                                        |
++===================================+========================================================+
+| **int** *n_columns*               | Number of nodes in the *x*-dimension                   |
++-----------------------------------+--------------------------------------------------------+
+| **int** *n_rows*                  | Number of nodes in the *y*-dimension                   |
++-----------------------------------+--------------------------------------------------------+
+| **int** *registration*            | 0 for grid line registration, 1 for pixel registration |
++-----------------------------------+--------------------------------------------------------+
+| **double** *x_min*                | Minimum *x*-value of region                            |
++-----------------------------------+--------------------------------------------------------+
+| **double** *x_max*                | Maximum *x*-value of region                            |
++-----------------------------------+--------------------------------------------------------+
+| **double** *y_min*                | Minimum *y*-value of region                            |
++-----------------------------------+--------------------------------------------------------+
+| **double** *y_max*                | Maximum *y*-value of region                            |
++-----------------------------------+--------------------------------------------------------+
+| **double** *z_min*                | Minimum *z*-value in data set                          |
++-----------------------------------+--------------------------------------------------------+
+| **double** *z_max*                | Maximum *z*-value in data set                          |
++-----------------------------------+--------------------------------------------------------+
+| **double** *x_inc*                | Node spacing in *x*-dimension                          |
++-----------------------------------+--------------------------------------------------------+
+| **double** *y_inc*                | Node spacing in *y*-dimension                          |
++-----------------------------------+--------------------------------------------------------+
+| **double** *z_scale_factor*       | Factor to multiply *z*-values after read               |
++-----------------------------------+--------------------------------------------------------+
+| **double** *z_add_offset*         | Offset to add to scaled *z*-values                     |
++-----------------------------------+--------------------------------------------------------+
+| **char** *x_units*\ [80]          | Units of the *x*-dimension                             |
++-----------------------------------+--------------------------------------------------------+
+| **char** *y_units*\ [80]          | Units of the *y*-dimension                             |
++-----------------------------------+--------------------------------------------------------+
+| **char** *z_units*\ [80]          | Units of the *z*-dimension                             |
++-----------------------------------+--------------------------------------------------------+
+| **char** *title*\ [80]            | Descriptive title of the data set                      |
++-----------------------------------+--------------------------------------------------------+
+| **char** *command*\ [320]         | Command line that produced the grid file               |
++-----------------------------------+--------------------------------------------------------+
+| **char** *remark*\ [160]          | Any additional comments                                |
++-----------------------------------+--------------------------------------------------------+
+| **TYPE** *z*\ [n_columns\*n_rows] | 1-D array with *z*-values in scanline format           |
++-----------------------------------+--------------------------------------------------------+
 
 Sun raster files
 ----------------
@@ -7564,7 +7806,7 @@ Numerous public-domain programs exist, such as **xv** and
 **convert** (in the GraphicsMagick or ImageMagick package), that will translate between
 various raster file formats such as tiff, gif, jpeg, and Sun raster.
 Raster patterns may be created with GMT plotting tools by generating
-PostScript plots that can be rasterized by ghostscript and
+*PostScript* plots that can be rasterized by ghostscript and
 translated into the right raster format.
 
 .. _include-gmt-graphics:
@@ -7579,55 +7821,55 @@ to a document, an article, a report, your dissertation, a poster, a web
 page, or a presentation. Of course, you could try the old-fashioned
 scissors and glue stick. More likely, you want to incorporate your
 graphics electronically into the document. Depending on the application,
-the GMT PostScript file will need to be converted to Encapsulated
-PostScript (EPS), Portable Document Format (PDF), or some raster
+the GMT *PostScript* file will need to be converted to Encapsulated
+*PostScript* (EPS), Portable Document Format (PDF), or some raster
 format (e.g., JPEG, PNG, or TIFF) in order to incorporate them into the
 document.
 
 -  When creating a document intended for printing (article,
    dissertation, or poster) it is best to preserve the scalable vector
-   characteristics of the PostScript file. Many applications can
-   directly incorporate PostScript in the form of EPS files. Modern
+   characteristics of the *PostScript* file. Many applications can
+   directly incorporate *PostScript* in the form of EPS files. Modern
    programs will often allow the inclusion of PDF files. Either way, the
    sharpness of lines and fonts will be preserved and can be scaled up
    or down as required.
 
 -  When the aim is to display the graphics on a computer screen or
    present it using a projector, it is wise to convert the
-   PostScript into a raster format. Although applications like
+   *PostScript* into a raster format. Although applications like
    PowerPoint can do this for you, you can best take the
    conversion into your own hands for the best results.
 
 A large number of questions to the GMT-Help mailing list are related to
 these rendering issues, showing that something as seemingly
-straightforward as incorporating a PostScript file into a document is
+straightforward as incorporating a *PostScript* file into a document is
 a far from trivial exercise. This Chapter will show how to include
 GMT graphics into documents and how to achieve the best quality results.
 
-Making GMT Encapsulated PostScript Files
+Making GMT Encapsulated *PostScript* Files
 ------------------------------------------
 
-GMT produces freeform PostScript files. Note that a freeform
-PostScript file may contain special operators (such as
+GMT produces freeform *PostScript* files. Note that a freeform
+*PostScript* file may contain special operators (such as
 ``Setpagedevice``) that is specific to printers (e.g., selection of
 paper tray). Some previewers (among them, Sun's pageview) may not
 understand these valid instructions and may fail to image the file.
-Also, embedding freeform PostScript with such instructions in it into
+Also, embedding freeform *PostScript* with such instructions in it into
 a larger document can cause printing to fail. While you could choose
 another viewer (we recommend **ghostview**) to view single plots
-prepared by GMT, it is generally wiser to convert PostScript to EPS
+prepared by GMT, it is generally wiser to convert *PostScript* to EPS
 output when you are creating a plot intended for inclusion into a larger
 document. Some programs (and some publishers as well) do not allow the
 use of instructions like ``Setpagedevice`` as part of embedded graphics.
 
 An EPS file that is to be placed into another document needs to have
 correct bounding box parameters. These are found in the
-PostScript Document Comment %%BoundingBox. Applications that generate
+*PostScript* Document Comment %%BoundingBox. Applications that generate
 EPS files should set these parameters correctly. Because GMT\ makes
-the PostScript files on the fly, often with several overlays, it is
+the *PostScript* files on the fly, often with several overlays, it is
 not possible to do so accurately. Therefore, if you need and EPS version
 with a "tight" BoundingBox you need to post-process your
-PostScript file. There are several ways in which this can be
+*PostScript* file. There are several ways in which this can be
 accomplished.
 
 -  Programs such as Adobe Illustrator, Aldus Freehand, and
@@ -7653,9 +7895,9 @@ accomplished.
    should also do the trick. The downside is that this program adds an
    "image" of the plot in the preamble of the EPS file, thus increasing
    the file size significantly. This image is a rough rendering of your
-   PostScript graphics that some programs will show on screen while
+   *PostScript* graphics that some programs will show on screen while
    you are editing your document. This image is basically a placeholder
-   for the PostScript graphics that will actually be printed.
+   for the *PostScript* graphics that will actually be printed.
 
 -  However, the preferred option is to use the GMT utility
    :doc:`psconvert`. Its **-A** option will
@@ -7666,23 +7908,23 @@ accomplished.
 
        gmt psconvert -A -Te myplot.ps
 
-   will convert the PostScript file ``myplot.ps`` into an encapsulated
-   PostScript file ``myplot.eps`` which is exactly cropped to the tightest possible
+   will convert the *PostScript* file ``myplot.ps`` into an encapsulated
+   *PostScript* file ``myplot.eps`` which is exactly cropped to the tightest possible
    BoundingBox.
 
 If you do not want to modify your illustration but just include it in a
 text document: many word processors (such as Microsoft Word  or Apple Pages) will let you include a
-PostScript file that you may place but not edit. Newer versions of
+*PostScript* file that you may place but not edit. Newer versions of
 those programs also allow you to include PDF versions of your graphics.
 Except for Pages, you will not be able to view the figure
 on-screen, but it will print correctly.
 
-Converting GMT PostScript to PDF or raster images
+Converting GMT *PostScript* to PDF or raster images
 ---------------------------------------------------
 
 Since Adobe's PDF (Portable Document Format) seems to have become the
 *de facto* standard for vector graphics, you are often well off
-converting GMT produced PostScript files to PDF. Being both vector
+converting GMT produced *PostScript* files to PDF. Being both vector
 formats (i.e., they basically describe all objects, text and graphics as
 lines and curves), such conversion sounds awfully straightforward and
 not worth a full section in this document. But experience has shown
@@ -7691,25 +7933,25 @@ differently, since most converters cut corners by using the same tool
 devised to produce the best quality PDF files.
 
 For some applications it is practical or even essential that you convert
-your PostScript file into a raster format, such as GIF (Graphics
+your *PostScript* file into a raster format, such as GIF (Graphics
 Interchange Format), TIFF (Tagged Image File Format), PNG (Portable
 Network Graphics), or JPEG (Joint Photographic Experts Group). A web
 page is better served with a raster image that will immediately show on
-a web browser, than with a PostScript file that needs to be downloaded
-to view, despite the better printing quality of the PostScript image.
+a web browser, than with a *PostScript* file that needs to be downloaded
+to view, despite the better printing quality of the *PostScript* image.
 A less obvious reason to convert your image to a raster format is to
 by-pass PowerPoint's rendering engine in case you want to embed
 the image into a presentation.
 
-The are a number of programs that will convert PostScript files to PDF
+The are a number of programs that will convert *PostScript* files to PDF
 or raster formats, like Aladdin's **pstopdf**, pbmplus' **pstoimg**,
 or GraphicsMagick's and ImageMagick's **convert**, most of which run ghostscript
 behind the scenes. The same is true for viewers like **ghostview** and
 Apple's Preview*. So a lot of the times when people report that
-their PostScript plot does not look right but prints fine, it is the
+their *PostScript* plot does not look right but prints fine, it is the
 way ghostscript is used with its most basic settings that is to blame.
 
-When converting or viewing PostScript goes awry
+When converting or viewing *PostScript* goes awry
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here are some notorious pitfalls with ghostscript (and other
@@ -7803,7 +8045,7 @@ option. Simply run
 
     gmt psconvert -A -P -Tf *.ps
 
-to convert all PostScript files to PDF while cropping it to the
+to convert all *PostScript* files to PDF while cropping it to the
 smallest possible BoundingBox. Or use the **-Tg** option to convert your
 files to PNG.
 
@@ -7822,13 +8064,7 @@ Examples
 GMT graphics in LaTeX
 ~~~~~~~~~~~~~~~~~~~~~
 
-Nearly all illustrations in this GMT documentation were GMT-produced
-PostScript files. They were converted to PDF files using
-:doc:`psconvert` and then included into a
-LaTeX document that was processed with **pdflatex** to create the PDF
-document you are reading.
-
-To add the graphics into the LaTeX document we use the
+To add the graphics into a LaTeX document we use the
 ``\includegraphics`` command supplied by the package. In the preamble of
 your LaTeX document you will need to include the line
 
@@ -7889,8 +8125,8 @@ GMT graphics in **PowerPoint**
    PowerPoint's Format Picture dialogue to set scale and rotation.
 
 In Figure :ref:`Rendered images <Rendering>` we have attempted to include
-Figure :ref:`Example 20 <Fig_example_20>` into a PowerPoint presentation.
-First the PostScript file was converted to PDF (using
+Example :ref:`example_20` into a PowerPoint presentation.
+First the *PostScript* file was converted to PDF (using
 :doc:`psconvert`), then loaded into
 PowerPoint and the white background color was made transparent
 using the formatting toolbar (shown on the left side of
@@ -7933,7 +8169,7 @@ Concluding remarks
 
 These examples do not constitute endorsements of the products mentioned
 above; they only represent our limited experience with adding
-PostScript to various types of documents. For other solutions and
+*PostScript* to various types of documents. For other solutions and
 further help, please post messages to.
 
 
@@ -7990,11 +8226,11 @@ firmware will not know about the euro).
    Octal codes and corresponding symbols for Symbol (left) and ZapfDingbats (right) fonts.
 
 
-PostScript Fonts Used by GMT
-============================
+*PostScript* Fonts Used by GMT
+==============================
 
 GMT uses the standard 35 fonts that come with most
-PostScript laserwriters. If your printer does not support some of
+*PostScript* laserwriters. If your printer does not support some of
 these fonts, it will automatically substitute the default font (which is
 usually Courier). The following is a list of the GMT fonts:
 
@@ -8002,7 +8238,7 @@ usually Courier). The following is a list of the GMT fonts:
    :width: 500 px
    :align: center
 
-   The standard 35 PostScript fonts recognized by GMT.
+   The standard 35 *PostScript* fonts recognized by GMT.
 
 
 For the special fonts Symbol (12) and ZapfDingbats (34), see the octal
@@ -8012,6 +8248,8 @@ this table. To change the fonts used in plotting basemap frames, see the
 man page for :doc:`gmt.conf`. For direct
 plotting of text-strings, see the man page for :doc:`pstext`.
 
+.. _non-default-fonts:
+
 Using non-default fonts with GMT
 --------------------------------
 
@@ -8020,7 +8258,7 @@ available freely in the internet or at your institution, see the
 instructions in the ``PSL_custom_fonts.txt`` under the ``share/postscriptlight`` directory and continue reading. GMT does
 not read or process any font files and thus does not know anything about
 installed fonts and their metrics. In order to use extra fonts in
-GMT you need to specify the PostScript name of the relevant fonts in
+GMT you need to specify the *PostScript* name of the relevant fonts in
 the file ``PSL_custom_fonts.txt``. You can either edit the existing file distributed with
 GMT to make the changes global or you can create a new file in the
 current working directory, e.g.,
@@ -8030,11 +8268,11 @@ current working directory, e.g.,
     LinBiolinumO      0.700    0
     LinLibertineOB    0.700    0
 
-The format is a space delimited list of the PostScript font name, the
+The format is a space delimited list of the *PostScript* font name, the
 font height-point size-ratio, and a boolean variable that tells GMT to
 re-encode the font (if set to zero). The latter has to be set to zero as
 additional fonts will most likely not come in standard
-PostScript encoding. GMT determines how tall typical annotations
+*PostScript* encoding. GMT determines how tall typical annotations
 might be from the font size ratio so that the vertical position of
 labels and titles can be adjusted to a more uniform typesetting. Now,
 you can set the GMT font parameters to your non-standard fonts:
@@ -8048,21 +8286,21 @@ you can set the GMT font parameters to your non-standard fonts:
 
 After setting the encoding and the degree symbol, the configuration part
 for GMT is finished and you can proceed to create GMT-maps as usual.
-An example script is discussed in Example [sec:non-default-fonts-example].
+An example script is discussed in Example :ref:`example_31`.
 
-Embedding fonts in PostScript and PDF
+Embedding fonts in *PostScript* and PDF
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you have Type 1 fonts in PFA (Printer Font ASCII) format you can
 embed them directly by copying them at the very top of your
-PostScript-file, before even the %!PS header comment. PFB (Printer
+*PostScript* file, before even the %!PS header comment. PFB (Printer
 Font Binary), TrueType or OpenType fonts cannot be embedded in
-PostScript directly and therefore have to be converted to PFA first.
+*PostScript* directly and therefore have to be converted to PFA first.
 
 However, you most likely will have to tell Ghostscript where to
-find your custom fonts in order to convert your GMT-PostScript-plot
+find your custom fonts in order to convert your GMT *PostScript* plot
 to PDF or an image with :doc:`psconvert`.
-When you have used the correct PostScript-names of the fonts in ``PSL_custom_fonts.txt`` you
+When you have used the correct *PostScript* names of the fonts in ``PSL_custom_fonts.txt`` you
 only need to point the ``GS_FONTPATH`` environment variable to the
 directory where the font files can be found and invoke
 :doc:`psconvert` in the usual way. Likewise
@@ -8070,7 +8308,7 @@ you can specify Ghostscript's ``-sFONTPATH`` option on the
 command line with ``C -sFONTPATH=/path/to/fontdir``. Ghostscript,
 which is invoked by :doc:`psconvert`, does
 not depend on file names. It will automatically find the relevant font
-files by their PostScript-names and embed and subset them in
+files by their *PostScript* names and embed and subset them in
 PDF-files. This is quite convenient as the document can be displayed and
 printed even on other computers when the font is not available locally.
 There is no need to convert your fonts as Ghostscript can handle
@@ -8089,22 +8327,21 @@ way:
 
 Note, that this only works with the *pswrite* device. If you need
 outlined fonts in PDF, create the PDF from the converted
-PostScript-file. Also, :doc:`psconvert`
-cannot correctly crop Ghostscript converted PostScript-files
+*PostScript* file. Also, :doc:`psconvert`
+cannot correctly crop Ghostscript converted *PostScript* files
 anymore. Use Heiko Oberdiek's instead or crop with
-:doc:`psconvert` **-A** **-Te** before (See
-Example [sec:non-default-fonts-example]).
+:doc:`psconvert` **-A** **-Te** before (See Example :ref:`example_31`).
 
 Character encoding
 ~~~~~~~~~~~~~~~~~~
 
-Since PostScript itself does not support Unicode fonts,
+Since *PostScript* itself does not support Unicode fonts,
 Ghostscript will re-encode the fonts on the fly. You have to make
 sure to set the correct :ref:`PS_CHAR_ENCODING <PS_CHAR_ENCODING>`
 with :doc:`gmtset` and save your
 script file with the same character encoding. Alternatively, you can
 substitute all non ASCII characters with their corresponding octal
-codes, e.g., \\265 instead of μ. Note, that PostScript fonts support
+codes, e.g., \\265 instead of μ. Note, that *PostScript* fonts support
 only a small range of glyphs and you may have to switch the
 :ref:`PS_CHAR_ENCODING <PS_CHAR_ENCODING>` within your script.
 
@@ -8114,10 +8351,10 @@ Color Space: The Final Frontier
 
 In this Chapter, we are going to try to explain the relationship
 between the RGB, CMYK, and HSV color systems so as to (hopefully) make
-them more intuitive. GMT allows users to specify colors in CPT files
+them more intuitive. GMT allows users to specify colors in CPTs
 in either of these three systems. Interpolation between colors is
 performed in either RGB or HSV, depending on the specification in the
-CPT file. Below, we will explain why this all matters.
+CPT. Below, we will explain why this all matters.
 
 RGB color system
 ----------------
@@ -8135,7 +8372,7 @@ imaginable. In GMT each color can be represented by the triplet
 green, and no blue) creates a color called chartreuse. The color sliders
 in the graphics program GIMP are an excellent way to experiment
 with colors, since they show you in advance how moving one of the color
-sliders will change the color. As Figure :ref:`Chartreuse in GIMP <GIMP>`\ *a*
+sliders will change the color. As Figure *(a)* of :ref:`Chartreuse in GIMP <GIMP>`
 shows: increase
 the red and you will get a more yellow color, while lowering the blue
 level will turn it into brown.
@@ -8203,7 +8440,7 @@ The color cube
 
 We are going to try to give you a geometric picture of color mixing in
 RGB and HSV by means of a tour of the RGB cube depicted in
-Figure :ref:`Example 11 <Fig_example_11>`. The geometric picture is most
+Figure :ref:`fig_ex11`. The geometric picture is most
 helpful, we think, since HSV are not orthogonal coordinates and not
 found from RGB by a simple algebraic transformation. So here goes: Look
 at the cube face with black, red, magenta, and blue corners. This is the
@@ -8333,7 +8570,7 @@ Depending on the design of your CPT, you may want to have it
 either way. By default, GMT interpolates in RGB space, even when the
 original CPT is in the HSV system. However, when you add the
 line ``#COLOR_MODEL=+HSV`` (with the leading ‘+' sign) in the header of
-the CPT file, GMT will not only read the color
+the CPT, GMT will not only read the color
 representation as HSV values, but also interpolate colors in the HSV
 system. That means that H, S, and V values are interpolated linearly
 between two colors, instead of their respective R, G, and B values.
@@ -8362,7 +8599,7 @@ Artificial illumination
 GMT uses the HSV system to achieve artificial illumination of colored
 images (e.g., **-I** option in :doc:`grdimage`) by changing the saturation
 *s* and value *v* coordinates of the color. When the intensity is zero
-(flat illumination), the data are colored according to the CPT file. If
+(flat illumination), the data are colored according to the CPT. If
 the intensity is non-zero, the color is either lightened or darkened
 depending on the illumination. The color is first converted to HSV (if
 necessary) and then darkened by moving (*sv*) toward
@@ -8422,7 +8659,7 @@ are really concerned about how your color plots will show up in your PhD
 thesis, for example, it might be worth trying to save and print all your
 color plots using the CMYK system. Letting GMT do the conversion to
 CMYK may avoid some nasty surprises when it comes down to printing. To
-specify the color space of your PostScript file, set
+specify the color space of your *PostScript* file, set
 :ref:`PS_COLOR_MODEL <PS_COLOR_MODEL>` in the :doc:`gmt.conf` file to RGB, HSV, or CMYK.
 
 
@@ -8912,12 +9149,12 @@ Of Colors and Color Legends
 Built-in color palette tables (CPT)
 -----------------------------------
 
-Figures :ref:`CPT files a <CPT_files_a>` and
-:ref:`b <CPT_files_b>` show the 36 built-in
-color palettes, stored in so-called CPT tables [40]_. The programs
+Figures :ref:`CPTs a <CPT_files_a>` and
+:ref:`b <CPT_files_b>` show the 40 built-in
+color palettes, stored in so-called CPTs [40]_. The programs
 :doc:`makecpt` and
 :doc:`grd2cpt` are used to access these
-master CPT tables and translate/scale them to fit the user's range of
+master CPTs and translate/scale them to fit the user's range of
 *z*-values. The top half of the color bars in the Figure shows the
 original color scale, which can be either discrete or continuous, though
 some (like **globe**) are a mix of the two. The bottom half the color
@@ -8930,7 +9167,7 @@ bar are built by using :doc:`makecpt`
    :width: 500 px
    :align: center
 
-   The first 18 of the standard 36 CPT files supported by GMT
+   The first 20 of the standard 40 CPTs supported by GMT
 
 .. _CPT_files_b:
 
@@ -8938,18 +9175,19 @@ bar are built by using :doc:`makecpt`
    :width: 500 px
    :align: center
 
-   The second 18 of the standard 36 CPT files supported by GMT
+   The second 20 of the standard 40 CPTs supported by GMT
 
 
 Labeled and non-equidistant color legends
 -----------------------------------------
 
-The use of color legends has already been introduced in examples 2, 16, and 17.
+The use of color legends has already been introduced in Examples
+:ref:`2 <example_02>`, :ref:`16 <example_16>`, and :ref:`17 <example_17>`.
 Things become a bit more
 complicated when you want to label the legend with names for certain
 intervals (like geological time periods in the example below). To
 accomplish that, one should add a semi-colon and the label name at the
-end of a line in the CPT table and add the **-L** option to the
+end of a line in the CPT and add the **-L** option to the
 :doc:`psscale` command that draws the color
 legend. This option also makes all intervals in the legend of equal
 length, even it the numerical values are not equally spaced.
@@ -8957,7 +9195,7 @@ length, even it the numerical values are not equally spaced.
 Normally, the name labels are plotted at the lower end of the intervals.
 But by adding a *gap* amount (even when zero) to the **-L** option, they
 are centered. The example below also shows how to annotate ranges using
-**-Li** (in which case no name labels should appear in the CPT file),
+**-Li** (in which case no name labels should appear in the CPT),
 and how to switch the color bar around (by using a negative length).
 
 .. figure:: /_images/GMT_App_M_2.*
@@ -9073,7 +9311,7 @@ are listed in Table :ref:`custsymb <tbl-custsymb>`.
 +---------------+------------+----------------------------------------+--------------------------------------------+
 | drawto        | **D**      | Draw line from previous point          | :math:`x, y`                               |
 +---------------+------------+----------------------------------------+--------------------------------------------+
-| arc           | **A**      | Append circular arc to existing path   | :math:`x_c, y_c, r, \alpha_1, \alpha_2`    |
+| arc           | **A**      | Append circular arc to existing path   | :math:`x_c, y_c, d, \alpha_1, \alpha_2`    |
 +---------------+------------+----------------------------------------+--------------------------------------------+
 | stroke        | **S**      | Stroke existing path only              |                                            |
 +---------------+------------+----------------------------------------+--------------------------------------------+
@@ -9564,7 +9802,7 @@ Examples of Contour Label Placement
 
 We will demonstrate the use of these options with a few simple examples.
 First, we will contour a subset of the global geoid data used in
-GMT Example 01; the region selected encompasses the world's strongest
+Example :ref:`example_01`; the region selected encompasses the world's strongest
 "geoid dipole": the Indian Low and the New Guinea High.
 
 Equidistant labels
@@ -9896,7 +10134,7 @@ are:
 
 A cure to all these woes is the *isolation mode* introduced in
 GMT version 4.2.2. This mode allows you to run a GMT script without
-leaving any traces other than the resulting PostScript  or data files,
+leaving any traces other than the resulting *PostScript*  or data files,
 and not altering the ``gmt.conf`` or ``gmt.history`` files. Those files will be placed in a temporary
 directory instead. And if properly set up, this temporary directory will
 only be used by a single script, even if another GMT script is running
@@ -10357,7 +10595,7 @@ Finally we show an example of a polygon file:
    XXII(176)*, 88--93.
 
 .. [8]
-   PostScript definition. In the typesetting industry a slightly
+   *PostScript* definition. In the typesetting industry a slightly
    different definition of point (1/72.27 inch) is used, presumably to
    cause needless trouble.
 
@@ -10403,7 +10641,7 @@ Finally we show an example of a polygon file:
    Ensures that boundary annotations do not fall off the page.
 
 .. [16]
-   To keep PostScript files small, such comments are by default turned
+   To keep *PostScript* files small, such comments are by default turned
    off; see :ref:`PS_COMMENTS <PS_COMMENTS>` to enable them.
 
 .. [17]
@@ -10501,7 +10739,7 @@ Finally we show an example of a polygon file:
    *J. Geophys. Res. 101*, 8741--8743).
 
 .. [40]
-   The 23rd palette is called *random* and produces a random set of
+   The 3rd palette is called *categorical* and produces a set of
    colors suitable for categorical plots.
 
 .. [41]

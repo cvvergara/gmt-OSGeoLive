@@ -1,5 +1,5 @@
 /*
- * $Id: getopt.c 12822 2014-01-31 23:39:56Z remko $
+ * $Id: getopt.c 15720 2016-02-17 05:43:33Z pwessel $
  *
  * Copyright (c) 1987, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -52,12 +52,7 @@ char *optarg,       /* argument associated with option */
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int
-getopt(nargc, nargv, ostr)
-	int nargc;
-	char * const *nargv;
-	const char *ostr;
-{
+int getopt(int nargc, char * const *nargv, const char *ostr) {
 	static char *place = EMSG;		/* option letter processing */
 	char *oli;				/* option letter list index */
 

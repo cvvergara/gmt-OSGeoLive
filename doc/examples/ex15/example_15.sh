@@ -1,14 +1,14 @@
 #!/bin/bash
 #		GMT EXAMPLE 15
-#		$Id: example_15.sh 12380 2013-10-23 19:20:13Z pwessel $
+#		$Id: example_15.sh 16750 2016-07-09 05:44:02Z pwessel $
 #
 # Purpose:	Gridding and clipping when data are missing
-# GMT progs:	blockmedian, gmtconvert, grdclip, grdcontour, grdinfo, gmtinfo
-# GMT progs:	nearneighbor, pscoast, psmask, pstext, surface
+# GMT modules:	blockmedian, gmtconvert, grdclip, grdcontour, grdinfo, gmtinfo
+# GMT modules:	nearneighbor, pscoast, psmask, pstext, surface
 # Unix progs:	echo, rm
 #
 ps=example_15.ps
-gmt gmtconvert ship.xyz -bo > ship.b
+gmt convert ship.xyz -bo > ship.b
 #
 region=`gmt info ship.b -I1 -bi3d`
 gmt nearneighbor $region -I10m -S40k -Gship.nc ship.b -bi

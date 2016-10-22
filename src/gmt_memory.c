@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_memory.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_memory.c 16740 2016-07-08 00:42:45Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -25,12 +25,12 @@
  */
 
 /* Two functions called elsewhere:
-   GMT_prep_tmp_arrays	: Called wherever temporary column vectors are needed, such
+   gmt_prep_tmp_arrays	: Called wherever temporary column vectors are needed, such
 			  as in data reading and fix_up_path and elsewhere.
-   GMT_free_tmp_arrays  : Called when ready to free up stuff
-   GMT_malloc              Memory management
-   GMT_memory              Memory allocation/reallocation
-   GMT_free                Memory deallocation
+   gmtlib_free_tmp_arrays  : Called when ready to free up stuff
+   gmt_M_malloc              Memory management
+   gmt_M_memory              Memory allocation/reallocation
+   gmt_M_free                Memory deallocation
  */
 
 #include "gmt_dev.h"
@@ -40,9 +40,55 @@
 #	include <malloc.h>
 #endif
 
+/* Local functions */
+
+/* To avoid lots of alloc and realloc calls we prefer to allocate a sizeable array
+ * per coordinate axes once, then use that temporary space for reading and
+ * calculations, and then alloc permanent space elsewhere and call memcpy to
+ * place the final memory there.  We assume that for most purposes we will
+ * need GMT_INITIAL_MEM_COL_ALLOC columns [2] and allocate GMT_INITIAL_MEM_ROW_ALLOC
+ * [2097152U] rows for each column.  This is 32 Mb for double precision data.
+ * These arrays are expected to hardly ever beeing reallocated as that would
+ * only happen for very long segments, a rare occurance. For most typical data
+ * we may have lots of smaller segments but rarely do any segment exceed the
+ * 1048576U length initialized above.  Thus, reallocs are generally avoided.
+ * Note: (1) All columns share a signle n_alloc counter and the code belows will
+ *           check whenever arrays need to be extended.
+ *	 (2) We chose to maintain a small set of column vectors rather than a single
+ *	     item since GMT tends to use columns vectors and thus the book-keeping is
+ *	     simpler and the number of columns is typically very small (2-3).
+ */
+
+GMT_LOCAL void memory_init_tmp_arrays (struct GMT_CTRL *GMT, size_t n_cols) {
+	/* Initialization of GMT coordinate temp arrays - this is called at most once per GMT session  */
+
+	size_t col;
+
+	if (n_cols == 0) n_cols = GMT_INITIAL_MEM_COL_ALLOC;	/* Allocate at least this many */
+	GMT->hidden.mem_coord  = gmt_M_memory (GMT, GMT->hidden.mem_coord, n_cols, double *);	/* These are all NULL */
+	GMT->hidden.mem_cols = n_cols;	/* How many columns we have initialized */
+	for (col = 0; col < n_cols; col++)	/* For each column, reallocate space for n_rows */
+		GMT->hidden.mem_coord[col] = gmt_M_memory (GMT, NULL, GMT_INITIAL_MEM_ROW_ALLOC, double);
+	GMT->hidden.mem_rows = GMT_INITIAL_MEM_ROW_ALLOC;
+	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "GMT memory: Initialize %" PRIuS " temporary column arrays, each of length : %" PRIuS "\n", GMT->hidden.mem_cols, GMT->hidden.mem_rows);
+}
+
+GMT_LOCAL int memory_die_if_memfail (struct GMT_CTRL *GMT, size_t nelem, size_t size, const char *where) {
+	/* Handle reporting and aborting if memory allocation fails */
+	double mem = ((double)nelem) * ((double)size);
+	unsigned int k = 0;
+	static char *m_unit[4] = {"bytes", "kb", "Mb", "Gb"};
+	while (mem >= 1024.0 && k < 3) mem /= 1024.0, k++;
+	gmtlib_report_func (GMT, GMT_MSG_NORMAL, where, "Error: Could not reallocate memory [%.2f %s, %" PRIuS " items of %" PRIuS " bytes]\n", mem, m_unit[k], nelem, size);
+#ifdef DEBUG
+	gmtlib_report_func (GMT, GMT_MSG_NORMAL, where, "gmt_M_memory [realloc] called\n");
+#endif
+	GMT_exit (GMT, GMT_MEMORY_ERROR); return GMT_MEMORY_ERROR;
+}
+
 #ifdef MEMDEBUG
 /* Memory tracking used to assist in finding memory leaks.  We internally keep track
- * of all memory allocated by GMT_memory and subsequently freed with GMT_free.  If
+ * of all memory allocated by gmt_M_memory and subsequently freed with gmt_M_free.  If
  * upon exit there are unreleased memory we issue a report of how many items were
  * not freed and where they were first allocated.  This is only used by the developers
  * and if -DMEMDEBUG is not set then all of this is left out.
@@ -58,16 +104,6 @@
  * Splay tree manipulation functions are modified after Sleator and Tarjan, 1985:
  * Self-adjusting binary search trees. JACM, 32(3), doi:10.1145/3828.3835 */
 
-void GMT_memtrack_on (struct GMT_CTRL *GMT)
-{	/* Turns memory tracking ON */
-	GMT->hidden.mem_keeper->active = true;
-}
-
-void GMT_memtrack_off (struct GMT_CTRL *GMT)
-{	/* Turns memory tracking OFF */
-	GMT->hidden.mem_keeper->active = false;
-}
-
 static inline double gmt_memtrack_mem (size_t mem, unsigned int *unit) {
 	/* Report the memory in the chosen unit */
 	unsigned int k = 0;
@@ -78,7 +114,8 @@ static inline double gmt_memtrack_mem (size_t mem, unsigned int *unit) {
 	return (val);
 }
 
-int GMT_memtrack_init (struct GMT_CTRL *GMT) { /* Called in GMT_begin() */
+int gmt_memtrack_init (struct GMT_CTRL *GMT) {
+	/* Called in gmt_begin() */
 	time_t now = time (NULL);
 	char *env = getenv ("GMT_TRACK_MEMORY"); /* 0: off; any: track; 2: log to file */
 	struct MEMORY_TRACKER *M = calloc (1, sizeof (struct MEMORY_TRACKER));
@@ -102,7 +139,7 @@ int GMT_memtrack_init (struct GMT_CTRL *GMT) { /* Called in GMT_begin() */
 		snprintf (logfile, 32, "gmt_memtrack_%d.log", pid);
 		if ((M->fp = fopen (logfile, "w")) == NULL) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Could not create log file gmt_memtrack_%d.log\n", pid);
-			GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+			GMT_exit (GMT, GMT_ERROR_ON_FOPEN); return GMT_ERROR_ON_FOPEN;
 		}
 	}
 	fprintf (M->fp, "# %s", ctime (&now));
@@ -180,7 +217,7 @@ static inline struct MEMORY_ITEM * gmt_treeinsert (struct MEMORY_ITEM *t, void *
 		return new;
 	} else {
 		/* We get here if addr is already in the tree. Don't add it again. */
-		free (new);
+		gmt_M_str_free (new);
 		return t;
 	}
 }
@@ -208,8 +245,8 @@ static inline struct MEMORY_ITEM * gmt_treedelete (struct MEMORY_ITEM *t, void *
 			x = gmt_treesplay (t->l, addr);
 			x->r = t->r;
 		}
-		if (t->name != NULL) free (t->name);
-		free (t);
+		gmt_M_str_free (t->name);
+		gmt_M_str_free (t);
 		return x;
 	}
 	return t; /* It wasn't there */
@@ -221,14 +258,14 @@ static inline void gmt_treedestroy (struct MEMORY_ITEM **t) {
 	if (x != NULL) {
 		gmt_treedestroy (&x->l);
 		gmt_treedestroy (&x->r);
-		if (x->name != NULL) free (x->name);
-		free (x);
+		gmt_M_str_free (x->name);
+		gmt_M_str_free (x);
 		*t = NULL;
 	}
 }
 
 static inline void gmt_memtrack_add (struct GMT_CTRL *GMT, const char *where, void *ptr, void *prev_ptr, size_t size) {
-	/* Called from GMT_memory to update current list of memory allocated */
+	/* Called from gmt_M_memory to update current list of memory allocated */
 	size_t old, diff;
 	void *use = NULL;
 	struct MEMORY_ITEM *entry = NULL;
@@ -289,20 +326,20 @@ static inline void gmt_memtrack_add (struct GMT_CTRL *GMT, const char *where, vo
 }
 
 static inline bool gmt_memtrack_sub (struct GMT_CTRL *GMT, const char *where, void *ptr) {
-	/* Called from GMT_free to remove memory pointer */
+	/* Called from gmt_M_free to remove memory pointer */
 	struct MEMORY_TRACKER *M = GMT->hidden.mem_keeper;
 	struct MEMORY_ITEM *entry = gmt_treefind (&M->root, ptr);
 
 	M->n_freed++; /* Increment first to also count multiple frees on same address */
 	if (!entry) {
-		/* Error, trying to free something not allocated by GMT_memory_func */
-		GMT_report_func (GMT, GMT_MSG_NORMAL, where, "Wrongly tries to free item\n");
+		/* Error, trying to free something not allocated by gmt_memory_func */
+		gmtlib_report_func (GMT, GMT_MSG_NORMAL, where, "Wrongly tries to free item\n");
 		if (M->do_log)
 			fprintf (M->fp, "!!!: 0x%zx ---------- %7.0lf %s @%s\n", (size_t)ptr, M->current / 1024.0, GMT->init.module_name, where);
 		return false; /* Notify calling function that something went wrong */
 	}
 	if (entry->size > M->current) {
-		GMT_report_func (GMT, GMT_MSG_NORMAL, where, "Memory tracker reports < 0 bytes allocated!\n");
+		gmtlib_report_func (GMT, GMT_MSG_NORMAL, where, "Memory tracker reports < 0 bytes allocated!\n");
 		M->current = 0;
 	}
 	else
@@ -333,8 +370,8 @@ static inline void gmt_treeprint (struct GMT_CTRL *GMT, struct MEMORY_ITEM *t) {
 	}
 }
 
-void GMT_memtrack_report (struct GMT_CTRL *GMT) {
-	/* Called at end of GMT_end() */
+void gmt_memtrack_report (struct GMT_CTRL *GMT) {
+	/* Called at end of gmt_end() */
 	unsigned int u, level;
 	uint64_t excess = 0, n_multi_frees = 0;
 	double size;
@@ -393,96 +430,48 @@ void GMT_memtrack_report (struct GMT_CTRL *GMT) {
 }
 #endif
 
-/* To avoid lots of alloc and realloc calls we prefer to allocate a sizeable array
- * per coordinate axes once, then use that temporary space for reading and
- * calculations, and then alloc permanent space elsewhere and call memcpy to
- * place the final memory there.  We assume that for most purposes we will
- * need GMT_INITIAL_MEM_COL_ALLOC columns [2] and allocate GMT_INITIAL_MEM_ROW_ALLOC
- * [2097152U] rows for each column.  This is 32 Mb for double precision data.
- * These arrays are expected to hardly ever beeing reallocated as that would
- * only happen for very long segments, a rare occurance. For most typical data
- * we may have lots of smaller segments but rarely do any segment exceed the
- * 1048576U length initialized above.  Thus, reallocs are generally avoided.
- * Note: (1) All columns share a signle n_alloc counter and the code belows will
- *           check whenever arrays need to be extended.
- *	 (2) We chose to maintain a small set of column vectors rather than a single
- *	     item since GMT tends to use columns vectors and thus the book-keeping is
- *	     simpler and the number of columns is typically very small (2-3).
- */
-
-void gmt_init_tmp_arrays (struct GMT_CTRL *GMT, size_t n_cols)
-{
-	/* Initialization of GMT coordinate temp arrays - this is called at most once per GMT session  */
-
-	size_t col;
-
-	if (n_cols == 0) n_cols = GMT_INITIAL_MEM_COL_ALLOC;	/* Allocate at least this many */
-	GMT->hidden.mem_coord  = GMT_memory (GMT, GMT->hidden.mem_coord, n_cols, double *);	/* These are all NULL */
-	GMT->hidden.mem_cols = n_cols;	/* How many columns we have initialized */
-	for (col = 0; col < n_cols; col++)	/* For each column, reallocate space for n_rows */
-		GMT->hidden.mem_coord[col] = GMT_memory (GMT, NULL, GMT_INITIAL_MEM_ROW_ALLOC, double);
-	GMT->hidden.mem_rows = GMT_INITIAL_MEM_ROW_ALLOC;
-	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "GMT memory: Initialize %" PRIuS " temporary column arrays, each of length : %" PRIuS "\n", GMT->hidden.mem_cols, GMT->hidden.mem_rows);
-}
-
-void GMT_free_tmp_arrays (struct GMT_CTRL *GMT)
-{
+void gmtlib_free_tmp_arrays (struct GMT_CTRL *GMT) {
 	/* Free temporary coordinate memory used by this session */
 	size_t col;
 
 	if (GMT->hidden.mem_cols) GMT_Report (GMT->parent, GMT_MSG_DEBUG, "GMT memory: Free %" PRIuS " temporary column arrays, each of length : %" PRIuS "\n", GMT->hidden.mem_cols, GMT->hidden.mem_rows);
 	for (col = 0; col < GMT->hidden.mem_cols; col++) {	/* For each column, free an array */
-		if (GMT->hidden.mem_coord[col]) GMT_free (GMT, GMT->hidden.mem_coord[col]);
+		gmt_M_free (GMT, GMT->hidden.mem_coord[col]);
 	}
-	if (GMT->hidden.mem_coord) GMT_free (GMT, GMT->hidden.mem_coord);
+	gmt_M_free (GMT, GMT->hidden.mem_coord);
 	GMT->hidden.mem_rows = GMT->hidden.mem_cols = 0;
 }
 
-void GMT_prep_tmp_arrays (struct GMT_CTRL *GMT, size_t row, size_t n_cols)
-{
+void gmt_prep_tmp_arrays (struct GMT_CTRL *GMT, size_t row, size_t n_cols) {
 	size_t col;
 
 	/* Check if this is the very first time, if so we initialize the arrays */
 	if (GMT->hidden.mem_cols == 0)
-		gmt_init_tmp_arrays (GMT, n_cols);	/* First time we get here */
+		memory_init_tmp_arrays (GMT, n_cols);	/* First time we get here */
 
 	/* Check if we are exceeding our column count so far, if so we must allocate more columns */
 	else if (n_cols > GMT->hidden.mem_cols) {	/* Must allocate more columns, this is expected to happen rarely */
-		GMT->hidden.mem_coord = GMT_memory (GMT, GMT->hidden.mem_coord, n_cols, double *);	/* New ones are NOT NULL */
+		GMT->hidden.mem_coord = gmt_M_memory (GMT, GMT->hidden.mem_coord, n_cols, double *);	/* New ones are NOT NULL */
 		for (col = GMT->hidden.mem_cols; col < n_cols; col++)	/* Explicitly allocate the new additions */
-			GMT->hidden.mem_coord[col] = GMT_memory (GMT, NULL, GMT->hidden.mem_rows, double);
+			GMT->hidden.mem_coord[col] = gmt_M_memory (GMT, NULL, GMT->hidden.mem_rows, double);
 		GMT->hidden.mem_cols = n_cols;		/* Updated column count */
 	}
 
 	/* Check if we are exceeding our allocated count for this column.  If so allocate more rows */
 
 	if (row < GMT->hidden.mem_rows) return;	/* Nothing to do */
-	
+
 	/* Here we must allocate more rows, this is expected to happen rarely given the large initial allocation */
 
 	while (row >= GMT->hidden.mem_rows) GMT->hidden.mem_rows <<= 1;	/* Double up until enough */
 	for (col = 0; col < GMT->hidden.mem_cols; col++)	/* Add more memory via realloc */
-		GMT->hidden.mem_coord[col] = GMT_memory (GMT, GMT->hidden.mem_coord[col], GMT->hidden.mem_rows, double);
+		GMT->hidden.mem_coord[col] = gmt_M_memory (GMT, GMT->hidden.mem_coord[col], GMT->hidden.mem_rows, double);
 
 	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "GMT memory: Increase %" PRIuS " temporary column arrays to new length : %" PRIuS "\n", GMT->hidden.mem_cols, GMT->hidden.mem_rows);
 	/* Note: Any additions to these arrays are not guaranteed to be set to zero */
 }
 
-int die_if_memfail (struct GMT_CTRL *GMT, size_t nelem, size_t size, const char *where)
-{	/* Handle reporting and aborting if memory allocation fails */
-	double mem = ((double)nelem) * ((double)size);
-	unsigned int k = 0;
-	static char *m_unit[4] = {"bytes", "kb", "Mb", "Gb"};
-	while (mem >= 1024.0 && k < 3) mem /= 1024.0, k++;
-	GMT_report_func (GMT, GMT_MSG_NORMAL, where, "Error: Could not reallocate memory [%.2f %s, %" PRIuS " items of %" PRIuS " bytes]\n", mem, m_unit[k], nelem, size);
-#ifdef DEBUG
-	GMT_report_func (GMT, GMT_MSG_NORMAL, where, "GMT_memory [realloc] called\n");
-#endif
-	GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
-}
-
-void *GMT_memory_func (struct GMT_CTRL *GMT, void *prev_addr, size_t nelem, size_t size, bool align, const char *where)
-{
+void *gmt_memory_func (struct GMT_CTRL *GMT, void *prev_addr, size_t nelem, size_t size, bool align, const char *where) {
 	/* Multi-functional memory allocation subroutine.
 	   If prev_addr is NULL, allocate new memory of nelem elements of size bytes.
 		Ignore when nelem == 0.
@@ -494,11 +483,11 @@ void *GMT_memory_func (struct GMT_CTRL *GMT, void *prev_addr, size_t nelem, size
 	void *tmp = NULL;
 
 	if (nelem == SIZE_MAX) {	/* Probably 32-bit overflow */
-		GMT_report_func (GMT, GMT_MSG_NORMAL, where, "Error: Requesting SIZE_MAX number of items (%" PRIuS ") - exceeding 32-bit counting?\n", nelem);
+		gmtlib_report_func (GMT, GMT_MSG_NORMAL, where, "Error: Requesting SIZE_MAX number of items (%" PRIuS ") - exceeding 32-bit counting?\n", nelem);
 #ifdef DEBUG
-		GMT_report_func (GMT, GMT_MSG_NORMAL, where, "GMT_memory called\n");
+		gmtlib_report_func (GMT, GMT_MSG_NORMAL, where, "gmt_M_memory called\n");
 #endif
-		GMT_exit (GMT, EXIT_FAILURE); return NULL;
+		GMT_exit (GMT, GMT_MEMORY_ERROR); return NULL;
 	}
 
 #if defined(WIN32) && !defined(USE_MEM_ALIGNED)
@@ -507,7 +496,7 @@ void *GMT_memory_func (struct GMT_CTRL *GMT, void *prev_addr, size_t nelem, size
 
 	if (prev_addr) {
 		if (nelem == 0) { /* Take care of n == 0 */
-			GMT_free (GMT, prev_addr);
+			gmt_M_free (GMT, prev_addr);
 			return (NULL);
 		}
 		if (align) {
@@ -526,7 +515,7 @@ void *GMT_memory_func (struct GMT_CTRL *GMT, void *prev_addr, size_t nelem, size
 		else
 			tmp = realloc ( prev_addr, nelem * size);
 		if (tmp == NULL)
-			die_if_memfail (GMT, nelem, size, where);
+			memory_die_if_memfail (GMT, nelem, size, where);
 	}
 	else {
 		if (nelem == 0) return (NULL); /* Take care of n == 0 */
@@ -548,7 +537,7 @@ void *GMT_memory_func (struct GMT_CTRL *GMT, void *prev_addr, size_t nelem, size
 		else
 			tmp = calloc (nelem, size);
 		if (tmp == NULL)
-			die_if_memfail (GMT, nelem, size, where);
+			memory_die_if_memfail (GMT, nelem, size, where);
 	}
 
 #ifdef MEMDEBUG
@@ -558,22 +547,21 @@ void *GMT_memory_func (struct GMT_CTRL *GMT, void *prev_addr, size_t nelem, size
 	return (tmp);
 }
 
-void GMT_free_func (struct GMT_CTRL *GMT, void *addr, bool align, const char *where)
-{
-#ifndef DEBUG
+void gmt_free_func (struct GMT_CTRL *GMT, void *addr, bool align, const char *where) {
 	if (addr == NULL) {
+#ifndef DEBUG
 		/* report freeing unallocated memory only in level GMT_MSG_DEBUG (-V4) */
-		GMT_report_func (GMT, GMT_MSG_DEBUG, where,
+		gmtlib_report_func (GMT, GMT_MSG_DEBUG, where,
 				"tried to free unallocated memory\n");
+#endif
 		return; /* Do not free a NULL pointer, although allowed */
 	}
-#endif
 
 #ifdef MEMDEBUG
 	if (GMT->hidden.mem_keeper->active) {
 		bool is_safe_to_free = gmt_memtrack_sub (GMT, where, addr);
 		if (is_safe_to_free == false)
-			return; /* Address addr was not allocated by GMT_memory_func before */
+			return; /* Address addr was not allocated by gmt_memory_func before */
 	}
 #endif
 
@@ -592,23 +580,26 @@ void GMT_free_func (struct GMT_CTRL *GMT, void *addr, bool align, const char *wh
 	}
 	else
 		free (addr);
+	addr = NULL;
 }
 
-void * GMT_malloc_func (struct GMT_CTRL *GMT, void *ptr, size_t n, size_t *n_alloc, size_t element_size, const char *where)
-{
-	/* GMT_malloc is used to initialize, grow, and finalize an array allocation in cases
+void * gmt_malloc_func (struct GMT_CTRL *GMT, void *ptr, size_t n, size_t *n_alloc, size_t element_size, const char *where) {
+	/* gmt_M_malloc is used to initialize, grow, and finalize an array allocation in cases
 	 * were more memory is needed as new data are read.  There are three different situations:
 	 * A) Initial allocation of memory:
-	 *	Signaled by passing *n_alloc == 0 or n_alloc = NULL.  This will initialize the pointer to NULL first.
-	 *	Allocation size is controlled by GMT->session.min_meminc, unless n > 0 which then is used.
-	 *	If n_alloc == NULL then we also do not need to rreturn back the n_alloc value set herein.
+	 *	  Signaled by passing *n_alloc == 0 or n_alloc = NULL or ptr = NULL.
+	 *    This will initialize the pointer to NULL first.
+	 *	  Allocation size is controlled by GMT->session.min_meminc, unless n > 0 which then is used.
+	 *	  If n_alloc == NULL then we also do not need to rreturn back the n_alloc value set herein.
 	 * B) Incremental increase in memory:
-	 *	Signaled by passing n >= n_alloc.  The incremental memory is set to 50% of the
-	 *	previous size, but no more than GMT->session.max_meminc. Note, *ptr[n] is the location
-	 *	of where the next assignment will take place, hence n >= n_alloc is used.
+	 *	  Signaled by passing n >= n_alloc.
+	 *    The incremental memory is set to 50% of the
+	 *	  previous size, but no more than GMT->session.max_meminc. Note, *ptr[n] is the location
+	 *	  of where the next assignment will take place, hence n >= n_alloc is used.
 	 * C) Finalize memory:
-	 *	Signaled by passing n == 0 and n_alloc > 0.  Unused memory beyond n_alloc is freed up.
-	 * You can use GMT_set_meminc to temporarily change GMT_min_mininc and GMT_reset_meminc will
+	 *	  Signaled by passing n == 0 and n_alloc > 0.
+	 *    Unused memory beyond n_alloc is freed up.
+	 * You can use gmt_set_meminc to temporarily change GMT_min_mininc and gmt_reset_meminc will
 	 * reset this value to the compilation default.
 	 * For 32-bit systems there are safety-values to avoid 32-bit overflow.
 	 * Note that n_alloc refers to the number of items to allocate, not the total memory taken
@@ -617,9 +608,9 @@ void * GMT_malloc_func (struct GMT_CTRL *GMT, void *ptr, size_t n, size_t *n_all
 	 * Note: This memory, used for all kinds of things, is not requested to be aligned (align = false),
 	 */
 	size_t in_n_alloc = (n_alloc) ? *n_alloc : 0U;	/* If NULL it means init, i.e. 0, and we dont pass n_alloc back out */
-	if (in_n_alloc == 0) {	/* A) First time allocation, use default minimum size, unless n > 0 is given */
+	if (in_n_alloc == 0 || !ptr) {	/* A) First time allocation, use default minimum size, unless n > 0 is given */
 		in_n_alloc = (n == 0) ? GMT->session.min_meminc : n;
-		ptr = NULL;	/* Initialize a new pointer to NULL before calling GMT_memory with it */
+		ptr = NULL;	/* Initialize a new pointer to NULL before calling gmt_M_memory with it */
 	}
 	else if (n == 0 && in_n_alloc > 0)	/* C) Final allocation, set to actual final size */
 		n = in_n_alloc;		/* Keep the given n_alloc */
@@ -636,27 +627,31 @@ void * GMT_malloc_func (struct GMT_CTRL *GMT, void *ptr, size_t n, size_t *n_all
 
 	/* Here n_alloc is set one way or another.  Do the actual [re]allocation for non-aligned memory */
 
-	ptr = GMT_memory_func (GMT, ptr, in_n_alloc, element_size, false, where);
+	ptr = gmt_memory_func (GMT, ptr, in_n_alloc, element_size, false, where);
 	if (n_alloc) *n_alloc = in_n_alloc;	/* Pass allocated count back out unless given NULL */
 
 	return (ptr);
 }
 
-#ifdef FISH_STRDUP_LEAKS
-char *GMT_strdup(struct GMT_CTRL *GMT, const char *s) {
+bool gmt_this_alloc_level (struct GMT_CTRL *GMT, unsigned int alloc_level) {
+	/* Returns true if the tested alloc_level matches the current function level */
+	return (alloc_level == GMT->hidden.func_level);
+}
 
-	char *p = GMT_memory(GMT, NULL, strlen(s) + 1, unsigned char);
+#ifdef FISH_STRDUP_LEAKS
+char *gmt_strdup(struct GMT_CTRL *GMT, const char *s) {
+	char *p = gmt_M_memory(GMT, NULL, strlen(s) + 1, unsigned char);
 	if (p) { strcpy(p, s); }
 	return p;
 }
 #endif
 
-void GMT_set_meminc (struct GMT_CTRL *GMT, size_t increment)
-{	/* Temporarily set the GMT_min_memic to this value; restore with GMT_reset_meminc */
+void gmt_set_meminc (struct GMT_CTRL *GMT, size_t increment) {
+	/* Temporarily set the GMT_min_memic to this value; restore with gmt_reset_meminc */
 	GMT->session.min_meminc = increment;
 }
 
-void GMT_reset_meminc (struct GMT_CTRL *GMT)
-{	/* Temporarily set the GMT_min_memic to this value; restore with GMT_reset_meminc */
+void gmt_reset_meminc (struct GMT_CTRL *GMT) {
+	/* Temporarily set the GMT_min_memic to this value; restore with gmt_reset_meminc */
 	GMT->session.min_meminc = GMT_MIN_MEMINC;
 }

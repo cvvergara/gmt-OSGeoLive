@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error_codes.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_error_codes.c 16772 2016-07-11 04:09:50Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
  * Version:	5 API
  */
 
-const char *g_api_error_string[] = {
+const char *gmt_api_error_string[] = {
 	/* GMT_OK */				"GMT_OK",
 	/* GMT_WRONG_MATRIX_SHAPE */		"GMT_WRONG_MATRIX_SHAPE",
 	/* GMT_ACCESS_NOT_ENABLED */		"GMT_ACCESS_NOT_ENABLED",
@@ -48,6 +48,7 @@ const char *g_api_error_string[] = {
 	/* GMT_ID_TOO_LARGE */			"GMT_ID_TOO_LARGE",
 	/* GMT_IMAGE_BC_ERROR */		"GMT_IMAGE_BC_ERROR",
 	/* GMT_IMAGE_READ_ERROR */		"GMT_IMAGE_READ_ERROR",
+	/* GMT_IMAGE_WRITE_ERROR */		"GMT_IMAGE_WRITE_ERROR",
 	/* GMT_MEMORY_ERROR */			"GMT_MEMORY_ERROR",
 	/* GMT_FREE_EXTERNAL_NOT_ALLOWED */	"GMT_FREE_EXTERNAL_NOT_ALLOWED",
 	/* GMT_FREE_WRONG_LEVEL */		"GMT_FREE_WRONG_LEVEL",

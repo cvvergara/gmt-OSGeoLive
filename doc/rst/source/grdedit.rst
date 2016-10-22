@@ -13,7 +13,7 @@ Synopsis
 
 .. include:: common_SYN_OPTs.rst_
 
-**grdedit** *grid* [ |-A| ]
+**grdedit** *grid* [ |-A| ] [ |-C| ]
 [ |-D|\ *xname*/*yname*/*zname*/*scale*/*offset*/*invalid*/*title*/*remark* ]
 [ |-E|\ [**a**\ \|\ **h**\ \|\ **l**\ \|\ **r**\ \|\ **t**\ \|\ **v**] ]
 [ |-G|\ *outgrid* ]
@@ -25,7 +25,6 @@ Synopsis
 [ |SYN_OPT-bi| ]
 [ |SYN_OPT-di| ]
 [ |SYN_OPT-f| ]
-[ |SYN_OPT-i| ]
 [ |SYN_OPT-:| ]
 
 |No-spaces|
@@ -59,6 +58,11 @@ Optional Arguments
     (i.e., created prior to GMT 3.1) often had excessive slop in
     *x_inc*, *y_inc* and an adjustment is necessary. Newer files are
     created correctly.
+
+.. _-C:
+
+**-C**
+    Clear the command history from the grid header.
 
 .. _-D:
 
@@ -135,11 +139,9 @@ Optional Arguments
 .. |Add_-h| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-h.rst_
 
-.. include:: explain_-icols.rst_
-
 .. include:: explain_help.rst_
 
-.. include:: explain_grd_inout.rst_
+.. include:: explain_grd_inout_short.rst_
 
 .. include:: explain_grd_coord.rst_
 

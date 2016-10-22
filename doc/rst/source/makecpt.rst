@@ -17,11 +17,11 @@ Synopsis
 [ |-C|\ *cpt* ]
 [ |-D|\ [**i**\ \|\ **o**] ]
 [ |-E|\ [*nlevels*] ]
-[ |-F|\ [**R**\ \|\ **r**\ \|\ **h**\ \|\ **c** ]
+[ |-F|\ [**R**\ \|\ **r**\ \|\ **h**\ \|\ **c** ][**+c**\ ]]
 [ |-G|\ *zlo*\ /\ *zhi* ]
 [ |-I| ] [ |-M| ]
 [ |-N| ] [ |-Q|\ [**i**\ \|\ **o**] ]
-[ |-T|\ *z_min*/*z_max*\ [/*z_inc*\ [+]] \| **-T**\ *ztable* ]
+[ |-T|\ *z_min*/*z_max*\ [/*z_inc*\ [+]] \| **-T**\ *ztable* \| **-T**\ *z1,z2,...,zn* ]
 [ |-V|\ [*level*\ ] ] [ |-W| ] [ |-Z| ]
 
 |No-spaces|
@@ -29,21 +29,21 @@ Synopsis
 Description
 -----------
 
-**makecpt** is a utility that will help you make color palette tables
-(CPT files). You define an equidistant set of contour intervals or pass
-your own z-table, and create a new CPT file based on an existing master
-CPT file. The resulting CPT file can be reversed relative to the master
+**makecpt** is a utility that will help you make static color palette tables
+(CPTs). You define an equidistant set of contour intervals or pass
+your own z-table or list, and create a new CPT based on an existing master (dynamic)
+CPT. The resulting CPT can be reversed relative to the master
 cpt, and can be made continuous or discrete.  For color tables beyond the
 standard GMT offerings, visit cpt-city:
 http://soliton.vm.bytemark.co.uk/pub/cpt-city/.
 
-The CPT file includes three additional colors beyond the range of
+The CPT includes three additional colors beyond the range of
 z-values. These are the background color (B) assigned to values lower
 than the lowest *z*-value, the foreground color (F) assigned to values
 higher than the highest *z*-value, and the NaN color (N) painted
 wherever values are undefined.
 
-If the master CPT file includes B, F, and N entries, these will be
+If the master CPT includes B, F, and N entries, these will be
 copied into the new master file. If not, the parameters
 :ref:`COLOR_BACKGROUND <COLOR_BACKGROUND>`, :ref:`COLOR_FOREGROUND <COLOR_FOREGROUND>`,
 and :ref:`COLOR_NAN <COLOR_NAN>` from
@@ -51,10 +51,10 @@ the :doc:`gmt.conf` file or the command line will be used. This default
 behavior can be overruled using the options **-D**, **-M** or **-N**.
 
 The color model (RGB, HSV or CMYK) of the palette created by **makecpt**
-will be the same as specified in the header of the master CPT file. When
-there is no :ref:`COLOR_MODEL <COLOR_MODEL>` entry in the master CPT file, the
+will be the same as specified in the header of the master CPT. When
+there is no :ref:`COLOR_MODEL <COLOR_MODEL>` entry in the master CPT, the
 :ref:`COLOR_MODEL <COLOR_MODEL>` specified in the :doc:`gmt.conf` file or on the command
-line will be used. 
+line will be used.
 
 Required Arguments
 ------------------
@@ -74,11 +74,11 @@ Optional Arguments
 .. _-C:
 
 **-C**\ *cpt*
-    Selects the master color table CPT file to use in the interpolation.
+    Selects the master color table CPT to use in the interpolation.
     Choose among the built-in tables (type **makecpt** to see the list)
-    or give the name of an existing CPT file [Default gives a rainbow CPT file].
+    or give the name of an existing CPT [Default gives a rainbow CPT].
     Yet another option is to specify -Ccolor1,color2[,color3,...]
-    to build a linear continuous cpt from those colors automatically.  
+    to build a linear continuous cpt from those colors automatically.
     In this case *color*\ **n** can be a r/g/b triplet, a color name,
     or an HTML hexadecimal color (e.g. #aabbcc ).
 
@@ -86,11 +86,11 @@ Optional Arguments
 
 **-D**\ [**i**\ \|\ **o**]
     Select the back- and foreground colors to match the colors for
-    lowest and highest *z*-values in the output CPT file [Default uses
+    lowest and highest *z*-values in the output CPT [Default uses
     the colors specified in the master file, or those defined by the
     parameters :ref:`COLOR_BACKGROUND <COLOR_BACKGROUND>`, :ref:`COLOR_FOREGROUND <COLOR_FOREGROUND>`, and
     :ref:`COLOR_NAN <COLOR_NAN>`]. Append **i** to match the colors for the lowest and
-    highest values in the input (instead of the output) CPT file.
+    highest values in the input (instead of the output) CPT.
 
 .. _-E:
 
@@ -101,14 +101,15 @@ Optional Arguments
     This z-range information is used instead of providing the **-T** option.
     We create a linear color table by dividing the table data z-range into
     *nlevels* equidistant slices.  If *nlevels* is not given it defaults to
-    the number of levels in the chosen CPT file.
+    the number of levels in the chosen CPT.
 
 .. _-F:
 
-**-F**\ [**R**\ \|\ **r**\ \|\ **h**\ \|\ **c**]
-    Force output CPT file to written with r/g/b codes, gray-scale values
+**-F**\ [**R**\ \|\ **r**\ \|\ **h**\ \|\ **c**][**+c**\ ]]
+    Force output CPT to written with r/g/b codes, gray-scale values
     or color name (**R**, default) or r/g/b codes only (**r**), or h-s-v
-    codes (**h**), or c/m/y/k codes (**c**).
+    codes (**h**), or c/m/y/k codes (**c**).  Optionally or alternatively,
+    append **+c** to write discrete palettes in categorical format.
 
 .. _-G:
 
@@ -121,7 +122,7 @@ Optional Arguments
 .. _-I:
 
 **-I**
-    Reverses the sense of color progression in the master CPT file. Also
+    Reverses the sense of color progression in the master CPT. Also
     exchanges the foreground and background colors, including those
     specified by the parameters :ref:`COLOR_BACKGROUND <COLOR_BACKGROUND>` and
     :ref:`COLOR_FOREGROUND <COLOR_FOREGROUND>`.
@@ -130,7 +131,7 @@ Optional Arguments
 
 **-M**
     Overrule background, foreground, and NaN colors specified in the
-    master CPT file with the values of the parameters
+    master CPT with the values of the parameters
     :ref:`COLOR_BACKGROUND <COLOR_BACKGROUND>`, :ref:`COLOR_FOREGROUND <COLOR_FOREGROUND>`,
     and :ref:`COLOR_NAN <COLOR_NAN>`
     specified in the :doc:`gmt.conf` file or on the command line. When
@@ -151,15 +152,15 @@ Optional Arguments
 
 .. _-T:
 
-**-T**\ *z_min*/*z_max*\ [/*z_inc*\ [+]] \| **-T**\ *ztable*
-    Defines the range of the new CPT file by giving the lowest and
-    highest z-value and interval. When used with **-C** and *z_inc* is
-    not specified, the number of intervals remains the same as in the
-    input palette. If *z_inc* is specified with a trailing **+** we
-    interpret *z_inc* as the number of desired intervals instead.
+**-T**\ *z_min*/*z_max*\ [/*z_inc*\ [+]] \| **-T**\ *ztable* \| **-T**\ *z1,z2,...,zn*
+    Defines the range of the new CPT by giving the lowest and
+    highest z-value and interval.  Append /*z_inc* to sample the input CPT
+    discretely at intervals *z_inc* between *z_min* and *z_max*;
+    append a trailing **+** to interpret *z_inc* as the number of desired intervals instead.
     Alternatively, give the name of a ASCII file that has one z-value
-    per record. If **-T** is not given, the existing range in the master
-    CPT file will be used intact. 
+    per record, or provide a list of comma-separated z-values instead
+    If **-T** is not given, the existing range in the master
+    CPT will be used intact.
 
 .. _-V:
 
@@ -178,34 +179,62 @@ Optional Arguments
 .. _-Z:
 
 **-Z**
-    Creates a continuous CPT file [Default is discontinuous, i.e.,
-    constant colors for each interval]. 
+    Creates a continuous CPT [Default is discontinuous, i.e.,
+    constant colors for each interval]. This option has no effect when no **-T**
+    is used, or when using **-T**\ *z_min*/*z_max*; in the first case the input
+    CPT remains untouched, in the second case it is only scaled to match the
+    range *z_min*/*z_max*.
 
 .. include:: explain_help.rst_
+
+.. include:: explain_transparency.rst_
+
+Color Hinges
+------------
+
+Some of the GMT master dynamic CPTs are actually two separate CPTs
+meeting at a *hinge*.  Usually, colors may change dramatically across
+the hinge, which is used to separate two different domains (e.g., land
+and ocean across the shoreline, for instance).  CPTs with a hinge will
+have their two parts stretched to the required range separately, i.e.,
+the bottom part up to the hinge will be stretched independently of the
+part from the hinge to the top, according to the prescribed new range.
+If the selected range does not include the hinge then no such partitioning
+takes place.
+
+Color Aliasing
+--------------
+
+For best result when **-T -Z** is used we recommend you do no append
+a specific *z_inc*.  This way the original CPT is used exactly
+as is but the *z* boundaries are adjusted to match the stated limits.
+Otherwise you may, depending on the nature of the input CPT, miss
+aspects of the color changes by aliasing the signal.
 
 Examples
 --------
 
-To make a CPT file with z-values from -200 to 200, with discrete color
+To make a CPT with z-values from -200 to 200, with discrete color
 changes every 25, and using a polar blue-white-red colortable:
 
    ::
 
     gmt makecpt -Cpolar -T-200/200/25 > colors.cpt
 
-To make an equidistant CPT file from z = -2 to 6, in steps of 1, using
-continuous default rainbow colors:
+To make an equidistant CPT from z = -2 to 6 using the
+continuous default rainbow of colors:
 
    ::
 
-    gmt makecpt -T-2/6/1 -Z > rainbow.cpt
+    gmt makecpt -T-2/6 -Z > rainbow.cpt
 
-To make a GEBCO look-alike CPT file for bathymetry, run
+To use the GEBCO look-alike CPT with its default range for bathymetry, run
 
    ::
 
     gmt makecpt -Cgebco > my_gebco.cpt
 
+or simply use -Cgebco directly in the application that needs the color table.
 To create a 24-level rainbow color table suitable for plotting the depths in
 the data table depths.txt (with lon, lat, depths), run
 
@@ -213,12 +242,30 @@ the data table depths.txt (with lon, lat, depths), run
 
     gmt makecpt -Cgebco depths.txt -i2 -Z -E24 > my_depths.cpt
 
+To make a custom discrete color table for depth of seismicity, using red color for
+hypocenters between 0 and 100 km, green for 100-300 km, and blue for deep (300-1000 km)
+earthquakes, use
+
+   ::
+   
+    gmt makecpt -Cred,green,blue -T0,80,300,1000 -N > seis.cpt
+
+Finally, to make a continuous CPT from white to blue as z goes from
+3 to 10, try
+
+   ::
+   
+    gmt makecpt -Cwhite,blue -T3,10 -Z > cold.cpt
+
 Bugs
 ----
 
-Since **makecpt** will also interpolate from any existing CPT file you
-may have in your directory, you cannot use one of the listed cpt names
-as an output filename; hence the my_gebco.cpt in the example.
+Since **makecpt** will also interpolate from any existing CPT you
+may have in your directory, you should not use one of the listed cpt names
+as an output filename; hence the my_gebco.cpt in the example.  If you
+do create a CPT of such a name, e.g., rainbow.cpt, then **makecpt** will
+read that file first and not look for the master CPT in the shared GMT
+directory.
 
 See Also
 --------

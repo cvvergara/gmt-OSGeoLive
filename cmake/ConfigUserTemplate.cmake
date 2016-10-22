@@ -1,5 +1,5 @@
 #
-# $Id: ConfigUserTemplate.cmake 15218 2015-11-12 00:46:59Z fwobbe $
+# $Id: ConfigUserTemplate.cmake 17038 2016-08-30 19:57:06Z pwessel $
 #
 # Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -34,7 +34,8 @@
 # ============================================================================
 # Basic setup begins here.  All settings are optional.  In most cases, setting
 # CMAKE_INSTALL_PREFIX should be all you need to do in order to build GMT with
-# reasonable defaults enabled.
+# reasonable defaults enabled.  Note: If you need to specify directory names
+# with spaces (e.g., on Windows) then you must put them in quotes.
 # ============================================================================
 
 # Installation path (usually defaults to /usr/local) [auto]:
@@ -54,6 +55,13 @@
 
 # Make executables relocatable on supported platforms (relative RPATH) [FALSE]:
 #set (GMT_INSTALL_RELOCATABLE TRUE)
+
+# Exclude optional GDAL, PCRE, FFTW3, LAPACK, ZLIB dependencies even if you have them installed [FALSE]
+#set (GMT_EXCLUDE_GDAL TRUE)
+#set (GMT_EXCLUDE_PCRE TRUE)
+#set (GMT_EXCLUDE_FFTW3 TRUE)
+#set (GMT_EXCLUDE_LAPACK TRUE)
+#set (GMT_EXCLUDE_ZLIB TRUE)
 
 # ============================================================================
 # Advanced configuration begins here.  Usually it is not necessary to edit any
@@ -199,6 +207,7 @@
 # that link against the full gmt libs (not just the API; for building codes
 # that only need the GMT API, see the gmt-custom project).
 #set (EXTRA_BUILD_DIRS apidemo)
+#set (DO_API_TESTS ON)
 
 # Directory in which to install the release sources per default
 # [${GMT_BINARY_DIR}/gmt-${GMT_PACKAGE_VERSION}]:

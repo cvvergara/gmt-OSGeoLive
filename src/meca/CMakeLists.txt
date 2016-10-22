@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CMakeLists.txt 17057 2016-09-01 17:55:27Z jluis $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -20,8 +20,8 @@
 #
 
 # source files
-set (SUPPL_LIB_SRCS utilmeca.c nrutil.c)
-set (SUPPL_PROGS_SRCS psmeca.c pspolar.c psvelo.c pscoupe.c)
+set (SUPPL_LIB_SRCS utilmeca.c sacio.c)
+set (SUPPL_PROGS_SRCS psmeca.c pspolar.c psvelo.c pscoupe.c pssac.c)
 
 # example files
 set (SUPPL_EXAMPLE_FILES README.meca)

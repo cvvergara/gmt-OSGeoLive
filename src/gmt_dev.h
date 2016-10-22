@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dev.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_dev.h 16029 2016-04-03 03:26:48Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -54,15 +54,15 @@ extern "C" {
 /* Note: GMT functions will sometimes have arguments that are unused by design, i.e., to ensure that
  * a family of functions have the same number and type of arguments so that pointers to these functions
  * can be passed, even though in some cases not all arguments are used.  These will result in compiler
- * warnings [-Wunused-variable]. To suppress those (and only those), we can define GMT_UNUSED as this:
+ * warnings [-Wunused-variable]. To suppress those (and only those), we can define gmt_M_unused as this:
  */
 
-#define GMT_UNUSED(x) (void)(x)
+#define gmt_M_unused(x) (void)(x)
 
-/* and then call GMT_UNUSED() on all such variables at the beginning of a routine. For example:
- * bool func (int x) { GMT_UNUSED(x); return(true); }
+/* and then call gmt_M_unused() on all such variables at the beginning of a routine. For example:
+ * bool func (int x) { gmt_M_unused(x); return(true); }
  * This should work for all compilers, GCC and others.
- * Just grep for GMT_UNUSED to see where these situations occur.
+ * Just grep for gmt_M_unused to see where these situations occur.
  */
 
 /* Because gcc does not support some features in clang AND due to bugs in os/base.h we must add these,
@@ -77,6 +77,9 @@ extern "C" {
 #define vImage_CVUtilities_h
 #endif
 #endif
+
+/* Used to restrict the scope of a function to the file it was declared in */
+#define GMT_LOCAL static
 
 /* CMake definitions: This must be first! */
 #include "gmt_config.h"
@@ -120,7 +123,7 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 #include "gmt_time.h"           /* Declarations of structures for dealing with time */
 #include "gmt_texture.h"        /* Declarations of structures for dealing with pen, fill, etc. */
 #include "gmt_defaults.h"       /* Declarations of structure for GMT default settings */
-#include "gmt_ps.h"             /* Declarations of structure for GMT PostScript settings */
+#include "gmt_psl.h"            /* Declarations of structure for GMT PostScript settings */
 #include "gmt_hash.h"           /* Declarations of structure for GMT hashing */
 
 #ifdef HAVE_GDAL
@@ -145,7 +148,7 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 #include "gmt_contour.h"        /* Contour label structure and functions */
 #include "gmt_decorate.h"       /* Decorated line structure */
 #include "gmt_plot.h"           /* extern functions defined in gmt_plot.c */
-#include "gmt_memory.h"         /* extern functions defined in gmt_memory.c */
+#include "gmt_memory.h"         /* extern functions defined in gmt_M_memory.c */
 #include "gmt_types.h"          /* GMT type declarations */
 
 #ifdef _OPENMP                  /* Using open MP parallelization */
@@ -154,6 +157,11 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 
 #include "gmt_prototypes.h"     /* All GMT low-level API */
 #include "common_string.h"      /* All code shared between GMT and PSL */
+
+/* If GLIBC compatible qsort_r is not available */
+#ifndef HAVE_QSORT_R_GLIBC
+#	include "compat/qsort.h"
+#endif
 
 #ifdef __cplusplus
 }

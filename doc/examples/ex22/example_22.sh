@@ -1,29 +1,29 @@
 #!/bin/bash
 #		GMT EXAMPLE 22
-#		$Id: example_22.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_22.sh 16792 2016-07-13 21:12:21Z pwessel $
 #
 # Purpose:	Automatic map of last 7 days of world-wide seismicity
-# GMT progs:	gmtset, pscoast, psxy, pslegend
+# GMT modules:	gmtset, pscoast, psxy, pslegend
 # Unix progs:	cat, sed, awk, wget|curl
 #
 ps=example_22.ps
-gmt gmtset FONT_ANNOT_PRIMARY 10p FONT_TITLE 18p FORMAT_GEO_MAP ddd:mm:ssF
+gmt set FONT_ANNOT_PRIMARY 10p FONT_TITLE 18p FORMAT_GEO_MAP ddd:mm:ssF
 
 # Get the data (-q quietly) from USGS using the wget (comment out in case
 # your system does not have wget or curl)
 
-#wget http://neic.usgs.gov/neis/gis/bulletin.asc -q -O neic_quakes.d
-#curl http://neic.usgs.gov/neis/gis/bulletin.asc -s > neic_quakes.d
+#wget http://neic.usgs.gov/neis/gis/bulletin.asc -q -O neic_quakes.txt
+#curl http://neic.usgs.gov/neis/gis/bulletin.asc -s > neic_quakes.txt
 
 # Count the number of events (to be used in title later. one less due to header)
 
-n=`cat neic_quakes.d | wc -l`
+n=`cat neic_quakes.txt | wc -l`
 n=`expr $n - 1`
 
 # Pull out the first and last timestamp to use in legend title
 
-first=`sed -n 2p neic_quakes.d | $AWK -F, '{printf "%s %s\n", $1, $2}'`
-last=`sed -n '$p' neic_quakes.d | $AWK -F, '{printf "%s %s\n", $1, $2}'`
+first=`sed -n 2p neic_quakes.txt | $AWK -F, '{printf "%s %s\n", $1, $2}'`
+last=`sed -n '$p' neic_quakes.txt | $AWK -F, '{printf "%s %s\n", $1, $2}'`
 
 # Assign a string that contains the current user @ the current computer node.
 # Note that two @@ is needed to print a single @ in gmt pstext:
@@ -33,17 +33,13 @@ me="GMT guru @@ GMTbox"
 
 # Create standard seismicity color table
 
-cat > neis.cpt << END
-0	red	100	red
-100	green	300	green
-300	blue	10000	blue
-END
+gmt makecpt -Cred,green,blue -T0,100,300,10000 -N > neis.cpt
 
 # Start plotting. First lay down map, then plot quakes with size = magintude/50":
 
 gmt pscoast -Rg -JK180/9i -B45g30 -B+t"World-wide earthquake activity" -Gbrown -Slightblue \
 	-Dc -A1000 -K -Y2.75i > $ps
-$AWK -F, '{ print $4, $3, $6, $5*0.02}' neic_quakes.d \
+$AWK -F, '{ print $4, $3, $6, $5*0.02}' neic_quakes.txt \
 	| gmt psxy -R -JK -O -K -Cneis.cpt -Sci -Wthin -h >> $ps
 # Create legend input file for NEIS quake plot
 

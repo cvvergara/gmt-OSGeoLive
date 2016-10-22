@@ -111,6 +111,7 @@ Supplementary modules
    supplements/meca/psmeca
    supplements/meca/pspolar
    supplements/meca/psvelo
+   supplements/meca/pssac
    supplements/mgd77/mgd77convert
    supplements/mgd77/mgd77info
    supplements/mgd77/mgd77list
@@ -139,6 +140,7 @@ Supplementary modules
    supplements/spotter/hotspotter
    supplements/spotter/originator
    supplements/spotter/rotconverter
+   supplements/spotter/rotsmoother
    supplements/x2sys/x2sys_binlist
    supplements/x2sys/x2sys_cross
    supplements/x2sys/x2sys_datalist

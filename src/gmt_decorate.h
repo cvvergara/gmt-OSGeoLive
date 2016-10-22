@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_decorate.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_decorate.h 16603 2016-06-22 02:47:24Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -72,7 +72,7 @@ struct GMT_DECORATE {
 	char pen[GMT_LEN64];		/* The symbol outline pen */
 	char symbol_code[2];		/* The symbol code only as a null-terminated string */
 	char flag;			/* Char for the option key */
-	struct GMT_DATATABLE *xp;	/* Table with list of structures with crossing-line coordinates */
+	struct GMT_DATASET *X;		/* Dataset with list of structures with crossing-line coordinates */
 	struct GMT_XSEGMENT *ylist_XP;	/* Sorted y-segments for crossing-lines */
 	struct GMT_XSEGMENT *ylist;	/* y-indices sorted in increasing order */
 	struct GMT_XOVER XC;		/* Structure with resulting crossovers */

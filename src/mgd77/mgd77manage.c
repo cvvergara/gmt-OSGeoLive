@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77manage.c 15213 2015-11-11 03:40:07Z pwessel $
+ *	$Id: mgd77manage.c 17163 2016-10-03 19:17:34Z pwessel $
  *
- *    Copyright (c) 2005-2015 by P. Wessel
+ *    Copyright (c) 2005-2016 by P. Wessel
  * mgd77manage is used to (1) remove data columns from mgd77+ files
  * or (2) add a new data column to mgd77+ files.  Data can be added
  * from data tables, created from reference field formulas, or by
@@ -28,8 +28,6 @@
 #include "mgd77_e77.h"	/* E77 Header Errata Codes */
 
 #define GMT_PROG_OPTIONS "-RVbn"
-
-int backwards_SQ_parsing (struct GMT_CTRL *GMT, char option, char *item);
 
 #define N_PAR		7
 #define COL_SCALE	0
@@ -61,7 +59,7 @@ int backwards_SQ_parsing (struct GMT_CTRL *GMT, char option, char *item);
 #define MODE_n		7
 #define MODE_t		8
 
-#define set_bit(k) (1 << (k))
+EXTERN_MSC int gmtinit_backwards_SQ_parsing (struct GMT_CTRL *GMT, char option, char *item);
 
 struct MGD77MANAGE_CTRL {	/* All control options for this program (except common args) */
 	/* active is true if the option has been activated */
@@ -105,10 +103,10 @@ struct MGD77MANAGE_CTRL {	/* All control options for this program (except common
 	} N;
 };
 
-void *New_mgd77manage_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct MGD77MANAGE_CTRL *C = NULL;
 	
-	C = GMT_memory (GMT, NULL, 1, struct MGD77MANAGE_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct MGD77MANAGE_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 	
@@ -121,23 +119,22 @@ void *New_mgd77manage_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a
  	return (C);
 }
 
-void Free_mgd77manage_Ctrl (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->A.file) free (C->A.file);	
-	if (C->D.file) free (C->D.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->A.file);	
+	gmt_M_str_free (C->D.file);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_mgd77manage_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: mgd77manage <cruise(s)> [-A[+]a|c|d|D|e|E|g|i|n|t|T<info>] [-Cf|g|e] [-D<name1>,<name2>,...]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-E<no_char>] [-F] [-I<abbrev>/<name>/<units>/<size>/<scale>/<offset>/\"comment\"]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-N%s[+|-]] [%s] [%s] [%s]\n\t[%s]\n\n",
 	             GMT_LEN_UNITS2_DISPLAY, GMT_Rgeo_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_n_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	MGD77_Cruise_Explain (API->GMT);
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
@@ -172,7 +169,7 @@ int GMT_mgd77manage_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   g: Sample a GMT grid along track. (also see -n; use -R to select a sub-region).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      Append filename of the GMT grid.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   i: Sample a Sandwell/Smith *.img Mercator grid along track (also see -n; use -R to select a sub-region).\n");
-	GMT_img_syntax (API->GMT);
+	gmt_img_syntax (API->GMT);
 	GMT_Message (API, GMT_TIME_NONE, "\t   n: Give filename with (rec_no, data) for a new column.  We expect a two-column file\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      with record numbers (0 means 1st row) in first column and data values in 2nd.  Only one cruise can be set.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      If filename is - we read from stdin.  Only records with matching record numbers will have data assigned.\n");
@@ -204,13 +201,12 @@ int GMT_mgd77manage_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t    See -C for selecting distance calculation procedure.\n");
 	GMT_Option (API, "Rg,V,bi,di,n,.");
 	
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
 /* Help functions to decode the -A and -I options */
 
-int decode_A_options (int mode, char *line, char *file, double parameters[])
-{
+GMT_LOCAL int decode_A_options (int mode, char *line, char *file, double parameters[]) {
 	int error = 0, n;
 	
 	if (mode == 1) {	/* For *.img files since we need to know data scale and grid mode */
@@ -226,12 +222,12 @@ int decode_A_options (int mode, char *line, char *file, double parameters[])
 	return (error);
 }
 
-int decode_I_options (struct GMT_CTRL *GMT, char *line, char *abbrev, char *name, char *units, char *size, char *comment, double parameters[])
-{	/* -I<abbrev>/<name>/<units>/<size>/<scale>/<offset>/\"comment\" */
+GMT_LOCAL int decode_I_options (struct GMT_CTRL *GMT, char *line, char *abbrev, char *name, char *units, char *size, char *comment, double parameters[]) {
+	/* -I<abbrev>/<name>/<units>/<size>/<scale>/<offset>/\"comment\" */
 	unsigned int i = 0, k, error, pos = 0;
 	char p[GMT_BUFSIZ] = {""};
 	
-	while (i < 7 && GMT_strtok (line, "/", &pos, p)) {	/* Process the 7 items */
+	while (i < 7 && gmt_strtok (line, "/", &pos, p)) {	/* Process the 7 items */
 		switch (i) {
 			case 0:
 				strcpy (abbrev, p);
@@ -298,8 +294,8 @@ int decode_I_options (struct GMT_CTRL *GMT, char *line, char *abbrev, char *name
 	return ((lrint (parameters[COL_TYPE]) == MGD77_NOT_SET) || (i != 7));
 }
 
-int skip_if_missing (struct GMT_CTRL *GMT, char *name, char *file, struct MGD77_CONTROL *F, struct MGD77_DATASET **D)
-{	/* Used when a needed column is not present and we must free memory and goto next file */
+GMT_LOCAL int skip_if_missing (struct GMT_CTRL *GMT, char *name, char *file, struct MGD77_CONTROL *F, struct MGD77_DATASET **D) {
+	/* Used when a needed column is not present and we must free memory and goto next file */
 	int id;
 
 	if ((id = MGD77_Get_Column (GMT, name, F)) == MGD77_NOT_SET) {
@@ -309,12 +305,11 @@ int skip_if_missing (struct GMT_CTRL *GMT, char *name, char *file, struct MGD77_
 	return (id);
 }
 
-int got_default_answer (char *line, char *answer)
-{
+GMT_LOCAL int got_default_answer (char *line, char *answer) {
 	int i, k, len;
 	
 	len = (int)strlen (line) - 1;
-	GMT_memset (answer, GMT_BUFSIZ, char);	/* No default answer */
+	gmt_M_memset (answer, GMT_BUFSIZ, char);	/* No default answer */
 	if (line[len] == ']') {	/* Got a default answer for this item */
 		for (k = i = len; i && line[i] != '['; i--);
 		strncpy (answer, &line[i+1], (size_t)(k - i - 1));
@@ -322,8 +317,7 @@ int got_default_answer (char *line, char *answer)
 	return (answer[0] != '\0');
 }
 
-int GMT_mgd77manage_parse (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to mgd77manage and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -437,6 +431,7 @@ int GMT_mgd77manage_parse (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *Ctrl, 
 			case 'D':	/* Columns to delete */
 				Ctrl->D.active = true;
 				Ctrl->D.file = strdup (opt->arg);
+				break;
 				
 			case 'E':	/* character to generate no-string value */
 				Ctrl->E.active = true;
@@ -456,7 +451,7 @@ int GMT_mgd77manage_parse (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *Ctrl, 
 			case 'N':	/* Set distance units */
 				Ctrl->N.active = true;
 				Ctrl->N.code[0] = opt->arg[0];
-				if (Ctrl->N.code[0] == 'm' && GMT_compat_check (GMT, 4)) {
+				if (Ctrl->N.code[0] == 'm' && gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning -N: Unit m for miles is deprecated; use unit M instead\n");
 					Ctrl->N.code[0] = 'M';
 				}
@@ -467,13 +462,13 @@ int GMT_mgd77manage_parse (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *Ctrl, 
 				break;
 				
 			case 'Q':	/* Backwards compatible.  Grid interpolation options are now be set with -n */
-				if (GMT_compat_check (GMT, 4))
-					n_errors += backwards_SQ_parsing (GMT, 'Q', opt->arg);
+				if (gmt_M_compat_check (GMT, 4))
+					n_errors += gmtinit_backwards_SQ_parsing (GMT, 'Q', opt->arg);
 				else
-					n_errors += GMT_default_error (GMT, opt->option);
+					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
@@ -483,36 +478,35 @@ int GMT_mgd77manage_parse (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *Ctrl, 
 	c_nc_type = (nc_type) lrint (Ctrl->A.parameters[COL_TYPE]);		/* NC data type */
 	strings = (c_nc_type == NC_CHAR);				/* true if our new column contains strings */
 	
-	n_errors += GMT_check_condition (GMT, (got_table + got_grid) > 1, "Syntax error: You must select one, and only one, of the -A options\n");
-	n_errors += GMT_check_condition (GMT, (Ctrl->A.interpolate + strings) > 1, "Syntax error: Cannot interpolate column if data are strings\n");
-	n_errors += GMT_check_condition (GMT, got_table && Ctrl->A.mode == MODE_c, "Syntax error: Only one -A option can be specified\n");
-	n_errors += GMT_check_condition (GMT, !got_grid && GMT->common.n.interpolant != BCR_BICUBIC, "Syntax error -n: Requires -Ag|i\n");
+	n_errors += gmt_M_check_condition (GMT, (got_table + got_grid) > 1, "Syntax error: You must select one, and only one, of the -A options\n");
+	n_errors += gmt_M_check_condition (GMT, (Ctrl->A.interpolate + strings) > 1, "Syntax error: Cannot interpolate column if data are strings\n");
+	n_errors += gmt_M_check_condition (GMT, got_table && Ctrl->A.mode == MODE_c, "Syntax error: Only one -A option can be specified\n");
+	n_errors += gmt_M_check_condition (GMT, !got_grid && GMT->common.n.interpolant != BCR_BICUBIC, "Syntax error -n: Requires -Ag|i\n");
 	if (!(Ctrl->D.active || Ctrl->A.mode == MODE_e)) {
-		n_errors += GMT_check_condition (GMT, strlen (Ctrl->I.c_abbrev) > MGD77_COL_ABBREV_LEN,
+		n_errors += gmt_M_check_condition (GMT, strlen (Ctrl->I.c_abbrev) > MGD77_COL_ABBREV_LEN,
 		                                 "Syntax error: Column abbreviation too long - %d characters is maximum!\n", MGD77_COL_ABBREV_LEN);
-		n_errors += GMT_check_condition (GMT, strlen (Ctrl->I.c_name) > MGD77_COL_NAME_LEN,
+		n_errors += gmt_M_check_condition (GMT, strlen (Ctrl->I.c_name) > MGD77_COL_NAME_LEN,
 		                                 "Syntax error: Column name too long - %d characters is maximum!\n", MGD77_COL_NAME_LEN);
-		n_errors += GMT_check_condition (GMT, strlen (Ctrl->I.c_comment) > MGD77_COL_COMMENT_LEN,
+		n_errors += gmt_M_check_condition (GMT, strlen (Ctrl->I.c_comment) > MGD77_COL_COMMENT_LEN,
 		                                 "Syntax error: Column comment too long - %d characters is maximum!\n", MGD77_COL_COMMENT_LEN);
 	}
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_mgd77manage_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_mgd77manage (void *V_API, int mode, void *args)
-{
+int GMT_mgd77manage (void *V_API, int mode, void *args) {
 	int cdf_var_id, n_dims = 0, dims[2];		/* netCDF variables should be declared as int */
 	size_t start[2] = {0, 0}, count[2] = {0, 0};	/* NetCDF offset variables are size_t */
 	
 	int i, k = 0, column, result, set, check, error = 0;
-	int width, GF_version = MGD77_NOT_SET, n_fields = 0;
+	int width, GF_version = MGD77_NOT_SET, n_fields = 0, n_paths = 0;
 	bool transform, verified, strings = false, got_grid, got_table;
 	bool two_cols = false, constant, ok_to_read = true, interpolate = false;
 	
 	unsigned int MTF_col = 1, pos, c_kind = 0, row, col;
-	uint64_t argno, n_expected_fields, n_paths = 0, n_delete = 0, n_bad, n_sampled = 0, n_changed = 0, n = 0, rec, jrec;
+	uint64_t argno, n_expected_fields, n_delete = 0, n_bad, n_sampled = 0, n_changed = 0, n = 0, rec, jrec;
 	size_t n_alloc = GMT_CHUNK;
 	
 	time_t now;
@@ -535,27 +529,27 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 	struct MGD77MANAGE_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_mgd77manage_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_mgd77manage_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_mgd77manage_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_mgd77manage_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_mgd77manage_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
 	/*---------------------------- This is the mgd77manage main code ----------------------------*/
 
-	GMT_set_pad (GMT, 2U);	/* Ensure space for BCs in case an API passed pad == 0 */
+	gmt_set_pad (GMT, 2U);	/* Ensure space for BCs in case an API passed pad == 0 */
 	MGD77_Init (GMT, &In);	/* Initialize MGD77 Machinery */
 
 	/* Default e77_skip_mode will apply header and fix corrections if prefix is Y and set all data bits */
@@ -571,12 +565,13 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 
 	if (n_paths == 0) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: No cruises given\n");
-		Return (EXIT_FAILURE);
+		Return (GMT_NO_INPUT);
 	}
 
 	if (got_table && n_paths != 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: With -Aa|d|D|n|t|T you can only select one cruise at the time.\n");
-		Return (EXIT_FAILURE);
+		MGD77_Path_Free (GMT, n_paths, list);
+		Return (GMT_PARSE_ERROR);
 	}
 	MGD77_Set_Unit (GMT, Ctrl->N.code, &dist_scale, -1);	/* Gets scale which multiplies meters to chosen distance unit */
 
@@ -605,7 +600,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 		}
 		else {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: -Ac expects m, c, or g[1-4]\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_PARSE_ERROR);
 		}
 	}
 	else if (Ctrl->A.mode == MODE_e) {	/* Do E77 work by ignoring previous E77 settings */
@@ -614,8 +609,8 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 	}
 	else if (Ctrl->A.mode == MODE_g) {	/* Read regular GMT grid */
 		double wesn[4];
-		GMT_memset (wesn, 4, double);
-		if (GMT->common.R.active) GMT_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
+		gmt_M_memset (wesn, 4, double);
+		if (GMT->common.R.active) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
 		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->A.file, NULL)) == NULL) {	/* Get data */
 			Return (API->error);
 		}
@@ -623,10 +618,10 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 	}
 	else if (Ctrl->A.mode == MODE_i) {	/* Read Sandwell/Smith IMG file */
 		double wesn[4];
-		GMT_memset (wesn, 4, double);
-		if (GMT->common.R.active) GMT_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
-		if ((G = GMT_create_grid (GMT)) == NULL) Return (API->error);
-		GMT_read_img (GMT, Ctrl->A.file, G, wesn, Ctrl->A.parameters[IMG_SCALE], urint(Ctrl->A.parameters[IMG_MODE]),
+		gmt_M_memset (wesn, 4, double);
+		if (GMT->common.R.active) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
+		if ((G = gmt_create_grid (GMT)) == NULL) Return (API->error);
+		gmt_read_img (GMT, Ctrl->A.file, G, wesn, Ctrl->A.parameters[IMG_SCALE], urint(Ctrl->A.parameters[IMG_MODE]),
 		              Ctrl->A.parameters[IMG_LAT], true);
 		interpolate = (GMT->common.n.threshold > 0.0);
 	}
@@ -637,20 +632,25 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 		if (Ctrl->A.file[0] == '-') {   /* Just read from standard input */
 			fp = GMT->session.std[GMT_IN];
 #ifdef SET_IO_MODE
-			GMT_setmode (GMT, GMT_IN);
+			gmt_setmode (GMT, GMT_IN);
 #endif
 		}
 		else {
-			if ((fp = GMT_fopen (GMT, Ctrl->A.file, GMT->current.io.r_mode)) == NULL) {
+			if ((fp = gmt_fopen (GMT, Ctrl->A.file, GMT->current.io.r_mode)) == NULL) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Cannot open file %s\n", Ctrl->A.file);
-				Return (EXIT_FAILURE);
+				MGD77_Path_Free (GMT, n_paths, list);
+				Return (GMT_ERROR_ON_FOPEN);
 			}
 		}
 
 		if (GMT->current.setting.io_header[GMT_IN]) {	/* Skip any header records */
-			for (i = 0; i < (int)GMT->current.setting.io_n_header_items; i++) if (!GMT_fgets (GMT, line, GMT_BUFSIZ, fp)) {
-				GMT_Report (API, GMT_MSG_NORMAL, "Read error for headers\n");
-				Return (EXIT_FAILURE);
+			for (i = 0; i < (int)GMT->current.setting.io_n_header_items; i++) {
+				if (!gmt_fgets (GMT, line, GMT_BUFSIZ, fp)) {
+					GMT_Report (API, GMT_MSG_NORMAL, "Read error for headers\n");
+					if (fp != GMT->session.std[GMT_IN]) gmt_fclose (GMT, fp);
+					MGD77_Path_Free (GMT, n_paths, list);
+					Return (GMT_DATA_READ_ERROR);
+				}
 			}
 		}
 
@@ -658,33 +658,33 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 		n = (two_cols) ? -1 : 0;
 		n_alloc = GMT_CHUNK;
 		n_expected_fields = (GMT->common.b.ncol[GMT_IN]) ? GMT->common.b.ncol[GMT_IN] : GMT_MAX_COLUMNS;
-		colvalue = GMT_memory (GMT, NULL, n_alloc, double);
+		colvalue = gmt_M_memory (GMT, NULL, n_alloc, double);
 		if (two_cols) {	/* Got an abscissae column as well (dnt: d = dist, n = rec number, t = time) */
-			coldnt = GMT_memory (GMT, NULL, n_alloc, double);
+			coldnt = gmt_M_memory (GMT, NULL, n_alloc, double);
 			GMT->current.io.col_type[GMT_IN][GMT_X] = Ctrl->A.kind;
 		}
 		if (strings && !two_cols) {	/* Must read strings directly from file since GMT->current.io.input would barf */
 			ok_to_read = false;
-			tmp_string = GMT_memory (GMT, NULL, n_alloc, char *);
-			while (GMT_fgets (GMT, word, GMT_BUFSIZ, fp)) {
+			tmp_string = gmt_M_memory (GMT, NULL, n_alloc, char *);
+			while (gmt_fgets (GMT, word, GMT_BUFSIZ, fp)) {
 				if (word[0] == '#') continue;
 				width = (int)strlen (word);
-				tmp_string[n] = GMT_memory (GMT, NULL, width + 1, char);
+				tmp_string[n] = gmt_M_memory (GMT, NULL, width + 1, char);
 				strcpy (tmp_string[n], word);
 				if (width > LEN) LEN = (signed char)width;
 				n++;
 			}
 		}
 		else if (strings) {		/* Pretend to read one column and get the text string form the text record */
-			tmp_string = GMT_memory (GMT, NULL, n_alloc, char *);
+			tmp_string = gmt_M_memory (GMT, NULL, n_alloc, char *);
 			n_expected_fields = 1;
 		}
 		
 		if (ok_to_read) in = GMT->current.io.input (GMT, fp, &n_expected_fields, &n_fields);
 
-		while (ok_to_read && !GMT_REC_IS_EOF (GMT)) {	/* Not yet EOF */
+		while (ok_to_read && !gmt_M_rec_is_eof (GMT)) {	/* Not yet EOF */
 
-			while (GMT_REC_IS_SEGMENT_HEADER (GMT) && !GMT_REC_IS_EOF(GMT)) {
+			while (gmt_M_rec_is_segment_header (GMT) && !gmt_M_rec_is_eof(GMT)) {
 				in = GMT->current.io.input (GMT, fp, &n_expected_fields, &n_fields);
 			}
 			if ((GMT->current.io.status & GMT_IO_EOF)) continue;	/* At EOF */
@@ -692,13 +692,18 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			if (GMT->current.io.status & GMT_IO_MISMATCH) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Mismatch between actual (%d) and expected (%d) fields near line %d\n",
 				            n_fields, n_expected_fields, n);
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				MGD77_Path_Free (GMT, n_paths, list);
+				MGD77_end (GMT, &In);
+				gmt_M_free (GMT, colvalue);
+				if (two_cols) gmt_M_free (GMT, coldnt);
+				if (strings) gmt_M_free (GMT, tmp_string);
+				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 			}
 
 			if (strings) {	/* number in col1, string in col2 */
 				coldnt[n]   = in[0];
-				sscanf (GMT->current.io.current_record, "%*s %s", word);
-				tmp_string[n] = GMT_memory (GMT, NULL, strlen(word) + 1, char);
+				sscanf (GMT->current.io.record, "%*s %s", word);
+				tmp_string[n] = gmt_M_memory (GMT, NULL, strlen(word) + 1, char);
 				strcpy (tmp_string[n], word);
 			}
 			else if (two_cols) {
@@ -721,18 +726,18 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			if (n == n_alloc) {
 				n_alloc <<= 1;
 				if (strings)
-					tmp_string = GMT_memory (GMT, tmp_string, n_alloc, char *);
+					tmp_string = gmt_M_memory (GMT, tmp_string, n_alloc, char *);
 				else
-					colvalue = GMT_memory (GMT, colvalue, n_alloc, double);
-				if (two_cols) coldnt = GMT_memory (GMT, coldnt, n_alloc, double);
+					colvalue = gmt_M_memory (GMT, colvalue, n_alloc, double);
+				if (two_cols) coldnt = gmt_M_memory (GMT, coldnt, n_alloc, double);
 			}
 
 			in = GMT->current.io.input (GMT, fp, &n_expected_fields, &n_fields);
 		}
-		GMT_fclose (GMT, fp);
+		gmt_fclose (GMT, fp);
 		if (two_cols && n_ave) { colvalue[n] = sum_z / n_ave; coldnt[n++] = last_dnt;}
-		if (!strings) colvalue = GMT_memory (GMT, colvalue, n, double);
-		if (two_cols) coldnt = GMT_memory (GMT, coldnt, n, double);
+		if (!strings) colvalue = gmt_M_memory (GMT, colvalue, n, double);
+		if (two_cols) coldnt = gmt_M_memory (GMT, coldnt, n, double);
 	}
 	
 	MGD77_Ignore_Format (GMT, MGD77_FORMAT_ANY);	/* Reset to all formats OK, then ... */
@@ -742,7 +747,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 	
 	In.format = MGD77_FORMAT_CDF;	/* Only file type allowed as input */
 	
-	for (argno = 0; argno < n_paths; argno++) {		/* Process each ID */
+	for (argno = 0; argno < (uint64_t)n_paths; argno++) {		/* Process each ID */
 	
 		if (MGD77_Open_File (GMT, list[argno], &In, MGD77_READ_MODE)) continue;
 				
@@ -753,7 +758,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 
 		if (MGD77_Read_File (GMT, list[argno], &In, D)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error reading data set for cruise %s\n", list[argno]);
-			GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+			GMT_exit (GMT, GMT_DATA_READ_ERROR); return GMT_DATA_READ_ERROR;
 		}
 
 		/* Start reading data from file */
@@ -765,7 +770,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			if (set == MGD77_M77_SET && !Ctrl->F.active) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Column %s is part of the standard MGD77 set and cannot be removed unless you use -F!\n",
 				            Ctrl->I.c_abbrev);
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 			}
 			if (!Ctrl->A.replace) {
 				GMT_Report (API, GMT_MSG_NORMAL, "A columned named %s is already present in %s.  use -A+ to overwrite [default is to skip]\n",
@@ -791,7 +796,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			(void) time (&now);
 			sprintf (history, "%s [%s] removed columns", ctime(&now), In.user);
 			for (i = 0; history[i]; i++) if (history[i] == '\n') history[i] = ' ';	/* Remove the \n returned by ctime() */
-			while ((GMT_strtok (Ctrl->D.file, ",", &pos, p))) {	/* For each named column */
+			while ((gmt_strtok (Ctrl->D.file, ",", &pos, p))) {	/* For each named column */
 				k = MGD77_Get_Column (GMT, p, &In);
 				if (k == MGD77_NOT_SET) {
 					GMT_Report (API, GMT_MSG_NORMAL, "No column named %s in %s - cannot delete it. \n", p, list[argno]);
@@ -809,7 +814,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				In.n_out_columns--;
 				for (col = k; col < In.n_out_columns; col++) {	/* Move remaining columns over */
 					D->values[col] = D->values[col+1];
-					free(In.desired_column[col]);	/* Need to free and realloc because next var name might be longer */
+					gmt_M_str_free (In.desired_column[col]);	/* Need to free and realloc because next var name might be longer */
 					In.desired_column[col] = strdup(In.desired_column[col+1]);
 					In.order[col].set = In.order[col+1].set;
 					In.order[col].item = In.order[col+1].item;
@@ -828,7 +833,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			sprintf (oldfile, "%s.old", In.path);
 			if (rename (In.path, oldfile)) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to rename %s to %s\n", In.path, oldfile);
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 			}
 			
 			/* Update header history */
@@ -837,19 +842,19 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			for (i = 0; i < k; i++) if (history[i] == '\n') history[i] = ' ';	/* Remove the \n returned by ctime() */
 			history[k++] = '\n';	history[k] = '\0';				/* Add LF at end of line */
 			k += (int)strlen (D->H.history);
-			D->H.history = GMT_memory (GMT, D->H.history, k+1, char);
+			D->H.history = gmt_M_memory (GMT, D->H.history, k+1, char);
 			strcat (D->H.history, history);		/* MGD77_Write_FILE_cdf will use this to create the history attribute, thus preserving earlier history */
 
 			if (MGD77_Write_File (GMT, In.path, &In, D)) {	/* Create the new, slimmer file */
 				GMT_Report (API, GMT_MSG_NORMAL, "Error writing slimmer version of %s\n", list[argno]);
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				GMT_exit (GMT, GMT_DATA_WRITE_ERROR); return GMT_DATA_WRITE_ERROR;
 			}
 
 			/* Now we can safely remove the old file */
 			
 			if (remove (oldfile)) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error removing the old version of %s\n", list[argno]);
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 			}
 			
 			MGD77_Free_Dataset (GMT, &D);
@@ -861,7 +866,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			D = MGD77_Create_Dataset (GMT);
 			if (MGD77_Read_File (GMT, list[argno], &In, D)) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error reading data set for cruise %s\n", list[argno]);
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				GMT_exit (GMT, GMT_DATA_READ_ERROR); return GMT_DATA_READ_ERROR;
 			}
 			if (reset_column)
 				column = MGD77_NOT_SET;
@@ -880,7 +885,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			xvar = D->values[ix];
 			yvar = D->values[iy];
 			tvar = D->values[it];
-			colvalue = GMT_memory (GMT, NULL, D->H.n_records, double);
+			colvalue = gmt_M_memory (GMT, NULL, D->H.n_records, double);
 			
 			for (rec = n_sampled = 0; rec < D->H.n_records; rec++) {
 				date = MGD77_time_to_fyear (GMT, &In, tvar[rec]);	/* Get date as decimal year */
@@ -907,7 +912,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			}
 			xvar = D->values[ix];
 			yvar = D->values[iy];
-			colvalue = GMT_memory (GMT, NULL, D->H.n_records, double);
+			colvalue = gmt_M_memory (GMT, NULL, D->H.n_records, double);
 			
 			for (rec = 0; rec < D->H.n_records; rec++) colvalue[rec] = MGD77_Theoretical_Gravity (GMT, xvar[rec], yvar[rec], GF_version);
 			GMT_Report (API, GMT_MSG_VERBOSE, "Estimated IGRF at %d locations out of %d for cruise %s\n",
@@ -924,7 +929,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			xvar = D->values[ix];
 			yvar = D->values[iy];
 			tvar = D->values[it];
-			colvalue = GMT_memory (GMT, NULL, D->H.n_records, double);
+			colvalue = gmt_M_memory (GMT, NULL, D->H.n_records, double);
 			
 			for (rec = 0; rec < D->H.n_records; rec++) colvalue[rec] = MGD77_carter_correction (GMT, xvar[rec], yvar[rec], 1000.0 * tvar[rec], &Carter);
 			GMT_Report (API, GMT_MSG_VERBOSE, "Estimated IGRF at %d locations out of %d for cruise %s\n", D->H.n_records, D->H.n_records, list[argno]);
@@ -944,7 +949,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			yvar = D->values[iy];
 			tvar = D->values[it];
 			mvar = D->values[im];
-			colvalue = GMT_memory (GMT, NULL, D->H.n_records, double);
+			colvalue = gmt_M_memory (GMT, NULL, D->H.n_records, double);
 			
 			for (rec = n_sampled = 0; rec < D->H.n_records; rec++) {
 				date = MGD77_time_to_fyear (GMT, &In, tvar[rec]);	/* Get date as decimal year */
@@ -964,7 +969,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 
 			xvar = D->values[ix];
 			yvar = D->values[iy];
-			colvalue = GMT_memory (GMT, NULL, D->H.n_records, double);
+			colvalue = gmt_M_memory (GMT, NULL, D->H.n_records, double);
 			
 			for (rec = n_sampled = 0; rec < D->H.n_records; rec++) {
 				colvalue[rec] = GMT->session.d_NaN;	/* In case we are outside grid */
@@ -972,7 +977,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				/* If point is outside grd area, shift it using periodicity or skip if not periodic. */
 
 				if (Ctrl->A.mode == MODE_i)	/* Mercator IMG grid */
-					GMT_geo_to_xy (GMT, xvar[rec], yvar[rec], &x, &y);
+					gmt_geo_to_xy (GMT, xvar[rec], yvar[rec], &x, &y);
 				else {		/* Regular geographic grd */
 					x = xvar[rec];
 					y = yvar[rec];
@@ -986,12 +991,12 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				if (x > G->header->wesn[XHI]) continue;
 
 				if (interpolate) {	/* IMG has been corrected, and GRD is good to go */
-					colvalue[rec] = GMT_get_bcr_z (GMT, G, x, y);
+					colvalue[rec] = gmt_bcr_get_z (GMT, G, x, y);
 				}
 				else {	/* Take IMG nearest node and do special stuff (values already set during read) */
-					col = (unsigned int)GMT_grd_x_to_col (GMT, x, G->header);
-					row = (unsigned int)GMT_grd_y_to_row (GMT, y, G->header);
-					colvalue[rec] = G->data[GMT_IJP(G->header,row,col)];
+					col = (unsigned int)gmt_M_grd_x_to_col (GMT, x, G->header);
+					row = (unsigned int)gmt_M_grd_y_to_row (GMT, y, G->header);
+					colvalue[rec] = G->data[gmt_M_ijp(G->header,row,col)];
 				}
 				n_sampled++;
 			}
@@ -1001,7 +1006,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			if (n != D->H.n_records) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Extra column data records (%d) do not match # of cruise records (%d) for %s\n",
 				            n, D->H.n_records, list[argno]);
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 			}
 			GMT_Report (API, GMT_MSG_VERBOSE, "Appended column data for all %d records for cruise %s\n", D->H.n_records, list[argno]);
 		}
@@ -1009,14 +1014,14 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			int ix, iy, it;
 			double *x = NULL, *y = NULL, *d = NULL;
 			size_t LEN_size = LEN;
-			colvalue = GMT_memory (GMT, colvalue, D->H.n_records, double);
+			colvalue = gmt_M_memory (GMT, colvalue, D->H.n_records, double);
 			if (Ctrl->A.mode == MODE_d) {	/* Must create distances in user's units */
 				if ((ix = skip_if_missing (GMT, "lon", list[argno], &In, &D)) == MGD77_NOT_SET) continue;
 				if ((iy = skip_if_missing (GMT, "lat", list[argno], &In, &D)) == MGD77_NOT_SET) continue;
 				x = D->values[ix];
 				y = D->values[iy];
-				if ((d = GMT_dist_array_2 (GMT, x, y, D->H.n_records, dist_scale, Ctrl->C.mode)) == NULL)
-					GMT_err_fail (GMT, GMT_MAP_BAD_DIST_FLAG, "");
+				if ((d = gmt_dist_array_2 (GMT, x, y, D->H.n_records, dist_scale, Ctrl->C.mode)) == NULL)
+					gmt_M_err_fail (GMT, GMT_MAP_BAD_DIST_FLAG, "");
 				x = d;
 			}
 			else if (Ctrl->A.mode == MODE_t) {	/* Time */
@@ -1024,17 +1029,17 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				x = D->values[it];
 			}
 			if (Ctrl->A.interpolate) {	/* Using given table to interpolate the values at all mgd77 records */
-				y = GMT_memory (GMT, NULL, D->H.n_records, double);
-				result = GMT_intpol (GMT, coldnt, colvalue, n, D->H.n_records, x, y, GMT->current.setting.interpolant);
+				y = gmt_M_memory (GMT, NULL, D->H.n_records, double);
+				result = gmt_intpol (GMT, coldnt, colvalue, n, D->H.n_records, x, y, GMT->current.setting.interpolant);
 				if (result != 0) {
-					GMT_Report (API, GMT_MSG_NORMAL, "Error from GMT_intpol near row %d!\n", result+1);
-					GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+					GMT_Report (API, GMT_MSG_NORMAL, "Error from gmt_intpol near row %d!\n", result+1);
+					GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 				}
-				GMT_memcpy (colvalue, y, D->H.n_records, double);
-				GMT_free (GMT, y);
+				gmt_M_memcpy (colvalue, y, D->H.n_records, double);
+				gmt_M_free (GMT, y);
 			}
 			else if (strings && n < D->H.n_records) {	/* Only update the exact matching records */
-				text = GMT_memory (GMT, NULL, D->H.n_records * LEN_size, char);
+				text = gmt_M_memory (GMT, NULL, D->H.n_records * LEN_size, char);
 				for (rec = jrec = n_sampled = 0; rec < D->H.n_records && jrec < n; rec++) {
 					match_value = (Ctrl->A.mode == MODE_n) ? rec+1 : x[rec];
 					strncpy (&text[rec*LEN_size], not_given, LEN_size);	/* In case we have no data at this time */
@@ -1044,19 +1049,19 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 						n_sampled++;
 					}
 				}
-				GMT_free (GMT, tmp_string);
+				gmt_M_free (GMT, tmp_string);
 				GMT_Report (API, GMT_MSG_VERBOSE, "Appended column data for %d locations out of %d for cruise %s\n",
 				            n_sampled, D->H.n_records, list[argno]);
 			}
 			else if (strings) {	/* One to one match */
-				text = GMT_memory (GMT, NULL, D->H.n_records * LEN_size, char);
+				text = gmt_M_memory (GMT, NULL, D->H.n_records * LEN_size, char);
 				for (rec = 0; rec < n; rec++) strncpy (&text[rec*LEN_size], tmp_string[rec], LEN_size);
-				GMT_free (GMT, tmp_string);
+				gmt_M_free (GMT, tmp_string);
 				GMT_Report (API, GMT_MSG_VERBOSE, "Appended column data for %d locations out of %d for cruise %s\n",
 				            n_sampled, D->H.n_records, list[argno]);
 			}
 			else {	/* Only update the exact matching records */
-				y = GMT_memory (GMT, NULL, D->H.n_records, double);
+				y = gmt_M_memory (GMT, NULL, D->H.n_records, double);
 				for (rec = jrec = n_sampled = 0; rec < D->H.n_records && jrec < n; rec++) {
 					match_value = (Ctrl->A.mode == MODE_n) ? rec+1 : x[rec];
 					y[rec] = GMT->session.d_NaN;	/* In case we have no data at this time */
@@ -1066,12 +1071,12 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 						n_sampled++;
 					}
 				}
-				GMT_memcpy (colvalue, y, D->H.n_records, double);
+				gmt_M_memcpy (colvalue, y, D->H.n_records, double);
 				GMT_Report (API, GMT_MSG_VERBOSE, "Appended column data for %d locations out of %d for cruise %s\n",
 				            n_sampled, D->H.n_records, list[argno]);
-				GMT_free (GMT, y);
+				gmt_M_free (GMT, y);
 			}
-			if (Ctrl->A.mode == MODE_d) GMT_free (GMT, d);
+			if (Ctrl->A.mode == MODE_d) gmt_M_free (GMT, d);
 		}
 		else if (Ctrl->A.mode == MODE_e)
 		{
@@ -1098,9 +1103,9 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			}
 			
 			sprintf (efile, "%s.e77", list[argno]);
-			if ((fp_e = GMT_fopen (GMT, efile, "r")) == NULL) {	/* Not in current directory, try MGD77_HOME/E77 */
+			if ((fp_e = gmt_fopen (GMT, efile, "r")) == NULL) {	/* Not in current directory, try MGD77_HOME/E77 */
 				sprintf (efile, "%s/E77/%s.e77", In.MGD77_HOME, list[argno]);
-				if ((fp_e = GMT_fopen (GMT, efile, "r")) == NULL) {	/* Not here either */
+				if ((fp_e = gmt_fopen (GMT, efile, "r")) == NULL) {	/* Not here either */
 					GMT_Report (API, GMT_MSG_NORMAL, "Error: The file %s.e77 could not be found in current directory or in MGD77_HOME/E77 - skipped\n", list[argno]);
 					MGD77_Free_Dataset (GMT, &D);	/* Free memory allocated by MGD77_Read_File for this aborted effort */
 					continue;
@@ -1112,7 +1117,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			 */
 			 
 			P = D->H.mgd77[MGD77_ORIG];	/* Because E77 is absolute and not incremental we start from original settings */
-			if (!GMT_fgets (GMT, line, GMT_BUFSIZ, fp_e)) {
+			if (!gmt_fgets (GMT, line, GMT_BUFSIZ, fp_e)) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Could not read record #1 from %s.e77 - aborting\n", list[argno]);
 				e_error++;
 			}
@@ -1138,9 +1143,9 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				e_error++;
 			}
 			verified = false;
-			while (GMT_fgets (GMT, line, GMT_BUFSIZ, fp_e) && strncmp (line, "# Errata: Header", 14U)) {	/* Read until we get to Header record section */
+			while (gmt_fgets (GMT, line, GMT_BUFSIZ, fp_e) && strncmp (line, "# Errata: Header", 14U)) {	/* Read until we get to Header record section */
 				if (line[0] == '#') continue;	/* Skip comments */
-				GMT_chop (line);		/* Rid the world of CR/LF */
+				gmt_chop (line);		/* Rid the world of CR/LF */
 				if (!strncmp (line, "Y Errata table verification status", 34U)) verified = true;
 			}
 			if (!verified && !Ctrl->A.ignore_verify) {
@@ -1159,7 +1164,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			/* Quickly scan through file to make sure there are no unprocessed recommendations or bad records before making changes */
 			
 			e_error = n_unprocessed = 0;
-			while (GMT_fgets (GMT, line, GMT_BUFSIZ, fp_e)) {
+			while (gmt_fgets (GMT, line, GMT_BUFSIZ, fp_e)) {
 				if (line[0] == '#' || line[0] == '\n') continue;	/* Comments or blank lines are OK */
 				if (line[1] == '-') {		/* Header record */
 					if (!(line[0] == 'Y' || line[0] == 'N') && !Ctrl->A.ignore_verify) {		/* Unprocessed recommendation? */
@@ -1179,31 +1184,31 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			
 			if (e_error) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: The file %s has too many errors.  E77 not applied\n", efile);
-				GMT_fclose (GMT, fp_e);
+				gmt_fclose (GMT, fp_e);
 				MGD77_Free_Dataset (GMT, &D);	/* Free memory allocated by MGD77_Read_File for this aborted effort */
 				continue;
 			}
 			if (n_unprocessed) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: The file %s has unprocessed E77 recommendations.  E77 not applied\n", efile);
-				GMT_fclose (GMT, fp_e);
+				gmt_fclose (GMT, fp_e);
 				MGD77_Free_Dataset (GMT, &D);	/* Free memory allocated by MGD77_Read_File for this aborted effort */
 				continue;
 			}
 			
 			/* OK, here we believe the E77 file contains the correct information for this cruise. Rewind and start from top */
 			
-			GMT_rewind (fp_e);
-			while (GMT_fgets (GMT, line, GMT_BUFSIZ, fp_e) && strncmp (line, "# Errata: Header", 14U));	/* Read until we get to Header record section */
+			gmt_M_rewind (fp_e);
+			while (gmt_fgets (GMT, line, GMT_BUFSIZ, fp_e) && strncmp (line, "# Errata: Header", 14U));	/* Read until we get to Header record section */
 			
-			flags = GMT_memory (GMT, NULL, D->H.n_records, unsigned int);
+			flags = gmt_M_memory (GMT, NULL, D->H.n_records, unsigned int);
 			n_E77_flags = n_E77_headers = n_E77_scales = n_E77_offsets = n_E77_recalcs = 0;
 
 			MGD77_nc_status (GMT, nc_open (In.path, NC_WRITE, &In.nc_id));	/* Open the file */
 			MGD77_nc_status (GMT, nc_redef (In.nc_id));				/* Enter define mode */
 			old_flags = MGD77_Remove_E77 (GMT, &In);				/* Remove any previously revised header parameters */
-			while (GMT_fgets (GMT, line, GMT_BUFSIZ, fp_e) && strncmp (line, "# Errata: Data", 14U)) {	/* Read until we get to data record section */
+			while (gmt_fgets (GMT, line, GMT_BUFSIZ, fp_e) && strncmp (line, "# Errata: Data", 14U)) {	/* Read until we get to data record section */
 				if (line[0] == '#' || line[0] == '\n') continue;	/* Skip comments */
-				GMT_chop (line);					/* Rid the world of CR/LF */
+				gmt_chop (line);					/* Rid the world of CR/LF */
 				/* Example of expected line 
 				   Y-E-06050010-H15-01: Invalid Gravity Departure Base Station Value: (0000000) [1000009]
 				*/
@@ -1224,7 +1229,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				if (Ctrl->A.e77_skip_mode[type]) continue;
 				if (!Ctrl->A.e77_skip_mode[type] && YorN == 'N') continue;
 				if (kind == 'W') {	/* Output the warning (if Y) and goto next line*/
-					if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE) && (YorN == 'Y' || (Ctrl->A.ignore_verify && YorN == '?')))
+					if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE) && (YorN == 'Y' || (Ctrl->A.ignore_verify && YorN == '?')))
 						GMT_Message (API, GMT_TIME_NONE, "%s: Warning: %s\n", list[argno], line);
 					continue;
 				}
@@ -1313,7 +1318,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 									GMT_Report (API, GMT_MSG_NORMAL, "Error: Record range %s is invalid.  Correction skipped\n", answer);
 									break;
 								}
-								pattern = set_bit (id);
+								pattern = mgd77_set_bit (id);
  								for (rec = from-1; rec < to; rec++, n_E77_flags++) flags[rec] |= pattern;	/* -1 to get C indices */
 								break;
 							default:
@@ -1328,9 +1333,9 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				has_time = false;
 			else {	/* See if we really have time or if they are all NaN */
 				tvar = D->values[it];
-				for (rec = 0, has_time = false; !has_time && rec < D->H.n_records; rec++) if (!GMT_is_dnan (tvar[rec])) has_time = true;
+				for (rec = 0, has_time = false; !has_time && rec < D->H.n_records; rec++) if (!gmt_M_is_dnan (tvar[rec])) has_time = true;
 			}
-			while (GMT_fgets (GMT, line, GMT_BUFSIZ, fp_e)) {	/* Read until EOF */
+			while (gmt_fgets (GMT, line, GMT_BUFSIZ, fp_e)) {	/* Read until EOF */
 				sscanf (line, "%c %s %s %" SCNu64 " %s", &YorN, ID, timestamp, &rec, code);
 				if (strcmp (In.NGDC_id, ID)) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Error: E77 Conflict %s : ID = %s versus %s in data records - skipped\n", efile, ID, In.NGDC_id);
@@ -1349,7 +1354,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 						GMT_Report (API, GMT_MSG_VERBOSE, "Warning: %s: E77 time stamp %s, using recno\n", ID, timestamp);
 					}
 					else {	/* Must try to interpret the timestamp */
-						if (GMT_verify_expectations (GMT, GMT_IS_ABSTIME, GMT_scanf (GMT, timestamp, GMT_IS_ABSTIME, &rec_time), timestamp)) {
+						if (gmt_verify_expectations (GMT, GMT_IS_ABSTIME, gmt_scanf (GMT, timestamp, GMT_IS_ABSTIME, &rec_time), timestamp)) {
 							GMT_Report (API, GMT_MSG_NORMAL, "Error: %s: E77 time stamp (%s) in wrong format? - skipped\n", ID, timestamp);
 							continue;
 						}
@@ -1362,7 +1367,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				}
 				pos = 0;
 				item = -1;	/* So we increment to 0 inside the loop */
-				while (GMT_strtok (code, "-", &pos, p)) {
+				while (gmt_strtok (code, "-", &pos, p)) {
 					item++;
 					if (Ctrl->A.e77_skip_mode[item+2]) continue;	/* Ignore this sort of code */
 					if (p[0] == '0') continue;
@@ -1371,7 +1376,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 						if (item == 0) {	/* NAV */
 							switch (p[k]) {
 								case 'A':	/* Time out of range */
-									flags[rec] |= set_bit(NCPOS_TIME);
+									flags[rec] |= mgd77_set_bit(NCPOS_TIME);
 									n_E77_flags++;
 									break;
 								case 'B':
@@ -1379,20 +1384,20 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 									            list[argno], timestamp);
 									break;
 								case 'C':	/* Excessive speed - flag time, lon, lat */
-									flags[rec] |= set_bit(NCPOS_TIME);
-									flags[rec] |= set_bit(NCPOS_LON);
-									flags[rec] |= set_bit(NCPOS_LAT);
+									flags[rec] |= mgd77_set_bit(NCPOS_TIME);
+									flags[rec] |= mgd77_set_bit(NCPOS_LON);
+									flags[rec] |= mgd77_set_bit(NCPOS_LAT);
 									n_E77_flags++;
 									break;
 								case 'D':	/* On land */ 
-									flags[rec] |= set_bit(NCPOS_LON);
-									flags[rec] |= set_bit(NCPOS_LAT);
+									flags[rec] |= mgd77_set_bit(NCPOS_LON);
+									flags[rec] |= mgd77_set_bit(NCPOS_LAT);
 									n_E77_flags++;
 									break;
 								case 'E':	/* Undefined nav - flag time, lon, lat */
-									flags[rec] |= set_bit(NCPOS_TIME);
-									flags[rec] |= set_bit(NCPOS_LON);
-									flags[rec] |= set_bit(NCPOS_LAT);
+									flags[rec] |= mgd77_set_bit(NCPOS_TIME);
+									flags[rec] |= mgd77_set_bit(NCPOS_LON);
+									flags[rec] |= mgd77_set_bit(NCPOS_LAT);
 									n_E77_flags++;
 									break;
 								default:
@@ -1411,7 +1416,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 									key = p[k] - 'A' + 1;	/* A (rectype) = 1, B (TZ) = 2 */
 								else
   									key = 0;	/* C-G (yyyy,mm,dd,hh,mi) all map to time 0 */
-								flags[rec] |= set_bit(key);
+								flags[rec] |= mgd77_set_bit(key);
 								n_E77_flags++;
 							}
 							else {
@@ -1421,7 +1426,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 					}		
 				}
 			}
-			GMT_fclose (GMT, fp_e);
+			gmt_fclose (GMT, fp_e);
 
 			/* Update E77 history */
 
@@ -1430,7 +1435,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			         ctime(&now), In.user, n_E77_headers, n_E77_scales, n_E77_offsets, n_E77_recalcs, n_E77_flags);
 			for (i = 0; E77[i]; i++) if (E77[i] == '\n') E77[i] = ' ';	/* Remove the \n returned by ctime() */
 			length = strlen (E77);
-			D->H.E77 = GMT_memory (GMT, D->H.E77, length + 1, char);
+			D->H.E77 = gmt_M_memory (GMT, D->H.E77, length + 1, char);
 			strcpy (D->H.E77, E77);
 			MGD77_nc_status (GMT, nc_put_att_text (In.nc_id, NC_GLOBAL, "E77", length, D->H.E77));
 		
@@ -1439,14 +1444,14 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			if (n_E77_flags) {	/* Add flags to netCDF file */
 				if (old_flags) {	/* Flag variable exists already - simply replace existing flags with the new ones */
 					if (D->flags[0])	/* Was allocated and read */
-						GMT_memcpy (D->flags[0], flags, D->H.n_records, int);
+						gmt_M_memcpy (D->flags[0], flags, D->H.n_records, int);
 					else	/* Was not allcoated */
 						D->flags[0] = flags;
 				}
 				else {	/* We need to define the flags for the first time */
 					dims[0] = In.nc_recid;
 					MGD77_nc_status (GMT, nc_def_var (In.nc_id, "MGD77_flags", NC_INT, 1, dims, &cdf_var_id));	/* Define an array variable */
-					GMT_memset (answer, GMT_BUFSIZ, char);	/* No default answer */
+					gmt_M_memset (answer, GMT_BUFSIZ, char);	/* No default answer */
 					strcpy (answer, "MGD77 flags (ON = Bad, OFF = Good) derived from E77 errata");
 					MGD77_nc_status (GMT, nc_put_att_text (In.nc_id, cdf_var_id, "comment", strlen (answer), answer));
 					D->flags[0] = flags;
@@ -1463,7 +1468,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 				GMT_Message (API, GMT_TIME_NONE, "If possible, recreate the MGD77+ file %s from the MGD77 original, then reapply E77.\n", list[argno]);
 				start[0] = 0;
 				count[0] = D->H.n_records;
-				GMT_memset (D->flags[0], D->H.n_records, int);	/* Reset all flags to 0 (GOOD) */
+				gmt_M_memset (D->flags[0], D->H.n_records, int);	/* Reset all flags to 0 (GOOD) */
 				MGD77_nc_status (GMT, nc_put_vara_int (In.nc_id, cdf_var_id, start, count, (int *)D->flags[0]));
 			}
 			
@@ -1567,7 +1572,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 		for (i = 0; i < k; i++) if (history[i] == '\n') history[i] = ' ';	/* Remove the \n returned by ctime() */
 		history[k++] = '\n';	history[k] = '\0';    /* Add LF at end of line */
 		k += (int)(strlen (D->H.history) + 1);             /* +1 because the '\0' of 'history' that is also copied by strcat */
-		D->H.history = GMT_memory (GMT, D->H.history, k, char);
+		D->H.history = gmt_M_memory (GMT, D->H.history, k, char);
 		strcat (D->H.history, history);
 		MGD77_nc_status (GMT, nc_put_att_text (In.nc_id, NC_GLOBAL, "history", strlen (D->H.history), D->H.history));
 		
@@ -1588,17 +1593,17 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 			if (LEN)
 				MGD77_nc_status (GMT, nc_put_vara_schar (In.nc_id, cdf_var_id, start, count, (signed char *)text));
 			else if (transform) {
-				xtmp = GMT_memory (GMT, NULL, count[0], double);
+				xtmp = gmt_M_memory (GMT, NULL, count[0], double);
 				n_bad = MGD77_do_scale_offset_before_write (GMT, xtmp, colvalue, D->H.n_records, Ctrl->A.parameters[COL_SCALE],
 				                                            Ctrl->A.parameters[COL_OFFSET], c_nc_type);
 				MGD77_nc_status (GMT, nc_put_vara_double (In.nc_id, cdf_var_id, start, count, xtmp));
-				GMT_free (GMT, xtmp);
+				gmt_M_free (GMT, xtmp);
 			}
 			else 
 				MGD77_nc_status (GMT, nc_put_vara_double (In.nc_id, cdf_var_id, start, count, colvalue));
 		}
 		if (n_bad) {	/* Report what we found */
-			if (In.verbose_level | 1)
+			if (In.verbose_level & 1)
 				fprintf (fp_err, "%s: %s [%s] had %" PRIu64 " values outside valid range <%g,%g> for the chosen type (set to NaN = %g)\n",
 				THIS_MODULE_NAME, In.NGDC_id, Ctrl->I.c_abbrev, n_bad, MGD77_Low_val[c_nc_type], MGD77_High_val[c_nc_type], MGD77_NaN_val[c_nc_type]);
 		}
@@ -1609,8 +1614,8 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 		GMT_Report (API, GMT_MSG_NORMAL, "Data column %s added to %s\n", Ctrl->I.c_abbrev, list[argno]);
 	}
 
-	if (colvalue) GMT_free (GMT, colvalue);
-	if (two_cols) GMT_free (GMT, coldnt);
+	gmt_M_free (GMT, colvalue);
+	if (two_cols) gmt_M_free (GMT, coldnt);
 
 	if (Ctrl->D.active)
 		GMT_Report (API, GMT_MSG_VERBOSE, "Removed %d data columns from %d MGD77 files\n", n_delete, n_changed);
@@ -1621,7 +1626,8 @@ int GMT_mgd77manage (void *V_API, int mode, void *args)
 	
 	MGD77_Path_Free (GMT, n_paths, list);
 	MGD77_end (GMT, &In);
-	GMT_set_pad (GMT, API->pad);	/* Reset to session default pad before output */
+	gmt_set_pad (GMT, API->pad);	/* Reset to session default pad before output */
 
-	Return (GMT_OK);
+	gmt_M_free (GMT, tmp_string);		/* A Coverity issue pointed out that 'tmp_string' could not had been freed yet */
+	Return (GMT_NOERROR);
 }

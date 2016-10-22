@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 27
-#		$Id: example_27.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_27.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:	Illustrates how to plot Mercator img grids
-# GMT progs:	makecpt, mapproject, grdgradient, grdimage, grdinfo, pscoast
+# GMT modules:	makecpt, mapproject, grdgradient, grdimage, grdinfo, pscoast
 # GMT supplement: img2grd (to read Sandwell/Smith img files)
 # Unix progs:	rm, grep, $AWK
 #
@@ -17,7 +17,7 @@ gmt grdgradient tasman_grav.nc -Nt1 -A45 -Gtasman_grav_i.nc
 
 # Make a suitable cpt file for mGal
 
-gmt makecpt -T-120/120/240 -Z -Crainbow > grav.cpt
+gmt makecpt -T-120/120 -Crainbow > grav.cpt
 
 # Since this is a Mercator grid we use a linear projection
 

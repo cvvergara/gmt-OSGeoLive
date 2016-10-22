@@ -1,7 +1,7 @@
 ////
-$Id: README.CMake 15178 2015-11-06 10:45:03Z fwobbe $
+$Id: README.CMake 15759 2016-02-24 23:36:11Z pwessel $
 
-Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis
+Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis
 and F. Wobbe. See LICENSE.TXT file for copying and redistribution conditions.
 
 Contact info: http://gmt.soest.hawaii.edu/

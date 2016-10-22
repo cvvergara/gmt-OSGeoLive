@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_symbol.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_symbol.h 15810 2016-03-05 00:33:55Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@
 #define GMT_FRAME_GAP		2.0	/* In points */
 #define GMT_FRAME_RADIUS	6.0	/* In points */
 
-enum GMT_enum_panel {
+enum gmt_enum_panel {
 	GMT_PANEL_INNER		= 1,
 	GMT_PANEL_ROUNDED	= 2,
 	GMT_PANEL_SHADOW	= 4,
@@ -77,14 +77,15 @@ struct GMT_CUSTOM_SYMBOL_ITEM {
 };
 
 struct GMT_CUSTOM_SYMBOL {
-	char name[GMT_LEN64];	/* Name of this symbol (i.e., just the <name> in [<dir>/]<name>.def) */
-	char *PS_macro;		/* Contains all the PS commands if PS is true */
-	unsigned int n_required;	/* Number of additional columns necessary to decode chosen symbol */
-	unsigned int start;	/* Column number of first additional column [2-4 depending on -C and psxy vs psxyz] */
-	bool PS;		/* true if a PSL symbol */
-	bool text;		/* true if symbol places text and hence need fonts to be set properly */
-	unsigned int *type;	/* Array with type of each parameter [0 = dimensionless, 1 = dimension, 2 = geographic angle (convert via projection)] */
-	struct GMT_CUSTOM_SYMBOL_ITEM *first;
+	char          name[GMT_LEN64];	/* Name of this symbol (i.e., just the <name> in [<dir>/]<name>.def) */
+	char         *PS_macro;   	/* Contains all the PS commands if PS is true */
+	unsigned int  n_required;   /* Number of additional columns necessary to decode chosen symbol */
+	unsigned int  start;    /* Column number of first additional column [2-4 depending on -C and psxy vs psxyz] */
+	unsigned int  PS;       /* nonzero if a PSL symbol */
+	bool          text;     /* true if symbol places text and hence need fonts to be set properly */
+	unsigned int *type;     /* Array with type of each parameter [0 = dimensionless, 1 = dimension, 2 = geographic angle (convert via projection)] */
+	double        PS_BB[4]; /* Will hold the BoundingBox as [x0 x1 y0 y1] if PS is true */
+	struct        GMT_CUSTOM_SYMBOL_ITEM *first;
 };
 
 /*! Plot a map panel behind scales, legends, images, logos */

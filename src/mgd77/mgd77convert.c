@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77convert.c 15213 2015-11-11 03:40:07Z pwessel $
+ *	$Id: mgd77convert.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *    Copyright (c) 2005-2015 by P. Wessel
+ *    Copyright (c) 2005-2016 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -58,10 +58,10 @@ struct MGD77CONVERT_CTRL {	/* All control options for this program (except commo
 	} T;
 };
 
-void *New_mgd77convert_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct MGD77CONVERT_CTRL *C = NULL;
 	
-	C = GMT_memory (GMT, NULL, 1, struct MGD77CONVERT_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct MGD77CONVERT_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 	
@@ -70,18 +70,17 @@ void *New_mgd77convert_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize 
 	return (C);
 }
 
-void Free_mgd77convert_Ctrl (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	GMT_free (GMT, C);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_mgd77convert_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: mgd77convert <cruise(s)> -Fa|c|m|t -T[+]a|c|m|t [-C] [-D] [-L[e][w][+]] [%s]\n\n", GMT_V_OPT);
         
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
              
 	MGD77_Cruise_Explain (API->GMT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[Files are read from data repositories and written to current directory]\n");
@@ -98,11 +97,10 @@ int GMT_mgd77convert_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   of w for warnings, e for errors, and + to send log to stdout [Default is stderr].\n");
 	GMT_Option (API, "V,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_mgd77convert_parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to mgd77convert and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -177,12 +175,12 @@ int GMT_mgd77convert_parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl
 				}
 				break;
 			case '4':	/* Selected high-resolution 4-byte integer MGD77+ format for mag, diur, faa, eot [2-byte integer] */
-				if (GMT_compat_check (GMT, 4)) {
+				if (gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -4 is deprecated; use -D instead next time.\n");
 					Ctrl->D.active = true;
 				}
 				else
-					n_errors += GMT_default_error (GMT, opt->option);
+					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'C':
 				Ctrl->C.active = true;
@@ -191,27 +189,26 @@ int GMT_mgd77convert_parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl
 				Ctrl->D.active = true;
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
 	if (Ctrl->C.active) {
-		n_errors += GMT_check_condition (GMT, Ctrl->D.active || Ctrl->F.active || Ctrl->L.active || Ctrl->T.active, "Syntax error -C: No other options allowed\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->D.active || Ctrl->F.active || Ctrl->L.active || Ctrl->T.active, "Syntax error -C: No other options allowed\n");
 	}
 	else {
-		n_errors += GMT_check_condition (GMT, Ctrl->F.format == MGD77_NOT_SET, "Syntax error: Must specify format of input files\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->T.format == MGD77_NOT_SET, "Syntax error: Must specify format of output files\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->F.format == MGD77_NOT_SET, "Syntax error: Must specify format of input files\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->T.format == MGD77_NOT_SET, "Syntax error: Must specify format of output files\n");
 	}
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_mgd77convert_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_mgd77convert (void *V_API, int mode, void *args)
-{
+int GMT_mgd77convert (void *V_API, int mode, void *args) {
 	int i, argno, n_cruises = 0, n_paths, error = 0;
 	
 	char file[GMT_BUFSIZ] = {""}, **list = NULL, *fcode = "actm";
@@ -222,23 +219,23 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 	struct MGD77CONVERT_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_mgd77convert_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_mgd77convert_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_mgd77convert_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_mgd77convert_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_mgd77convert_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
 	/*---------------------------- This is the mgd77convert main code ----------------------------*/
 
@@ -271,10 +268,13 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 			}
 			if ((fph77 = fopen (h77_file, "r")) == NULL) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Cannot read H77 file %s - skipping conversion\n", h77_file);
+				fclose (fpout);
 				continue;
 			}
 			if ((fpa77 = fopen (a77_file, "r")) == NULL) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Cannot read A77 file %s - skipping conversion\n", a77_file);
+				fclose (fpout);
+				fclose (fph77);
 				continue;
 			}
 			GMT_Report (API, GMT_MSG_NORMAL, "Assemble %s + %s --> %s\n", h77_file, a77_file, mgd77_file);
@@ -284,7 +284,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 			++n_files;
 		}
 		GMT_Report (API, GMT_MSG_NORMAL, "Assembled %d H77/A77 files to MGD77 format\n", n_files);
-		Return (GMT_OK);
+		Return (GMT_NOERROR);
 	}
 	/* Initialize MGD77 output order and other parameters*/
 	
@@ -299,7 +299,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 
 	if (n_paths == 0) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: No cruises given\n");
-		Return (EXIT_FAILURE);
+		Return (GMT_RUNTIME_ERROR);
 	}
 
 	
@@ -324,7 +324,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 		if (MGD77_Open_File (GMT, list[argno], &M, MGD77_READ_MODE)) continue;
 		if (MGD77_Read_Header_Record (GMT, list[argno], &M, &D->H)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error reading header sequence for cruise %s\n", list[argno]);
-			Return (EXIT_FAILURE);
+			Return (GMT_DATA_READ_ERROR);
 		}
 		sprintf (file, "%s.%s", M.NGDC_id, MGD77_suffix[Ctrl->T.format]);
 		if (Ctrl->F.format == Ctrl->T.format && !(M.path[0] == '/' || M.path[1] == ':')) {
@@ -352,7 +352,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 		
 		if (MGD77_Read_Data (GMT, list[argno], &M, D)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error reading data set for cruise %s\n", list[argno]);
-			Return (EXIT_FAILURE);
+			Return (GMT_DATA_READ_ERROR);
 		}
 		MGD77_Close_File (GMT, &M);
 		
@@ -369,13 +369,13 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 		M.format = Ctrl->T.format;				/* Change the format to the desired output format and write new file in current directory */
 		M.original = true;					/* Always write to original attributes */
 		for (i = 0; i < MGD77_N_FORMATS; i++) MGD77_format_allowed[i] = (M.format == i) ? true : false;	/* Only allow the specified output format */
-		if (D->H.author) GMT_free (GMT, D->H.author);	/* Make sure author is blank so it is reset below */
-		D->H.author = GMT_memory (GMT, NULL, strlen (M.user)+1, char);	/* Allocate space for author */
+		gmt_M_free (GMT, D->H.author);	/* Make sure author is blank so it is reset below */
+		D->H.author = gmt_M_memory (GMT, NULL, strlen (M.user)+1, char);	/* Allocate space for author */
 		strcpy (D->H.author, M.user);									/* Pass current user login id as author */
-		if (D->H.history) GMT_free (GMT, D->H.history);	/* Make sure history is blank so it is reset by MGD77_Write_File */
+		gmt_M_free (GMT, D->H.history);	/* Make sure history is blank so it is reset by MGD77_Write_File */
 		if (MGD77_Write_File (GMT, file, &M, D)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error writing new file for cruise %s\n", list[argno]);
-			Return (EXIT_FAILURE);
+			Return (GMT_DATA_WRITE_ERROR);
 		}
 		GMT_Report (API, GMT_MSG_VERBOSE, "Converted cruise %s to %s format\n", list[argno], format_name[Ctrl->T.format]);
 		if (D->H.errors[0]) GMT_Report (API, GMT_MSG_VERBOSE, " [%02d header problems (%d warnings + %d errors)]", D->H.errors[0], D->H.errors[1], D->H.errors[2]);
@@ -391,5 +391,5 @@ int GMT_mgd77convert (void *V_API, int mode, void *args)
 	MGD77_Path_Free (GMT, n_paths, list);
 	MGD77_end (GMT, &M);
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

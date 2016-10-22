@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: backtracker.c 15213 2015-11-11 03:40:07Z pwessel $
+ *	$Id: backtracker.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *   Copyright (c) 1999-2015 by P. Wessel
+ *   Copyright (c) 1999-2016 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -73,7 +73,7 @@
 #define THIS_MODULE_NAME	"backtracker"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Generate forward and backward flowlines and hotspot tracks"
-#define THIS_MODULE_KEYS	"<DI,>DO,EDI,FDi"
+#define THIS_MODULE_KEYS	"<D{,>D},FD("
 
 #include "spotter.h"
 
@@ -90,12 +90,9 @@ struct BACKTRACKER_CTRL {	/* All control options for this program (except common
 		bool active;
 		unsigned int mode;		/* 1 we go FROM hotspot to seamount, 0 is reverse */
 	} D;
-	struct E {	/* -E[+]rotfile or -E<lon/lat/angle> */
+	struct E {	/* -E[+]rotfile, -E[+]<ID1>-<ID2>, or -E<lon/lat/angle> */
 		bool active;
-		bool single;
-		bool mode;
-		char *file;
-		double lon, lat, w;
+		struct SPOTTER_ROT rot;
 	} E;
 	struct F {	/* -Fdriftfile */
 		bool active;
@@ -129,34 +126,33 @@ struct BACKTRACKER_CTRL {	/* All control options for this program (except common
 	} W;
 };
 
-void *New_backtracker_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct BACKTRACKER_CTRL *C;
-	
-	C = GMT_memory (GMT, NULL, 1, struct BACKTRACKER_CTRL);
-	
+
+	C = gmt_M_memory (GMT, NULL, 1, struct BACKTRACKER_CTRL);
+
 	/* Initialize values whose defaults are not 0/false/NULL */
-	
+
 	return (C);
 }
 
-void Free_backtracker_Ctrl (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->E.file) free (C->E.file);	
-	if (C->F.file) free (C->F.file);	
-	if (C->S.file) free (C->S.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->E.rot.file);	
+	gmt_M_str_free (C->F.file);	
+	gmt_M_str_free (C->S.file);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_backtracker_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: backtracker [<table>] -E[+]<rottable>|<plon>/<plat>/<prot> [-A[<young></old>]] [-Df|b]\n");
+	GMT_Message (API, GMT_TIME_NONE, "usage: backtracker [<table>] %s [-A[<young></old>]] [-Df|b]\n", SPOTTER_E_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F<driftfile] [-Lf|b<d_km>] [-N<upper_age>] [-Q<t_fix>] [-S<stem>] [-T<t_zero>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-W] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
 		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT, GMT_colon_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<table> (in ASCII, binary, or netCDF) has 3 or more columns.  If no file(s) is given, standard input is read.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   First 3 columns must have lon, lat (or lat, lon, see -:) and age (Ma).\n");
@@ -188,12 +184,11 @@ int GMT_backtracker_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Wa will output lon,lat,angle,az,major,minor.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -D to specify which direction to rotate [forward in time].\n");
 	GMT_Option (API, "bi3,bo,d,h,i,o,s,:,.");
-	
-	return (EXIT_FAILURE);
+
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to backtracker and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -210,7 +205,7 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Supplemental parameters */
@@ -225,7 +220,7 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 						Ctrl->A.mode = 1;
 					}
 					else {
-						GMT_Report (API, GMT_MSG_NORMAL, "ERROR Option -A: Append <young>/<old> age or stage limits.\n");
+						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -A: Append <young>/<old> age or stage limits.\n");
 						n_errors++;
 					}
 				}
@@ -235,10 +230,10 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 				break;
 
 			case 'C':	/* Now done automatically in spotter_init */
-				if (GMT_compat_check (GMT, 4))
+				if (gmt_M_compat_check (GMT, 4))
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -C is no longer needed as total reconstruction vs stage rotation is detected automatically.\n");
 				else
-					n_errors += GMT_default_error (GMT, opt->option);
+					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'D':	/* Specify in which direction we should project */
 				Ctrl->D.active = true;
@@ -253,7 +248,7 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 						break;
 					default:
 						n_errors++;
-						GMT_Report (API, GMT_MSG_NORMAL, "ERROR Option -D: Append b or f\n");
+						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -D: Append b or f\n");
 						break;
 				}
 				break;
@@ -263,28 +258,11 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 				/* Fall-through on purpose */
 			case 'E':	/* File with stage poles or a single rotation pole */
 				Ctrl->E.active = true;
-				k = (opt->arg[0] == '+') ? 1 : 0;
-				if (!GMT_access (GMT, &opt->arg[k], F_OK) && GMT_check_filearg (GMT, 'E', &opt->arg[k], GMT_IN, GMT_IS_DATASET)) {	/* Was given a file (with possible leading + flag) */
-					Ctrl->E.file  = strdup (&opt->arg[k]);
-					if (k == 1) Ctrl->E.mode = true;
-				}
-				else {	/* Apply a fixed total reconstruction rotation to all input points  */
-					unsigned int ns = 0;
-					size_t kk;
-					for (kk = 0; kk < strlen (opt->arg); kk++) if (opt->arg[kk] == '/') ns++;
-					if (ns == 2) {	/* Looks like we got lon/lat/omega */
-						Ctrl->E.single  = true;
-						sscanf (opt->arg, "%[^/]/%[^/]/%lg", txt_a, txt_b, &Ctrl->E.w);
-						n_errors += GMT_verify_expectations (GMT, GMT->current.io.col_type[GMT_IN][GMT_X], GMT_scanf_arg (GMT, txt_a, GMT->current.io.col_type[GMT_IN][GMT_X], &Ctrl->E.lon), txt_a);
-						n_errors += GMT_verify_expectations (GMT, GMT->current.io.col_type[GMT_IN][GMT_Y], GMT_scanf_arg (GMT, txt_b, GMT->current.io.col_type[GMT_IN][GMT_Y], &Ctrl->E.lat), txt_b);
-					}
-					else	/* Junk of some sort */
-						n_errors++;
-				}
+				n_errors += spotter_parse (GMT, opt->option, opt->arg, &(Ctrl->E.rot));
 				break;
 
 			case 'F':	/* File with hotspot motion history */
-				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
+				if ((Ctrl->F.active = gmt_check_filearg (GMT, 'F', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
 					Ctrl->F.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -305,7 +283,7 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 						break;
 					default:
 						n_errors++;
-						GMT_Report (API, GMT_MSG_NORMAL, "ERROR Option -L: Append f or b\n");
+						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -L: Append f or b\n");
 						break;
 				}
 				Ctrl->L.d_km = (opt->arg[1]) ? atof (&opt->arg[1]) : -1.0;
@@ -323,7 +301,7 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 					Ctrl->S.active = true;
 				}
 				else {
-					GMT_Report (API, GMT_MSG_NORMAL, "ERROR Option -S: Append a file stem\n");
+					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -S: Append a file stem\n");
 					n_errors++;
 				}
 				break;
@@ -343,28 +321,27 @@ int GMT_backtracker_parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, 
 				Ctrl->N.t_upper = atof (opt->arg);
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, !Ctrl->E.active, "Syntax error: Must give -E\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->W.active && Ctrl->L.active, "Syntax error: -W cannot be set if -Lf or -Lb are set\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->E.active, "Syntax error: Must give -E\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->W.active && Ctrl->L.active, "Syntax error: -W cannot be set if -Lf or -Lb are set\n");
         if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0) GMT->common.b.ncol[GMT_IN] = 3 + ((Ctrl->A.mode == 2) ? 2 : 0);
-	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] < 3, "Syntax error: Binary input data (-bi) must have at least 3 columns\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->A.active && !Ctrl->L.active, "Syntax error: -A requires -L.\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] < 3, "Syntax error: Binary input data (-bi) must have at least 3 columns\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && !Ctrl->L.active, "Syntax error: -A requires -L.\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
 #define SPOTTER_BACK -1
 #define SPOTTER_FWD  +1
 
-int spotter_track (struct GMT_CTRL *GMT, int way, double xp[], double yp[], double tp[], unsigned int np, struct EULER p[], unsigned int ns, double d_km, double t_zero, unsigned int time_flag, double wesn[], double **c)
-{
+GMT_LOCAL int spotter_track (struct GMT_CTRL *GMT, int way, double xp[], double yp[], double tp[], unsigned int np, struct EULER p[], unsigned int ns, double d_km, double t_zero, unsigned int time_flag, double wesn[], double **c) {
 	int n = -1;
 	/* Call either spotter_forthtrack (way = 1) or spotter_backtrack (way = -1) */
-	
+
 	switch (way) {
 		case SPOTTER_BACK:
 			n = spotter_backtrack (GMT, xp, yp, tp, np, p, ns, d_km, t_zero, time_flag, wesn, c);
@@ -376,15 +353,14 @@ int spotter_track (struct GMT_CTRL *GMT, int way, double xp[], double yp[], doub
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Bad use of spotter_track\n");
 			break;
 	}
-		
+
 	return (n);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_backtracker_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_backtracker (void *V_API, int mode, void *args)
-{
+int GMT_backtracker (void *V_API, int mode, void *args) {
 	struct EULER *p = NULL;			/* Pointer to array of stage poles */
 
 	uint64_t n_points;		/* Number of data points read */
@@ -399,7 +375,7 @@ int GMT_backtracker (void *V_API, int mode, void *args)
 	int n_fields, error;		/* Misc. signed counters */
 	int spotter_way = 0;		/* Either SPOTTER_FWD or SPOTTER_BACK */
 	bool make_path = false;		/* true means create continuous path, false works on discrete points */
-	
+
 
 	double *c = NULL;		/* Array of track chunks returned by libeuler routines */
 	double lon, lat;		/* Seamounts location in decimal degrees */
@@ -418,114 +394,120 @@ int GMT_backtracker (void *V_API, int mode, void *args)
 	struct BACKTRACKER_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_backtracker_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args); if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_backtracker_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_backtracker_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
-	Ctrl = New_backtracker_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_backtracker_parse (GMT, Ctrl, options)) != 0) Return (error);
+	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the backtracker main code ----------------------------*/
-	
-	if (Ctrl->E.single) {	/* Get rotation matrix R */
-		GMT_make_rot_matrix (GMT, Ctrl->E.lon, Ctrl->E.lat, Ctrl->E.w, R);
+
+	if (Ctrl->E.rot.single) {	/* Get rotation matrix R */
+		gmt_make_rot_matrix (GMT, Ctrl->E.rot.lon, Ctrl->E.rot.lat, Ctrl->E.rot.w, R);
 	}
 	else {	/* Load in the stage poles */
-		n_stages = spotter_init (GMT, Ctrl->E.file, &p, Ctrl->L.mode, Ctrl->W.active, Ctrl->E.mode, &Ctrl->N.t_upper);
+		n_stages = spotter_init (GMT, Ctrl->E.rot.file, &p, Ctrl->L.mode, Ctrl->W.active, Ctrl->E.rot.invert, &Ctrl->N.t_upper);
 		spotter_way = ((Ctrl->L.mode + Ctrl->D.mode) == 1) ? SPOTTER_FWD : SPOTTER_BACK;
 
 		if (fabs (Ctrl->L.d_km) > GMT_CONV4_LIMIT) {		/* User wants to interpolate tracks rather than project individual points */
 			make_path = true;
-			GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
+			gmt_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
 			(Ctrl->L.mode) ? sprintf (type, "Flowline") : sprintf (type, "Hotspot track");
 			(Ctrl->D.mode) ? sprintf (dir, "from") : sprintf (dir, "to");
 		}
 	}
 
 	if (Ctrl->F.active) {	/* Get hotspot motion file */
+		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
 		if ((F = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POINT, GMT_READ_NORMAL, NULL, Ctrl->F.file, NULL)) == NULL) {
 			Return (API->error);
 		}
+		if (F->n_columns < 3) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Input file %s has %d column(s) but at least 3 are needed\n", Ctrl->F.file, (int)F->n_columns);
+			Return (GMT_DIM_TOO_SMALL);
+		}
+		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
 		H = F->table[0]->segment[0];	/* Only one table with one segment for histories */
-		for (row = 0; row < H->n_rows; row++) H->coord[GMT_Y][row] = GMT_lat_swap (GMT, H->coord[GMT_Y][row], GMT_LATSWAP_G2O);	/* Convert to geocentric */
+		for (row = 0; row < H->n_rows; row++) H->data[GMT_Y][row] = gmt_lat_swap (GMT, H->data[GMT_Y][row], GMT_LATSWAP_G2O);	/* Convert to geocentric */
 	}
 
 	n_points = n_segments = 0;
 
 	n_expected_fields = (GMT->common.b.ncol[GMT_IN]) ? GMT->common.b.ncol[GMT_IN] : 3 + ((Ctrl->A.mode == 2) ? 2 : 0);
 	if (Ctrl->Q.active && !GMT->common.b.ncol[GMT_IN]) n_expected_fields = 2;	/* Lon, lat only; use fixed t */
-	if (Ctrl->E.single && !GMT->common.b.active[GMT_IN]) n_expected_fields = GMT_MAX_COLUMNS;	/* Allow any input for -E single rotation */
+	if (Ctrl->E.rot.single && !GMT->common.b.active[GMT_IN]) n_expected_fields = GMT_MAX_COLUMNS;	/* Allow any input for -E single rotation */
 
 	n_out = (Ctrl->S.active) ? 4 : 3;	/* Append smt id number as 4th column when individual files are requested */
 	if (Ctrl->W.active) n_out = 5 + !(Ctrl->W.mode == 0);
 
 	/* Specify input and output expected columns */
-	if ((error = GMT_set_cols (GMT, GMT_IN, n_expected_fields)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_IN, n_expected_fields)) != GMT_NOERROR) {
 		Return (error);
 	}
-	if ((error = GMT_set_cols (GMT, GMT_OUT, n_out)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_OUT, n_out)) != GMT_NOERROR) {
 		Return (error);
 	}
 
 	/* Initialize the i/o for doing record-by-record reading/writing */
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data input */
 		Return (API->error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
 		Return (API->error);
 	}
 
 	/* Read the seamount data from file or stdin */
 
-	if (GMT_Begin_IO (API, GMT_IS_DATASET,  GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET,  GMT_IN, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
 
 	do {	/* Keep returning records until we reach EOF */
 		n_read++;
 		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
-			if (GMT_REC_IS_TABLE_HEADER (GMT)) {	/* Skip all table headers */
+			if (gmt_M_rec_is_table_header (GMT)) {	/* Skip all table headers */
 				GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, NULL);
 				continue;
 			}
-			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
-			else if (GMT_REC_IS_NEW_SEGMENT (GMT) && !make_path) {			/* Parse segment headers */
+			else if (gmt_M_rec_is_new_segment (GMT) && !make_path) {			/* Parse segment headers */
 				GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);
 				continue;
 			}
 		}
 
 		/* Data record to process */
-	
-		if (Ctrl->E.single) {	/* Simple reconstruction, then exit */
-			in[GMT_Y] = GMT_lat_swap (GMT, in[GMT_Y], GMT_LATSWAP_G2O);	/* Convert to geocentric */
-			GMT_geo_to_cart (GMT, in[GMT_Y], in[GMT_X], x, true);		/* Get x-vector */
-			GMT_matrix_vect_mult (GMT, 3U, R, x, y);			/* Rotate the x-vector */
-			GMT_cart_to_geo (GMT, &out[GMT_Y], &out[GMT_X], y, true);	/* Recover lon lat representation; true to get degrees */
-			out[GMT_Y] = GMT_lat_swap (GMT, out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
-			GMT_memcpy (&out[GMT_Z], &in[GMT_Z], n_fields - 2, double);
+
+		if (Ctrl->E.rot.single) {	/* Simple reconstruction, then exit */
+			in[GMT_Y] = gmt_lat_swap (GMT, in[GMT_Y], GMT_LATSWAP_G2O);	/* Convert to geocentric */
+			gmt_geo_to_cart (GMT, in[GMT_Y], in[GMT_X], x, true);		/* Get x-vector */
+			gmt_matrix_vect_mult (GMT, 3U, R, x, y);			/* Rotate the x-vector */
+			gmt_cart_to_geo (GMT, &out[GMT_Y], &out[GMT_X], y, true);	/* Recover lon lat representation; true to get degrees */
+			out[GMT_Y] = gmt_lat_swap (GMT, out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+			gmt_M_memcpy (&out[GMT_Z], &in[GMT_Z], n_fields - 2, double);
 			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 			continue;
 		}
-		
+
 		if (Ctrl->Q.active) in[GMT_Z] = Ctrl->Q.t_fix;
 		if (in[GMT_Z] < 0.0) {	/* Negative ages are flags for points to be skipped */
 			n_skipped++;
@@ -553,11 +535,11 @@ int GMT_backtracker (void *V_API, int mode, void *args)
 		}
 
 		if (Ctrl->F.active) {	/* Must account for hotspot drift, use interpolation for given age */
-			GMT_intpol (GMT, H->coord[GMT_Z], H->coord[GMT_X], H->n_rows, 1, &age, &lon, GMT->current.setting.interpolant);
-			GMT_intpol (GMT, H->coord[GMT_Z], H->coord[GMT_Y], H->n_rows, 1, &age, &lat, GMT->current.setting.interpolant);
+			gmt_intpol (GMT, H->data[GMT_Z], H->data[GMT_X], H->n_rows, 1, &age, &lon, GMT->current.setting.interpolant);
+			gmt_intpol (GMT, H->data[GMT_Z], H->data[GMT_Y], H->n_rows, 1, &age, &lat, GMT->current.setting.interpolant);
 		}
 		else {	/* Use input location */
-			in[GMT_Y] = GMT_lat_swap (GMT, in[GMT_Y], GMT_LATSWAP_G2O);	/* Convert to geocentric */
+			in[GMT_Y] = gmt_lat_swap (GMT, in[GMT_Y], GMT_LATSWAP_G2O);	/* Convert to geocentric */
 			lon = in[GMT_X];
 			lat = in[GMT_Y];
 		}
@@ -570,35 +552,35 @@ int GMT_backtracker (void *V_API, int mode, void *args)
 			else
 				sprintf (GMT->current.io.segment_header, "%s %s %g %g", type, dir, in[GMT_X], in[GMT_Y]);
 			GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);
-			
+
 			if (Ctrl->F.active) {	/* Must generate intermediate points in time, then rotatate each adjusted location */
 				t = (Ctrl->A.mode) ? t_low : 0.0;
 				t_end = (Ctrl->A.mode) ? t_high : age;
 				while (t <= t_end) {
-					GMT_intpol (GMT, H->coord[GMT_Z], H->coord[GMT_X], H->n_rows, 1, &t, &lon, GMT->current.setting.interpolant);
-					GMT_intpol (GMT, H->coord[GMT_Z], H->coord[GMT_Y], H->n_rows, 1, &t, &lat, GMT->current.setting.interpolant);
+					gmt_intpol (GMT, H->data[GMT_Z], H->data[GMT_X], H->n_rows, 1, &t, &lon, GMT->current.setting.interpolant);
+					gmt_intpol (GMT, H->data[GMT_Z], H->data[GMT_Y], H->n_rows, 1, &t, &lat, GMT->current.setting.interpolant);
 					lon *= D2R;	lat *= D2R;
 					if (spotter_track (GMT, spotter_way, &lon, &lat, &t, 1L, p, n_stages, 0.0, Ctrl->T.t_zero, 1 + Ctrl->L.stage_id, NULL, &c) <= 0) {
 						GMT_Report (API, GMT_MSG_NORMAL, "Nothing returned from spotter_track - aborting\n");
 						Return (GMT_RUNTIME_ERROR);
 					}
 					out[GMT_X] = lon * R2D;
-					out[GMT_Y] = GMT_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+					out[GMT_Y] = gmt_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 					out[GMT_Z] = t;
 					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 					t += Ctrl->L.d_km;	/* dt, actually */
 				}
 				t -= Ctrl->L.d_km;	/* Last time used in the loop */
 				if (!(doubleAlmostEqualZero (t_end, t))) {	/* One more point since t_end was not a multiple of d_km from t_start */
-					GMT_intpol (GMT, H->coord[GMT_Z], H->coord[GMT_X], H->n_rows, 1, &t_end, &lon, GMT->current.setting.interpolant);
-					GMT_intpol (GMT, H->coord[GMT_Z], H->coord[GMT_Y], H->n_rows, 1, &t_end, &lat, GMT->current.setting.interpolant);
+					gmt_intpol (GMT, H->data[GMT_Z], H->data[GMT_X], H->n_rows, 1, &t_end, &lon, GMT->current.setting.interpolant);
+					gmt_intpol (GMT, H->data[GMT_Z], H->data[GMT_Y], H->n_rows, 1, &t_end, &lat, GMT->current.setting.interpolant);
 					lon *= D2R;	lat *= D2R;
 					if (spotter_track (GMT, spotter_way, &lon, &lat, &t_end, 1L, p, n_stages, 0.0, Ctrl->T.t_zero, 1 + Ctrl->L.stage_id, NULL, &c) <= 0) {
 						GMT_Report (API, GMT_MSG_NORMAL, "Nothing returned from spotter_track - aborting\n");
 						Return (GMT_RUNTIME_ERROR);
 					}
 					out[GMT_X] = lon * R2D;
-					out[GMT_Y] = GMT_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+					out[GMT_Y] = gmt_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 					out[GMT_Z] = t_end;
 					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 				}
@@ -611,17 +593,17 @@ int GMT_backtracker (void *V_API, int mode, void *args)
 						Return (GMT_RUNTIME_ERROR);
 					}
 				}
-				
+
 				n_track = lrint (c[0]);
 				for (j = 0, i = 1; j < n_track; j++, i += 3) {
 					out[GMT_Z] = c[i+2];
 					if (Ctrl->A.mode && (out[GMT_Z] < t_low || out[GMT_Z] > t_high)) continue;
 					out[GMT_X] = c[i] * R2D;
-					out[GMT_Y] = GMT_lat_swap (GMT, c[i+1] * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+					out[GMT_Y] = gmt_lat_swap (GMT, c[i+1] * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 				}
 			}
-			if (c) GMT_free (GMT, c);
+			gmt_M_free (GMT, c);
 		}
 		else {	/* Just return the projected locations */
 			if (Ctrl->W.active) {	/* Asked for confidence ellipses on reconstructed points */
@@ -640,17 +622,17 @@ int GMT_backtracker (void *V_API, int mode, void *args)
 				out[GMT_Y] = lat * R2D;
 				for (col = 2; col < n_expected_fields; col++) out[col] = in[col];
 			}
-			out[GMT_Y] = GMT_lat_swap (GMT, out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+			out[GMT_Y] = gmt_lat_swap (GMT, out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 		}
 
 		n_points++;
 	} while (true);
 
-	if (GMT_End_IO (API, GMT_IN,  0) != GMT_OK) {	/* Disables further data input */
+	if (GMT_End_IO (API, GMT_IN,  0) != GMT_NOERROR) {	/* Disables further data input */
 		Return (API->error);
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 		Return (API->error);
 	}
 
@@ -663,7 +645,7 @@ int GMT_backtracker (void *V_API, int mode, void *args)
 
 	/* Clean up and exit */
 
-	if (!Ctrl->E.single) GMT_free (GMT, p);
-	
-	Return (GMT_OK);
+	if (!Ctrl->E.rot.single) gmt_M_free (GMT, p);
+
+	Return (GMT_NOERROR);
 }

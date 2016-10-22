@@ -16,7 +16,7 @@ Synopsis
 **grdview** *relief_file* |-J|\ *parameters*
 [ |SYN_OPT-B| ]
 [ |-C|\ [*cpt*]]
-[ |-G|\ *drapefile* \| |-G|\ *grd_r*,\ *grd_g*,\ *grd_b* ]
+[ |-G|\ *drapefile* \| |-G|\ *grd_r* |-G|\ *grd_g* |-G|\ *grd_b* ]
 [ |-I|\ *intensfile*\ \|\ *intensity* ] [ **-Jz**\ \|\ **Z**\ *parameters* ] [ **-K** ]
 [ |-N|\ *level*\ [**+g**\ *fill*] ] [ **-O** ] [ **-P** ]
 [ |-Q|\ *args*\ [**+m**] ]
@@ -68,26 +68,28 @@ Optional Arguments
 .. _-C:
 
 **-C**\ [*cpt*]
-    name of the CPT file. Must be present if you want
+    name of the CPT. Must be present if you want
     (1) mesh plot with contours (**-Qm**), or
     (2) shaded/colored perspective image (**-Qs** or
     **-Qi**). For **-Qs**: You can specify that you want to skip a
     z-slice by setting red = -; to use a pattern give red =
     **P\|p**\ *dpi/pattern*\ [:**F**\ *color*\ [**B**\ *color*]].
-    Alternatively, supply the name of a GMT color master CPT [rainbow] and let
-    **grdview** automatically determine a 16-level continuous CPT from
-    the grid's z-range.
+    Alternatively,
+    supply the name of a GMT color master dynamic CPT [rainbow] to
+    automatically determine a continuous CPT from
+    the grid's z-range.  If the dynamic CPT has a default range then
+    that range will be imposed instead.
 
 .. _-G:
 
-**-G**\ *drapefile* \| **-G**\ *grd_r*,\ *grd_g*,\ *grd_b*
+|-G|\ *drapefile* \| |-G|\ *grd_r* |-G|\ *grd_g* |-G|\ *grd_b*
     Drape the image in *drapefile* on top of the relief provided by
     *relief_file*. [Default is *relief_file*]. Note that **-Jz** and
     **-N** always refers to the *relief_file*. The *drapefile* only
     provides the information pertaining to colors, which is looked-up
-    via the CPT file (see **-C**). Alternatively, give three grid files
-    separated by commas. These files must contain the red, green, and
-    blue colors directly (in 0-255 range) and no CPT file is needed. The
+    via the CPT (see **-C**). Alternatively, give three grid files
+    via separate **-G** options in the specified order. These files must contain the red, green, and
+    blue colors directly (in 0-255 range) and no CPT is needed. The
     *drapefile* may be of higher resolution than the *relief_file*.
 
 .. _-I:
@@ -200,7 +202,7 @@ Optional Arguments
 
 .. include:: explain_help.rst_
 
-.. include:: explain_grd_inout.rst_
+.. include:: explain_grd_inout_short.rst_
 
 .. include:: explain_grdresample.rst_
 
@@ -208,7 +210,7 @@ Examples
 --------
 
 To make a mesh plot from the file hawaii_grav.nc and drawing the
-contours given in the CPT file hawaii.cpt on a Lambert map at
+contours given in the CPT hawaii.cpt on a Lambert map at
 1.5 cm/degree along the standard parallels 18 and 24, with vertical
 scale 20 mgal/cm, and looking at the surface from SW at 30 degree
 elevation, run
@@ -219,7 +221,7 @@ elevation, run
                 -Jz0.05c -Qm -N-100 -p225/30 -Wc > hawaii_grav_image.ps
 
 To create a illuminated color perspective plot of the gridded data set
-image.nc, using the CPT file color.rgb, with linear scaling at
+image.nc, using the CPT color.rgb, with linear scaling at
 10 cm/x-unit and tickmarks every 5 units, with intensities provided by
 the file intens.nc, and looking from the SE, use
 
@@ -234,7 +236,7 @@ To make the same plot using the rastering option with dpi = 50, use
     gmt grdview image.nc -Jx10.0c -Ccolor.rgb -Qi50 -p135/30 -Iintens.nc > image3D.ps
 
 To create a color PostScript perspective plot of the gridded data set
-magnetics.nc, using the CPT file mag_intens.cpt, draped over
+magnetics.nc, using the CPT mag_intens.cpt, draped over
 the relief given by the file topography.nc, with Mercator map width of 6
 inch and tickmarks every 1 degree, with intensities provided by the file
 topo_intens.nc, and looking from the SE, run
@@ -252,7 +254,7 @@ the topography and shade the result for good measure. The commands are
 
     gmt grd2rgb veggies.ras -Glayer_%c.nc
     gmt grdview topo.nc -JM6i -Qi -p140/30 -Itopo_intens.nc \
-               -Glayer_r.nc,layer_g.nc,layer_b.nc > image.ps
+               -Glayer_r.nc -Glayer_g.nc -Glayer_b.nc > image.ps
 
 Remarks
 -------

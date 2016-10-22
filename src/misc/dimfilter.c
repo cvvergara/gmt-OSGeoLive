@@ -1,5 +1,5 @@
 /*
- * $Id: dimfilter.c 15178 2015-11-06 10:45:03Z fwobbe $
+ * $Id: dimfilter.c 16706 2016-07-04 02:52:44Z pwessel $
  *
  * dimfilter.c  reads a grdfile and creates filtered grd file
  *
@@ -23,15 +23,15 @@
 #define THIS_MODULE_NAME	"dimfilter"
 #define THIS_MODULE_LIB		"misc"
 #define THIS_MODULE_PURPOSE	"Directional filtering of grids in the space domain"
-#define THIS_MODULE_KEYS	"<GI,GGO,RG-,>DQ"
+#define THIS_MODULE_KEYS	"<G{,GG},>DQ"
 
 #include "gmt_dev.h"
 
 #define GMT_PROG_OPTIONS "-:RVfh"
 
 struct DIMFILTER_INFO {
-	int nx;			/* The max number of filter weights in x-direction */
-	int ny;			/* The max number of filter weights in y-direction */
+	int n_columns;			/* The max number of filter weights in x-direction */
+	int n_rows;			/* The max number of filter weights in y-direction */
 	int x_half_width;	/* Number of filter nodes to either side needed at this latitude */
 	int y_half_width;	/* Number of filter nodes above/below this point (ny_f/2) */
 	int d_flag;
@@ -89,10 +89,10 @@ struct DIMFILTER_CTRL {
 	} T;
 };
 
-void *New_dimfilter_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct DIMFILTER_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct DIMFILTER_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct DIMFILTER_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 	C->F.filter = C->N.filter = C->D.mode = -1;
@@ -100,24 +100,23 @@ void *New_dimfilter_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a n
 	return (C);
 }
 
-void Free_dimfilter_Ctrl (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->In.file) free (C->In.file);
-	if (C->G.file) free (C->G.file);
-	if (C->S.file) free (C->S.file);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->In.file);
+	gmt_M_str_free (C->G.file);
+	gmt_M_str_free (C->S.file);
+	gmt_M_free (GMT, C);
 }
 
 
-int GMT_dimfilter_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: dimfilter <ingrid> -D<distance_flag> -F<type><filter_width> -G<outgrid> -N<type><n_sectors>\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-Q<cols>]\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-T] [%s] [%s]\n\t[%s]\n\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_f_OPT, GMT_ho_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is grid to be filtered.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\tDistance flag determines how grid (x,y) maps into distance units of filter width as follows:\n");
@@ -152,11 +151,10 @@ int GMT_dimfilter_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Toggles between grid and pixel registration for output grid [Default is same as input registration].\n");
 	GMT_Option (API, "V,f,h,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_dimfilter_parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to dimfilter and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
 	 * Any GMT common options will override values set previously by other commands.
@@ -176,7 +174,7 @@ int GMT_dimfilter_parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, stru
 		switch (opt->option) {
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
+				if ((Ctrl->In.active = gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -190,7 +188,7 @@ int GMT_dimfilter_parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, stru
 			case 'D':
 				Ctrl->D.active = true;
 				k = atoi (opt->arg);
-				n_errors += GMT_check_condition (GMT, k < 0 || k > 4, "Syntax error -D option: Choose from the range 0-4\n");
+				n_errors += gmt_M_check_condition (GMT, k < 0 || k > 4, "Syntax error -D option: Choose from the range 0-4\n");
 				Ctrl->D.mode = k;
 				break;
 #ifdef OBSOLETE
@@ -223,15 +221,15 @@ int GMT_dimfilter_parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, stru
 				Ctrl->F.width = atof (&opt->arg[1]);
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
+				if ((Ctrl->G.active = gmt_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'I':
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
@@ -258,7 +256,7 @@ int GMT_dimfilter_parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, stru
 						break;
 				}
 				k = atoi (&opt->arg[1]);	/* Number of sections to split filter into */
-				n_errors += GMT_check_condition (GMT, k <= 0, "Syntax error -N option: Correct syntax: -NX<nsectors>, with X one of luamp, nsectors is number of sectors\n");
+				n_errors += gmt_M_check_condition (GMT, k <= 0, "Syntax error -N option: Correct syntax: -NX<nsectors>, with X one of luamp, nsectors is number of sectors\n");
 				Ctrl->N.n_sectors = k;	/* Number of sections to split filter into */
 				break;
 			case 'Q':	/* entering the MAD error analysis mode */
@@ -276,36 +274,35 @@ int GMT_dimfilter_parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, stru
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input file\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input file\n");
 	if (!Ctrl->Q.active) {
-		GMT_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
-		n_errors += GMT_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");
-		n_errors += GMT_check_condition (GMT, !Ctrl->G.file, "Syntax error -G option: Must specify output file\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->F.width <= 0.0, "Syntax error -F option: Correct syntax: -FX<width>, with X one of bcgmp, width is filter fullwidth\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->N.n_sectors == 0, "Syntax error -N option: Correct syntax: -NX<nsectors>, with X one of luamp, nsectors is number of sectors\n");
+		gmt_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
+		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");
+		n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G option: Must specify output file\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->F.width <= 0.0, "Syntax error -F option: Correct syntax: -FX<width>, with X one of bcgmp, width is filter fullwidth\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->N.n_sectors == 0, "Syntax error -N option: Correct syntax: -NX<nsectors>, with X one of luamp, nsectors is number of sectors\n");
 #ifdef OBSOLETE
 		slow = (Ctrl->F.filter == 3 || Ctrl->F.filter == 4);		/* Will require sorting etc */
-		n_errors += GMT_check_condition (GMT, Ctrl->E.active && !slow, "Syntax error -E option: Only valid for robust filters -Fm|p.\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->E.active && !slow, "Syntax error -E option: Only valid for robust filters -Fm|p.\n");
 #endif
 	}
 	else {
-		n_errors += GMT_check_condition (GMT, !Ctrl->Q.active, "Syntax error: Must use -Q to specify total # of columns in the input file.\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->Q.err_cols > 50, "Syntax error -Q option: Total # of columns cannot exceed 50.\n");
+		n_errors += gmt_M_check_condition (GMT, !Ctrl->Q.active, "Syntax error: Must use -Q to specify total # of columns in the input file.\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->Q.err_cols > 50, "Syntax error -Q option: Total # of columns cannot exceed 50.\n");
 	}
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-void set_weight_matrix_dim (struct DIMFILTER_INFO *F, struct GMT_GRID_HEADER *h, double y_0, int fast)
+GMT_LOCAL void set_weight_matrix_dim (struct DIMFILTER_INFO *F, struct GMT_GRID_HEADER *h, double y_0, int fast) {
 /* Last two gives offset between output node and 'origin' input node for this window (0,0 for integral grids) */
 /* true when input/output grids are offset by integer values in dx/dy */
 
-{
 	int i, j, ij, i_half, j_half;
 	double x_scl, y_scl, f_half, r_f_half, sigma, sig_2;
 	double y1, y2, theta, x, y, r, s_y1, c_y1, s_y2, c_y2;
@@ -322,15 +319,15 @@ void set_weight_matrix_dim (struct DIMFILTER_INFO *F, struct GMT_GRID_HEADER *h,
 
 	/* Get radius, weight, etc.  */
 
-	i_half = F->nx / 2;
-	j_half = F->ny / 2;
+	i_half = F->n_columns / 2;
+	j_half = F->n_rows / 2;
 	f_half = 0.5 * F->width;
 	r_f_half = 1.0 / f_half;
 	sigma = F->width / 6.0;
 	sig_2 = -0.5 / (sigma * sigma);
 	for (i = -i_half; i <= i_half; i++) {
 		for (j = -j_half; j <= j_half; j++) {
-			ij = (j + j_half) * F->nx + i + i_half;
+			ij = (j + j_half) * F->n_columns + i + i_half;
 			if (fast && i == 0)
 				r = (j == 0) ? 0.0 : j * y_scl * F->dy;
 			else if (fast && j == 0)
@@ -370,15 +367,14 @@ void set_weight_matrix_dim (struct DIMFILTER_INFO *F, struct GMT_GRID_HEADER *h,
 	}
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_dimfilter_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_dimfilter (void *V_API, int mode, void *args)
-{
+int GMT_dimfilter (void *V_API, int mode, void *args) {
 	unsigned short int **sector = NULL;
 
 	unsigned int *n_in_median, wsize = 0, one_or_zero = 1, effort_level, n_sectors_2 = 0, col_in, row_in;
-	unsigned int GMT_mode_selection = 0, GMT_n_multiples = 0, col_out, row_out, i, j, k, s;
+	unsigned int gmt_mode_selection = 0, GMT_n_multiples = 0, col_out, row_out, i, j, k, s;
 	bool full_360, shift = false, slow, slow2, fast_way;
 	int j_origin, *i_origin = NULL, ii, jj, scol, srow, error = 0;
 
@@ -410,27 +406,27 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 	struct DIMFILTER_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
         struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_dimfilter_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
         options = GMT_Create_Options (API, mode, args);	if (API->error) bailout (API->error);   /* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_dimfilter_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_dimfilter_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy);	/* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy);	/* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_dimfilter_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_dimfilter_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the dimfilter main code ----------------------------*/
 
-	GMT_memset (&F, 1, struct DIMFILTER_INFO);
+	gmt_M_memset (&F, 1, struct DIMFILTER_INFO);
 	F.deg2km = GMT->current.proj.DIST_KM_PR_DEG;
 
 	if (!Ctrl->Q.active) {
@@ -438,7 +434,7 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 		if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
-		GMT_grd_init (GMT, Gin->header, options, true);	/* Update command history only */
+		gmt_grd_init (GMT, Gin->header, options, true);	/* Update command history only */
 
 		slow  = (Ctrl->F.filter == 3 || Ctrl->F.filter == 4);	/* Will require sorting etc */
 		slow2 = (Ctrl->N.filter == 3 || Ctrl->N.filter == 4);	/* SCAN: Will also require sorting etc */
@@ -449,13 +445,13 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 			one_or_zero = (Gin->header->registration == GMT_GRID_PIXEL_REG) ? 0 : 1;
 
 		/* Use the -R region for output if set; otherwise match grid domain */
-		GMT_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : Gin->header->wesn), 4, double);
-		full_360 = (Ctrl->D.mode && GMT_grd_is_global (GMT, Gin->header));	/* Periodic geographic grid */
+		gmt_M_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : Gin->header->wesn), 4, double);
+		full_360 = (Ctrl->D.mode && gmt_M_grd_is_global (GMT, Gin->header));	/* Periodic geographic grid */
 
 		if (Ctrl->I.active)
-			GMT_memcpy (inc, Ctrl->I.inc, 2, double);
+			gmt_M_memcpy (inc, Ctrl->I.inc, 2, double);
 		else
-			GMT_memcpy (inc, Gin->header->inc, 2, double);
+			gmt_M_memcpy (inc, Gin->header->inc, 2, double);
 
 		if (!full_360) {
 			if (wesn[XLO] < Gin->header->wesn[XLO]) error = true;
@@ -466,7 +462,7 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 
 		if (error) {
 			GMT_Report (API, GMT_MSG_NORMAL, "New WESN incompatible with old.\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 
 		last_median = 0.5 * (Gin->header->z_min + Gin->header->z_max);
@@ -493,8 +489,8 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 			if ((Sout = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_ALLOC, Gout)) == NULL) Return (API->error);
 		}
 #endif
-		i_origin = GMT_memory (GMT, NULL, Gout->header->nx, int);
-		if (!fast_way) x_shift = GMT_memory (GMT, NULL, Gout->header->nx, double);
+		i_origin = gmt_M_memory (GMT, NULL, Gout->header->n_columns, int);
+		if (!fast_way) x_shift = gmt_M_memory (GMT, NULL, Gout->header->n_columns, double);
 
 		if (fast_way && Gin->header->registration == one_or_zero) {	/* multiple grid but one is pix, other is grid */
 			F.x_fix = 0.5 * Gin->header->inc[GMT_X];
@@ -526,42 +522,42 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 		F.dx = Gin->header->inc[GMT_X];
 		F.dy = Gin->header->inc[GMT_Y];
 
-		F.nx = 2 * F.x_half_width + 1;
-		F.ny = 2 * F.y_half_width + 1;
+		F.n_columns = 2 * F.x_half_width + 1;
+		F.n_rows = 2 * F.y_half_width + 1;
 		F.width = Ctrl->F.width;
-		F.weight = GMT_memory (GMT, NULL, F.nx*F.ny, double);
+		F.weight = gmt_M_memory (GMT, NULL, F.n_columns*F.n_rows, double);
 
 		if (slow) {	/* SCAN: Now require several work_arrays, one for each sector */
-			work_array = GMT_memory (GMT, NULL, Ctrl->N.n_sectors, double *);
+			work_array = gmt_M_memory (GMT, NULL, Ctrl->N.n_sectors, double *);
 #ifdef OBSOLETE
-			if (Ctrl->S.active) work_array2 = GMT_memory (GMT, NULL, 2*F.nx*F.ny, double);
+			if (Ctrl->S.active) work_array2 = gmt_M_memory (GMT, NULL, 2*F.n_columns*F.n_rows, double);
 			if (Ctrl->E.active) {
-				xx = GMT_memory (GMT, NULL, Ctrl->N.n_sectors, short int *);
-				yy = GMT_memory (GMT, NULL, Ctrl->N.n_sectors, short int *);
+				xx = gmt_M_memory (GMT, NULL, Ctrl->N.n_sectors, short int *);
+				yy = gmt_M_memory (GMT, NULL, Ctrl->N.n_sectors, short int *);
 			}
 #endif
-			wsize = 2*F.nx*F.ny/Ctrl->N.n_sectors;	/* Should be enough, watch for messages to the contrary */
+			wsize = 2*F.n_columns*F.n_rows/Ctrl->N.n_sectors;	/* Should be enough, watch for messages to the contrary */
 			for (i = 0; i < Ctrl->N.n_sectors; i++) {
-				work_array[i] = GMT_memory (GMT, NULL, wsize, double);
+				work_array[i] = gmt_M_memory (GMT, NULL, wsize, double);
 #ifdef OBSOLETE
 				if (Ctrl->E.active) {
-					xx[i] = GMT_memory (GMT, NULL, wsize, short int);
-					yy[i] = GMT_memory (GMT, NULL, wsize, short int);
+					xx[i] = gmt_M_memory (GMT, NULL, wsize, short int);
+					yy[i] = gmt_M_memory (GMT, NULL, wsize, short int);
 				}
 #endif
 			}
 		}
 
-		GMT_Report (API, GMT_MSG_VERBOSE, "Input nx,ny = (%d %d), output nx,ny = (%d %d), filter nx,ny = (%d %d)\n",
-			Gin->header->nx, Gin->header->ny, Gout->header->nx, Gout->header->ny, F.nx, F.ny);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Input n_columns,n_rows = (%d %d), output n_columns,n_rows = (%d %d), filter n_columns,n_rows = (%d %d)\n",
+			Gin->header->n_columns, Gin->header->n_rows, Gout->header->n_columns, Gout->header->n_rows, F.n_columns, F.n_rows);
 		GMT_Report (API, GMT_MSG_VERBOSE, "Filter type is %s.\n", filter_name[Ctrl->F.filter]);
 
 		/* Compute nearest xoutput i-indices and shifts once */
 
-		for (col_out = 0; col_out < Gout->header->nx; col_out++) {
-			x_out = GMT_grd_col_to_x (GMT, col_out, Gout->header);	/* Current longitude */
-			i_origin[col_out] = (int)GMT_grd_x_to_col (GMT, x_out, Gin->header);
-			if (!fast_way) x_shift[col_out] = x_out - GMT_grd_col_to_x (GMT, i_origin[col_out], Gin->header);
+		for (col_out = 0; col_out < Gout->header->n_columns; col_out++) {
+			x_out = gmt_M_grd_col_to_x (GMT, col_out, Gout->header);	/* Current longitude */
+			i_origin[col_out] = (int)gmt_M_grd_x_to_col (GMT, x_out, Gin->header);
+			if (!fast_way) x_shift[col_out] = x_out - gmt_M_grd_col_to_x (GMT, i_origin[col_out], Gin->header);
 		}
 
 		/* Now we can do the filtering  */
@@ -583,8 +579,8 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 
 		if (Ctrl->C.active) {	/* Use fixed-width diagonal corridors instead of bow-ties */
 			n_sectors_2 = Ctrl->N.n_sectors / 2;
-			c_x = GMT_memory (GMT, NULL, n_sectors_2, double);
-			c_y = GMT_memory (GMT, NULL, n_sectors_2, double);
+			c_x = gmt_M_memory (GMT, NULL, n_sectors_2, double);
+			c_y = gmt_M_memory (GMT, NULL, n_sectors_2, double);
 			for (i = 0; i < n_sectors_2; i++) {
 				angle = (i + 0.5) * (M_PI/n_sectors_2);	/* Angle of central diameter of each corridor */
 				sincos (angle, &c_y[i], &c_x[i]);	/* Unit vector of diameter */
@@ -592,8 +588,8 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 		}
 		else {
 		/* SCAN: Precalculate which sector each point belongs to */
-			sector = GMT_memory (GMT, NULL, F.ny, unsigned short int *);
-			for (jj = 0; jj < F.ny; jj++) sector[jj] = GMT_memory (GMT, NULL, F.nx, unsigned short int);
+			sector = gmt_M_memory (GMT, NULL, F.n_rows, unsigned short int *);
+			for (jj = 0; jj < F.n_rows; jj++) sector[jj] = gmt_M_memory (GMT, NULL, F.n_columns, unsigned short int);
 			for (jj = -F.y_half_width; jj <= F.y_half_width; jj++) {	/* This double loop visits all nodes in the square centered on an output node */
 				j = F.y_half_width + jj;
 				for (ii = -F.x_half_width; ii <= F.x_half_width; ii++) {	/* (ii, jj) is local coordinates relative center (0,0) */
@@ -606,43 +602,43 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 				}
 			}
 		}
-		n_in_median = GMT_memory (GMT, NULL, Ctrl->N.n_sectors, unsigned int);
-		value = GMT_memory (GMT, NULL, Ctrl->N.n_sectors, double);
-		wt_sum = GMT_memory (GMT, NULL, Ctrl->N.n_sectors, double);
+		n_in_median = gmt_M_memory (GMT, NULL, Ctrl->N.n_sectors, unsigned int);
+		value = gmt_M_memory (GMT, NULL, Ctrl->N.n_sectors, double);
+		wt_sum = gmt_M_memory (GMT, NULL, Ctrl->N.n_sectors, double);
 
-		for (row_out = 0; row_out < Gout->header->ny; row_out++) {
+		for (row_out = 0; row_out < Gout->header->n_rows; row_out++) {
 
 			GMT_Report (API, GMT_MSG_VERBOSE, "Processing output line %d\r", row_out);
-			y_out = GMT_grd_row_to_y (GMT, row_out, Gout->header);
-			j_origin = (int)GMT_grd_y_to_row (GMT, y_out, Gin->header);
+			y_out = gmt_M_grd_row_to_y (GMT, row_out, Gout->header);
+			j_origin = (int)gmt_M_grd_y_to_row (GMT, y_out, Gin->header);
 			if (effort_level == 2) set_weight_matrix_dim (&F, Gout->header, y_out, shift);
 
-			for (col_out = 0; col_out < Gout->header->nx; col_out++) {
+			for (col_out = 0; col_out < Gout->header->n_columns; col_out++) {
 
 				if (effort_level == 3) set_weight_matrix_dim (&F, Gout->header, y_out, shift);
-				GMT_memset (n_in_median, Ctrl->N.n_sectors, unsigned int);
-				GMT_memset (value, Ctrl->N.n_sectors, double);
-				GMT_memset (wt_sum, Ctrl->N.n_sectors, double);
+				gmt_M_memset (n_in_median, Ctrl->N.n_sectors, unsigned int);
+				gmt_M_memset (value, Ctrl->N.n_sectors, double);
+				gmt_M_memset (wt_sum, Ctrl->N.n_sectors, double);
 #ifdef OBSOLETE
 				if (Ctrl->E.active) S = 0, Sx = Sy = Sz = Sxx = Syy = Sxy = Sxz = Syz = Sxx = Sw = 0.0;
 				n = 0;
 #endif
 
-				ij_out = GMT_IJP (Gout->header, row_out, col_out);
+				ij_out = gmt_M_ijp (Gout->header, row_out, col_out);
 
 				for (ii = -F.x_half_width; ii <= F.x_half_width; ii++) {
 					scol = i_origin[col_out] + ii;
-					if (scol < 0 || (col_in = scol) >= Gin->header->nx) continue;
+					if (scol < 0 || (col_in = scol) >= Gin->header->n_columns) continue;
 
 					for (jj = -F.y_half_width; jj <= F.y_half_width; jj++) {
 						srow = j_origin + jj;
-						if (srow < 0 || (row_in = srow) >= Gin->header->ny) continue;
+						if (srow < 0 || (row_in = srow) >= Gin->header->n_rows) continue;
 
-						ij_wt = (jj + F.y_half_width) * F.nx + ii + F.x_half_width;
+						ij_wt = (jj + F.y_half_width) * (uint64_t)F.n_columns + ii + F.x_half_width;
 						if (F. weight[ij_wt] < 0.0) continue;
 
-						ij_in = GMT_IJP (Gin->header, row_in, col_in);
-						if (GMT_is_fnan (Gin->data[ij_in])) continue;
+						ij_in = gmt_M_ijp (Gin->header, row_in, col_in);
+						if (gmt_M_is_fnan (Gin->data[ij_in])) continue;
 
 						/* Get here when point is usable  */
 
@@ -818,11 +814,11 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 							}
 #endif
 							if (Ctrl->F.filter == 3) {
-								GMT_median (GMT, work_array[s], n_in_median[s], z_min, z_max, last_median, &this_median);
+								gmt_median (GMT, work_array[s], n_in_median[s], z_min, z_max, last_median, &this_median);
 								last_median = this_median;
 							}
 							else
-								GMT_mode (GMT, work_array[s], n_in_median[s], n_in_median[s]/2, true, GMT_mode_selection, &GMT_n_multiples, &this_median);
+								gmt_mode (GMT, work_array[s], n_in_median[s], n_in_median[s]/2, true, gmt_mode_selection, &GMT_n_multiples, &this_median);
 							value[k] = this_median;
 #ifdef OBSOLETE
 							if (Ctrl->E.active) value[k] += intercept;	/* I.e., intercept + x * slope_x + y * slope_y, but x == y == 0 at node */
@@ -855,11 +851,11 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 
 				if (slow2) {	/* Get median (or mode) of all the medians (or modes) */
 					if (Ctrl->F.filter == 3) {
-						GMT_median (GMT, value, k, z2_min, z2_max, last_median2, &this_median2);
+						gmt_median (GMT, value, k, z2_min, z2_max, last_median2, &this_median2);
 						last_median2 = this_median2;
 					}
 					else
-						GMT_mode (GMT, value, k, k/2, true, GMT_mode_selection, &GMT_n_multiples, &this_median2);
+						gmt_mode (GMT, value, k, k/2, true, gmt_mode_selection, &GMT_n_multiples, &this_median2);
 					z = this_median2;
 				}
 				else {	/* Get min, max, or mean */
@@ -897,8 +893,8 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 #ifdef OBSOLETE
 				if (Ctrl->S.active) {	/* Now assess a measure of deviation about this value */
 					if (slow) {	/* Get MAD! */
-						GMT_sort_array (GMT, work_array2, n, GMT_DOUBLE);
-						GMT_getmad (GMT, work_array2, n, z, &scale);
+						gmt_sort_array (GMT, work_array2, n, GMT_DOUBLE);
+						gmt_getmad (GMT, work_array2, n, z, &scale);
 					}
 					else {		/* Get weighted stdev. */
 						scale = sqrt ((Sxx - Sw * z * z) / (Sw * (n - 1) / n));
@@ -920,47 +916,47 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Write filtered grid\n");
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Gout)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_OK) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
 			Return (API->error);
 		}
 #ifdef OBSOLETE
 		if (Ctrl->S.active) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Write scale grid\n");
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Sout)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->S.file, Sout) != GMT_OK) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->S.file, Sout) != GMT_NOERROR) {
 				Return (API->error);
 			}
 		}
 #endif
 		GMT_Report (API, GMT_MSG_VERBOSE, "Done\n");
 
-		GMT_free (GMT, F. weight);
-		GMT_free (GMT, i_origin);
-		for (ii = 0; ii < F.ny; ii++) GMT_free (GMT, sector[ii]);
-		GMT_free (GMT, sector);
-		GMT_free (GMT, value);
-		GMT_free (GMT, wt_sum);
-		GMT_free (GMT, n_in_median);
+		gmt_M_free (GMT, F. weight);
+		gmt_M_free (GMT, i_origin);
+		for (ii = 0; ii < F.n_rows; ii++) gmt_M_free (GMT, sector[ii]);
+		gmt_M_free (GMT, sector);
+		gmt_M_free (GMT, value);
+		gmt_M_free (GMT, wt_sum);
+		gmt_M_free (GMT, n_in_median);
 		if (slow) {
 			for (j = 0; j < Ctrl->N.n_sectors; j++) {
-				GMT_free (GMT, work_array[j]);
+				gmt_M_free (GMT, work_array[j]);
 #ifdef OBSOLETE
 				if (Ctrl->E.active) {
-					GMT_free (GMT, xx[j]);
-					GMT_free (GMT, yy[j]);
+					gmt_M_free (GMT, xx[j]);
+					gmt_M_free (GMT, yy[j]);
 				}
 #endif
 			}
-			GMT_free (GMT, work_array);
+			gmt_M_free (GMT, work_array);
 #ifdef OBSOLETE
-			if (Ctrl->S.active) GMT_free (GMT, work_array2);
+			if (Ctrl->S.active) gmt_M_free (GMT, work_array2);
 			if (Ctrl->E.active) {
-				GMT_free (GMT, xx);
-				GMT_free (GMT, yy);
+				gmt_M_free (GMT, xx);
+				gmt_M_free (GMT, yy);
 			}
 #endif
 		}
-		if (!fast_way) GMT_free (GMT, x_shift);
+		if (!fast_way) gmt_M_free (GMT, x_shift);
 
 	}
 	else {	/* Here -Q is active */
@@ -969,17 +965,21 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 
 		FILE *ip = NULL;
 
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
+			Return (API->error);
+		}
+		
+		if ((error = gmt_set_cols (GMT, GMT_OUT, 3)) != GMT_NOERROR) Return (error);
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+			Return (API->error);
+		}
+		gmt_set_cartesian (GMT, GMT_OUT);	/* No coordinates here */
+
 		/* Check the crucial condition to run the program*/
 		if ((ip = fopen (Ctrl->In.file, "r")) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: Unable to open file %s\n", Ctrl->In.file);
-			Return (EXIT_FAILURE);
+			Return (GMT_ERROR_ON_FOPEN);
 		}
-
-		if ((error = GMT_set_cols (GMT, GMT_OUT, 3))!= GMT_OK) Return (error);
-		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
-			Return (API->error);
-		}
-		GMT_set_cartesian (GMT, GMT_OUT);	/* No coordinates here */
 
 		/* read depths from each column until EOF */
 		while (fscanf (ip, "%lf", &err_depth) != EOF) {
@@ -990,7 +990,8 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 			for (i = 1; i < Ctrl->Q.err_cols; i++) {
 				if (fscanf (ip, "%lf", &err_depth) != 1) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Error: Unable to read depths for column %d\n", i);
-					Return (EXIT_FAILURE);
+					fclose (ip);
+					Return (GMT_DATA_READ_ERROR);
 				}
 				err_workarray[i] = err_depth;
 				err_sum += err_depth;
@@ -999,7 +1000,7 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 			}
 
 			/* calculate MEDIAN and MAD for each row */
-			GMT_median (GMT, err_workarray, Ctrl->Q.err_cols, err_min, err_max, err_null_median, &err_median);
+			gmt_median (GMT, err_workarray, Ctrl->Q.err_cols, err_min, err_max, err_null_median, &err_median);
 			err_workarray[0] = fabs (err_workarray[0] - err_median);
 			err_min = err_max = err_workarray[0];
 			for (i = 1; i < Ctrl->Q.err_cols; i++) {
@@ -1007,8 +1008,8 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 				if (err_workarray[i] < err_min) err_min=err_workarray[i];
 				if (err_workarray[i] > err_max) err_max=err_workarray[i];
 			}
-			GMT_median (GMT, err_workarray, Ctrl->Q.err_cols, err_min, err_max, err_null_median, &err_mad);
-			err_mad *= 1.482;
+			gmt_median (GMT, err_workarray, Ctrl->Q.err_cols, err_min, err_max, err_null_median, &err_mad);
+			err_mad *= 1.4826;
 
 			/* calculate MEAN for each row */
 			out[0] = err_median;
@@ -1023,10 +1024,10 @@ int GMT_dimfilter (void *V_API, int mode, void *args)
 		}
 		/* close the input */
 		fclose (ip);
-		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {
+		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {
 			Return (API->error);	/* Disables further data output */
 		}
 	}
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: segy2grd.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: segy2grd.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *	Copyright (c) 1991-2015 by T. Henstock
+ *	Copyright (c) 1991-2016 by T. Henstock
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 #define THIS_MODULE_NAME	"segy2grd"
 #define THIS_MODULE_LIB		"segy"
 #define THIS_MODULE_PURPOSE	"Converting SEGY data to a GMT grid"
-#define THIS_MODULE_KEYS	"GGO,RG-"
+#define THIS_MODULE_KEYS	"GG}"
 
 #include "gmt_dev.h"
 #include "segy_io.h"
@@ -93,10 +93,10 @@ struct SEGY2GRD_CTRL {
 	} S;
 };
 
-void *New_segy2grd_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct SEGY2GRD_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct SEGY2GRD_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct SEGY2GRD_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 
@@ -108,23 +108,22 @@ void *New_segy2grd_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a ne
 	return (C);
 }
 
-void Free_segy2grd_Ctrl (struct GMT_CTRL *GMT, struct SEGY2GRD_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct SEGY2GRD_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C && C->In.file) free (C->In.file);
-	if (C && C->D.text) free (C->D.text);
-	if (C && C->G.file) free (C->G.file);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->In.file);
+	gmt_M_str_free (C->D.text);
+	gmt_M_str_free (C->G.file);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_segy2grd_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int GMT_segy2grd_usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: segy2grd <segyfile> -G<grdfile> %s\n", GMT_Id_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [-A[n|z]]\n\t[%s] [-L<nsamp>]\n", GMT_Rgeo_OPT, GMT_GRDEDIT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-M<ntraces>] [-N<nodata>] [-Q<mode><value>] [-S<header>] [%s] [%s]\n\n", GMT_V_OPT, GMT_r_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\tsegyfile(s) is an IEEE floating point SEGY file. Traces are all assumed to start at 0 time/depth.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Set name the output grid file.\n");
@@ -147,11 +146,10 @@ int GMT_segy2grd_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   If -S not set, assumes even spacing of samples at dx, dy supplied with -I.\n");
 	GMT_Option (API, "V,r,.");
 	
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_segy2grd_parse (struct GMT_CTRL *GMT, struct SEGY2GRD_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SEGY2GRD_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to segy2grd and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
 	 * Any GMT common options will override values set previously by other commands.
@@ -169,7 +167,7 @@ int GMT_segy2grd_parse (struct GMT_CTRL *GMT, struct SEGY2GRD_CTRL *Ctrl, struct
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
+				if ((Ctrl->In.active = gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -193,15 +191,15 @@ int GMT_segy2grd_parse (struct GMT_CTRL *GMT, struct SEGY2GRD_CTRL *Ctrl, struct
 				Ctrl->D.text = strdup (opt->arg);
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
+				if ((Ctrl->G.active = gmt_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'I':
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
@@ -256,30 +254,29 @@ int GMT_segy2grd_parse (struct GMT_CTRL *GMT, struct SEGY2GRD_CTRL *Ctrl, struct
 				}
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
 
-	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->G.active || !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->G.active || !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.active || !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.active || !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_segy2grd_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_segy2grd (void *V_API, int mode, void *args)
-{
+int GMT_segy2grd (void *V_API, int mode, void *args) {
 	bool  read_cont = false, swap_bytes = !GMT_BIGENDIAN;
 	int error = 0;
 	unsigned int ii, jj, n_read = 0, n_filled = 0, n_used = 0, *flag = NULL;
-	unsigned int n_empty = 0, n_stuffed = 0, n_bad = 0, n_confused = 0, check, ix;
+	unsigned int n_empty = 0, n_stuffed = 0, n_confused = 0, check, ix;
 
 	uint64_t ij, ij0, n_samp = 0, isamp;
 	
@@ -300,7 +297,7 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 	struct SEGY2GRD_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 	
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
@@ -313,10 +310,10 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_segy2grd_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_segy2grd_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the segy2grd main code ----------------------------*/
 
@@ -327,13 +324,13 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 
 	/* Decode grd information given, if any */
 
-	if (Ctrl->D.active) GMT_decode_grd_h_info (GMT, Ctrl->D.text, Grid->header);
+	if (Ctrl->D.active) gmt_decode_grd_h_info (GMT, Ctrl->D.text, Grid->header);
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "nx = %d  ny = %d\n", Grid->header->nx, Grid->header->ny);
+	GMT_Report (API, GMT_MSG_VERBOSE, "n_columns = %d  n_rows = %d\n", Grid->header->n_columns, Grid->header->n_rows);
 
-	flag = GMT_memory (GMT, NULL, Grid->header->size, unsigned int);
+	flag = gmt_M_memory (GMT, NULL, Grid->header->size, unsigned int);
 
-	GMT_grd_pad_off (GMT, Grid);	/* Undo pad since algorithm does not expect on */
+	gmt_grd_pad_off (GMT, Grid);	/* Undo pad since algorithm does not expect on */
 
 	idy = 1.0 / Grid->header->inc[GMT_Y];
 
@@ -342,15 +339,24 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 		GMT_Report (API, GMT_MSG_VERBOSE, "Will read segy file %s\n", Ctrl->In.file);
 		if ((fpi = fopen (Ctrl->In.file, "rb")) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Cannot find segy file %s\n", Ctrl->In.file);
-			Return (EXIT_FAILURE);
+			gmt_M_free (GMT, flag);
+			Return (GMT_ERROR_ON_FOPEN);
 		}
 	}
 	else {
 		GMT_Report (API, GMT_MSG_VERBOSE, "Will read segy file from standard input\n");
 		if (fpi == NULL) fpi = stdin;
 	}
-	if ((check = get_segy_reelhd (fpi, reelhead)) != true) {GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;}
-	if ((check = get_segy_binhd (fpi, &binhead)) != true) {GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;}
+	if ((check = segy_get_reelhd (fpi, reelhead)) != true) {
+		if (fpi != stdin) fclose (fpi); GMT_exit (GMT, GMT_RUNTIME_ERROR);
+		gmt_M_free (GMT, flag);
+		return GMT_RUNTIME_ERROR;
+	}
+	if ((check = segy_get_binhd (fpi, &binhead)) != true) {
+		if (fpi != stdin) fclose (fpi); GMT_exit (GMT, GMT_RUNTIME_ERROR);
+		gmt_M_free (GMT, flag);
+		return GMT_RUNTIME_ERROR;
+	}
 
 	if (swap_bytes) {
 		/* this is a little-endian system, and we need to byte-swap ints in the reel header - we only
@@ -377,7 +383,9 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 
 	if (!Ctrl->L.value) { /* no number of samples still - a problem! */
 		GMT_Report (API, GMT_MSG_NORMAL, "Error, number of samples per trace unknown\n");
-		Return (EXIT_FAILURE);
+		if (fpi != stdin) fclose (fpi);
+		gmt_M_free (GMT, flag);
+		Return (GMT_RUNTIME_ERROR);
 	}
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Number of samples for reel is %d\n", Ctrl->L.value);
@@ -394,37 +402,40 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 
 	if (!Ctrl->Q.value[Y_ID]) { /* still no sample interval at this point is a problem! */
 		GMT_Report (API, GMT_MSG_NORMAL, "Error, no sample interval in reel header\n");
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		if (fpi != stdin) fclose (fpi);
+		gmt_M_free (GMT, flag);
+		GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 	}
 	if (read_cont && (Ctrl->Q.value[Y_ID] != Grid->header->inc[GMT_Y])) {
 		GMT_Report (API, GMT_MSG_VERBOSE, "Warning, grid spacing != sample interval, setting sample interval to grid spacing\n");
 		Ctrl->Q.value[Y_ID] = Grid->header->inc[GMT_Y];
 	}
 
-	if (Grid->header->inc[GMT_Y] < Ctrl->Q.value[Y_ID]) GMT_Report (API, GMT_MSG_VERBOSE, "Warning, grid spacing < sample interval, expect gaps in output....\n");
+	if (Grid->header->inc[GMT_Y] < Ctrl->Q.value[Y_ID])
+		GMT_Report (API, GMT_MSG_VERBOSE, "Warning, grid spacing < sample interval, expect gaps in output....\n");
 
 	/* starts reading actual data here....... */
 
 	if (read_cont) {	/* old-style segy2grd */
 		ix = 0;
 		for (ij = 0; ij < Grid->header->size; ij++) Grid->data[ij] = Ctrl->N.f_value;
-		if (Grid->header->nx < Ctrl->M.value) {
+		if (Grid->header->n_columns < Ctrl->M.value) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Warning, number of traces in header > size of grid. Reading may be truncated\n");
-			Ctrl->M.value = Grid->header->nx;
+			Ctrl->M.value = Grid->header->n_columns;
 		}
-		while ((ix < Ctrl->M.value) && (header = get_segy_header (fpi)) != 0) {
+		while ((ix < Ctrl->M.value) && (header = segy_get_header (fpi)) != 0) {
 			if (swap_bytes) {
 /* need to permanently byte-swap number of samples in the trace header */
 				header->num_samps = bswap32 (header->num_samps);
 				header->sampleLength = bswap16 (header->sampleLength);
 			}
 
-			data = get_segy_data (fpi, header); /* read a trace */
+			data = segy_get_data (fpi, header); /* read a trace */
 			/* get number of samples in _this_ trace or set to number in reel header */
-			if ((n_samp = samp_rd (header)) != 0) n_samp = Ctrl->L.value;
+			if ((n_samp = segy_samp_rd (header)) != 0) n_samp = Ctrl->L.value;
 
 			ij0 = lrint (GMT->common.R.wesn[YLO] * idy);
-			if ((n_samp - ij0) > (uint64_t)Grid->header->ny) n_samp = Grid->header->ny + ij0;
+			if ((n_samp - ij0) > (uint64_t)Grid->header->n_rows) n_samp = Grid->header->n_rows + ij0;
 
 			if (swap_bytes) {
 				/* need to swap the order of the bytes in the data even though assuming IEEE format */
@@ -437,18 +448,18 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 			}
 
 			for (ij = ij0; ij < n_samp ; ij++) {  /* n*idy is index of first sample to be included in the grid */
-				Grid->data[ix + Grid->header->nx*(Grid->header->ny+ij0-ij-1)] = data[ij];
+				Grid->data[ix + Grid->header->n_columns*(Grid->header->n_rows+ij0-ij-1)] = data[ij];
 			}
 
-			free (data);
-			free (header);
+			gmt_M_str_free (data);
+			gmt_M_str_free (header);
 			ix++;
 		}
 	}
 	else {
 		/* Get trace data and position by headers */
 		ix = 0;
-		while ((ix < Ctrl->M.value) && (header = get_segy_header (fpi)) != 0) {
+		while ((ix < Ctrl->M.value) && (header = segy_get_header (fpi)) != 0) {
 			/* read traces one by one */
 			if (Ctrl->S.mode == PLOT_OFFSET) {
 				/* plot traces by offset, cdp, or input order */
@@ -471,7 +482,7 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 				/* get value starting at Ctrl->S.value of header into a double */
 				uint32_t tmp;
 				memcpy (&tmp, &header[Ctrl->S.value], sizeof (uint32_t));
-				x0 = (swap_bytes) ? (double) bswap32 (tmp) : (double) tmp;
+				x0 = (double) bswap32 (tmp);
 			}
 			else
 				x0 = (1.0 + (double) ix);
@@ -489,10 +500,10 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 				header->num_samps = bswap32 (header->num_samps);
 			}
 
-			data = get_segy_data (fpi, header); /* read a trace */
+			data = segy_get_data (fpi, header); /* read a trace */
 			/* get number of samples in _this_ trace (e.g. OMEGA has strange ideas about SEGY standard)
 			   or set to number in reel header */
-			if ((n_samp = samp_rd (header)) != 0) n_samp = Ctrl->L.value;
+			if ((n_samp = segy_samp_rd (header)) != 0) n_samp = Ctrl->L.value;
 
 			if (swap_bytes) {
 				/* need to swap the order of the bytes in the data even though assuming IEEE format */
@@ -506,22 +517,22 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 
 			if (!(x0 < GMT->common.R.wesn[XLO] || x0 > GMT->common.R.wesn[XHI])) {	/* inside x-range */
 				/* find horizontal grid pos of this trace */
-				ii = (unsigned int)GMT_grd_x_to_col (GMT, x0, Grid->header);
-				if (ii == Grid->header->nx) ii--, n_confused++;
+				ii = (unsigned int)gmt_M_grd_x_to_col (GMT, x0, Grid->header);
+				if (ii == Grid->header->n_columns) ii--, n_confused++;
 				for (isamp = 0; isamp< n_samp; ++isamp) {
 					yval = isamp*Ctrl->Q.value[Y_ID];
 					if (!(yval < GMT->common.R.wesn[YLO] || yval > GMT->common.R.wesn[YHI])) {	/* inside y-range */
-						jj = (unsigned int)GMT_grd_y_to_row (GMT, yval, Grid->header);
-						if (jj == Grid->header->ny) jj--, n_confused++;
-						ij = GMT_IJ0 (Grid->header, jj, ii);
+						jj = (unsigned int)gmt_M_grd_y_to_row (GMT, yval, Grid->header);
+						if (jj == Grid->header->n_rows) jj--, n_confused++;
+						ij = gmt_M_ij0 (Grid->header, jj, ii);
 						Grid->data[ij] += data[isamp];	/* Add up incase we must average */
 						flag[ij]++;
 						n_used++;
 					}
 				}
 			}
-			free (data);
-			free (header);
+			gmt_M_str_free (data);
+			gmt_M_str_free (header);
 			ix++;
 		}
 
@@ -544,24 +555,23 @@ int GMT_segy2grd (void *V_API, int mode, void *args)
 			}
 		}
 
-		if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+		if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 			sprintf (line, "%s\n", GMT->current.setting.format_float_out);
 			GMT_Message (API, GMT_TIME_NONE, " n_read: %d  n_used: %d  n_filled: %d  n_empty: %d set to ",
 				n_read, n_used, n_filled, n_empty);
-			(GMT_is_dnan (Ctrl->N.d_value)) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.d_value);
-			if (n_bad) GMT_Message (API, GMT_TIME_NONE, "%d records unreadable\n", n_bad);
+			(gmt_M_is_dnan (Ctrl->N.d_value)) ? GMT_Message (API, GMT_TIME_NONE, "NaN\n") : GMT_Message (API, GMT_TIME_NONE, line, Ctrl->N.d_value);
 			if (n_stuffed) GMT_Message (API, GMT_TIME_NONE, "Warning - %d nodes had multiple entries that were averaged\n", n_stuffed);
 			if (n_confused) GMT_Message (API, GMT_TIME_NONE, "Warning - %d values gave bad indices: Pixel vs gridline confusion?\n", n_confused);
 		}
 	}
+	if (fpi != stdin) fclose (fpi);
+	gmt_M_free (GMT, flag);
 
-	GMT_grd_pad_on (GMT, Grid, GMT->current.io.pad);	/* Restore padding */
+	gmt_grd_pad_on (GMT, Grid, GMT->current.io.pad);	/* Restore padding */
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_OK) {
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
 		Return (API->error);
 	}
 
-	GMT_free (GMT, flag);
-
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

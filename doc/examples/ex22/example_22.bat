@@ -1,7 +1,7 @@
 REM
 REM             GMT EXAMPLE 22
 REM
-REM             $Id: example_22.bat 15178 2015-11-06 10:45:03Z fwobbe $
+REM             $Id: example_22.bat 16792 2016-07-13 21:12:21Z pwessel $
 REM
 REM Purpose:    Automatic map of last 7 days of world-wide seismicity
 REM
@@ -11,24 +11,24 @@ REM
 echo GMT EXAMPLE 22
 set ps=example_22.ps
 
-gmt gmtset FONT_ANNOT_PRIMARY 10p FONT_TITLE 18p FORMAT_GEO_MAP ddd:mm:ssF
+gmt set FONT_ANNOT_PRIMARY 10p FONT_TITLE 18p FORMAT_GEO_MAP ddd:mm:ssF
 
 REM Get the data (-q quietly) from USGS using the wget (comment out in case
 REM your system does not have wget or curl)
 
-REM wget http://neic.usgs.gov/neis/gis/bulletin.asc -q -O neic_quakes.d
-REM curl http://neic.usgs.gov/neis/gis/bulletin.asc -s > neic_quakes.d
+REM wget http://neic.usgs.gov/neis/gis/bulletin.asc -q -O neic_quakes.txt
+REM curl http://neic.usgs.gov/neis/gis/bulletin.asc -s > neic_quakes.txt
 
 REM Count the number of events (to be used in title later. one less due to header)
 
-REM n=`cat neic_quakes.d | wc -l`
+REM n=`cat neic_quakes.txt | wc -l`
 REM n=`expr $n - 1`
 set n=77
 
 REM Pull out the first and last timestamp to use in legend title
 
-REM first=`sed -n 2p neic_quakes.d | awk -F, '{printf "%s %s\n", $1, $2}'`
-REM last=`sed -n '$p' neic_quakes.d | awk -F, '{printf "%s %s\n", $1, $2}'`
+REM first=`sed -n 2p neic_quakes.txt | awk -F, '{printf "%s %s\n", $1, $2}'`
+REM last=`sed -n '$p' neic_quakes.txt | awk -F, '{printf "%s %s\n", $1, $2}'`
 set first=04/04/19 00:04:33
 set last=04/04/25 11:11:33
 
@@ -40,14 +40,12 @@ set me=GMT guru @@ GMTbox
 
 REM Create standard seismicity color table
 
-echo 0	red	100	red > neis.cpt
-echo 100	green	300	green >> neis.cpt
-echo 300	blue	10000	blue >> neis.cpt
+gmt makecpt -Cred,green,blue -T0,100,300,10000 -N > neis.cpt
 
 REM Start plotting. First lay down map, then plot quakes with size = magintude/50":
 
 gmt pscoast -Rg -JK180/9i -B45g30 -B+t"World-wide earthquake activity" -Gbrown -Slightblue -Dc -A1000 -K -Y2.75i > %ps%
-gawk -F, "{ print $4, $3, $6, $5*0.02}" neic_quakes.d | gmt psxy -R -JK -O -K -Cneis.cpt -Sci -Wthin -h >> %ps%
+gawk -F, "{ print $4, $3, $6, $5*0.02}" neic_quakes.txt | gmt psxy -R -JK -O -K -Cneis.cpt -Sci -Wthin -h >> %ps%
 
 REM Create legend input file for NEIS quake plot
 

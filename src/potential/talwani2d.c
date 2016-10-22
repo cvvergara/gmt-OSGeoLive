@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: talwani2d.c 15186 2015-11-06 21:01:51Z pwessel $
+ *	$Id: talwani2d.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
 #define THIS_MODULE_NAME	"talwani2d"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute geopotential anomalies over 2-D bodies by the method of Talwani"
-#define THIS_MODULE_KEYS	"<DI,NDi,>DO"
+#define THIS_MODULE_KEYS	"<D{,ND(,>D}"
 
 #include "gmt_dev.h"
 
@@ -106,25 +106,24 @@ enum Talwani2d_fields {
 	TALWANI2D_VER=1
 };
 
-void *New_talwani2d_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct TALWANI2D_CTRL *C = NULL;
 	
-	C = GMT_memory (GMT, NULL, 1, struct TALWANI2D_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct TALWANI2D_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 
 	return (C);
 }
 
-void Free_talwani2d_Ctrl (struct GMT_CTRL *GMT, struct TALWANI2D_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct TALWANI2D_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->Out.file) free (C->Out.file);
-	if (C->N.file) free (C->N.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->Out.file);
+	gmt_M_str_free (C->N.file);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_talwani2d_parse (struct GMT_CTRL *GMT, struct TALWANI2D_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct TALWANI2D_CTRL *Ctrl, struct GMT_OPTION *options) {
 	unsigned int k, n_errors = 0, n_files = 0;
 	int n;
 	struct GMT_OPTION *opt = NULL;
@@ -133,20 +132,20 @@ int GMT_talwani2d_parse (struct GMT_CTRL *GMT, struct TALWANI2D_CTRL *Ctrl, stru
 		switch (opt->option) {
 
 			case '<':	/* Input file(s) */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 			case '>':	/* Got named output file */
-				if (n_files++ == 0 && GMT_check_filearg (GMT, '>', opt->arg, GMT_OUT, GMT_IS_DATASET))
+				if (n_files++ == 0 && gmt_check_filearg (GMT, '>', opt->arg, GMT_OUT, GMT_IS_DATASET))
 					Ctrl->Out.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 
 			case 'A':	/* Specify z-axis is positive up [Default is down] */
-				Ctrl->A.active = TRUE;
+				Ctrl->A.active = true;
 				break;
 			case 'D':
-				Ctrl->D.active = TRUE;
+				Ctrl->D.active = true;
 				Ctrl->D.rho = atof (opt->arg);
 				break;
 			case 'F':
@@ -195,29 +194,29 @@ int GMT_talwani2d_parse (struct GMT_CTRL *GMT, struct TALWANI2D_CTRL *Ctrl, stru
 				else if (n == 1) Ctrl->Z.mode = 1;
 				break;
 			default:
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && Ctrl->N.active,
+	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && Ctrl->N.active,
 	                                 "Syntax error -N option: Cannot also specify -T\n");
-	n_errors += GMT_check_condition (GMT, (Ctrl->Z.mode & 2) && Ctrl->Z.ymin >= Ctrl->Z.ymax,
+	n_errors += gmt_M_check_condition (GMT, (Ctrl->Z.mode & 2) && Ctrl->Z.ymin >= Ctrl->Z.ymax,
 				         "Syntax error -Z option: The ymin >= ymax for 2.5-D body\n");
-	n_errors += GMT_check_condition (GMT, (Ctrl->Z.mode & 2) && Ctrl->F.mode != TALWANI2D_FAA,
+	n_errors += gmt_M_check_condition (GMT, (Ctrl->Z.mode & 2) && Ctrl->F.mode != TALWANI2D_FAA,
 				         "Syntax error -Z option: 2.5-D solution only available for FAA\n");
-	n_errors += GMT_check_condition (GMT, n_files > 1, "Syntax error: Only one output destination can be specified\n");
+	n_errors += gmt_M_check_condition (GMT, n_files > 1, "Syntax error: Only one output destination can be specified\n");
 	if ((Ctrl->Z.mode & 2) && Ctrl->F.mode == TALWANI2D_FAA) Ctrl->F.mode = TALWANI2D_FAA2;
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-int GMT_talwani2d_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: talwani2d <modelfile> [-A] [-D<rho>] [-Ff|n|v]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-M[hz]] [-T[<xmin>/<xmax>/<xinc>[+]]] [%s] [-Z[<level>][/<ymin/<ymax>]]\n", GMT_V_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-M[hz]] [-N<trktable>] [-T[<xmin>/<xmax>/<xinc>[+]]] [%s] [-Z[<level>][/<ymin/<ymax>]]\n", GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE,"\t[%s]\n\t[%s] [%s]%s\n\n", GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_x_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<modelfile> is a multiple-segment ASCII file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
@@ -239,7 +238,7 @@ int GMT_talwani2d_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Set observation level for output locations [0].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   For FAA only: Optionally append <ymin/ymax> to get a 2.5-D solution.\n");
 	GMT_Option (API, "h,i,o,x,.");
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
 /*
@@ -250,8 +249,7 @@ int GMT_talwani2d_usage (struct GMTAPI_CTRL *API, int level) {
  * modelling, Geophys. Prosp.
  */
  
-double integralI1 (double xa, double xb, double za, double zb, double y)
-{
+GMT_LOCAL double integralI1 (double xa, double xb, double za, double zb, double y) {
 	/* This function performs the integral I1 (i,Y) from
 	 * Rasmussen & Pedersen's paper
 	 */
@@ -281,8 +279,7 @@ double integralI1 (double xa, double xb, double za, double zb, double y)
 	return (part1 + part2 + part3);
 }
 
-double grav_2_5D (struct GMT_CTRL *GMT, double x[], double z[], unsigned int n, double x0, double z0,
-                  double rho, double ymin, double ymax) {
+GMT_LOCAL double grav_2_5D (struct GMT_CTRL *GMT, double x[], double z[], unsigned int n, double x0, double z0, double rho, double ymin, double ymax) {
 /*  x0;		X-coordinate of observation point */
 /*  z0;		Z-coordinate of observation point */
 /*  x[];	Array of xpositions */
@@ -323,8 +320,7 @@ double grav_2_5D (struct GMT_CTRL *GMT, double x[], double z[], unsigned int n, 
 	return (sum);
 }
 
-double get_grav2d (struct GMT_CTRL *GMT, double x[], double z[], unsigned int n, double x0, double z0, double rho)
-{
+GMT_LOCAL double get_grav2d (struct GMT_CTRL *GMT, double x[], double z[], unsigned int n, double x0, double z0, double rho) {
 	/*  x0;		X-coordinate of observation point */
 	/*  z0;		Z-coordinate of observation point */
 	/*  x[];	Array of xpositions */
@@ -364,8 +360,8 @@ double get_grav2d (struct GMT_CTRL *GMT, double x[], double z[], unsigned int n,
 	return (sum);
 }
 
-double get_vgg2d (struct GMT_CTRL *GMT, double *x, double *z, unsigned int n, double x0, double z0, double rho)
-{	/* From Kim & Wessel, 2015 */
+GMT_LOCAL double get_vgg2d (struct GMT_CTRL *GMT, double *x, double *z, unsigned int n, double x0, double z0, double rho) {
+	/* From Kim & Wessel, 2016 */
 	int i1, i2;
 	double sum = 0.0, x1, z1, x2, z2, r1sq, r2sq;
 	double dx, dz, drsq, two_theta2, two_theta1, sin_2th2, sin_2th1;
@@ -405,8 +401,8 @@ double get_vgg2d (struct GMT_CTRL *GMT, double *x, double *z, unsigned int n, do
 	return (sum);
 }
 
-double get_geoid2d (struct GMT_CTRL *GMT, double y[], double z[], unsigned int n, double y0, double z0, double rho)
-{	/* Based on Chaptman, 1979, Techniques for interpretation of geoid anomalies, JGR, 84 (B8), 3793-3801.
+GMT_LOCAL double get_geoid2d (struct GMT_CTRL *GMT, double y[], double z[], unsigned int n, double y0, double z0, double rho) {
+	/* Based on Chaptman, 1979, Techniques for interpretation of geoid anomalies, JGR, 84 (B8), 3793-3801.
 	 *  y0;		Y-coordinate of observation point, in m
 	 *  z0;		Z-coordinate of observation point, in m
 	 *  y[];	Y-coordinates of vertices, in m
@@ -492,14 +488,14 @@ double get_geoid2d (struct GMT_CTRL *GMT, double y[], double z[], unsigned int n
 	return (N);
 }
 
-double get_one_output2D (struct GMT_CTRL *GMT, double x_obs, double z_obs, struct BODY2D *body, unsigned int n_bodies, unsigned int mode, double ymin, double ymax)
-{	/* Evaluate output at a single observation point (x,z) */
+GMT_LOCAL double get_one_output2D (struct GMT_CTRL *GMT, double x_obs, double z_obs, struct BODY2D *body, unsigned int n_bodies, unsigned int mode, double ymin, double ymax) {
+	/* Evaluate output at a single observation point (x,z) */
 	/* Work array vtry must have at least of length ndepths */
 	unsigned int k;
 	double area, v_sum = 0.0, v;
 
 	for (k = 0; k < n_bodies; k++) {	/* Loop over slices */
-		area = GMT_pol_area (body[k].x, body[k].z, body[k].n);
+		area = gmt_pol_area (body[k].x, body[k].z, body[k].n);
 		v = 0.0;
 		if (mode == TALWANI2D_FAA) /* FAA */
 			v += get_grav2d (GMT, body[k].x, body[k].z, body[k].n, x_obs, z_obs, body[k].rho);
@@ -515,16 +511,15 @@ double get_one_output2D (struct GMT_CTRL *GMT, double x_obs, double z_obs, struc
 	return (v_sum);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_talwani2d_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_talwani2d (void *V_API, int mode, void *args)
-{
+int GMT_talwani2d (void *V_API, int mode, void *args) {
 	int srow, error = 0, ns;
-	unsigned int k, tbl, seg, n = 0, geometry, n_bodies, dup_node, n_duplicate = 0;
+	unsigned int k, tbl, seg, n = 0, geometry, n_bodies, dup_node = 0, n_duplicate = 0;
 	size_t n_alloc = 0, n_alloc1 = 0;
 	uint64_t dim[4] = {1, 1, 0, 2}, row;
-	double scl, rho, z_level, answer, min_answer = DBL_MAX, max_answer = -DBL_MAX;
+	double scl, rho = 0.0, z_level, answer, min_answer = DBL_MAX, max_answer = -DBL_MAX;
 	bool first = true;
 	
 	char *uname[2] = {"meter", "km"}, *kind[4] = {"FAA", "VGG", "GEOID", "FAA(2.5-D)"};
@@ -536,48 +531,48 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 	struct GMT_DATASEGMENT *S = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_talwani2d_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);
 	if (API->error) return (API->error);	/* Set or get option list */
 
 	if (!options || options->option == GMT_OPT_USAGE)
-		bailout (GMT_talwani2d_usage (API, GMT_USAGE));	/* Return the usage message */
+		bailout (usage (API, GMT_USAGE));	/* Return the usage message */
 	if (options->option == GMT_OPT_SYNOPSIS)
-		bailout (GMT_talwani2d_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+		bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_talwani2d_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_talwani2d_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the talwani2d main code ----------------------------*/
 	
-	GMT_enable_threads (GMT);	/* Set number of active threads, if supported */
+	gmt_enable_threads (GMT);	/* Set number of active threads, if supported */
 	scl = (Ctrl->M.active[TALWANI2D_HOR]) ? METERS_IN_A_KM : 1.0;	/* Perhaps convert to m */
 	
 	if (Ctrl->T.active) {
 		/* Make sure the min/man/inc values harmonize */
-		switch (GMT_minmaxinc_verify (GMT, Ctrl->T.min, Ctrl->T.max, Ctrl->T.inc, GMT_CONV4_LIMIT)) {
+		switch (gmt_minmaxinc_verify (GMT, Ctrl->T.min, Ctrl->T.max, Ctrl->T.inc, GMT_CONV4_LIMIT)) {
 			case 1:
 				GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -T option: (max - min) is not a whole multiple of inc\n");
-				Return (EXIT_FAILURE);
+				Return (GMT_PARSE_ERROR);
 				break;
 			case 2:
 				if (Ctrl->T.inc != 1.0) {	/* Allow for somebody explicitly saying -T0/0/1 */
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -T option: (max - min) is <= 0\n");
-					Return (EXIT_FAILURE);
+					Return (GMT_PARSE_ERROR);
 				}
 				break;
 			case 3:
 				GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -T option: inc is <= 0\n");
-				Return (EXIT_FAILURE);
+				Return (GMT_PARSE_ERROR);
 				break;
 			default:	/* OK */
 				break;
@@ -586,32 +581,38 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 		dim[GMT_ROW] = lrint ((Ctrl->T.max - Ctrl->T.min) / Ctrl->T.inc) + 1;
 		if ((Out = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (GMT_MEMORY_ERROR);
 		S = Out->table[0]->segment[0];	/* Only one segment when -T is used */
-		for (row = 0; row < dim[GMT_ROW]; row++) S->coord[GMT_X][row] = (row == (S->n_rows-1)) ? Ctrl->T.max: Ctrl->T.min + row * Ctrl->T.inc;
+		for (row = 0; row < dim[GMT_ROW]; row++) S->data[GMT_X][row] = (row == (S->n_rows-1)) ? Ctrl->T.max: Ctrl->T.min + row * Ctrl->T.inc;
 	}
 	else {	/* Got a dataset with output locations */
 		geometry = GMT_IS_PLP;	/* We dont really know */
+		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
 		if ((Out = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_PLP, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL) {
 			Return (API->error);
 		}
+		if (Out->n_columns < 2) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Input file %s has %d column(s) but at least 2 are needed\n", Ctrl->N.file, (int)Out->n_columns);
+			Return (GMT_DIM_TOO_SMALL);
+		}
+		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
 	}
 
 	/* Specify input expected columns to be at least 2 */
-	if ((error = GMT_set_cols (GMT, GMT_IN, 2)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_IN, 2)) != GMT_NOERROR) {
 		Return (error);
 	}
 	/* Register likely model files unless the caller has already done so */
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POLYGON, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default input sources, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POLYGON, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default input sources, unless already set */
 		Return (API->error);
 	}
 	/* Initialize the i/o for doing record-by-record reading */
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
 
 	/* Set up cake slice array and pointers */
 	
 	n_alloc1 = GMT_CHUNK;
-	body = GMT_memory (GMT, NULL, n_alloc1, struct BODY2D);
+	body = gmt_M_memory (GMT, NULL, n_alloc1, struct BODY2D);
 	n_bodies = 0;
 	/* Read polygon information from multiple segment file */
 	GMT_Report (API, GMT_MSG_VERBOSE, "All x-values are assumed to be given in %s\n", uname[Ctrl->M.active[TALWANI2D_HOR]]);
@@ -620,19 +621,21 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 	/* Read the sliced model */
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) { 		/* Bail if there are any read errors */
+				gmt_M_free (GMT, body);
 				Return (GMT_RUNTIME_ERROR);
-			if (GMT_REC_IS_TABLE_HEADER (GMT)) 	/* Skip all table headers */
+			}
+			if (gmt_M_rec_is_table_header (GMT)) 	/* Skip all table headers */
 				continue;
-			if (GMT_REC_IS_SEGMENT_HEADER (GMT) || GMT_REC_IS_EOF (GMT)) {	/* Process segment headers or end-of-file */
+			if (gmt_M_rec_is_segment_header (GMT) || gmt_M_rec_is_eof (GMT)) {	/* Process segment headers or end-of-file */
 				if (!first) {	/* First close previous body */
 					if (!(x[n-1] == x[0] && z[n-1] == z[0])) {	/* Copy first point to last */
 						if (n_duplicate == 1 && dup_node == n) n_duplicate = 0;	/* So it was the last == first duplicate; reset count */
 						x[n] = x[0];	z[n] = z[0];
 						n++;
 					}
-					x = GMT_memory (GMT, x, n, double);
-					z = GMT_memory (GMT, z, n, double);
+					x = gmt_M_memory (GMT, x, n, double);
+					z = gmt_M_memory (GMT, z, n, double);
 					body[n_bodies].rho = rho;
 					body[n_bodies].x = x;
 					body[n_bodies].z = z;
@@ -640,23 +643,24 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 					n_bodies++;
 				}
 				first = false;
-				if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+				if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 					break;
 				/* Process the next segment header */
 				ns = sscanf (GMT->current.io.segment_header, "%lf",  &rho);
 				if (ns == 0 && !Ctrl->D.active) {
 					GMT_Report (API, GMT_MSG_VERBOSE, "Neither segment header nor -D specified density - must quit\n");
+					gmt_M_free (GMT, body);
 					Return (API->error);
 				}
 				if (Ctrl->D.active) rho = Ctrl->D.rho;
 				/* Allocate array for this body */
 				n_alloc = GMT_CHUNK;
-				x = GMT_memory (GMT, NULL, n_alloc, double);
-				z = GMT_memory (GMT, NULL, n_alloc, double);
+				x = gmt_M_memory (GMT, NULL, n_alloc, double);
+				z = gmt_M_memory (GMT, NULL, n_alloc, double);
 				n = 0;
 				if (n_bodies == n_alloc1) {
 					n_alloc1 <<= 1;
-					body = GMT_memory (GMT, body, n_alloc1, struct BODY2D);
+					body = gmt_M_memory (GMT, body, n_alloc1, struct BODY2D);
 				}
 				continue;
 			}
@@ -674,19 +678,23 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 			n++;
 			if (n == n_alloc) {
 				n_alloc += GMT_CHUNK;
-				x = GMT_memory (GMT, x, n_alloc, double);
-				z = GMT_memory (GMT, z, n_alloc, double);
+				x = gmt_M_memory (GMT, x, n_alloc, double);
+				z = gmt_M_memory (GMT, z, n_alloc, double);
 			}
 		}
 	} while (true);
 	
-	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+	if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
+ 		for (k = 0; k < n_bodies; k++) {
+			gmt_M_free (GMT, body[k].x);	gmt_M_free (GMT, body[k].z);
+		}
+		gmt_M_free (GMT, body);
 		Return (API->error);
 	}
 	
 	/* Finish allocation */
 	
-	body = GMT_memory (GMT, body, n_bodies, struct BODY2D);
+	body = gmt_M_memory (GMT, body, n_bodies, struct BODY2D);
 	
 	if (n_duplicate) GMT_Report (API, GMT_MSG_VERBOSE, "Ignored %u duplicate vertices\n", n_duplicate);
 	
@@ -700,7 +708,7 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 	}
 	GMT_Report (API, GMT_MSG_VERBOSE, "Start calculating %s\n", kind[Ctrl->F.mode]);
 	
-	if (Out->n_segments > 1) GMT_set_segmentheader (GMT, GMT_OUT, true);	
+	if (Out->n_segments > 1) gmt_set_segmentheader (GMT, GMT_OUT, true);	
 	for (tbl = 0; tbl < Out->n_tables; tbl++) {
 		for (seg = 0; seg < Out->table[tbl]->n_segments; seg++) {
 			S = Out->table[tbl]->segment[seg];	/* Current segment */
@@ -709,9 +717,9 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 #pragma omp parallel for private(srow,z_level,answer) shared(GMT,Ctrl,S,scl,body,n_bodies)
 #endif
 			for (srow = 0; srow < (int)S->n_rows; srow++) {	/* Calculate attraction at all output locations for this segment. OpenMP requires sign int srow */
-				z_level = (S->n_columns == 2 && !(Ctrl->Z.mode & 1)) ? S->coord[GMT_Y][srow] : Ctrl->Z.level;
-				answer = get_one_output2D (GMT, S->coord[GMT_X][srow] * scl, z_level, body, n_bodies, Ctrl->F.mode, Ctrl->Z.ymin, Ctrl->Z.ymax);
-				S->coord[GMT_Y][srow] = answer;
+				z_level = (S->n_columns == 2 && !(Ctrl->Z.mode & 1)) ? S->data[GMT_Y][srow] : Ctrl->Z.level;
+				answer = get_one_output2D (GMT, S->data[GMT_X][srow] * scl, z_level, body, n_bodies, Ctrl->F.mode, Ctrl->Z.ymin, Ctrl->Z.ymax);
+				S->data[GMT_Y][srow] = answer;
 				if (answer < min_answer) min_answer = answer;
 				if (answer > max_answer) max_answer = answer;
 			}
@@ -723,22 +731,26 @@ int GMT_talwani2d (void *V_API, int mode, void *args)
 			for (seg = 0; seg < Out->table[tbl]->n_segments; seg++) {
 				S = Out->table[tbl]->segment[seg];	/* Current segment */
 				for (row = 0; row < S->n_rows; row++) {	/* Calculate attraction at all output locations for this segment */
-					S->coord[GMT_Y][row] -= off;
+					S->data[GMT_Y][row] -= off;
 				}
 			}
 		}
 	}
-	if (GMT_Write_Data (API, GMT_IS_DATASET, GMT_IS_FILE, geometry, 0, NULL, Ctrl->Out.file, Out) != GMT_OK) {
-		Return (API->error);
-	}
+	if (GMT_Write_Data (API, GMT_IS_DATASET, GMT_IS_FILE, geometry, 0, NULL, Ctrl->Out.file, Out) != GMT_NOERROR)
+		error++;
 		
 	/* Clean up memory */
 	
  	for (k = 0; k < n_bodies; k++) {
-		GMT_free (GMT, body[k].x);
-		GMT_free (GMT, body[k].z);
+		gmt_M_free (GMT, body[k].x);
+		gmt_M_free (GMT, body[k].z);
 	}
-	GMT_free (GMT, body);
+	gmt_M_free (GMT, body);
 
-	Return (EXIT_SUCCESS);
+	if (error) {
+		Return (API->error);
+	}
+	else {
+		Return (GMT_NOERROR);
+	}
 }

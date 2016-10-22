@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: common_sighandler.c 14480 2015-07-09 02:15:49Z pwessel $
+ *	$Id: common_sighandler.c 15817 2016-03-06 03:50:50Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -77,10 +77,20 @@ void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_RIP])
 # elif defined(__aarch64__) || defined(__mips__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.pc)
+# elif defined( __alpha__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.sc_pc)
 # elif defined( __arm__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
+# elif defined( __hppa__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.sc_iaoq[0])
 # elif defined(__s390__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.psw.addr)
+# elif defined(__sparc__)
+#  if defined (__arch64__)
+#   define UC_IP(uc) ((void *) (uc)->uc_mcontext.mc_gregs[MC_PC])
+#  else
+#   define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_PC])
+#  endif
 # else
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[REG_EIP])
 # endif
@@ -104,7 +114,7 @@ void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 #	define sys_siglist __sys_siglist
 #endif
 
-void process_cpu() {
+static void process_cpu() {
 	/* print current process accumulated cpu time */
 	struct rusage ru;
 	if (getrusage (RUSAGE_SELF, &ru) == -1 )
@@ -114,7 +124,7 @@ void process_cpu() {
 					 ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1000000.0);
 }
 
-void process_mem() {
+static void process_mem() {
 	/* print current process memory usage */
 	double rss, vsize;
 #if defined(__APPLE__)
@@ -145,7 +155,7 @@ void process_mem() {
 	fprintf (stderr, "VmRSS: %.0lfkB VmSize: %.0lfkB\n", rss, vsize);
 }
 
-void process_info() {
+static void process_info() {
 	process_cpu();
 	process_mem();
 }

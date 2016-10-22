@@ -1,5 +1,5 @@
 /************************ segy_io.h *******************************
- * $Id: segy_io.h 15178 2015-11-06 10:45:03Z fwobbe $
+ * $Id: segy_io.h 15819 2016-03-06 20:54:48Z pwessel $
  * Include file for segy_io.c, a suite of functions to
  * help reading and writing those annoying, redundant SEGY header
  * variables and for reading/writing to/from SEGY files.
@@ -21,10 +21,10 @@
 #include "segy.h"
 #include "segyreel.h"
 
-uint32_t samp_rd (SEGYHEAD *hdr);
-int get_segy_reelhd (FILE *fileptr, char *reelhead);
-int get_segy_binhd (FILE *fileptr, SEGYREEL *binhead);
-SEGYHEAD *get_segy_header (FILE *file_ptr);
-float *get_segy_data (FILE *file_ptr, SEGYHEAD *head_ptr);
+uint32_t segy_samp_rd (SEGYHEAD *hdr);
+int segy_get_reelhd (FILE *fileptr, char *reelhead);
+int segy_get_binhd (FILE *fileptr, SEGYREEL *binhead);
+SEGYHEAD *segy_get_header (FILE *file_ptr);
+float *segy_get_data (FILE *file_ptr, SEGYHEAD *head_ptr);
 
 #endif /* SEGY_IO_H */

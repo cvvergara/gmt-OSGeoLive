@@ -3,7 +3,7 @@
 The GMT historical collection
 =============================
 
-The 45 Examples
+The 50 Examples
 ----------------
 
 In this section we will be giving numerous examples of typical usage of
@@ -73,6 +73,14 @@ complex illustration.
 |:ref:`example_43` | :ref:`example_44`  | :ref:`example_45`   |
 |                  |                    |                     |
 | |ex43|           | |ex44|             | |ex45|              |
++------------------+--------------------+---------------------+
+|:ref:`example_46` | :ref:`example_47`  | :ref:`example_48`   |
+|                  |                    |                     |
+| |ex46|           | |ex47|             | |ex48|              |
++------------------+--------------------+---------------------+
+|:ref:`example_49` |                    | :ref:`example_50`   |
+|                  |                    |                     |
+| |ex49|           |                    | |ex50|              |
 +------------------+--------------------+---------------------+
 
 .. |ex01| image:: /_images/example_01.*
@@ -210,6 +218,21 @@ complex illustration.
 .. |ex45| image:: /_images/example_45.*
    :width: 150 px
 
+.. |ex46| image:: /_images/example_46.*
+   :width: 150 px
+
+.. |ex47| image:: /_images/example_47.*
+   :width: 150 px
+
+.. |ex48| image:: /_images/example_48.*
+   :width: 150 px
+
+.. |ex49| image:: /_images/example_49.*
+   :width: 150 px
+
+.. |ex50| image:: /_images/example_50.*
+   :width: 150 px
+
 .. toctree::
    :hidden:
 
@@ -258,6 +281,11 @@ complex illustration.
    gallery/ex43.rst
    gallery/ex44.rst
    gallery/ex45.rst
+   gallery/ex46.rst
+   gallery/ex47.rst
+   gallery/ex48.rst
+   gallery/ex49.rst
+   gallery/ex50.rst
 
 
 Animations
@@ -277,6 +305,10 @@ Animations
 |                  |                |
 | |anim03|         | |anim04|       |
 +------------------+----------------+
+|:ref:`anim_05`    |                |
+|                  |                |
+| |anim05|         |                |
++------------------+----------------+
 
 .. |anim01| image:: /_images/anim_01.*
    :width: 150 px
@@ -290,6 +322,9 @@ Animations
 .. |anim04| image:: /_images/anim_04.*
    :width: 150 px
 
+.. |anim05| image:: /_images/anim_05.*
+   :width: 150 px
+
 .. toctree::
    :hidden:
 
@@ -297,4 +332,5 @@ Animations
    gallery/anim02.rst
    gallery/anim03.rst
    gallery/anim04.rst
+   gallery/anim05.rst
 

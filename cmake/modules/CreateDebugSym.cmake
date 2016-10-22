@@ -1,5 +1,5 @@
 #
-# $Id: CreateDebugSym.cmake 13846 2014-12-28 21:46:54Z pwessel $
+# $Id: CreateDebugSym.cmake 15759 2016-02-24 23:36:11Z pwessel $
 #
 # - Generates Mac .dSYM bundle
 # CREATE_DEBUG_SYM ( DESTINATION TARGETS )
@@ -7,7 +7,7 @@
 #  DESTINATION - destination directory for installed targets
 #  TARGETS     - list of targets
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify

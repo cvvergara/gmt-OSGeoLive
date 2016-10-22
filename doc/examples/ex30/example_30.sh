@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 30
-#		$Id: example_30.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_30.sh 16750 2016-07-09 05:44:02Z pwessel $
 #
 # Purpose:	Show graph mode and math angles
-# GMT progs:	gmtmath, psbasemap, pstext and psxy
+# GMT modules:	gmtmath, psbasemap, pstext and psxy
 # Unix progs:	echo, rm
 #
 # Draw generic x-y axes with arrows
@@ -14,8 +14,8 @@ gmt psbasemap -R0/360/-1.25/1.75 -JX8i/6i -Bx90f30+u"\\312" -By1g10 -BWS+t"Two T
 
 # Draw sine an cosine curves
 
-gmt gmtmath -T0/360/0.1 T COSD = | gmt psxy -R -J -O -K -W3p >> $ps
-gmt gmtmath -T0/360/0.1 T SIND = | gmt psxy -R -J -O -K -W3p,0_6:0 --PS_LINE_CAP=round >> $ps
+gmt math -T0/360/0.1 T COSD = | gmt psxy -R -J -O -K -W3p >> $ps
+gmt math -T0/360/0.1 T SIND = | gmt psxy -R -J -O -K -W3p,0_6:0 --PS_LINE_CAP=round >> $ps
 
 # Indicate the x-angle = 120 degrees
 gmt psxy -R -J -O -K -W0.5p,- << EOF >> $ps

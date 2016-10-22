@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------
  *
- *  $Id: gmtmath_op.h.in 13846 2014-12-28 21:46:54Z pwessel $
+ *  $Id: gmtmath_op.h.in 15944 2016-03-26 08:43:39Z pwessel $
  *
- *  Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo,
+ *  Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
  *  See LICENSE.TXT file for copying and redistribution conditions.
  *
@@ -23,7 +23,7 @@
 
 /* Declare operator array */
 
-char *operator[GMTMATH_N_OPERATORS + 1] = {
+static char *operator[GMTMATH_N_OPERATORS + 1] = {
 
 @GMTMATH_OPERATOR_ARRAY@
 	"" /* last element is intentionally left blank */

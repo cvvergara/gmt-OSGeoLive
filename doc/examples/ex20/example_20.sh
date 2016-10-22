@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 20
-#		$Id: example_20.sh 11641 2013-06-07 00:06:36Z pwessel $
+#		$Id: example_20.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:	Extend GMT to plot custom symbols
-# GMT progs:	pscoast, psxy
+# GMT modules:	pscoast, psxy
 # Unix progs:	rm
 #
 # Plot a world-map with volcano symbols of different sizes

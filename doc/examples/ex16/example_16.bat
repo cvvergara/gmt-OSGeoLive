@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 16
 REM
-REM		$Id: example_16.bat 15178 2015-11-06 10:45:03Z fwobbe $
+REM		$Id: example_16.bat 16750 2016-07-09 05:44:02Z pwessel $
 REM
 REM Purpose:	Illustrates interpolation methods using same data as Example 12.
 REM GMT progs:	gmtset, grdview, grdfilter, pscontour, psscale, pstext, surface, triangulate
@@ -13,7 +13,7 @@ set ps=example_16.ps
 REM
 REM Illustrate various means of contouring, using triangulate and surface.
 REM
-gmt gmtset FONT_ANNOT_PRIMARY 9p
+gmt set FONT_ANNOT_PRIMARY 9p
 REM
 gmt pscontour -R0/6.5/-0.2/6.5 -Jx0.45i -P -K -Y5.5i -Ba2f1 -BWSne table_5.11 -Cex16.cpt -I > %ps%
 echo 3.25 7 pscontour (triangulate) | gmt pstext -R -J -O -K -N -F+f18p,Times-Roman+jCB >> %ps%
@@ -26,7 +26,7 @@ gmt surface table_5.11 -R -I0.2 -Graws5.nc -T0.5
 gmt grdview raws5.nc -R -J -B -Cex16.cpt -Qs -O -K -Y-3.75i -X-3.5i >> %ps%
 echo 3.25 7 surface (tension = 0.5) | gmt pstext -R -J -O -K -N -F+f18p,Times-Roman+jCB >> %ps%
 REM
-gmt triangulate table_5.11 -Grawt.nc -R -I0.2 > NUL
+gmt triangulate table_5.11 -Grawt.nc -R -I0.2
 gmt grdfilter rawt.nc -Gfiltered.nc -D0 -Fc1
 gmt grdview filtered.nc -R -J -B -Cex16.cpt -Qs -O -K -X3.5i >> %ps%
 echo 3.25 7 triangulate @~\256@~ gmt grdfilter | gmt pstext -R -J -O -K -N -F+f18p,Times-Roman+jCB >> %ps%

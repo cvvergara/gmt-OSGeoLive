@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- *	$Id: cm4_functions.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: cm4_functions.c 17138 2016-09-25 23:03:40Z jluis $
  *
  *
  *  File:	cm4_functions.c
@@ -32,132 +32,136 @@
 
 #define I_DIM(x, y) (((x) > (y)) ? (x) - (y) : 0)
 
-void ymdtomjd(int yearad, int month, int dayofmonth, int *mjd, int *dayofyear);
-void ydtomjdx(int yearad, int dayofyear, int * mjd, int *month, int *dayofmonth, int *daysinmonth);
-double intdst(int mjdl, int mjdh, int mjdy, int msec, double *dstx, int *cerr);
-double intf107(int iyrl, int imol, int iyrh, int imoh, int iyr, int imon, int idom, int *idim, 
+static void ymdtomjd(int yearad, int month, int dayofmonth, int *mjd, int *dayofyear);
+static void ydtomjdx(int yearad, int dayofyear, int * mjd, int *month, int *dayofmonth, int *daysinmonth);
+static double intdst(int mjdl, int mjdh, int mjdy, int msec, double *dstx, int *cerr);
+static double intf107(int iyrl, int imol, int iyrh, int imoh, int iyr, int imon, int idom, int *idim, 
 	int msec, double *f107x, int *cerr);
-double getmut2(double thenmp, double phinmp, int iyear, int iday, int msec);
-void sun2(int iyr, int iday, double secs, double *gst, double *slong, double *srasn, double *sdec);
-void rmerge_(double *rmrg, double *rmlt);
-void tsearad(int full, int ks, int kr, int ns, int ng, double f, double *t, double *e, double *g);
-void tseardr(int full, int ks, int kr, int ns, int ng, double f, double *t, double *e, double *g);
-void mseason(int ks, int ns, int ng, double d, double *t, double *e, double *g);
-void iseason(int ks, int ns, int ng, double f, double *t, double *e, double *g);
-void mpotent(int nmax, int mmax, int nd, int nz, double cphi, double sphi, double *d, double *z);
-void jtbelow(int pmin, int pmax, int nmax, int mmax, double r, double rref, int nz, double *z);
-void jtabove(int pmin, int pmax, int nmax, int mmax, double r, double rref, int nz, double *z);
-void jtbcont(int pmin, int pmax, int nmax, int mmax, double rold, double rnew, int nz, double *z);
-void mstream(int nmax, int mmax, int nd, int nz, double cphi, double sphi, double faor, double *d, double *z);
-void jpoloid(int pmin, int pmax, int nmax, int mmax, double r, double rm, int nd, int nz, double *t, double *d, double *z);
-void blsgen(int nc, int nd, int ni, double *b, double *c, double *dldc);
-void getgmf(int nder, int ns, double *ep, double *tm, double *b, double *c, double *g, int *h, int *o, double *p);
-void dbspln_(int *l, double *t, int *n, int * d__, int *k, double *x, double *b, double *w);
-void getgxf(int pmin, int pmax, int nmax, int mmax, int *ng, double *e, double *g, double *t);
-void bfield(int rgen, int nmxi, int nmxe, int nmni, int nmne, int mmxi, int mmxe, int mmni,
+static double getmut2(double thenmp, double phinmp, int iyear, int iday, int msec);
+static void sun2(int iyr, int iday, double secs, double *gst, double *slong, double *srasn, double *sdec);
+static void rmerge_(double *rmrg, double *rmlt);
+static void tsearad(int full, int ks, int kr, int ns, int ng, double f, double *t, double *e, double *g);
+static void tseardr(int full, int ks, int kr, int ns, int ng, double f, double *t, double *e, double *g);
+static void mseason(int ks, int ns, int ng, double d, double *t, double *e, double *g);
+static void iseason(int ks, int ns, int ng, double f, double *t, double *e, double *g);
+static void mpotent(int nmax, int mmax, int nd, int nz, double cphi, double sphi, double *d, double *z);
+static void jtbelow(int pmin, int pmax, int nmax, int mmax, double r, double rref, int nz, double *z);
+static void jtabove(int pmin, int pmax, int nmax, int mmax, double r, double rref, int nz, double *z);
+static void jtbcont(int pmin, int pmax, int nmax, int mmax, double rold, double rnew, int nz, double *z);
+static void mstream(int nmax, int mmax, int nd, int nz, double cphi, double sphi, double faor, double *d, double *z);
+static void jpoloid(int pmin, int pmax, int nmax, int mmax, double r, double rm, int nd, int nz, double *t, double *d, double *z);
+static void blsgen(int nc, int nd, int ni, double *b, double *c, double *dldc);
+static void getgmf(int nder, int ns, double *ep, double *tm, double *b, double *c, double *g, int *h, int *o, double *p);
+static void dbspln_(int *l, double *t, int *n, int * d__, int *k, double *x, double *b, double *w);
+static void getgxf(int pmin, int pmax, int nmax, int mmax, int *ng, double *e, double *g, double *t);
+static void bfield(int rgen, int nmxi, int nmxe, int nmni, int nmne, int mmxi, int mmxe, int mmni,
 	int mmne, int grad, int ctyp, int dtyp, int ityp, int etyp, double ep, double re, 
 	double rp, double rm, double tm, double clat, double elon, double h, double dst, double dstt, 
 	double *rse, int *nc, int *na, double *ro, double *theta, int *atyp, int *dsti, int *bori, int *bkni, 
 	double *bkpi, int *tdgi, int *dste, int *bore, int *bkne, double *bkpe, int *tdge, double *a, 
 	double *b, double *c, double *p, double *r, double *t, int *u, double *w, double *dsdc, 
 	double *dldc, double *dlda, int *cerr);
-void prebf_(int *rgen, int *ityp, int *etyp, int *dtyp, int *grad, int *nmni, int *nmxi, int *
+static void prebf_(int *rgen, int *ityp, int *etyp, int *dtyp, int *grad, int *nmni, int *nmxi, int *
 	nmne, int *nmxe, int *mmni, int *mmxi, int *mmne, int *mmxe, int *nmax, int *mmin, int *mmax, int *
 	ns, int *nsi, int *nse, int *nc, int *nci, int *nce, int *na, int *np, int *ii, int *ie, int *
 	atyp, int *dsti, int *bori, int *bkni, int *tdgi, int *dste, int *bore, int *bkne, int *tdge, int *u, int *cerr);
-void fdlds_(int *rgen, int *grad, int *ctyp, double *clat, double *phi, double *h, double *re, 
+static void fdlds_(int *rgen, int *grad, int *ctyp, double *clat, double *phi, double *h, double *re, 
 	double *rp, double *rm, double *ro, int *nsi, int *nc, int *nci, int *np, int *ii, int *ie, int *
 	nmni, int *nmxi, int *nmne, int *nmxe, int *nmax, int *mmni, int *mmxi, int *mmne, int *mmxe, int *
 	mmin, int *mmax, double *theta, double *p, double *r, double *t, int *u, double *w, double *dldc, int *cerr);
-void geocen(int ctyp, double re, double rp, double rm, double h, double clat, double *r, double *theta, double *sinthe, double *costhe);
-void schmit_(int *grad, int *rgen, int *nmax, int *mmin, int *mmax, double *sinthe, double *costhe, double *p, double *r);
-void srecur_(int *grad, int *nmax, int *mmin, int *mmax, int *ksm2, int *ktm2, int *npall, int *
+static void geocen(int ctyp, double re, double rp, double rm, double h, double clat, double *r, double *theta, double *sinthe, double *costhe);
+static void schmit_(int *grad, int *rgen, int *nmax, int *mmin, int *mmax, double *sinthe, double *costhe, double *p, double *r);
+static void srecur_(int *grad, int *nmax, int *mmin, int *mmax, int *ksm2, int *ktm2, int *npall, int *
 	nad1, int *nad2, int *nad3, int *nad4, int *nad5, int *nad6, int *nad7, int *nad8, double *r);
-void trigmp(int mmax, double phi, double *t);
-void tdc(int grad, int nc, double clat, double theta, double *dldc, double *r);
-void fdsdc_(int *rgen, int *ityp, int *etyp, int *nsi, int *nse, int *nc, int *nci, double *ta,
+static void trigmp(int mmax, double phi, double *t);
+static void tdc(int grad, int nc, double clat, double theta, double *dldc, double *r);
+static void fdsdc_(int *rgen, int *ityp, int *etyp, int *nsi, int *nse, int *nc, int *nci, double *ta,
 	double *tb, double *dst, double *dstt, int *dsti, int *bori, int *bkni, double *bkpi, int *tdgi, 
 	int *dste, int *bore, int *bkne, double *bkpe, int *tdge, int *u, double *w, double *dsdc, int *cerr);
-void taylor(int nc, int ns, double ta, double tb, int *tdeg, int *u, double *dsdt, double *dsdc);
-void bsplyn(int nc, int ns, double *ta, double *tb, int *bord, int *bkno, double *bkpo, int *u, double *dtdb, double *dsdc, int *cerr);
-void sbspln_(double *ta, double *tb, int *n, int *k, double *bkpo, double *dtdb, double *dsdc, int *cerr);
-void tbspln_(double *t, int *n, int *k, double *bkpo, double *dtdb, int *cerr);
-void dstorm(int nc, int ns, double *dst, double *dstt, int *dstm, int *u, double *dsdc);
-void fdldc(int grad, int nc, double *dsdc, double *dldc);
-void blgen(int grad, int nc, double *b, double *c, double *dldc);
-void bngen_(double *b);
-void tec(int grad, int k, int nc, double *theta, double *phi, double *b, double *dldc, double *r);
-void tse(int grad, int k, int nc, double *rse, double *b, double *dldc, double *r);
-void tms(int grad, int k, int nc, int na, int ia, double *a, double *b, double *dldc, double *dlda, double *r);
-void fdldeu_(int *k, int *na, int *ia, double *seulx, double *ceulx, double *seuly, double *ceuly, 
+static void taylor(int nc, int ns, double ta, double tb, int *tdeg, int *u, double *dsdt, double *dsdc);
+static void bsplyn(int nc, int ns, double *ta, double *tb, int *bord, int *bkno, double *bkpo, int *u, double *dtdb, double *dsdc, int *cerr);
+static void sbspln_(double *ta, double *tb, int *n, int *k, double *bkpo, double *dtdb, double *dsdc, int *cerr);
+static void tbspln_(double *t, int *n, int *k, double *bkpo, double *dtdb, int *cerr);
+static void dstorm(int nc, int ns, double *dst, double *dstt, int *dstm, int *u, double *dsdc);
+static void fdldc(int grad, int nc, double *dsdc, double *dldc);
+static void blgen(int grad, int nc, double *b, double *c, double *dldc);
+static void bngen_(double *b);
+static void tec(int grad, int k, int nc, double *theta, double *phi, double *b, double *dldc, double *r);
+static void tse(int grad, int k, int nc, double *rse, double *b, double *dldc, double *r);
+static void tms(int grad, int k, int nc, int na, int ia, double *a, double *b, double *dldc, double *dlda, double *r);
+static void fdldeu_(int *k, int *na, int *ia, double *seulx, double *ceulx, double *seuly, double *ceuly, 
 	double *seulz, double *ceulz, double *r, double *b, double *dlda);
-void tnm_(int *grad, int *k, int *nc, int *na, int *ia, double *a, double *b, double *dldc, double *dlda, double *r);
-void fdldno_(int *k, int *na, int *ia, double *schix, double *cchix, double *schiy, double *cchiy, 
+static void tnm_(int *grad, int *k, int *nc, int *na, int *ia, double *a, double *b, double *dldc, double *dlda, double *r);
+static void fdldno_(int *k, int *na, int *ia, double *schix, double *cchix, double *schiy, double *cchiy, 
 	double *schiz, double *cchiz, double *r, double *b, double *dlda);
-void fdldsl_(int *k, int *na, int *ia, double *b, double *dlda);
-void tvn_(int *grad, int *k, int *nc, int *na, int *ia, double *a, double *b, double *dldc, double *dlda, double *r);
-void tbi_(int *k, int *na, int *ia, double *a, double *b, double *dlda);
-void fdldbi_(int *k, int *na, int *ia, double *dlda);
-void ltrans(int n, int m, double *q, double *r, double *s);
-void ltranv(int rfac, int n, int m, double *r, double *v);
-int nshx(int nmax, int nmin, int mmax, int mmin);
-int nlpx(int nmax, int mmax, int mmin);
-int i8ssum(int abeg, int alen, int *a);
-void i8vset(int abeg, int alen, int s, int *a);
-void i8vadd(int abeg, int bbeg, int cbeg, int vlen, int *a, int *b, int *c);
-void i8vadds(int abeg, int bbeg, int vlen, int s, int *a, int *b);
-void i8vcum(int abas, int abeg, int alen, int *a);
-void i8vdel(int abas, int abeg, int alen, int *a);
-void r8vset(int abeg, int alen, double s, double *a);
-double r8sdot(int abeg, int bbeg, int vlen, double *a, double *b);
-double r8ssum_(int *abeg, int *alen, double *a);
-void r8slt(int abeg, int alen, double s, double *a, int *j);
-void r8vsub(int abeg, int bbeg, int cbeg, int vlen, double *a, double *b, double *c);
-void r8vmul(int abeg, int bbeg, int cbeg, int vlen, double *a, double *b, double *c);
-void r8vscale(int abeg, int alen, double s, double *a);
-void r8vscats(int qbeg, int qlen, double s, int *q, double *a);
-void r8vlinkt(int abeg, int bbeg, int vlen, double s, double *a, double *b);
-void r8vlinkq(int abeg, int bbeg, int cbeg, int vlen, double s, double *a, double *b, double *c);
-void r8vgathp(int abeg, int ainc, int bbeg, int blen, double *a, double *b);
-double d_mod(double x, double y);
-double pow_di(double ap, int bp);
-int i_dnnt(double x);
+static void fdldsl_(int *k, int *na, int *ia, double *b, double *dlda);
+static void tvn_(int *grad, int *k, int *nc, int *na, int *ia, double *a, double *b, double *dldc, double *dlda, double *r);
+static void tbi_(int *k, int *na, int *ia, double *a, double *b, double *dlda);
+static void fdldbi_(int *k, int *na, int *ia, double *dlda);
+static void ltrans(int n, int m, double *q, double *r, double *s);
+static void ltranv(int rfac, int n, int m, double *r, double *v);
+static int nshx(int nmax, int nmin, int mmax, int mmin);
+static int nlpx(int nmax, int mmax, int mmin);
+static int i8ssum(int abeg, int alen, int *a);
+static void i8vset(int abeg, int alen, int s, int *a);
+static void i8vadd(int abeg, int bbeg, int cbeg, int vlen, int *a, int *b, int *c);
+static void i8vadds(int abeg, int bbeg, int vlen, int s, int *a, int *b);
+static void i8vcum(int abas, int abeg, int alen, int *a);
+static void i8vdel(int abas, int abeg, int alen, int *a);
+static void r8vset(int abeg, int alen, double s, double *a);
+static double r8sdot(int abeg, int bbeg, int vlen, double *a, double *b);
+static double r8ssum_(int *abeg, int *alen, double *a);
+static void r8slt(int abeg, int alen, double s, double *a, int *j);
+static void r8vsub(int abeg, int bbeg, int cbeg, int vlen, double *a, double *b, double *c);
+static void r8vmul(int abeg, int bbeg, int cbeg, int vlen, double *a, double *b, double *c);
+static void r8vscale(int abeg, int alen, double s, double *a);
+static void r8vscats(int qbeg, int qlen, double s, int *q, double *a);
+static void r8vlinkt(int abeg, int bbeg, int vlen, double s, double *a, double *b);
+static void r8vlinkq(int abeg, int bbeg, int cbeg, int vlen, double s, double *a, double *b, double *c);
+static void r8vgathp(int abeg, int ainc, int bbeg, int blen, double *a, double *b);
+static double d_mod(double x, double y);
+static double pow_di(double ap, int bp);
+static int i_dnnt(double x);
+static void clear_mem (double *mut, double *gpsq, double *gssq, double *gpmg, double *gsmg, double *hysq, double *epsq, double *essq,
+	double *ecto, double *hyto, double *hq, double *ht, double *bkpo, double *ws, double *gamf, double *epmg,
+	double *esmg, double *hymg, double *f107x, double *pleg, double *rcur, double *gcto_or, double *gcto_mg);
 
 int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon, double *p_lat, double *p_alt, double *p_date) {
 
 	int c__1356 = 1356, c__13680 = 13680;
-	int i, j, k, l, n, p, nu, mz, nz, mu, js, jy, nt, mt, iyr = 0, jyr, jf107, cerr = 0;
+	int i, j, k, l, n, p, nu, mz, nz, mu, js, jy, nt, mt, iyr = 0, jyr = 0, jf107, cerr = 0;
 	int lum1, lum2, lum3, lum4, lum5, lum6, lum7, nsm1, nsm2, lcmf, idim[12], omdl;
 	int lsmf, lpos, lcmg, lsmg, lcsq, lssq, lcto, lsto, lrto, idoy, n_Dst_rows, i_unused = 0;
-	int *msec, *mjdy, imon = 0, idom = 0, jaft, jmon, jdom, jmjd = 0, jdoy, mjdl = 0, mjdh = 0, iyrl = 0, imol = 0, iyrh = 0, imoh = 0;
+	int *msec = NULL, *mjdy = NULL;
+	int imon = 0, idom = 0, jaft, jmon = 0, jdom, jmjd = 0, jdoy, mjdl = 0, mjdh = 0, iyrl = 0, imol = 0, iyrh = 0, imoh = 0;
 	int nout = 0, nygo = 0, nmax, nmin, nobo, nopo, nomn, nomx, noff, noga, nohq, nimf, nyto, nsto, ntay, mmdl;
 	int us[4355], bord[4355], bkno[4355], pbto, peto, csys, jdst[24];
-	double *mut, *dstx = NULL, dstt = 0., x, y, z, h, t, dumb, bmdl[21], jmdl[12], date, dst, mut_now, alt;
-	double re, xd, yd, rm, xg, ro, rp, yg, zg, zd;
+	double *mut = NULL, *dstx = NULL, dstt = 0., x, y, z, h, t, dumb, bmdl[21], jmdl[12], date, dst, mut_now, alt;
+	double re, xd, yd, rm, xg, ro = 0, rp, yg, zg, zd;
 	double bc[29], wb[58], trig[132], ru, rt, rse[9], doy, fyr, cego, epch;
 	double rlgm[15], rrgt[9], tsmg[6], tssq[6], tsto[6], tdmg[12], tdsq[10], tdto[10];
-	double rtay_dw, rtay_or, sinp, fsrf, rtay, frto, frho, thetas, rtay_dk;
+	double rtay_dw, rtay_or, sinp, fsrf, rtay, frto, frho, thetas = 0, rtay_dk;
 	double cnmp, enmp, omgs, omgd, hion, cpol, epol, ctmp, stmp, cemp, semp, rion, fdoy, clat, elon;
 	double sthe, cthe, psiz, cpsi, spsi, ctgo, stgo, sego, cdip = 0, edip = 0, ctmo, stmo, cemo, semo, taus = 0, taud = 0, cosp;
-	double *hq, *ht, *pleg, *rcur;			/* was hq[53040], ht[17680], pleg[4422], rcur[9104] */
-	double *bkpo, *ws, *gamf, *epmg, *esmg;		/* was bkpo[12415], ws[4355], gamf[8840], epmg[1356], esmg[1356] */
-	double *f107x;		/* was [100][12] */
-	double *hymg;		/* was [1356][6] */
-	double *gcto_or = NULL;	/* was [13680][5][2] */ 
-	double *gcto_mg = NULL;	/* was [2736][3][2][2] */ 
-	double *gpsq;		/* was [13680][5][2] */
-	double *gssq;		/* was [13680][5] */
-	double *gpmg;		/* was [1356][5][2] */ 
-	double *gsmg;		/* was [1356][5][2] */  
-	double *hysq;		/* was [1356][6] */  
-	double *epsq;		/* was [13680] */
-	double *essq;		/* was [13680] */
-	double *ecto;		/* was [16416] */
-	double *hyto;		/* was [49248] */
+	double *hq = NULL, *ht = NULL, *pleg = NULL, *rcur = NULL;		/* was hq[53040], ht[17680], pleg[4422], rcur[9104] */
+	double *bkpo = NULL, *ws = NULL, *gamf = NULL, *epmg = NULL, *esmg = NULL;	/* was bkpo[12415], ws[4355], gamf[8840], epmg[1356], esmg[1356] */
+	double *f107x = NULL;		/* was [100][12] */
+	double *hymg = NULL;		/* was [1356][6] */
+	double *gcto_or = NULL;		/* was [13680][5][2] */ 
+	double *gcto_mg = NULL;		/* was [2736][3][2][2] */ 
+	double *gpsq = NULL;		/* was [13680][5][2] */
+	double *gssq = NULL;		/* was [13680][5] */
+	double *gpmg = NULL;		/* was [1356][5][2] */ 
+	double *gsmg = NULL;		/* was [1356][5][2] */  
+	double *hysq = NULL;		/* was [1356][6] */  
+	double *epsq = NULL;		/* was [13680] */
+	double *essq = NULL;		/* was [13680] */
+	double *ecto = NULL;		/* was [16416] */
+	double *hyto = NULL;		/* was [49248] */
 	char line[GMT_BUFSIZ] = {""}, *c_unused = NULL;
 
 	FILE *fp;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 /* =====  FORTRAN SOUVENIRS ==============================================
    =======================================================================
@@ -181,13 +185,29 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	f107x = calloc(1200U, sizeof(double));
 
 	if ((fp = fopen(Ctrl->CM4_M.path, "r")) == NULL) {
-		fprintf (stderr, "CM4: Could not open file %s\n", Ctrl->CM4_M.path);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "CM4: Could not open file %s\n", Ctrl->CM4_M.path);
+		gmt_M_str_free (bkpo);	gmt_M_str_free (gamf);	gmt_M_str_free (f107x);
 		return 1;
 	}
 
+	/* coverity[tainted_data_argument] */	/* Try to shut up Coverity about Tainted variables */
 	c_unused = fgets(line, GMT_BUFSIZ, fp);
-	sscanf (line, "%d %d %d", &lsmf, &lpos, &lcmf);
+	if ((n = sscanf (line, "%d %d %d", &lsmf, &lpos, &lcmf)) != 3) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to parse line in MGD77_cm4field\n");
+		gmt_M_str_free (bkpo);	gmt_M_str_free (gamf);	gmt_M_str_free (f107x);
+		fclose (fp);
+		return 1;
+	}
+	
+	if (lsmf > 4355 || lpos > 12415 || lcmf > 8840) {	/* Mainly to shut up CID 39232 (TAINTED variables), but it maybe right */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Suspicious values in first line of umdl.CM4 file\n");;
+		gmt_M_str_free (bkpo);	gmt_M_str_free (gamf);	gmt_M_str_free (f107x);
+		fclose (fp);
+		return 1;
+	}
+	
 	c_unused = fgets(line, GMT_BUFSIZ, fp);
+	(void)(c_unused++); /* silence -Wunused-but-set-variable and PVS warning of double assignement */
 	sscanf (line, "%d", &lum1);
 	c_unused = fgets(line, GMT_BUFSIZ, fp);
 	(void)c_unused; /* silence -Wunused-but-set-variable */
@@ -204,7 +224,8 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	i_unused = fscanf (fp, "%d %d", &lcmg, &lsmg);
 	i_unused = fscanf (fp, "%d %d %d %d %d %d", &lum1, &lum2, &lum3, &lum4, &lum5, &lum6);
 	i_unused = fscanf (fp, "%lf %lf %lf %lf %lf %lf %lf", &cnmp, &enmp, &omgs, &omgd, &re, &rp, &rm);
-	gpmg = calloc((size_t)(2 * lsmg * lcmg), sizeof(double));
+	/* coverity[overflow_sink] */		/* For Coverity analysis. Do not remove this comment */
+	gpmg = calloc ((2U * (size_t)lsmg * (size_t)lcmg), sizeof(double));
 	for (k = 0; k < 2; ++k)
 		for (j = 0; j < lsmg; ++j) {
 			n = (j + k * 5) * 1356;
@@ -212,7 +233,8 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				i_unused = fscanf (fp, "%lf", &gpmg[i + n]);
 		}
 
-	gsmg = calloc((size_t)(2 * lsmg * lcmg), sizeof(double));
+	/* coverity[overflow_sink] */		/* For Coverity analysis. Do not remove this comment */
+	gsmg = calloc((2U * (size_t)lsmg * (size_t)lcmg), sizeof(double));
 	for (k = 0; k < 2; ++k)
 		for (j = 0; j < lsmg; ++j) {
 			n = (j + k * 5) * 1356;
@@ -223,7 +245,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	i_unused = fscanf (fp, "%d %d", &lcsq, &lssq);
 	i_unused = fscanf (fp, "%d %d %d %d %d %d", &lum1, &lum2, &lum3, &lum4, &lum5, &lum6);
 	i_unused = fscanf (fp, "%lf %lf %lf %lf %lf %lf %lf %lf", &cnmp, &enmp, &omgs, &omgd, &re, &rp, &rm, &hion);
-	gpsq = calloc((size_t)(2 * lssq * lcsq), sizeof(double));
+	gpsq = calloc((2U * (size_t)lssq * (size_t)lcsq), sizeof(double));
 	for (k = 0; k < 2; ++k)
 		for (j = 0; j < lssq; ++j) {
 			n = (j + k * 5) * 13680;
@@ -231,7 +253,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				i_unused = fscanf (fp, "%lf", &gpsq[i + n]);
 		}
 
-	gssq = calloc((size_t)(lssq * lcsq), sizeof(double));
+	gssq = calloc(((size_t)lssq * (size_t)lcsq), sizeof(double));
 	for (j = 0; j < lssq; ++j) {
 		n = j * 13680;
 		for (i = 0; i < lcsq; ++i)
@@ -242,7 +264,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	i_unused = fscanf (fp, "%d %d %d %d %d %d %d", &lum1, &lum2, &lum3, &lum4, &lum5, &lum6, &lum7);
 	i_unused = fscanf (fp, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", &cnmp, &enmp, &omgs, &omgd, &re, &rp, &rm, &rtay_dw, &rtay_dk);
 	if (Ctrl->CM4_DATA.pred[3]) { 	/* In other cases the next coefficients are not used, so no waste time/memory with them */
-		gcto_mg = calloc((size_t)(2 * lrto * lsto * lcto), sizeof(double));
+		gcto_mg = calloc((2U * (size_t)lrto * (size_t)lsto * (size_t)lcto), sizeof(double));
 		for (l = 0; l < 2; ++l)
 			for (k = 0; k < lrto; ++k)
 				for (j = 0; j < lsto; ++j) {
@@ -259,7 +281,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	i_unused = fscanf (fp, "%d %d %d %d %d %d %d", &lum1, &lum2, &lum3, &lum4, &lum5, &lum6, &lum7);
 	i_unused = fscanf (fp, "%lf %lf %lf %lf %lf %lf %lf %lf", &cnmp, &enmp, &omgs, &omgd, &re, &rp, &rm, &rtay_or);
 	if (Ctrl->CM4_DATA.pred[3] && !Ctrl->CM4_DATA.pred[4]) { 	/* In other cases the next coefficients are not used, so no waste time/memory with them */
-		gcto_or = calloc((size_t)(lrto * lsto * lcto), sizeof(double));
+		gcto_or = calloc(((size_t)lrto * (size_t)lsto * (size_t)lcto), sizeof(double));
 		for (k = 0; k < lrto; ++k)
 			for (j = 0; j < lsto; ++j) {
 				n = (j + k * 5) * 13680;
@@ -298,12 +320,15 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 			int k;
 			if ((fp = fopen(Ctrl->CM4_D.path, "r")) == NULL) {
 				fprintf (stderr, "CM4: Could not open file %s\n", Ctrl->CM4_D.path);
+				clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+				           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+				gmt_M_str_free (msec);	gmt_M_str_free (mjdy);	free (mjdy);
 				return 1;
 			}
 			jaft = 0;
 			n = 0;
 			n_Dst_rows = 18262;	/* Current (13-05-2009) number of lines in Dst_all.wdc file */
-			dstx = calloc((size_t)(n_Dst_rows * 24), sizeof(double));
+			dstx = calloc(((size_t)n_Dst_rows * 24U), sizeof(double));
 			/* One improvment would be to compute year_min/year_max and retain only the needed data in dstx */
 
 			while (fgets (line, GMT_BUFSIZ, fp)) {
@@ -334,24 +359,37 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 			Ctrl->CM4_D.dst = realloc(Ctrl->CM4_D.dst, (size_t)(Ctrl->CM4_DATA.n_times) * sizeof(double));
 
 		/* Get only one dst first so that we can test (and abort if needed) if date is out of bounds */
-		Ctrl->CM4_D.dst[0] = intdst(mjdl, mjdh, mjdy[0], msec[0], dstx, &cerr);
+		if (dstx) Ctrl->CM4_D.dst[0] = intdst(mjdl, mjdh, mjdy[0], msec[0], dstx, &cerr);
 		if (cerr > 49) {
-			free( dstx);
-			if (Ctrl->CM4_DATA.n_times > 1) free( Ctrl->CM4_D.dst);
+			gmt_M_str_free (dstx);
+			if (Ctrl->CM4_DATA.n_times > 1) gmt_M_str_free (Ctrl->CM4_D.dst);
+			clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+			           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+			gmt_M_str_free (msec);	gmt_M_str_free (mjdy);	free (mjdy);
 			return 1;
 		}
 
 
-		for (n = 1; n < Ctrl->CM4_DATA.n_times; ++n)
-			Ctrl->CM4_D.dst[n] = intdst(mjdl, mjdh, mjdy[n], msec[n], dstx, &cerr);
+		if (dstx) {
+			for (n = 1; n < Ctrl->CM4_DATA.n_times; n++)
+				Ctrl->CM4_D.dst[n] = intdst(mjdl, mjdh, mjdy[n], msec[n], dstx, &cerr);
 
-		free( dstx);
-		if (cerr > 49) return 1;
+			gmt_M_str_free (dstx);
+		}
+		if (cerr > 49) {
+			clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+			           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+			gmt_M_str_free (msec);	gmt_M_str_free (mjdy);	free (mjdy);
+			return 1;
+		}
 	}
 	if (Ctrl->CM4_I.index) {
 		if (Ctrl->CM4_I.load) {
 			if ((fp = fopen(Ctrl->CM4_I.path, "r")) == NULL) {
 				fprintf (stderr, "CM4: Could not open file %s\n", Ctrl->CM4_I.path);
+				clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+				           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+				gmt_M_str_free (msec);	gmt_M_str_free (mjdy);	free (mjdy);
 				return 1;
 			}
 			jaft = 0;
@@ -372,10 +410,14 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 		}
 		/* MUST INVESTIGATE IF IT WORTH HAVING AN ARRAY OF f107 LIKE IN THE DST CASE */
 		Ctrl->CM4_I.F107 = intf107(iyrl, imol, iyrh, imoh, iyr, imon, idom, idim, msec[0], f107x, &cerr);
-		if (cerr > 49) return 1;
+		if (cerr > 49) {
+			gmt_M_str_free (msec);	gmt_M_str_free (mjdy);	free(mjdy);
+			clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+	                   esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+			return 1;
+		}
 	}
-	free ( msec);
-	free ( mjdy);
+	gmt_M_str_free (msec);	gmt_M_str_free (mjdy);	free (mjdy);
 
 	/* On Windows, either this or declare them as "static", otherwise ... BOOM */
 	hysq = calloc(82080U, sizeof(double));
@@ -430,7 +472,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				epch, re, rp, rm, date, clat, elon, alt, dst, dstt, rse, &nz, 
 				&mz, &ro, &thetas, us, us, &bord[nobo], &bkno[nobo], &bkpo[nopo], us, us, us, us, 
 				ws, us, gamf, bc, gamf, pleg, rcur, trig, us, ws, ht, hq, hq, &cerr);
-			if (cerr > 49) return 1;
+			if (cerr > 49) {
+				clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+				           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+				return 1;
+			}
 			nomn = nshx(Ctrl->CM4_S.nlmf[0] - 1, 1, Ctrl->CM4_S.nlmf[0] - 1, 0);
 			nomx = nshx(Ctrl->CM4_S.nhmf[0], 1, Ctrl->CM4_S.nhmf[0], 0);
 			noff = nomn - nobo;
@@ -443,7 +489,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				nopo = i8ssum(1, nomn, bkno) + (nomn << 1);
 				getgmf(4, nsm1, &epch, &date, wb, &gamf[noga], &Ctrl->CM4_DATA.gmdl[nout-1], 
 					&bkno[nomn], &bord[nomn], &bkpo[nopo]);
-				if (cerr > 49) return 1;
+				if (cerr > 49) {
+					clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+					           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+					return 1;
+				}
 			}
 			nomn = nshx(Ctrl->CM4_S.nlmf[1] - 1, 1, Ctrl->CM4_S.nlmf[1] - 1, 0);
 			nomx = nshx(Ctrl->CM4_S.nhmf[1], 1, Ctrl->CM4_S.nhmf[1], 0);
@@ -460,7 +510,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				nopo = i8ssum(1, nomn, bkno) + (nomn << 1);
 				getgmf(4, nsm2, &epch, &date, wb, &gamf[noga], &Ctrl->CM4_DATA.gmdl[nout-1], 
 					&bkno[nomn], &bord[nomn], &bkpo[nopo]);
-				if (cerr > 49) return 1;
+				if (cerr > 49) {
+					clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+					           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+					return 1;
+				}
 				nout += nygo * MIN(1,nsm2);
 			}
 		}
@@ -506,7 +560,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				date, cdip, edip, alt, dst, dstt, rse, &nu, &mu, 
 				&ru, &thetas, us, us, us, us, ws, us, us, us, us, ws, us, gsmg, bc, gsmg, pleg, rcur, 
 				trig, us, ws, ht, hq, hq, &cerr);
-			if (cerr > 49) return 1;
+			if (cerr > 49) {
+				clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+				           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+				return 1;
+			}
 			js = nu / 2;
 			jy = 1;
 			trigmp(2, taus, tsmg);
@@ -546,7 +604,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 					date, cdip, edip, alt, dst, dstt, rse, &nu,
 					&mu, &ru, &thetas, us, us, us, us, ws, us, us, us, us, ws, us, gssq, 
 					bc, gssq, pleg, rcur, trig, us, ws, ht, hq, hq, &cerr);
-				if (cerr > 49) return 1;
+				if (cerr > 49) {
+					clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+					           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+					return 1;
+				}
 				js = nu / 2;
 				jy = 1;
 				trigmp(2, taus, tssq);
@@ -588,7 +650,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 					date, cdip, edip, alt, dst, dstt, 
 					rse, &nu, &mu, &ru, &thetas, us, us, us, us, ws, us, us, us, us, ws, us, gssq, 
 					bc, gssq, pleg, rcur, trig, us, ws, ht, hq, hq, &cerr);
-				if (cerr > 49) return 1;
+				if (cerr > 49) {
+					clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+					           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+					return 1;
+				}
 				jy = 1;
 				trigmp(2, taus, tssq);
 				trigmp(4, taud, tdsq);
@@ -657,7 +723,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				date, cdip, edip, 0., dst, dstt, rse, &nt, &mt,
 				&rt, &thetas, us, us, us, us, ws, us, us, us, us, ws, us, gcto_mg, bc, gcto_mg, 
 				pleg, rcur, trig, us, ws, ht, hq, hq, &cerr);
-			if (cerr > 49) return 1;
+			if (cerr > 49) {
+				clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+				           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
+				return 1;
+			}
 			frto = rm / ro;
 			frho = (ro - rtay) / rm;
 			jy = 1;
@@ -746,17 +816,37 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 		}
 	}
 
-	free ( mut);
-	free ( gpsq);	free ( gssq);	free ( gpmg);
-	free ( gsmg);	free ( hysq);	free ( epsq);
-	free ( essq);	free ( ecto);	free ( hyto);
-	free ( hq);	free ( ht);	free ( bkpo);
-	free ( ws);	free ( gamf);	free ( epmg);
-	free ( esmg);	free ( hymg);	free ( f107x);
-	free ( pleg);	free ( rcur);
-	if (gcto_or) free( gcto_or);
-	if (gcto_mg) free( gcto_mg);
+	clear_mem (mut, gpsq, gssq, gpmg, gsmg, hysq, epsq, essq, ecto, hyto, hq, ht, bkpo, ws, gamf, epmg,
+	           esmg, hymg, f107x, pleg, rcur, gcto_or, gcto_mg);
 	return 0;
+}
+
+static void clear_mem (double *mut, double *gpsq, double *gssq, double *gpmg, double *gsmg, double *hysq, double *epsq, double *essq,
+	            double *ecto, double *hyto, double *hq, double *ht, double *bkpo, double *ws, double *gamf, double *epmg,
+	            double *esmg, double *hymg, double *f107x, double *pleg, double *rcur, double *gcto_or, double *gcto_mg) {
+	gmt_M_str_free (mut);
+	gmt_M_str_free (gpsq);
+	gmt_M_str_free (gssq);
+	gmt_M_str_free (gpmg);
+	gmt_M_str_free (gsmg);
+	gmt_M_str_free (hysq);
+	gmt_M_str_free (epsq);
+	gmt_M_str_free (essq);
+	gmt_M_str_free (ecto);
+	gmt_M_str_free (hyto);
+	gmt_M_str_free (hq);
+	gmt_M_str_free (ht);
+	gmt_M_str_free (bkpo);
+	gmt_M_str_free (ws);
+	gmt_M_str_free (gamf);
+	gmt_M_str_free (epmg);
+	gmt_M_str_free (esmg);
+	gmt_M_str_free (hymg);
+	gmt_M_str_free (f107x);
+	gmt_M_str_free (pleg);
+	gmt_M_str_free (rcur);
+	gmt_M_str_free (gcto_or);
+	gmt_M_str_free (gcto_mg);
 }
 
 void ymdtomjd(int yearad, int month, int dayofmonth, int *mjd, int *dayofyear) {
@@ -1089,7 +1179,7 @@ void mseason(int ks, int ns, int ng, double d, double *t, double *e, double *g) 
 void iseason(int ks, int ns, int ng, double f, double *t, double *e, double *g) {
 	int i, j;
 	double s;
-	GMT_UNUSED(ns);
+	gmt_M_unused(ns);
 
 	memset(e, 0, ng * sizeof(double));
 	j = 0;
@@ -1612,7 +1702,7 @@ void getgxf(int pmin, int pmax, int nmax, int mmax, int *ng, double *e, double *
     }
 }
 
-void bfield(int rgen, int nmxi, int nmxe, int nmni, int nmne, int mmxi, int mmxe, int mmni,
+static void bfield(int rgen, int nmxi, int nmxe, int nmni, int nmne, int mmxi, int mmxe, int mmni,
 	int mmne, int grad, int ctyp, int dtyp, int ityp, int etyp, double ep, double re, 
 	double rp, double rm, double tm, double clat, double elon, double h, double dst, double dstt, 
 	double *rse, int *nc, int *na, double *ro, double *theta, int *atyp, int *dsti, int *bori, int *bkni, 
@@ -1676,7 +1766,7 @@ void prebf_(int *rgen, int *ityp, int *etyp, int *dtyp, int *grad, int *nmni, in
 
     static int nx = 0;
     int i__1, edst, esvr, idst, isvr;
-    GMT_UNUSED(grad);
+    gmt_M_unused(grad);
 
     /* Parameter adjustments */
     --u;
@@ -1792,7 +1882,7 @@ void fdlds_(int *rgen, int *grad, int *ctyp, double *clat, double *phi, double *
     double fa, fc, fd, ar, fm, ra, fp, fr, fs, fn, fnm1, fnp1, fnp2, fnfp, fprr, fdrr;
     double pbppp = 0, pbppr = 0, pbrpp = 0, pbtpp = 0, pbppt = 0, pbtpr = 0, pbrpt = 0, pbtpt = 0, pbrpr = 0, cscth2;
     double cscthe, costhe, cotthe, sinthe, fmfpst;
-    GMT_UNUSED(nsi); GMT_UNUSED(nci); GMT_UNUSED(cerr);
+    gmt_M_unused(nsi); gmt_M_unused(nci); gmt_M_unused(cerr);
 
     /* Parameter adjustments */
     --dldc;

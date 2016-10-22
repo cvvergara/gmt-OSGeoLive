@@ -1,7 +1,7 @@
  /*--------------------------------------------------------------------
- *	$Id: grdmath.c 15213 2015-11-11 03:40:07Z pwessel $
+ *	$Id: grdmath.c 17085 2016-09-07 08:03:01Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -29,16 +29,24 @@
 #define THIS_MODULE_NAME	"grdmath"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Reverse Polish Notation (RPN) calculator for grids (element by element)"
-#define THIS_MODULE_KEYS	"<GI,=GO,RG-"
+#define THIS_MODULE_KEYS	"<G(,=G}"
 
 #include "gmt_dev.h"
 
 #define GMT_PROG_OPTIONS "-:RVbdfghinrs" GMT_OPT("F") GMT_ADD_x_OPT
 
-EXTERN_MSC int gmt_load_macros (struct GMT_CTRL *GMT, char *mtype, struct MATH_MACRO **M);
-EXTERN_MSC int gmt_find_macro (char *arg, unsigned int n_macros, struct MATH_MACRO *M);
-EXTERN_MSC void gmt_free_macros (struct GMT_CTRL *GMT, unsigned int n_macros, struct MATH_MACRO **M);
+EXTERN_MSC int gmt_load_macros (struct GMT_CTRL *GMT, char *mtype, struct GMT_MATH_MACRO **M);
+EXTERN_MSC int gmt_find_macro (char *arg, unsigned int n_macros, struct GMT_MATH_MACRO *M);
+EXTERN_MSC void gmt_free_macros (struct GMT_CTRL *GMT, unsigned int n_macros, struct GMT_MATH_MACRO **M);
 EXTERN_MSC struct GMT_OPTION * gmt_substitute_macros (struct GMT_CTRL *GMT, struct GMT_OPTION *options, char *mfile);
+
+/* Some local macros to simplify coding */
+/*! Loop over all nodes including the pad */
+#define grdmath_row_padloop(C,G,row,ij) for (row = 0, ij = 0; (int)row < (int)G->header->my; row++)
+#define grdmath_col_padloop(C,G,col,ij) for (col = 0; (int)col < (int)G->header->mx; col++, ij++)
+#define grdmath_grd_padloop(C,G,row,col,ij) grdmath_row_padloop(C,G,row,ij) grdmath_col_padloop(C,G,col,ij)
+/*! Just a loop over columns */
+#define grdmath_col_padloop2(C,G,col) for (col = 0; (int)col < (int)G->header->mx; col++)
 
 #define GRDMATH_ARG_IS_OPERATOR		 0
 #define GRDMATH_ARG_IS_FILE		-1
@@ -127,7 +135,6 @@ struct GRDMATH_STACK {
 	struct GMT_GRID *G;		/* The grid */
 	bool constant;			/* true if a constant (see factor) and S == NULL */
 	double factor;			/* The value if constant is true */
-	unsigned int alloc_mode;	/* 0 is not allocated, 1 is allocated in this program, 2 = allocated elsewhere, 3 for externals */
 };
 
 struct GRDMATH_STORE {
@@ -135,8 +142,8 @@ struct GRDMATH_STORE {
 	struct GRDMATH_STACK stored;
 };
 
-void *New_grdmath_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
-	struct GRDMATH_CTRL *C = GMT_memory (GMT, NULL, 1, struct GRDMATH_CTRL);
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+	struct GRDMATH_CTRL *C = gmt_M_memory (GMT, NULL, 1, struct GRDMATH_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 
@@ -145,21 +152,20 @@ void *New_grdmath_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new
 	return (C);
 }
 
-void Free_grdmath_Ctrl (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	GMT_free (GMT, C);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_grdmath_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdmath [%s]\n\t[%s]\n\t[-D<resolution>][+] [%s]\n\t[-M] [-N] [%s] [%s] [%s] [%s]\n\t[%s]"
 		" [%s]\n\t[%s] [%s] [%s] [%s]\n\t%s",	GMT_Rgeo_OPT, GMT_A_OPT, GMT_I_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT,
 		GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_n_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT);
 	GMT_Message (API, GMT_TIME_NONE, " A B op C op D op ... = <outgrd>\n\n");
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE,
 		"\tA, B, etc are grid files, constants, or symbols (see below).\n"
@@ -187,7 +193,7 @@ int GMT_grdmath_usage (struct GMTAPI_CTRL *API, int level)
 		"\n\tUse macros for frequently used long expressions; see the grdmath man page.\n"
 		"\tStore stack to named variable via STO@<label>, recall via [RCL]@<label>, clear via CLR@<label>.\n"
 		"\n\tOPTIONS: (only use -R|I|r|f if no grid files are passed as arguments).\n");
-	GMT_GSHHG_syntax (API->GMT, 'A');
+	gmt_GSHHG_syntax (API->GMT, 'A');
 	GMT_Message (API, GMT_TIME_NONE, "\t   (-A is only relevant to the LDISTG operator)\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Choose one of the following resolutions to use with the LDISTG operator:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   f - full resolution (may be very slow for large regions).\n");
@@ -208,11 +214,10 @@ int GMT_grdmath_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   (Only applies to the input files for operators LDIST, PDIST, POINT and INSIDE).\n");
 	GMT_Option (API, "n,r,s,x,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_grdmath_parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to grdmath and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -247,7 +252,7 @@ int GMT_grdmath_parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct G
 
 			case 'A':	/* Restrict GSHHS features */
 				Ctrl->A.active = true;
-				GMT_set_levels (GMT, opt->arg, &Ctrl->A.info);
+				gmt_set_levels (GMT, opt->arg, &Ctrl->A.info);
 				break;
 			case 'D':	/* Set GSHHS resolution */
 				Ctrl->D.active = true;
@@ -256,8 +261,8 @@ int GMT_grdmath_parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct G
 				break;
 			case 'I':	/* Grid spacings */
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
@@ -269,11 +274,11 @@ int GMT_grdmath_parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct G
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 		}
 	}
 
-	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
 
 	if (missing_equal) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Usage is <operations> = [outfile]\n");
@@ -288,20 +293,19 @@ int GMT_grdmath_parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct G
 		n_errors++;
 	}
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-struct GMT_GRID * alloc_stack_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Template)
-{	/* Allocate a new GMT_GRID structure based on dimensions etc of the Template */
+GMT_LOCAL struct GMT_GRID *alloc_stack_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Template) {
+	/* Allocate a new GMT_GRID structure based on dimensions etc of the Template */
 	struct GMT_GRID *New = GMT_Create_Data (GMT->parent, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Template->header->wesn, Template->header->inc, \
 		Template->header->registration, GMT_NOTSET, NULL);
 	return (New);
 }
 
-int grdmath_find_stored_item (struct GMT_CTRL *GMT, struct GRDMATH_STORE *recall[], int n_stored, char *label)
-{
+GMT_LOCAL int grdmath_find_stored_item (struct GMT_CTRL *GMT, struct GRDMATH_STORE *recall[], int n_stored, char *label) {
 	int k = 0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 	while (k < n_stored && strcmp (recall[k]->label, label)) k++;
 	return (k == n_stored ? -1 : k);
 }
@@ -311,7 +315,7 @@ int grdmath_find_stored_item (struct GMT_CTRL *GMT, struct GRDMATH_STORE *recall
  * -----------------------------------------------------------------*/
 /* Note: The OPERATOR: **** lines are used to extract syntax for documentation */
 
-void grd_ABS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ABS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ABS 1 1 abs (A).  */
 {
 	uint64_t node;
@@ -320,21 +324,22 @@ void grd_ABS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand == 0!\n");
 	if (stack[last]->constant) a = (float)fabs (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : fabsf (stack[last]->G->data[node]);
-	GMT_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad, if needed */
+	gmt_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad, if needed */
 }
 
-void grd_ACOS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ACOS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ACOS 1 1 acos (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ACOS!\n");
 	if (stack[last]->constant) a = (float)d_acos (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : d_acosf (stack[last]->G->data[node]);
 }
 
-void grd_ACOSH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ACOSH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ACOSH 1 1 acosh (A).  */
 {
 	uint64_t node;
@@ -347,12 +352,13 @@ void grd_ACOSH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : acoshf (stack[last]->G->data[node]);
 }
 
-void grd_ACOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ACOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ACOT 1 1 acot (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0)
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ACOT!\n");
 	if (stack[last]->constant) a = (float)atan (1.0 / stack[last]->factor);
@@ -360,7 +366,7 @@ void grd_ACOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : atanf (1.0f / stack[last]->G->data[node]);
 }
 
-void grd_ACOTH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ACOTH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ACOTH 1 1 acoth (A).  */
 {
 	uint64_t node;
@@ -371,12 +377,13 @@ void grd_ACOTH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : atanhf (1.0f/stack[last]->G->data[node]);
 }
 
-void grd_ACSC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ACSC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ACSC 1 1 acsc (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0)
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ACSC!\n");
 	if (stack[last]->constant) a = (float)d_asin (1.0 / stack[last]->factor);
@@ -384,24 +391,24 @@ void grd_ACSC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : d_asinf (1.0f / stack[last]->G->data[node]);
 }
 
-void grd_ACSCH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ACSCH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ACSCH 1 1 acsch (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)asinh (1.0/stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : asinhf (1.0f/stack[last]->G->data[node]);
 }
 
-void grd_ADD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ADD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ADD 2 1 A + B.  */
 {
 	uint64_t node;
 	unsigned int prev = last - 1;
 	double a, b;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
@@ -410,22 +417,22 @@ void grd_ADD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_AND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_AND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: AND 2 1 B if A == NaN, else A.  */
 {
 	uint64_t node;
 	unsigned int prev = last - 1;
 	double a, b;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)((GMT_is_dnan (a)) ? b : a);
+		stack[prev]->G->data[node] = (float)((gmt_M_is_dnan (a)) ? b : a);
 	}
 }
 
-void grd_ARC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ARC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ARC 2 1 arc(A, B) = pi - |pi - |a-b|| for A, B in radians.  */
 	/*
 	given phase values a and b each in radians on [-pi,pi]
@@ -438,8 +445,9 @@ void grd_ARC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	uint64_t node;
 	unsigned int prev = last - 1;
 	double a, b;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	for (node = 0; node < info->size; node++) {
 
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
@@ -453,20 +461,93 @@ void grd_ARC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_ASEC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void get_geo_cellarea (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G) {
+	/* Calculate geographic SPHERICAL area in km^2.
+	 * Integrating the area between two parallels +/- yinc/2 to either side of latitude y on a sphere
+	 * and partition it amount all cells in longitude yields the exact area (angles in radians)
+	 *     A(y) = 2 * R^2 * xinc * sin (0.5 * yinc) * cos(y)
+	 * except at the points at the pole (gridline registration) or near the pole (pixel reg).
+	 * There, the integration yields
+	 *     A(pole) = R^2 * xinc * (1.0 - cos (f * yinc))
+	 * where f = 0.5 for gridline-registered and f = 1 for pixel-registered grids.
+	 * P.Wessel, July 2016.
+	 */
+	uint64_t node;
+	unsigned int row, col, j, first_row = 0, last_row = G->header->n_rows - 1, last_col = G->header->n_columns - 1;
+	double lat, area, f, row_weight, col_weight = 1.0, R2 = pow (0.001 * GMT->current.proj.mean_radius, 2.0);	/* squared mean radius in km */
+	char *aux[6] = {"geodetic", "authalic", "conformal", "meridional", "geocentric", "parametric"};
+	char *rad[5] = {"mean (R_1)", "authalic (R_2)", "volumetric (R_3)", "meridional", "quadratic"};
+
+	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Compute spherical gridnode areas using %s radius [R = %.12g km] and %s latitudes\n",
+		rad[GMT->current.setting.proj_mean_radius], GMT->current.proj.mean_radius, aux[1+GMT->current.setting.proj_aux_latitude/2]);
+	/* May need special treatment of pole points */
+	f = (G->header->registration == GMT_GRID_NODE_REG) ? 0.5 : 1.0;	/* Half pizza-slice for gridline regs with node at pole, full slice for grids */
+	area = R2 * (G->header->inc[GMT_X] * D2R);
+	if (doubleAlmostEqualZero (G->header->wesn[YHI], 90.0)) {	/* North pole row */
+		row_weight = 1.0 - cosd (f * G->header->inc[GMT_Y]);
+		gmt_M_col_loop (GMT, info->G, first_row, col, node) {
+			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;
+			G->data[node] = (float)(row_weight * col_weight * area);
+		}
+		first_row++;
+	}
+	if (doubleAlmostEqualZero (G->header->wesn[YLO], -90.0)) {	/* South pole row */
+		row_weight = 1.0 - cosd (f * G->header->inc[GMT_Y]);
+		gmt_M_col_loop (GMT, info->G, last_row, col, node) {
+			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;
+			G->data[node] = (float)(row_weight * col_weight * area);
+		}
+		last_row--;
+	}
+	/* Below we just use the standard graticule equation. Must use j instead of row in d_grd_y due to pad */
+	area *= 2.0 * sind (0.5 * G->header->inc[GMT_Y]);	/* Since no longer any special cases with poles below */
+	for (row = first_row, j = first_row + G->header->pad[YHI]; row <= last_row; row++, j++) {
+		lat = gmt_lat_swap (GMT, info->d_grd_y[j], GMT->current.setting.proj_aux_latitude);	/* Convert to selected auxiliary latitude */
+		row_weight = cosd (lat);
+		gmt_M_col_loop (GMT, info->G, row, col, node) {	/* Loop over cols; always save the next left before we update the array at that col */
+			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;
+			G->data[node] = (float)(row_weight * col_weight * area);
+		}
+	}
+}
+
+GMT_LOCAL void get_cart_cellarea (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G) {
+	/* Calculate Cartesian cell areas in user units */
+	uint64_t node;
+	unsigned int row, col, last_row = G->header->n_rows - 1, last_col = G->header->n_columns - 1;
+	double row_weight = 1.0, col_weight = 1.0, area = G->header->inc[GMT_X] * G->header->inc[GMT_Y];	/* All whole cells have same area */
+	gmt_M_unused(GMT);
+	gmt_M_row_loop (GMT, info->G, row) {	/* Loop over the rows */
+		if (G->header->registration == GMT_GRID_NODE_REG) row_weight = (row == 0 || row == last_row) ? 0.5 : 1.0;	/* half-cells in y */
+		gmt_M_col_loop (GMT, info->G, row, col, node) {	/* Now loop over the columns */
+			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;	/* half-cells in x */
+			G->data[node] = (float)(row_weight * col_weight * area);
+		}
+	}
+}
+
+GMT_LOCAL void grd_AREA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: AREA 0 1 Area of each gridnode cell (spherical calculation in km^2 if geographic).  */
+	if (gmt_M_is_geographic (GMT, GMT_IN))
+		get_geo_cellarea (GMT, info, stack[last]->G);
+	else
+		get_cart_cellarea (GMT, info, stack[last]->G);
+}
+
+GMT_LOCAL void grd_ASEC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: ASEC 1 1 asec (A).  */
-{
 	uint64_t node;
 	float a = 0.0f;
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ASEC!\n");
 	if (stack[last]->constant) a = (float)d_acos (1.0 / stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : d_acosf (1.0f / stack[last]->G->data[node]);
+	for (node = 0; node < info->size; node++)
+		stack[last]->G->data[node] = (stack[last]->constant) ? a : d_acosf (1.0f / stack[last]->G->data[node]);
 }
 
-void grd_ASECH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ASECH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: ASECH 1 1 asech (A).  */
-{
 	uint64_t node;
 	float a = 0.0f;
 
@@ -477,46 +558,51 @@ void grd_ASECH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : acoshf (1.0f/stack[last]->G->data[node]);
 }
 
-void grd_ASIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ASIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ASIN 1 1 asin (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ASIN!\n");
 	if (stack[last]->constant) a = (float)d_asin (stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : d_asinf (stack[last]->G->data[node]);
+	for (node = 0; node < info->size; node++)
+		stack[last]->G->data[node] = (stack[last]->constant) ? a : d_asinf (stack[last]->G->data[node]);
 }
 
-void grd_ASINH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ASINH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ASINH 1 1 asinh (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)asinh (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : asinhf (stack[last]->G->data[node]);
 }
 
-void grd_ATAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ATAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ATAN 1 1 atan (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant) a = (float)atan (stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : atanf (stack[last]->G->data[node]);
+	for (node = 0; node < info->size; node++)
+		stack[last]->G->data[node] = (stack[last]->constant) ? a : atanf (stack[last]->G->data[node]);
 }
 
-void grd_ATAN2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ATAN2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ATAN2 2 1 atan2 (A, B).  */
 {
 	uint64_t node;
 	unsigned int prev = last - 1;
 	double a, b;
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for ATAN2!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for ATAN2!\n");
 	for (node = 0; node < info->size; node++) {
@@ -526,7 +612,7 @@ void grd_ATAN2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	}
 }
 
-void grd_ATANH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ATANH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ATANH 1 1 atanh (A).  */
 {
 	uint64_t node;
@@ -537,7 +623,7 @@ void grd_ATANH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : atanhf (stack[last]->G->data[node]);
 }
 
-void grd_BCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BCDF 3 1 Binomial cumulative distribution function for p = A, n = B and x = C.  */
 {
 	uint64_t node;
@@ -562,19 +648,19 @@ void grd_BCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		float value;
 		p = stack[prev2]->factor;
 		n = stack[prev1]->factor;	x = stack[last]->factor;
-		value = (error) ? GMT->session.f_NaN : (float)GMT_binom_cdf (GMT, lrint(x), lrint(n), p);
-		GMT_grd_loop (GMT, info->G, row, col, node) stack[prev2]->G->data[node] = value;
+		value = (error) ? GMT->session.f_NaN : (float)gmt_binom_cdf (GMT, lrint(x), lrint(n), p);
+		gmt_M_grd_loop (GMT, info->G, row, col, node) stack[prev2]->G->data[node] = value;
 		return;
 	}
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		p = (stack[prev2]->constant) ? stack[prev2]->factor : (double)stack[prev2]->G->data[node];
 		n = (stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node];
 		x = (stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node];
-		stack[prev2]->G->data[node] = (float)(GMT_binom_cdf (GMT, lrint(x), lrint(n), p));
+		stack[prev2]->G->data[node] = (float)(gmt_binom_cdf (GMT, lrint(x), lrint(n), p));
 	}
 }
 
-void grd_BPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BPDF 3 1 Binomial probability density function for p = A, n = B and x = C.  */
 {
 	uint64_t node;
@@ -599,40 +685,42 @@ void grd_BPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		float value;
 		p = stack[prev2]->factor;	q = 1.0 - p;
 		n = stack[prev1]->factor;	x = stack[last]->factor;
-		value = (error) ? GMT->session.f_NaN : (float)(GMT_combination (GMT, irint (n), irint (x)) * pow (p, x) * pow (q, n-x));
-		GMT_grd_loop (GMT, info->G, row, col, node) stack[prev2]->G->data[node] = value;
+		value = (error) ? GMT->session.f_NaN : (float)(gmt_combination (GMT, irint (n), irint (x)) * pow (p, x) * pow (q, n-x));
+		gmt_M_grd_loop (GMT, info->G, row, col, node) stack[prev2]->G->data[node] = value;
 		return;
 	}
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		p = (stack[prev2]->constant) ? stack[prev2]->factor : (double)stack[prev2]->G->data[node];
-		n = (stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node];
-		x = (stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node];
-		q = 1.0 - p;
-		stack[prev2]->G->data[node] = (float)(GMT_combination (GMT, irint (n), irint (x)) * pow (p, x) * pow (q, n-x));
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			p = (stack[prev2]->constant) ? stack[prev2]->factor : (double)stack[prev2]->G->data[node];
+			n = (stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node];
+			x = (stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node];
+			q = 1.0 - p;
+			stack[prev2]->G->data[node] = (float)(gmt_combination (GMT, irint (n), irint (x)) * pow (p, x) * pow (q, n-x));
+		}
 	}
 }
 
-void grd_BEI (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BEI (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BEI 1 1 bei (A).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_bei (GMT, fabs (stack[last]->factor));
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_bei (GMT, fabs((double)stack[last]->G->data[node])));
+	if (stack[last]->constant) a = gmt_bei (GMT, fabs (stack[last]->factor));
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_bei (GMT, fabs((double)stack[last]->G->data[node])));
 }
 
-void grd_BER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BER 1 1 ber (A).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_ber (GMT, fabs (stack[last]->factor));
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_ber (GMT, fabs ((double)stack[last]->G->data[node])));
+	if (stack[last]->constant) a = gmt_ber (GMT, fabs (stack[last]->factor));
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_ber (GMT, fabs ((double)stack[last]->G->data[node])));
 }
 
-void grd_BITAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BITAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BITAND 2 1 A & B (bitwise AND operator).  */
 {
 	uint64_t node, n_warn = 0;
@@ -645,7 +733,7 @@ void grd_BITAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) af = stack[prev]->G->data[node];
 		if (!stack[last]->constant) bf = stack[last]->G->data[node];
-		if (GMT_is_fnan (af) || GMT_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
+		if (gmt_M_is_fnan (af) || gmt_M_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
 			stack[prev]->G->data[node] = GMT->session.f_NaN;
 		else {
 			a = (unsigned int)af;	b = (unsigned int)bf;
@@ -659,7 +747,7 @@ void grd_BITAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 
 }
 
-void grd_BITLEFT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BITLEFT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BITLEFT 2 1 A << B (bitwise left-shift operator).  */
 {
 	uint64_t node, n_warn = 0;
@@ -674,7 +762,7 @@ void grd_BITLEFT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) af = stack[prev]->G->data[node];
 		if (!stack[last]->constant) bf = stack[last]->G->data[node];
-		if (GMT_is_fnan (af) || GMT_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
+		if (gmt_M_is_fnan (af) || gmt_M_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
 			stack[prev]->G->data[node] = GMT->session.f_NaN;
 		else {
 			a = (unsigned int)af;	b_signed = (int)bf;
@@ -695,7 +783,7 @@ void grd_BITLEFT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	if (n_warn) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: BITLEFT resulted in %" PRIu64 " values truncated to fit in the 24 available bits\n");
 }
 
-void grd_BITNOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BITNOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BITNOT 1 1  ~A (bitwise NOT operator, i.e., return two's complement).  */
 {
 	uint64_t node, n_warn = 0;
@@ -705,7 +793,7 @@ void grd_BITNOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	if (stack[last]->constant) af = (float)stack[last]->factor;
 	for (node = 0; node < info->size; node++) {
 		if (!stack[last]->constant) af = stack[last]->G->data[node];
-		if (GMT_is_fnan (af))	/* Any NaN in bitwise operations results in NaN output */
+		if (gmt_M_is_fnan (af))	/* Any NaN in bitwise operations results in NaN output */
 			stack[last]->G->data[node] = GMT->session.f_NaN;
 		else {
 			a = (unsigned int)af;
@@ -718,7 +806,7 @@ void grd_BITNOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	if (n_warn) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: BITNOT resulted in %" PRIu64 " values truncated to fit in the 24 available bits\n");
 }
 
-void grd_BITOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BITOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BITOR 2 1 A | B (bitwise OR operator).  */
 {
 	uint64_t node, n_warn = 0;
@@ -731,7 +819,7 @@ void grd_BITOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) af = stack[prev]->G->data[node];
 		if (!stack[last]->constant) bf = stack[last]->G->data[node];
-		if (GMT_is_fnan (af) || GMT_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
+		if (gmt_M_is_fnan (af) || gmt_M_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
 			stack[prev]->G->data[node] = GMT->session.f_NaN;
 		else {
 			a = (unsigned int)af;	b = (unsigned int)bf;
@@ -744,7 +832,7 @@ void grd_BITOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	if (n_warn) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: BITOR resulted in %" PRIu64 " values truncated to fit in the 24 available bits\n");
 }
 
-void grd_BITRIGHT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BITRIGHT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BITRIGHT 2 1 A >> B (bitwise right-shift operator).  */
 {
 	uint64_t node, n_warn = 0;
@@ -759,7 +847,7 @@ void grd_BITRIGHT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMA
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) af = stack[prev]->G->data[node];
 		if (!stack[last]->constant) bf = stack[last]->G->data[node];
-		if (GMT_is_fnan (af) || GMT_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
+		if (gmt_M_is_fnan (af) || gmt_M_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
 			stack[prev]->G->data[node] = GMT->session.f_NaN;
 		else {
 			a = (unsigned int)af;	b_signed = (int)bf;
@@ -780,7 +868,7 @@ void grd_BITRIGHT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMA
 	if (n_warn) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: BITRIGHT resulted in %" PRIu64 " values truncated to fit in the 24 available bits\n");
 }
 
-void grd_BITTEST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BITTEST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BITTEST 2 1 1 if bit B of A is set, else 0 (bitwise TEST operator).  */
 {
 	uint64_t node, n_warn = 0;
@@ -795,7 +883,7 @@ void grd_BITTEST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) af = stack[prev]->G->data[node];
 		if (!stack[last]->constant) bf = stack[last]->G->data[node];
-		if (GMT_is_fnan (af) || GMT_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
+		if (gmt_M_is_fnan (af) || gmt_M_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
 			stack[prev]->G->data[node] = GMT->session.f_NaN;
 		else {
 			a = (unsigned int)af;	b_signed = (int)bf;
@@ -817,7 +905,7 @@ void grd_BITTEST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	if (n_warn) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: BITTEST resulted in %" PRIu64 " values truncated to fit in the 24 available bits\n");
 }
 
-void grd_BITXOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_BITXOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: BITXOR 2 1 A ^ B (bitwise XOR operator).  */
 {
 	uint64_t node, n_warn = 0;
@@ -830,7 +918,7 @@ void grd_BITXOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) af = stack[prev]->G->data[node];
 		if (!stack[last]->constant) bf = stack[last]->G->data[node];
-		if (GMT_is_fnan (af) || GMT_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
+		if (gmt_M_is_fnan (af) || gmt_M_is_fnan (bf))	/* Any NaN in bitwise operations results in NaN output */
 			stack[prev]->G->data[node] = GMT->session.f_NaN;
 		else {
 			a = (unsigned int)af;	b = (unsigned int)bf;
@@ -843,15 +931,16 @@ void grd_BITXOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	if (n_warn) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: BITXOR resulted in %" PRIu64 " values truncated to fit in the 24 available bits\n");
 }
 
-void grd_CAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CAZ 2 1 Cartesian azimuth from grid nodes to stack x,y.  */
 {
 	uint64_t node, row, col;
 	unsigned int prev = last - 1;
 	double x, y, az;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		x = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		y = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
 		az = (90.0 - atan2d (y - info->d_grd_y[row], x - info->d_grd_x[col]));
@@ -861,15 +950,16 @@ void grd_CAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_CBAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CBAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CBAZ 2 1 Cartesian back-azimuth from grid nodes to stack x,y.  */
 {
 	uint64_t node, row, col;
 	unsigned int prev = last - 1;
 	double x, y, az;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		x = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		y = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
 		az = (270.0 - atan2d (y - info->d_grd_y[row], x - info->d_grd_x[col]));
@@ -879,36 +969,36 @@ void grd_CBAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	}
 }
 
-void grd_CDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CDIST 2 1 Cartesian distance between grid nodes and stack x,y.  */
 {
 	uint64_t node, row, col;
 	unsigned int prev = last - 1;
 	double a, b;
 
-	if (GMT_is_geographic (GMT, GMT_IN)) {
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "CDIST Error: Grid must be Cartesian; see SDIST for geographic data.\n");
 		return;
 	}
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
+	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
 		stack[prev]->G->data[node] = (float)hypot (a - info->d_grd_x[col], b - info->d_grd_y[row]);
 	}
 }
 
-void grd_CDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CDIST2 2 1 As CDIST but only to nodes that are != 0.  */
 {
 	uint64_t node, row, col;
 	unsigned int prev = last - 1;
 	double a, b;
 
-	if (GMT_is_geographic (GMT, GMT_IN)) {
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "CDIST2 Error: Grid must be Cartesian; see SDIST2 for geographic data.\n");
 		return;
 	}
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
+	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		if (stack[prev]->G->data[node] == 0.0)
 			stack[prev]->G->data[node] = GMT->session.f_NaN;
 		else {
@@ -919,18 +1009,18 @@ void grd_CDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	}
 }
 
-void grd_CEIL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CEIL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CEIL 1 1 ceil (A) (smallest integer >= A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)ceil (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : ceilf (stack[last]->G->data[node]);
 }
 
-void grd_CHI2CRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CHI2CRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CHI2CRIT 2 1 Chi-squared distribution critical value for alpha = A and nu = B.  */
 {
 	uint64_t node;
@@ -939,14 +1029,14 @@ void grd_CHI2CRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMA
 
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for CHI2CRIT!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for CHI2CRIT!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)GMT_chi2crit (GMT, a, b);
+		stack[prev]->G->data[node] = (float)gmt_chi2crit (GMT, a, b);
 	}
 }
 
-void grd_CHI2CDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CHI2CDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CHI2CDF 2 1 Chi-squared cumulative distribution function for chi2 = A and nu = B.  */
 {
 	uint64_t node;
@@ -955,15 +1045,17 @@ void grd_CHI2CDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for CHI2CDF!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for CHI2CDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		GMT_chi2 (GMT, a, b, &q);
-		stack[prev]->G->data[node] = (float)(1.0 - q);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+			gmt_chi2 (GMT, a, b, &q);
+			stack[prev]->G->data[node] = (float)(1.0 - q);
+		}
 	}
 }
 
-void grd_CHI2PDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CHI2PDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CHI2PDF 2 1 Chi-squared probability density function for chi = A and nu = B.  */
 {
 	uint64_t node, nu;
@@ -972,14 +1064,16 @@ void grd_CHI2PDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for CHI2PDF!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for CHI2PDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		c = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		nu = lrint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
-		stack[prev]->G->data[node] = (float)GMT_chi2_pdf (GMT, c, nu);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			c = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			nu = lrint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
+			stack[prev]->G->data[node] = (float)gmt_chi2_pdf (GMT, c, nu);
+		}
 	}
 }
 
-void grd_COMB (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_COMB (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: COMB 2 1 Combinations n_C_r, with n = A and r = B.  */
 {
 	uint64_t node;
@@ -995,18 +1089,20 @@ void grd_COMB (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		error++;
 	}
 	if (error || (stack[prev]->constant && stack[last]->constant)) {	/* COMBO is undefined or we have a constant */
-		float value = (error) ? GMT->session.f_NaN : (float)GMT_combination (GMT, irint(stack[prev]->factor), irint(stack[last]->factor));
-		GMT_grd_loop (GMT, info->G, row, col, node) stack[prev]->G->data[node] = value;
+		float value = (error) ? GMT->session.f_NaN : (float)gmt_combination (GMT, irint(stack[prev]->factor), irint(stack[last]->factor));
+		gmt_M_grd_loop (GMT, info->G, row, col, node) stack[prev]->G->data[node] = value;
 		return;
 	}
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)GMT_combination (GMT, irint(a), irint(b));
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+			stack[prev]->G->data[node] = (float)gmt_combination (GMT, irint(a), irint(b));
+		}
 	}
 }
 
-void grd_CORRCOEFF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CORRCOEFF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CORRCOEFF 2 1 Correlation coefficient r(A, B).  */
 {
 	uint64_t node;
@@ -1018,82 +1114,82 @@ void grd_CORRCOEFF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDM
 		for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = GMT->session.f_NaN;
 		return;
 	}
-	GMT_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
-	GMT_grd_pad_off (GMT, stack[prev]->G);				/* Undo pad if one existed so we can sort */
-	GMT_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-	coeff = GMT_corrcoeff_f (GMT, stack[prev]->G->data, stack[last]->G->data, info->nm, 0);
-	GMT_grd_pad_on (GMT, stack[prev]->G, pad);		/* Reinstate the original pad */
-	GMT_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
+	gmt_M_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
+	gmt_grd_pad_off (GMT, stack[prev]->G);				/* Undo pad if one existed so we can sort */
+	gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
+	coeff = gmt_corrcoeff_f (GMT, stack[prev]->G->data, stack[last]->G->data, info->nm, 0);
+	gmt_grd_pad_on (GMT, stack[prev]->G, pad);		/* Reinstate the original pad */
+	gmt_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = (float)coeff;
 }
 
-void grd_COS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_COS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: COS 1 1 cos (A) (A in radians).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)cos (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : cosf (stack[last]->G->data[node]);
 }
 
-void grd_COSD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_COSD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: COSD 1 1 cos (A) (A in degrees).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = cosd (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : cosd (stack[last]->G->data[node]));
 }
 
-void grd_COSH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_COSH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: COSH 1 1 cosh (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)cosh (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : coshf (stack[last]->G->data[node]);
 }
 
-void grd_COT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_COT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: COT 1 1 cot (A) (A in radians).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 1.0 / tan (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : (1.0 / tan (stack[last]->G->data[node])));
 }
 
-void grd_COTD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_COTD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: COTD 1 1 cot (A) (A in degrees).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 1.0 / tand (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : 1.0 / tand (stack[last]->G->data[node]));
 }
 
-void grd_COTH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_COTH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: COTH 1 1 coth (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)(1.0/tanh (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : 1.0f / tanhf (stack[last]->G->data[node]);
 }
 
-void grd_PCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: PCDF 2 1 Poisson cumulative distribution function x = A and lambda = B.  */
 {
 	uint64_t node;
@@ -1101,15 +1197,17 @@ void grd_PCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	double a, b, prob;
 
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for PCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		GMT_poisson_cdf (GMT, a, b, &prob);
-		stack[prev]->G->data[node] = (float)prob;
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+			gmt_poisson_cdf (GMT, a, b, &prob);
+			stack[prev]->G->data[node] = (float)prob;
+		}
 	}
 }
 
-void grd_PPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: PPDF 2 1 Poisson probability density function for x = A and lambda = B.  */
 {
 	uint64_t node;
@@ -1117,47 +1215,49 @@ void grd_PPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	double a, b;
 
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for PPDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)GMT_poissonpdf (GMT, a, b);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+			stack[prev]->G->data[node] = (float)gmt_poissonpdf (GMT, a, b);
+		}
 	}
 }
 
-void grd_CSC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CSC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CSC 1 1 csc (A) (A in radians).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 1.0 / sin (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : 1.0 / sinf (stack[last]->G->data[node]));
 }
 
-void grd_CSCD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CSCD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CSCD 1 1 csc (A) (A in degrees).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 1.0 / sind (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : 1.0 / sind (stack[last]->G->data[node]));
 }
 
-void grd_CSCH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CSCH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CSCH 1 1 csch (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)(1.0 / sinh (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : 1.0f / sinhf (stack[last]->G->data[node]);
 }
 
-void grd_CURV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_CURV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: CURV 1 1 Curvature of A (Laplacian).  */
 {
 	uint64_t node;
@@ -1167,9 +1267,10 @@ void grd_CURV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 
 	/* Curvature (Laplacian). */
 
+	if (gmt_M_is_geographic (GMT, GMT_IN)) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, geographic grid given to a Cartesian operator [CURV]!\n");
 	if (stack[last]->constant) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand to CURV is constant!\n");
-		GMT_memset (stack[last], info->size, float);
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
@@ -1177,30 +1278,32 @@ void grd_CURV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	 * If -fg we assume geographic grid and use geographic BCs, else we use natural BCs. If the grid
 	 * as a BC == GMT_BC_IS_DATA then the pad already constains observations. */
 
-	GMT_BC_init (GMT, stack[last]->G->header);	/* Initialize grid interpolation and boundary condition parameters */
-	GMT_grd_BC_set (GMT, stack[last]->G, GMT_IN);	/* Set boundary conditions */
+	gmt_BC_init (GMT, stack[last]->G->header);	/* Initialize grid interpolation and boundary condition parameters */
+	gmt_grd_BC_set (GMT, stack[last]->G, GMT_IN);	/* Set boundary conditions */
 
 	/* Now, stack[last]->G->data has boundary rows/cols all set according to the boundary conditions (or actual data).
 	 * We can then operate on the interior of the grid and temporarily assign values to the z grid */
 
-	z = GMT_memory (GMT, NULL, info->size, float);
-	cx = GMT_memory (GMT, NULL, info->G->header->ny, double);
-	GMT_row_loop (GMT, info->G, row) cx[row] = 1.0 / (info->dx[row] * info->dx[row]);
+	z = gmt_M_memory (GMT, NULL, info->size, float);
+	cx = gmt_M_memory (GMT, NULL, info->G->header->n_rows, double);
+	gmt_M_row_loop (GMT, info->G, row) cx[row] = 1.0 / (info->dx[row] * info->dx[row]);
 
 	mx = info->G->header->mx;
 	cy = 1.0 / (info->dy * info->dy);
 
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
 		z[node] = (float)(cx[row] * (stack[last]->G->data[node+1] - 2.0 * stack[last]->G->data[node] + stack[last]->G->data[node-1]) + \
 			cy * (stack[last]->G->data[node+mx] - 2.0 * stack[last]->G->data[node] + stack[last]->G->data[node-mx]));
+		}
 	}
 
-	GMT_memcpy (stack[last]->G->data, z, info->size, float);
-	GMT_free (GMT, z);
-	GMT_free (GMT, cx);
+	gmt_M_memcpy (stack[last]->G->data, z, info->size, float);
+	gmt_M_free (GMT, z);
+	gmt_M_free (GMT, cx);
 }
 
-void grd_D2DX2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_D2DX2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: D2DX2 1 1 d^2(A)/dx^2 2nd derivative.  */
 {
 	uint64_t node, ij;
@@ -1209,32 +1312,33 @@ void grd_D2DX2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 
 	/* Central 2nd difference in x */
 
+	if (gmt_M_is_geographic (GMT, GMT_IN)) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, geographic grid given to a Cartesian operator [D2DX2]!\n");
 	if (stack[last]->constant) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand to D2DX2 is constant!\n");
-		GMT_memset (stack[last], info->size, float);
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
-	GMT_row_loop (GMT, info->G, row) {	/* Process d2/dx2 row by row since dx may change with row */
+	gmt_M_row_loop (GMT, info->G, row) {	/* Process d2/dx2 row by row since dx may change with row */
 		c = 1.0 / (info->dx[row] * info->dx[row]);
 		/* Unless pad has real data we assign outside col values via natural BCs */
-		ij = GMT_IJP (info->G->header, row, 0);	/* First col */
+		ij = gmt_M_ijp (info->G->header, row, 0);	/* First col */
 		if (stack[last]->G->header->BC[XLO] != GMT_BC_IS_DATA)
 			stack[last]->G->data[ij-1] = (float)(2.0 * stack[last]->G->data[ij] - stack[last]->G->data[ij+1]);	/* Set left node via BC curv = 0 */
 		next_left = stack[last]->G->data[ij-1];
-		ij = GMT_IJP (info->G->header, row, info->G->header->nx-1);	/* Last col */
+		ij = gmt_M_ijp (info->G->header, row, info->G->header->n_columns-1);	/* Last col */
 		if (stack[last]->G->header->BC[XHI] != GMT_BC_IS_DATA)
 			stack[last]->G->data[ij+1] = (float)(2.0 * stack[last]->G->data[ij] - stack[last]->G->data[ij-1]);	/* Set right node via BC curv = 0 */
-		GMT_col_loop (GMT, info->G, row, col, node) {	/* Loop over cols; always save the next left before we update the array at that col */
+		gmt_M_col_loop (GMT, info->G, row, col, node) {	/* Loop over cols; always save the next left before we update the array at that col */
 			left = next_left;
 			next_left = stack[last]->G->data[node];
 			stack[last]->G->data[node] = (float)(c * (stack[last]->G->data[node+1] - 2.0 * stack[last]->G->data[node] + left));
 		}
 	}
-	GMT_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad */
+	gmt_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad */
 }
 
-void grd_D2DY2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_D2DY2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: D2DY2 1 1 d^2(A)/dy^2 2nd derivative.  */
 {
 	uint64_t node, ij;
@@ -1243,33 +1347,34 @@ void grd_D2DY2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 
 	/* Central 2nd difference in y */
 
+	if (gmt_M_is_geographic (GMT, GMT_IN)) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, geographic grid given to a Cartesian operator [D2DY2]!\n");
 	if (stack[last]->constant) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand to D2DY2 is constant!\n");
-		GMT_memset (stack[last], info->size, float);
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
 	c = 1.0 / (info->dy * info->dy);
 	mx = info->G->header->mx;
-	GMT_col_loop (GMT, info->G, 0, col, node) {	/* Process d2/dy2 column by column */
+	gmt_M_col_loop (GMT, info->G, 0, col, node) {	/* Process d2/dy2 column by column */
 		/* Unless pad has real data we assign outside row values via natural BCs */
 		if (stack[last]->G->header->BC[YHI] != GMT_BC_IS_DATA)
 			stack[last]->G->data[node-mx] = (float)(2.0 * stack[last]->G->data[node] - stack[last]->G->data[node+mx]);	/* Set top node via BC curv = 0 */
 		next_bottom = stack[last]->G->data[node-mx];
-		ij = GMT_IJP (info->G->header, info->G->header->ny-1, col);	/* Last row for this column */
+		ij = gmt_M_ijp (info->G->header, info->G->header->n_rows-1, col);	/* Last row for this column */
 		if (stack[last]->G->header->BC[YLO] != GMT_BC_IS_DATA)
 			stack[last]->G->data[ij+mx] = (float)(2.0 * stack[last]->G->data[ij] - stack[last]->G->data[ij-mx]);	/* Set bottom node via BC curv = 0 */
-		GMT_row_loop (GMT, info->G, row) { /* Cannot use node inside here and must get ij separately */
-			ij = GMT_IJP (info->G->header, row, col);	/* current node in this column */
+		gmt_M_row_loop (GMT, info->G, row) { /* Cannot use node inside here and must get ij separately */
+			ij = gmt_M_ijp (info->G->header, row, col);	/* current node in this column */
 			bottom = next_bottom;
 			next_bottom = stack[last]->G->data[ij];
 			stack[last]->G->data[ij] = (float)(c * (stack[last]->G->data[ij+mx] - 2.0 * stack[last]->G->data[ij] + bottom));
 		}
 	}
-	GMT_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad */
+	gmt_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad */
 }
 
-void grd_D2DXY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_D2DXY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: D2DXY 1 1 d^2(A)/dxdy 2nd derivative.  */
 {
 	uint64_t node;
@@ -1279,9 +1384,10 @@ void grd_D2DXY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 
 	/* Cross derivative d2/dxy = d2/dyx  */
 
+	if (gmt_M_is_geographic (GMT, GMT_IN)) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, geographic grid given to a Cartesian operator [D2DXY]!\n");
 	if (stack[last]->constant) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand to D2DXY is constant!\n");
-		GMT_memset (stack[last], info->size, float);
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
@@ -1289,41 +1395,42 @@ void grd_D2DXY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	 * If -fg we assume geographic grid and use geographic BCs, else we use natural BCs. If the grid
 	 * as a BC == GMT_BC_IS_DATA then the pad already constains observations. */
 
-	GMT_BC_init (GMT, stack[last]->G->header);	/* Initialize grid interpolation and boundary condition parameters */
-	GMT_grd_BC_set (GMT, stack[last]->G, GMT_IN);	/* Set boundary conditions */
+	gmt_BC_init (GMT, stack[last]->G->header);	/* Initialize grid interpolation and boundary condition parameters */
+	gmt_grd_BC_set (GMT, stack[last]->G, GMT_IN);	/* Set boundary conditions */
 
 	/* Now, stack[last]->G->data has boundary rows/cols all set according to the boundary conditions (or actual data).
 	 * We can then operate on the interior of the grid and temporarily assign values to the z grid */
 
-	z = GMT_memory (GMT, NULL, info->size, float);
-	cx = GMT_memory (GMT, NULL, info->G->header->ny, double);
-	GMT_row_loop (GMT, info->G, row) cx[row] = 0.5 / (info->dx[row] * info->dx[row]);
+	z = gmt_M_memory (GMT, NULL, info->size, float);
+	cx = gmt_M_memory (GMT, NULL, info->G->header->n_rows, double);
+	gmt_M_row_loop (GMT, info->G, row) cx[row] = 0.5 / (info->dx[row] * info->dx[row]);
 
 	mx = info->G->header->mx;
 	cy = 0.5 / (info->dy * info->dy);
 
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		z[node] = (float)(cx[row] * cy * (stack[last]->G->data[node-mx+1] - stack[last]->G->data[node-mx-1] + \
 			stack[last]->G->data[node+mx-1] - stack[last]->G->data[node+mx+1]));
 	}
 
-	GMT_memcpy (stack[last]->G->data, z, info->size, float);
-	GMT_free (GMT, z);
-	GMT_free (GMT, cx);
+	gmt_M_memcpy (stack[last]->G->data, z, info->size, float);
+	gmt_M_free (GMT, z);
+	gmt_M_free (GMT, cx);
 }
 
-void grd_D2R (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_D2R (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: D2R 1 1 Converts Degrees to Radians.  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant) a = stack[last]->factor * D2R;
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : (stack[last]->G->data[node] * D2R));
 }
 
-void grd_DDX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_DDX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: DDX 1 1 d(A)/dx Central 1st derivative.  */
 {
 	uint64_t node, ij;
@@ -1332,23 +1439,24 @@ void grd_DDX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 
 	/* Central 1st difference in x */
 
+	if (gmt_M_is_geographic (GMT, GMT_IN)) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, geographic grid given to a Cartesian operator [DDX]!\n");
 	if (stack[last]->constant) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand to DDX is constant!\n");
-		GMT_memset (stack[last], info->size, float);
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
-	GMT_row_loop (GMT, info->G, row) {	/* Process d/dx row by row since dx may change with row */
+	gmt_M_row_loop (GMT, info->G, row) {	/* Process d/dx row by row since dx may change with row */
 		c = 0.5 / info->dx[row];
 		/* Unless pad has real data we assign outside col values via natural BCs */
-		ij = GMT_IJP (info->G->header, row, 0);	/* First col */
+		ij = gmt_M_ijp (info->G->header, row, 0);	/* First col */
 		if (stack[last]->G->header->BC[XLO] != GMT_BC_IS_DATA)
 			stack[last]->G->data[ij-1] = (float)(2.0 * stack[last]->G->data[ij] - stack[last]->G->data[ij+1]);	/* Set left node via BC curv = 0 */
 		next_left = stack[last]->G->data[ij-1];
-		ij = GMT_IJP (info->G->header, row, info->G->header->nx-1);	/* Last col */
+		ij = gmt_M_ijp (info->G->header, row, info->G->header->n_columns-1);	/* Last col */
 		if (stack[last]->G->header->BC[XHI] != GMT_BC_IS_DATA)
 			stack[last]->G->data[ij+1] = (float)(2.0 * stack[last]->G->data[ij] - stack[last]->G->data[ij-1]);	/* Set right node via BC curv = 0 */
-		GMT_col_loop (GMT, info->G, row, col, node) {	/* Loop over cols; always save the next left before we update the array at that col */
+		gmt_M_col_loop (GMT, info->G, row, col, node) {	/* Loop over cols; always save the next left before we update the array at that col */
 			left = next_left;
 			next_left = stack[last]->G->data[node];
 			stack[last]->G->data[node] = (float)(c * (stack[last]->G->data[node+1] - left));
@@ -1356,7 +1464,7 @@ void grd_DDX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_DDY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_DDY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: DDY 1 1 d(A)/dy Central 1st derivative.  */
 {
 	uint64_t node, ij;
@@ -1365,40 +1473,41 @@ void grd_DDY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 
 	/* Central 1st difference in y */
 
+	if (gmt_M_is_geographic (GMT, GMT_IN)) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, geographic grid given to a Cartesian operator [DDY]!\n");
 	if (stack[last]->constant) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand to DDY is constant!\n");
-		GMT_memset (stack[last], info->size, float);
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
 	c = -0.5 / info->dy;	/* Because the loop over j below goes from ymax to ymin we compensate with a minus sign here */
 	mx = info->G->header->mx;
-	GMT_col_loop (GMT, info->G, 0, col, node) {	/* Process d/dy column by column */
+	gmt_M_col_loop (GMT, info->G, 0, col, node) {	/* Process d/dy column by column */
 		/* Unless pad has real data we assign outside row values via natural BCs */
 		if (stack[last]->G->header->BC[YHI] != GMT_BC_IS_DATA) 	/* Set top node via BC curv = 0 */
 			stack[last]->G->data[node-mx] = (float)(2.0 * stack[last]->G->data[node] - stack[last]->G->data[node+mx]);
 		next_bottom = stack[last]->G->data[node-mx];
-		ij = GMT_IJP (info->G->header, info->G->header->ny-1, col);	/* Last row for this column */
+		ij = gmt_M_ijp (info->G->header, info->G->header->n_rows-1, col);	/* Last row for this column */
 		if (stack[last]->G->header->BC[YLO] != GMT_BC_IS_DATA) 	/* Set bottom node via BC curv = 0 */
 			stack[last]->G->data[ij+mx] = (float)(2.0 * stack[last]->G->data[ij] - stack[last]->G->data[ij-mx]);
-		GMT_row_loop (GMT, info->G, row) {
-			ij = GMT_IJP (info->G->header, row, col);	/* current node in this column */
+		gmt_M_row_loop (GMT, info->G, row) {
+			ij = gmt_M_ijp (info->G->header, row, col);	/* current node in this column */
 			bottom = next_bottom;
 			next_bottom = stack[last]->G->data[ij];
 			stack[last]->G->data[ij] = (float)(c * (stack[last]->G->data[ij+mx] - bottom));
 		}
 	}
-	GMT_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad */
+	gmt_grd_pad_zero (GMT, stack[last]->G);	/* Reset the boundary pad */
 }
 
-void grd_DEG2KM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_DEG2KM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: DEG2KM 1 1 Converts Spherical Degrees to Kilometers.  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (GMT_is_geographic (GMT, GMT_IN)) {
-		if (GMT_sph_mode (GMT) == GMT_GEODESIC) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, DEG2KM is only exact when PROJ_ELLIPSOID == sphere\n");
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {
+		if (gmt_M_sph_mode (GMT) == GMT_GEODESIC) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, DEG2KM is only exact when PROJ_ELLIPSOID == sphere\n");
 	}
 	else
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, DEG2KM used with Cartesian data\n");
@@ -1406,39 +1515,33 @@ void grd_DEG2KM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : stack[last]->G->data[node] * GMT->current.proj.DIST_KM_PR_DEG);
 }
 
-void grd_DENAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_DENAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: DENAN 2 1 Replace NaNs in A with values from B.  */
 {	/* Just a more straightforward application of AND */
 	grd_AND (GMT, info, stack, last);
 }
 
-void grd_DILOG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_DILOG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: DILOG 1 1 dilog (A).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_dilog (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_dilog (GMT, stack[last]->G->data[node]));
+	if (stack[last]->constant) a = gmt_dilog (GMT, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_dilog (GMT, stack[last]->G->data[node]));
 }
 
-void grd_DIV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_DIV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: DIV 2 1 A / B.  */
 {
 	uint64_t node;
 	unsigned int prev = last - 1;
 	double a, b;
-	void grd_MUL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last);
 
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Divide by zero gives NaNs\n");
-	if (stack[last]->constant) {	/* Turn divide into multiply */
-		a = stack[last]->factor;	/* Save original factor */
-		stack[last]->factor = 1.0 / stack[last]->factor;
-		grd_MUL (GMT, info, stack, last);
-		stack[last]->factor = a;	/* Restore factor */
-		return;
-	}
-
+	prev = last - 1;
+	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0!\n");
+	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0!\n");
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
@@ -1446,12 +1549,12 @@ void grd_DIV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_DUP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_DUP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: DUP 1 2 Places duplicate of A on the stack.  */
 {
 	uint64_t node;
 	unsigned int next;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	next = last + 1;
 	stack[next]->constant = stack[last]->constant;
@@ -1460,10 +1563,10 @@ void grd_DUP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 	}
 
-	GMT_memcpy (stack[next]->G->data, stack[last]->G->data, info->size, float);
+	gmt_M_memcpy (stack[next]->G->data, stack[last]->G->data, info->size, float);
 }
 
-void grd_ECDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ECDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ECDF 2 1 Exponential cumulative distribution function for x = A and lambda = B.  */
 {
 	uint64_t node;
@@ -1471,14 +1574,14 @@ void grd_ECDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	double a, b;
 
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for PCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
 		stack[prev]->G->data[node] = 1.0f - (float)exp (-b * a);
 	}
 }
 
-void grd_ECRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ECRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ECRIT 2 1 Exponential distribution critical value for alpha = A and lambda = B.  */
 {
 	uint64_t node;
@@ -1486,14 +1589,14 @@ void grd_ECRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	double a, b;
 
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for PCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
 		stack[prev]->G->data[node] = -(float)(log (1.0 - a)/b);
 	}
 }
 
-void grd_EPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_EPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: EPDF 2 1 Exponential probability density function for x = A and lambda = B.  */
 {
 	uint64_t node;
@@ -1501,36 +1604,36 @@ void grd_EPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	double a, b;
 
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for PCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
 		stack[prev]->G->data[node] = (float)(b * exp (-b * a));
 	}
 }
 
-void grd_ERF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ERF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ERF 1 1 Error function erf (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)erf (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : erff (stack[last]->G->data[node]);
 }
 
-void grd_ERFC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ERFC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ERFC 1 1 Complementary Error function erfc (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)erfc (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : erfcf (stack[last]->G->data[node]);
 }
 
-void grd_EQ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_EQ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: EQ 2 1 1 if A == B, else 0.  */
 {
 	uint64_t node;
@@ -1540,26 +1643,33 @@ void grd_EQ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : (float)(a == b);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : (float)(a == b);
 	}
 }
 
-void grd_ERFINV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ERFINV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ERFINV 1 1 Inverse error function of A.  */
 {
 	uint64_t node;
-	double a = 0.0;
+	float a = 0.0f;
 
-	if (stack[last]->constant) a = GMT_erfinv (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_erfinv (GMT, stack[last]->G->data[node]));
+	if (stack[last]->constant) {
+		a = (float)gmt_erfinv (GMT, stack[last]->factor);
+		for (node = 0; node < info->size; node++)
+			stack[last]->G->data[node] = a;
+	}
+	else {
+		for (node = 0; node < info->size; node++)
+			stack[last]->G->data[node] = (float)gmt_erfinv (GMT, stack[last]->G->data[node]);
+	}
 }
 
-void grd_EXCH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_EXCH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: EXCH 2 2 Exchanges A and B on the stack.  */
 {
 	uint64_t node;
 	unsigned int prev = last - 1;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	for (node = 0; node < info->size; node++) {
 		if (stack[prev]->constant) stack[prev]->G->data[node] = (float)stack[prev]->factor;
@@ -1567,36 +1677,35 @@ void grd_EXCH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		float_swap (stack[last]->G->data[node], stack[prev]->G->data[node]);
 	}
 	double_swap (stack[last]->factor, stack[prev]->factor);
-	uint_swap (stack[last]->alloc_mode, stack[prev]->alloc_mode);
 	bool_swap (stack[last]->constant, stack[prev]->constant);
 }
 
-void grd_EXP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_EXP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: EXP 1 1 exp (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)exp (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : expf (stack[last]->G->data[node]);
 }
 
-void grd_FACT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FACT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FACT 1 1 A! (A factorial).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
 	if (stack[last]->constant)
-		a = GMT_factorial (GMT, irint(stack[last]->factor));
+		a = gmt_factorial (GMT, irint(stack[last]->factor));
 	for (node = 0; node < info->size; node++)
-		stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_factorial (GMT, irint((double)stack[last]->G->data[node])));
+		stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_factorial (GMT, irint((double)stack[last]->G->data[node])));
 }
 
 /* Subroutines for grd_EXTREMA */
 
-int do_derivative (float *z, uint64_t this_node, int off, unsigned int type)
+GMT_LOCAL int do_derivative (float *z, uint64_t this_node, int off, unsigned int type)
 {	/* Examine a line of 3-points centered on the current this_node.
 	 * z is the data matrix.
 	 * off is shift to add to get index of the next value and subtract to get previous node.
@@ -1611,13 +1720,13 @@ int do_derivative (float *z, uint64_t this_node, int off, unsigned int type)
 
 	prev_node = this_node - off;	/* Previous node in line */
 	next_node = this_node + off;	/* Next node in line */
-	if (GMT_is_fnan (z[prev_node])) {			/* At least one of the two neighbor points is a NaN */
-		if (GMT_is_fnan (z[next_node])) return (nan_flag);	/* Both points are NaN, return -2 (or 0 if diagonal) */
+	if (gmt_M_is_fnan (z[prev_node])) {			/* At least one of the two neighbor points is a NaN */
+		if (gmt_M_is_fnan (z[next_node])) return (nan_flag);	/* Both points are NaN, return -2 (or 0 if diagonal) */
 		if (z[this_node] == z[next_node]) return (-2);	/* Flat line, no extrema possible */
 		if (z[this_node] < z[next_node]) return (-1);	/* A local minimum */
 		return (+1);					/* Else it must be a local maximum */
 	}
-	if (GMT_is_fnan (z[next_node])) {			/* One of the two neighbor points is a NaN */
+	if (gmt_M_is_fnan (z[next_node])) {			/* One of the two neighbor points is a NaN */
 		if (z[this_node] == z[prev_node]) return (-2);	/* Flat line, no extrema possible */
 		if (z[this_node] < z[prev_node]) return (-1);	/* A local minimum */
 		return (+1);					/* Else it must be a local maximum */
@@ -1628,7 +1737,7 @@ int do_derivative (float *z, uint64_t this_node, int off, unsigned int type)
 	return (0);									/* No extrema found */
 }
 
-void grd_EXTREMA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_EXTREMA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: EXTREMA 1 1 Local Extrema: +2/-2 is max/min, +1/-1 is saddle with max/min in x, 0 elsewhere.  */
 {
 	uint64_t node;
@@ -1640,7 +1749,7 @@ void grd_EXTREMA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 
 	if (stack[last]->constant) {
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand to EXTREMA is constant!\n");
-		GMT_memset (stack[last], info->size, float);
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
@@ -1648,13 +1757,13 @@ void grd_EXTREMA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	 * If -fg we assume geographic grid and use geographic BCs, else we use natural BCs. If the grid
 	 * as a BC == GMT_BC_IS_DATA then the pad already constains observations. */
 
-	GMT_BC_init (GMT, stack[last]->G->header);	/* Initialize grid interpolation and boundary condition parameters */
-	GMT_grd_BC_set (GMT, stack[last]->G, GMT_IN);	/* Set boundary conditions */
+	gmt_BC_init (GMT, stack[last]->G->header);	/* Initialize grid interpolation and boundary condition parameters */
+	gmt_grd_BC_set (GMT, stack[last]->G, GMT_IN);	/* Set boundary conditions */
 
 	/* Now, stack[last]->G->data has boundary rows/cols all set according to the boundary conditions (or actual data).
 	 * We can then operate on the interior of the grid and temporarily assign values to the z grid */
 
-	z = GMT_memory (GMT, NULL, info->size, float);
+	z = gmt_M_memory (GMT, NULL, info->size, float);
 
 	/* We will visit each node on the grid and determine if there are extrema.  We do this
 	 * by looking at the along-x and along-y profiles separately.  If both of them shows the
@@ -1670,9 +1779,9 @@ void grd_EXTREMA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 
 	mx1 = info->G->header->mx + 1;
 
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 
-		if (GMT_is_fnan (stack[last]->G->data[node])) continue;	/* No extrema if point is NaN */
+		if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;	/* No extrema if point is NaN */
 
 		if ((dx = do_derivative (stack[last]->G->data, node, 1, 0)) == -2) continue;	/* Too many NaNs or flat x-line */
 		if ((dy = do_derivative (stack[last]->G->data, node, info->G->header->mx, 0)) == -2) continue;	/* Too many NaNs or flat y-line */
@@ -1695,12 +1804,12 @@ void grd_EXTREMA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 		z[node] = (float)((dx > 0) ? +2 : -2);
 	}
 
-	GMT_memcpy (stack[last]->G->data, z, info->size, float);
-	GMT_memset (stack[last]->G->header->BC, 4, unsigned int);	/* No BC padding in this array */
-	GMT_free (GMT, z);
+	gmt_M_memcpy (stack[last]->G->data, z, info->size, float);
+	gmt_M_memset (stack[last]->G->header->BC, 4, unsigned int);	/* No BC padding in this array */
+	gmt_M_free (GMT, z);
 }
 
-void grd_FCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FCRIT 3 1 F distribution critical value for alpha = A, nu1 = B, and nu2 = C.  */
 {
 	uint64_t node;
@@ -1713,15 +1822,17 @@ void grd_FCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	if (stack[prev2]->constant && stack[prev2]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for FCRIT!\n");
 	if (stack[prev1]->constant && stack[prev1]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for FCRIT!\n");
 	if (stack[last]->constant  && stack[last]->factor  == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand three == 0 for FCRIT!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		alpha = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
-		nu1 = irint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
-		nu2 = irint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
-		stack[prev2]->G->data[node] = (float)GMT_Fcrit (GMT, alpha, nu1, nu2);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			alpha = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
+			nu1 = irint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
+			nu2 = irint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
+			stack[prev2]->G->data[node] = (float)gmt_Fcrit (GMT, alpha, nu1, nu2);
+		}
 	}
 }
 
-void grd_FCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FCDF 3 1 F cumulative distribution function for F = A, nu1 = B, and nu2 = C.  */
 {
 	uint64_t node, nu1, nu2;
@@ -1732,15 +1843,17 @@ void grd_FCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	prev2 = last - 2;
 	if (stack[prev1]->constant && stack[prev1]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for FCDF!\n");
 	if (stack[last]->constant  && stack[last]->factor  == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand three == 0 for FCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		F = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
-		nu1 = lrint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
-		nu2 = lrint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
-		stack[prev2]->G->data[node] = (float)GMT_f_cdf (GMT, F, nu1, nu2);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			F = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
+			nu1 = lrint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
+			nu2 = lrint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
+			stack[prev2]->G->data[node] = (float)gmt_f_cdf (GMT, F, nu1, nu2);
+		}
 	}
 }
 
-void grd_FLIPLR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FLIPLR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FLIPLR 1 1 Reverse order of values in each row.  */
 {
 	uint64_t node;
@@ -1762,7 +1875,7 @@ void grd_FLIPLR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	}
 }
 
-void grd_FLIPUD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FLIPUD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FLIPUD 1 1 Reverse order of values in each column.  */
 {
 	unsigned int my1, mx, row_t, row_b, col, my_half;
@@ -1784,18 +1897,18 @@ void grd_FLIPUD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	}
 }
 
-void grd_FLOOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FLOOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FLOOR 1 1 floor (A) (greatest integer <= A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)floor (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : floorf (stack[last]->G->data[node]);
 }
 
-void grd_FMOD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FMOD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FMOD 2 1 A % B (remainder after truncated division).  */
 {
 	uint64_t node;
@@ -1811,7 +1924,7 @@ void grd_FMOD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	}
 }
 
-void grd_FPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_FPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: FPDF 3 1 F probability density function for F = A, nu1 = B and nu2 = C.  */
 {
 	uint64_t node, nu1, nu2;
@@ -1823,15 +1936,17 @@ void grd_FPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	if (stack[prev2]->constant && stack[prev2]->factor < 0.0)  GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one < 0 for FCDF!\n");
 	if (stack[prev1]->constant && stack[prev1]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for FCDF!\n");
 	if (stack[last]->constant  && stack[last]->factor  == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand three == 0 for FCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		F = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
-		nu1 = lrint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
-		nu2 = lrint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
-		stack[prev2]->G->data[node] = (float)GMT_f_pdf (GMT, F, nu1, nu2);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			F = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
+			nu1 = lrint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
+			nu2 = lrint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
+			stack[prev2]->G->data[node] = (float)gmt_f_pdf (GMT, F, nu1, nu2);
+		}
 	}
 }
 
-void grd_GE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_GE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: GE 2 1 1 if A >= B, else 0.  */
 {
 	uint64_t node;
@@ -1842,11 +1957,11 @@ void grd_GE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : (float)(a >= b);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : (float)(a >= b);
 	}
 }
 
-void grd_GT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_GT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: GT 2 1 1 if A > B, else 0.  */
 {
 	uint64_t node;
@@ -1857,17 +1972,17 @@ void grd_GT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : (float)(a > b);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : (float)(a > b);
 	}
 }
 
-void grd_HYPOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_HYPOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: HYPOT 2 1 hypot (A, B) = sqrt (A*A + B*B).  */
 {
 	uint64_t node;
 	unsigned int prev;
 	double a, b;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	prev = last - 1;
 	for (node = 0; node < info->size; node++) {
@@ -1877,33 +1992,33 @@ void grd_HYPOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	}
 }
 
-void grd_I0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_I0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: I0 1 1 Modified Bessel function of A (1st kind, order 0).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_i0 (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_i0 (GMT, stack[last]->G->data[node]));
+	if (stack[last]->constant) a = gmt_i0 (GMT, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_i0 (GMT, stack[last]->G->data[node]));
 }
 
-void grd_I1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_I1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: I1 1 1 Modified Bessel function of A (1st kind, order 1).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_i1 (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_i1 (GMT, stack[last]->G->data[node]));
+	if (stack[last]->constant) a = gmt_i1 (GMT, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_i1 (GMT, stack[last]->G->data[node]));
 }
 
-void grd_IFELSE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_IFELSE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: IFELSE 3 1 B if A != 0, else C.  */
 {
 	uint64_t node;
 	unsigned int prev1, prev2;
 	float a = 0.0f, b = 0.0f, c = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	/* last is C */
 	prev1 = last - 1;	/* This is B */
@@ -1925,7 +2040,7 @@ void grd_IFELSE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	}
 }
 
-void grd_IN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_IN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: IN 2 1 Modified Bessel function of A (1st kind, order B).  */
 {
 	uint64_t node;
@@ -1939,21 +2054,23 @@ void grd_IN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 		if (fabs (rint(stack[last]->factor) - stack[last]->factor) > GMT_CONV4_LIMIT) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, order not an integer for IN!\n");
 		order = urint (fabs (stack[last]->factor));
 		if (stack[prev]->constant) {
-			b = (float)GMT_in (GMT, order, fabs (stack[prev]->factor));
+			b = (float)gmt_in (GMT, order, fabs (stack[prev]->factor));
 			simple = true;
 		}
 	}
-	for (node = 0; node < info->size; node++) {
-		if (simple)
+	if (simple) {
+		for (node = 0; node < info->size; node++)
 			stack[prev]->G->data[node] = b;
-		else {
+	}
+	else {
+		for (node = 0; node < info->size; node++) {
 			if (!stack[last]->constant) order = urint (fabs (stack[last]->G->data[node]));
-			stack[last]->G->data[node] = (float)GMT_in (GMT, order, fabs ((double)stack[prev]->G->data[node]));
+			stack[last]->G->data[node] = (float)gmt_in (GMT, order, fabs ((double)stack[prev]->G->data[node]));
 		}
 	}
 }
 
-void grd_INRANGE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_INRANGE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: INRANGE 3 1 1 if B <= A <= C, else 0.  */
 {
 	uint64_t node;
@@ -1976,7 +2093,7 @@ void grd_INRANGE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 		if (!stack[prev1]->constant) b = stack[prev1]->G->data[node];
 		if (!stack[last]->constant)  c = stack[last]->G->data[node];
 
-		if (GMT_is_fnan (a) || GMT_is_fnan (b) || GMT_is_fnan (c)) {
+		if (gmt_M_is_fnan (a) || gmt_M_is_fnan (b) || gmt_M_is_fnan (c)) {
 			stack[prev2]->G->data[node] = GMT->session.f_NaN;
 			continue;
 		}
@@ -1986,7 +2103,7 @@ void grd_INRANGE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	}
 }
 
-void grd_INSIDE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_INSIDE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: INSIDE 1 1 1 when inside or on polygon(s) in A, else 0.  */
 {	/* Suitable for geographic (lon, lat) data and polygons */
 	uint64_t node, seg, row, col;
@@ -1995,34 +2112,41 @@ void grd_INSIDE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	struct GMT_DATASET *D = NULL;
 	struct GMT_DATASEGMENT *S = NULL;
 
-	GMT_set_cols (GMT, GMT_IN, 2);
-	GMT_skip_xy_duplicates (GMT, true);	/* Avoid repeating x/y points in polygons */
+	if (gmt_set_cols (GMT, GMT_IN, 2) != GMT_NOERROR) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in operator INSIDE setting number of input columns\n");
+		info->error = GMT->parent->error;
+		return;
+	}
+	gmt_skip_xy_duplicates (GMT, true);	/* Avoid repeating x/y points in polygons */
 	if ((D = GMT_Read_Data (GMT->parent, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POLY, GMT_READ_NORMAL, NULL, info->ASCII_file, NULL)) == NULL) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in operator INSIDE reading file %s!\n", info->ASCII_file);
 		info->error = GMT->parent->error;
 		return;
 	}
-	GMT_skip_xy_duplicates (GMT, false);	/* Reset */
+	gmt_skip_xy_duplicates (GMT, false);	/* Reset */
 	T = D->table[0];	/* Only one table in a single file */
-	GMT_grd_padloop (GMT, info->G, row, col, node) {	/* Visit each node */
-		for (seg = inside = 0; !inside && seg < T->n_segments; seg++) {
-			S = T->segment[seg];
-			if (GMT_polygon_is_hole (S)) continue;	/* Holes are handled within GMT_inonout */
-			inside = GMT_inonout (GMT, info->d_grd_x[col], info->d_grd_y[row], S);
+	for (row = 0; row < info->G->header->my; row++) {
+		node = row * info->G->header->mx;
+		for (col = 0; col < info->G->header->mx; col++, node++) {
+			for (seg = inside = 0; !inside && seg < T->n_segments; seg++) {
+				S = T->segment[seg];
+				if (gmt_M_polygon_is_hole (S)) continue;	/* Holes are handled within gmt_inonout */
+				inside = gmt_inonout (GMT, info->d_grd_x[col], info->d_grd_y[row], S);
+			}
+			stack[last]->G->data[node] = (inside) ? 1.0f : 0.0f;
 		}
-		stack[last]->G->data[node] = (inside) ? 1.0f : 0.0f;
 	}
 
 	/* Free memory used for pol */
 
-	if (GMT_Destroy_Data (GMT->parent, &D) != GMT_OK) {
+	if (GMT_Destroy_Data (GMT->parent, &D) != GMT_NOERROR) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in operator INSIDE destroying allocated data from %s!\n", info->ASCII_file);
 		info->error = GMT->parent->error;
 		return;
 	}
 }
 
-void grd_INV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_INV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: INV 1 1 1 / A.  */
 {
 	uint64_t node;
@@ -2036,51 +2160,51 @@ void grd_INV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_ISFINITE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ISFINITE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ISFINITE 1 1 1 if A is finite, else 0.  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)isfinite (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : isfinite (stack[last]->G->data[node]);
 }
 
-void grd_ISNAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ISNAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ISNAN 1 1 1 if A == NaN, else 0.  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
-	if (stack[last]->constant) a = (float)GMT_is_fnan (stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : GMT_is_fnan (stack[last]->G->data[node]);
+	if (stack[last]->constant) a = (float)gmt_M_is_fnan (stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : gmt_M_is_fnan (stack[last]->G->data[node]);
 }
 
-void grd_J0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_J0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: J0 1 1 Bessel function of A (1st kind, order 0).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)j0 (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)j0 (stack[last]->G->data[node]);
 }
 
-void grd_J1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_J1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: J1 1 1 Bessel function of A (1st kind, order 1).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)j1 (fabs (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)j1 (fabsf (stack[last]->G->data[node]));
 }
 
-void grd_JN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_JN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: JN 2 1 Bessel function of A (1st kind, order B).  */
 {
 	uint64_t node;
@@ -2108,54 +2232,54 @@ void grd_JN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	}
 }
 
-void grd_K0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_K0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: K0 1 1 Modified Kelvin function of A (2nd kind, order 0).  */
 {
 	uint64_t node;
 	float a = 0.0f;
 
-	if (stack[last]->constant) a = (float)GMT_k0 (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)GMT_k0 (GMT, stack[last]->G->data[node]);
+	if (stack[last]->constant) a = (float)gmt_k0 (GMT, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)gmt_k0 (GMT, stack[last]->G->data[node]);
 }
 
-void grd_K1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_K1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: K1 1 1 Modified Bessel function of A (2nd kind, order 1).  */
 {
 	uint64_t node;
 	float a = 0.0f;
 
-	if (stack[last]->constant) a = (float)GMT_k1 (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)GMT_k1 (GMT, stack[last]->G->data[node]);
+	if (stack[last]->constant) a = (float)gmt_k1 (GMT, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)gmt_k1 (GMT, stack[last]->G->data[node]);
 }
 
-void grd_KEI (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_KEI (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: KEI 1 1 kei (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
 
-	if (stack[last]->constant) a = (float)GMT_kei (GMT, fabs (stack[last]->factor));
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)GMT_kei (GMT, fabsf (stack[last]->G->data[node]));
+	if (stack[last]->constant) a = (float)gmt_kei (GMT, fabs (stack[last]->factor));
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)gmt_kei (GMT, fabsf (stack[last]->G->data[node]));
 }
 
-void grd_KER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_KER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: KER 1 1 ker (A).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_ker (GMT, fabs (stack[last]->factor));
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_ker (GMT, fabsf (stack[last]->G->data[node])));
+	if (stack[last]->constant) a = gmt_ker (GMT, fabs (stack[last]->factor));
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_ker (GMT, fabsf (stack[last]->G->data[node])));
 }
 
-void grd_KM2DEG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_KM2DEG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: KM2DEG 1 1 Converts Kilometers to Spherical Degrees.  */
 {
 	uint64_t node;
 	double a = 0.0, f = 1.0 / GMT->current.proj.DIST_KM_PR_DEG;
 
-	if (GMT_is_geographic (GMT, GMT_IN)) {
-		if (GMT_sph_mode (GMT) == GMT_GEODESIC) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, KM2DEG is only exact when PROJ_ELLIPSOID == sphere\n");
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {
+		if (gmt_M_sph_mode (GMT) == GMT_GEODESIC) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, KM2DEG is only exact when PROJ_ELLIPSOID == sphere\n");
 	}
 	else
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, KM2DEG used with Cartesian data\n");
@@ -2163,7 +2287,7 @@ void grd_KM2DEG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : (stack[last]->G->data[node] * f));
 }
 
-void grd_KN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_KN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: KN 2 1 Modified Bessel function of A (2nd kind, order B).  */
 {
 	uint64_t node;
@@ -2177,21 +2301,23 @@ void grd_KN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 		if (fabs (rint(stack[last]->factor) - stack[last]->factor) > GMT_CONV4_LIMIT) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, order not an integer for KN!\n");
 		order = urint (fabs (stack[last]->factor));
 		if (stack[prev]->constant) {
-			b = (float)GMT_kn (GMT, order, fabs (stack[prev]->factor));
+			b = (float)gmt_kn (GMT, order, fabs (stack[prev]->factor));
 			simple = true;
 		}
 	}
-	for (node = 0; node < info->size; node++) {
-		if (simple)
+	if (simple) {
+		for (node = 0; node < info->size; node++)
 			stack[prev]->G->data[node] = b;
-		else {
+	}
+	else {
+		for (node = 0; node < info->size; node++) {
 			if (!stack[last]->constant) order = urint (fabsf (stack[last]->G->data[node]));
-			stack[last]->G->data[node] = (float)GMT_kn (GMT, order, fabsf (stack[prev]->G->data[node]));
+			stack[last]->G->data[node] = (float)gmt_kn (GMT, order, fabsf (stack[prev]->G->data[node]));
 		}
 	}
 }
 
-void grd_KURT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_KURT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: KURT 1 1 Kurtosis of A.  */
 {
 	uint64_t node, n = 0;
@@ -2205,16 +2331,16 @@ void grd_KURT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	}
 
 	/* Use Welford (1962) algorithm to compute mean and corrected sum of squares */
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
 		n++;
 		delta = (double)stack[last]->G->data[node] - mean;
 		mean += delta / n;
 		sum2 += delta * ((double)stack[last]->G->data[node] - mean);
 	}
 	if (n > 1) {
-		GMT_grd_loop (GMT, info->G, row, col, node) {
-			if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
+			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
 			delta = (double)stack[last]->G->data[node] - mean;
 			kurt += pow (delta, 4.0);
 		}
@@ -2229,15 +2355,19 @@ void grd_KURT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 
 /* Helper functions ASCII_read and ASCII_free are used in LDIST*, PDIST and *POINT */
 
-struct GMT_DATASET *ASCII_read (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, int geometry, char *op)
+GMT_LOCAL struct GMT_DATASET *ASCII_read (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, int geometry, char *op)
 {
 	struct GMT_DATASET *D = NULL;
-	if (GMT_is_geographic (GMT, GMT_IN))
-		GMT_init_distaz (GMT, 'k', GMT_sph_mode (GMT), GMT_MAP_DIST);
+	if (gmt_M_is_geographic (GMT, GMT_IN))
+		gmt_init_distaz (GMT, 'k', gmt_M_sph_mode (GMT), GMT_MAP_DIST);
 	else
-		GMT_init_distaz (GMT, 'X', 0, GMT_MAP_DIST);	/* Cartesian */
+		gmt_init_distaz (GMT, 'X', 0, GMT_MAP_DIST);	/* Cartesian */
 
-	GMT_set_cols (GMT, GMT_IN,  2);
+	if (gmt_set_cols (GMT, GMT_IN, 2) != GMT_NOERROR) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in operator %s setting number of input columns\n", op);
+		info->error = GMT->parent->error;
+		return NULL;
+	}
 	if ((D = GMT_Read_Data (GMT->parent, GMT_IS_DATASET, GMT_IS_FILE, geometry, GMT_READ_NORMAL, NULL, info->ASCII_file, NULL)) == NULL) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in operator %s reading file %s!\n", op, info->ASCII_file);
 		info->error = GMT->parent->error;
@@ -2246,9 +2376,9 @@ struct GMT_DATASET *ASCII_read (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info,
 	return (D);
 }
 
-int ASCII_free (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_DATASET **D, char *op)
+GMT_LOCAL int ASCII_free (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_DATASET **D, char *op)
 {
-	if (GMT_Destroy_Data (GMT->parent, D) != GMT_OK) {
+	if (GMT_Destroy_Data (GMT->parent, D) != GMT_NOERROR) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in operator %s destroying allocated data from %s!\n", op, info->ASCII_file);
 		info->error = GMT->parent->error;
 		return 1;
@@ -2256,23 +2386,23 @@ int ASCII_free (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_DATA
 	return 0;
 }
 
-void grd_LCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LCDF 1 1 Laplace cumulative distribution function for z = A.  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 0.5 + copysign (0.5, stack[last]->factor) * (1.0 - exp (-fabs (stack[last]->factor)));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : 0.5f + copysignf (0.5f, stack[last]->G->data[node]) * (1.0 - expf (-fabsf (stack[last]->G->data[node]))));
 }
 
-void grd_LCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LCRIT 1 1 Laplace distribution critical value for alpha = A.  */
 {
 	uint64_t node;
 	double a = 0.0, p;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) {
 		p = (1.0 - stack[last]->factor) - 0.5;
@@ -2288,7 +2418,7 @@ void grd_LCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	}
 }
 
-void grd_LDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LDIST 1 1 Compute minimum distance (in km if -fg) from lines in multi-segment ASCII file A.  */
 {
 	int64_t node, row, col;
@@ -2299,14 +2429,11 @@ void grd_LDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	if ((D = ASCII_read (GMT, info, GMT_IS_LINE, "LDIST")) == NULL) return;
 	T = D->table[0];	/* Only one table in a single file */
 
-#ifdef _OPENMP
-#pragma omp parallel for private(row,col,node,d) shared(GMT,stack,info,T,last)
-#endif
 	for (row = 0; row < info->G->header->my; row++) {
 		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Row %d\n", row);
 		for (col = 0; col < info->G->header->mx; col++) {	/* Visit each node */
-			(void) GMT_near_lines (GMT, info->d_grd_x[col], info->d_grd_y[row], T, 1, &d, NULL, NULL);
-			node = GMT_IJ(info->G->header,row,col);
+			(void) gmt_near_lines (GMT, info->d_grd_x[col], info->d_grd_y[row], T, 1, &d, NULL, NULL);
+			node = gmt_M_ij(info->G->header,row,col);
 			stack[last]->G->data[node] = (float)d;
 		}
 	}
@@ -2314,7 +2441,7 @@ void grd_LDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	ASCII_free (GMT, info, &D, "LDIST");	/* Free memory used for line */
 }
 
-void grd_LDISTG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LDISTG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LDISTG 0 1 As LDIST, but operates on the GSHHG dataset (see -A, -D for options).  */
 {
 	uint64_t node, row, col, seg, tbl, old_row = INT64_MAX;
@@ -2324,20 +2451,20 @@ void grd_LDISTG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_DATASET *D = NULL;
 
-	if (!GMT_is_geographic (GMT, GMT_IN)) /* Set -fg implicitly since not set already via input grid or -fg */
-		GMT_parse_common_options (GMT, "f", 'f', "g");
-	GMT_init_distaz (GMT, 'k', GMT_sph_mode (GMT), GMT_MAP_DIST);
+	if (!gmt_M_is_geographic (GMT, GMT_IN)) /* Set -fg implicitly since not set already via input grid or -fg */
+		gmt_parse_common_options (GMT, "f", 'f', "g");
+	gmt_init_distaz (GMT, 'k', gmt_M_sph_mode (GMT), GMT_MAP_DIST);
 
 	/* We use the global GSHHG data set to construct distances to. Although we know that the
 	 * max distance to a coastline is ~2700 km, we cannot anticipate the usage of any user.
 	 * If (s)he's excluding small features, then the distance will be larger. So we do not
 	 * limit the region of GSHHG */
-	if ((D = GMT_get_gshhg_lines (GMT, wesn, info->gshhg_res, info->A)) == NULL) return;
+	if ((D = gmt_get_gshhg_lines (GMT, wesn, info->gshhg_res, info->A)) == NULL) return;
 
 	bin_size = info->A->bin_size;	/* Current GSHHG bin size in degrees */
-	slop = 2 * GMT_distance (GMT, 0.0, 0.0, bin_size, 0.0);	/* Define slop in projected units (km) */
+	slop = 2 * gmt_distance (GMT, 0.0, 0.0, bin_size, 0.0);	/* Define slop in projected units (km) */
 	if (last == UINT32_MAX) last = 0;	/* Was called the very first time when n_stack - 1 goes crazy since it is unsigned */
-	GMT_grd_padloop (GMT, info->G, row, col, node) {	/* Visit each node */
+	grdmath_grd_padloop (GMT, info->G, row, col, node) {	/* Visit each node */
 		if (col == 0) GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Row %d\n", row);
 		lon = info->d_grd_x[col], lat = info->d_grd_y[row];
 		i = (int)floor(lon/bin_size);
@@ -2347,7 +2474,7 @@ void grd_LDISTG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 			for (tbl = 0, hor = DBL_MAX; tbl < D->n_tables; tbl++) {
 				x = 0.5 * (D->table[tbl]->min[GMT_X] + D->table[tbl]->max[GMT_X]);
 				y = 0.5 * (D->table[tbl]->min[GMT_Y] + D->table[tbl]->max[GMT_Y]);
-				D->table[tbl]->dist = d = GMT_distance (GMT, lon1, lat, x, y);
+				D->table[tbl]->dist = d = gmt_distance (GMT, lon1, lat, x, y);
 				if (d < hor) hor = d;
 			}
 			/* Add 2 bin sizes to the closest distance to a bin as slop. This should always include the closest points in any bin */
@@ -2361,16 +2488,16 @@ void grd_LDISTG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 			T = D->table[tbl];
 			if (T->dist >= hor) continue;	/* Skip entire bins that are too far away */
 			for (seg = 0; seg < T->n_segments; seg++) {
-				(void) GMT_near_a_line (GMT, lon, lat, seg, T->segment[seg], true, &d, NULL, NULL);
+				(void) gmt_near_a_line (GMT, lon, lat, seg, T->segment[seg], true, &d, NULL, NULL);
 			}
 		}
 		stack[last]->G->data[node] = (float)d;
 	}
 	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Max LDISTG horizon distance used: %g\n", max_hor);
-	GMT_free_dataset (GMT, &D);
+	gmt_free_dataset (GMT, &D);
 }
 
-void grd_LDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LDIST2 2 1 As LDIST, from lines in ASCII file B but only to nodes where A != 0.  */
 {
 	uint64_t node, row, col;
@@ -2383,20 +2510,23 @@ void grd_LDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	T = D->table[0];	/* Only one table in a single file */
 	prev = last - 1;
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {	/* Visit each node */
-		if (col == 0) GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Row %d\n", row);
-		if (stack[prev]->G->data[node] == 0.0)
-			stack[prev]->G->data[node] = GMT->session.f_NaN;
-		else {
-			(void) GMT_near_lines (GMT, info->d_grd_x[col], info->d_grd_y[row], T, 1, &d, NULL, NULL);
-			stack[prev]->G->data[node] = (float)d;
+	for (row = 0; row < info->G->header->my; row++) {
+		node = row * info->G->header->mx;
+		for (col = 0; col < info->G->header->mx; col++, node++) {
+			if (col == 0) GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Row %d\n", row);
+			if (stack[prev]->G->data[node] == 0.0)
+				stack[prev]->G->data[node] = GMT->session.f_NaN;
+			else {
+				(void) gmt_near_lines (GMT, info->d_grd_x[col], info->d_grd_y[row], T, 1, &d, NULL, NULL);
+				stack[prev]->G->data[node] = (float)d;
+			}
 		}
 	}
 
 	ASCII_free (GMT, info, &D, "LDIST2");	/* Free memory used for line */
 }
 
-void grd_LE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LE 2 1 1 if A <= B, else 0.  */
 {
 	uint64_t node;
@@ -2407,11 +2537,11 @@ void grd_LE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : (float)(a <= b);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : (float)(a <= b);
 	}
 }
 
-void grd_LOG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LOG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LOG 1 1 log (A) (natural log).  */
 {
 	uint64_t node;
@@ -2423,7 +2553,7 @@ void grd_LOG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : d_logf (GMT, fabsf (stack[last]->G->data[node]));
 }
 
-void grd_LOG10 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LOG10 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LOG10 1 1 log10 (A) (base 10).  */
 {
 	uint64_t node;
@@ -2435,7 +2565,7 @@ void grd_LOG10 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : d_log10f (GMT, fabsf (stack[last]->G->data[node]));
 }
 
-void grd_LOG1P (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LOG1P (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LOG1P 1 1 log (1+A) (accurate for small A).  */
 {
 	uint64_t node;
@@ -2447,7 +2577,7 @@ void grd_LOG1P (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : d_log1pf (GMT, fabsf (stack[last]->G->data[node]));
 }
 
-void grd_LOG2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LOG2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LOG2 1 1 log2 (A) (base 2).  */
 {
 	uint64_t node;
@@ -2459,76 +2589,123 @@ void grd_LOG2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : d_logf (GMT, fabsf (stack[last]->G->data[node])) * M_LN2_INV);
 }
 
-void grd_LMSSCL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL float grd_wlmsscl_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
+	uint64_t node, n = 0;
+	unsigned int row, col;
+	float wmode, lmsscl;
+	double w = 1.0;
+	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
+	/* 1. Create array of value,weight pairs, skipping NaNs */
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		pair[n].value    = G->data[node];
+		pair[n++].weight = (float)w;
+	}
+	/* 2. Find the weighted mode */
+	wmode = (float)gmt_mode_weighted (GMT, pair, n);
+	/* 3. Compute the absolute deviations from this mode */
+	for (node = 0; node < n; node++) pair[node].value = (float)fabs (pair[node].value - wmode);
+	/* 4. Find the weighted median absolue deviation and scale it */
+	lmsscl = (float)(1.4826 * gmt_median_weighted (GMT, pair, n));
+	gmt_M_free (GMT, pair);
+	return lmsscl;
+}
+
+GMT_LOCAL void grd_LMSSCL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: LMSSCL 1 1 LMS scale estimate (LMS STD) of A.  */
-{
-	uint64_t node, n;
-	unsigned int GMT_mode_selection = 0, GMT_n_multiples = 0, pad[4];
-	double mode, lmsscl;
+	uint64_t node;
 	float lmsscl_f;
 
-	if (stack[last]->constant) {	/* Trivial case */
-		GMT_memset (stack[last]->G->data, info->size, float);
+	if (stack[last]->constant) {	/* Trivial case: lmsscale = 0 */
+		gmt_M_memset (stack[last]->G->data, info->size, float);
+		return;
+	}
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		lmsscl_f = grd_wlmsscl_sub (GMT, info, stack[last]->G, W, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
+	}
+	else {
+		uint64_t n;
+		unsigned int gmt_mode_selection = 0, GMT_n_multiples = 0, pad[4];
+		double mode, lmsscl;
+		/* Sort will put any NaNs to the end - we then count to find the real data */
+
+		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
+		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
+		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
+		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
+		if (n) {
+			gmt_mode_f (GMT, stack[last]->G->data, n, n/2, 0, gmt_mode_selection, &GMT_n_multiples, &mode);
+			gmt_getmad_f (GMT, stack[last]->G->data, n, mode, &lmsscl);
+			lmsscl_f = (float)lmsscl;
+		}
+		else
+			lmsscl_f = GMT->session.f_NaN;
+
+		gmt_M_memset (stack[last]->G->data, info->size, float);	/* Wipes everything */
+		gmt_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
+		if (GMT_n_multiples > 0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: %d Multiple modes found\n", GMT_n_multiples);
+	}
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = lmsscl_f;
+}
+
+GMT_LOCAL void grd_LMSSCLW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: LMSSCLW 1 1 Weighted LMS scale estimate (LMS STD) of A for weights in B.  */
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float lmsscl;
+
+	if (stack[prev]->constant) {	/* Trivial case: lmsscale = 0 */
+		gmt_M_memset (stack[prev]->G->data, info->size, float);
 		return;
 	}
 
-	/* Sort will put any NaNs to the end - we then count to find the real data */
-
-	GMT_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
-	GMT_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-	GMT_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
-	for (n = info->nm; n > 1 && GMT_is_fnan (stack[last]->G->data[n-1]); n--);
-	if (n) {
-		GMT_mode_f (GMT, stack[last]->G->data, n, n/2, 0, GMT_mode_selection, &GMT_n_multiples, &mode);
-		GMT_getmad_f (GMT, stack[last]->G->data, n, mode, &lmsscl);
-		lmsscl_f = (float)lmsscl;
-	}
-	else
-		lmsscl_f = GMT->session.f_NaN;
-
-	GMT_memset (stack[last]->G->data, info->size, float);	/* Wipes everything */
-	GMT_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = lmsscl_f;
-
-	if (GMT_n_multiples > 0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: %d Multiple modes found\n", GMT_n_multiples);
+	lmsscl = grd_wlmsscl_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = lmsscl;
 }
 
-void grd_LOWER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LOWER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: LOWER 1 1 The lowest (minimum) value of A.  */
-{
 	uint64_t node;
 	unsigned int row, col;
 	float low = FLT_MAX;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
 
-	GMT_grd_loop (GMT, info->G, row, col, node) {	/* First we must find the lowest value in the grid */
-		if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {	/* First we must find the lowest value in the grid */
+		if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
 		if (stack[last]->G->data[node] < low) low = stack[last]->G->data[node];
 	}
 	/* Now copy that low value everywhere */
 	if (low == FLT_MAX) low = GMT->session.f_NaN;
-	for (node = 0; node < info->size; node++) if (!GMT_is_fnan (stack[last]->G->data[node])) stack[last]->G->data[node] = low;
+	for (node = 0; node < info->size; node++) if (!gmt_M_is_fnan (stack[last]->G->data[node])) stack[last]->G->data[node] = low;
 }
 
-void grd_LPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: LPDF 1 1 Laplace probability density function for z = A.  */
-{
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 0.5 * exp (-fabs (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : 0.5 * expf (-fabsf (stack[last]->G->data[node])));
 }
 
-void grd_LRAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LRAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: LRAND 2 1 Laplace random noise with mean A and std. deviation B.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	double a = 0.0, b = 0.0;
@@ -2539,13 +2716,12 @@ void grd_LRAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) a = stack[prev]->G->data[node];
 		if (!stack[last]->constant) b = stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)(a + b * GMT_lrand (GMT));
+		stack[prev]->G->data[node] = (float)(a + b * gmt_lrand (GMT));
 	}
 }
 
-void grd_LT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_LT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: LT 2 1 1 if A < B, else 0.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	float a, b;
@@ -2554,44 +2730,95 @@ void grd_LT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : (float)(a < b);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : (float)(a < b);
 	}
 }
 
-void grd_MAD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL float grd_wmad_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
+	uint64_t node, n = 0;
+	unsigned int row, col;
+	double med, w = 1.0;
+	float wmad;
+	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
+	/* 1. Create array of value,weight pairs, skipping NaNs */
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		pair[n].value    = G->data[node];
+		pair[n++].weight = (float)w;
+	}
+	/* 2. Find the weighted median */
+	med = gmt_median_weighted (GMT, pair, n);
+	/* 3. Compute the absolute deviations from this median */
+	for (node = 0; node < n; node++) pair[node].value = (float)fabs (pair[node].value - med);
+	/* 4. Find the weighted median absolue deviation */
+	wmad = (float)gmt_median_weighted (GMT, pair, n);
+	gmt_M_free (GMT, pair);
+	return wmad;
+}
+
+GMT_LOCAL void grd_MAD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MAD 1 1 Median Absolute Deviation (L1 STD) of A.  */
-{
-	uint64_t node, n;
-	unsigned int pad[4];
-	double mad, med;
+	uint64_t node;
 	float mad_f;
 
-	if (stack[last]->constant) {	/* Trivial case */
-		GMT_memset (stack[last], info->size, float);
+	if (stack[last]->constant) {	/* Trivial case: mad = 0 */
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
-	/* Sort will put any NaNs to the end - we then count to find the real data */
-
-	GMT_memcpy (pad, stack[last]->G->header->pad, 4U, unsigned int);	/* Save original pad */
-	GMT_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-	GMT_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
-	for (n = info->nm; n > 1 && GMT_is_fnan (stack[last]->G->data[n-1]); n--);
-	if (n) {
-		med = (n%2) ? stack[last]->G->data[n/2] : 0.5 * (stack[last]->G->data[(n-1)/2] + stack[last]->G->data[n/2]);
-		GMT_getmad_f (GMT, stack[last]->G->data, n, med, &mad);
-		mad_f = (float)mad;
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		mad_f = grd_wmad_sub (GMT, info, stack[last]->G, W, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
 	}
-	else
-		mad_f = GMT->session.f_NaN;
+	else {
+		uint64_t n;
+		unsigned int pad[4];
+		double mad, med;
+		/* Sort will put any NaNs to the end - we then count to find the real data */
 
-	GMT_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
+		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4U, unsigned int);	/* Save original pad */
+		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
+		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
+		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
+		if (n) {
+			med = (n%2) ? stack[last]->G->data[n/2] : 0.5 * (stack[last]->G->data[(n-1)/2] + stack[last]->G->data[n/2]);
+			gmt_getmad_f (GMT, stack[last]->G->data, n, med, &mad);
+			mad_f = (float)mad;
+		}
+		else
+			mad_f = GMT->session.f_NaN;
+
+		gmt_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
+	}
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = mad_f;
 }
 
-void grd_MAX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_MADW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: MADW 2 1 Weighted Median Absolute Deviation (L1 STD) of A for weights in B.  */
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float wmad;
+
+	if (stack[prev]->constant) {	/* Trivial case if data are constant: mad = 0 */
+		for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = (float)stack[prev]->factor;
+		return;
+	}
+
+	wmad = grd_wmad_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = wmad;
+}
+
+GMT_LOCAL void grd_MAX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MAX 2 1 Maximum of A and B.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	float a, b;
@@ -2600,60 +2827,153 @@ void grd_MAX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : MAX (a, b);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : MAX (a, b);
 	}
 }
 
-void grd_MEAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
-/*OPERATOR: MEAN 1 1 Mean value of A.  */
-{
-	uint64_t node, n_a = 0;
+GMT_LOCAL float grd_wmean_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
+	uint64_t node, n = 0;
 	unsigned int row, col;
-	double sum_a = 0.0;
-	GMT_UNUSED(GMT);
+	double sum_zw = 0.0, sum_w = 0.0, w = 1.0;
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		sum_zw += G->data[node] * w;
+		sum_w  += w;
+		n++;
+	}
+	return (n == 0 || sum_w == 0.0) ? GMT->session.f_NaN : (float)(sum_zw / sum_w);
+}
+
+GMT_LOCAL void grd_MEAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: MEAN 1 1 Mean value of A.  */
+	uint64_t node;
+	float zm;
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
-
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		if (GMT_is_fnan (stack[last]->G->data[node])) continue;
-		sum_a += stack[last]->G->data[node];
-		n_a++;
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		zm = grd_wmean_sub (GMT, info, stack[last]->G, W, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
 	}
-	sum_a = (n_a) ? sum_a / (double)n_a : 0.0;
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)sum_a;
+	else {	/* Cartesian calculation */
+		uint64_t n_a = 0;
+		unsigned int row, col;
+		double sum_a = 0.0;
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
+			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
+			sum_a += stack[last]->G->data[node];
+			n_a++;
+		}
+		zm = (n_a) ? (float)(sum_a / n_a) : 0.0f;
+	}
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = zm;
 }
 
-void grd_MED (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
-/*OPERATOR: MED 1 1 Median value of A.  */
-{
-	uint64_t node, n;
-	unsigned int pad[4];
+GMT_LOCAL void grd_MEANW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: MEANW 2 1 Weighted mean value of A for weights in B.  */
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float zm;
+	gmt_M_unused(GMT);
+
+	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for MEANW!\n");
+	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for MEANW!\n");
+	
+	if (stack[prev]->constant) {	/* Trivial case if data are constant */
+		for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = (float)stack[prev]->factor;
+		return;
+	}
+
+	zm = grd_wmean_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = zm;
+}
+
+GMT_LOCAL float grd_wmedian_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
+	uint64_t node, n = 0;
+	unsigned int row, col;
+	float wmed;
+	double w = 1.0;
+	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
+	/* 1. Create array of value,weight pairs, skipping NaNs */
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		pair[n].value    = G->data[node];
+		pair[n++].weight = (float)w;
+	}
+	/* 2. Find the weighted median */
+	wmed = (float)gmt_median_weighted (GMT, pair, n);
+	gmt_M_free (GMT, pair);
+	return wmed;
+}
+
+GMT_LOCAL void grd_MEDIAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: MEDIAN 1 1 Median value of A.  */
+	uint64_t node;
 	float med;
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		med = grd_wmedian_sub (GMT, info, stack[last]->G, W, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
+	}
+	else {
+		uint64_t n;
+		unsigned int pad[4];
+		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
+		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
+		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
+		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
+		if (n)
+			med = (n%2) ? stack[last]->G->data[n/2] : 0.5f * (stack[last]->G->data[(n-1)/2] + stack[last]->G->data[n/2]);
+		else
+			med = GMT->session.f_NaN;
+		gmt_grd_pad_on (GMT, stack[last]->G, pad);	/* Reinstate the original pad */
+	}
 
-	GMT_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
-	GMT_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-	GMT_sort_array (GMT, stack[last], info->nm, GMT_FLOAT);
-	for (n = info->nm; n > 1 && GMT_is_fnan (stack[last]->G->data[n-1]); n--);
-	if (n)
-		med = (n%2) ? stack[last]->G->data[n/2] : 0.5f * (stack[last]->G->data[(n-1)/2] + stack[last]->G->data[n/2]);
-	else
-		med = GMT->session.f_NaN;
-
-	GMT_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = med;
 }
 
-void grd_MIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_MEDIANW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: MEDIANW 2 1 Weighted median value of A for weights in B.  */
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float wmed;
+
+	if (stack[prev]->constant) {	/* Trivial case if data are constant */
+		for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = (float)stack[prev]->factor;
+		return;
+	}
+
+	wmed = grd_wmedian_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = wmed;
+}
+
+GMT_LOCAL void grd_MIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MIN 2 1 Minimum of A and B.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	float a, b;
@@ -2662,13 +2982,12 @@ void grd_MIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : MIN (a, b);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : MIN (a, b);
 	}
 }
 
-void grd_MOD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_MOD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MOD 2 1 A mod B (remainder after floored division).  */
-{
 	uint64_t node;
 	unsigned int prev;
 	double a, b;
@@ -2682,35 +3001,83 @@ void grd_MOD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_MODE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL float grd_wmode_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
+	uint64_t node, n = 0;
+	unsigned int row, col;
+	float wmode;
+	double w = 1.0;
+	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
+	/* 1. Create array of value,weight pairs, skipping NaNs */
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		pair[n].value    = G->data[node];
+		pair[n++].weight = (float)w;
+	}
+	/* 2. Find the weighted mode */
+	wmode = (float)gmt_mode_weighted (GMT, pair, n);
+	gmt_M_free (GMT, pair);
+	return wmode;
+}
+
+GMT_LOCAL void grd_MODE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MODE 1 1 Mode value (Least Median of Squares) of A.  */
-{
-	uint64_t node, n;
-	unsigned int GMT_mode_selection = 0, GMT_n_multiples = 0, pad[4];
-	double mode = 0.0;
+	uint64_t node;
+	float mode = 0.0f;
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
-
-	GMT_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
-	GMT_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-	GMT_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
-	for (n = info->nm; n > 1 && GMT_is_fnan (stack[last]->G->data[n-1]); n--);
-	if (n)
-		GMT_mode_f (GMT, stack[last]->G->data, n, n/2, 0, GMT_mode_selection, &GMT_n_multiples, &mode);
-	else
-		mode = GMT->session.f_NaN;
-
-	GMT_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)mode;
-	if (GMT_n_multiples > 0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: %d Multiple modes found\n", GMT_n_multiples);
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		mode = grd_wmode_sub (GMT, info, stack[last]->G, W, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
+	}
+	else {
+		unsigned int gmt_mode_selection = 0, GMT_n_multiples = 0, pad[4];
+		uint64_t n;
+		double dmode;
+		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
+		gmt_grd_pad_off (GMT, stack[last]->G);	/* Undo pad if one existed so we can sort */
+		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
+		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
+		if (n) {
+			gmt_mode_f (GMT, stack[last]->G->data, n, n/2, 0, gmt_mode_selection, &GMT_n_multiples, &dmode);
+			mode = (float)dmode;
+		}
+		else
+			mode = GMT->session.f_NaN;
+		gmt_grd_pad_on (GMT, stack[last]->G, pad);	/* Reinstate the original pad */
+		if (GMT_n_multiples > 0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: %d Multiple modes found\n", GMT_n_multiples);
+	}
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = mode;
 }
 
-void grd_MUL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_MODEW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
+/*OPERATOR: MODEW 2 1 Weighted mode value of A for weights in B.  */
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float wmode;
+
+	if (stack[prev]->constant) {	/* Trivial case if data are constant */
+		for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = (float)stack[prev]->factor;
+		return;
+	}
+
+	wmode = grd_wmode_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = wmode;
+}
+
+GMT_LOCAL void grd_MUL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MUL 2 1 A * B.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	double a, b;
@@ -2725,9 +3092,8 @@ void grd_MUL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_NAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_NAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: NAN 2 1 NaN if A == B, else A.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	float a = 0.0f, b = 0.0f;
@@ -2742,9 +3108,8 @@ void grd_NAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_NEG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_NEG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: NEG 1 1 -A.  */
-{
 	uint64_t node;
 	float a = 0.0f;
 
@@ -2753,13 +3118,12 @@ void grd_NEG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : -stack[last]->G->data[node];
 }
 
-void grd_NEQ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_NEQ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: NEQ 2 1 1 if A != B, else 0.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	float a, b;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	prev = last - 1;
 	for (node = 0; node < info->size; node++) {
@@ -2769,9 +3133,8 @@ void grd_NEQ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_NORM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_NORM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: NORM 1 1 Normalize (A) so max(A)-min(A) = 1.  */
-{
 	uint64_t node, n = 0;
 	unsigned int row, col;
 	float z, zmin = FLT_MAX, zmax = -FLT_MAX;
@@ -2782,21 +3145,20 @@ void grd_NORM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		a = GMT->session.d_NaN;
 	}
 	else {
-		GMT_grd_loop (GMT, info->G, row, col, node) {
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
 			z = stack[last]->G->data[node];
-			if (GMT_is_fnan (z)) continue;
+			if (gmt_M_is_fnan (z)) continue;
 			if (z < zmin) zmin = z;
 			if (z > zmax) zmax = z;
 			n++;
 		}
 		a = (n == 0 || zmax == zmin) ? GMT->session.f_NaN : (1.0 / (zmax - zmin));	/* Normalization scale */
 	}
-	GMT_grd_loop (GMT, info->G, row, col, node) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : a * stack[last]->G->data[node]);
+	gmt_M_grd_loop (GMT, info->G, row, col, node) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : a * stack[last]->G->data[node]);
 }
 
-void grd_NOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_NOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: NOT 1 1 NaN if A == NaN, 1 if A == 0, else 0.  */
-{
 	uint64_t node;
 	float a = 0.0f;
 
@@ -2805,9 +3167,8 @@ void grd_NOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : ((fabsf (stack[last]->G->data[node]) > GMT_CONV8_LIMIT) ? 0.0f : 1.0f);
 }
 
-void grd_NRAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_NRAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: NRAND 2 1 Normal, random values with mean A and std. deviation B.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	double a = 0.0, b = 0.0;
@@ -2818,13 +3179,12 @@ void grd_NRAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) a = stack[prev]->G->data[node];
 		if (!stack[last]->constant) b = stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)(a + b * GMT_nrand (GMT));
+		stack[prev]->G->data[node] = (float)(a + b * gmt_nrand (GMT));
 	}
 }
 
-void grd_OR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_OR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: OR 2 1 NaN if B == NaN, else A.  */
-{
 	uint64_t node;
 	unsigned int prev;
 	float a, b;
@@ -2833,13 +3193,12 @@ void grd_OR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? (float)stack[prev]->factor : stack[prev]->G->data[node];
 		b = (stack[last]->constant) ? (float)stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) || GMT_is_fnan (b)) ? GMT->session.f_NaN : a;
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) || gmt_M_is_fnan (b)) ? GMT->session.f_NaN : a;
 	}
 }
 
-void grd_PDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: PDIST 1 1 Compute minimum distance (in km if -fg) from points in ASCII file A.  */
-{
 	uint64_t dummy[2], node, row, col;
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_DATASET *D = NULL;
@@ -2848,14 +3207,17 @@ void grd_PDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 
 	T = D->table[0];	/* Only one table in a single file */
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) stack[last]->G->data[node] = (float)GMT_mindist_to_point (GMT, info->d_grd_x[col], info->d_grd_y[row], T, dummy);
-
+	for (row = 0; row < info->G->header->my; row++) {
+		node = row * info->G->header->mx;
+		for (col = 0; col < info->G->header->mx; col++, node++) {
+			stack[last]->G->data[node] = (float)gmt_mindist_to_point (GMT, info->d_grd_x[col], info->d_grd_y[row], T, dummy);
+		}
+	}
 	ASCII_free (GMT, info, &D, "PDIST");	/* Free memory used for points */
 }
 
-void grd_PDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: PDIST2 2 1 As PDIST, from points in ASCII file B but only to nodes where A != 0.  */
-{
 	uint64_t dummy[2], node, row, col;
 	unsigned int prev;
 	struct GMT_DATATABLE *T = NULL;
@@ -2866,19 +3228,21 @@ void grd_PDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 	T = D->table[0];	/* Only one table in a single file */
 	prev = last - 1;
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
-		if (stack[prev]->G->data[node] == 0.0)
-			stack[prev]->G->data[node] = GMT->session.f_NaN;
-		else
-			stack[prev]->G->data[node] = (float)GMT_mindist_to_point (GMT, info->d_grd_x[col], info->d_grd_y[row], T, dummy);
+	for (row = 0; row < info->G->header->my; row++) {
+		node = row * info->G->header->mx;
+		for (col = 0; col < info->G->header->mx; col++, node++) {
+			if (stack[prev]->G->data[node] == 0.0)
+				stack[prev]->G->data[node] = GMT->session.f_NaN;
+			else
+				stack[prev]->G->data[node] = (float)gmt_mindist_to_point (GMT, info->d_grd_x[col], info->d_grd_y[row], T, dummy);
+		}
 	}
 
 	ASCII_free (GMT, info, &D, "PDIST2");	/* Free memory used for points */
 }
 
-void grd_PERM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PERM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: PERM 2 1 Permutations n_P_r, with n = A and r = B.  */
-{
 	uint64_t node;
 	unsigned int prev = last - 1, row, col, error = 0;
 	double a, b;
@@ -2892,25 +3256,27 @@ void grd_PERM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		error++;
 	}
 	if (error || (stack[prev]->constant && stack[last]->constant)) {	/* PERM is undefined */
-		float value = (error) ? GMT->session.f_NaN : (float)GMT_permutation (GMT, irint(stack[prev]->factor), irint(stack[last]->factor));
-		GMT_grd_loop (GMT, info->G, row, col, node) stack[prev]->G->data[node] = value;
+		float value = (error) ? GMT->session.f_NaN : (float)gmt_permutation (GMT, irint(stack[prev]->factor), irint(stack[last]->factor));
+		gmt_M_grd_loop (GMT, info->G, row, col, node) stack[prev]->G->data[node] = value;
 		return;
 	}
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)GMT_permutation (GMT, irint(a), irint(b));
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+			stack[prev]->G->data[node] = (float)gmt_permutation (GMT, irint(a), irint(b));
+		}
 	}
 }
 
-void grd_POP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_POP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: POP 1 0 Delete top element from the stack.  */
 {
-	GMT_UNUSED(GMT); GMT_UNUSED(info); GMT_UNUSED(stack); GMT_UNUSED(last);
+	gmt_M_unused(GMT); gmt_M_unused(info); gmt_M_unused(stack); gmt_M_unused(last);
 	/* Dummy routine that does nothing but consume the top element of stack */
 }
 
-void grd_PLM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PLM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: PLM 3 1 Associated Legendre polynomial P(A) degree B order C.  */
 {
 	uint64_t node;
@@ -2927,12 +3293,18 @@ void grd_PLM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	L = irint (stack[prev]->factor);
 	M = irint (stack[last]->factor);
 
-	if (stack[first]->constant) a = GMT_plm (GMT, L, M, stack[first]->factor);
-	for (node = 0; node < info->size; node++) stack[first]->G->data[node] = (float)((stack[first]->constant) ? a : GMT_plm (GMT, L, M, stack[first]->G->data[node]));
+	if (stack[first]->constant) {
+		a = gmt_plm (GMT, L, M, stack[first]->factor);
+		for (node = 0; node < info->size; node++) stack[first]->G->data[node] = (float)a;
+	}
+	else {
+		for (node = 0; node < info->size; node++)
+			stack[first]->G->data[node] = (float)gmt_plm (GMT, L, M, stack[first]->G->data[node]);
+	}
 }
 
 
-void grd_PLMg (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PLMg (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: PLMg 3 1 Normalized associated Legendre polynomial P(A) degree B order C (geophysical convention).  */
 {
 	uint64_t node;
@@ -2949,11 +3321,17 @@ void grd_PLMg (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	L = irint (stack[prev]->factor);
 	M = irint (stack[last]->factor);
 
-	if (stack[first]->constant) a = GMT_plm_bar (GMT, L, M, stack[first]->factor, false);
-	for (node = 0; node < info->size; node++) stack[first]->G->data[node] = (float)((stack[first]->constant) ? a : GMT_plm_bar (GMT, L, M, stack[first]->G->data[node], false));
+	if (stack[first]->constant) {
+		a = gmt_plm_bar (GMT, L, M, stack[first]->factor, false);
+		for (node = 0; node < info->size; node++) stack[first]->G->data[node] = (float)a;
+	}
+	else {
+		for (node = 0; node < info->size; node++)
+			stack[first]->G->data[node] = (float)gmt_plm_bar (GMT, L, M, stack[first]->G->data[node], false);
+	}
 }
 
-void grd_POINT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_POINT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: POINT 1 2 Return mean_x mean_y of points in ASCII file A.  */
 {
 	uint64_t node, n = 0;
@@ -2961,27 +3339,27 @@ void grd_POINT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	double *x = NULL, *y = NULL, pos[2];
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_DATASET *D = NULL;
-	int geo = GMT_is_geographic (GMT, GMT_IN) ? 1 : 0;
+	int geo = gmt_M_is_geographic (GMT, GMT_IN) ? 1 : 0;
 
 	/* Read a table and compute mean location */
 	if ((D = ASCII_read (GMT, info, GMT_IS_POINT, "POINT")) == NULL) return;
 	T = D->table[0];	/* Only one table in a single file */
-	if (T->n_segments > 1) {	/* Must build a single table for GMT_centroid */
+	if (T->n_segments > 1) {	/* Must build a single table for gmt_centroid */
 		uint64_t seg;
 		size_t n_alloc = 0;
-		GMT_malloc2 (GMT, x, y, T->n_records, &n_alloc, double);		/* Allocate one long array for each */
+		gmt_M_malloc2 (GMT, x, y, T->n_records, &n_alloc, double);		/* Allocate one long array for each */
 		for (seg = 0; seg < T->n_segments; seg++) {
-			GMT_memcpy (&x[n], T->segment[seg]->coord[GMT_X], T->segment[seg]->n_rows, double);
-			GMT_memcpy (&y[n], T->segment[seg]->coord[GMT_Y], T->segment[seg]->n_rows, double);
+			gmt_M_memcpy (&x[n], T->segment[seg]->data[GMT_X], T->segment[seg]->n_rows, double);
+			gmt_M_memcpy (&y[n], T->segment[seg]->data[GMT_Y], T->segment[seg]->n_rows, double);
 			n += T->segment[seg]->n_rows;
 		}
 	}
 	else {	/* Just a single segment, use pointers */
-		x = T->segment[0]->coord[GMT_X];
-		y = T->segment[0]->coord[GMT_Y];
+		x = T->segment[0]->data[GMT_X];
+		y = T->segment[0]->data[GMT_Y];
 		n = T->segment[0]->n_rows;
 	}
-	GMT_centroid (GMT, x, y, n, pos, geo);	/* Get mean location */
+	gmt_centroid (GMT, x, y, n, pos, geo);	/* Get mean location */
 	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "[Centroid computed as %g %g]\n", pos[GMT_X], pos[GMT_Y]);
 	/* Place mean x and y on the stack */
 	stack[last]->constant = true;
@@ -2993,13 +3371,13 @@ void grd_POINT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	/* The next stack needs to be filled */
 	for (node = 0; node < info->size; node++) stack[next]->G->data[node] = (float)stack[next]->factor;
 	if (T->n_segments > 1) {	/* Free what we allocated */
-		GMT_free (GMT, x);
-		GMT_free (GMT, y);
+		gmt_M_free (GMT, x);
+		gmt_M_free (GMT, y);
 	}
 	ASCII_free (GMT, info, &D, "POINT");	/* Free memory used for points */
 }
 
-void grd_POW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_POW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: POW 2 1 A ^ B.  */
 {
 	uint64_t node;
@@ -3017,7 +3395,32 @@ void grd_POW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_PQUANT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL float grd_wquant_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, double q, bool use_grid, double weight) {
+	uint64_t node, n = 0;
+	unsigned int row, col;
+	float p;
+	double w = 1.0;
+	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
+	/* 1. Create array of value,weight pairs, skipping NaNs */
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		pair[n].value    = G->data[node];
+		pair[n++].weight = (float)w;
+	}
+	/* 2. Find the weighted quantile */
+	p = (float)gmt_quantile_weighted (GMT, pair, n, 0.01*q);
+	gmt_M_free (GMT, pair);
+	return p;
+}
+
+GMT_LOCAL void grd_PQUANT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: PQUANT 2 1 The B'th Quantile (0-100%) of A.  */
 {
 	uint64_t node;
@@ -3037,19 +3440,49 @@ void grd_PQUANT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: PQUANT of a constant is set to NaN\n");
 		p = GMT->session.f_NaN;
 	}
+	else if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[prev]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		p = grd_wquant_sub (GMT, info, stack[prev]->G, W, stack[last]->factor, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
+	}
 	else {
-		GMT_memcpy (pad, stack[last]->G->header->pad, 4U, unsigned int);	/* Save original pad */
-		GMT_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-		GMT_sort_array (GMT, stack[prev]->G->data, info->nm, GMT_FLOAT);
-		p = (float) GMT_quantile_f (GMT, stack[prev]->G->data, stack[last]->factor, info->nm);
-		GMT_memset (stack[last]->G->data, info->size, float);	/* Wipes everything */
-		GMT_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
+		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4U, unsigned int);	/* Save original pad */
+		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
+		gmt_sort_array (GMT, stack[prev]->G->data, info->nm, GMT_FLOAT);
+		p = (float) gmt_quantile_f (GMT, stack[prev]->G->data, stack[last]->factor, info->nm);
+		gmt_M_memset (stack[last]->G->data, info->size, float);	/* Wipes everything */
+		gmt_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
 	}
 
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = p;
 }
 
-void grd_PSI (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PQUANTW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: PQUANTW 3 1 The C'th Quantile (0-100%) of A for weights in B.  */
+{
+	uint64_t node;
+	unsigned int prev = last - 1, prev2 = last - 2;
+	float p;
+
+	if (!stack[last]->constant) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: PQUANTW must be given a constant quantile (no calculations performed)\n");
+		return;
+	}
+	if (stack[last]->factor < 0.0 || stack[last]->factor > 100.0) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: PQUANTW must be given a constant quantile between 0-100%% (no calculations performed)\n");
+		return;
+	}
+	if (stack[prev2]->constant) {	/* Trivial case */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: PQUANTW of a constant is set to NaN\n");
+		p = GMT->session.f_NaN;
+	}
+	else
+		p = grd_wquant_sub (GMT, info, stack[prev2]->G, stack[prev]->G, stack[last]->factor, !stack[prev]->constant, stack[prev]->factor);
+	for (node = 0; node < info->size; node++) stack[prev2]->G->data[node] = p;
+}
+
+GMT_LOCAL void grd_PSI (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: PSI 1 1 Psi (or Digamma) of A.  */
 {
 	uint64_t node;
@@ -3059,19 +3492,19 @@ void grd_PSI (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	x[1] = 0.0;	/* No imaginary part */
 	if (stack[last]->constant) {
 		x[0] = stack[last]->factor;
-		a = (float)GMT_psi (GMT, x, NULL);
+		a = (float)gmt_psi (GMT, x, NULL);
+		for (node = 0; node < info->size; node++)
+			stack[last]->G->data[node] = a;
 	}
-
-	for (node = 0; node < info->size; node++) {
-		if (!stack[last]->constant) {
+	else {
+		for (node = 0; node < info->size; node++) {
 			x[0] = stack[last]->G->data[node];
-			a = (float)GMT_psi (GMT, x, NULL);
+			stack[last]->G->data[node] = (float)gmt_psi (GMT, x, NULL);
 		}
-		stack[last]->G->data[node] = a;
 	}
 }
 
-void grd_PVQV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last, unsigned int kind)
+GMT_LOCAL void grd_PVQV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last, unsigned int kind)
 {
 	bool calc;
 	unsigned int prev = last - 1, first = last - 2, n;
@@ -3086,38 +3519,36 @@ void grd_PVQV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		nu[0] = stack[prev]->factor;
 		nu[1] = stack[last]->factor;
 		if ((stack[first]->factor < -1.0 || stack[first]->factor > 1.0)) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, argument to %s outside domain!\n", name[kind]);
-		GMT_PvQv (GMT, stack[first]->factor, nu, pq, &n);
+		gmt_PvQv (GMT, stack[first]->factor, nu, pq, &n);
 		a = (float)pq[2*kind];
+		for (node = 0; node < info->size; node++)
+			stack[first]->G->data[node] = a;
 	}
-	if (stack[prev]->constant) nu[0] = stack[prev]->factor;
-	if (stack[last]->constant) nu[1] = stack[last]->factor;
-	if (stack[first]->constant)    x = stack[first]->factor;
-	kind *= 2;
-	for (node = 0; node < info->size; node++) {
-		if (calc){
-			if (!stack[prev]->constant) nu[0] = stack[prev]->G->data[node];
-			if (!stack[last]->constant) nu[1] = stack[last]->G->data[node];
-			if (!stack[first]->constant)    x = stack[first]->G->data[node];
-			GMT_PvQv (GMT, x, nu, pq, &n);
-			a = (float)pq[kind];
+	else {	/* Must evaluate GMT_PvQv repeatedly */
+		kind *= 2;
+		for (node = 0; node < info->size; node++) {
+			nu[0] = (stack[prev]->constant)  ? stack[prev]->factor  : stack[prev]->G->data[node];
+			nu[1] = (stack[last]->constant)  ? stack[last]->factor  : stack[last]->G->data[node];
+			x     = (stack[first]->constant) ? stack[first]->factor : stack[first]->G->data[node];
+			gmt_PvQv (GMT, x, nu, pq, &n);
+			stack[first]->G->data[node] = (float)pq[kind];
 		}
-		stack[first]->G->data[node] = a;
 	}
 }
 
-void grd_PV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_PV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: PV 3 1 Legendre function Pv(A) of degree v = real(B) + imag(C).  */
 {
 	grd_PVQV (GMT, info, stack, last, 0);
 }
 
-void grd_QV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_QV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: QV 3 1 Legendre function Qv(A) of degree v = real(B) + imag(C).  */
 {
 	grd_PVQV (GMT, info, stack, last, 1);
 }
 
-void grd_R2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_R2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: R2 2 1 R2 = A^2 + B^2.  */
 {
 	uint64_t node;
@@ -3136,19 +3567,20 @@ void grd_R2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	}
 }
 
-void grd_R2D (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_R2D (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: R2D 1 1 Convert Radians to Degrees.  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
 	if (stack[last]->constant) a = R2D * stack[last]->factor;
 	for (node = 0; node < info->size; node++)
 		stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : R2D * stack[last]->G->data[node]);
 }
 
-void grd_RAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_RAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: RAND 2 1 Uniform random values between A and B.  */
 {
 	uint64_t node;
@@ -3161,70 +3593,91 @@ void grd_RAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) a = stack[prev]->G->data[node];
 		if (!stack[last]->constant) b = stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float)(a + GMT_rand (GMT) * (b - a));
+		stack[prev]->G->data[node] = (float)(a + gmt_rand (GMT) * (b - a));
 	}
 }
 
-void grd_RCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_RCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: RCDF 1 1 Rayleigh cumulative distribution function for z = A.  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 1.0 - exp (-0.5*stack[last]->factor*stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : 1.0 - expf (-0.5f*stack[last]->G->data[node]*stack[last]->G->data[node]));
 }
 
-void grd_RCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_RCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: RCRIT 1 1 Rayleigh distribution critical value for alpha = A.  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = M_SQRT2 * sqrt (-log (1.0 - stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : M_SQRT2 * sqrtf (-logf (1.0f - stack[last]->G->data[node])));
 }
 
-void grd_RINT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_RINT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: RINT 1 1 rint (A) (round to integral value nearest to A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)rint (stack[last]->factor);
 	for (node = 0; node < info->size; node++)
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : rintf (stack[last]->G->data[node]);
 }
 
-void grd_RPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_RMS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: RMS 1 1 Root-mean-square of A.  */
+{
+	uint64_t node;
+	double sum2 = 0.0;
+	gmt_M_unused(GMT);
+
+	if (stack[last]->constant)	/* Trivial case */
+		sum2 = stack[last]->factor;
+	else {
+		unsigned int row, col;
+		uint64_t n = 0;
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
+			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
+			n++;
+			sum2 += (stack[last]->G->data[node] * stack[last]->G->data[node]);
+		}
+		sum2 = (n > 0) ? sqrt (sum2 / n) : GMT->session.d_NaN;
+	}
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)sum2;
+}
+
+GMT_LOCAL void grd_RPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: RPDF 1 1 Rayleigh probability density function for z = A.  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = stack[last]->factor * exp (-0.5 * stack[last]->factor * stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : stack[last]->G->data[node] * expf (-0.5f * stack[last]->G->data[node] * stack[last]->G->data[node]));
 }
 
-void assign_grdstack (struct GRDMATH_STACK *Sto, struct GRDMATH_STACK *Sfrom)
+GMT_LOCAL void assign_grdstack (struct GRDMATH_STACK *Sto, struct GRDMATH_STACK *Sfrom)
 {	/* Copy contents of Sfrom to Sto */
 	Sto->G          = Sfrom->G;
 	Sto->constant   = Sfrom->constant;
-	Sto->alloc_mode = Sfrom->alloc_mode;
 	Sto->factor     = Sfrom->factor;
 }
 
-void grd_ROLL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ROLL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ROLL 2 0 Cyclicly shifts the top A stack items by an amount B.  */
 {
 	unsigned int prev, top, bottom, k, kk, n_items;
 	int n_shift;
 	struct GRDMATH_STACK Stmp;
-	GMT_UNUSED(GMT); GMT_UNUSED(info);
+	gmt_M_unused(GMT); gmt_M_unused(info);
 	assert (last > 2);	/* Must have at least 3 items on the stack: A single item plus the two roll arguments */
 	prev = last - 1;	/* This gives the number of stack items to include in the cycle */
 	if (!(stack[last]->constant && stack[prev]->constant)) {
@@ -3256,11 +3709,10 @@ void grd_ROLL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	return;
 }
 
-void grd_ROTX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ROTX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: ROTX 2 1 Rotate A by the (constant) shift B in x-direction.  */
-{
 	uint64_t node;
-	unsigned int col, row, prev = last - 1, *new_col = NULL, nx;
+	unsigned int col, row, prev = last - 1, *new_col = NULL, n_columns;
 	int colx, shift;
 	float *z = NULL;
 
@@ -3273,25 +3725,24 @@ void grd_ROTX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	shift = irint (stack[last]->factor * info->G->header->r_inc[GMT_X]);	/* Shift of nodes */
 
 	if (stack[prev]->constant || !shift) return;	/* Trivial since A is a constant or shift is zero */
-	if (shift < 0) shift += info->G->header->nx;	/* Same thing */
-	nx = info->G->header->nx;
+	if (shift < 0) shift += info->G->header->n_columns;	/* Same thing */
+	n_columns = info->G->header->n_columns;
 	/* Set up permutation vector */
 
-	new_col = GMT_memory (GMT, NULL, nx, unsigned int);
-	z = GMT_memory (GMT, NULL, nx, float);
-	for (col = colx = 0; col < info->G->header->nx; col++, colx++) new_col[colx] = (colx + shift) % info->G->header->nx;	/* Move by shift but rotate around */
-	GMT_row_loop (GMT, info->G, row) {	/* For each row */
-		GMT_col_loop (GMT, info->G, row, col, node) z[new_col[col]] = stack[prev]->G->data[node];	/* Copy one row of data to z with shift */
-		node = GMT_IJP (info->G->header, row, 0);		/* First col */
-		GMT_memcpy (&stack[prev]->G->data[node], z, nx, float);	/* Replace this row */
+	new_col = gmt_M_memory (GMT, NULL, n_columns, unsigned int);
+	z = gmt_M_memory (GMT, NULL, n_columns, float);
+	for (col = colx = 0; col < info->G->header->n_columns; col++, colx++) new_col[colx] = (colx + shift) % info->G->header->n_columns;	/* Move by shift but rotate around */
+	gmt_M_row_loop (GMT, info->G, row) {	/* For each row */
+		gmt_M_col_loop (GMT, info->G, row, col, node) z[new_col[col]] = stack[prev]->G->data[node];	/* Copy one row of data to z with shift */
+		node = gmt_M_ijp (info->G->header, row, 0);		/* First col */
+		gmt_M_memcpy (&stack[prev]->G->data[node], z, n_columns, float);	/* Replace this row */
 	}
-	GMT_free (GMT, z);
-	GMT_free (GMT, new_col);
+	gmt_M_free (GMT, z);
+	gmt_M_free (GMT, new_col);
 }
 
-void grd_ROTY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ROTY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: ROTY 2 1 Rotate A by the (constant) shift B in y-direction.  */
-{
 	unsigned int row, col, prev = last - 1, *new_row = NULL;
 	int rowx, shift;
 	float *z = NULL;
@@ -3305,134 +3756,145 @@ void grd_ROTY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	shift = irint (stack[last]->factor / info->G->header->inc[GMT_Y]);	/* Shift of nodes */
 
 	if (stack[prev]->constant || !shift) return;	/* Trivial since A is a constant or shift is zero */
-	if (shift < 0) shift += info->G->header->ny;	/* Same thing */
+	if (shift < 0) shift += info->G->header->n_rows;	/* Same thing */
 	/* Set up permutation vector */
 
-	new_row = GMT_memory (GMT, NULL, info->G->header->ny, unsigned int);
-	z = GMT_memory (GMT, NULL, info->G->header->ny, float);
-	for (row = rowx = 0; row < info->G->header->ny; row++, rowx++) new_row[rowx] = (rowx + info->G->header->ny - shift) % info->G->header->ny;	/* Move by shift but rotate around */
-	for (col = 0; col < info->G->header->nx; col++) {	/* For each column */
-		for (row = 0; row < info->G->header->ny; row++) z[new_row[row]] = stack[prev]->G->data[GMT_IJP(info->G->header, row, col)];	/* Copy one column of data to z with shift */
-		for (row = 0; row < info->G->header->ny; row++) stack[prev]->G->data[GMT_IJP(info->G->header, row, col)] = z[row];	/* Replace this column */
+	new_row = gmt_M_memory (GMT, NULL, info->G->header->n_rows, unsigned int);
+	z = gmt_M_memory (GMT, NULL, info->G->header->n_rows, float);
+	for (row = rowx = 0; row < info->G->header->n_rows; row++, rowx++) new_row[rowx] = (rowx + info->G->header->n_rows - shift) % info->G->header->n_rows;	/* Move by shift but rotate around */
+	for (col = 0; col < info->G->header->n_columns; col++) {	/* For each column */
+		for (row = 0; row < info->G->header->n_rows; row++) z[new_row[row]] = stack[prev]->G->data[gmt_M_ijp(info->G->header, row, col)];	/* Copy one column of data to z with shift */
+		for (row = 0; row < info->G->header->n_rows; row++) stack[prev]->G->data[gmt_M_ijp(info->G->header, row, col)] = z[row];	/* Replace this column */
 	}
-	GMT_free (GMT, z);
-	GMT_free (GMT, new_row);
+	gmt_M_free (GMT, z);
+	gmt_M_free (GMT, new_row);
 }
 
-void grd_SDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: SDIST 2 1 Spherical distance (in km) between grid nodes and stack lon,lat (A, B).  */
-{
-	uint64_t node, row, col;
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
 	unsigned int prev = last - 1;
-	double a, b;
+	double x0, y0;
 
-	if (GMT_is_geographic (GMT, GMT_IN))
-		GMT_init_distaz (GMT, 'k', GMT_sph_mode (GMT), GMT_MAP_DIST);
+	if (gmt_M_is_geographic (GMT, GMT_IN))
+		gmt_init_distaz (GMT, 'k', gmt_M_sph_mode (GMT), GMT_MAP_DIST);
 	else {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "SDIST Error: Grid must be geographic; see CDIST for Cartesian data.\n");
 		return;
 	}
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (float) GMT_distance (GMT, a, b, info->d_grd_x[col], info->d_grd_y[row]);
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,x0,y0) shared(info,stack,prev,last,GMT)
+#endif 
+	for (row = 0; row < info->G->header->my; row++) {
+		node = row * info->G->header->mx;
+		for (col = 0; col < info->G->header->mx; col++, node++) {
+			x0 = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			y0 = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+			stack[prev]->G->data[node] = (float) gmt_distance (GMT, x0, y0, info->d_grd_x[col], info->d_grd_y[row]);
+		}
 	}
 }
 
-void grd_SDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: SDIST2 2 1 As SDIST but only to nodes that are != 0.  */
-{
 	uint64_t node, row, col;
 	unsigned int prev = last - 1;
 	double a, b;
 
-	if (GMT_is_geographic (GMT, GMT_IN))
-		GMT_init_distaz (GMT, 'k', GMT_sph_mode (GMT), GMT_MAP_DIST);
+	if (gmt_M_is_geographic (GMT, GMT_IN))
+		gmt_init_distaz (GMT, 'k', gmt_M_sph_mode (GMT), GMT_MAP_DIST);
 	else {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "SDIST2 Error: Grid must be geographic; see CDIST2 for Cartesian data.\n");
 		return;
 	}
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
-		if (stack[prev]->G->data[node] == 0.0)
-			stack[prev]->G->data[node] = GMT->session.f_NaN;
-		else {
-			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-			b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-			stack[prev]->G->data[node] = (float) GMT_distance (GMT, a, b, info->d_grd_x[col], info->d_grd_y[row]);
+	for (row = 0; row < info->G->header->my; row++) {
+		node = row * info->G->header->mx;
+		for (col = 0; col < info->G->header->mx; col++, node++) {
+			if (stack[prev]->G->data[node] == 0.0)
+				stack[prev]->G->data[node] = GMT->session.f_NaN;
+			else {
+				a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+				b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+				stack[prev]->G->data[node] = (float) gmt_distance (GMT, a, b, info->d_grd_x[col], info->d_grd_y[row]);
+			}
 		}
 	}
 }
 
-void grd_AZ_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last, bool reverse)
-{
-	uint64_t node, row, col;
+GMT_LOCAL void grd_AZ_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last, bool reverse) {
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 still doesn't allow unsigned index variables */
 	unsigned int prev = last - 1;
 	double x0 = 0.0, y0 = 0.0, az;
 
-	GMT_init_distaz (GMT, 'd', GMT_sph_mode (GMT), GMT_MAP_DIST);
-	if (stack[prev]->constant) x0 = stack[prev]->factor;
-	if (stack[last]->constant) y0 = stack[last]->factor;
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
-		if (!stack[prev]->constant) x0 = stack[prev]->G->data[node];
-		if (!stack[last]->constant) y0 = stack[last]->G->data[node];
-		az = GMT_az_backaz (GMT, info->d_grd_x[col], info->d_grd_y[row], x0, y0, reverse);
-		while (az < -180.0) az += 360.0;
-		while (az > +180.0) az -= 360.0;
-		stack[prev]->G->data[node] = (float)az;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	gmt_init_distaz (GMT, 'd', gmt_M_sph_mode (GMT), GMT_MAP_DIST);
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,x0,y0,az) shared(info,stack,prev,last,GMT,reverse)
+#endif 
+	for (row = 0; row < info->G->header->my; row++) {
+		node = row * info->G->header->mx;
+		for (col = 0; col < info->G->header->mx; col++, node++) {
+			x0 = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			y0 = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+			az = gmt_az_backaz (GMT, info->d_grd_x[col], info->d_grd_y[row], x0, y0, reverse);
+			while (az < -180.0) az += 360.0;
+			while (az > +180.0) az -= 360.0;
+			stack[prev]->G->data[node] = (float)az;
+		}
 	}
 }
 
-void grd_SAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SAZ 2 1 Spherical azimuth from grid nodes to stack x,y.  */
 /* Azimuth from grid ones to stack point */
 {
 	grd_AZ_sub (GMT, info, stack, last, false);
 }
 
-void grd_SBAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SBAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SBAZ 2 1 Spherical back-azimuth from grid nodes to stack x,y.  */
 /* Azimuth from stack point to grid ones (back azimuth) */
 {
 	grd_AZ_sub (GMT, info, stack, last, true);
 }
 
-void grd_SEC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SEC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SEC 1 1 sec (A) (A in radians).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)(1.0 / cos (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (1.0f / cosf (stack[last]->G->data[node]));
 }
 
-void grd_SECD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SECD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SECD 1 1 sec (A) (A in degrees).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = 1.0 / cosd (stack[last]->factor);
 	for (node = 0; node < info->size; node++)
 		stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : 1.0 / cosd (stack[last]->G->data[node]));
 }
 
-void grd_SECH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SECH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SECH 1 1 sech (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)(1.0/cosh (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : 1.0f/coshf (stack[last]->G->data[node]);
 }
 
-void grd_SIGN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SIGN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SIGN 1 1 sign (+1 or -1) of A.  */
 {
 	uint64_t node;
@@ -3445,52 +3907,52 @@ void grd_SIGN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : copysignf (1.0f, stack[last]->G->data[node]);
 }
 
-void grd_SIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SIN 1 1 sin (A) (A in radians).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)sin (stack[last]->factor);
 	for (node = 0; node < info->size; node++)
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : sinf (stack[last]->G->data[node]);
 }
 
-void grd_SINC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SINC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SINC 1 1 sinc (A) (sin (pi*A)/(pi*A)).  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_sinc (GMT, stack[last]->factor);
+	if (stack[last]->constant) a = gmt_sinc (GMT, stack[last]->factor);
 	for (node = 0; node < info->size; node++)
-		stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_sinc (GMT, stack[last]->G->data[node]));
+		stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_sinc (GMT, stack[last]->G->data[node]));
 }
 
-void grd_SIND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SIND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SIND 1 1 sin (A) (A in degrees).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = sind (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : sind (stack[last]->G->data[node]));
 }
 
-void grd_SINH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SINH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SINH 1 1 sinh (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)sinh (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : sinhf (stack[last]->G->data[node]);
 }
 
-void grd_SKEW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SKEW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SKEW 1 1 Skewness of A.  */
 {
 	uint64_t node, n = 0;
@@ -3504,16 +3966,16 @@ void grd_SKEW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	}
 
 	/* Use Welford (1962) algorithm to compute mean and corrected sum of squares */
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
 		n++;
 		delta = stack[last]->G->data[node] - mean;
 		mean += delta / n;
 		sum2 += delta * (stack[last]->G->data[node] - mean);
 	}
 	if (n > 1) {
-		GMT_grd_loop (GMT, info->G, row, col, node) {
-			if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
+			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
 			delta = stack[last]->G->data[node] - mean;
 			skew += pow (delta, 3.0);
 		}
@@ -3526,18 +3988,18 @@ void grd_SKEW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = f_skew;
 }
 
-void grd_SQR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SQR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SQR 1 1 A^2.  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = stack[last]->factor * stack[last]->factor;
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : stack[last]->G->data[node] * stack[last]->G->data[node]);
 }
 
-void grd_SQRT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SQRT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SQRT 1 1 sqrt (A).  */
 {
 	uint64_t node;
@@ -3548,37 +4010,85 @@ void grd_SQRT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : sqrtf (stack[last]->G->data[node]);
 }
 
-void grd_STD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
-/*OPERATOR: STD 1 1 Standard deviation of A.  */
-{
+GMT_LOCAL float grd_wstd_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
+	/* Use West (1979) algorithm to compute mean and corrected sum of squares.
+	 * https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance */
 	uint64_t node, n = 0;
 	unsigned int row, col;
-	double mean = 0.0, sum2 = 0.0, delta;
-	GMT_UNUSED(GMT);
-
-	if (stack[last]->constant) {	/* Trivial case */
-		GMT_memset (stack[last], info->size, float);
-		return;
-	}
-
-	/* Use Welford (1962) algorithm to compute mean and corrected sum of squares */
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+	double temp, mean = 0.0, sumw = 0.0, delta, R, M2 = 0.0, w = 1.0;
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		temp  = w + sumw;
+		delta = G->data[node] - mean;
+		R = delta * w / temp;
+		mean += R;
+		M2 += sumw * delta * R;
+		sumw = temp;
 		n++;
-		delta = stack[last]->G->data[node] - mean;
-		mean += delta / n;
-		sum2 += delta * (stack[last]->G->data[node] - mean);
 	}
-	sum2 = (n > 1) ? sqrt (sum2 / (n - 1)) : 0.0;
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)sum2;
+	return (n <= 1 || sumw == 0.0) ? GMT->session.f_NaN : (float)sqrt ((n * M2) / (sumw * (n - 1.0)));
 }
 
-void grd_STEP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_STD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: STD 1 1 Standard deviation of A.  */
+{
+	uint64_t node;
+	float std;
+	gmt_M_unused(GMT);
+
+	if (stack[last]->constant)	/* Trivial case: std is undefined */
+		std = GMT->session.f_NaN;
+	else if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		std = grd_wstd_sub (GMT, info, stack[last]->G, W, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
+	}
+	else {	/* Use Welford (1962) algorithm to compute mean and corrected sum of squares */
+		uint64_t n = 0;
+		unsigned int row, col;
+		double mean = 0.0, sum2 = 0.0, delta;
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
+			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
+			n++;
+			delta = stack[last]->G->data[node] - mean;
+			mean += delta / n;
+			sum2 += delta * (stack[last]->G->data[node] - mean);
+		}
+		std = (n > 1) ? (float)sqrt (sum2 / (n - 1.0)) : GMT->session.f_NaN;
+	}
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = std;
+}
+
+GMT_LOCAL void grd_STDW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: STDW 2 1 Weighted standard deviation of A for weights in B.  */
+{
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float std;
+	gmt_M_unused(GMT);
+
+	if (stack[prev]->constant)	/* Trivial case: std is undefined */
+		std = GMT->session.f_NaN;
+	else
+		std = grd_wstd_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = std;
+}
+
+GMT_LOCAL void grd_STEP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: STEP 1 1 Heaviside step function: H(A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)stack[last]->factor;
 	for (node = 0; node < info->size; node++) {
@@ -3590,14 +4100,14 @@ void grd_STEP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	}
 }
 
-void grd_STEPX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_STEPX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: STEPX 1 1 Heaviside step function in x: H(x-A).  */
 {
 	uint64_t node, row, col;
 	double a;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
+	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		a = info->d_grd_x[col] - ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
 		if (a == 0.0)
 			stack[last]->G->data[node] = 0.5f;
@@ -3606,14 +4116,14 @@ void grd_STEPX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	}
 }
 
-void grd_STEPY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_STEPY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: STEPY 1 1 Heaviside step function in y: H(y-A).  */
 {
 	uint64_t node, row, col;
 	double a;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
-	GMT_grd_padloop (GMT, info->G, row, col, node) {
+	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		a = info->d_grd_y[row] - ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
 		if (a == 0.0)
 			stack[last]->G->data[node] = 0.5f;
@@ -3622,13 +4132,13 @@ void grd_STEPY (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	}
 }
 
-void grd_SUB (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SUB (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SUB 2 1 A - B.  */
 {
 	uint64_t node;
 	unsigned int prev;
 	double a, b;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	prev = last - 1;
 	for (node = 0; node < info->size; node++) {
@@ -3638,7 +4148,7 @@ void grd_SUB (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	}
 }
 
-void grd_SUM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_SUM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: SUM 1 1 Sum of all values in A.  */
 {
 	uint64_t node, n_used = 0;
@@ -3648,8 +4158,8 @@ void grd_SUM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 		sum = stack[last]->factor * stack[last]->G->header->nm;
 	else {
 		uint64_t row, col;
-		GMT_grd_loop (GMT, info->G, row, col, node) {
-			if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
+			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
 			sum += stack[last]->G->data[node];
 			n_used++;
 		}
@@ -3658,40 +4168,40 @@ void grd_SUM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)sum;
 }
 
-void grd_TAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TAN 1 1 tan (A) (A in radians).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)tan (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : tanf (stack[last]->G->data[node]);
 }
 
-void grd_TAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TAND (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TAND 1 1 tan (A) (A in degrees).  */
 {
 	uint64_t node;
 	double a = 0.0;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = tand (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : tand (stack[last]->G->data[node]));
 }
 
-void grd_TANH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TANH (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TANH 1 1 tanh (A).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)tanh (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : tanhf (stack[last]->G->data[node]);
 }
 
-void grd_TAPER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TAPER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TAPER 2 1 Unit weights cosine-tapered to zero within A and B of x and y grid margins.  */
 {
 	uint64_t node;
@@ -3708,16 +4218,16 @@ void grd_TAPER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	}
 
 	/* First compute and store x taper weights: Ramp 0 to 1 for left margin, constant 1, then ramp 1 to 0 for right margin */
-	w_x = GMT_memory (GMT, NULL, info->G->header->mx, double);
+	w_x = gmt_M_memory (GMT, NULL, info->G->header->mx, double);
 	if (stack[prev]->factor == 0.0) {	/* No taper in x so set weights to 1 */
-		GMT_col_padloop2 (GMT, info->G, col) w_x[col] = 1.0;
+		grdmath_col_padloop2 (GMT, info->G, col) w_x[col] = 1.0;
 	}
 	else {
 		strip = stack[prev]->factor;
 		scale = M_PI / strip;
 		start = strip + info->G->header->wesn[XLO];
 		stop  = strip - info->G->header->wesn[XHI];
-		GMT_col_padloop2 (GMT, info->G, col) {
+		grdmath_col_padloop2 (GMT, info->G, col) {
 			from_start = start - info->d_grd_x[col];
 			if (from_start > 0.0) w_x[col] = 0.5 * (1.0 + cos (from_start * scale));
 			else if ((from_stop = stop + info->d_grd_x[col]) > 0.0) w_x[col] = 0.5 * (1.0 + cos (from_stop * scale));
@@ -3732,20 +4242,20 @@ void grd_TAPER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	start = strip + info->G->header->wesn[YLO];
 	stop  = strip - info->G->header->wesn[YHI];
 
-	GMT_row_padloop (GMT, info->G, row, node) {
+	grdmath_row_padloop (GMT, info->G, row, node) {
 		from_start = start - info->d_grd_y[row];
 		if (stack[last]->factor == 0.0) w_y = 1.0;	/* No taper in y-range */
 		else if (from_start > 0.0) w_y = 0.5 * (1.0 + cos (from_start * scale));
 		else if ((from_stop = stop + info->d_grd_y[row]) > 0.0) w_y = 0.5 * (1.0 + cos (from_stop * scale));
 		else w_y = 1.0;	/* Inside non-tapered y-range */
-		GMT_col_padloop (GMT, info->G, col, node) {
+		grdmath_col_padloop (GMT, info->G, col, node) {
 			stack[prev]->G->data[node] = (float)(w_y * w_x[col]);
 		}
 	}
-	GMT_free (GMT, w_x);
+	gmt_M_free (GMT, w_x);
 }
 
-void grd_TN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TN 2 1 Chebyshev polynomial Tn(-1<t<+1,n), with t = A, and n = B.  */
 {
 	uint64_t node;
@@ -3756,12 +4266,12 @@ void grd_TN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	for (node = 0; node < info->size; node++) {
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		n = irint ((stack[last]->constant) ? stack[last]->factor : (double)stack[last]->G->data[node]);
-		GMT_chebyshev (GMT, a, n, &t);
+		gmt_chebyshev (GMT, a, n, &t);
 		stack[prev]->G->data[node] = (float)t;
 	}
 }
 
-void grd_TCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TCRIT 2 1 Student's t-distribution critical value for alpha = A and nu = B.  */
 {
 	uint64_t node;
@@ -3772,14 +4282,16 @@ void grd_TCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	prev = last - 1;
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for TCRIT!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for TCRIT!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = irint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
-		stack[prev]->G->data[node] = (float)GMT_tcrit (GMT, a, (double)b);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = irint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
+			stack[prev]->G->data[node] = (float)gmt_tcrit (GMT, a, (double)b);
+		}
 	}
 }
 
-void grd_TCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TCDF 2 1 Student's t cumulative distribution function for t = A, and nu = B.  */
 {
 	uint64_t node, b;
@@ -3789,14 +4301,16 @@ void grd_TCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	prev = last - 1;
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for TCDF!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for TCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = lrint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
-		stack[prev]->G->data[node] = (float)GMT_t_cdf (GMT, a, b);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = lrint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
+			stack[prev]->G->data[node] = (float)gmt_t_cdf (GMT, a, b);
+		}
 	}
 }
 
-void grd_TPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_TPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: TPDF 2 1 Student's t probability density function for t = A and nu = B.  */
 {
 	uint64_t node, b;
@@ -3806,35 +4320,109 @@ void grd_TPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	prev = last - 1;
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for TCDF!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for TCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-		b = lrint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
-		stack[prev]->G->data[node] = (float)GMT_t_pdf (GMT, a, b);
+	for (row = 0; row < info->G->header->n_rows; row++) {
+		for (col = 0, node = gmt_M_ijp (info->G->header, row, 0); col < info->G->header->n_columns; col++, node++) {
+			a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+			b = lrint ((stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node]);
+			stack[prev]->G->data[node] = (float)gmt_t_pdf (GMT, a, b);
+		}
 	}
 }
 
-void grd_UPPER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_UPPER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: UPPER 1 1 The highest (maximum) value of A.  */
 {
 	uint64_t node;
 	unsigned int row, col;
 	float high = -FLT_MAX;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
 
-	GMT_grd_loop (GMT, info->G, row, col, node) {
-		if (GMT_is_fnan (stack[last]->G->data[node])) continue;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
 		if (stack[last]->G->data[node] > high) high = stack[last]->G->data[node];
 	}
 	if (high == -FLT_MAX) high = GMT->session.f_NaN;
-	for (node = 0; node < info->size; node++) if (!GMT_is_fnan (stack[last]->G->data[node])) stack[last]->G->data[node] = high;
+	for (node = 0; node < info->size; node++) if (!gmt_M_is_fnan (stack[last]->G->data[node])) stack[last]->G->data[node] = high;
 }
 
-void grd_WCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL float grd_wvar_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
+	/* Use West (1979) algorithm to compute mean and corrected sum of squares.
+	 * https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance */
+	uint64_t node, n = 0;
+	unsigned int row, col;
+	double temp, mean = 0.0, sumw = 0.0, delta, R, M2 = 0.0, w = 1.0;
+	if (!use_grid) w = weight;
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		if (gmt_M_is_fnan (G->data[node])) continue;
+		if (use_grid) {
+			if (gmt_M_is_dnan (W->data[node]))
+				continue;
+			else
+				w = W->data[node];
+		}
+		temp  = w + sumw;
+		delta = G->data[node] - mean;
+		R = delta * w / temp;
+		mean += R;
+		M2 += sumw * delta * R;
+		sumw = temp;
+		n++;
+	}
+	return (n <= 1 || sumw == 0.0) ? GMT->session.f_NaN : (float) ((n * M2) / (sumw * (n - 1.0)));
+}
+
+GMT_LOCAL void grd_VAR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: VAR 1 1 Variance of A.  */
+{
+	uint64_t node;
+	float var;
+	gmt_M_unused(GMT);
+
+	if (stack[last]->constant)	/* Trivial case: variance is undefined */
+		var = GMT->session.f_NaN;
+	else if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		get_geo_cellarea (GMT, info, W);
+		var = grd_wvar_sub (GMT, info, stack[last]->G, W, true, 0.0);
+		gmt_free_grid (GMT, &W, true);
+	}
+	else {	/* Use Welford (1962) algorithm to compute mean and corrected sum of squares */
+		uint64_t n = 0;
+		unsigned int row, col;
+		double mean = 0.0, sum2 = 0.0, delta;
+		gmt_M_grd_loop (GMT, info->G, row, col, node) {
+			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
+			n++;
+			delta = stack[last]->G->data[node] - mean;
+			mean += delta / n;
+			sum2 += delta * (stack[last]->G->data[node] - mean);
+		}
+		var = (n > 1) ? (float)(sum2 / (n - 1)) : GMT->session.f_NaN;
+	}
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = var;
+}
+
+GMT_LOCAL void grd_VARW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: VARW 2 1 Weighted variance of A for weights in B.  */
+{
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float var;
+	gmt_M_unused(GMT);
+
+	if (stack[prev]->constant)	/* Trivial case: variance is undefined  */
+		var = GMT->session.f_NaN;
+	else
+		var = grd_wvar_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = var;
+}
+
+GMT_LOCAL void grd_WCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: WCDF 3 1 Weibull cumulative distribution function for x = A, scale = B, and shape = C.  */
 {
 	uint64_t node;
@@ -3845,15 +4433,15 @@ void grd_WCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	prev2 = last - 2;
 	if (stack[prev1]->constant && stack[prev1]->factor <= 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two <= 0 for WCDF!\n");
 	if (stack[last]->constant  && stack[last]->factor  <= 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand three <= 0 for WCDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		x = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
 		a = lrint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
 		b = lrint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
-		stack[prev2]->G->data[node] = (float)GMT_weibull_cdf (GMT, x, a, b);
+		stack[prev2]->G->data[node] = (float)gmt_weibull_cdf (GMT, x, a, b);
 	}
 }
 
-void grd_WCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_WCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: WCRIT 3 1 Weibull distribution critical value for alpha = A, scale = B, and shape = C.  */
 {
 	uint64_t node;
@@ -3864,15 +4452,15 @@ void grd_WCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_
 	prev2 = last - 2;
 	if (stack[prev1]->constant && stack[prev1]->factor <= 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two <= 0 for WCRIT!\n");
 	if (stack[last]->constant  && stack[last]->factor  <= 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand three <= 0 for WCRIT!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		alpha = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
 		a = lrint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
 		b = lrint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
-		stack[prev2]->G->data[node] = (float)GMT_weibull_crit (GMT, alpha, a, b);
+		stack[prev2]->G->data[node] = (float)gmt_weibull_crit (GMT, alpha, a, b);
 	}
 }
 
-void grd_WPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_WPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: WPDF 3 1 Weibull probability density function for x = A, scale = B and shape = C.  */
 {
 	uint64_t node;
@@ -3883,15 +4471,15 @@ void grd_WPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 	prev2 = last - 2;
 	if (stack[prev1]->constant && stack[prev1]->factor <= 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two <= 0 for WPDF!\n");
 	if (stack[last]->constant  && stack[last]->factor  <= 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand three <= 0 for WPDF!\n");
-	GMT_grd_loop (GMT, info->G, row, col, node) {
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
 		x = (stack[prev2]->constant) ? stack[prev2]->factor : stack[prev2]->G->data[node];
 		a = lrint ((stack[prev1]->constant) ? stack[prev1]->factor : (double)stack[prev1]->G->data[node]);
 		b = lrint ((stack[last]->constant)  ? stack[last]->factor  : (double)stack[last]->G->data[node]);
-		stack[prev2]->G->data[node] = (float)GMT_weibull_pdf (GMT, x, a, b);
+		stack[prev2]->G->data[node] = (float)gmt_weibull_pdf (GMT, x, a, b);
 	}
 }
 
-void grd_WRAP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_WRAP (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: WRAP 1 1 wrap (A). (A in radians). */
 /*
 wrap a value in radians onto [-pi,pi]
@@ -3917,7 +4505,7 @@ away from zero instead of to the nearest integer (or other current rounding mode
 {
 	uint64_t node;
 	double a;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	for (node = 0; node < info->size; node++) {
 		/* Argument must be finite  */
@@ -3928,7 +4516,7 @@ away from zero instead of to the nearest integer (or other current rounding mode
 	}
 }
 
-void grd_XOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_XOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: XOR 2 1 0 if A == NaN and B == NaN, NaN if B == NaN, else A.  */
 {
 	uint64_t node;
@@ -3941,33 +4529,33 @@ void grd_XOR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_ST
 	for (node = 0; node < info->size; node++) {
 		if (!stack[prev]->constant) a = stack[prev]->G->data[node];
 		if (!stack[last]->constant) b = stack[last]->G->data[node];
-		stack[prev]->G->data[node] = (GMT_is_fnan (a) && GMT_is_fnan (b)) ? 0.0f : (GMT_is_fnan (b) ? GMT->session.f_NaN : a);
+		stack[prev]->G->data[node] = (gmt_M_is_fnan (a) && gmt_M_is_fnan (b)) ? 0.0f : (gmt_M_is_fnan (b) ? GMT->session.f_NaN : a);
 	}
 }
 
-void grd_Y0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_Y0 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: Y0 1 1 Bessel function of A (2nd kind, order 0).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)y0 (fabs (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)y0 ((double)fabsf (stack[last]->G->data[node]));
 }
 
-void grd_Y1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_Y1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: Y1 1 1 Bessel function of A (2nd kind, order 1).  */
 {
 	uint64_t node;
 	float a = 0.0f;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = (float)y1 (fabs (stack[last]->factor));
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : (float)y1 ((double)fabsf (stack[last]->G->data[node]));
 }
 
-void grd_YLM_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last, bool ortho)
+GMT_LOCAL void grd_YLM_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last, bool ortho)
 {
 	/* Returns geophysical normalization, unless M < 0, then orthonormalized form */
 	uint64_t node, row, col;
@@ -3984,18 +4572,19 @@ void grd_YLM_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	M = irint (stack[last]->factor);
 	z = abs (M) * D2R;	/* abs() just in case routine is called with -M to add (-1)^M */
 
-	GMT_row_padloop (GMT, info->G, row, node) {	/* For each latitude */
+	for (row = 0; row < info->G->header->my; row++) {	/* For each latitude */
+		node = row * info->G->header->mx;
 
 		x = sind (info->d_grd_y[row]);	/* Plm takes cos(colatitude) = sin(latitude) */
-		P = GMT_plm_bar (GMT, L, M, x, ortho);
+		P = gmt_plm_bar (GMT, L, M, x, ortho);
 		if (M == 0) {
-			GMT_col_padloop (GMT, info->G, col, node) {
+			grdmath_col_padloop (GMT, info->G, col, node) {
 				stack[prev]->G->data[node] = (float)P;
 				stack[last]->G->data[node] = 0.0f;
 			}
 		}
 		else {
-			GMT_col_padloop (GMT, info->G, col, node) {
+			grdmath_col_padloop (GMT, info->G, col, node) {
 				sincos (z * info->d_grd_x[col], &S, &C);
 				stack[prev]->G->data[node] = (float)(P * C);
 				stack[last]->G->data[node] = (float)(P * S);
@@ -4004,19 +4593,19 @@ void grd_YLM_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMAT
 	}
 }
 
-void grd_YLM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_YLM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: YLM 2 2 Re and Im orthonormalized spherical harmonics degree A order B.  */
 {
 	grd_YLM_sub (GMT, info, stack, last, true);
 }
 
-void grd_YLMg (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_YLMg (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: YLMg 2 2 Cos and Sin normalized spherical harmonics degree A order B (geophysical convention).  */
 {
 	grd_YLM_sub (GMT, info, stack, last, false);
 }
 
-void grd_YN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_YN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: YN 2 1 Bessel function of A (2nd kind, order B).  */
 {
 	uint64_t node;
@@ -4045,32 +4634,32 @@ void grd_YN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STA
 	}
 }
 
-void grd_ZCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ZCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ZCRIT 1 1 Normal distribution critical value for alpha = A.  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_zcrit (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_zcrit (GMT, stack[last]->G->data[node]));
+	if (stack[last]->constant) a = gmt_zcrit (GMT, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_zcrit (GMT, stack[last]->G->data[node]));
 }
 
-void grd_ZCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ZCDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ZCDF 1 1 Normal cumulative distribution function for z = A.  */
 {
 	uint64_t node;
 	double a = 0.0;
 
-	if (stack[last]->constant) a = GMT_zdist (GMT, stack[last]->factor);
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : GMT_zdist (GMT, stack[last]->G->data[node]));
+	if (stack[last]->constant) a = gmt_zdist (GMT, stack[last]->factor);
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : gmt_zdist (GMT, stack[last]->G->data[node]));
 }
 
-void grd_ZPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+GMT_LOCAL void grd_ZPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: ZPDF 1 1 Normal probability density function for z = A.  */
 {
 	uint64_t node;
 	double a = 0.0, f = 1.0 / sqrt (TWO_PI);
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) a = f * exp (-0.5 * stack[last]->factor * stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : f * expf (-0.5f * stack[last]->G->data[node] * stack[last]->G->data[node]));
@@ -4080,29 +4669,29 @@ void grd_ZPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_S
 
 #include "grdmath.h"
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return1(code) {GMT_Destroy_Options (API, &list); Free_grdmath_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
-#define Return(code) {GMT_Destroy_Options (API, &list); Free_grdmath_Ctrl (GMT, Ctrl); grdmath_free (GMT, stack, recall, &info); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return1(code) {GMT_Destroy_Options (API, &list); Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
+#define Return(code) {GMT_Destroy_Options (API, &list); Free_Ctrl (GMT, Ctrl); grdmath_free (GMT, stack, recall, &info); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-void grdmath_backwards_fixing (struct GMT_CTRL *GMT, char **arg)
+GMT_LOCAL void grdmath_backwards_fixing (struct GMT_CTRL *GMT, char **arg)
 {	/* Handle backwards compatible operator names */
 	char *t = NULL, old[GMT_LEN16] = {""};
-	if (!GMT_compat_check (GMT, 6)) return;	/* No checking so we may fail later */
-	if (!strcmp (*arg, "CPOISS"))  {strcpy (old, *arg); free (*arg); *arg = t = strdup ("PCDF");   }
-	if (!strcmp (*arg, "FDIST"))   {strcpy (old, *arg); free (*arg); *arg = t = strdup ("FCDF");   }
-	if (!strcmp (*arg, "TDIST"))   {strcpy (old, *arg); free (*arg); *arg = t = strdup ("TCDF");   }
-	if (!strcmp (*arg, "ZDIST"))   {strcpy (old, *arg); free (*arg); *arg = t = strdup ("ZCDF");   }
-	if (!strcmp (*arg, "CHIDIST")) {strcpy (old, *arg); free (*arg); *arg = t = strdup ("CHI2CDF"); }
-	if (!strcmp (*arg, "CHICRIT")) {strcpy (old, *arg); free (*arg); *arg = t = strdup ("CHI2CRIT"); }
-	if (!strcmp (*arg, "Xn"))      {strcpy (old, *arg); free (*arg); *arg = t = strdup ("XNORM");  }
-	if (!strcmp (*arg, "Yn"))      {strcpy (old, *arg); free (*arg); *arg = t = strdup ("YNORM");  }
-	
+	if (!gmt_M_compat_check (GMT, 6)) return;	/* No checking so we may fail later */
+	if (!strcmp (*arg, "CHIDIST"))      {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("CHI2CDF");  }
+	else if (!strcmp (*arg, "CHICRIT")) {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("CHI2CRIT"); }
+	else if (!strcmp (*arg, "CPOISS"))  {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("PCDF");     }
+	else if (!strcmp (*arg, "FDIST"))   {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("FCDF");     }
+	else if (!strcmp (*arg, "MED"))     {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("MEDIAN");   }
+	else if (!strcmp (*arg, "TDIST"))   {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("TCDF");     }
+	else if (!strcmp (*arg, "Xn"))      {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("XNORM");    }
+	else if (!strcmp (*arg, "Yn"))      {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("YNORM");    }
+	else if (!strcmp (*arg, "ZDIST"))   {strncpy (old, *arg, GMT_LEN16-1); gmt_M_str_free (*arg); *arg = t = strdup ("ZCDF");     }
+
 	if (t)
 		GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Operator %s is deprecated; use %s instead.\n", old, t);
 }
 
-int decode_grd_argument (struct GMT_CTRL *GMT, struct GMT_OPTION *opt, double *value, struct GMT_HASH *H)
-{
+GMT_LOCAL int decode_grd_argument (struct GMT_CTRL *GMT, struct GMT_OPTION *opt, double *value, struct GMT_HASH *H) {
 	int i, expect, check = GMT_IS_NAN;
 	bool possible_number = false;
 	double tmp = 0.0;
@@ -4111,11 +4700,11 @@ int decode_grd_argument (struct GMT_CTRL *GMT, struct GMT_OPTION *opt, double *v
 
 	if (opt->option == GMT_OPT_OUTFILE2) return GRDMATH_ARG_IS_SAVE;	/* Time to save stack; arg is filename */
 
-	if (GMT_File_Is_Memory (opt->arg)) return GRDMATH_ARG_IS_FILE;	/* Deal with memory references first */
+	if (gmt_M_file_is_memory (opt->arg)) return GRDMATH_ARG_IS_FILE;	/* Deal with memory references first */
 
 	/* Check if argument is operator */
 
-	if ((i = GMT_hash_lookup (GMT, opt->arg, H, GRDMATH_N_OPERATORS, GRDMATH_N_OPERATORS)) >= GRDMATH_ARG_IS_OPERATOR) return (i);
+	if ((i = gmt_hash_lookup (GMT, opt->arg, H, GRDMATH_N_OPERATORS, GRDMATH_N_OPERATORS)) >= GRDMATH_ARG_IS_OPERATOR) return (i);
 
 	/* Next look for symbols with special meaning */
 
@@ -4147,15 +4736,15 @@ int decode_grd_argument (struct GMT_CTRL *GMT, struct GMT_OPTION *opt, double *v
 
 	/* Preliminary test-conversion to a number */
 
-	if (!GMT_not_numeric (GMT, opt->arg)) {	/* Only check if we are not sure this is NOT a number */
+	if (!gmt_not_numeric (GMT, opt->arg)) {	/* Only check if we are not sure this is NOT a number */
 		expect = (strchr (opt->arg, 'T')) ? GMT_IS_ABSTIME : GMT_IS_UNKNOWN;	/* Watch out for dateTclock-strings */
-		check = GMT_scanf (GMT, opt->arg, expect, &tmp);
+		check = gmt_scanf (GMT, opt->arg, expect, &tmp);
 		possible_number = true;
 	}
 
 	/* Determine if argument is file. But first strip off suffix */
 
-	if (!GMT_access (GMT, opt->arg, F_OK)) {	/* Yes it is */
+	if (!gmt_access (GMT, opt->arg, F_OK)) {	/* Yes it is */
 		if (check != GMT_IS_NAN && possible_number) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Your argument %s is both a file and a number.  File is selected\n", opt->arg);
 		return GRDMATH_ARG_IS_FILE;
 	}
@@ -4174,8 +4763,7 @@ int decode_grd_argument (struct GMT_CTRL *GMT, struct GMT_OPTION *opt, double *v
 	return GRDMATH_ARG_IS_BAD;
 }
 
-char *grdmath_setlabel (struct GMT_CTRL *GMT, char *arg)
-{
+GMT_LOCAL char *grdmath_setlabel (struct GMT_CTRL *GMT, char *arg) {
 	char *label = strchr (arg, '@') + 1;	/* Label that follows @ */
 	if (!label || label[0] == '\0') {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "No label appended to STO|RCL|CLR operator!\n");
@@ -4184,46 +4772,62 @@ char *grdmath_setlabel (struct GMT_CTRL *GMT, char *arg)
 	return (label);
 }
 
-void grdmath_free (struct GMT_CTRL *GMT, struct GRDMATH_STACK *stack[], struct GRDMATH_STORE *recall[], struct GRDMATH_INFO *info) {
-	/* Free allocated memory before quitting */
+GMT_LOCAL void grdmath_free (struct GMT_CTRL *GMT, struct GRDMATH_STACK *stack[], struct GRDMATH_STORE *recall[], struct GRDMATH_INFO *info) {
+	/* Free allocated memory before quitting.  Some memory is registered while other is local
+	 * so we must first use GMT_Destroy_Data and if it fails then use gmt_free_grid. */
 	unsigned int k;
+	int error = 0;
+	bool is_object;
 
 	for (k = 0; k < GRDMATH_STACK_SIZE; k++) {
-		if (stack[k]->alloc_mode == 3)
-			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Let stack item %d survive module\n", k);
-		else if (GMT_Destroy_Data (GMT->parent, &stack[k]->G) != GMT_OK) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to free stack item %d\n", k);
+		if (stack[k]->G) {	/* Must free unless being passed back out */
+			is_object = gmtlib_is_an_object (GMT, &stack[k]->G);
+			if (is_object && (error = GMT_Destroy_Data (GMT->parent, &stack[k]->G)) == GMT_NOERROR)
+				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "GMT_Destroy_Data freed stack item %d\n", k);
+			else if (!is_object || error == GMT_OBJECT_NOT_FOUND) {
+				/* Failures should only be from local objects not passed up */
+				if (gmt_this_alloc_level (GMT, stack[k]->G->alloc_level)) {
+					gmt_free_grid (GMT, &stack[k]->G, true);
+					GMT_Report (GMT->parent, GMT_MSG_DEBUG, "gmt_free_dataset freed stack item %d\n", k);
+				}
+				else
+					GMT_Report (GMT->parent, GMT_MSG_DEBUG, "No freeing, returning stack item %d\n", k);
+			}
+			else
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to free stack item %d\n", k);
 		}
-		GMT_free (GMT, stack[k]);
+		gmt_M_free (GMT, stack[k]);
 	}
 	for (k = 0; k < GRDMATH_STORE_SIZE; k++) {
 		if (recall[k] == NULL) continue;
 		if (recall[k] && !recall[k]->stored.constant) {
-			if (GMT_Destroy_Data (GMT->parent, &recall[k]->stored.G) != GMT_OK) {
-				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to free recall item %d\n", k);
+			if ((error = GMT_Destroy_Data (GMT->parent, &recall[k]->stored.G)) != GMT_NOERROR) {
+				if (error == GMT_OBJECT_NOT_FOUND && gmt_this_alloc_level (GMT, recall[k]->stored.G->alloc_level))
+					gmt_free_grid (GMT, &recall[k]->stored.G, true);
+				else
+					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to free recall item %d\n", k);
 			}
 		}
-		GMT_free (GMT, recall[k]);
+		gmt_M_free (GMT, recall[k]);
 	}
-	if (GMT_Destroy_Data (GMT->parent, &info->G) != GMT_OK) {
+	if (GMT_Destroy_Data (GMT->parent, &info->G) != GMT_NOERROR) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to free info.G\n");
 	}
-	if (info->d_grd_x)  GMT_free (GMT, info->d_grd_x);
-	if (info->d_grd_y)  GMT_free (GMT, info->d_grd_y);
-	if (info->d_grd_xn) GMT_free (GMT, info->d_grd_xn);
-	if (info->d_grd_yn) GMT_free (GMT, info->d_grd_yn);
-	if (info->f_grd_x)  GMT_free (GMT, info->f_grd_x);
-	if (info->f_grd_y)  GMT_free (GMT, info->f_grd_y);
-	if (info->f_grd_xn) GMT_free (GMT, info->f_grd_xn);
-	if (info->f_grd_yn) GMT_free (GMT, info->f_grd_yn);
-	if (info->dx) GMT_free (GMT, info->dx);
-	if (info->ASCII_file) free (info->ASCII_file);
+	gmt_M_free (GMT, info->d_grd_x);
+	gmt_M_free (GMT, info->d_grd_y);
+	gmt_M_free (GMT, info->d_grd_xn);
+	gmt_M_free (GMT, info->d_grd_yn);
+	gmt_M_free (GMT, info->f_grd_x);
+	gmt_M_free (GMT, info->f_grd_y);
+	gmt_M_free (GMT, info->f_grd_xn);
+	gmt_M_free (GMT, info->f_grd_yn);
+	gmt_M_free (GMT, info->dx);
+	gmt_M_str_free (info->ASCII_file);
 }
 
-int GMT_grdmath (void *V_API, int mode, void *args)
-{
+int GMT_grdmath (void *V_API, int mode, void *args) {
 	int k, op = 0, new_stack = -1, rowx, colx, status, start, error = 0;
-	unsigned int kk, nstack = 0, n_stored = 0, n_items = 0, this_stack;
+	unsigned int kk, nstack = 0, n_stored = 0, n_items = 0, this_stack, pos;
 	unsigned int consumed_operands[GRDMATH_N_OPERATORS], produced_operands[GRDMATH_N_OPERATORS];
 	bool subset;
 	char *in_file = NULL, *label = NULL;
@@ -4247,34 +4851,34 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 	struct GMT_OPTION *opt = NULL, *list = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdmath_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdmath_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdmath_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if ((list = gmt_substitute_macros (GMT, options, "grdmath.macros")) == NULL) Return1 (EXIT_FAILURE);
-	Ctrl = New_grdmath_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((list = gmt_substitute_macros (GMT, options, "grdmath.macros")) == NULL) Return1 (GMT_RUNTIME_ERROR);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return1 (API->error);
-	if ((error = GMT_grdmath_parse (GMT, Ctrl, options)) != 0) Return1 (error);
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return1 (error);
 
 	/*---------------------------- This is the grdmath main code ----------------------------*/
 
-	GMT_enable_threads (GMT);	/* Set number of active threads, if supported */
+	gmt_enable_threads (GMT);	/* Set number of active threads, if supported */
 	GMT_Report (API, GMT_MSG_VERBOSE, "Perform reverse Polish notation calculations on grids\n");
-	GMT_memset (&info, 1, struct GRDMATH_INFO);		/* Initialize here to not crash when Return gets called */
-	GMT_memset (recall, GRDMATH_STORE_SIZE, struct GRDMATH_STORE *);
-	GMT_memset (localhashnode, GRDMATH_N_OPERATORS, struct GMT_HASH);
-	for (k = 0; k < GRDMATH_STACK_SIZE; k++) stack[k] = GMT_memory (GMT, NULL, 1, struct GRDMATH_STACK);
-	GMT_set_pad (GMT, 2U);	/* Ensure space for BCs in case an API passed pad == 0 */
+	gmt_M_memset (&info, 1, struct GRDMATH_INFO);		/* Initialize here to not crash when Return gets called */
+	gmt_M_memset (recall, GRDMATH_STORE_SIZE, struct GRDMATH_STORE *);
+	gmt_M_memset (localhashnode, GRDMATH_N_OPERATORS, struct GMT_HASH);
+	for (k = 0; k < GRDMATH_STACK_SIZE; k++) stack[k] = gmt_M_memory (GMT, NULL, 1, struct GRDMATH_STACK);
+	gmt_set_pad (GMT, 2U);	/* Ensure space for BCs in case an API passed pad == 0 */
 
 	/* The list is now the active options list. */
 	/* Internally replace the = file sequence with an output option ->file*/
@@ -4291,14 +4895,14 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 			}
 			else {	/* Standard output */
 				GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: No output file specified via = file mechanism\n");
-				Return (EXIT_FAILURE);
+				Return (GMT_RUNTIME_ERROR);
 			}
 		}
 	}
 
-	GMT_hash_init (GMT, localhashnode, operator, GRDMATH_N_OPERATORS, GRDMATH_N_OPERATORS);
+	gmt_hash_init (GMT, localhashnode, operator, GRDMATH_N_OPERATORS, GRDMATH_N_OPERATORS);
 
-	GMT_memset (wesn, 4, double);
+	gmt_M_memset (wesn, 4, double);
 
 	/* Read the first file we encounter so we may allocate space */
 
@@ -4307,7 +4911,7 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 		if (opt->next && !(strncmp (opt->next->arg, "LDIST", 5U) && strncmp (opt->next->arg, "PDIST", 5U) && strncmp (opt->next->arg, "POINT", 5U) && strncmp (opt->next->arg, "INSIDE", 6U))) continue;	/* Not grids */
 		/* Filenames,  operators, some numbers and = will all have been flagged as files by the parser */
 		status = decode_grd_argument (GMT, opt, &value, localhashnode);		/* Determine what this is */
-		if (status == GRDMATH_ARG_IS_BAD) Return (EXIT_FAILURE);		/* Horrible */
+		if (status == GRDMATH_ARG_IS_BAD) Return (GMT_RUNTIME_ERROR);		/* Horrible */
 		if (status != GRDMATH_ARG_IS_FILE) continue;				/* Skip operators and numbers */
 		in_file = opt->arg;
 		/* Read but request IO reset since the file (which may be a memory reference) will be read again later */
@@ -4321,20 +4925,20 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 	if (G_in) {	/* We read a gridfile header above, now update columns */
 		if (GMT->common.R.active && Ctrl->I.active) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Cannot use -I together with -R<gridfile>\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 		else if  (GMT->common.r.active) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Cannot use -r when grid files are specified\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 		if (subset) {	/* Gave -R and files: Read the subset to set the header properly */
-			GMT_memcpy (wesn, GMT->common.R.wesn, 4, double);
+			gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);
 			if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, in_file, G_in) == NULL) {	/* Get subset only */
 				Return (API->error);
 			}
 		}
 		if ((info.G = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_NONE, G_in)) == NULL) Return (API->error);
-		if (GMT_Destroy_Data (API, &G_in) != GMT_OK) {
+		if (GMT_Destroy_Data (API, &G_in) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}
@@ -4346,23 +4950,23 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 	}
 	else {
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Expression must contain at least one grid file or -R, -I\n");
-		Return (EXIT_FAILURE);
+		Return (GMT_RUNTIME_ERROR);
 	}
 	info.nm = info.G->header->nm;	info.size = info.G->header->size;
 
 	/* Get x and y vectors (these extend onto the pad) */
 
-	info.d_grd_x  = GMT_memory (GMT, NULL, info.G->header->mx, double);
-	info.d_grd_y  = GMT_memory (GMT, NULL, info.G->header->my, double);
-	info.d_grd_xn = GMT_memory (GMT, NULL, info.G->header->mx, double);
-	info.d_grd_yn = GMT_memory (GMT, NULL, info.G->header->my, double);
-	info.f_grd_x  = GMT_memory (GMT, NULL, info.G->header->mx, float);
-	info.f_grd_y  = GMT_memory (GMT, NULL, info.G->header->my, float);
-	info.f_grd_xn = GMT_memory (GMT, NULL, info.G->header->mx, float);
-	info.f_grd_yn = GMT_memory (GMT, NULL, info.G->header->my, float);
-	for (k = 0, start = info.G->header->pad[XLO], colx = -start; k < (int)info.G->header->mx; colx++, k++) info.d_grd_x[k] = GMT_grd_col_to_x (GMT, colx, info.G->header);
-	for (k = 0, start = info.G->header->pad[YHI], rowx = -start; k < (int)info.G->header->my; rowx++, k++) info.d_grd_y[k] = GMT_grd_row_to_y (GMT, rowx, info.G->header);
-	if (GMT_is_geographic (GMT, GMT_IN)) {	/* Make sure latitudes remain in range; if not apply geographic BC */
+	info.d_grd_x  = gmt_M_memory (GMT, NULL, info.G->header->mx, double);
+	info.d_grd_y  = gmt_M_memory (GMT, NULL, info.G->header->my, double);
+	info.d_grd_xn = gmt_M_memory (GMT, NULL, info.G->header->mx, double);
+	info.d_grd_yn = gmt_M_memory (GMT, NULL, info.G->header->my, double);
+	info.f_grd_x  = gmt_M_memory (GMT, NULL, info.G->header->mx, float);
+	info.f_grd_y  = gmt_M_memory (GMT, NULL, info.G->header->my, float);
+	info.f_grd_xn = gmt_M_memory (GMT, NULL, info.G->header->mx, float);
+	info.f_grd_yn = gmt_M_memory (GMT, NULL, info.G->header->my, float);
+	for (k = 0, start = info.G->header->pad[XLO], colx = -start; k < (int)info.G->header->mx; colx++, k++) info.d_grd_x[k] = gmt_M_grd_col_to_x (GMT, colx, info.G->header);
+	for (k = 0, start = info.G->header->pad[YHI], rowx = -start; k < (int)info.G->header->my; rowx++, k++) info.d_grd_y[k] = gmt_M_grd_row_to_y (GMT, rowx, info.G->header);
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Make sure latitudes remain in range; if not apply geographic BC */
 		for (kk = 0; kk < info.G->header->pad[YHI]; kk++)
 			if (info.d_grd_y[kk] > 90.0) info.d_grd_y[kk] = 2.0 * 90.0 - info.d_grd_y[kk];
 		for (kk = 0, k = info.G->header->my - info.G->header->pad[YLO]; kk < info.G->header->pad[YLO]; kk++, k++)
@@ -4383,8 +4987,8 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 		info.f_grd_yn[kk] = (float)info.d_grd_yn[kk];
 	}
 	x_noise = GMT_CONV4_LIMIT * info.G->header->inc[GMT_X];	y_noise = GMT_CONV4_LIMIT * info.G->header->inc[GMT_Y];
-	info.dx = GMT_memory (GMT, NULL, info.G->header->my, double);
-	if (Ctrl->D.force) Ctrl->D.set = GMT_shore_adjust_res (GMT, Ctrl->D.set);
+	info.dx = gmt_M_memory (GMT, NULL, info.G->header->my, double);
+	if (Ctrl->D.force) Ctrl->D.set = gmt_shore_adjust_res (GMT, Ctrl->D.set);
 	info.gshhg_res = Ctrl->D.set;	/* Selected GSHHG resolution, if used */
 	info.A = &Ctrl->A.info;		/* Selected GSHHG flags, if used */
 
@@ -4407,11 +5011,11 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_XMIN]  = info.G->header->wesn[XLO];
 	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_XMAX]  = info.G->header->wesn[XHI];
 	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_XINC]  = info.G->header->inc[GMT_X];
-	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_NX]    = info.G->header->nx;
+	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_NX]    = info.G->header->n_columns;
 	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_YMIN]  = info.G->header->wesn[YLO];
 	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_YMAX]  = info.G->header->wesn[YHI];
 	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_YINC]  = info.G->header->inc[GMT_Y];
-	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_NY]    = info.G->header->ny;
+	special_symbol[GRDMATH_ARG_IS_PI-GRDMATH_ARG_IS_NY]    = info.G->header->n_rows;
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "");
 
@@ -4428,38 +5032,34 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 		if (op == GRDMATH_ARG_IS_SAVE) {	/* Time to save the current stack to output and pop the stack */
 			if (nstack <= 0) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: No items on stack available for output!\n");
-				Return (EXIT_FAILURE);
+				Return (GMT_RUNTIME_ERROR);
 			}
 
-			if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "= %s", opt->arg);
+			if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "= %s", opt->arg);
 
-			//if (n_items && new_stack < 0 && stack[nstack-1]->constant) {	/* Only a constant provided, set grid accordingly */
 			if (n_items && (new_stack < 0 || stack[nstack-1]->constant)) {	/* Only a constant provided, set grid accordingly */
-				if (!stack[nstack-1]->G) {
+				if (!stack[nstack-1]->G)
 					stack[nstack-1]->G = alloc_stack_grid (GMT, info.G);
-					stack[nstack-1]->alloc_mode = 1;
-				}
 				if (stack[nstack-1]->constant) {
-					GMT_grd_loop (GMT, info.G, row, col, node) stack[nstack-1]->G->data[node] = (float)stack[nstack-1]->factor;
+					gmt_M_grd_loop (GMT, info.G, row, col, node) stack[nstack-1]->G->data[node] = (float)stack[nstack-1]->factor;
 				}
 			}
 			this_stack = nstack - 1;
-			GMT_grd_init (GMT, stack[this_stack]->G->header, options, true);	/* Update command history only */
+			gmt_grd_init (GMT, stack[this_stack]->G->header, options, true);	/* Update command history only */
 
-			GMT_set_pad (GMT, API->pad);	/* Reset to session default pad before output */
+			gmt_set_pad (GMT, API->pad);	/* Reset to session default pad before output */
 
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, stack[this_stack]->G)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, opt->arg, stack[this_stack]->G) != GMT_OK) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, opt->arg, stack[this_stack]->G) != GMT_NOERROR) {
 				Return (API->error);
 			}
-			GMT_set_pad (GMT, 2U);			/* Ensure space for BCs in case an API passed pad == 0 */
-			stack[this_stack]->alloc_mode = (GMT_File_Is_Memory (opt->arg)) ? 3 : 2;	/* Since it now is registered (but set to 3 for external memory) */
+			gmt_set_pad (GMT, 2U);			/* Ensure space for BCs in case an API passed pad == 0 */
 			if (n_items) nstack--;	/* Pop off the current stack if there is one */
 			new_stack = nstack;
 			continue;
 		}
 
-		if (op != GRDMATH_ARG_IS_FILE && !GMT_access (GMT, opt->arg, R_OK)) GMT_Message (API, GMT_TIME_NONE, "Warning: The number or operator %s may be confused with an existing file %s!\n", opt->arg, opt->arg);
+		if (op != GRDMATH_ARG_IS_FILE && !gmt_access (GMT, opt->arg, R_OK)) GMT_Message (API, GMT_TIME_NONE, "Warning: The number or operator %s may be confused with an existing file %s!\n", opt->arg, opt->arg);
 
 		if (op < GRDMATH_ARG_IS_OPERATOR) {	/* File name or factor */
 
@@ -4474,14 +5074,14 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 				stack[nstack]->constant = true;
 				stack[nstack]->factor = value;
 				error = false;
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%g ", stack[nstack]->factor);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%g ", stack[nstack]->factor);
 				nstack++;
 				continue;
 			}
 			else if (op <= GRDMATH_ARG_IS_PI && op >= GRDMATH_ARG_IS_NY) {
 				stack[nstack]->constant = true;
 				stack[nstack]->factor = special_symbol[GRDMATH_ARG_IS_PI-op];
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%g ", stack[nstack]->factor);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%g ", stack[nstack]->factor);
 				nstack++;
 				continue;
 			}
@@ -4491,16 +5091,19 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 				bool added_new = false;
 				if (nstack == 0) {
 					GMT_Report (API, GMT_MSG_NORMAL, "No items on stack to put into stored memory!\n");
-					Return (EXIT_FAILURE);
+					Return (GMT_RUNTIME_ERROR);
 				}
-				if ((label = grdmath_setlabel (GMT, opt->arg)) == NULL) Return (EXIT_FAILURE);
+				if ((label = grdmath_setlabel (GMT, opt->arg)) == NULL) Return (GMT_RUNTIME_ERROR);
 				if ((k = grdmath_find_stored_item (GMT, recall, n_stored, label)) != -1) {
 					GMT_Report (API, GMT_MSG_DEBUG, "Stored memory cell %d named %s is overwritten with new information\n", k, label);
-					if (!stack[last]->constant) GMT_memcpy (recall[k]->stored.G->data, stack[last]->G->data, info.G->header->size, float);
+					if (!stack[last]->constant) {	/* Must copy over the grid - and allocate if not yet done */
+						if (recall[k]->stored.G == NULL) recall[k]->stored.G = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_ALLOC, stack[last]->G);
+						gmt_M_memcpy (recall[k]->stored.G->data, stack[last]->G->data, info.G->header->size, float);
+					}
 				}
 				else {	/* Need new named storage place */
 					k = n_stored;
-					recall[k] = GMT_memory (GMT, NULL, 1, struct GRDMATH_STORE);
+					recall[k] = gmt_M_memory (GMT, NULL, 1, struct GRDMATH_STORE);
 					recall[k]->label = strdup (label);
 					if (!stack[last]->constant) recall[k]->stored.G = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_DATA, stack[last]->G);
 					added_new = true;
@@ -4508,16 +5111,16 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 				}
 				recall[k]->stored.constant = stack[last]->constant;
 				recall[k]->stored.factor = stack[last]->factor;
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "[--> %s] ", recall[n_stored]->label);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "[--> %s] ", recall[n_stored]->label);
 				if (added_new) n_stored++;	/* We added a new item */
 				continue;	/* Just go back and process next item */
 			}
 			else if (op == GRDMATH_ARG_IS_RECALL) {
 				/* Add to stack from stored memory location */
-				if ((label = grdmath_setlabel (GMT, opt->arg)) == NULL) Return (EXIT_FAILURE);
+				if ((label = grdmath_setlabel (GMT, opt->arg)) == NULL) Return (GMT_RUNTIME_ERROR);
 				if ((k = grdmath_find_stored_item (GMT, recall, n_stored, label)) == -1) {
 					GMT_Report (API, GMT_MSG_NORMAL, "No stored memory item with label %s exists!\n", label);
-					Return (EXIT_FAILURE);
+					Return (GMT_RUNTIME_ERROR);
 				}
 				if (recall[k]->stored.constant) {	/* Place a stored constant on the stack */
 					stack[nstack]->constant = true;
@@ -4525,30 +5128,28 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 				}
 				else {	/* Place the stored grid on the stack */
 					stack[nstack]->constant = false;
-					if (!stack[nstack]->G) {
+					if (!stack[nstack]->G)
 						stack[nstack]->G = alloc_stack_grid (GMT, info.G);
-						stack[nstack]->alloc_mode = 1;
-					}
-					GMT_memcpy (stack[nstack]->G->data, recall[k]->stored.G->data, info.G->header->size, float);
+					gmt_M_memcpy (stack[nstack]->G->data, recall[k]->stored.G->data, info.G->header->size, float);
 				}
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "@%s ", recall[k]->label);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "@%s ", recall[k]->label);
 				nstack++;
 				continue;
 			}
 			else if (op == GRDMATH_ARG_IS_CLEAR) {
 				/* Free stored memory location */
-				if ((label = grdmath_setlabel (GMT, opt->arg)) == NULL) Return (EXIT_FAILURE);
+				if ((label = grdmath_setlabel (GMT, opt->arg)) == NULL) Return (GMT_RUNTIME_ERROR);
 				if ((k = grdmath_find_stored_item (GMT, recall, n_stored, label)) == -1) {
 					GMT_Report (API, GMT_MSG_NORMAL, "No stored memory item with label %s exists!\n", label);
-					Return (EXIT_FAILURE);
+					Return (GMT_RUNTIME_ERROR);
 				}
-				if (recall[k]->stored.G && GMT_Destroy_Data (API, &recall[k]->stored.G) != GMT_OK) {
+				if (recall[k]->stored.G && GMT_Destroy_Data (API, &recall[k]->stored.G) != GMT_NOERROR) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Failed to free recall item %d\n", k);
 				}
 
-				free ((void *)recall[k]->label);
-				GMT_free (GMT, recall[k]);
-				while (k && k == (int)(n_stored-1) && !recall[k]) k--, n_stored--;	/* Chop off trailing NULL cases */
+				gmt_M_str_free (recall[k]->label);
+				gmt_M_free (GMT, recall[k]);
+				while (n_stored && k == (int)(n_stored-1) && !recall[k]) k--, n_stored--;	/* Chop off trailing NULL cases */
 				continue;
 			}
 
@@ -4557,65 +5158,64 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 			stack[nstack]->constant= false;
 
 			if (op == GRDMATH_ARG_IS_X_MATRIX) {		/* Need to set up matrix of x-values */
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "X ");
-				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G), stack[nstack]->alloc_mode = 1;
-				GMT_row_padloop (GMT, info.G, row, node) {
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "X ");
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
+				grdmath_row_padloop (GMT, info.G, row, node) {
 					node = row * info.G->header->mx;
-					GMT_memcpy (&stack[nstack]->G->data[node], info.f_grd_x, info.G->header->mx, float);
+					gmt_M_memcpy (&stack[nstack]->G->data[node], info.f_grd_x, info.G->header->mx, float);
 				}
 			}
 			else if (op == GRDMATH_ARG_IS_x_MATRIX) {		/* Need to set up matrix of normalized x-values */
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "XNORM ");
-				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G), stack[nstack]->alloc_mode = 1;
-				GMT_row_padloop (GMT, info.G, row, node) {
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "XNORM ");
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
+				grdmath_row_padloop (GMT, info.G, row, node) {
 					node = row * info.G->header->mx;
-					GMT_memcpy (&stack[nstack]->G->data[node], info.f_grd_xn, info.G->header->mx, float);
+					gmt_M_memcpy (&stack[nstack]->G->data[node], info.f_grd_xn, info.G->header->mx, float);
 				}
 			}
 			else if (op == GRDMATH_ARG_IS_XCOL_MATRIX) {		/* Need to set up matrix of column numbers */
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "XCOL ");
-				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G), stack[nstack]->alloc_mode = 1;
-				GMT_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = (float)(col - stack[nstack]->G->header->pad[XLO]);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "XCOL ");
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
+				grdmath_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = (float)(col - stack[nstack]->G->header->pad[XLO]);
 			}
 			else if (op == GRDMATH_ARG_IS_Y_MATRIX) {	/* Need to set up matrix of y-values */
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "Y ");
-				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G), stack[nstack]->alloc_mode = 1;
-				GMT_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = info.f_grd_y[row];
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "Y ");
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
+				grdmath_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = info.f_grd_y[row];
 			}
 			else if (op == GRDMATH_ARG_IS_y_MATRIX) {	/* Need to set up matrix of normalized y-values */
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "YNORM ");
-				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G), stack[nstack]->alloc_mode = 1;
-				GMT_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = info.f_grd_yn[row];
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "YNORM ");
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
+				grdmath_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = info.f_grd_yn[row];
 			}
 			else if (op == GRDMATH_ARG_IS_YROW_MATRIX) {		/* Need to set up matrix of row numbers */
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "YROW ");
-				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G), stack[nstack]->alloc_mode = 1;
-				GMT_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = (float)(row - stack[nstack]->G->header->pad[YHI]);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "YROW ");
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
+				grdmath_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = (float)(row - stack[nstack]->G->header->pad[YHI]);
 			}
 			else if (op == GRDMATH_ARG_IS_ASCIIFILE) {
-				if (info.ASCII_file) free (info.ASCII_file);
-				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G), stack[nstack]->alloc_mode = 1;
+				gmt_M_str_free (info.ASCII_file);
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
 				info.ASCII_file = strdup (opt->arg);
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "(%s) ", opt->arg);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "(%s) ", opt->arg);
 			}
 			else if (op == GRDMATH_ARG_IS_FILE) {		/* Filename given */
-				if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%s ", opt->arg);
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%s ", opt->arg);
 				if ((stack[nstack]->G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, wesn, opt->arg, NULL)) == NULL) {	/* Get header only */
 					Return (API->error);
 				}
-				if (!subset && !GMT_grd_same_shape (GMT, stack[nstack]->G, info.G)) {
+				if (!subset && !gmt_M_grd_same_shape (GMT, stack[nstack]->G, info.G)) {
 					GMT_Report (API, GMT_MSG_NORMAL, "grid files not of same size!\n");
-					Return (EXIT_FAILURE);
+					Return (GMT_RUNTIME_ERROR);
 				}
 				else if (!Ctrl->N.active && (!subset && (fabs (stack[nstack]->G->header->wesn[XLO] - info.G->header->wesn[XLO]) > x_noise || fabs (stack[nstack]->G->header->wesn[XHI] - info.G->header->wesn[XHI]) > x_noise ||
 					fabs (stack[nstack]->G->header->wesn[YLO] - info.G->header->wesn[YLO]) > y_noise || fabs (stack[nstack]->G->header->wesn[YHI] - info.G->header->wesn[YHI]) > y_noise))) {
 					GMT_Report (API, GMT_MSG_NORMAL, "grid files do not cover the same area!\n");
-					Return (EXIT_FAILURE);
+					Return (GMT_RUNTIME_ERROR);
 				}
 				if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, opt->arg, stack[nstack]->G) == NULL) {	/* Get data */
 					Return (API->error);
 				}
-				stack[nstack]->alloc_mode = (GMT_File_Is_Memory (opt->arg)) ? 3 : 2;	/* Since it now is registered (but set to 3 if external memory) */
 			}
 			nstack++;
 			continue;
@@ -4625,36 +5225,35 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 
 		if ((new_stack = nstack - consumed_operands[op] + produced_operands[op]) >= GRDMATH_STACK_SIZE) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Stack overflow (%s)\n", opt->arg);
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 
 		if (nstack < consumed_operands[op]) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Operation \"%s\" requires %d operands\n", operator[op], consumed_operands[op]);
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 
 		n_items++;
-		if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%s ", operator[op]);
+		if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%s ", operator[op]);
 
 		for (k = produced_operands[op] - consumed_operands[op]; k > 0; k--) {
 			if (stack[nstack+k-1]->G) continue;
 
 			/* Must make space for more */
-
 			stack[nstack+k-1]->G = alloc_stack_grid (GMT, info.G);
-			stack[nstack+k-1]->alloc_mode = 1;
 		}
 
 		/* If operators operates on constants only we may have to make space as well */
 
 		for (kk = 0, k = nstack - consumed_operands[op]; kk < produced_operands[op]; kk++, k++) {
-			if (stack[k]->constant && !stack[k]->G) {
+			if (stack[k]->constant && !stack[k]->G)
 				stack[k]->G = alloc_stack_grid (GMT, info.G);
-				stack[k]->alloc_mode = 1;
-			}
 		}
 
-		(*call_operator[op]) (GMT, &info, stack, nstack - 1);	/* Do it */
+		GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_FLOAT;
+		
+		pos = (consumed_operands[op]) ? nstack - 1 : nstack;
+		(*call_operator[op]) (GMT, &info, stack, pos);	/* Do it */
 
 		if (info.error) Return (info.error);	/* Got an error inside the operator */
 
@@ -4665,16 +5264,16 @@ int GMT_grdmath (void *V_API, int mode, void *args)
 	/* Clean-up time */
 
 	for (kk = 0; kk < n_stored; kk++) {	/* Free up stored STO/RCL memory */
-		if (recall[kk]->stored.G && GMT_Destroy_Data (API, &recall[kk]->stored.G) != GMT_OK) {
+		if (recall[kk]->stored.G && GMT_Destroy_Data (API, &recall[kk]->stored.G) != GMT_NOERROR) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Failed to free recall item %d\n", kk);
 		}
-		free ((void *)recall[kk]->label);
-		GMT_free (GMT, recall[kk]);
+		gmt_M_str_free (recall[kk]->label);
+		gmt_M_free (GMT, recall[kk]);
 	}
 
-	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "\n");
+	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "\n");
 
 	if (nstack > 0) GMT_Report (API, GMT_MSG_NORMAL, "Warning: %d more operands left on the stack!\n", nstack);
 
-	Return (EXIT_SUCCESS);
+	Return (GMT_NOERROR);
 }

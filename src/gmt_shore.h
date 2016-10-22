@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_shore.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_shore.h 15810 2016-03-05 00:33:55Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@
 
 #include "netcdf.h"
 
-enum GMT_enum_gshhs {GSHHS_MAX_DELTA = 65535,	/* Largest value to store in a unsigned short, used as largest dx or dy in bin  */
+enum gmt_enum_gshhs {GSHHS_MAX_DELTA = 65535,	/* Largest value to store in a unsigned short, used as largest dx or dy in bin  */
 	GSHHS_MAX_LEVEL			= 4,	/* Highest hierarchical level of coastlines */
 	GSHHS_N_BLEVELS			= 3,	/* Number of levels for borders */
 	GSHHS_N_RLEVELS			= 11,	/* Number of levels for rivers */

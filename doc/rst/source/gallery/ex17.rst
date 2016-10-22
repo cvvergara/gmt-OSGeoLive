@@ -6,7 +6,7 @@
 This example demonstrates how :doc:`pscoast </pscoast>`
 can be used to set up clip paths based on coastlines. This approach is
 well suited when different gridded data sets are to be merged on a plot
-using different CPT files. Merging the files themselves may
+using different CPTs. Merging the files themselves may
 not be doable since they may represent different data sets, as we show
 in this example. Here, we lay down a color map of the geoid field near
 India with :doc:`grdimage </grdimage>`, use
@@ -14,7 +14,7 @@ India with :doc:`grdimage </grdimage>`, use
 then overlay topography from the ETOPO5 data set with another call to
 :doc:`grdimage </grdimage>`. We finally undo the
 clippath with a second call to :doc:`pscoast </pscoast>`
-with the option **-Q** (Figure [fig:example:sub:`1`\ 7]):
+with the option **-Q** (See the Figure :ref:`fig_ex17`):
 
 We also plot a color legend on top of the land. So here we basically
 have three layers of "paint" stacked on top of each other: the
@@ -27,13 +27,15 @@ amounts (in red) are not very prevalent, that color spans a long range.
 For this image it is appropriate to use the **-I** option in
 :doc:`psscale </psscale>` so the legend gets shaded,
 similar to the geoid grid. See Appendix [app:M] to learn more about
-CPT files and ways to draw color legends.
+CPTs and ways to draw color legends.
 
 .. literalinclude:: /_verbatim/example_17.txt
    :language: bash
+
+.. _fig_ex17:
 
 .. figure:: /_images/example_17.*
    :width: 500 px
    :align: center
 
-   Clipping of images using coastlines.
+   Clipping of images using coastlines

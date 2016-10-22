@@ -1,8 +1,13 @@
-	$Id: README.img 15178 2015-11-06 10:45:03Z fwobbe $
+	$Id: README.img 15816 2016-03-06 01:24:53Z pwessel $
 
 Maintained by: W H F Smith
 Distributed under the GNU Lesser Public License; see file
 LICENSE.TXT in main GMT directory.
+
+==> CHANGES IN GMT 5.3.0 <==
+
+Eliminate gmt_imgsubs.[ch] as individual files so that we can
+let those functions be local only and not exported to the API.
 
 ==> CHANGES IN GMT 5 <==
 

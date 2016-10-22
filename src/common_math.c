@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- * $Id: common_math.c 13846 2014-12-28 21:46:54Z pwessel $
+ * $Id: common_math.c 15757 2016-02-24 23:25:49Z pwessel $
  *
- * Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ * Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -73,8 +73,7 @@ union Double_t {
 	double f;
 };
 
-bool floatAlmostEqualUlpsAndAbs(float A, float B,
-																float maxDiff, int maxUlpsDiff) {
+bool floatAlmostEqualUlpsAndAbs(float A, float B, float maxDiff, int maxUlpsDiff) {
 	/* Adapted from AlmostEqualUlpsAndAbs,
 	 * http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
 	 *
@@ -114,8 +113,7 @@ bool floatAlmostEqualUlpsAndAbs(float A, float B,
 	return false;
 }
 
-bool doubleAlmostEqualUlpsAndAbs(double A, double B,
-																 double maxDiff, int maxUlpsDiff) {
+bool doubleAlmostEqualUlpsAndAbs(double A, double B, double maxDiff, int maxUlpsDiff) {
 	/* Adapted from AlmostEqualUlpsAndAbs,
 	 * http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
 	 *

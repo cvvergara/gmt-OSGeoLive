@@ -1,5 +1,5 @@
 REM		GMT EXAMPLE 32
-REM		$Id: example_32.bat 15178 2015-11-06 10:45:03Z fwobbe $
+REM		$Id: example_32.bat 16792 2016-07-13 21:12:21Z pwessel $
 REM
 REM Purpose:	Illustrate draping of an image over topography
 REM GMT progs:	grdcut, grdedit, grdgradient, grdconvert, grdtrack, grdview
@@ -23,14 +23,13 @@ REM gmt grdedit euflag.nc -fg %Rflag%
 
 REM Now get the topography for the same area from GTOPO30 and store it as topo.nc.
 REM The DEM file comes from http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/w020n90
-REM We make an gradient grid as well, which we will use to "illuminate" the flag.
+REM We make a gradient grid as well, which we will use to "illuminate" the flag.
 
 REM gmt grdcut W020N90.DEM -Reuflag.nc -Gtopo.nc=ns
 gmt grdgradient topo.nc -A0/270 -Gillum.nc -Ne0.6
 
 REM The color map assigns "Reflex Blue" to the lower half of the 0-255 range and "Yellow" to the upper half.
-echo 0   0/51/153   127 0/51/153   > euflag.cpt
-echo 127 255/204/0  255 255/204/0 >> euflag.cpt
+gmt makecpt -C0/51/153,255/204/0 -T0,127,255 -N > euflag.cpt
 
 REM The next step is the plotting of the image.
 REM We use gmt grdview to plot the topography, euflag.nc to give the color, and illum.nc to give the shading.

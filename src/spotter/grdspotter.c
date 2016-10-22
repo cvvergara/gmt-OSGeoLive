@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdspotter.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: grdspotter.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *   Copyright (c) 1999-2015 by P. Wessel
+ *   Copyright (c) 1999-2016 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -105,7 +105,7 @@
 #define THIS_MODULE_NAME	"grdspotter"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Create CVA image from a gravity or topography grid"
-#define THIS_MODULE_KEYS	"<GI,AGi,ETI,DGo,LGo,GGO,RG-"
+#define THIS_MODULE_KEYS	"<G{,AG(,DG),LG),GG}"
 
 #include "spotter.h"
 
@@ -186,10 +186,10 @@ struct GRDSPOTTER_CTRL {	/* All control options for this program (except common 
 	} Z;
 };
 
-void *New_grdspotter_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct GRDSPOTTER_CTRL *C;
 	
-	C = GMT_memory (GMT, NULL, 1, struct GRDSPOTTER_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct GRDSPOTTER_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 	
@@ -198,28 +198,27 @@ void *New_grdspotter_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a 
 	return (C);
 }
 
-void Free_grdspotter_Ctrl (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->In.file) free (C->In.file);	
-	if (C->A.file) free (C->A.file);	
-	if (C->D.file) free (C->D.file);	
-	if (C->E.file) free (C->E.file);	
-	if (C->G.file) free (C->G.file);	
-	if (C->L.file) free (C->L.file);	
-	if (C->PA.file) free (C->PA.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->In.file);	
+	gmt_M_str_free (C->A.file);	
+	gmt_M_str_free (C->D.file);	
+	gmt_M_str_free (C->E.file);	
+	gmt_M_str_free (C->G.file);	
+	gmt_M_str_free (C->L.file);	
+	gmt_M_str_free (C->PA.file);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_grdspotter_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdspotter <ingrid> -E[+]<rottable> -G<CVAgrid> %s\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [-A<agegrid>] [-D[i|p]<grdfile>] [-L<IDgrid>] [-M]\n", GMT_Rgeo_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-N<upper_age>] [-Q<IDinfo>] [-S] [-Tt|-u<age>] [%s] [-W<n_try]\n", GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Z<z_min>[/<z_max>[/<z_inc>]]] [%s] [%s]\n\n", GMT_ho_OPT, GMT_r_OPT);
 	
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 	
 	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is the grid with topo or gravity\n");
 	spotter_rot_usage (API, 'E');
@@ -246,11 +245,10 @@ int GMT_grdspotter_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   Give z_min/z_max/z_inc to make CVA grids for each z-slice {Default makes 1 CVA grid].\n");
 	GMT_Option (API, "h,r,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_grdspotter_parse (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to grdspotter and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -267,7 +265,7 @@ int GMT_grdspotter_parse (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *Ctrl, st
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
+				if ((Ctrl->In.active = gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -276,27 +274,27 @@ int GMT_grdspotter_parse (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *Ctrl, st
 			/* Supplemental parameters */
 
 			case 'A':
-				if ((Ctrl->A.active = GMT_check_filearg (GMT, 'A', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
+				if ((Ctrl->A.active = gmt_check_filearg (GMT, 'A', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
 					Ctrl->A.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'C':	/* Now done automatically in spotter_init */
-				if (GMT_compat_check (GMT, 4))
+				if (gmt_M_compat_check (GMT, 4))
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -C is no longer needed as total reconstruction vs stage rotation is detected automatically.\n");
 				else
-					n_errors += GMT_default_error (GMT, opt->option);
+					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'E':
 				Ctrl->E.active = true;	k = 0;
 				if (opt->arg[0] == '+') { Ctrl->E.mode = true; k = 1;}
-				if (GMT_check_filearg (GMT, 'E', &opt->arg[k], GMT_IN, GMT_IS_DATASET))
+				if (gmt_check_filearg (GMT, 'E', &opt->arg[k], GMT_IN, GMT_IS_DATASET))
 					Ctrl->E.file  = strdup (&opt->arg[k]);
 				else
 					n_errors++;
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
+				if ((Ctrl->G.active = gmt_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -304,13 +302,13 @@ int GMT_grdspotter_parse (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *Ctrl, st
 			case 'D':
 				switch (opt->arg[0]) {
 					case 'i':
-						if ((Ctrl->D.active = GMT_check_filearg (GMT, 'D', &opt->arg[1], GMT_OUT, GMT_IS_GRID)) != 0)
+						if ((Ctrl->D.active = gmt_check_filearg (GMT, 'D', &opt->arg[1], GMT_OUT, GMT_IS_GRID)) != 0)
 							Ctrl->D.file = strdup (&opt->arg[1]);
 						else
 							n_errors++;
 						break;
 					case 'p':
-						if ((Ctrl->PA.active = GMT_check_filearg (GMT, 'D', &opt->arg[1], GMT_OUT, GMT_IS_GRID)) != 0)
+						if ((Ctrl->PA.active = gmt_check_filearg (GMT, 'D', &opt->arg[1], GMT_OUT, GMT_IS_GRID)) != 0)
 							Ctrl->PA.file = strdup (&opt->arg[1]);
 						else
 							n_errors++;
@@ -322,13 +320,13 @@ int GMT_grdspotter_parse (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *Ctrl, st
 				break;
 			case 'I':
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
 			case 'L':
-				if ((Ctrl->L.active = GMT_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
+				if ((Ctrl->L.active = gmt_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
 					Ctrl->L.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -385,25 +383,24 @@ int GMT_grdspotter_parse (struct GMT_CTRL *GMT, struct GRDSPOTTER_CTRL *Ctrl, st
 				if (m == 3) Ctrl->Z.mode = true;	/* Want several slices */
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
 
-	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
-	n_errors += GMT_check_condition (GMT, !(Ctrl->G.active || Ctrl->G.file), "Syntax error -G: Must specify output file\n");
-	n_errors += GMT_check_condition (GMT, !(Ctrl->In.active || Ctrl->In.file), "Syntax error -Z: Must give name of topo gridfile\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->L.file && !Ctrl->Q.mode, "Syntax error: Must specify both -L and -Q if one is present\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->M.active && (Ctrl->W.active || Ctrl->Z.mode), "Syntax error: Cannot use -M with -W or -Z (slicing)\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, !(Ctrl->G.active || Ctrl->G.file), "Syntax error -G: Must specify output file\n");
+	n_errors += gmt_M_check_condition (GMT, !(Ctrl->In.active || Ctrl->In.file), "Syntax error -Z: Must give name of topo gridfile\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->L.file && !Ctrl->Q.mode, "Syntax error: Must specify both -L and -Q if one is present\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->M.active && (Ctrl->W.active || Ctrl->Z.mode), "Syntax error: Cannot use -M with -W or -Z (slicing)\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-int64_t get_flowline (struct GMT_CTRL *GMT, double xx, double yy, double tt, struct EULER *p, unsigned int n_stages, double d_km, unsigned int step, unsigned int flag, double wesn[], double **flow)
-{
+GMT_LOCAL int64_t get_flowline (struct GMT_CTRL *GMT, double xx, double yy, double tt, struct EULER *p, unsigned int n_stages, double d_km, unsigned int step, unsigned int flag, double wesn[], double **flow) {
 	int64_t n_track, m, kx, ky, np, first, last;
 	double *c = NULL, *f = NULL;
 
@@ -427,7 +424,7 @@ int64_t get_flowline (struct GMT_CTRL *GMT, double xx, double yy, double tt, str
 	}
 
 	if (first == -1) { 	/* Was never inside the grid, skip the entire flowline and move on */
-		GMT_free (GMT, c);	/* Free the flowline vector */
+		gmt_M_free (GMT, c);	/* Free the flowline vector */
 		return 0LL;
 	}
 
@@ -446,10 +443,10 @@ int64_t get_flowline (struct GMT_CTRL *GMT, double xx, double yy, double tt, str
 	if (np < n_track) {	/* Just copy out the subset of points we want */
 		size_t n_alloc;
 		n_alloc = np * step;	/* Number of (x,y[,t]) to copy */
-		f = GMT_memory (GMT, NULL, n_alloc+1, double);
+		f = gmt_M_memory (GMT, NULL, n_alloc+1, double);
 		f[0] = (double)np;	/* Number of points found */
-		GMT_memcpy (&f[1], &c[first], n_alloc, double);
-		GMT_free (GMT, c);	/* Free the old flowline vector */
+		gmt_M_memcpy (&f[1], &c[first], n_alloc, double);
+		gmt_M_free (GMT, c);	/* Free the old flowline vector */
 		*flow = f;		/* Return pointer to trimmed flowline */
 	}
 	else
@@ -457,11 +454,11 @@ int64_t get_flowline (struct GMT_CTRL *GMT, double xx, double yy, double tt, str
 	return (np);
 }
 
-bool set_age (struct GMT_CTRL *GMT, double *t_smt, struct GMT_GRID *A, uint64_t node, double upper_age, bool truncate) {
+GMT_LOCAL bool set_age (struct GMT_CTRL *GMT, double *t_smt, struct GMT_GRID *A, uint64_t node, double upper_age, bool truncate) {
 	/* Returns the age of this node based on either a given seafloor age grid
 	 * or the upper age, truncated if necessary */
 
-	if (!A || GMT_is_fnan (A->data[node]))		/* Age is NaN, assign upper value */
+	if (!A || gmt_M_is_fnan (A->data[node]))		/* Age is NaN, assign upper value */
 		*t_smt = upper_age;
 	else {	/* Assign given value */
 		*t_smt = A->data[node];
@@ -477,8 +474,8 @@ bool set_age (struct GMT_CTRL *GMT, double *t_smt, struct GMT_GRID *A, uint64_t 
 	return (true);	/* We are returning a useful age */
 }
 
-void normalize_grid (struct GMT_CTRL *GMT, struct GMT_GRID *G, float *data)
-{	/* Determines the grid's min/max z-values and normalizes the grid
+GMT_LOCAL void normalize_grid (struct GMT_CTRL *GMT, struct GMT_GRID *G, float *data) {
+	/* Determines the grid's min/max z-values and normalizes the grid
 	 * so that zmax is 100% */
 	unsigned int row, col;
 	uint64_t node;
@@ -486,8 +483,8 @@ void normalize_grid (struct GMT_CTRL *GMT, struct GMT_GRID *G, float *data)
 	
 	G->header->z_min = +DBL_MAX;
 	G->header->z_max = -DBL_MAX;
-	GMT_grd_loop (GMT, G, row, col, node) {	/* Loop over all output nodes */
-		if (GMT_is_fnan (data[node])) continue;
+	gmt_M_grd_loop (GMT, G, row, col, node) {	/* Loop over all output nodes */
+		if (gmt_M_is_fnan (data[node])) continue;
 		if (data[node] < G->header->z_min) G->header->z_min = data[node];
 		if (data[node] > G->header->z_max) G->header->z_max = data[node];
 	}
@@ -499,8 +496,8 @@ void normalize_grid (struct GMT_CTRL *GMT, struct GMT_GRID *G, float *data)
 	GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "%g %g\n", G->header->z_min, G->header->z_max);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_grdspotter_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_grdspotter (void *V_API, int mode, void *args) {
 	unsigned int n_stages;	/* Number of stage rotations (poles) */
@@ -556,24 +553,24 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 	struct GRDSPOTTER_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdspotter_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdspotter_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdspotter_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_grdspotter_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_grdspotter_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the grdspotter main code ----------------------------*/
 
@@ -599,18 +596,19 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 	G_rad->header->wesn[YHI]  = G->header->wesn[YHI] * D2R;
 	
 	/* Get geocentric wesn region in radians */
-	GMT_memcpy (wesn, G_rad->header->wesn, 4, double);
-	wesn[YLO] = D2R * GMT_lat_swap (GMT, R2D * wesn[YLO], GMT_LATSWAP_G2O);
-	wesn[YHI] = D2R * GMT_lat_swap (GMT, R2D * wesn[YHI], GMT_LATSWAP_G2O);
+	gmt_M_memcpy (wesn, G_rad->header->wesn, 4, double);
+	wesn[YLO] = D2R * gmt_lat_swap (GMT, R2D * wesn[YLO], GMT_LATSWAP_G2O);
+	wesn[YHI] = D2R * gmt_lat_swap (GMT, R2D * wesn[YHI], GMT_LATSWAP_G2O);
 
 	/* Allocate T/F array */
 
-	processed_node = GMT_memory (GMT, NULL, G->header->size, char);
+	processed_node = gmt_M_memory (GMT, NULL, G->header->size, char);
 
 	/* Set flowline sampling interval to 1/2 of the shortest distance between x-nodes */
 
 	/* sampling_int_in_km = 0.5 * G_rad->header->inc[GMT_X] * EQ_RAD * ((fabs (G_rad->header->wesn[YHI]) > fabs (G_rad->header->wesn[YLO])) ? cos (G_rad->header->wesn[YHI]) : cos (G_rad->header->wesn[YLO])); */
-	sampling_int_in_km = G_rad->header->inc[GMT_X] * EQ_RAD * ((fabs (G_rad->header->wesn[YHI]) > fabs (G_rad->header->wesn[YLO])) ? cos (G_rad->header->wesn[YHI]) : cos (G_rad->header->wesn[YLO]));
+	sampling_int_in_km = G_rad->header->inc[GMT_X] * EQ_RAD * ((fabs (G_rad->header->wesn[YHI]) > fabs (G_rad->header->wesn[YLO])) ?
+	                     cos (G_rad->header->wesn[YHI]) : cos (G_rad->header->wesn[YLO]));
 	if (Ctrl->S2.dist != 0.0) sampling_int_in_km = Ctrl->S2.dist;
 	GMT_Report (API, GMT_MSG_VERBOSE, "Flowline sampling interval = %.3f km\n", sampling_int_in_km);
 
@@ -618,32 +616,34 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 
 	/* Start to read input data */
 	
-	if (GMT_Init_IO (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
+	if (GMT_Init_IO (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data input */
+		gmt_M_free (GMT, processed_node);
 		Return (API->error);
 	}
 
 	if ((Z = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get data */
+		gmt_M_free (GMT, processed_node);
 		Return (API->error);
 	}
 	area = 111.195 * Z->header->inc[GMT_Y] * 111.195 * Z->header->inc[GMT_X];	/* In km^2 at Equator */
-	x_smt = GMT_memory (GMT, NULL, Z->header->nx, double);
-	for (col = 0; col < Z->header->nx; col++) x_smt[col] = D2R * GMT_grd_col_to_x (GMT, col, Z->header);
-	y_smt = GMT_memory (GMT, NULL, Z->header->ny, double);
-	for (row = 0; row < Z->header->ny; row++) y_smt[row] = D2R * GMT_lat_swap (GMT, GMT_grd_row_to_y (GMT, row, Z->header), GMT_LATSWAP_G2O);	/* Convert to geocentric */
-	lat_area = GMT_memory (GMT, NULL, Z->header->ny, double);
+	x_smt = gmt_M_memory (GMT, NULL, Z->header->n_columns, double);
+	for (col = 0; col < Z->header->n_columns; col++) x_smt[col] = D2R * gmt_M_grd_col_to_x (GMT, col, Z->header);
+	y_smt = gmt_M_memory (GMT, NULL, Z->header->n_rows, double);
+	for (row = 0; row < Z->header->n_rows; row++) y_smt[row] = D2R * gmt_lat_swap (GMT, gmt_M_grd_row_to_y (GMT, row, Z->header), GMT_LATSWAP_G2O);	/* Convert to geocentric */
+	lat_area = gmt_M_memory (GMT, NULL, Z->header->n_rows, double);
 
-	for (row = 0; row < Z->header->ny; row++) lat_area[row] = area * cos (y_smt[row]);
+	for (row = 0; row < Z->header->n_rows; row++) lat_area[row] = area * cos (y_smt[row]);
 	
-	x_cva = GMT_grd_coord (GMT, G->header, GMT_X);
-	y_cva = GMT_grd_coord (GMT, G->header, GMT_Y);
+	x_cva = gmt_grd_coord (GMT, G->header, GMT_X);
+	y_cva = gmt_grd_coord (GMT, G->header, GMT_Y);
 
 	if (Ctrl->A.file) {
 		if ((A = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->A.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
-		if (!(A->header->nx == Z->header->nx && A->header->ny == Z->header->ny && A->header->wesn[XLO] == Z->header->wesn[XLO] && A->header->wesn[YLO] == Z->header->wesn[YLO])) {
+		if (!(A->header->n_columns == Z->header->n_columns && A->header->n_rows == Z->header->n_rows && A->header->wesn[XLO] == Z->header->wesn[XLO] && A->header->wesn[YLO] == Z->header->wesn[YLO])) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Topo grid and age grid must coregister\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->A.file, A) == NULL) {	/* Get age data */
 			Return (API->error);
@@ -653,19 +653,19 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 		if ((L = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->L.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
-		if (!(L->header->nx == Z->header->nx && L->header->ny == Z->header->ny && L->header->wesn[XLO] == Z->header->wesn[XLO] && L->header->wesn[YLO] == Z->header->wesn[YLO])) {
+		if (!(L->header->n_columns == Z->header->n_columns && L->header->n_rows == Z->header->n_rows && L->header->wesn[XLO] == Z->header->wesn[XLO] && L->header->wesn[YLO] == Z->header->wesn[YLO])) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Topo grid and ID grid must coregister\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->L.file, L) == NULL) {	/* Get ID data */
 			Return (API->error);
 		}
 		
 		/* Store IDs in a int array instead */
-		ID = GMT_memory (GMT, NULL, L->header->size, int);
+		ID = gmt_M_memory (GMT, NULL, L->header->size, int);
 		for (ij = 0; ij < L->header->size; ij++) ID[ij] = irint ((double)L->data[ij]);
-		if (G->alloc_mode == GMT_ALLOC_INTERNALLY) GMT_free_aligned (GMT, L->data);	/* Just free the array since we use ID; Grid struct is destroyed at end */
-		ID_info = GMT_memory (GMT, NULL, lrint (L->header->z_max) + 1, struct ID);
+		if (G->alloc_mode == GMT_ALLOC_INTERNALLY) gmt_M_free_aligned (GMT, L->data);	/* Just free the array since we use ID; Grid struct is destroyed at end */
+		ID_info = gmt_M_memory (GMT, NULL, lrint (L->header->z_max) + 1, struct ID);
 		if (Ctrl->Q.mode == 1) {	/* Only doing one CVA with no extra restrictions */
 			ID_info[Ctrl->Q.id].ok = true;	/* Every other info in struct array is NULL or 0 */
 		}
@@ -677,7 +677,7 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 			
 			if ((fp = fopen (Ctrl->Q.file, "r")) == NULL) {	/* Oh, oh... */
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: -Q info file unreadable/nonexistent\n");
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				GMT_exit (GMT, GMT_ERROR_ON_FOPEN); return GMT_ERROR_ON_FOPEN;
 			}
 			while (fgets (line, GMT_BUFSIZ, fp)) {
 				if (line[0] == '#' || line[0] == '\n') continue;
@@ -685,8 +685,8 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 				ID_info[Ctrl->Q.id].ok = true;
 				if (k == 5) {	/* Got restricted wesn also */
 					ID_info[Qid].check_region = true;
- 					sq = GMT_lat_swap (GMT, sq, GMT_LATSWAP_G2O);	/* Go geocentric */
- 					nq = GMT_lat_swap (GMT, nq, GMT_LATSWAP_G2O);	/* Go geocentric */
+ 					sq = gmt_lat_swap (GMT, sq, GMT_LATSWAP_G2O);	/* Go geocentric */
+ 					nq = gmt_lat_swap (GMT, nq, GMT_LATSWAP_G2O);	/* Go geocentric */
 					ID_info[Qid].wesn[XLO] = wq * D2R;
 					ID_info[Qid].wesn[XHI] = eq * D2R;
 					ID_info[Qid].wesn[YLO] = sq * D2R;
@@ -710,24 +710,24 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 	}
 	if (keep_flowlines) {
 		n_alloc = inc_alloc;
-		flowline = GMT_memory (GMT, NULL, n_alloc, struct FLOWLINE);
-		if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+		flowline = gmt_M_memory (GMT, NULL, n_alloc, struct FLOWLINE);
+		if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 			GMT_Message (API, GMT_TIME_NONE, "Will attempt to keep all flowlines in memory.  However, should this not be possible\n");
 			GMT_Message (API, GMT_TIME_NONE, "the program might crash.  If so consider using the -M option\n");
 		}
 	}
 	
 	n_flow = n_nodes = 0;
-	GMT_grd_loop (GMT, Z, row, col, ij) {	/* Loop over all input nodes */
+	gmt_M_grd_loop (GMT, Z, row, col, ij) {	/* Loop over all input nodes */
 		/* STEP 1: Determine if z exceeds threshold and if so assign age */
-		if (GMT_is_fnan (Z->data[ij]) || Z->data[ij] < Ctrl->Z.min || Z->data[ij] > Ctrl->Z.max) continue;	/* Skip node since it is NaN or outside the Ctrl->Z.min < z < Ctrl->Z.max range */
+		if (gmt_M_is_fnan (Z->data[ij]) || Z->data[ij] < Ctrl->Z.min || Z->data[ij] > Ctrl->Z.max) continue;	/* Skip node since it is NaN or outside the Ctrl->Z.min < z < Ctrl->Z.max range */
 		if (Ctrl->Q.mode && !ID_info[ID[ij]].ok) continue;				/* Skip because of wrong ID */
 		if (!set_age (GMT, &t_smt, A, ij, Ctrl->N.t_upper, Ctrl->T.active[TRUNC])) continue;	/* Skip if age is given and we are outside range */
 		/* STEP 2: Calculate this node's flowline */
 		if (Ctrl->Q.mode && ID_info[ID[ij]].check_region) /* Set up a box-limited flowline sampling */
-			GMT_memcpy (this_wesn, ID_info[ID[ij]].wesn, 4, double);
+			gmt_M_memcpy (this_wesn, ID_info[ID[ij]].wesn, 4, double);
 		else
-			GMT_memcpy (this_wesn, wesn, 4, double);
+			gmt_M_memcpy (this_wesn, wesn, 4, double);
 		
 		np = get_flowline (GMT, x_smt[col], y_smt[row], t_smt, p, n_stages, sampling_int_in_km, k_step, forth_flag, this_wesn, &c);
 		if (np == 0) continue;	/* No flowline inside this wesn */
@@ -739,11 +739,11 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 		 * want the nearest distance from each node to the flowline. Later versions may
 		 * improve on this situation */
 
-		GMT_memset (processed_node, G->header->size, char);	/* Fresh start for this flowline convolution */
+		gmt_M_memset (processed_node, G->header->size, char);	/* Fresh start for this flowline convolution */
 		
 		if (keep_flowlines) {
-			flowline[n_nodes].node = GMT_memory (GMT, NULL, np, uint64_t);
-			if (Ctrl->PA.active) flowline[n_nodes].PA = GMT_memory (GMT, NULL, np, unsigned short);
+			flowline[n_nodes].node = gmt_M_memory (GMT, NULL, np, uint64_t);
+			if (Ctrl->PA.active) flowline[n_nodes].PA = gmt_M_memory (GMT, NULL, np, unsigned short);
 		}
 		
 		/* Keep in mind that although first and last are entry/exit into the CVA grid, we must
@@ -757,13 +757,13 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 		printf ("> %" PRIu64 " %" PRIu64 " %d %d %g\n", n_nodes, np, row, col, cva_contribution);
 #endif
 		for (m = 0, k = 1; m < np; m++) {	/* Store nearest node indices only */
-			i = (int)GMT_grd_x_to_col (GMT, c[k++], G_rad->header);
-			yg = GMT_lat_swap (GMT, R2D * c[k++], GMT_LATSWAP_O2G);		/* Convert back to geodetic */
-			j = (int)GMT_grd_y_to_row (GMT, yg, G->header);
-			if (i < 0 || (col2 = i) >= G->header->nx || j < 0 || (row2 = j) >= G->header->ny)	/* Outside the CVA box, flag as outside */
+			i = (int)gmt_M_grd_x_to_col (GMT, c[k++], G_rad->header);
+			yg = gmt_lat_swap (GMT, R2D * c[k++], GMT_LATSWAP_O2G);		/* Convert back to geodetic */
+			j = (int)gmt_M_grd_y_to_row (GMT, yg, G->header);
+			if (i < 0 || (col2 = i) >= G->header->n_columns || j < 0 || (row2 = j) >= G->header->n_rows)	/* Outside the CVA box, flag as outside */
 				node = UINTMAX_MAX;
 			else								/* Inside the CVA box, assign node ij */
-				node = GMT_IJP (G->header, row2, col2);
+				node = gmt_M_ijp (G->header, row2, col2);
 			if (keep_flowlines) {
 				flowline[n_nodes].node[m] = node;
 				if (Ctrl->PA.active) flowline[n_nodes].PA[m] = (unsigned short) lrint (c[k++] * T_2_PA);
@@ -787,7 +787,7 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 			mem += sizeof (struct FLOWLINE) + np * sizeof (uint64_t) + ((Ctrl->PA.active) ? np * sizeof (unsigned short) : 0);
 		}
 
-		GMT_free (GMT, c);	/* Free the flowline vector */
+		gmt_M_free (GMT, c);	/* Free the flowline vector */
 
 		n_nodes++;	/* Go to next node */
 
@@ -795,8 +795,8 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 			size_t old_n_alloc = n_alloc;
 			inc_alloc *= 2;
 			n_alloc += inc_alloc;
-			flowline = GMT_memory (GMT, flowline, n_alloc, struct FLOWLINE);
-			GMT_memset (&(flowline[old_n_alloc]), n_alloc - old_n_alloc, struct FLOWLINE);	/* Set to NULL/0 */
+			flowline = gmt_M_memory (GMT, flowline, n_alloc, struct FLOWLINE);
+			gmt_M_memset (&(flowline[old_n_alloc]), n_alloc - old_n_alloc, struct FLOWLINE);	/* Set to NULL/0 */
 		}
 		
 		if (!(n_nodes%100)) GMT_Report (API, GMT_MSG_VERBOSE, "Row %5ld Processed %5" PRIu64" nodes [%5ld/%.1f]\r", row, n_nodes, n_flow, mem * B_TO_MB);
@@ -804,7 +804,7 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 	GMT_Report (API, GMT_MSG_VERBOSE, "Row %5ld Processed %5" PRIu64 " nodes [%5ld/%.1f]\n", row, n_nodes, n_flow, mem * B_TO_MB);
 	GMT_Report (API, GMT_MSG_VERBOSE, "On average, each node was visited %g times\n", n_more_than_once / n_unique_nodes);
 
-	if (keep_flowlines && n_nodes != n_alloc) flowline = GMT_memory (GMT, flowline, n_nodes, struct FLOWLINE);
+	if (keep_flowlines && n_nodes != n_alloc) flowline = gmt_M_memory (GMT, flowline, n_nodes, struct FLOWLINE);
 	
 	/* OK, Done processing, time to write out */
 
@@ -815,8 +815,14 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 		
 	GMT_Report (API, GMT_MSG_VERBOSE, "Write CVA grid %s\n", Ctrl->G.file);
 
-	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, G) != GMT_OK) {
+	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) {
+		gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+		gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
+		Return (API->error);
+	}
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, G) != GMT_NOERROR) {
+		gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+		gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
 		Return (API->error);
 	}
 
@@ -834,19 +840,19 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 			strcat (format, "_%%d");		/* Make filenames like prefix_#.ext */
 			strcat (format, &Ctrl->G.file[len]);	/* Should add the extension from said file */
 		}
-		CVA_inc = GMT_memory (GMT, NULL, G->header->size, float);
+		CVA_inc = gmt_M_memory (GMT, NULL, G->header->size, float);
 		nz = urint ((Ctrl->Z.max - Ctrl->Z.min) / Ctrl->Z.inc);
 		for (layer = 0; layer < nz; layer++) {
 			z0 = Ctrl->Z.min + layer * Ctrl->Z.inc;
 			z1 = z0 + Ctrl->Z.inc;
 			GMT_Report (API, GMT_MSG_VERBOSE, "Start z-slice %g - %g\n", z0, z1);
-			GMT_memset (CVA_inc, G->header->size, float);	/* Fresh start for this z-slice */
+			gmt_M_memset (CVA_inc, G->header->size, float);	/* Fresh start for this z-slice */
 			for (m = 0; m < n_nodes; m++) {				/* Loop over all active flowlines */
 				ij = flowline[m].ij;
 				if (Z->data[ij] <= z0 || Z->data[ij] > z1) continue;	/* z outside current slice */
-				row = (unsigned int)GMT_row (Z->header, ij);
+				row = (unsigned int)gmt_M_row (Z->header, ij);
 				cva_contribution = lat_area[row] * (Ctrl->T.active[UPPER] ? Ctrl->T.t_fix : Z->data[ij]);	/* This node's contribution to the convolution */
-				GMT_memset (processed_node, G->header->size, char);		/* Fresh start for this flowline convolution */
+				gmt_M_memset (processed_node, G->header->size, char);		/* Fresh start for this flowline convolution */
 				for (k = 0; k < flowline[m].n; k++) {			/* For each point along this flowline */
 					node = flowline[m].node[k];
 					if (node != UINTMAX_MAX && !processed_node[node]) {	/* Have not added to the CVA at this node yet */
@@ -863,17 +869,25 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 				GMT_Report (API, GMT_MSG_VERBOSE, "Normalize CVS grid to percentages of max CVA\n");
 				normalize_grid (GMT, G, CVA_inc);
 			}
-			sprintf (G->header->remark, "CVA for z-range %g - %g only", z0, z1);
+			snprintf (G->header->remark, GMT_GRID_REMARK_LEN160, "CVA for z-range %g - %g only", z0, z1);
 			sprintf (file, format, layer);
 			G->data = CVA_inc;	/* Temporarily change the array pointer */
 			GMT_Report (API, GMT_MSG_VERBOSE, "Save z-slice CVA to file %s\n", file);
-			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, file, G) != GMT_OK) {
+			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) {
+				gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+				gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
+				gmt_M_free (GMT, CVA_inc);
+				Return (API->error);
+			}
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, file, G) != GMT_NOERROR) {
+				gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+				gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
+				gmt_M_free (GMT, CVA_inc);
 				Return (API->error);
 			}
 		}
 		G->data = old;	/* Reset the array pointer */
-		GMT_free (GMT, CVA_inc);
+		gmt_M_free (GMT, CVA_inc);
 	}
 			
 	if (Ctrl->D.active || Ctrl->PA.active) {	/* Must determine max CVA along each flowline */
@@ -905,16 +919,16 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 			k_step = 3;	/* FLowlines have (x,y,t) here */
 			forth_flag = (Ctrl->PA.active) ? 11 : 10;	/* The 10 is used to limit the flowline calculation to only resample track within the rectangular box of interest */
 			n_flow = n_nodes = 0;
-			GMT_grd_loop (GMT, Z, row, col, ij) {	/* Loop over all input nodes */
+			gmt_M_grd_loop (GMT, Z, row, col, ij) {	/* Loop over all input nodes */
 				/* STEP 1: Determine if z exceeds threshold and if so assign age */
-				if (GMT_is_fnan (Z->data[ij]) || Z->data[ij] < Ctrl->Z.min || Z->data[ij] > Ctrl->Z.max) continue;	/* Skip node since it is NaN or outside the Ctrl->Z.min < z < Ctrl->Z.max range */
+				if (gmt_M_is_fnan (Z->data[ij]) || Z->data[ij] < Ctrl->Z.min || Z->data[ij] > Ctrl->Z.max) continue;	/* Skip node since it is NaN or outside the Ctrl->Z.min < z < Ctrl->Z.max range */
 				if (Ctrl->Q.mode && !ID_info[ID[ij]].ok) continue;				/* Skip because of wrong ID */
 				if (!set_age (GMT, &t_smt, A, ij, Ctrl->N.t_upper, Ctrl->T.active[TRUNC])) continue;	/* Skip as age is outside our range */
 				/* STEP 2: Calculate this node's flowline */
 				if (Ctrl->Q.mode && ID_info[ID[ij]].check_region) /* Set up a box-limited flowline sampling */
-					GMT_memcpy (this_wesn, ID_info[ID[ij]].wesn, 4, double);
+					gmt_M_memcpy (this_wesn, ID_info[ID[ij]].wesn, 4, double);
 				else
-					GMT_memcpy (this_wesn, wesn, 4, double);
+					gmt_M_memcpy (this_wesn, wesn, 4, double);
 				np = get_flowline (GMT, x_smt[col], y_smt[row], t_smt, p, n_stages, sampling_int_in_km, k_step, forth_flag, this_wesn, &c);
 				if (np == 0) continue;	/* No flowline inside this wesn */
 		 		n_nodes++;
@@ -922,20 +936,20 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 				CVA_max = 0.0;
 				this_pa = GMT->session.d_NaN;
 				for (m = 0, k = 1; m < np; m++) {	/* Store nearest node indices only */
-					i = (int)GMT_grd_x_to_col (GMT, c[k++], G_rad->header);
-					if (i < 0 || (col = i) >= G->header->nx) { k += 2; continue;}	/* Outside the CVA box, flag as outside */
-					yg = GMT_lat_swap (GMT, R2D * c[k++], GMT_LATSWAP_O2G);		/* Convert back to geodetic */
-					j = (int)GMT_grd_y_to_row (GMT, yg, G->header);
-					if (j < 0 || (row = j) >= G->header->ny) { k++; continue;}	/* Outside the CVA box, flag as outside */
+					i = (int)gmt_M_grd_x_to_col (GMT, c[k++], G_rad->header);
+					if (i < 0 || (col = i) >= G->header->n_columns) { k += 2; continue;}	/* Outside the CVA box, flag as outside */
+					yg = gmt_lat_swap (GMT, R2D * c[k++], GMT_LATSWAP_O2G);		/* Convert back to geodetic */
+					j = (int)gmt_M_grd_y_to_row (GMT, yg, G->header);
+					if (j < 0 || (row = j) >= G->header->n_rows) { k++; continue;}	/* Outside the CVA box, flag as outside */
 					if (Ctrl->PA.active) pa_val = c[k++];
-					node = GMT_IJP (G->header, row, col);
+					node = gmt_M_ijp (G->header, row, col);
 					if (G->data[node] <= CVA_max) continue;	/* Already seen higher CVA values */
 					CVA_max = G->data[node];
 					if (Ctrl->PA.active) this_pa = pa_val;
 				}
 				if (Ctrl->D.active) DI->data[ij] = (float)CVA_max;	/* Store the maximum CVA associated with this node's flowline */
 				if (Ctrl->PA.active) PA->data[ij] = (float) this_pa;
-				GMT_free (GMT, c);
+				gmt_M_free (GMT, c);
 				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Row %5ld: Processed %5" PRIu64 " flowlines\r", row, n_nodes);
 			}
 			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Row %5ld: Processed %5" PRIu64 " flowlines\n", row, n_nodes);
@@ -944,17 +958,21 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 
 		if (Ctrl->D.active) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Write DI grid %s\n", Ctrl->D.file);
-			sprintf (DI->header->remark, "CVA maxima along flowlines from each node");
+			snprintf (DI->header->remark, GMT_GRID_REMARK_LEN160, "CVA maxima along flowlines from each node");
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, DI)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->D.file, DI) != GMT_OK) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->D.file, DI) != GMT_NOERROR) {
+				gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+				gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
 				Return (API->error);
 			}
 		}
 		if (Ctrl->PA.active) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Write PA grid %s\n", Ctrl->PA.file);
-			sprintf (PA->header->remark, "Predicted age for each node");
+			snprintf (PA->header->remark, GMT_GRID_REMARK_LEN160, "Predicted age for each node");
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, PA)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->PA.file, PA) != GMT_OK) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->PA.file, PA) != GMT_NOERROR) {
+				gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+				gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
 				Return (API->error);
 			}
 		}
@@ -962,20 +980,24 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 	
 	if (Ctrl->W.active) {	/* Use bootstrapping to estimate confidence region for CVA maxima */
 
-		if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+		if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 			GMT_Message (API, GMT_TIME_NONE, "Preprocessed %5" PRIu64 " flowlines\n", n_nodes);
 			GMT_Message (API, GMT_TIME_NONE, "%" PRIu64 " of %" PRIu64 " total flowlines entered CVA region\n", n_nodes, n_flow);
 			GMT_Message (API, GMT_TIME_NONE, "Flowlines consumed %d Mb of memory\n", lrint (mem * B_TO_MB));
 			GMT_Message (API, GMT_TIME_NONE, "Estimate %d CVA max locations using bootstrapping\n", Ctrl->W.n_try);
 		}
 
-		if ((error = GMT_set_cols (GMT, GMT_OUT, 3)) != GMT_OK) {
+		if ((error = gmt_set_cols (GMT, GMT_OUT, 3)) != GMT_NOERROR) {
 			Return (error);
 		}
-		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
+			gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+			gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
 			Return (API->error);
 		}
-		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+			gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+			gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
 			Return (API->error);
 		}
 
@@ -983,17 +1005,17 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 	
 		try = 0;
 		srand ((unsigned int)time(NULL));	/* Initialize random number generator */
-		x_scale = (double)G->header->nx / (double)RAND_MAX;
-		y_scale = (double)G->header->ny / (double)RAND_MAX;
+		x_scale = (double)G->header->n_columns / (double)RAND_MAX;
+		y_scale = (double)G->header->n_rows / (double)RAND_MAX;
 		for (try = 1; try <= Ctrl->W.n_try; try++) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Bootstrap try %d\r", try);
 		
-			GMT_memset (G->data, G->header->size, float);	/* Start with fresh grid */
+			gmt_M_memset (G->data, G->header->size, float);	/* Start with fresh grid */
 			for (m = 0; m < n_nodes; m++) {	/* Loop over all indices */
-				row = urint (floor (rand() * y_scale));		/* Get a random integer in 0 to ny-1 range */
-				col = urint (floor (rand() * x_scale));		/* Get a random integer in 0 to nx-1 range */
-				ij = GMT_IJP (G->header, row, col);		/* Get the node index */
-				GMT_memset (processed_node, G->header->size, char);		/* Fresh start for this flowline convolution */
+				row = urint (floor (rand() * y_scale));		/* Get a random integer in 0 to n_rows-1 range */
+				col = urint (floor (rand() * x_scale));		/* Get a random integer in 0 to n_columns-1 range */
+				ij = gmt_M_ijp (G->header, row, col);		/* Get the node index */
+				gmt_M_memset (processed_node, G->header->size, char);		/* Fresh start for this flowline convolution */
 				zz = Z->data[flowline[ij].ij];
 				for (k = 0; k < flowline[ij].n; k++) {		/* For each point along this flowline */
 					node = flowline[ij].node[k];
@@ -1015,38 +1037,38 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 					max_ij = ij;
 				}
 			}
-			col = (unsigned int)GMT_col (G->header, max_ij);
-			row = (unsigned int)GMT_row (G->header, max_ij);
-			out[0] = GMT_grd_col_to_x (GMT, col, G->header);
-			out[1] = GMT_grd_row_to_y (GMT, row, G->header);
+			col = (unsigned int)gmt_M_col (G->header, max_ij);
+			row = (unsigned int)gmt_M_row (G->header, max_ij);
+			out[0] = gmt_M_grd_col_to_x (GMT, col, G->header);
+			out[1] = gmt_M_grd_row_to_y (GMT, row, G->header);
 			out[2] = CVA_max;
 			
 			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
 		}
 		GMT_Report (API, GMT_MSG_VERBOSE, "Bootstrap try %d\n", Ctrl->W.n_try);
-		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 			Return (API->error);
 		}
 	}
 	
 	/* Clean up memory */
 
-	GMT_free (GMT, processed_node);
+	gmt_M_free (GMT, processed_node);
 	for (m = 0; keep_flowlines && m < n_nodes; m++) {
-		GMT_free (GMT, flowline[m].node);
-		if (Ctrl->PA.active) GMT_free (GMT, flowline[m].PA);
+		gmt_M_free (GMT, flowline[m].node);
+		if (Ctrl->PA.active) gmt_M_free (GMT, flowline[m].PA);
 	}
-	GMT_free (GMT, p);
-	GMT_free (GMT, x_smt);	GMT_free (GMT, y_smt);
-	GMT_free (GMT, x_cva);	GMT_free (GMT, y_cva);
-	GMT_free (GMT, lat_area);
-	if (keep_flowlines) GMT_free (GMT, flowline);
-	if (Ctrl->Q.mode) GMT_free (GMT, ID_info);
-	if (GMT_Destroy_Data (API, &G_rad) != GMT_OK) {
+	gmt_M_free (GMT, p);
+	gmt_M_free (GMT, x_smt);	gmt_M_free (GMT, y_smt);
+	gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+	gmt_M_free (GMT, lat_area);
+	if (keep_flowlines) gmt_M_free (GMT, flowline);
+	if (Ctrl->Q.mode) gmt_M_free (GMT, ID_info);
+	if (GMT_Destroy_Data (API, &G_rad) != GMT_NOERROR) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Failed to free G_rad\n");
 	}
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Done\n");
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

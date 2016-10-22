@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdpmodeler.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: grdpmodeler.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *   Copyright (c) 1999-2015 by P. Wessel
+ *   Copyright (c) 1999-2016 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -26,12 +26,12 @@
 
 #define THIS_MODULE_NAME	"grdpmodeler"
 #define THIS_MODULE_LIB		"spotter"
-#define THIS_MODULE_PURPOSE	"Evaluate a plate model on a geographic grid"
-#define THIS_MODULE_KEYS	"<GI,ETI,FDi,GGo,>DG,RG-"
+#define THIS_MODULE_PURPOSE	"Evaluate a plate motion model on a geographic grid"
+#define THIS_MODULE_KEYS	"<G{,FD(,GG),>DG"
 
 #include "spotter.h"
 
-#define GMT_PROG_OPTIONS "-:RVbdhior"
+#define GMT_PROG_OPTIONS "-:RVbdhor"
 
 #define N_PM_ITEMS	9
 #define PM_AZIM		0
@@ -50,9 +50,9 @@ struct GRDROTATER_CTRL {	/* All control options for this program (except common 
 		bool active;
 		char *file;
 	} In;
-	struct E {	/* -Erotfile */
+	struct E {	/* -E[+]rotfile, -E[+]<ID1>-<ID2>, or -E<lon/lat/angle> */
 		bool active;
-		char *file;
+		struct SPOTTER_ROT rot;
 	} E;
 	struct F {	/* -Fpolfile */
 		bool active;
@@ -81,34 +81,33 @@ struct GRDROTATER_CTRL {	/* All control options for this program (except common 
 	} T;
 };
 
-void *New_grdpmodeler_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct GRDROTATER_CTRL *C;
-	
-	C = GMT_memory (GMT, NULL, 1, struct GRDROTATER_CTRL);
-	
+
+	C = gmt_M_memory (GMT, NULL, 1, struct GRDROTATER_CTRL);
+
 	/* Initialize values whose defaults are not 0/false/NULL */
-	
+
 	return (C);
 }
 
-void Free_grdpmodeler_Ctrl (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->In.file) free (C->In.file);	
-	if (C->E.file) free (C->E.file);	
-	if (C->F.file) free (C->F.file);	
-	if (C->G.file) free (C->G.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->In.file);	
+	gmt_M_str_free (C->E.rot.file);	
+	gmt_M_str_free (C->F.file);	
+	gmt_M_str_free (C->G.file);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_grdpmodeler_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: grdpmodeler <agegrdfile> -E<rottable> [-F<polygontable>] [-G<outgrid>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-N<upper_age>] [-SadrswxyXY]\n\t[-T<time>] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s]\n\n",
-		GMT_Id_OPT, GMT_Rgeo_OPT, GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: grdpmodeler <agegrdfile> %s [-F<polygontable>] [-G<outgrid>]\n", SPOTTER_E_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-N<upper_age>] [-SadrswxyXY]\n\t[-T<time>] [%s] [%s] [%s]\n\t[%s] [%s]\n\n",
+		GMT_Id_OPT, GMT_Rgeo_OPT, GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_r_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<agegrdfile> is a gridded data file in geographic coordinates with crustal ages.\n");
 	spotter_rot_usage (API, 'E');
@@ -130,15 +129,15 @@ int GMT_grdpmodeler_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   y : Change in latitude since formation.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   X : Longitude at origin of crust.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Y : Latitude at origin of crust.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Default writes separate grids for adrswxyXY\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Set fixed time of reconstruction to override age grid.\n");
-	GMT_Option (API, "V,bi2,d,h,i,r,.");
-	
-	return (EXIT_FAILURE);
+	GMT_Option (API, "V,bi2,d,h,r,.");
+
+	return (GMT_MODULE_USAGE);
 
 }
 
-int GMT_grdpmodeler_parse (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to grdpmodeler and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -153,36 +152,34 @@ int GMT_grdpmodeler_parse (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *Ctrl, s
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
+				if ((Ctrl->In.active = gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 
 			/* Supplemental parameters */
-			
+
 			case 'E':	/* File with stage poles */
-				if ((Ctrl->E.active = GMT_check_filearg (GMT, 'E', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
-					Ctrl->E.file = strdup (opt->arg);
-				else
-					n_errors++;
+				Ctrl->E.active = true;
+				n_errors += spotter_parse (GMT, opt->option, opt->arg, &(Ctrl->E.rot));
 				break;
 			case 'F':
-				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
+				if ((Ctrl->F.active = gmt_check_filearg (GMT, 'F', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
 					Ctrl->F.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
+				if ((Ctrl->G.active = gmt_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'I':
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					GMT_inc_syntax (GMT, 'I', 1);
+				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+					gmt_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
@@ -217,56 +214,57 @@ int GMT_grdpmodeler_parse (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *Ctrl, s
 					}
 					Ctrl->S.n_items++;
 				}
-				if (Ctrl->S.n_items == 0) {	/* Set default which are all the items */
-					Ctrl->S.n_items = N_PM_ITEMS;
-					for (k = 0; k < Ctrl->S.n_items; k++) Ctrl->S.mode[k] = k;
-				}
 				break;
 			case 'T':
 				Ctrl->T.active = true;
 				Ctrl->T.value = atof (opt->arg);
 				break;
-				
+
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
+	if (Ctrl->S.n_items == 0) {	/* Set default which are all the items */
+		Ctrl->S.active = true;
+		Ctrl->S.n_items = N_PM_ITEMS;
+		for (k = 0; k < Ctrl->S.n_items; k++) Ctrl->S.mode[k] = k;
+	}
+
 	if (!Ctrl->In.file) {	/* Must have -R -I [-r] */
-		n_errors += GMT_check_condition (GMT, !GMT->common.R.active && !Ctrl->I.active, "Syntax error: Must specify input file or -R -I [-r]\n");
+		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active && !Ctrl->I.active, "Syntax error: Must specify input file or -R -I [-r]\n");
 	}
 	else {	/* Must not have -I -r */
-		n_errors += GMT_check_condition (GMT, Ctrl->I.active || GMT->common.r.active, "Syntax error: Cannot specify input file AND -R -r\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active || GMT->common.r.active, "Syntax error: Cannot specify input file AND -R -r\n");
 	}
 	if (Ctrl->G.active) {	/* Specified output grid(s) */
-		n_errors += GMT_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->S.n_items > 1 && !strstr (Ctrl->G.file, "%s"), "Syntax error -G: File name must be a template containing \"%s\"\n");
+		n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->S.n_items > 1 && !strstr (Ctrl->G.file, "%s"), "Syntax error -G: File name must be a template containing \"%s\"\n");
 	}
 	else
-		n_errors += GMT_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input file when no output grids are created\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->E.active, "Syntax error: Must specify -E\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->S.active, "Syntax error: Must specify -S\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.n_items == 0, "Syntax error: Must specify one or more fields with -S\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.value < 0.0, "Syntax error -T: Must specify positive age.\n");
+		n_errors += gmt_M_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input file when no output grids are created\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->E.active, "Syntax error: Must specify -E\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->S.active, "Syntax error: Must specify -S\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->S.n_items == 0, "Syntax error: Must specify one or more fields with -S\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->T.value < 0.0, "Syntax error -T: Must specify positive age.\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_grdpmodeler_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {gmt_M_free (GMT, p); Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_grdpmodeler (void *V_API, int mode, void *args)
-{
+int GMT_grdpmodeler (void *V_API, int mode, void *args) {
 	unsigned int col, row, inside, stage, n_stages, registration, k;
 	int retval, error = 0;
-	
+
 	bool skip, spotted;
-	
+
 	uint64_t node, seg, n_old = 0, n_outside = 0, n_NaN = 0;
-	
-	double lon, lat, d, value = 0.0, age, wesn[4], inc[2], *grd_x = NULL, *grd_y = NULL, *grd_yc = NULL, *out = NULL;
-	
+
+	double lon = 0, lat = 0, d, value = 0.0, age, wesn[4], inc[2], *grd_x = NULL, *grd_y = NULL, *grd_yc = NULL, *out = NULL;
+
 	char *quantity[N_PM_ITEMS] = { "azimuth", "distance displacement", "stage", "velocity", "rotation rate", "longitude displacement", \
 		"latitude displacement", "reconstructed longitude", "reconstructed latitude"};
 	char *tag[N_PM_ITEMS] = { "az", "dist", "stage", "vel", "omega", "dlon", "dlat", "lon", "lat" };
@@ -278,25 +276,25 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 	struct GRDROTATER_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdpmodeler_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdpmodeler_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdpmodeler_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_grdpmodeler_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_grdpmodeler_parse (GMT, Ctrl, options)) != 0) Return (error);
-	
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
+
 	/*---------------------------- This is the grdpmodeler main code ----------------------------*/
 
 	/* Check limits and get data file */
@@ -305,17 +303,17 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 		if ((G_age = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
-		GMT_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : G_age->header->wesn), 4, double);
+		gmt_M_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : G_age->header->wesn), 4, double);
 		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->In.file, G_age) == NULL) {
 			Return (API->error);	/* Get header only */
 		}
-		GMT_memcpy (inc, G_age->header->inc, 2, double);	/* Use same increment for output grid */
+		gmt_M_memcpy (inc, G_age->header->inc, 2, double);	/* Use same increment for output grid */
 		registration = G_age->header->registration;
-		GMT_memcpy (GMT->common.R.wesn, G_age->header->wesn, 4, double);
+		gmt_M_memcpy (GMT->common.R.wesn, G_age->header->wesn, 4, double);
 		GMT->common.R.active = true;
 	}
 	else {	/* Use the input options of -R -I [and -r] */
-		GMT_memcpy (inc, Ctrl->I.inc, 2, double);
+		gmt_M_memcpy (inc, Ctrl->I.inc, 2, double);
 		registration = GMT->common.r.registration;
 	}
 
@@ -327,7 +325,18 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 		GMT_Report (API, GMT_MSG_VERBOSE, "Restrict evalution to within polygons in file %s\n", Ctrl->F.file);
 	}
 
-	n_stages = spotter_init (GMT, Ctrl->E.file, &p, false, false, 0, &Ctrl->N.t_upper);
+	if (Ctrl->E.rot.single) {	/* Got a single rotation, no time, create a rotation table with one entry */
+		n_stages = 1;
+		p = gmt_M_memory (GMT, NULL, n_stages, struct EULER);
+		p[0].lon = Ctrl->E.rot.lon; p[0].lat = Ctrl->E.rot.lat; p[0].omega = Ctrl->E.rot.w;
+		if (gmt_M_is_dnan (Ctrl->E.rot.age)) {	/* No age, use fake age = 1 everywhere */
+			Ctrl->T.active = true;
+			Ctrl->T.value = p[0].t_start = 1.0;
+		}
+		spotter_setrot (GMT, &(p[0]));
+	}
+	else	/* Got a file or Gplates plate pair */
+		n_stages = spotter_init (GMT, Ctrl->E.rot.file, &p, false, false, Ctrl->E.rot.invert, &Ctrl->N.t_upper);
 	for (stage = 0; stage < n_stages; stage++) {
 		if (p[stage].omega < 0.0) {	/* Ensure all stages have positive rotation angles */
 			p[stage].omega = -p[stage].omega;
@@ -338,15 +347,20 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 	}
 	if (Ctrl->T.active && Ctrl->T.value > Ctrl->N.t_upper) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Requested a fixed reconstruction time outside range of rotation table\n");
-		GMT_free (GMT, p);
-		Return (EXIT_FAILURE);
+		Return (GMT_RUNTIME_ERROR);
 	}
-	
+
 	if (Ctrl->G.active) {	/* Need one or more output grids */
-		G_mod = GMT_memory (GMT, NULL, Ctrl->S.n_items, struct GMT_GRID *);
+		G_mod = gmt_M_memory (GMT, NULL, Ctrl->S.n_items, struct GMT_GRID *);
 		for (k = 0; k < Ctrl->S.n_items; k++) {
 			if ((G_mod[k] = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, inc, \
-				registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
+				registration, GMT_NOTSET, NULL)) == NULL) {	/* Free previous grids and bail */
+					unsigned int kk;
+					for (kk = 0; kk < k; kk++)
+						(void)GMT_Destroy_Data (API, &G_mod[kk]);
+					gmt_M_free (GMT, G_mod);
+					Return (API->error);
+			}
 
 			switch (Ctrl->S.mode[k]) {
 				case PM_AZIM:	/* Compute plate motion direction at this point in time/space */
@@ -369,45 +383,45 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 		}
 		/* Just need on common set of x/y arrays; select G_mod[0] as our template */
 		G = G_mod[0];
-		GMT_Report (API, GMT_MSG_VERBOSE, "Evalute %d model prediction grids based on %s\n", Ctrl->S.n_items, Ctrl->E.file);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Evaluate %d model prediction grids based on %s\n", Ctrl->S.n_items, Ctrl->E.rot.file);
 	}
 	else {	/* No output grids, must have input age grid to rely on */
 		G = G_age;
-		out = GMT_memory (GMT, NULL, Ctrl->S.n_items + 3, double);
-		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
 			Return (API->error);
 		}
-		if ((error = GMT_set_cols (GMT, GMT_OUT, Ctrl->S.n_items + 3)) != GMT_OK) {
+		if ((error = gmt_set_cols (GMT, GMT_OUT, Ctrl->S.n_items + 3)) != GMT_NOERROR) {
 			Return (error);
 		}
-		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
-		GMT_Report (API, GMT_MSG_VERBOSE, "Evalute %d model predictions based on %s\n", Ctrl->S.n_items, Ctrl->E.file);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Evaluate %d model predictions based on %s\n", Ctrl->S.n_items, Ctrl->E.rot.file);
+		out = gmt_M_memory (GMT, NULL, Ctrl->S.n_items + 3, double);
 	}
-	
-	grd_x  = GMT_memory (GMT, NULL, G->header->nx, double);
-	grd_y  = GMT_memory (GMT, NULL, G->header->ny, double);
-	grd_yc = GMT_memory (GMT, NULL, G->header->ny, double);
+
+	grd_x  = gmt_M_memory (GMT, NULL, G->header->n_columns, double);
+	grd_y  = gmt_M_memory (GMT, NULL, G->header->n_rows, double);
+	grd_yc = gmt_M_memory (GMT, NULL, G->header->n_rows, double);
 	/* Precalculate node coordinates in both degrees and radians */
-	for (row = 0; row < G->header->ny; row++) {
-		grd_y[row]  = GMT_grd_row_to_y (GMT, row, G->header);
-		grd_yc[row] = GMT_lat_swap (GMT, grd_y[row], GMT_LATSWAP_G2O);
+	for (row = 0; row < G->header->n_rows; row++) {
+		grd_y[row]  = gmt_M_grd_row_to_y (GMT, row, G->header);
+		grd_yc[row] = gmt_lat_swap (GMT, grd_y[row], GMT_LATSWAP_G2O);
 	}
-	for (col = 0; col < G->header->nx; col++) grd_x[col] = GMT_grd_col_to_x (GMT, col, G->header);
+	for (col = 0; col < G->header->n_columns; col++) grd_x[col] = gmt_M_grd_col_to_x (GMT, col, G->header);
 
 	/* Loop over all nodes in the new rotated grid and find those inside the reconstructed polygon */
-	
 
-	GMT_init_distaz (GMT, 'd', GMT_GREATCIRCLE, GMT_MAP_DIST);	/* Great circle distances in degrees */
+
+	gmt_init_distaz (GMT, 'd', GMT_GREATCIRCLE, GMT_MAP_DIST);	/* Great circle distances in degrees */
 	if (Ctrl->S.center) GMT->current.io.geo.range = GMT_IS_M180_TO_P180_RANGE;	/* Need +- around 0 here */
 
-	GMT_grd_loop (GMT, G, row, col, node) {
+	gmt_M_grd_loop (GMT, G, row, col, node) {
 		skip = false;
 		if (Ctrl->F.active) {	/* Use the bounding polygon */
 			for (seg = inside = 0; seg < pol->n_segments && !inside; seg++) {	/* Use degrees since function expects it */
-				if (GMT_polygon_is_hole (pol->segment[seg])) continue;	/* Holes are handled within GMT_inonout */
-				inside = (GMT_inonout (GMT, grd_x[col], grd_y[row], pol->segment[seg]) > 0);
+				if (gmt_M_polygon_is_hole (pol->segment[seg])) continue;	/* Holes are handled within gmt_inonout */
+				inside = (gmt_inonout (GMT, grd_x[col], grd_y[row], pol->segment[seg]) > 0);
 			}
 			if (!inside) skip = true, n_outside++;	/* Outside the polygon(s); set all output grids to NaN for this node */
 		}
@@ -416,7 +430,7 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 			age = Ctrl->T.value;
 		else {
 			age = G_age->data[node];
-			if (GMT_is_dnan (age)) skip = true, n_NaN++;		/* No crustal age  */
+			if (gmt_M_is_dnan (age)) skip = true, n_NaN++;		/* No crustal age  */
 			else if (age > Ctrl->N.t_upper) skip = true, n_old++;	/* Outside of model range */
 		}
 		if (skip) {
@@ -433,8 +447,8 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 		for (k = 0; k < Ctrl->S.n_items; k++) {
 			switch (Ctrl->S.mode[k]) {
 				case PM_AZIM:	/* Compute plate motion direction at this point in time/space */
-					value = GMT_az_backaz (GMT, grd_x[col], grd_yc[row], p[stage].lon, p[stage].lat, false) - 90.0;
-					GMT_lon_range_adjust (GMT->current.io.geo.range, &value);
+					value = gmt_az_backaz (GMT, grd_x[col], grd_yc[row], p[stage].lon, p[stage].lat, false) - 90.0;
+					gmt_lon_range_adjust (GMT->current.io.geo.range, &value);
 					break;
 				case PM_DIST:	/* Compute great-circle distance between node and point of origin at ridge */
 					if (!spotted) {
@@ -442,13 +456,13 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 						(void)spotter_backtrack (GMT, &lon, &lat, &age, 1U, p, n_stages, 0.0, 0.0, 0, NULL, NULL);
 						spotted = true;
 					}
-					value = GMT->current.proj.DIST_KM_PR_DEG * GMT_distance (GMT, grd_x[col], grd_yc[row], lon * R2D, lat * R2D);
+					value = GMT->current.proj.DIST_KM_PR_DEG * gmt_distance (GMT, grd_x[col], grd_yc[row], lon * R2D, lat * R2D);
 					break;
 				case PM_STAGE:	/* Compute plate rotation stage */
 					value = stage;
 					break;
 				case PM_VEL:	/* Compute plate motion speed at this point in time/space */
-					d = GMT_distance (GMT, grd_x[col], grd_yc[row], p[stage].lon, p[stage].lat);
+					d = gmt_distance (GMT, grd_x[col], grd_yc[row], p[stage].lon, p[stage].lat);
 					value = sind (d) * p[stage].omega * GMT->current.proj.DIST_KM_PR_DEG;	/* km/Myr or mm/yr */
 					break;
 				case PM_OMEGA:	/* Compute plate rotation rate omega */
@@ -469,7 +483,7 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 						(void)spotter_backtrack (GMT, &lon, &lat, &age, 1U, p, n_stages, 0.0, 0.0, 0, NULL, NULL);
 						spotted = true;
 					}
-					value = grd_y[row] - GMT_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
+					value = grd_y[row] - gmt_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 					break;
 				case PM_LON:	/* Compute latitude where this point was formed in the model */
 					if (!spotted) {
@@ -485,7 +499,7 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 						(void)spotter_backtrack (GMT, &lon, &lat, &age, 1U, p, n_stages, 0.0, 0.0, 0, NULL, NULL);
 						spotted = true;
 					}
-					value = GMT_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);			/* Convert back to geodetic */
+					value = gmt_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);			/* Convert back to geodetic */
 					break;
 			}
 			if (Ctrl->G.active)
@@ -494,8 +508,8 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 				out[k+3] = value;
 		}
 		if (!Ctrl->G.active) GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
-	}	
-	
+	}
+
 	if (n_outside) GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " points fell outside the polygonal boundary\n", n_outside);
 	if (n_old) GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " points had ages that exceeded the limit of the rotation model\n", n_old);
 	if (n_NaN) GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " points had ages that were NaN\n", n_NaN);
@@ -507,27 +521,26 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args)
 			GMT_Report (API, GMT_MSG_VERBOSE, "Write model prediction grid for %s (%s) to file %s\n", quantity[Ctrl->S.mode[k]], G_mod[k]->header->z_units, file);
 			strcpy (G_mod[k]->header->x_units, "degrees_east");
 			strcpy (G_mod[k]->header->y_units, "degrees_north");
-			sprintf (G_mod[k]->header->remark, "Plate Model predictions of %s for model %s", quantity[Ctrl->S.mode[k]], Ctrl->E.file);
+			snprintf (G_mod[k]->header->remark, GMT_GRID_REMARK_LEN160, "Plate Model predictions of %s for model %s", quantity[Ctrl->S.mode[k]], Ctrl->E.rot.file);
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G_mod[k])) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, file, G_mod[k]) != GMT_OK) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, file, G_mod[k]) != GMT_NOERROR) {
 				Return (API->error);
 			}
 		}
-		GMT_free (GMT, G_mod);
+		gmt_M_free (GMT, G_mod);
 	}
 	else {
-		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 			Return (API->error);
 		}
-		GMT_free (GMT, out);
+		gmt_M_free (GMT, out);
 	}
 
-	GMT_free (GMT, grd_x);
-	GMT_free (GMT, grd_y);
-	GMT_free (GMT, grd_yc);
-	GMT_free (GMT, p);
-	
+	gmt_M_free (GMT, grd_x);
+	gmt_M_free (GMT, grd_y);
+	gmt_M_free (GMT, grd_yc);
+
 	GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvolume.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: grdvolume.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * Brief synopsis: grdvolume reads a 2d binary gridded grid file, and calculates the volume
+ * Brief synopsis: grdvolume reads a 2d grid file, and calculates the volume
  * under the surface using exact integration of the bilinear interpolating
  * surface.  As an option, the user may supply a contour value; then the
  * volume is only integrated inside the chosen contour.
@@ -29,7 +29,7 @@
 #define THIS_MODULE_NAME	"grdvolume"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Calculate grid volume and area constrained by a contour"
-#define THIS_MODULE_KEYS	"<GI,>DO,RG-"
+#define THIS_MODULE_KEYS	"<G{,>D}"
 
 #include "gmt_dev.h"
 
@@ -42,7 +42,7 @@ struct GRDVOLUME_CTRL {
 	} In;
 	struct C {	/* -C */
 		bool active;
-		bool reverse;
+		bool reverse, reverse_min;
 		double low, high, inc;
 	} C;
 	struct L {	/* -L<base> */
@@ -67,8 +67,7 @@ struct GRDVOLUME_CTRL {
  * lines x0 and x1 and two horizontal lines y0 = ax +b and y1 = cx + d
  */
 
-double vol_prism_frac_x (struct GMT_GRID *G, uint64_t ij, double x0, double x1, double a, double b, double c, double d)
-{
+GMT_LOCAL double vol_prism_frac_x (struct GMT_GRID *G, uint64_t ij, double x0, double x1, double a, double b, double c, double d) {
 	double dzdx, dzdy, dzdxy, ca, db, c2a2, d2b2, cdab, v, x02, x12, x03, x04, x13, x14;
 
 	dzdx  = (G->data[ij+1] - G->data[ij]);
@@ -95,8 +94,7 @@ double vol_prism_frac_x (struct GMT_GRID *G, uint64_t ij, double x0, double x1, 
  * lines y0 and y1 and two vertical lines x0 = ay +b and x1 = cy + d
  */
 
-double vol_prism_frac_y (struct GMT_GRID *G, uint64_t ij, double y0, double y1, double a, double b, double c, double d)
-{
+GMT_LOCAL double vol_prism_frac_y (struct GMT_GRID *G, uint64_t ij, double y0, double y1, double a, double b, double c, double d) {
 	double dzdx, dzdy, dzdxy, ca, db, c2a2, d2b2, cdab, v, y02, y03, y04, y12, y13, y14;
 
 	dzdx = (G->data[ij+1] - G->data[ij]);
@@ -119,8 +117,8 @@ double vol_prism_frac_y (struct GMT_GRID *G, uint64_t ij, double y0, double y1, 
 	return (v);
 }
 
-void SW_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da)
-{	/* Calculates area of a SW-corner triangle */
+GMT_LOCAL void SW_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da) {
+	/* Calculates area of a SW-corner triangle */
 	/* triangle = true gets triangle, false gives the complementary area */
 	double x1, y0, frac;
 
@@ -137,8 +135,8 @@ void SW_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, do
 	}
 }
 
-void NE_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da)
-{	/* Calculates area of a NE-corner triangle */
+GMT_LOCAL void NE_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da) {
+	/* Calculates area of a NE-corner triangle */
 	/* triangle = true gets triangle, false gives the complementary area */
 	double x0, y1, a, x0_1, y1_1, frac = 0.0;
 
@@ -160,8 +158,8 @@ void NE_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, do
 	}
 }
 
-void SE_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da)
-{	/* Calculates area of a SE-corner triangle */
+GMT_LOCAL void SE_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da) {
+	/* Calculates area of a SE-corner triangle */
 	/* triangle = true gets triangle, false gives the complementary area */
 	double x0, y1, c, x0_1, frac = 0.0;
 
@@ -182,8 +180,8 @@ void SE_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, do
 	}
 }
 
-void NW_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da)
-{	/* Calculates area of a NW-corner triangle */
+GMT_LOCAL void NW_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, double *da) {
+	/* Calculates area of a NW-corner triangle */
 	/* triangle = true gets triangle, false gives the complementary area */
 	double x1, y0, y0_1, frac;
 
@@ -201,8 +199,8 @@ void NW_triangle (struct GMT_GRID *G, uint64_t ij, bool triangle, double *dv, do
 	}
 }
 
-void NS_trapezoid (struct GMT_GRID *G, uint64_t ij, bool right, double *dv, double *da)
-{	/* Calculates area of a NS trapezoid */
+GMT_LOCAL void NS_trapezoid (struct GMT_GRID *G, uint64_t ij, bool right, double *dv, double *da) {
+	/* Calculates area of a NS trapezoid */
 	/* right = true gets the right trapezoid, false gets the left */
 	double x0, x1;
 
@@ -218,8 +216,8 @@ void NS_trapezoid (struct GMT_GRID *G, uint64_t ij, bool right, double *dv, doub
 	}
 }
 
-void EW_trapezoid (struct GMT_GRID *G, uint64_t ij, bool top, double *dv, double *da)
-{	/* Calculates area of a EW trapezoid */
+GMT_LOCAL void EW_trapezoid (struct GMT_GRID *G, uint64_t ij, bool top, double *dv, double *da) {
+	/* Calculates area of a EW trapezoid */
 	/* top = true gets the top trapezoid, false gets the bottom */
 	double y0, y1;
 
@@ -235,8 +233,8 @@ void EW_trapezoid (struct GMT_GRID *G, uint64_t ij, bool top, double *dv, double
 	}
 }
 
-double median3 (double x[])
-{	/* Returns the median of the three points in x */
+GMT_LOCAL double median3 (double x[]) {
+	/* Returns the median of the three points in x */
 	if (x[0] < x[1]) {
 		if (x[2] > x[1]) return (x[1]);
 		if (x[2] > x[0]) return (x[2]);
@@ -249,19 +247,20 @@ double median3 (double x[])
 	}
 }
 
-int ors_find_kink (struct GMT_CTRL *GMT, double y[], unsigned int n, unsigned int mode)
-{	/* mode: 0 = find value maximum, 1 = find curvature maximum */
+GMT_LOCAL int ors_find_kink (struct GMT_CTRL *GMT, double y[], unsigned int n, unsigned int mode) {
+	/* mode: 0 = find value maximum, 1 = find curvature maximum */
 	unsigned int i, im;
 	double *c = NULL, *f = NULL;
 
 	if (mode == 0) {	/* Find maximum value */
-		for (i = im = 0; i < n; i++) if (y[i] > y[im]) im = i;
+		for (i = im = 0; i < n; i++)
+			if (y[i] > y[im]) im = i;
 		return (im);
 	}
 
 	/* Calculate curvatures */
 
-	c = GMT_memory (GMT, NULL, n, double);
+	c = gmt_M_memory (GMT, NULL, n, double);
 
 	for (i = 1; i < (n-1); i++) c[i] = y[i+1] - 2.0 * y[i] + y[i-1];
 	c[0] = c[1];
@@ -269,23 +268,23 @@ int ors_find_kink (struct GMT_CTRL *GMT, double y[], unsigned int n, unsigned in
 
 	/* Apply 3-point median filter to curvatures to mitigate noisy values */
 
-	f = GMT_memory (GMT, NULL, n, double);
+	f = gmt_M_memory (GMT, NULL, n, double);
 	for (i = 1; i < (n-1); i++) f[i] = median3 (&c[i-1]);
 
 	/* Find maximum negative filtered curvature */
 
 	for (i = im = 1; i < (n-1); i++) if (f[i] < f[im]) im = i;
 
-	GMT_free (GMT, c);
-	GMT_free (GMT, f);
+	gmt_M_free (GMT, c);
+	gmt_M_free (GMT, f);
 
 	return (im);
 }
 
-void *New_grdvolume_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct GRDVOLUME_CTRL *C;
 	
-	C = GMT_memory (GMT, NULL, 1, struct GRDVOLUME_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct GRDVOLUME_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 	C->L.value = GMT->session.d_NaN;
@@ -293,20 +292,20 @@ void *New_grdvolume_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a n
 	return (C);
 }
 
-void Free_grdvolume_Ctrl (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->In.file) free (C->In.file);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->In.file);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_grdvolume_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: grdvolume <ingrid> [-C<cval> or -C<low>/<high>/<delta> or -Cr<low>/<high>] [-L<base>] [-S<unit>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-T[c|h]] [%s] [%s] [-Z<fact>[/<shift>]] [%s]\n\t[%s] [%s]\n\n",
+	GMT_Message (API, GMT_TIME_NONE, "usage: grdvolume <ingrid> [-C<cval> or -C<low>/<high>/<delta> or -Cr<low>/<high> or -Cr<cval>] [-L<base>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-S<unit>] [-T[c|h]] [%s] [%s] [-Z<fact>[/<shift>]]\n\t[%s] [%s] [%s]\n\n",
 		GMT_Rgeo_OPT, GMT_V_OPT, GMT_f_OPT, GMT_ho_OPT, GMT_o_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is the name of the grid file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
@@ -314,6 +313,7 @@ int GMT_grdvolume_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   OR search using all contours from <low> to <high> in steps of <delta>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default returns area, volume and mean height of entire grid].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   OR append r (-Cr) to compute 'outside' area and volume between <low> and <high>.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   or below <cval> and grid's minimum.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Add volume from <base> up to contour [Default is from contour and up only].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Convert degrees to distances, append a unit from %s [Default is Cartesian].\n", GMT_LEN_UNITS2_DISPLAY);
 	GMT_Message (API, GMT_TIME_NONE, "\t-T (or -Th): Find the contour value that yields max average height (volume/area).\n");
@@ -322,10 +322,10 @@ int GMT_grdvolume_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Subtract <shift> and then multiply data by <fact> before processing [1/0].\n");
 	GMT_Option (API, "f,h,o,.");
 	
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_grdvolume_parse (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to grdvolume and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
 	 * Any GMT common options will override values set previously by other commands.
@@ -343,7 +343,7 @@ int GMT_grdvolume_parse (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *Ctrl, stru
 		switch (opt->option) {
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
+				if ((Ctrl->In.active = gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)) != 0)
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -356,8 +356,14 @@ int GMT_grdvolume_parse (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *Ctrl, stru
 				if (opt->arg[0] == 'r') {
 					Ctrl->C.reverse = true;
 					n = sscanf (&opt->arg[1], "%lf/%lf", &Ctrl->C.low, &Ctrl->C.high);
-					n_errors += GMT_check_condition (GMT, Ctrl->C.low >= Ctrl->C.high,
-							"Syntax error -C option: high must exceed low\n");
+					if (n == 1) {		/* -Cr<cval> used */
+						Ctrl->C.high = Ctrl->C.low;
+						Ctrl->C.low = -DBL_MAX;
+						Ctrl->C.reverse_min = true;
+						n = 2;			/* To cheat the sanity test on -Cr option below */
+					}
+					n_errors += gmt_M_check_condition (GMT, Ctrl->C.low >= Ctrl->C.high,
+					                                   "Syntax error -C option: high must exceed low\n");
 					/* Now apply the trick that makes this option work. Swap and change signs of low/high */
 					Ctrl->C.inc   = Ctrl->C.low;	/* Use inc as the buble sort tmp variable */
 					Ctrl->C.low   = -Ctrl->C.high;
@@ -368,7 +374,7 @@ int GMT_grdvolume_parse (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *Ctrl, stru
 				else {
 					n = sscanf (opt->arg, "%lf/%lf/%lf", &Ctrl->C.low, &Ctrl->C.high, &Ctrl->C.inc);
 					if (n == 3) {
-						n_errors += GMT_check_condition (GMT, Ctrl->C.low >= Ctrl->C.high || Ctrl->C.inc <= 0.0,
+						n_errors += gmt_M_check_condition (GMT, Ctrl->C.low >= Ctrl->C.high || Ctrl->C.inc <= 0.0,
 								"Syntax error -C option: high must exceed low and delta must be positive\n");
 					}
 					else
@@ -400,35 +406,35 @@ int GMT_grdvolume_parse (struct GMT_CTRL *GMT, struct GRDVOLUME_CTRL *Ctrl, stru
 				break;
 			case 'Z':
 				Ctrl->Z.active = true;
-				n_errors += GMT_check_condition (GMT, sscanf (opt->arg, "%lf/%lf", &Ctrl->Z.scale, &Ctrl->Z.offset) < 1,
+				n_errors += gmt_M_check_condition (GMT, sscanf (opt->arg, "%lf/%lf", &Ctrl->Z.scale, &Ctrl->Z.offset) < 1,
 						"Syntax error option -Z: Must specify <fact> and optionally <shift>\n");
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input grid file\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->C.active && !Ctrl->C.reverse && !(n == 1 || n == 3),
-			"Syntax error option -C: Must specify 1 or 3 arguments\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->C.reverse && n != 2,
-			"Syntax error option -C: Must specify 2 arguments\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->S.active && !(strchr (GMT_LEN_UNITS2, Ctrl->S.unit)),
-			"Syntax error option -S: Must append one of %s\n", GMT_LEN_UNITS2_DISPLAY);
-	n_errors += GMT_check_condition (GMT, Ctrl->L.active && GMT_is_dnan (Ctrl->L.value),
-			"Syntax error option -L: Must specify base\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && !Ctrl->C.active,
-			"Syntax error option -T: Must also specify -Clow/high/delta\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && Ctrl->C.active && doubleAlmostEqualZero (Ctrl->C.high, Ctrl->C.low),
-			"Syntax error option -T: Must specify -Clow/high/delta\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input grid file\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->C.active && !Ctrl->C.reverse && !(n == 1 || n == 3),
+	                                   "Syntax error option -C: Must specify 1 or 3 arguments\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->C.reverse && n != 2,
+	                                   "Syntax error option -C: Must specify 2 arguments\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && !(strchr (GMT_LEN_UNITS2, Ctrl->S.unit)),
+	                                   "Syntax error option -S: Must append one of %s\n", GMT_LEN_UNITS2_DISPLAY);
+	n_errors += gmt_M_check_condition (GMT, Ctrl->L.active && gmt_M_is_dnan (Ctrl->L.value),
+	                                   "Syntax error option -L: Must specify base\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && !Ctrl->C.active,
+	                                   "Syntax error option -T: Must also specify -Clow/high/delta\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && Ctrl->C.active && doubleAlmostEqualZero (Ctrl->C.high, Ctrl->C.low),
+	                                   "Syntax error option -T: Must specify -Clow/high/delta\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_grdvolume_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_grdvolume (void *V_API, int mode, void *args) {
 	bool bad, cut[4];
@@ -444,23 +450,23 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 	struct GMT_GRID *Grid = NULL, *Work = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_grdvolume_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_grdvolume_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_grdvolume_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_grdvolume_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_grdvolume_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the grdvolume main code ----------------------------*/
 
@@ -468,27 +474,50 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 	if ((Grid = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 		Return (API->error);
 	}
-	if (Ctrl->L.active && Ctrl->L.value >= Grid->header->z_min) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Selected base value exceeds the minimum grid z value - aborting\n");
-		Return (EXIT_FAILURE);
+	if (Ctrl->S.active && !gmt_M_is_geographic (GMT, GMT_IN)) {	/* Not known to be geographic */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: -S requires a geographic grid.\n");
+		if ((Grid->header->wesn[YLO] >= -90.0 && Grid->header->wesn[YHI] <= 90.0) && 
+			(Grid->header->wesn[XLO] >= -360.0 && Grid->header->wesn[XHI] <= 720.0) && 
+			(Grid->header->wesn[XHI] - Grid->header->wesn[XLO]) <= 360.0) {
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "However, your grid domain is compatible with geographical grid domains.\n");
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "To make sure the grid is recognized as geographical, use the -fg option.\n");
+		}
+		else
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Yours grid is recognized as Cartesian.\n");
+		
+		Return (GMT_RUNTIME_ERROR);
 	}
 	
-	if (!GMT->common.R.active) GMT_memcpy (GMT->common.R.wesn, Grid->header->wesn, 4, double);	/* No -R, use grid domain */
-	GMT_memcpy (wesn, GMT->common.R.wesn, 4, double);
+	if (Ctrl->L.active && Ctrl->L.value >= Grid->header->z_min) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Selected base value exceeds the minimum grid z value - aborting\n");
+		Return (GMT_RUNTIME_ERROR);
+	}
+	
+	if (!GMT->common.R.active) gmt_M_memcpy (GMT->common.R.wesn, Grid->header->wesn, 4, double);	/* No -R, use grid domain */
+	gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);
 
 	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->In.file, Grid) == NULL) {
 		Return (API->error);
 	}
 
-	(void) GMT_set_outgrid (GMT, Ctrl->In.file, Grid, &Work);	/* true if input is a read-only array */
-	GMT_grd_init (GMT, Work->header, options, true);
+	if (Ctrl->C.reverse_min) {		/* Only now we know the min value to use in the -Cr<cval> option */
+		Ctrl->C.high = -Grid->header->z_min; 
+		Ctrl->C.inc  = Ctrl->C.high - Ctrl->C.low;
+		if (Ctrl->C.high <= Ctrl->C.low) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -Cr<cval> option: <cval> must exceed grid's minimum.\n");
+			Return (GMT_RUNTIME_ERROR);
+		}
+	}
+
+	(void) gmt_set_outgrid (GMT, Ctrl->In.file, false, Grid, &Work);	/* true if input is a read-only array */
+	gmt_grd_init (GMT, Work->header, options, true);
 
 	/* Set node increments relative to the lower-left node of a 4-point box */
-	GMT_grd_set_ij_inc (GMT, Work->header->mx, ij_inc);
+	gmt_grd_set_ij_inc (GMT, Work->header->mx, ij_inc);
 	ij_inc[4] = ij_inc[0];	/* Repeat for convenience */
 	cellsize = Work->header->inc[GMT_X] * Work->header->inc[GMT_Y];
 	if (Ctrl->S.active) {
-		GMT_init_distaz (GMT, Ctrl->S.unit, 1, GMT_MAP_DIST);	/* Flat Earth mode */
+		gmt_init_distaz (GMT, Ctrl->S.unit, 1, GMT_MAP_DIST);	/* Flat Earth mode */
 		dist_pr_deg = GMT->current.proj.DIST_M_PR_DEG;
 		dist_pr_deg *= GMT->current.map.dist[GMT_MAP_DIST].scale;	/* Scales meters to desired unit */
 		cellsize *= dist_pr_deg * dist_pr_deg;
@@ -496,18 +525,18 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 
 	n_contours = (Ctrl->C.active) ? urint ((Ctrl->C.high - Ctrl->C.low) / Ctrl->C.inc) + 1U : 1U;
 
-	height = GMT_memory (GMT, NULL, n_contours, double);
-	vol    = GMT_memory (GMT, NULL, n_contours, double);
-	area   = GMT_memory (GMT, NULL, n_contours, double);
+	height = gmt_M_memory (GMT, NULL, n_contours, double);
+	vol    = gmt_M_memory (GMT, NULL, n_contours, double);
+	area   = gmt_M_memory (GMT, NULL, n_contours, double);
 
 	if (!(Ctrl->Z.scale == 1.0 && Ctrl->Z.offset == 0.0)) {
 		GMT_Report (API, GMT_MSG_VERBOSE, "Subtracting %g and multiplying by %g\n", Ctrl->Z.offset, Ctrl->Z.scale);
 		Work->header->z_min = (Work->header->z_min - Ctrl->Z.offset) * Ctrl->Z.scale;
 		Work->header->z_max = (Work->header->z_max - Ctrl->Z.offset) * Ctrl->Z.scale;
 		if (Ctrl->Z.scale < 0.0) double_swap (Work->header->z_min, Work->header->z_max);
-		/* Since GMT_scale_and_offset_f applies z' = z * scale + offset we must adjust Z.offset first: */
+		/* Since gmt_scale_and_offset_f applies z' = z * scale + offset we must adjust Z.offset first: */
 		Ctrl->Z.offset *= Ctrl->Z.scale;
-		GMT_scale_and_offset_f (GMT, Work->data, Work->header->size, Ctrl->Z.scale, Ctrl->Z.offset);
+		gmt_scale_and_offset_f (GMT, Work->data, Work->header->size, Ctrl->Z.scale, Ctrl->Z.offset);
 	}
 
 	this_base = (Ctrl->L.active) ? Ctrl->L.value : 0.0;
@@ -520,7 +549,7 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 	for (c = 0; Ctrl->C.active && c < n_contours; c++) {	/* Trace contour, only count volumes inside contours */
 
 		cval = Ctrl->C.low + c * Ctrl->C.inc;
-		take_out = (c == 0) ? cval : Ctrl->C.inc;	/* Take out start contour the first time and just the increment subsequent times */
+		take_out = (c == 0) ? cval + small : Ctrl->C.inc;	/* Take out start contour the first time and just the increment subsequent times */
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Compute volume, area, and average height for contour = %g\n", cval);
 		
@@ -535,17 +564,17 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 			continue;
 		}
 
-		for (row = 1; row < Work->header->ny; row++) {
+		for (row = 1; row < Work->header->n_rows; row++) {
 
 			dv = da = 0.0;	/* Reset these for each row */
 
-			for (col = 0, ij = GMT_IJP (Work->header, row, 0); col < (Work->header->nx-1); col++, ij++) {
+			for (col = 0, ij = gmt_M_ijp (Work->header, row, 0); col < (Work->header->n_columns-1); col++, ij++) {
 
 				/* Find if a contour goes through this bin */
 
 				for (k = neg = pos = 0, bad = false; !bad && k < 4; k++) {
 					(Work->data[ij+ij_inc[k]] <= (float)small) ? neg++ : pos++;
-					if (GMT_is_fnan (Work->data[ij+ij_inc[k]])) bad = true;
+					if (gmt_M_is_fnan (Work->data[ij+ij_inc[k]])) bad = true;
 				}
 
 				if (bad || neg == 4) continue;	/* Contour not crossing, go to next bin */
@@ -606,13 +635,13 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 		if (Ctrl->L.active) vol[c] -= area[c] * this_base;
 	}
 	if (!Ctrl->C.active) {	/* Since no contours we can use columns with bilinear tops to get the volume */
-		for (row = 0; row < Work->header->ny; row++) {
+		for (row = 0; row < Work->header->n_rows; row++) {
 			dv = da = 0.0;
-			for (col = 0, ij = GMT_IJP (Work->header, row, 0); col < Work->header->nx; col++, ij++) {
-				if (GMT_is_fnan (Work->data[ij])) continue;
+			for (col = 0, ij = gmt_M_ijp (Work->header, row, 0); col < Work->header->n_columns; col++, ij++) {
+				if (gmt_M_is_fnan (Work->data[ij])) continue;
 
 				/* Half the leftmost and rightmost cell */
-				if (Work->header->registration == GMT_GRID_NODE_REG && (col == 0 || col == Work->header->nx-1)) {
+				if (Work->header->registration == GMT_GRID_NODE_REG && (col == 0 || col == Work->header->n_columns-1)) {
 					dv += 0.5 * Work->data[ij];
 					da += 0.5;
 				}
@@ -626,7 +655,7 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 			/* Allow for shrinking of longitudes with latitude */
 			if (Ctrl->S.active) fact *= cosd (Work->header->wesn[YHI] - row * Work->header->inc[GMT_Y]);
 			/* Half the top and bottom row */
-			if (Work->header->registration == GMT_GRID_NODE_REG && (row == 0 || row == Work->header->ny-1)) fact *= 0.5;
+			if (Work->header->registration == GMT_GRID_NODE_REG && (row == 0 || row == Work->header->n_rows-1)) fact *= 0.5;
 
 			vol[0]  += dv * fact;
 			area[0] += da * fact;
@@ -644,17 +673,28 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 
 	/* Print out final estimates */
 
-	if ((error = GMT_set_cols (GMT, GMT_OUT, 4)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_OUT, 4)) != GMT_NOERROR) {
+		gmt_M_free (GMT, area);		gmt_M_free (GMT, vol);		gmt_M_free (GMT, height);
 		Return (error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
+		gmt_M_free (GMT, area);		gmt_M_free (GMT, vol);		gmt_M_free (GMT, height);
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT->common.h.add_colnames) {
+		char header[GMT_LEN64] = {""};
+		sprintf (header, "#contour\tarea\tvolume\theight");
+		if (GMT_Set_Comment (API, GMT_IS_DATASET, GMT_COMMENT_IS_COLNAMES, header, NULL)) {
+			gmt_M_free (GMT, area);		gmt_M_free (GMT, vol);		gmt_M_free (GMT, height);
+			Return (API->error);
+		}
+	}
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		gmt_M_free (GMT, area);		gmt_M_free (GMT, vol);		gmt_M_free (GMT, height);
 		Return (API->error);
 	}
 
-	GMT_set_cartesian (GMT, GMT_OUT);	/* Since no coordinates are written */
+	gmt_set_cartesian (GMT, GMT_OUT);	/* Since no coordinates are written */
 
 	if (Ctrl->T.active) {	/* Determine the best contour value and return the corresponding information for that contour only */
 		c = ors_find_kink (GMT, height, n_contours, Ctrl->T.mode);
@@ -663,7 +703,7 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 	}
 	else {			/* Return information for all contours (possibly one if -C<val> was used) */
 		if (Ctrl->C.reverse) {
-			out[0] = 0;	out[1] = area[0] - area[1];	out[2] = vol[0] - vol[1];
+			out[0] = 0;	out[1] = area[0] - area[1];	out[2] = vol[0] - vol[1];	out[3] = out[2] / out[1];
 			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
 		}
 		else {
@@ -673,13 +713,14 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 			}
 		}
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
+		gmt_M_free (GMT, area);		gmt_M_free (GMT, vol);		gmt_M_free (GMT, height);
 		Return (API->error);
 	}
 
-	GMT_free (GMT, area);
-	GMT_free (GMT, vol);
-	GMT_free (GMT, height);
+	gmt_M_free (GMT, area);
+	gmt_M_free (GMT, vol);
+	gmt_M_free (GMT, height);
 
-	Return (EXIT_SUCCESS);
+	Return (GMT_NOERROR);
 }

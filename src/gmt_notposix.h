@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- * $Id: gmt_notposix.h 15178 2015-11-06 10:45:03Z fwobbe $
+ * $Id: gmt_notposix.h 15757 2016-02-24 23:25:49Z pwessel $
  *
- * Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+ * Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -521,6 +521,12 @@
 #	define vsnprintf _vsnprintf
 #elif !defined HAVE_VSNPRINTF_
 #	define vsnprintf(s, n, format, arg) vsprintf(s, format, arg)
+#endif
+
+#ifdef HAVE__FSTATI64
+#	define fstat _fstati64
+#elif defined HAVE__FSTAT
+#	define fstat _fstat
 #endif
 
 #ifdef HAVE__STATI64

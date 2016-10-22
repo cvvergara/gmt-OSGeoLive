@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight_f77.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: postscriptlight_f77.c 15757 2016-02-24 23:25:49Z pwessel $
  *
- *	Copyright (c) 2009-2015 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2016 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by

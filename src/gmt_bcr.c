@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_bcr.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_bcr.c 16849 2016-07-22 18:45:29Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -69,21 +69,23 @@
  * Version:	5
  * Now 64-bit enabled.
  *
- * Public functions:
+ * Public functions (3):
  *
- *	GMT_bcr_init		Initialize structure for convolution interpolation
- *	GMT_get_bcr_z		Get interpolated grid value by convolution
- *	GMT_get_bcr_img		Get interpolated image value(s) by convolution
+ *	gmt_bcr_get_z	   : Get interpolated grid value by convolution
+ *	gmt_bcr_get_z_fast : Same, but skips NaN or outside checking
+ *	gmtlib_bcr_get_img	   : Get interpolated image value(s) by convolution
  */
 
 #include "gmt_dev.h"
 #include "gmt_internals.h"
 
-unsigned int gmt_bcr_reject (struct GMT_GRID_HEADER *h, double *xx, double *yy)
-{
+/* Local functions */
+
+GMT_LOCAL unsigned int bcr_reject (struct GMT_GRID_HEADER *h, double *xx, double *yy) {
+
 	/* First check that xx,yy are not Nan - if so return NaN */
 
-	if (GMT_is_dnan (*xx) || GMT_is_dnan (*yy)) return (2);
+	if (gmt_M_is_dnan (*xx) || gmt_M_is_dnan (*yy)) return (2);
 
 	/* First check if the xx and yy are within the grid.
 	   16-Sep-2007: Added some slack (GMT_CONV4_LIMIT) here to avoid setting to NaN points
@@ -114,8 +116,7 @@ unsigned int gmt_bcr_reject (struct GMT_GRID_HEADER *h, double *xx, double *yy)
 	return (0);	/* Good to use */
 }
 
-uint64_t gmt_bcr_prep (struct GMT_GRID_HEADER *h, double xx, double yy, double wx[], double wy[])
-{
+GMT_LOCAL uint64_t bcr_prep (struct GMT_GRID_HEADER *h, double xx, double yy, double wx[], double wy[]) {
 	int col, row;
 	uint64_t ij;
 	double x, y, wp, wq, w, xi, yj;
@@ -150,12 +151,12 @@ uint64_t gmt_bcr_prep (struct GMT_GRID_HEADER *h, double xx, double yy, double w
 	/* Normally, one would expect here a check on the value (i,j) to make sure that the
 	   corners of the convolution kernel, (i,j) and (i+bcr->n-1,j+bcr->n-1), are both within
 	   the padded grid. However, the check on (xx, yy) above, even with the slack, ensures
-	   that the corner points are between (-2,-2) and (G->header->nx+1,G->header->ny+1), the corners
+	   that the corner points are between (-2,-2) and (G->header->n_columns+1,G->header->n_rows+1), the corners
 	   of the padding.
 	*/
 
 	/* Save the location of the upper left corner point of the convolution kernel */
-	ij = GMT_IJP (h, row, col);
+	ij = gmt_M_ijp (h, row, col);
 
 	/* Build weights */
 
@@ -225,12 +226,16 @@ uint64_t gmt_bcr_prep (struct GMT_GRID_HEADER *h, double xx, double yy, double w
 	return (ij);
 }
 
-double GMT_get_bcr_z_fast (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, double yy)
-{
+/*----------------------------------------------------------|
+ * Public functions that are part of the GMT Devel library  |
+ *----------------------------------------------------------|
+ */
+
+double gmt_bcr_get_z_fast (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, double yy) {
 	/* Given xx, yy in user's grid file (in non-normalized units)
 	   this routine returns the desired interpolated value (nearest-neighbor, bilinear
 	   B-spline or bicubic) at xx, yy.
-	   Same as GMT_get_bcr_z but no check for Nan or outside, so calling program
+	   Same as gmt_bcr_get_z but no check for Nan or outside, so calling program
 	   must make sure we dont go outside array or pass nans.
 	*/
 
@@ -240,7 +245,7 @@ double GMT_get_bcr_z_fast (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, 
 
 	/* Determine nearest node ij and set weights wx, wy */
 
-	ij = gmt_bcr_prep (G->header, xx, yy, wx, wy);
+	ij = bcr_prep (G->header, xx, yy, wx, wy);
 
 	retval = wsum = 0.0;
 	for (j = 0; j < G->header->bcr_n; j++) {
@@ -265,8 +270,7 @@ double GMT_get_bcr_z_fast (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, 
 	return (GMT->session.d_NaN);
 }
 
-double GMT_get_bcr_z (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, double yy)
-{
+double gmt_bcr_get_z (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, double yy) {
 	/* Given xx, yy in user's grid file (in non-normalized units)
 	   this routine returns the desired interpolated value (nearest-neighbor, bilinear
 	   B-spline or bicubic) at xx, yy. */
@@ -277,11 +281,11 @@ double GMT_get_bcr_z (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, doubl
 
 	/* First check that xx,yy are not Nan or outside domain - if so return NaN */
 
-	if (gmt_bcr_reject (G->header, &xx, &yy)) return (GMT->session.d_NaN);	/* NaNs or outside */
+	if (bcr_reject (G->header, &xx, &yy)) return (GMT->session.d_NaN);	/* NaNs or outside */
 
 	/* Determine nearest node ij and set weights wx, wy */
 
-	ij = gmt_bcr_prep (G->header, xx, yy, wx, wy);
+	ij = bcr_prep (G->header, xx, yy, wx, wy);
 
 	retval = wsum = 0.0;
 	for (j = 0; j < G->header->bcr_n; j++) {
@@ -289,7 +293,7 @@ double GMT_get_bcr_z (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, doubl
 			/* assure that index is inside bounds of the array G->data: */
 			node = ij + i;
 			assert (node < G->header->size);
-			if (!GMT_is_fnan (G->data[node])) {
+			if (!gmt_M_is_fnan (G->data[node])) {
 				w = wx[i] * wy[j];
 				retval += G->data[node] * w;
 				wsum += w;
@@ -308,8 +312,7 @@ double GMT_get_bcr_z (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, doubl
 	return (GMT->session.d_NaN);
 }
 
-int GMT_get_bcr_img (struct GMT_CTRL *GMT, struct GMT_IMAGE *G, double xx, double yy, unsigned char *z)
-{
+int gmtlib_bcr_get_img (struct GMT_CTRL *GMT, struct GMT_IMAGE *G, double xx, double yy, unsigned char *z) {
 	/* Given xx, yy in user's image file (in non-normalized units)
 	   this routine returns the desired interpolated image value (nearest-neighbor, bilinear
 	   B-spline or bicubic) at xx, yy. 8-bit components is assumed per band.  */
@@ -320,13 +323,13 @@ int GMT_get_bcr_img (struct GMT_CTRL *GMT, struct GMT_IMAGE *G, double xx, doubl
 
 	/* First check that xx,yy are not Nan or outside domain - if so return NaN */
 
-	if (gmt_bcr_reject (G->header, &xx, &yy)) return (1);	/* NaNs or outside */
+	if (bcr_reject (G->header, &xx, &yy)) return (1);	/* NaNs or outside */
 
 	/* Determine nearest node ij and set weights wx wy */
 
-	ij = gmt_bcr_prep (G->header, xx, yy, wx, wy);
+	ij = bcr_prep (G->header, xx, yy, wx, wy);
 
-	GMT_memset (retval, 4, double);
+	gmt_M_memset (retval, 4, double);
 	wsum = 0.0;
 	for (j = 0; j < G->header->bcr_n; j++) {
 		for (i = 0; i < G->header->bcr_n; i++) {
@@ -339,10 +342,10 @@ int GMT_get_bcr_img (struct GMT_CTRL *GMT, struct GMT_IMAGE *G, double xx, doubl
 	if ((wsum + GMT_CONV8_LIMIT - G->header->bcr_threshold) > 0.0) {	/* OK to evaluate result */
 		for (b = 0; b < nb; b++) {
 			retval[b] /= wsum;
-			z[b] = (unsigned char) lrint (GMT_0_255_truncate (retval[b]));
+			z[b] = (unsigned char) lrint (gmt_M_0_255_truncate (retval[b]));
 		}
 	}
 	else
-		for (b = 0; b < nb; b++) z[b] = GMT_u255 (GMT->current.setting.color_patch[GMT_NAN][b]);
+		for (b = 0; b < nb; b++) z[b] = gmt_M_u255 (GMT->current.setting.color_patch[GMT_NAN][b]);
 	return (0);
 }

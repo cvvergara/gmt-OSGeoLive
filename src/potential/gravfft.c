@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gravfft.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gravfft.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -23,11 +23,11 @@
  *         	13-SEP-2002
  * GMT5ed   17-MAR-2012
  *          14-Feb-2013		Big rework by PW
- *          1-Dec-2013		Added -T with infill density approximation
+ *          01-Dec-2013		Added -T with infill density approximation
  *
  *
  * For details, see Luis, J.F. and M.C. Neves. 2006, "The isostatic compensation of the Azores Plateau:
- * a 3D admittance and coherence analysis. J. Geotermal Vulc. Res. Volume 156, Issues 1-2 , 
+ * a 3D admittance and coherence analysis. J. Geotermal Vulc. Res. Volume 156, Issues 1-2 ,
  * Pages 10-22, http://dx.doi.org/10.1016/j.jvolgeores.2006.03.010
  *
  * */
@@ -35,7 +35,7 @@
 #define THIS_MODULE_NAME	"gravfft"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute gravitational attraction of 3-D surfaces and a little more (ATTENTION z positive up)"
-#define THIS_MODULE_KEYS	"<GI,GGO"
+#define THIS_MODULE_KEYS	"<G{+,GG},DG(,GDC,GDI"
 
 #include "gmt_dev.h"
 
@@ -47,7 +47,7 @@ enum Gravfft_fields {
 	GRAVFFT_GEOID,
 	GRAVFFT_VGG,
 	GRAVFFT_DEFL_EAST,
-	GRAVFFT_DEFL_NORTH	
+	GRAVFFT_DEFL_NORTH
 };
 
 struct GRAVFFT_CTRL {
@@ -86,7 +86,7 @@ struct GRAVFFT_CTRL {
 		bool active;
 		double value;
 	} I;
-	struct GRVF_N {	/* -N[f|q|s<nx>/<ny>][+e|m|n][+t<width>][+w[<suffix>]][+z[p]]  */
+	struct GRVF_N {	/* -N[f|q|s<n_columns>/<n_rows>][+e|m|n][+t<width>][+w[<suffix>]][+z[p]]  */
 		bool active;
 		struct GMT_FFT_INFO *info;
 	} N;
@@ -110,7 +110,7 @@ struct GRAVFFT_CTRL {
 	struct GRVF_Z {
 		bool active;
 		double zm;		/* mean Moho depth (given by user) */
-		double zl;		/* mean depth of swell compensation (user given) */		
+		double zl;		/* mean depth of swell compensation (user given) */
 	} Z;
 	struct GRVF_misc {	/* -T */
 		bool coherence;
@@ -132,45 +132,48 @@ struct GRAVFFT_CTRL {
 #define	NORMAL_GRAVITY	9.806199203	/* Moritz's 1980 IGF value for gravity at 45 degrees latitude (m/s) */
 #define	POISSONS_RATIO	0.25
 
-bool rem_mean = false;
-bool sphericity = false;
+static bool sphericity = false;
 
-void *New_gravfft_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct GRAVFFT_CTRL *C = NULL;
-	
-	C = GMT_memory (GMT, NULL, 1, struct GRAVFFT_CTRL);
-	
+
+	C = gmt_M_memory (GMT, NULL, 1, struct GRAVFFT_CTRL);
+
 	/* Initialize values whose defaults are not 0/false/NULL */
 
 	C->E.n_terms = 3;
 	return (C);
 }
 
-void Free_gravfft_Ctrl (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->par) GMT_free (GMT, C->par);	
-	if (C->In.file[0]) free (C->In.file[0]);	
-	if (C->In.file[1]) free (C->In.file[1]);	
-	if (C->D.file) free (C->D.file);	
-	if (C->G.file) free (C->G.file);	
-	if (C->N.info) GMT_free (GMT, C->N.info);
-	GMT_free (GMT, C);	
+	gmt_M_free (GMT, C->par);
+	gmt_M_str_free (C->In.file[0]);
+	gmt_M_str_free (C->In.file[1]);
+	gmt_M_str_free (C->D.file);
+	gmt_M_str_free (C->G.file);
+	gmt_M_free (GMT, C->N.info);
+	gmt_M_free (GMT, C);
 }
 
-double	scale_out = 1.0;
-double	earth_rad = 6371008.7714;	/* GRS-80 sphere */
+static double	scale_out = 1.0;
+static double	earth_rad = 6371008.7714;	/* GRS-80 sphere */
 
-void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, uint64_t n, double rho);
-void remove_level(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl);
-void do_isostasy__(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K);
-void do_admittance(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GMT_GRID *GridB, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K);
-void load_from_below_admitt(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_below);
-void load_from_top_admitt(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_top);
-void load_from_top_grid(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n);
-void load_from_below_grid(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n);
-void compute_only_admitts(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_top_or_bot, double delta_pt);
+GMT_LOCAL void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K,
+                float *raised, uint64_t n, double rho);
+GMT_LOCAL void do_isostasy(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K);
+GMT_LOCAL void load_from_below_admitt(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_below);
+GMT_LOCAL void load_from_top_admitt(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_top);
+GMT_LOCAL void load_from_top_grid(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl,
+                        struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n);
+GMT_LOCAL void load_from_below_grid(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl,
+                          struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n);
+GMT_LOCAL void compute_only_admitts(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K,
+                          double *z_top_or_bot, double delta_pt);
+GMT_LOCAL int do_admittance(struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GMT_GRID *GridB, struct GRAVFFT_CTRL *Ctrl,
+                  struct GMT_FFT_WAVENUMBER *K);
 
-int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_OPTION *options) {
 
 	unsigned int n_errors = 0;
 
@@ -178,7 +181,7 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 	struct GMT_OPTION *opt = NULL,  *popt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
 	char   ptr[GMT_BUFSIZ] = {""}, t_or_b[4] = {""}, argument[GMT_LEN16] = {""}, combined[GMT_BUFSIZ] = {""};
-	if (GMT_compat_check (GMT, 4)) {
+	if (gmt_M_compat_check (GMT, 4)) {
 		char *mod = NULL;
 		if ((popt = GMT_Find_Option (API, 'L', options)) != 0) {	/* Gave old -L */
 			mod = popt->arg; /* Gave old -L option */
@@ -197,7 +200,7 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 					n_errors++;
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: A maximum of two input grids may be processed\n");
 				}
-				else if (GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID))
+				else if (gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID))
 					Ctrl->In.file[Ctrl->In.n_grids++] = strdup (opt->arg);
 				else
 					n_errors++;
@@ -225,12 +228,13 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 				break;
 			case 'D':
 				if (!opt->arg) {
-					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -D option: must give constant density contrast or grid with density constrasts\n");
+					GMT_Report (API, GMT_MSG_NORMAL,
+					            "Syntax error -D option: must give constant density contrast or grid with density constrasts\n");
 					n_errors++;
 				}
 				else {
 					Ctrl->D.active = true;
-					if (!GMT_access (GMT, opt->arg, R_OK)) {	/* Gave a grid with density contrast */
+					if (!gmt_access (GMT, opt->arg, R_OK)) {	/* Gave a grid with density contrast */
 						Ctrl->D.file = strdup (opt->arg);
 						Ctrl->D.variable = true;
 						Ctrl->misc.rho = 1.0;
@@ -243,7 +247,7 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 			case 'E':
 				Ctrl->E.n_terms = atoi (opt->arg);
 				if (Ctrl->E.n_terms > 10) {
-					GMT_Report (API, GMT_MSG_NORMAL, "ERROR -E option: n_terms must be <= 10\n");
+					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -E: n_terms must be <= 10\n");
 					n_errors++;
 				}
 				else if (Ctrl->E.n_terms <= 0) {
@@ -264,7 +268,7 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 				}
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
+				if ((Ctrl->G.active = gmt_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)) != 0)
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -296,14 +300,14 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 				}
 				break;
 			case 'L':	/* Leave trend alone */
-				if (GMT_compat_check (GMT, 4))
+				if (gmt_M_compat_check (GMT, 4))
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -L is deprecated; use -N modifiers in the future.\n");
 				else
-					n_errors += GMT_default_error (GMT, opt->option);
+					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'N':
 				Ctrl->N.active = true;
-				if (popt && GMT_compat_check (GMT, 4)) {	/* Got both old -L and -N; append */
+				if (popt && gmt_M_compat_check (GMT, 4)) {	/* Got both old -L and -N; append */
 					sprintf (combined, "%s%s", opt->arg, argument);
 					Ctrl->N.info = GMT_FFT_Parse (API, 'N', GMT_FFT_DIM, combined);
 				}
@@ -337,18 +341,18 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 				break;
 			case 'W':	/* Water depth */
 				Ctrl->W.active = true;
-				GMT_Get_Value (API, opt->arg, &Ctrl->W.water_depth);
+				GMT_Get_Values (API, opt->arg, &Ctrl->W.water_depth, 1);
 				break;
 			case 'Z':
 				Ctrl->Z.active = true;
 				sscanf (opt->arg, "%lf/%lf", &Ctrl->Z.zm, &Ctrl->Z.zl);
 				break;
 			default:
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
-	if (GMT_compat_check (GMT, 4) && !Ctrl->N.active && popt) {	/* User set -L but no -N so nothing got appended above... Sigh...*/
+	if (gmt_M_compat_check (GMT, 4) && !Ctrl->N.active && popt) {	/* User set -L but no -N so nothing got appended above... Sigh...*/
 		Ctrl->N.info = GMT_FFT_Parse (API, 'N', GMT_FFT_DIM, argument);
 	}
 
@@ -363,55 +367,55 @@ int GMT_gravfft_parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct G
 			Ctrl->N.info->trend_mode = override_mode;
 	}
 
-	if (Ctrl->N.active && Ctrl->N.info->info_mode == GMT_FFT_LIST) {
+	if (Ctrl->N.active && Ctrl->N.info && Ctrl->N.info->info_mode == GMT_FFT_LIST) {
 		return (GMT_PARSE_ERROR);	/* So that we exit the program */
 	}
-	
+
 	if (Ctrl->C.active) {
-		n_errors += GMT_check_condition (GMT, !Ctrl->T.active, "Error: -T not set\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->misc.from_top && !Ctrl->Z.zm, 
+		n_errors += gmt_M_check_condition (GMT, !Ctrl->T.active, "Error: -T not set\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->misc.from_top && !Ctrl->Z.zm,
 									"Error: -Z not set, must give moho compensation depth\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->misc.from_below && !(Ctrl->Z.zm && Ctrl->Z.zl), 
+		n_errors += gmt_M_check_condition (GMT, Ctrl->misc.from_below && !(Ctrl->Z.zm && Ctrl->Z.zl),
 									"Error: -Z not set, must give moho and swell compensation depths\n");
 	}
 	else {
-		n_errors += GMT_check_condition (GMT, !Ctrl->In.file[0], "Syntax error: Must specify input file\n");
-		n_errors += GMT_check_condition (GMT, !Ctrl->G.file && !Ctrl->I.active, 
+		n_errors += gmt_M_check_condition (GMT, !Ctrl->In.file[0], "Syntax error: Must specify input file\n");
+		n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file && !Ctrl->I.active,
 					"Syntax error -G option: Must specify output file\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->Q.active && !Ctrl->T.active, "Error: -Q implies also -T\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->S.active && !Ctrl->T.active, "Error: -S implies also -T\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->T.moho && !Ctrl->Z.zm, 
+		n_errors += gmt_M_check_condition (GMT, Ctrl->Q.active && !Ctrl->T.active, "Error: -Q implies also -T\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && !Ctrl->T.active, "Error: -S implies also -T\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->T.moho && !Ctrl->Z.zm,
 					"Error: for computing the Moho's effect I need to know it's average depth (see -Z<zm>)\n");
-		n_errors += GMT_check_condition (GMT, !(Ctrl->D.active || Ctrl->T.active || Ctrl->S.active || 
+		n_errors += gmt_M_check_condition (GMT, !(Ctrl->D.active || Ctrl->T.active || Ctrl->S.active ||
 							Ctrl->I.active), "Error: must set density contrast\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->I.active && !Ctrl->In.file[1], 
+		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && !Ctrl->In.file[1],
 					"Error: for admittance|coherence need a gravity or geoid grid\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->misc.from_below && Ctrl->misc.from_top, 
+		n_errors += gmt_M_check_condition (GMT, Ctrl->misc.from_below && Ctrl->misc.from_top,
 					"Error: -I, choose only one model\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->I.active && Ctrl->misc.from_top && 
-					!(Ctrl->T.rhow && Ctrl->T.rhol && Ctrl->T.rhom && Ctrl->Z.zm), 
+		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && Ctrl->misc.from_top &&
+					!(Ctrl->T.rhow && Ctrl->T.rhol && Ctrl->T.rhom && Ctrl->Z.zm),
 					"Error: not all parameters needed for computing \"loading from top\" admittance were set\n");
-		n_errors += GMT_check_condition (GMT, Ctrl->I.active && Ctrl->misc.from_below && 
-			!(Ctrl->T.rhow && Ctrl->T.rhol && Ctrl->T.rhom && Ctrl->Z.zm && Ctrl->Z.zl), 
+		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && Ctrl->misc.from_below &&
+			!(Ctrl->T.rhow && Ctrl->T.rhol && Ctrl->T.rhom && Ctrl->Z.zm && Ctrl->Z.zl),
 					"Error: not all parameters for computing \"loading from below\" admittance were set\n");
 	}
 
-	n_errors += GMT_check_condition (GMT, (Ctrl->misc.from_top || Ctrl->misc.from_below) && 
-			!(Ctrl->F.mode == GRAVFFT_FAA || Ctrl->F.mode == GRAVFFT_GEOID), 
+	n_errors += gmt_M_check_condition (GMT, (Ctrl->misc.from_top || Ctrl->misc.from_below) &&
+			!(Ctrl->F.mode == GRAVFFT_FAA || Ctrl->F.mode == GRAVFFT_GEOID),
 				"Syntax error: Theoretical admittances are only defined for FAA or GEOID.\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-int GMT_gravfft_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: gravfft <topo_grd> [<ingrid2>] -G<outgrid> [-C<n/wavelength/mean_depth/tbw>]\n");
 	GMT_Message (API, GMT_TIME_NONE,"\t[-D<density|grid>] [-E<n_terms>] [-F[f[+]|g|v|n|e]] [-I<wbctk>]\n");
 	GMT_Message (API, GMT_TIME_NONE,"\t[-N%s] [-Q]\n", GMT_FFT_OPT);
 	GMT_Message (API, GMT_TIME_NONE,"\t[-T<te/rl/rm/rw>[/<ri>][+m]] [%s] [-W<wd>] [-Z<zm>[/<zl>]] [-fg]\n\n", GMT_V_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE,"\ttopo_grd is the input grdfile with topography values\n");
 	GMT_Message (API, GMT_TIME_NONE,"\t-G Filename for output netCDF grdfile with gravity [or geoid] values\n");
@@ -467,73 +471,86 @@ int GMT_gravfft_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Option (API, "V");
 	GMT_Message (API, GMT_TIME_NONE,"\t-fg Convert geographic grids to meters using a \"Flat Earth\" approximation.\n");
 	GMT_Option (API, ".");
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_gravfft_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_gravfft (void *V_API, int mode, void *args) {
-
 	unsigned int k, n;
-	int error = 0;
+	int      error = 0;
 	uint64_t m;
-	char	format[64] = {""}, buffer[256] = {""};
-	float	slab_gravity = 0.0f, *topo = NULL, *raised = NULL;
-	double	delta_pt, freq;
+	float    slab_gravity = 0.0f, *topo = NULL, *raised = NULL;
+	double   delta_pt, freq;
 
 	struct GMT_GRID *Grid[2] = {NULL, NULL}, *Orig[2] = {NULL, NULL}, *Rho = NULL;
 	struct GMT_FFT_WAVENUMBER *FFT_info[2] = {NULL, NULL}, *K = NULL, *Rho_info = NULL;
 	struct GRAVFFT_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_gravfft_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);
 	if (API->error) return (API->error);	/* Set or get option list */
 
 	if (!options || options->option == GMT_OPT_USAGE)
-		bailout (GMT_gravfft_usage (API, GMT_USAGE));		/* Return the usage message */
+		bailout (usage (API, GMT_USAGE));		/* Return the usage message */
 	if (options->option == GMT_OPT_SYNOPSIS)
-		bailout (GMT_gravfft_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+		bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_gravfft_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_gravfft_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the grdfft main code ----------------------------*/
 
 	/* -------------------- Compute only a theoretical model and exit -------------------- */
 	if (Ctrl->C.active) {
+		uint64_t dim[4] = {1, 1, 0, 0};	/* One table and one segment */
 		double *z_top_or_bot = NULL;
-		struct GMT_FFT_WAVENUMBER *K = GMT_memory (GMT, NULL, 1, struct GMT_FFT_WAVENUMBER);
+		struct GMT_DATASET *D = NULL;
+		struct GMT_DATASEGMENT *S = NULL;
+		struct GMT_FFT_WAVENUMBER *K = gmt_M_memory (GMT, NULL, 1, struct GMT_FFT_WAVENUMBER);
 
-		z_top_or_bot = GMT_memory (GMT, NULL, (size_t)Ctrl->C.n_pt, double);
+		z_top_or_bot = gmt_M_memory (GMT, NULL, (size_t)Ctrl->C.n_pt, double);
 
 		delta_pt = 2 * M_PI / (Ctrl->C.n_pt * Ctrl->C.theor_inc);	/* Times 2PI because frequency will be used later */
 		compute_only_admitts (GMT, Ctrl, K, z_top_or_bot, delta_pt);
-		sprintf (format, "%s%s%s\n", GMT->current.setting.format_float_out, 
-                 GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out);
 		delta_pt /= (2.0 * M_PI);			/* Write out frequency, not wavenumber  */
 		if (Ctrl->misc.give_wavelength && Ctrl->misc.give_km) delta_pt *= 1000.0;	/* Wanted wavelength in km */
+
+		gmt_set_cartesian (GMT, GMT_OUT);	/* To counter-act any -fg setting */
+
+		dim[GMT_COL] = 2;
+		dim[GMT_ROW] = Ctrl->C.n_pt;
+		if ((D = GMT_Create_Data (GMT->parent, GMT_IS_DATASET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to create a data set for spectral estimates\n");
+			gmt_M_free (GMT, K);
+			gmt_M_free (GMT, z_top_or_bot);
+			Return (API->error);
+		}
+		S = D->table[0]->segment[0];	/* Only one table with one segment here */
 
 		for (k = 0; k < Ctrl->C.n_pt; k++) {
 			freq = (k + 1) * delta_pt;
 			if (Ctrl->misc.give_wavelength) freq = 1. / freq;
-			sprintf (buffer, format, freq, z_top_or_bot[k]);
-			GMT_fputs (buffer, stdout);
+			S->data[0][k] = freq;
+			S->data[1][k] = z_top_or_bot[k];
 		}
+		if (GMT_Write_Data (GMT->parent, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_WRITE_SET, NULL, Ctrl->G.file, D) != GMT_NOERROR)
+			Return (API->error);
 
-		GMT_free (GMT, K);
-		GMT_free (GMT, z_top_or_bot);
-		Return (EXIT_SUCCESS);
+		gmt_M_free (GMT, K);
+		gmt_M_free (GMT, z_top_or_bot);
+		Return (GMT_NOERROR);
 	}
 	/* ---------------------------------------------------------------------------------- */
 
@@ -541,7 +558,7 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 		if (((Ctrl->T.active && !Ctrl->T.moho) && Ctrl->E.n_terms > 1) || (Ctrl->S.active && Ctrl->E.n_terms > 1)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Warning: Due to a bug, or a method limitation (I didn't figure that yet)\n"
 				"with the selected options, the number of terms in Parker expansion is reset to one\n"
-				"See examples in the manual if you want to compute with higher order expansion\n\n"); 
+				"See examples in the manual if you want to compute with higher order expansion\n\n");
 			Ctrl->E.n_terms = 1;
 		}
 	}
@@ -556,19 +573,19 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 	if (Ctrl->In.n_grids == 2) {	/* If given 2 grids, make sure they are co-registered and has same size, registration, etc. */
 		if(Orig[0]->header->registration != Orig[1]->header->registration) {
 			GMT_Report (API, GMT_MSG_NORMAL, "The two grids have different registrations!\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
-		if (!GMT_grd_same_shape (GMT, Orig[0], Orig[1])) {
+		if (!gmt_M_grd_same_shape (GMT, Orig[0], Orig[1])) {
 			GMT_Report (API, GMT_MSG_NORMAL, "The two grids have different dimensions\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
-		if (!GMT_grd_same_region (GMT, Orig[0], Orig[1])) {
+		if (!gmt_M_grd_same_region (GMT, Orig[0], Orig[1])) {
 			GMT_Report (API, GMT_MSG_NORMAL, "The two grids have different regions\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
-		if (!GMT_grd_same_inc (GMT, Orig[0], Orig[1])) {
+		if (!gmt_M_grd_same_inc (GMT, Orig[0], Orig[1])) {
 			GMT_Report (API, GMT_MSG_NORMAL, "The two grids have different intervals\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 	}
 
@@ -577,31 +594,31 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 			Return (API->error);
 		if(Orig[0]->header->registration != Rho->header->registration) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Surface and density grids have different registrations!\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
-		if (!GMT_grd_same_shape (GMT, Orig[0], Rho)) {
+		if (!gmt_M_grd_same_shape (GMT, Orig[0], Rho)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Surface and density grids have different dimensions\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
-		if (!GMT_grd_same_region (GMT, Orig[0], Rho)) {
+		if (!gmt_M_grd_same_region (GMT, Orig[0], Rho)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Surface and density grids have different regions\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
-		if (!GMT_grd_same_inc (GMT, Orig[0], Rho)) {
+		if (!gmt_M_grd_same_inc (GMT, Orig[0], Rho)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Surface and density grids have different intervals\n");
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 	}
 
 	/* Grids are compatible. Initialize FFT structs, grid headers, read data, and check for NaNs */
-	
+
 	for (k = 0; k < Ctrl->In.n_grids; k++) {	/* Read, and check that no NaNs are present in either grid */
-		GMT_grd_init (GMT, Orig[k]->header, options, true);	/* Update the header */
+		gmt_grd_init (GMT, Orig[k]->header, options, true);	/* Update the header */
 		if ((Orig[k] = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY |
                                       GMT_GRID_IS_COMPLEX_REAL, NULL, Ctrl->In.file[k], Orig[k])) == NULL)	/* Get data only */
 			Return (API->error);
 		/* Note: If input grid(s) are read-only then we must duplicate them; otherwise Grid[k] points to Orig[k] */
-		(void) GMT_set_outgrid (GMT, Ctrl->In.file[k], Orig[k], &Grid[k]);
+		(void) gmt_set_outgrid (GMT, Ctrl->In.file[k], false, Orig[k], &Grid[k]);
 	}
 
 	/* From here we address the first grid via Grid[0] and the 2nd grid (if given) as Grid[1];
@@ -610,7 +627,7 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 	if (Ctrl->W.active) {	/* Need to adjust for a different observation level relative to topo.grd */
 		unsigned int row, col;
 		GMT_Report (API, GMT_MSG_VERBOSE, "Remove %g m from topography grid %s\n", Ctrl->W.water_depth, Ctrl->In.file[0]);
-		GMT_grd_loop (GMT, Grid[0], row, col, m)
+		gmt_M_grd_loop (GMT, Grid[0], row, col, m)
 			Grid[0]->data[m] -= (float)Ctrl->W.water_depth;
 		Grid[0]->header->z_min -= (float)Ctrl->W.water_depth;
 		Grid[0]->header->z_max -= (float)Ctrl->W.water_depth;
@@ -619,7 +636,7 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 	for (k = 0; k < Ctrl->In.n_grids; k++) {	/* Read, and check that no NaNs are present in either grid */
 		FFT_info[k] = GMT_FFT_Create (API, Grid[k], GMT_FFT_DIM, GMT_GRID_IS_COMPLEX_REAL, Ctrl->N.info);	/* Also detrends, if requested */
 	}
-	
+
 	if (Ctrl->D.variable) {	/* No detrending, please */
 		int was = Ctrl->N.info->trend_mode;	/* Record what trendmode we had for topography */
 		Ctrl->N.info->trend_mode = GMT_FFT_REMOVE_NOTHING;	/* Temporarily set to no removal */
@@ -639,54 +656,60 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 		for (k = 0; k < Ctrl->In.n_grids; k++) {	/* Call the forward FFT, once per grid */
 			GMT_Report (API, GMT_MSG_VERBOSE, "forward FFT...\n");
 			if (GMT_FFT (API, Grid[k], GMT_FFT_FWD, GMT_FFT_COMPLEX, FFT_info[k]))
-				Return (EXIT_FAILURE);
+				Return (GMT_RUNTIME_ERROR);
 		}
 
-		do_admittance (GMT, Grid[0], Grid[1], Ctrl, K);
+		error = do_admittance (GMT, Grid[0], Grid[1], Ctrl, K);
 		for (k = 0; k < Ctrl->In.n_grids; k++)
 			GMT_FFT_Destroy (API, &(FFT_info[k]));
-		Return (EXIT_SUCCESS);
+
+		if (!error) {
+			Return (GMT_NOERROR);
+		}
+		else {
+			Return (error);
+		}
 	}
 
-	topo   = GMT_memory (GMT, NULL, Grid[0]->header->size, float);
-	raised = GMT_memory (GMT, NULL, Grid[0]->header->size, float);
+	topo   = gmt_M_memory (GMT, NULL, Grid[0]->header->size, float);
+	raised = gmt_M_memory (GMT, NULL, Grid[0]->header->size, float);
 
 	if (Ctrl->Q.active || Ctrl->T.moho) {
 		double coeff[3];
 		GMT_Report (API, GMT_MSG_VERBOSE, "Forward FFT...\n");
 		if (GMT_FFT (API, Grid[0], GMT_FFT_FWD, GMT_FFT_COMPLEX, FFT_info[0])) {
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 		}
 
-		do_isostasy__ (GMT, Grid[0], Ctrl, K);
-		
+		do_isostasy (GMT, Grid[0], Ctrl, K);
+
 		GMT_Report (API, GMT_MSG_VERBOSE, "Inverse FFT...\n");
 		if (GMT_FFT (API, Grid[0], GMT_FFT_INV, GMT_FFT_COMPLEX, K))
-			Return (EXIT_FAILURE);
+			Return (GMT_RUNTIME_ERROR);
 
 		if (!doubleAlmostEqual (scale_out, 1.0))
-			GMT_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, scale_out, 0);
+			gmt_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, scale_out, 0);
 
 		if (!Ctrl->T.moho) {
 
 			if (false && Ctrl->N.info->trend_mode != GMT_FFT_REMOVE_MEAN) { /* Account also for the difference between detrend level and true mean  */
-				GMT_grd_detrend (GMT, Grid[0], GMT_FFT_REMOVE_MEAN, coeff);
-				GMT_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, 1.0, -Ctrl->Z.zm);
+				gmt_grd_detrend (GMT, Grid[0], GMT_FFT_REMOVE_MEAN, coeff);
+				gmt_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, 1.0, -Ctrl->Z.zm);
 			}
 			else
-				GMT_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, 1.0, -Ctrl->Z.zm);
+				gmt_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, 1.0, -Ctrl->Z.zm);
 
 			/* The data are in the middle of the padded array; only the interior (original dimensions) will be written to file */
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid[0]))
 				Return (API->error);
 			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY |
-                                GMT_GRID_IS_COMPLEX_REAL, NULL, Ctrl->G.file, Grid[0]) != GMT_OK) {
+                                GMT_GRID_IS_COMPLEX_REAL, NULL, Ctrl->G.file, Grid[0]) != GMT_NOERROR) {
 				Return (API->error);
 			}
 			GMT_FFT_Destroy (API, &(FFT_info[0]));
-			GMT_free (GMT, topo);
-			GMT_free (GMT, raised);
-			Return (EXIT_SUCCESS);
+			gmt_M_free (GMT, topo);
+			gmt_M_free (GMT, raised);
+			Return (GMT_NOERROR);
 		}
 		else {
 			Ctrl->misc.z_level = Ctrl->Z.zm;
@@ -695,31 +718,33 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 		}
 	}
 
-	GMT_memcpy (topo, Grid[0]->data, Grid[0]->header->size, float);
+	gmt_M_memcpy (topo, Grid[0]->data, Grid[0]->header->size, float);
 	/* Manually interleave this copy of topo [and hence raised] since we will call FFT repeatedly */
-	GMT_grd_mux_demux (API->GMT, Grid[0]->header, topo, GMT_GRID_IS_INTERLEAVED);
+	gmt_grd_mux_demux (API->GMT, Grid[0]->header, topo, GMT_GRID_IS_INTERLEAVED);
 	if (Ctrl->D.variable) {	/* Also interleave manually the rho grid */
-		GMT_grd_mux_demux (API->GMT, Rho->header, Rho->data, GMT_GRID_IS_INTERLEAVED);
+		gmt_grd_mux_demux (API->GMT, Rho->header, Rho->data, GMT_GRID_IS_INTERLEAVED);
 		for (m = 0; m < Grid[0]->header->size; m++)
 			raised[m] = topo[m] * Rho->data[m];
 	}
 	else	/* Constant density contrast passed into do_parker */
-		GMT_memcpy (raised,  topo, Grid[0]->header->size, float);
+		gmt_M_memcpy (raised,  topo, Grid[0]->header->size, float);
 
-	GMT_memset (Grid[0]->data, Grid[0]->header->size, float);
+	gmt_M_memset (Grid[0]->data, Grid[0]->header->size, float);
 
 	for (n = 1; n <= Ctrl->E.n_terms; n++) {
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Evaluating Parker for term = %d\n", n);
 
-		if (n > 1)	/* n == 1 was initialized via the GMT_memcpy or loop above */
+		if (n > 1)	/* n == 1 was initialized via the gmt_M_memcpy or loop above */
 			for (m = 0; m < Grid[0]->header->size; m++) {
 				raised[m] = (float)pow(topo[m], (double)n);
 				if (Ctrl->D.variable) raised[m] *= Rho->data[m];
 			}
 
-		if (GMT_FFT_2D (API, raised, K->nx2, K->ny2, GMT_FFT_FWD, GMT_FFT_COMPLEX))
-			Return (EXIT_FAILURE);
+		if (GMT_FFT_2D (API, raised, K->nx2, K->ny2, GMT_FFT_FWD, GMT_FFT_COMPLEX)) {
+			gmt_M_free (GMT, raised);	gmt_M_free (GMT, topo);
+			Return (GMT_RUNTIME_ERROR);
+		}
 
 		if (Ctrl->D.active || Ctrl->T.moho)	/* "classical" anomaly */
 			do_parker (GMT, Grid[0], Ctrl, K, raised, n, Ctrl->misc.rho);
@@ -731,21 +756,23 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_NORMAL, "It SHOULDN'T pass here\n");
 	}
 
-	if (GMT_FFT (API, Grid[0], GMT_FFT_INV, GMT_FFT_COMPLEX, K))
-		Return (EXIT_FAILURE);
+	if (GMT_FFT (API, Grid[0], GMT_FFT_INV, GMT_FFT_COMPLEX, K)) {
+		gmt_M_free (GMT, raised);	gmt_M_free (GMT, topo);
+		Return (GMT_RUNTIME_ERROR);
+	}
 
 	/* Manually demux back since we may do loops below */
-	GMT_grd_mux_demux (API->GMT, Grid[0]->header, Grid[0]->data, GMT_GRID_IS_SERIAL);
+	gmt_grd_mux_demux (API->GMT, Grid[0]->header, Grid[0]->data, GMT_GRID_IS_SERIAL);
 
 	if (!doubleAlmostEqual (scale_out, 1.0))
-		GMT_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, scale_out, 0);
+		gmt_scale_and_offset_f (GMT, Grid[0]->data, Grid[0]->header->size, scale_out, 0);
 
 	switch (Ctrl->F.mode) {
 		case GRAVFFT_FAA:
 			strcpy (Grid[0]->header->title, "Gravity anomalies");
 			strcpy (Grid[0]->header->z_units, "mGal");
 			if (Ctrl->F.slab) {	/* Do the slab adjustment */
-				slab_gravity = (float) (1.0e5 * 2 * M_PI * Ctrl->misc.rho * GRAVITATIONAL_CONST * 
+				slab_gravity = (float) (1.0e5 * 2 * M_PI * Ctrl->misc.rho * GRAVITATIONAL_CONST *
 				                        fabs (Ctrl->W.water_depth - Ctrl->misc.z_level));
 				GMT_Report (API, GMT_MSG_VERBOSE, "Add %g mGal to predicted FAA grid to account for implied slab\n", slab_gravity);
 				for (m = 0; m < Grid[0]->header->size; m++)
@@ -770,7 +797,7 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 			break;
 	}
 
-	sprintf (Grid[0]->header->remark, "Parker expansion of order %d", Ctrl->E.n_terms);
+	snprintf (Grid[0]->header->remark, GMT_GRID_REMARK_LEN160, "Parker expansion of order %d", Ctrl->E.n_terms);
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Write Output...\n");
 
@@ -778,22 +805,26 @@ int GMT_gravfft (void *V_API, int mode, void *args) {
 		GMT_FFT_Destroy (API, &(FFT_info[k]));
 	if (Ctrl->D.variable)
 		GMT_FFT_Destroy (API, &Rho_info);
-	GMT_free (GMT, raised);
+	gmt_M_free (GMT, raised);
 
-	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid[0])) Return (API->error);
+	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid[0])) {
+		gmt_M_free (GMT, topo);
+		Return (API->error);
+	}
 	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY |
-                        GMT_GRID_IS_COMPLEX_REAL, NULL, Ctrl->G.file, Grid[0]) != GMT_OK) {
+                        GMT_GRID_IS_COMPLEX_REAL, NULL, Ctrl->G.file, Grid[0]) != GMT_NOERROR) {
+		gmt_M_free (GMT, topo);
 		Return (API->error);
 	}
 
-	GMT_free (GMT, topo);
+	gmt_M_free (GMT, topo);
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
 
-	Return (EXIT_SUCCESS);
+	Return (GMT_NOERROR);
 }
 
-void do_isostasy__ (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K) {
+GMT_LOCAL void do_isostasy (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K) {
 	/* Do the isostatic response function convolution in the Freq domain.
 	All units assumed to be in SI (that is kx, ky, modk wavenumbers in m**-1,
 	densities in kg/m**3, Te in m, etc.
@@ -802,7 +833,7 @@ void do_isostasy__ (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_
 	uint64_t k;
 	double  A = 1.0, rho_load, airy_ratio, rigidity_d, d_over_restoring_force, mk, k2, k4, transfer_fn;
 	float *datac = Grid->data;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	/*   te	 Elastic thickness, SI units (m)  */
 	/*   rl	 Load density, SI units  */
@@ -812,7 +843,7 @@ void do_isostasy__ (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_
 	/* If infill density was specified then Ctrl->T.approx will be true, in which case we will do the
 	 * approximate FFT solution of Wessel [2001, JGR]: Use rhoi instead of rhol to determine flexural wavelength
 	 * and and amplitudes but scale airy_ratio by A to compensate for the lower load weight */
-	
+
 	rho_load = Ctrl->T.rhol;
 	if (Ctrl->T.approx) {	/* Do approximate calculation when both rhol and rhoi were set */
 		char way = (Ctrl->T.rhoi < Ctrl->T.rhol) ? '<' : '>';
@@ -824,27 +855,27 @@ void do_isostasy__ (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_
 	rigidity_d = (YOUNGS_MODULUS * Ctrl->T.te * Ctrl->T.te * Ctrl->T.te) / (12.0 * (1.0 - POISSONS_RATIO * POISSONS_RATIO));
 	d_over_restoring_force = rigidity_d / ( (Ctrl->T.rhom - rho_load) * NORMAL_GRAVITY);
 	airy_ratio = -A * (rho_load - Ctrl->T.rhow)/(Ctrl->T.rhom - rho_load);
- 
+
 	if (Ctrl->T.te == 0.0) {      /* Airy isostasy; scale global variable scale_out and return */
 		scale_out *= airy_ratio;
 		return;
 	}
 
 	for (k = 0; k < Grid->header->size; k+= 2) {
-		mk = GMT_fft_get_wave (k, K);
+		mk = gmt_fft_get_wave (k, K);
 		k2 = mk * mk;	k4 = k2 * k2;
-		transfer_fn = airy_ratio / ( (d_over_restoring_force * k4) + 1.0);	  
+		transfer_fn = airy_ratio / ( (d_over_restoring_force * k4) + 1.0);
 		datac[k] *= (float)transfer_fn;
 		datac[k+1] *= (float)transfer_fn;
 	}
 }
 
 #define	MGAL_AT_45	980619.9203 	/* Moritz's 1980 IGF value for gravity in mGal at 45 degrees latitude */
-void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, uint64_t n, double rho) {
+GMT_LOCAL void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, uint64_t n, double rho) {
 	uint64_t i, k;
 	double f, p, t, mk, kx, ky, v, c;
 	float *datac = Grid->data;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	f = 1.0;
 	for (i = 2; i <= n; i++) f *= i;	/* n! */
@@ -853,7 +884,7 @@ void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL
 	c = 1.0e5 * 2.0 * M_PI * GRAVITATIONAL_CONST * rho / f; /* Gives mGal */
 
 	for (k = 0; k < Grid->header->size; k+= 2) {
-		mk = GMT_fft_get_wave (k, K);
+		mk = gmt_fft_get_wave (k, K);
 		if (p == 0.0)
 			t = 1.0;
 		else if (p == 1.0)
@@ -877,9 +908,9 @@ void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL
 				datac[k]   += (float) (v * raised[k]);
 				datac[k+1] += (float) (v * raised[k+1]);
 				break;
-			case GRAVFFT_DEFL_EAST: 
+			case GRAVFFT_DEFL_EAST:
 				if (mk > 0.0) {	/* Scale tan (xslope) ~ slope to microradians */
-					kx = GMT_fft_any_wave (k, GMT_FFT_K_IS_KX, K);
+					kx = gmt_fft_any_wave (k, GMT_FFT_K_IS_KX, K);
 					v *= 1.e6 * (-kx / (MGAL_AT_45 * mk));
 				}
 				datac[k]   += (float) (-v * raised[k+1]);
@@ -887,7 +918,7 @@ void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL
 				break;
 			case GRAVFFT_DEFL_NORTH:
 				if (mk > 0.0) {	/* Scale tan (yslope) ~ slope to microradians */
-					ky = GMT_fft_any_wave (k, GMT_FFT_K_IS_KY, K);
+					ky = gmt_fft_any_wave (k, GMT_FFT_K_IS_KY, K);
 					v *= 1.e6 * (-ky / (MGAL_AT_45 * mk));
 				}
 				datac[k]   += (float) ( v * raised[k+1]);
@@ -897,53 +928,56 @@ void do_parker (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL
 	}
 }
 
-void do_admittance (struct GMT_CTRL *GMT, struct GMT_GRID *GridA, struct GMT_GRID *GridB, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K) {
+GMT_LOCAL int do_admittance (struct GMT_CTRL *GMT, struct GMT_GRID *GridA, struct GMT_GRID *GridB, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K) {
 	/*	The following are the comments of the routine do_spectrum
 	 *	of grdfft from which this code was adapted.
 	 *
 	 *	"This is modeled on the 1-D case, using the following ideas:
-	 *	In 1-D, we ensemble average over samples of length L = 
+	 *	In 1-D, we ensemble average over samples of length L =
 	 *	n * dt.  This gives n/2 power spectral estimates, at
 	 *	frequencies i/L, where i = 1, n/2.  If we have a total
 	 *	data set of ndata, we can make nest=ndata/n independent
 	 *	estimates of the power.  Our standard error is then
 	 *	1/sqrt(nest).
 	 *	In making 1-D estimates from 2-D data, we may choose
-	 *	n and L from nx2 or ny2 and delta_kx, delta_ky as 
+	 *	n and L from nx2 or ny2 and delta_kx, delta_ky as
 	 *	appropriate.  In this routine, we are giving the sum over
 	 * 	all frequencies in the other dimension; that is, an
 	 *	approximation of the integral."
 	 */
 
-	uint64_t	k, k_0 = 0, nk, ifreq;
+	int      error = 0, n_col_out = 3, col;
+	uint64_t dim[4] = {1, 1, 0, 0};	/* One table and one segment, with either 1 + 1*2 = 3 or 1 + 8*2 = 17 columns and yet unknown rows */
+	uint64_t k, k_0 = 0, nk, ifreq;
 	unsigned int *nused = NULL;
-	size_t n_alloc;
-	char	format[64] = {""}, buffer[256] = {""};
-	double	delta_k, r_delta_k, freq;
-	double	*out = NULL, *err_bar = NULL, *coh = NULL, *b_pow = NULL, *g_pow = NULL, *co_spec = NULL, *quad = NULL;
-	float	*datac = GridA->data;
-	float	*in_grv = GridB->data;
-	double	*z_from_below = NULL, *z_from_top = NULL;
+	size_t   n_alloc;
+	double   delta_k, r_delta_k, freq;
+	double  *out = NULL, *err_bar = NULL, *coh = NULL, *b_pow = NULL, *g_pow = NULL, *co_spec = NULL, *quad = NULL;
+	float   *datac = GridA->data;
+	float   *in_grv = GridB->data;
+	double  *z_from_below = NULL, *z_from_top = NULL;
+	struct   GMT_DATASET *D = NULL;
+	struct   GMT_DATASEGMENT *S = NULL;
 
-	if (K->delta_kx < K->delta_ky) 
+	if (K->delta_kx < K->delta_ky)
 		{delta_k = K->delta_kx;	nk = K->nx2/2;}
-	else 
+	else
 		{delta_k = K->delta_ky;	nk = K->ny2/2;}
 	n_alloc = nk;
 	/* Get an array for summing stuff */
-	b_pow   = GMT_memory (GMT, NULL, n_alloc, double );
-	g_pow   = GMT_memory (GMT, NULL, n_alloc, double);
-	err_bar = GMT_memory (GMT, NULL, n_alloc, double);
-	co_spec = GMT_memory (GMT, NULL, n_alloc, double);
-	quad    = GMT_memory (GMT, NULL, n_alloc, double);
-	coh     = GMT_memory (GMT, NULL, n_alloc, double);
-	out     = GMT_memory (GMT, NULL, n_alloc, double);
+	b_pow   = gmt_M_memory (GMT, NULL, n_alloc, double );
+	g_pow   = gmt_M_memory (GMT, NULL, n_alloc, double);
+	err_bar = gmt_M_memory (GMT, NULL, n_alloc, double);
+	co_spec = gmt_M_memory (GMT, NULL, n_alloc, double);
+	quad    = gmt_M_memory (GMT, NULL, n_alloc, double);
+	coh     = gmt_M_memory (GMT, NULL, n_alloc, double);
+	out     = gmt_M_memory (GMT, NULL, n_alloc, double);
 	if (Ctrl->misc.from_below)
-		z_from_below = GMT_memory (GMT, NULL, n_alloc, double);
+		z_from_below = gmt_M_memory (GMT, NULL, n_alloc, double);
 	if (Ctrl->misc.from_top)
-		z_from_top = GMT_memory (GMT, NULL, n_alloc, double);
+		z_from_top = gmt_M_memory (GMT, NULL, n_alloc, double);
 	n_alloc   = K->nx2 * K->ny2;
-	nused   = GMT_memory (GMT, NULL, n_alloc, unsigned int);
+	nused   = gmt_M_memory (GMT, NULL, n_alloc, unsigned int);
 
 	if (Ctrl->misc.coherence)
 		Ctrl->I.active = false;
@@ -951,9 +985,9 @@ void do_admittance (struct GMT_CTRL *GMT, struct GMT_GRID *GridA, struct GMT_GRI
 	/* Loop over it all, summing and storing, checking range for r */
 
 	r_delta_k = 1.0 / delta_k;
-	
+
 	for (k = 2; k < GridA->header->size; k+= 2) {
-		freq = GMT_fft_get_wave (k, K);
+		freq = gmt_fft_get_wave (k, K);
 		ifreq = lrint (fabs(freq) * r_delta_k);	/* Might be zero when doing r average  */
 		if (ifreq) ifreq--;
 		if (ifreq >= nk) continue;	/* Might happen when doing r average  */
@@ -986,46 +1020,54 @@ void do_admittance (struct GMT_CTRL *GMT, struct GMT_GRID *GridA, struct GMT_GRI
 	if (Ctrl->misc.from_top) 		/* compute theoretical "load from top" admittance */
 		load_from_top_admitt(GMT, Ctrl, K, z_from_top);
 
-	if (Ctrl->misc.from_below || Ctrl->misc.from_top)
-		sprintf (format, "%s%s%s%s%s%s%s\n", GMT->current.setting.format_float_out, 
-			GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out, 
-			GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out, 
-			GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out);
-	else
-		sprintf (format, "%s%s%s%s%s\n", GMT->current.setting.format_float_out, 
-			GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out, 
-			GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out);
+	gmt_set_cartesian (GMT, GMT_OUT);	/* To counter-act any -fg setting */
+
+	n_col_out = (Ctrl->misc.from_below || Ctrl->misc.from_top) ? 4 : 3;
+	dim[GMT_COL] = n_col_out;
+	dim[GMT_ROW] = nk;
+	if ((D = GMT_Create_Data (GMT->parent, GMT_IS_DATASET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to create a data set for spectral estimates\n");
+		error = GMT->parent->error;
+		goto Lfree;		/* So that we can free what it need to be */
+	}
+	S = D->table[0]->segment[0];	/* Only one table with one segment here, with 17 cols and nk rows */
 
 	if (Ctrl->misc.give_wavelength && Ctrl->misc.give_km) delta_k *= 1000.0;	/* Wanted wavelength in km */
+
 	for (k = k_0; k < nk; k++) {
 		freq = (k + 1) * delta_k;
 		if (Ctrl->misc.give_wavelength) freq = 1.0/freq;
-		if (Ctrl->misc.from_below) {
-			sprintf (buffer, format, freq, out[k], err_bar[k], z_from_below[k]);
-			GMT_fputs (buffer, stdout);
-		}
-		else if (Ctrl->misc.from_top) {
-			sprintf (buffer, format, freq, out[k], err_bar[k], z_from_top[k]);
-			GMT_fputs (buffer, stdout);
-		}
-		else {
-			sprintf (buffer, format, freq, out[k], err_bar[k]);
-			GMT_fputs (buffer, stdout);
-		}
+
+		col = 0;
+		/* Col 0 is the frequency (or wavelength) */
+		S->data[col++][k] = freq;
+		/* Cols 1-2 are xpower and std.err estimate */
+		S->data[col++][k] = out[k];
+		S->data[col++][k] = err_bar[k];
+		if (Ctrl->misc.from_below)
+			S->data[col++][k] = z_from_below[k];
+		else if (Ctrl->misc.from_top)
+			S->data[col++][k] = z_from_top[k];
 	}
-	GMT_free (GMT, out);
-	GMT_free (GMT, b_pow);
-	GMT_free (GMT, g_pow);
-	GMT_free (GMT, err_bar);
-	GMT_free (GMT, co_spec);
-	GMT_free (GMT, coh);
-	GMT_free (GMT, quad);
-	GMT_free (GMT, nused);
-	if (Ctrl->misc.from_below) GMT_free (GMT, z_from_below);
-	if (Ctrl->misc.from_top) GMT_free (GMT, z_from_top);
+	if (GMT_Write_Data (GMT->parent, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_WRITE_SET, NULL, Ctrl->G.file, D) != GMT_NOERROR)
+		error = GMT->parent->error;
+
+Lfree:
+	gmt_M_free (GMT, out);
+	gmt_M_free (GMT, b_pow);
+	gmt_M_free (GMT, g_pow);
+	gmt_M_free (GMT, err_bar);
+	gmt_M_free (GMT, co_spec);
+	gmt_M_free (GMT, coh);
+	gmt_M_free (GMT, quad);
+	gmt_M_free (GMT, nused);
+	if (Ctrl->misc.from_below) gmt_M_free (GMT, z_from_below);
+	if (Ctrl->misc.from_top) gmt_M_free (GMT, z_from_top);
+
+	return error;
 }
 
-void compute_only_admitts(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_top_or_bot, double delta_pt) {
+GMT_LOCAL void compute_only_admitts(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_top_or_bot, double delta_pt) {
 
 	/* Calls the apropriate function to compute the theoretical admittance. */
 	K->delta_kx = K->delta_ky = delta_pt;
@@ -1037,21 +1079,21 @@ void compute_only_admitts(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struc
 		load_from_below_admitt(GMT, Ctrl, K, z_top_or_bot);
 }
 
-void load_from_below_admitt(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_from_below) {
+GMT_LOCAL void load_from_below_admitt(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_from_below) {
 
 	/* Compute theoretical admittance for the "loading from below" model
 	   M. McNutt & Shure (1986) in same |k| of computed data admittance
 
-	   The z_from_below is a vector that must have been previously allocated 
+	   The z_from_below is a vector that must have been previously allocated
 	   with a size of "nk" like that variable is computed here.	*/
 
 	unsigned int k, nk;
 	double	earth_curvature, alfa, delta_k, freq, D, twopi, t1, t2, t3;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	if (K->delta_kx < K->delta_ky)
 		{delta_k = K->delta_kx;	 nk = K->nx2/2;}
-	else 
+	else
 		{delta_k = K->delta_ky;	 nk = K->ny2/2;}
 
 	twopi = 2. * M_PI;
@@ -1067,28 +1109,28 @@ void load_from_below_admitt(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, str
 			t1 *= 1.0e5;     /* to have it in mGals */
 		else                 /* Must be the GEOID case */
 			t1 /= (NORMAL_GRAVITY * freq * twopi);
-		t2 = Ctrl->T.rho_cw * exp(-twopi * freq * Ctrl->misc.z_level) + 
+		t2 = Ctrl->T.rho_cw * exp(-twopi * freq * Ctrl->misc.z_level) +
 			Ctrl->T.rho_mc * exp(-twopi * freq * Ctrl->Z.zm);
 		t3 = -(Ctrl->T.rho_mw + Ctrl->T.rho_mc * pow(freq,4.) * alfa) * exp(-twopi * freq * Ctrl->Z.zl);
 		z_from_below[k] = t1 * (t2 + t3);
 	}
 }
 
-void load_from_top_admitt (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_from_top) {
+GMT_LOCAL void load_from_top_admitt (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_from_top) {
 
 	/* Compute theoretical admittance for the "loading from top" model
 	   M. McNutt & Shure (1986) in same |k| of computed data admittance
-	   
-	   The z_from_top is a vector that must have been previously allocated 
+
+	   The z_from_top is a vector that must have been previously allocated
 	   with a size of "nk" like that variable is computed here.	*/
 
 	unsigned int k, nk;
 	double	earth_curvature, alfa, delta_k, freq, D, twopi, t1, t2;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
-	if (K->delta_kx < K->delta_ky) 
+	if (K->delta_kx < K->delta_ky)
 		{delta_k = K->delta_kx;	 nk = K->nx2/2;}
-	else 
+	else
 		{delta_k = K->delta_ky;	 nk = K->ny2/2;}
 
 	twopi = 2. * M_PI;
@@ -1104,12 +1146,12 @@ void load_from_top_admitt (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, stru
 			t1 *= 1.0e5;     /* to have it in mGals */
 		else                 /* Must be the GEOID case */
 			t1 /= (NORMAL_GRAVITY * freq * twopi);
-		t2 = exp(-twopi * freq * Ctrl->misc.z_level) - exp(-twopi * freq * Ctrl->Z.zm) / (1 + alfa*pow(freq,4.));   
+		t2 = exp(-twopi * freq * Ctrl->misc.z_level) - exp(-twopi * freq * Ctrl->Z.zm) / (1 + alfa*pow(freq,4.));
 		z_from_top[k] = t1 * Ctrl->T.rho_cw * t2;
 	}
 }
 
-void load_from_top_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n) {
+GMT_LOCAL void load_from_top_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n) {
 
 	/* Computes the gravity|geoid grid due to the effect of the bathymetry using the theoretical
 	admittance for the "loading from top" model --  M. McNutt & Shure (1986)  */
@@ -1118,7 +1160,7 @@ void load_from_top_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRA
 	uint64_t k;
 	double	earth_curvature, alfa, D, twopi, t1, t2, f, p, t, mk;
 	float *datac = Grid->data;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	f = 1.0;
 	for (i = 2; i <= n; i++)
@@ -1131,7 +1173,7 @@ void load_from_top_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRA
 	raised[0] = 0.0f;		raised[1] = 0.0f;
 
 	for (k = 0; k < Grid->header->size; k+= 2) {
-		mk = GMT_fft_get_wave (k, K) / twopi;
+		mk = gmt_fft_get_wave (k, K) / twopi;
 		if (p == 0.0)
 			t = 1.0;
 		else if (p == 1.0)
@@ -1150,7 +1192,7 @@ void load_from_top_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRA
 	}
 }
 
-void load_from_below_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n) {
+GMT_LOCAL void load_from_below_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, float *raised, unsigned int n) {
 
 	/* Computes the gravity|geoid grid due to the effect of the bathymetry using the theoretical
 	admittance for the "loading from below" model --  M. McNutt & Shure (1986)  */
@@ -1159,7 +1201,7 @@ void load_from_below_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct G
 	uint64_t k;
 	double	earth_curvature, alfa, D, twopi, t1, t2, t3, f, p, t, mk;
 	float *datac = Grid->data;
-	GMT_UNUSED(GMT);
+	gmt_M_unused(GMT);
 
 	f = 1.0;
 	for (i = 2; i <= n; i++)
@@ -1172,7 +1214,7 @@ void load_from_below_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct G
 	raised[0] = 0.0f;		raised[1] = 0.0f;
 
 	for (k = 0; k < Grid->header->size; k+= 2) {
-		mk = GMT_fft_get_wave (k, K) / twopi;
+		mk = gmt_fft_get_wave (k, K) / twopi;
 		if (p == 0.0)
 			t = 1.0;
 		else if (p == 1.0)
@@ -1185,7 +1227,7 @@ void load_from_below_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct G
 			t1 *= 1.0e5;     /* to have it in mGals */
 		else                 /* Must be the GEOID case */
 			t1 /= (NORMAL_GRAVITY * mk * twopi);
-		t2 = Ctrl->T.rho_cw * exp(-twopi * mk * Ctrl->misc.z_level) + 
+		t2 = Ctrl->T.rho_cw * exp(-twopi * mk * Ctrl->misc.z_level) +
 			 Ctrl->T.rho_mc * exp(-twopi * mk * Ctrl->Z.zm);
 		t3 = -(Ctrl->T.rho_mw + Ctrl->T.rho_mc * pow(mk,4.) * alfa) * exp(-twopi * mk * Ctrl->Z.zl);
 		datac[k] += (float) ((t1 * (t2 + t3)) * t / f * raised[k]);

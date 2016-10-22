@@ -92,7 +92,7 @@ Optional Arguments
 
 .. include:: explain_distunits.rst_
 
-.. include:: explain_grd_inout.rst_
+.. include:: explain_grd_inout_short.rst_
 
 .. include:: explain_grd_coord.rst_
 
@@ -121,8 +121,8 @@ distance of 500 km from the point 45,30 try
 
     gmt grdcut bathy.nc -Gsubset_bathy.nc -S45/30/500k -V
 
-`See Also <#toc10>`_
---------------------
+See Also
+--------
 
 :doc:`gmt`,
 :doc:`grdclip`,

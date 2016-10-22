@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: okbfuns.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: okbfuns.c 16594 2016-06-21 19:05:47Z jluis $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -18,12 +18,12 @@
 
 #include "okbfuns.h"
 
-static double okb_grv (unsigned int n_vert, struct LOC_OR *loc_or, double c_phi);
-static double okb_mag (unsigned int n_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or,
+GMT_LOCAL double okb_grv (unsigned int n_vert, struct LOC_OR *loc_or, double c_phi);
+GMT_LOCAL double okb_mag (unsigned int n_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or,
 	double c_tet, double s_tet, double c_phi, double s_phi); 
-static double eq_30 (double c, double s, double x, double y, double z);
-static double eq_43 (double mz, double c, double tg, double auxil, double x, double y, double z);
-static void rot_17 (unsigned int n_vert, bool top, struct LOC_OR *loc_or, double *c_tet, double *s_tet,
+GMT_LOCAL double eq_30 (double c, double s, double x, double y, double z);
+GMT_LOCAL double eq_43 (double mz, double c, double tg, double auxil, double x, double y, double z);
+GMT_LOCAL void rot_17 (unsigned int n_vert, bool top, struct LOC_OR *loc_or, double *c_tet, double *s_tet,
 	double *c_phi, double *s_phi);
 
 /*--------------------------------------------------------------------*/
@@ -34,7 +34,7 @@ double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double r
 	unsigned int i, l, k, cnt_v = 0, n_vert;
 	bool top = true;
 	struct LOC_OR loc_or[32];
-	GMT_UNUSED(loc_or_);
+	gmt_M_unused(loc_or_);
 	GMT_declare_gmutex		/* A no-op when no HAVE_GLIB_GTHREAD */
 
 /* x_o, y_o, z_o are the coordinates of the observation point
@@ -109,7 +109,7 @@ double okabe (struct GMT_CTRL *GMT, double x_o, double y_o, double z_o, double r
 }
 
 /* ---------------------------------------------------------------------- */
-static void rot_17 (unsigned int n_vert, bool top, struct LOC_OR *loc_or,
+GMT_LOCAL void rot_17 (unsigned int n_vert, bool top, struct LOC_OR *loc_or,
 			double *c_tet, double *s_tet, double *c_phi, double *s_phi) {
 	/* Rotates coordinates by teta and phi acording to equation (17) of Okabe */
 	/* store the result in external structure loc_or and angles c_tet s_tet c_phi s_phi */
@@ -151,7 +151,7 @@ static void rot_17 (unsigned int n_vert, bool top, struct LOC_OR *loc_or,
 }
 
 /* ---------------------------------------------------------------------- */
-static double okb_grv (unsigned int n_vert, struct LOC_OR *loc_or, double c_phi) {
+GMT_LOCAL double okb_grv (unsigned int n_vert, struct LOC_OR *loc_or, double c_phi) {
 /*  Computes the gravity anomaly due to a facet. */
 
 	unsigned int l;
@@ -175,7 +175,7 @@ static double okb_grv (unsigned int n_vert, struct LOC_OR *loc_or, double c_phi)
 }
 
 /* ---------------------------------------------------------------------- */
-static double eq_30 (double c, double s, double x, double y, double z) {
+GMT_LOCAL double eq_30 (double c, double s, double x, double y, double z) {
 	double r, Ji = 0, log_arg;
 
 	r = sqrt(x * x + y * y + z * z);
@@ -190,39 +190,37 @@ static double eq_30 (double c, double s, double x, double y, double z) {
 }
 
 /* ---------------------------------------------------------------------- */
-static double okb_mag (unsigned int n_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or,
-			double c_tet, double s_tet, double c_phi, double s_phi) {
+GMT_LOCAL double okb_mag (unsigned int n_vert, unsigned int km, unsigned int pm, struct LOC_OR *loc_or,
+	                      double c_tet, double s_tet, double c_phi, double s_phi) {
 /*  Computes the total magnetic anomaly due to a facet. */
 
 	unsigned int i;
 	double qsi1, qsi2, eta1, eta2, z2, z1, dx, dy, kx, ky, kz, v, r, c_psi, s_psi;
-	double ano = 0, ano_p, mag_fac, xi, xi1, yi, yi1, mx, my, mz, r_1, tg_psi, auxil;
+	double ano = 0, ano_p, mag_fac, xi, xi1, yi, yi1, mx, my, mz, tg_psi, auxil;
 
-	mag_fac = s_phi * (mag_param[pm].rim[0] * c_tet + mag_param[pm].rim[1] * s_tet) +
-				   mag_param[pm].rim[2] * c_phi;
+	mag_fac = s_phi * (okabe_mag_param[pm].rim[0] * c_tet + okabe_mag_param[pm].rim[1] * s_tet) +
+	          c_phi * okabe_mag_param[pm].rim[2];
 
 	if (fabs(mag_fac) < FLT_EPSILON) return 0.0;
 
-	kx = mag_var[km].rk[0];	ky = mag_var[km].rk[1];	kz = mag_var[km].rk[2];
-	v = kx * c_tet + ky * s_tet;
-	mx = v * c_phi - kz * s_phi;	my = ky * c_tet - kx * s_tet;
-	mz = v * s_phi + kz * c_phi;
+	kx = okabe_mag_var[km].rk[0];	ky = okabe_mag_var[km].rk[1];	kz = okabe_mag_var[km].rk[2];
+	v  = kx * c_tet + ky * s_tet;
+	mx = v * c_phi - kz * s_phi;	my = ky * c_tet - kx * s_tet;	mz = v * s_phi + kz * c_phi;
 
 	for (i = 0; i < n_vert; i++) {
 		xi = loc_or[i].x;	xi1 = loc_or[i+1].x;
 		yi = loc_or[i].y;	yi1 = loc_or[i+1].y;
 		dx = xi1 - xi;	dy = yi1 - yi;
-		r = sqrt(dx*dx + dy*dy);
-		r_1 = 1. / r;
+		r  = sqrt(dx*dx + dy*dy);
 		if (r > FLT_EPSILON) {
-			c_psi = dx * r_1;	s_psi = dy * r_1;
+			c_psi  = dx / r;		s_psi = dy / r;
 			tg_psi = dy / dx;
-			auxil = my * c_psi - mx * s_psi;
-			qsi1 = yi * s_psi + xi * c_psi;	qsi2 = yi1 * s_psi + xi1 * c_psi;
-			eta1 = yi * c_psi - xi * s_psi;	eta2 = yi1 * c_psi - xi1 * s_psi;
-			z1 = loc_or[i].z;	z2 = loc_or[i+1].z;
-			ano_p = eq_43(mz, c_psi, tg_psi, auxil, qsi2, eta2, z2) -
-			        eq_43(mz, c_psi, tg_psi, auxil, qsi1, eta1, z1);
+			auxil  = my * c_psi - mx * s_psi;
+			qsi1   = yi * s_psi + xi * c_psi;	qsi2 = yi1 * s_psi + xi1 * c_psi;
+			eta1   = yi * c_psi - xi * s_psi;	eta2 = yi1 * c_psi - xi1 * s_psi;
+			z1     = loc_or[i].z;	z2 = loc_or[i+1].z;
+			ano_p  = eq_43(mz, c_psi, tg_psi, auxil, qsi2, eta2, z2) -
+			         eq_43(mz, c_psi, tg_psi, auxil, qsi1, eta1, z1);
 		}
 		else
 			ano_p = 0;
@@ -232,7 +230,7 @@ static double okb_mag (unsigned int n_vert, unsigned int km, unsigned int pm, st
 }
 
 /* ---------------------------------------------------------------------- */
-static double eq_43 (double mz, double c, double tg, double auxil, double x, double y, double z) {
+GMT_LOCAL double eq_43 (double mz, double c, double tg, double auxil, double x, double y, double z) {
 	double r, ez, Li = 0, tmp;
 
 	ez = y * y + z * z;

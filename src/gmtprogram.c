@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtprogram.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmtprogram.c 16555 2016-06-16 22:49:46Z pwessel $
  *
  *	Copyright (c) 1991-$year by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -28,7 +28,7 @@
 #include "gmt_dev.h"
 
 int main (int argc, char *argv[]) {
-	int status = EXIT_SUCCESS;           /* Status code from GMT API */
+	int status = GMT_NOERROR;           /* Status code from GMT API */
 	struct GMTAPI_CTRL *api_ctrl = NULL; /* GMT API control structure */
 	/* Structure containing name, purpose, Api_mode, and function pointer of this module: */
 
@@ -40,7 +40,7 @@ int main (int argc, char *argv[]) {
 	status = GMT_Call_Module (api_ctrl, MODULE, argc-1, (argv+1));
 
 	/* 3. Destroy GMT session */
-	if (GMT_Destroy_Session (api_ctrl) != GMT_OK)
+	if (GMT_Destroy_Session (api_ctrl) != GMT_NOERROR)
 		return EXIT_FAILURE;
 
 	return status; /* Return the status from the module */

@@ -1,9 +1,9 @@
 #!/bin/bash
 #               GMT ANIMATION 03
-#               $Id: anim_03.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#               $Id: anim_03.sh 16750 2016-07-09 05:44:02Z pwessel $
 #
 # Purpose:      Make web page with simple animated GIF of Iceland topo
-# GMT progs:    gmt gmtset, gmt gmtmath, gmt psxy, gmt psconvert
+# GMT modules:  grdclip, grdgradient, makecpt, grdview, psxy, psconvert
 # Unix progs:   awk, mkdir, rm, mv, echo, convert, cat
 # Note:         Run with any argument to build movie; otherwise 1st frame is plotted only.
 #

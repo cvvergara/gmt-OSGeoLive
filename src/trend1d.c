@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: trend1d.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: trend1d.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * Brief synopsis: Reads stdin or file of x y pairs, or weighted pairs as x,y w data.  Fit 
+ * Brief synopsis: Reads stdin or file of x y pairs, or weighted pairs as x,y w data.  Fit
  * a regression model y = f(x) + e, where e are error misfits and f(x) has
  * some user-prescribed functional form.  Presently available models are
  * polynomials and Fourier series.  The user may choose the number of terms
@@ -28,7 +28,7 @@
  * Date:	1 JAN 2010
  * Version:	5 API
  *
- * In trend1d I chose to construct the polynomial model using Chebyshev 
+ * In trend1d I chose to construct the polynomial model using Chebyshev
  * Polynomials so that the user may easily compare the sizes of the
  * coefficients (and compare with a Fourier series as well).  Tn(x)
  * is an n-degree polynomial with n zero-crossings in [-1,1] and n+1
@@ -41,30 +41,30 @@
  * is rescaled to match the original input values.
  *
  * An n degree polynomial can be written with terms of the form a0 + a1*x
- * + a2*x*x + ...  But it can also be written using other polynomial 
+ * + a2*x*x + ...  But it can also be written using other polynomial
  * basis functions, such as a0*P0 + a1*P1 + a2*P2..., the Legendre
  * polynomials, and a0*T0 + a1*T1 + a2*T2..., the Chebyshev polynomials.
  * (The domain of the x values has to be in [-1, 1] in order to use P or T.)
- * It is well known that the ordinary polynomial basis 1, x, x*x, ... gives 
+ * It is well known that the ordinary polynomial basis 1, x, x*x, ... gives
  * terribly ill- conditioned matrices.  The Ps and Ts do much better.
  * This is because the ordinary basis is far from orthogonal.  The Ps
  * are orthogonal on [-1,1] and the Ts are orthogonal on [-1,1] under a
  * simple weight function.
  * Because the Ps have ordinary orthogonality on [-1,1], I expected them
- * to be the best basis for a regression model; best meaning that they 
+ * to be the best basis for a regression model; best meaning that they
  * would lead to the most balanced G'G (matrix of normal equations) with
  * the smallest condition number and the most nearly diagonal model
  * parameter covariance matrix ((G'G)inverse).  It turns out, however, that
- * the G'G obtained from the Ts is very similar and usually has a smaller 
+ * the G'G obtained from the Ts is very similar and usually has a smaller
  * condition number than the Ps G'G.  Both of these are vastly superior to
  * the usual polynomials 1, x, x*x.  In a test with 1000 equally spaced
  * data and 8 model parameters, the Chebyshev system had a condition # = 10.6,
  * Legendre = 14.8, and traditional = 54722.7.  For 1000 randomly spaced data
  * and 8 model parameters, the results were C = 13.1, L = 15.6, and P = 54916.6.
- * As the number of model parameters approaches the number of data, the 
- * situation still holds, although all matrices get ill-conditioned; for 8 
+ * As the number of model parameters approaches the number of data, the
+ * situation still holds, although all matrices get ill-conditioned; for 8
  * random data and 8 model parameters, C = 1.8e+05, L = 2.6e+05, P = 1.1e+08.
- * I expected the Legendre polynomials to have a covariance matrix more nearly 
+ * I expected the Legendre polynomials to have a covariance matrix more nearly
  * diagonal than that of the Chebyshev polynomials, but on this criterion also
  * the Chebyshev turned out to do better.  Only as ndata -> n_model_parameters
  * does the Legendre covariance matrix do better than the Chebyshev.   So for
@@ -80,7 +80,7 @@
 #define THIS_MODULE_NAME	"trend1d"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Fit a [weighted] [robust] polynomial [and/or Fourier] model for y = f(x) to xy[w] data"
-#define THIS_MODULE_KEYS	"<DI,>DO"
+#define THIS_MODULE_KEYS	"<D{,>D}"
 
 #include "gmt_dev.h"
 
@@ -88,10 +88,17 @@
 
 #define TREND1D_N_OUTPUT_CHOICES 5
 
+enum trend1d_enums {
+	TREND1D_NO_MODEL 	= 0,
+	TREND1D_POL_MODEL	= 1,
+	TREND1D_POL_MODEL_NORM	= 2,
+	TREND1D_CHEB_MODEL_NORM	= 3
+	};
+
 struct TREND1D_CTRL {
 	unsigned int n_outputs;
 	bool weighted_output;
-	bool model_parameters;
+	unsigned int model_parameters;	/* 0 = no output, 1 = polynomial output (users), 2 = polynomial outout (normalized), 3 = Chebyshev (normalized) */
 	struct C {	/* -C<condition_#> */
 		bool active;
 		double value;
@@ -122,27 +129,26 @@ struct	TREND1D_DATA {
 	double	w;
 };
 
-int read_data_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA **data, uint64_t *n_data, double *xmin, double *xmax, int weighted_input, double **work)
-{
+GMT_LOCAL int read_data_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA **data, uint64_t *n_data, double *xmin, double *xmax, int weighted_input, double **work) {
 	uint64_t i;
 	size_t n_alloc = GMT_INITIAL_MEM_ROW_ALLOC;
 	double *in = NULL;
 
-	*data = GMT_memory (GMT, NULL, n_alloc, struct TREND1D_DATA);
+	*data = gmt_M_memory (GMT, NULL, n_alloc, struct TREND1D_DATA);
 
 	i = 0;
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (GMT->parent, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (GMT_REC_IS_ERROR (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				return (GMT_RUNTIME_ERROR);
-			if (GMT_REC_IS_ANY_HEADER (GMT)) 	/* Skip all headers */
+			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all headers */
 				continue;
-			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
+			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
 		}
 
 		/* Data record to process */
-	
+
 		(*data)[i].x = (*data)[i].t = in[GMT_X];
 		(*data)[i].y = in[GMT_Y];
 		(*data)[i].w = (weighted_input) ? in[GMT_Z] : 1.0;
@@ -158,35 +164,33 @@ int read_data_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA **data, uint64_
 
 		if (++i == n_alloc) {
 			n_alloc <<= 1;
-			*data = GMT_memory (GMT, *data, n_alloc, struct TREND1D_DATA);
+			*data = gmt_M_memory (GMT, *data, n_alloc, struct TREND1D_DATA);
 		}
 	} while (true);
 
-	*data = GMT_memory (GMT, *data, i, struct TREND1D_DATA);
-	*work = GMT_memory (GMT, NULL, i, double);
+	*data = gmt_M_memory (GMT, *data, i, struct TREND1D_DATA);
+	*work = gmt_M_memory (GMT, NULL, i, double);
 
 	*n_data = i;
 	return (0);
 }
 
-void allocate_the_memory_1d (struct GMT_CTRL *GMT, unsigned int np, double **gtg, double **v, double **gtd, double **lambda, double **workb, double **workz, double **c_model, double **o_model, double **w_model)
-{
-	*gtg = GMT_memory (GMT, NULL, np*np, double);
-	*v = GMT_memory (GMT, NULL, np*np, double);
-	*gtd = GMT_memory (GMT, NULL, np, double);
-	*lambda = GMT_memory (GMT, NULL, np, double);
-	*workb = GMT_memory (GMT, NULL, np, double);
-	*workz = GMT_memory (GMT, NULL, np, double);
-	*c_model = GMT_memory (GMT, NULL, np, double);
-	*o_model = GMT_memory (GMT, NULL, np, double);
-	*w_model = GMT_memory (GMT, NULL, np, double);
+GMT_LOCAL void allocate_the_memory (struct GMT_CTRL *GMT, unsigned int np, double **gtg, double **v, double **gtd, double **lambda, double **workb, double **workz, double **c_model, double **o_model, double **w_model) {
+	*gtg = gmt_M_memory (GMT, NULL, np*np, double);
+	*v = gmt_M_memory (GMT, NULL, np*np, double);
+	*gtd = gmt_M_memory (GMT, NULL, np, double);
+	*lambda = gmt_M_memory (GMT, NULL, np, double);
+	*workb = gmt_M_memory (GMT, NULL, np, double);
+	*workz = gmt_M_memory (GMT, NULL, np, double);
+	*c_model = gmt_M_memory (GMT, NULL, np, double);
+	*o_model = gmt_M_memory (GMT, NULL, np, double);
+	*w_model = gmt_M_memory (GMT, NULL, np, double);
 }
 
-void write_output_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA *data, uint64_t n_data, char *output_choice, unsigned int n_outputs)
-{
+GMT_LOCAL void write_output_trend (struct GMT_CTRL *GMT, struct TREND1D_DATA *data, uint64_t n_data, char *output_choice, unsigned int n_outputs) {
 	uint64_t i;
 	unsigned int j;
-	double out[5];
+	double out[5] = {0, 0, 0, 0, 0};
 
 	for (i = 0; i < n_data; i++) {
 		for (j = 0; j < n_outputs; j++) {
@@ -212,23 +216,22 @@ void write_output_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA *data, uint
 	}
 }
 
-void free_the_memory_1d (struct GMT_CTRL *GMT, double *gtg, double *v, double *gtd, double *lambda, double *workb, double *workz, double *c_model, double *o_model, double *w_model, struct TREND1D_DATA *data, double *work)
-{
-	GMT_free (GMT, work);
-	GMT_free (GMT, data);
-	GMT_free (GMT, w_model);
-	GMT_free (GMT, o_model);
-	GMT_free (GMT, c_model);
-	GMT_free (GMT, workz);
-	GMT_free (GMT, workb);
-	GMT_free (GMT, lambda);
-	GMT_free (GMT, gtd);
-	GMT_free (GMT, v);
-	GMT_free (GMT, gtg);
+GMT_LOCAL void free_the_memory (struct GMT_CTRL *GMT, double *gtg, double *v, double *gtd, double *lambda, double *workb,
+                      double *workz, double *c_model, double *o_model, double *w_model, struct TREND1D_DATA *data, double *work) {
+	gmt_M_free (GMT, work);
+	gmt_M_free (GMT, data);
+	gmt_M_free (GMT, w_model);
+	gmt_M_free (GMT, o_model);
+	gmt_M_free (GMT, c_model);
+	gmt_M_free (GMT, workz);
+	gmt_M_free (GMT, workb);
+	gmt_M_free (GMT, lambda);
+	gmt_M_free (GMT, gtd);
+	gmt_M_free (GMT, v);
+	gmt_M_free (GMT, gtg);
 }
 
-void transform_x_1d (struct TREND1D_DATA *data, uint64_t n_data, struct GMT_MODEL *M, double xmin, double xmax)
-{
+GMT_LOCAL void transform_x_1d (struct TREND1D_DATA *data, uint64_t n_data, struct GMT_MODEL *M, double xmin, double xmax) {
 	uint64_t i;
 	double offset, scale;
 
@@ -245,8 +248,8 @@ void transform_x_1d (struct TREND1D_DATA *data, uint64_t n_data, struct GMT_MODE
 	}
 }
 
-void untransform_x_1d (struct TREND1D_DATA *data, uint64_t n_data, struct GMT_MODEL *M, double xmin, double xmax)
-{	/* Undo transformation of x, if used */
+GMT_LOCAL void untransform_x_1d (struct TREND1D_DATA *data, uint64_t n_data, struct GMT_MODEL *M, double xmin, double xmax) {
+	/* Undo transformation of x, if used */
 	uint64_t i;
 	double offset, scale;
 
@@ -257,8 +260,7 @@ void untransform_x_1d (struct TREND1D_DATA *data, uint64_t n_data, struct GMT_MO
 	for (i = 0; i < n_data; i++) data[i].x = (data[i].x * scale) + offset;
 }
 
-double get_chisq_1d (struct TREND1D_DATA *data, uint64_t n_data, unsigned int n_model)
-{
+GMT_LOCAL double get_chisq_1d (struct TREND1D_DATA *data, uint64_t n_data, unsigned int n_model) {
 	uint64_t i, nu;
 	double chi = 0.0;
 
@@ -273,17 +275,16 @@ double get_chisq_1d (struct TREND1D_DATA *data, uint64_t n_data, unsigned int n_
 	return (chi);
 }
 
-void recompute_weights_1d (struct GMT_CTRL *GMT, struct TREND1D_DATA *data, uint64_t n_data, double *work, double *scale)
-{
+GMT_LOCAL void recompute_weights_1d (struct GMT_CTRL *GMT, struct TREND1D_DATA *data, uint64_t n_data, double *work, double *scale) {
 	uint64_t i;
 	double k, ksq, rr;
 
 	/* First find median { fabs(data[].r) },
 		estimate scale from this,
-		and compute chisq based on this.  */ 
+		and compute chisq based on this.  */
 
 	for (i = 0; i < n_data; i++) work[i] = fabs(data[i].r);
-	GMT_sort_array (GMT, work, n_data, GMT_DOUBLE);
+	gmt_sort_array (GMT, work, n_data, GMT_DOUBLE);
 
 	if (n_data%2)
 		*scale = 1.4826 * work[n_data/2];
@@ -299,8 +300,8 @@ void recompute_weights_1d (struct GMT_CTRL *GMT, struct TREND1D_DATA *data, uint
 	}
 }
 
-double chebyshev (double x, unsigned int n)
-{	/* Return T_n(x) */
+GMT_LOCAL double chebyshev (double x, unsigned int n) {
+	/* Return T_n(x) */
 	double cj, cj1, cj2;
 	unsigned int j;
 	if (n == 0) return 1.0;
@@ -314,15 +315,14 @@ double chebyshev (double x, unsigned int n)
 	return (cj);
 }
 
-double polynomial (double x, unsigned int n)
-{	/* Return x^n */
+GMT_LOCAL double polynomial (double x, unsigned int n) {
+	/* Return x^n */
 	if (n == 0) return 1.0;
 	if (n == 1) return x;
 	return (pow (x, (double)n));
 }
 
-void load_g_row_1d (double x, double t, int n, double *gr, struct GMT_MODEL *M)
-{
+GMT_LOCAL void load_g_row_1d (double x, double t, int n, double *gr, struct GMT_MODEL *M) {
 	/* x: Current data position, appropriately normalized.  */
 	/* Number of model parameters, and elements of gr[]  */
 	/* Elements of row of G matrix.  */
@@ -353,8 +353,7 @@ void load_g_row_1d (double x, double t, int n, double *gr, struct GMT_MODEL *M)
 	}
 }
 
-void calc_m_and_r_1d (struct TREND1D_DATA *data, uint64_t n_data, double *model, unsigned int n_model, struct GMT_MODEL *M, double *grow)
-{
+GMT_LOCAL void calc_m_and_r_1d (struct TREND1D_DATA *data, uint64_t n_data, double *model, unsigned int n_model, struct GMT_MODEL *M, double *grow) {
 	/* model[n_model] holds solved coefficients of m_type model.
 	  grow[n_model] is a vector for a row of G matrix.  */
 
@@ -368,15 +367,13 @@ void calc_m_and_r_1d (struct TREND1D_DATA *data, uint64_t n_data, double *model,
 	}
 }
 
-void move_model_a_to_b_1d (double *model_a, double *model_b, unsigned int n_model, double *chisq_a, double *chisq_b)
-{
-	unsigned int i;
-	for (i = 0; i < n_model; i++) model_b[i] = model_a[i];
+GMT_LOCAL void move_model_a_to_b_1d (double *model_a, double *model_b, unsigned int n_model, double *chisq_a, double *chisq_b) {
+	gmt_M_memcpy (model_b, model_a, n_model, double);
 	*chisq_b = *chisq_a;
 }
 
-void load_gtg_and_gtd_1d (struct TREND1D_DATA *data, uint64_t n_data, double *gtg, double *gtd, double *grow, unsigned int n_model, unsigned int mp, struct GMT_MODEL *M)
-{
+GMT_LOCAL void load_gtg_and_gtd_1d (struct TREND1D_DATA *data, uint64_t n_data, double *gtg, double *gtd, double *grow, unsigned int n_model, unsigned int mp, struct GMT_MODEL *M) {
+ 
    	/* mp is row dimension of gtg  */
 
 	uint64_t i;
@@ -409,8 +406,7 @@ void load_gtg_and_gtd_1d (struct TREND1D_DATA *data, uint64_t n_data, double *gt
 	}
 }
 
-void solve_system_1d (struct GMT_CTRL *GMT, double *gtg, double *gtd, double *model, unsigned int n_model, unsigned int mp, double *lambda, double *v, double *b, double *z, double c_no, unsigned int *ir)
-{
+GMT_LOCAL void solve_system_1d (struct GMT_CTRL *GMT, double *gtg, double *gtd, double *model, unsigned int n_model, unsigned int mp, double *lambda, double *v, double *b, double *z, double c_no, unsigned int *ir) {
 	unsigned int i, j, k, rank = 0, nrots;
 	double c_test, temp_inverse_ij;
 
@@ -419,7 +415,7 @@ void solve_system_1d (struct GMT_CTRL *GMT, double *gtg, double *gtd, double *mo
 		*ir = 1;
 	}
 	else {
-		if (GMT_jacobi (GMT, gtg, n_model, mp, lambda, v, b, z, &nrots)) {
+		if (gmt_jacobi (GMT, gtg, n_model, mp, lambda, v, b, z, &nrots)) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Matrix Solver Convergence Failure.\n");
 		}
 		c_test = fabs (lambda[0]) / c_no;
@@ -438,20 +434,36 @@ void solve_system_1d (struct GMT_CTRL *GMT, double *gtg, double *gtd, double *mo
 	}
 }
 
-void GMT_cheb_to_pol (struct GMT_CTRL *GMT, double c[], unsigned int n, double a, double b)
-{
+GMT_LOCAL void unscale_polynomial (struct GMT_CTRL *GMT, double c[], unsigned int n, double a, double b) {
+	/* n are the first n terms that are polynomial - there may be Fourier terms beyond this set */
+	unsigned int j, k;
+	double cnst, fac;
+	gmt_M_unused(GMT);
+
+	cnst = fac = 2.0 / (b - a);
+	for (j = 1; j < n; j++) {
+		c[j] *= fac;
+		fac *= cnst;
+	}
+	cnst = 0.5 * (a + b);
+	for (j = 0; j <= n - 2; j++) {
+		for (k = n - 1; k > j; k--) c[k-1] -= cnst * c[k];
+	}
+}
+
+GMT_LOCAL void cheb_to_pol (struct GMT_CTRL *GMT, double c[], unsigned int n, double a, double b, unsigned int denorm) {
 	/* Convert from Chebyshev coefficients used on a t =  [-1,+1] interval
 	 * to polynomial coefficients on the original x = [a b] interval.
 	 * Modified from Numerical Miracles, ...eh Recipes */
-	 
+
 	 unsigned int j, k;
-	 double sv, cnst, fac, *d, *dd;
-	 
-	 d  = GMT_memory (GMT, NULL, n, double);
-	 dd = GMT_memory (GMT, NULL, n, double);
-	 
+	 double sv, *d, *dd;
+
+	 d  = gmt_M_memory (GMT, NULL, n, double);
+	 dd = gmt_M_memory (GMT, NULL, n, double);
+
 	 /* First we generate coefficients for a polynomial in t */
-	 
+
 	 d[0] = c[n-1];
 	 for (j = n - 2; j >= 1; j--) {
 	 	for (k = n - j; k >= 1; k--) {
@@ -467,51 +479,47 @@ void GMT_cheb_to_pol (struct GMT_CTRL *GMT, double c[], unsigned int n, double a
 	/* d[0] = -dd[0] + 0.5 * c[0]; */	/* This is what Num. Rec. says, but we do not do the approx with 0.5 * c[0] */
 	d[0] = -dd[0] + c[0];
 
-	/* Next step is to undo the scaling so we can use coefficients with x */
+	/* Next step is to undo the scaling so we can use coefficients with the user's x */
 
-	cnst = fac = 2.0 / (b - a);
-	for (j = 1; j < n; j++) {
-		d[j] *= fac;
-		fac *= cnst;
-	}
-	cnst = 0.5 * (a + b);
-	for (j = 0; j <= n - 2; j++) for (k = n - 1; k > j; k--) d[k-1] -= cnst * d[k];
+	if (denorm)
+		unscale_polynomial (GMT, d, n, a, b);
 
 	/* Return the new coefficients via c */
 
-	GMT_memcpy (c, d, n, double);
+	gmt_M_memcpy (c, d, n, double);
 
-	GMT_free (GMT, d);
-	GMT_free (GMT, dd);
+	gmt_M_free (GMT, d);
+	gmt_M_free (GMT, dd);
 }
 
-void *New_trend1d_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct TREND1D_CTRL *C = NULL;
-	
-	C = GMT_memory (GMT, NULL, 1, struct TREND1D_CTRL);
-	
+
+	C = gmt_M_memory (GMT, NULL, 1, struct TREND1D_CTRL);
+
 	/* Initialize values whose defaults are not 0/false/NULL */
-	C->C.value = 1.0e06;		/* Condition number for matrix solution  */	
+	C->C.value = 1.0e06;		/* Condition number for matrix solution  */
 	C->I.value = 0.51;		/* Confidence interval for significance test  */
 	return (C);
 }
 
-void Free_trend1d_Ctrl (struct GMT_CTRL *GMT, struct TREND1D_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct TREND1D_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	GMT_free (GMT, C);	
+	gmt_M_free (GMT, C);
 }
 
-int GMT_trend1d_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: trend1d [<table>] -F<xymrw|p> -N[p|P|f|F|c|C|s|S|x|X]<list-of-terms>[,...][+l<length>][+o<origin>][+r]\n");
+	GMT_Message (API, GMT_TIME_NONE, "usage: trend1d [<table>] -F<xymrw|p|P|c> -N[p|P|f|F|c|C|s|S|x|X]<list-of-terms>[,...][+l<length>][+o<origin>][+r]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-C<condition_#>] [-I[<confidence>]] [%s] [-W] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
-	GMT_Message (API, GMT_TIME_NONE, "\t-F Choose at least 1, up to 5, any order, of xymrw for ASCII output to stdout.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-F Choose at least 1, up to 5, any order, of xymrw for output to stdout.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   x=x, y=y, m=model, r=residual=y-m, w=weight.  w determined iteratively if robust fit used.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively choose -Fp to output only the model coefficients (Polynomial).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively choose just p to output only the model coefficients (Polynomial form),\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   P for normalized polynomial coefficients, and c for normalized Chebyshev coefficients.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Specify a polynomial, Fourier, or mixed model of any order; separate components by commas:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     p<n> adds complete polynomial (including intercept) up to degree <n>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     P<n> (or xx..x adds the component x^<n> only.\n");
@@ -534,13 +542,13 @@ int GMT_trend1d_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Option (API, "V");
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Weighted input given, weights in 3rd column [Default is unweighted].\n");
 	GMT_Option (API, "bi");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Default is 2 (or 3 if -W is set) input columns.\n");
+	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is 2 (or 3 if -W is set) input columns.\n");
 	GMT_Option (API, "bo,d,h,i,s,:,.");
-	
-	return (EXIT_FAILURE);
+
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_trend1d_parse (struct GMT_CTRL *GMT, struct TREND1D_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct TREND1D_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to trend1d and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
 	 * It also replaces any file names specified as input or output with the data ID
@@ -555,7 +563,7 @@ int GMT_trend1d_parse (struct GMT_CTRL *GMT, struct TREND1D_CTRL *Ctrl, struct G
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -581,7 +589,7 @@ int GMT_trend1d_parse (struct GMT_CTRL *GMT, struct TREND1D_CTRL *Ctrl, struct G
 				break;
 			case 'N':
 				Ctrl->N.active = true;
-				if (GMT_parse_model (API->GMT, opt->option, opt->arg, 1U, &(Ctrl->N.M)) == -1) {
+				if (gmt_parse_model (API->GMT, opt->option, opt->arg, 1U, &(Ctrl->N.M)) == -1) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -N option: See usage for details.\n");
 					n_errors++;
 				}
@@ -591,46 +599,50 @@ int GMT_trend1d_parse (struct GMT_CTRL *GMT, struct TREND1D_CTRL *Ctrl, struct G
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, Ctrl->C.value <= 1.0, "Syntax error -C option: Condition number must be larger than unity\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.value < 0.0 || Ctrl->I.value > 1.0, "Syntax error -C option: Give 0 < confidence level < 1.0\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->N.M.n_terms <= 0, "Syntax error -N option: A positive number of terms must be specified\n");
-	n_errors += GMT_check_binary_io (GMT, (Ctrl->W.active) ? 3 : 2);
+	n_errors += gmt_M_check_condition (GMT, Ctrl->C.value <= 1.0, "Syntax error -C option: Condition number must be larger than unity\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->I.value < 0.0 || Ctrl->I.value > 1.0, "Syntax error -C option: Give 0 < confidence level < 1.0\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->N.M.n_terms <= 0, "Syntax error -N option: A positive number of terms must be specified\n");
+	n_errors += gmt_check_binary_io (GMT, (Ctrl->W.active) ? 3 : 2);
 	for (j = Ctrl->n_outputs = 0; j < TREND1D_N_OUTPUT_CHOICES && Ctrl->F.col[j]; j++) {
-		if (!strchr ("xymrwp", Ctrl->F.col[j])) {
+		if (!strchr ("xymrwpPc", Ctrl->F.col[j])) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -F option: Unrecognized output choice %c\n", Ctrl->F.col[j]);
 			n_errors++;
 		}
 		else if (Ctrl->F.col[j] == 'w')
 			Ctrl->weighted_output = true;
 		else if (Ctrl->F.col[j] == 'p')
-			Ctrl->model_parameters = true;
+			Ctrl->model_parameters = TREND1D_POL_MODEL;
+		else if (Ctrl->F.col[j] == 'P')
+			Ctrl->model_parameters = TREND1D_POL_MODEL_NORM;
+		else if (Ctrl->F.col[j] == 'c')
+			Ctrl->model_parameters = TREND1D_CHEB_MODEL_NORM;
 		Ctrl->n_outputs++;
 	}
-	n_errors += GMT_check_condition (GMT, Ctrl->n_outputs == 0, "Syntax error -F option: Must specify at least one output columns \n");
-	n_errors += GMT_check_condition (GMT, Ctrl->n_outputs > 1 && Ctrl->model_parameters, 
+	n_errors += gmt_M_check_condition (GMT, Ctrl->n_outputs == 0, "Syntax error -F option: Must specify at least one output columns \n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->n_outputs > 1 && Ctrl->model_parameters,
 					"Syntax error -F option: When selecting model parameters, it must be the only output\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_trend1d_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_trend1d (void *V_API, int mode, void *args) {
 	unsigned int i, n_model, rank, np;
 	int error = 0;
 	bool significant;
-	
+
 	uint64_t n_data;
 
 	double *gtg = NULL, *v = NULL, *gtd = NULL, *lambda = NULL, *workb = NULL;
 	double *workz = NULL, *c_model = NULL, *o_model = NULL, *w_model = NULL, *work = NULL;
-	double xmin, xmax, c_chisq, o_chisq = 0.0, w_chisq, scale = 1.0, prob;
+	double xmin = 0.0, xmax = 0.0, c_chisq, o_chisq = 0.0, w_chisq, scale = 1.0, prob;
 
 	char format[GMT_BUFSIZ];
 
@@ -638,57 +650,57 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 	struct TREND1D_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_trend1d_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_trend1d_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_trend1d_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_trend1d_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_trend1d_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the trend1d main code ----------------------------*/
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
 	np = Ctrl->N.M.n_terms;	/* Row dimension for matrices gtg and v  */
-	allocate_the_memory_1d(GMT, np, &gtg, &v, &gtd, &lambda, &workb, &workz, &c_model, &o_model, &w_model);
 
-	if ((error = GMT_set_cols (GMT, GMT_IN, 2 + Ctrl->W.active)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_IN, 2 + Ctrl->W.active)) != GMT_NOERROR) {
 		Return (error);
 	}
-	if (GMT_Init_IO (GMT->parent, GMT_IS_DATASET, GMT_IS_NONE, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
+	if (GMT_Init_IO (GMT->parent, GMT_IS_DATASET, GMT_IS_NONE, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data input */
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
+	allocate_the_memory (GMT, np, &gtg, &v, &gtd, &lambda, &workb, &workz, &c_model, &o_model, &w_model);
 	if ((error = read_data_trend1d (GMT, &data, &n_data, &xmin, &xmax, Ctrl->W.active, &work)) != 0) Return (error);
-	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
+	if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
 		Return (API->error);
 	}
 
 	if (xmin == xmax) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: Min and Max value of input data are the same.\n");
-		Return (EXIT_FAILURE);
+		Return (GMT_RUNTIME_ERROR);
 	}
 	if (n_data == 0) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: Could not read any data.\n");
-		Return (EXIT_FAILURE);
+		Return (GMT_RUNTIME_ERROR);
 	}
 	if (n_data < (uint64_t)Ctrl->N.M.n_terms) GMT_Report (API, GMT_MSG_NORMAL, "Warning: Ill-posed problem; n_data < n_model_max.\n");
 
 	transform_x_1d (data, n_data, &(Ctrl->N.M), xmin, xmax);	/* Set domain to [-1, 1] or [-pi, pi]  */
 
-	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 		sprintf (format,"Read %%" PRIu64 " data with X values from %s to %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
 		GMT_Report (API, GMT_MSG_VERBOSE, format, n_data, xmin, xmax);
 		GMT_Report (API, GMT_MSG_VERBOSE, "N_model%sRank%sChi_Squared%sSignificance\n", GMT->current.setting.io_col_separator, GMT->current.setting.io_col_separator, GMT->current.setting.io_col_separator);
@@ -713,7 +725,7 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 				solve_system_1d (GMT, gtg, gtd, c_model, n_model, np, lambda, v, workb, workz, Ctrl->C.value, &rank);
 				calc_m_and_r_1d (data, n_data, c_model, n_model, &(Ctrl->N.M), workb);
 				c_chisq = get_chisq_1d (data, n_data, n_model);
-				significant = GMT_sig_f (GMT, c_chisq, n_data-n_model, w_chisq, n_data-n_model, Ctrl->I.value, &prob);
+				significant = gmt_sig_f (GMT, c_chisq, n_data-n_model, w_chisq, n_data-n_model, Ctrl->I.value, &prob);
 				GMT_Report (API, GMT_MSG_VERBOSE, format, n_model, rank, c_chisq, prob);
 			} while (significant);
 			/* Go back to previous model only if w_chisq < c_chisq  */
@@ -744,7 +756,7 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 					solve_system_1d (GMT, gtg, gtd, c_model, n_model, np, lambda, v, workb, workz, Ctrl->C.value, &rank);
 					calc_m_and_r_1d (data, n_data, c_model, n_model, &(Ctrl->N.M), workb);
 					c_chisq = get_chisq_1d (data, n_data, n_model);
-					significant = GMT_sig_f (GMT, c_chisq, n_data-n_model, w_chisq, n_data-n_model, Ctrl->I.value, &prob);
+					significant = gmt_sig_f (GMT, c_chisq, n_data-n_model, w_chisq, n_data-n_model, Ctrl->I.value, &prob);
 					GMT_Report (API, GMT_MSG_VERBOSE, format, n_model, rank, c_chisq, prob);
 				} while (significant);
 				/* Go back to previous model only if w_chisq < c_chisq  */
@@ -755,7 +767,7 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 				}
 			}
 			/* Next [robust] model has been found  */
-			significant = GMT_sig_f (GMT, c_chisq, n_data-n_model, o_chisq, n_data-n_model-1, Ctrl->I.value, &prob);
+			significant = gmt_sig_f (GMT, c_chisq, n_data-n_model, o_chisq, n_data-n_model-1, Ctrl->I.value, &prob);
 		}
 
 		if (!(significant) ) {	/* Go back to previous [robust] model, stored in o_model  */
@@ -781,7 +793,7 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 				solve_system_1d (GMT, gtg, gtd, c_model, n_model, np, lambda, v, workb, workz, Ctrl->C.value, &rank);
 				calc_m_and_r_1d (data, n_data, c_model, n_model, &(Ctrl->N.M), workb);
 				c_chisq = get_chisq_1d (data, n_data, n_model);
-				significant = GMT_sig_f (GMT, c_chisq, n_data-n_model, w_chisq, n_data-n_model, Ctrl->I.value, &prob);
+				significant = gmt_sig_f (GMT, c_chisq, n_data-n_model, w_chisq, n_data-n_model, Ctrl->I.value, &prob);
 				GMT_Report (API, GMT_MSG_VERBOSE, format, n_model, rank, c_chisq, prob);
 			} while (significant);
 			/* Go back to previous model only if w_chisq < c_chisq  */
@@ -793,55 +805,66 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 		}
 	}
 
-	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+	/* Before output, convert back to polynomial coefficients, if desired */
+
+	if (Ctrl->model_parameters && Ctrl->N.M.n_poly) {
+		if (Ctrl->N.M.chebyshev) {	/* Solved using Chebyshev, perhaps convert to polynomial coefficients */
+			if (Ctrl->model_parameters != TREND1D_CHEB_MODEL_NORM) {
+				char *kind[2] = {"user-domain", "normalized"};
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert from normalized Chebyshev to %s polynomial coefficients\n", kind[Ctrl->model_parameters-1]);
+				cheb_to_pol (GMT, c_model, Ctrl->N.M.n_poly, xmin, xmax, Ctrl->model_parameters == TREND1D_POL_MODEL);
+			}
+			else
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Report normalized Chebyshev coefficients\n");
+		}
+		else if (Ctrl->model_parameters != TREND1D_POL_MODEL_NORM) {
+			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert from normalized polynomial to user-domain polynomial coefficients\n");
+			unscale_polynomial (GMT, c_model, Ctrl->N.M.n_poly, xmin, xmax);
+		}
+	}
+
+	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 		sprintf (format, "Final model stats: N model parameters %%d.  Rank %%d.  Chi-Squared: %s\n", GMT->current.setting.format_float_out);
 		GMT_Report (API, GMT_MSG_VERBOSE, format, n_model, rank, c_chisq);
-		if (Ctrl->N.M.type & 1) {	/* Has polynomial component */
-			if (Ctrl->N.M.chebyshev)
-				sprintf (format, "Model Coefficients  (Chebyshev");
-			else
-				sprintf (format, "Model Coefficients  (polynomial");
+		if (!Ctrl->model_parameters) {	/* Only give verbose feedback on coefficients if not requested as output */
+			if (Ctrl->N.M.type & 1) {	/* Has polynomial component */
+				if (Ctrl->N.M.chebyshev)
+					cheb_to_pol (GMT, c_model, Ctrl->N.M.n_poly, xmin, xmax, 1);
+				sprintf (format, "Model Coefficients  (Polynomial");
+			}
+			if (Ctrl->N.M.type & 2)	/* Has Fourier components */
+				strcat (format, " and Fourier");
+			strcat (format, "): ");
+			GMT_Report (API, GMT_MSG_VERBOSE, format);
+			sprintf (format, "%s%s", GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out);
+			for (i = 0; i < n_model; i++) GMT_Message (API, GMT_TIME_NONE, format, c_model[i]);
+			GMT_Message (API, GMT_TIME_NONE, "\n");
 		}
-		if (Ctrl->N.M.type & 2)	/* Has Fourier components */
-			strcat (format, " and Fourier");
-		strcat (format, ")\n");
-		GMT_Report (API, GMT_MSG_VERBOSE, format);
-		sprintf (format, "%s%s", GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out);
-		for (i = 0; i < n_model; i++) GMT_Message (API, GMT_TIME_NONE, format, c_model[i]);
-		GMT_Message (API, GMT_TIME_NONE, "\n");
-		if (!Ctrl->N.M.chebyshev)
-			GMT_cheb_to_pol (GMT, c_model, n_model, xmin, xmax);
-		GMT_Report (API, GMT_MSG_VERBOSE, "Model Coefficients (Polynomial): ");
-		for (i = 0; i < n_model; i++) GMT_Message (API, GMT_TIME_NONE, format, c_model[i]);
-		GMT_Message (API, GMT_TIME_NONE, "\n");
 	}
 
 	untransform_x_1d (data, n_data, &(Ctrl->N.M), xmin, xmax);
 
 	i = (Ctrl->model_parameters) ? n_model : Ctrl->n_outputs;
-	if ((error = GMT_set_cols (GMT, GMT_OUT, i)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_OUT, i)) != GMT_NOERROR) {
 		Return (error);
 	}
-	if (GMT_Init_IO (GMT->parent, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+	if (GMT_Init_IO (GMT->parent, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
 
 	if (!Ctrl->model_parameters)	/* Write any or all of the 'xymrw' */
-		write_output_trend1d (GMT, data, n_data, Ctrl->F.col, Ctrl->n_outputs);
-	else {				/* Write only the model parameters */
-		if (!Ctrl->N.M.chebyshev)
-			GMT_cheb_to_pol (GMT, c_model, n_model, xmin, xmax);
+		write_output_trend (GMT, data, n_data, Ctrl->F.col, Ctrl->n_outputs);
+	else				/* Write only the model parameters */
 		GMT_Put_Record (API, GMT_WRITE_DOUBLE, c_model);
-	}
 
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 		Return (API->error);
 	}
 
-	free_the_memory_1d (GMT, gtg, v, gtd, lambda, workb, workz, c_model, o_model, w_model, data, work);
+	free_the_memory (GMT, gtg, v, gtd, lambda, workb, workz, c_model, o_model, w_model, data, work);
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

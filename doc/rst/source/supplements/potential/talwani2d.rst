@@ -6,7 +6,7 @@ talwani2d
 
 .. only:: not man
 
-    talwani2d - Compute free-air, geoid or vertical gravity gradients anomalies over 2-D bodies
+    talwani2d - Compute geopotential anomalies over 2-D bodies by the method of Talwani
 
 Synopsis
 --------
@@ -79,7 +79,7 @@ Optional Arguments
 
 **-N**\ *trackfile*
     Specifies locations where we wish to compute the predicted value.  When this option
-    is used you cannot use *-T** to set an equidistant lattice. The output data records are written to stdout.
+    is used you cannot use **-T** to set an equidistant lattice. The output data records are written to stdout.
 
 .. _-T:
 

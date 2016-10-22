@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: splitxyz.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: splitxyz.c 16835 2016-07-19 03:18:51Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,7 @@
 #define THIS_MODULE_NAME	"splitxyz"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Split xyz[dh] data tables into individual segments"
-#define THIS_MODULE_KEYS	"<DI,>DO"
+#define THIS_MODULE_KEYS	"<D{,>D}"
 
 #include "gmt_dev.h"
 
@@ -39,46 +39,45 @@
 int gmt_parse_g_option (struct GMT_CTRL *GMT, char *txt);
 
 struct SPLITXYZ_CTRL {
-	struct Out {	/* -> */
+	struct SPLITXYZ_Out {	/* -> */
 		bool active;
 		char *file;
 	} Out;
-	struct A {	/* -A<azimuth>/<tolerance> */
+	struct SPLITXYZ_A {	/* -A<azimuth>/<tolerance> */
 		bool active;
 		double azimuth, tolerance;
 	} A;
-	struct C {	/* -C<course_change> */
+	struct SPLITXYZ_C {	/* -C<course_change> */
 		bool active;
 		double value;
 	} C;
-	struct D {	/* -D<mindist> */
+	struct SPLITXYZ_D {	/* -D<mindist> */
 		bool active;
 		double value;
 	} D;
-	struct F {	/* -F<xy_filter>/<z_filter> */
+	struct SPLITXYZ_F {	/* -F<xy_filter>/<z_filter> */
 		bool active;
 		double xy_filter, z_filter;
 	} F;
-	struct N {	/* -N<namestem> */
+	struct SPLITXYZ_N {	/* -N<namestem> */
 		bool active;
 		char *name;
 	} N;
-	struct Q {	/* -Q[<xyzdg>] */
+	struct SPLITXYZ_Q {	/* -Q[<xyzdg>] */
 		bool active;
 		bool z_selected;
 		char col[SPLITXYZ_N_OUTPUT_CHOICES];	/* Character codes for desired output in the right order */
 	} Q;
-	struct S {	/* -S */
+	struct SPLITXYZ_S {	/* -S */
 		bool active;
 	} S;
 };
 
-double *filterxy_setup (struct GMT_CTRL *GMT)
-{
+GMT_LOCAL double *filterxy_setup (struct GMT_CTRL *GMT) {
 	unsigned int i;
 	double tmp, sum = 0.0, *fwork = NULL;
 
-	fwork = GMT_memory (GMT, NULL, SPLITXYZ_F_RES, double);	/* Initialized to zeros */
+	fwork = gmt_M_memory (GMT, NULL, SPLITXYZ_F_RES, double);	/* Initialized to zeros */
 	tmp = M_PI / SPLITXYZ_F_RES;
 	for (i = 0; i < SPLITXYZ_F_RES; i++) {
 		fwork[i] = 1.0 + cos (i * tmp);
@@ -88,8 +87,7 @@ double *filterxy_setup (struct GMT_CTRL *GMT)
 	return (fwork);
 }
 
-void filter_cols (struct GMT_CTRL *GMT, double *data[], uint64_t begin, uint64_t end, unsigned int d_col, unsigned int n_cols, unsigned int cols[], double filter_width, double *fwork)
-{
+GMT_LOCAL void filter_cols (struct GMT_CTRL *GMT, double *data[], uint64_t begin, uint64_t end, unsigned int d_col, unsigned int n_cols, unsigned int cols[], double filter_width, double *fwork) {
 	uint64_t i, j, k, p, istart, istop, ndata;
 	int64_t kk;
 	bool hilow;
@@ -100,8 +98,8 @@ void filter_cols (struct GMT_CTRL *GMT, double *data[], uint64_t begin, uint64_t
 	half_width = 0.5 * fabs (filter_width);
 	dt = SPLITXYZ_F_RES / half_width;
 	ndata = end - begin;
-	w = GMT_memory (GMT, NULL, n_cols, double *);
-	for (k = 0; k < n_cols; k++) w[k] = GMT_memory (GMT, NULL, ndata, double);	/* Initialized to zeros */
+	w = gmt_M_memory (GMT, NULL, n_cols, double *);
+	for (k = 0; k < n_cols; k++) w[k] = gmt_M_memory (GMT, NULL, ndata, double);	/* Initialized to zeros */
 	j = istart = istop = begin;
 	while (j < end) {
 		while (istart < end && data[d_col][istart] - data[d_col][j] <= -half_width) istart++;
@@ -122,14 +120,14 @@ void filter_cols (struct GMT_CTRL *GMT, double *data[], uint64_t begin, uint64_t
 	else {
 		for (i = begin; i < end; i++) for (p = 0; p < n_cols; p++) data[cols[p]][i] = w[p][i];
 	}
-	for (p = 0; p < n_cols; p++) GMT_free (GMT, w[p]);
-	GMT_free (GMT, w);
+	for (p = 0; p < n_cols; p++) gmt_M_free (GMT, w[p]);
+	gmt_M_free (GMT, w);
 }
 
-void *New_splitxyz_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct SPLITXYZ_CTRL *C = NULL;
 	
-	C = GMT_memory (GMT, NULL, 1, struct SPLITXYZ_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct SPLITXYZ_CTRL);
 	
 	/* Initialize values whose defaults are not 0/false/NULL */
 	C->A.azimuth = 90.0;
@@ -138,24 +136,24 @@ void *New_splitxyz_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a ne
 	return (C);
 }
 
-void Free_splitxyz_Ctrl (struct GMT_CTRL *GMT, struct SPLITXYZ_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct SPLITXYZ_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->Out.file) free (C->Out.file);	
-	if (C->N.name) free (C->N.name);	
-	GMT_free (GMT, C);	
+	gmt_M_str_free (C->Out.file);	
+	gmt_M_str_free (C->N.name);	
+	gmt_M_free (GMT, C);	
 }
 
-int GMT_splitxyz_usage (struct GMTAPI_CTRL *API, int level) {
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the splitxyz synopsis and optionally full usage information */
 
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: splitxyz [<table>] [-A<azimuth>/<tolerance>] [-C<course_change>] [-D<minimum_distance>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F<xy_filter>/<z_filter>] [-N<template>] [-Q<flags>] [-S] [%s]\n", GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
 		GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\tGive xyz[dh]file name or read stdin.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
@@ -181,13 +179,13 @@ int GMT_splitxyz_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-S d,h is supplied.  Input is 5 col x,y,z,d,h with d non-decreasing.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default input is 3 col x,y,z only and computes d,h from the data].\n");
 	GMT_Option (API, "V,bi");
-	GMT_Message (API, GMT_TIME_NONE, "\t     Default input columns is set via -S.\n");
+	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t     Default input columns is set via -S.\n");
 	GMT_Option (API, "bo,d,f,g,h,i,s,:,.");
 	
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_splitxyz_parse (struct GMT_CTRL *GMT, struct SPLITXYZ_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SPLITXYZ_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to splitxyz and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
 	 * Any GMT common options will override values set previously by other commands.
@@ -205,7 +203,7 @@ int GMT_splitxyz_parse (struct GMT_CTRL *GMT, struct SPLITXYZ_CTRL *Ctrl, struct
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+				if (!gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 			case '>':	/* Got named output file */
 				if (n_files++ == 0) Ctrl->Out.file = strdup (opt->arg);
@@ -215,40 +213,44 @@ int GMT_splitxyz_parse (struct GMT_CTRL *GMT, struct SPLITXYZ_CTRL *Ctrl, struct
 
 			case 'A':
 				Ctrl->A.active = true;
-				n_errors += GMT_check_condition (GMT,  (sscanf(opt->arg, "%lf/%lf", &Ctrl->A.azimuth, &Ctrl->A.tolerance)) != 2, "Syntax error -A option: Can't decipher values\n");
+				n_errors += gmt_M_check_condition (GMT, (sscanf(opt->arg, "%lf/%lf", &Ctrl->A.azimuth, &Ctrl->A.tolerance)) != 2,
+				                                       "Syntax error -A option: Can't decipher values\n");
 				break;
 			case 'C':
 				Ctrl->C.active = true;
-				n_errors += GMT_check_condition (GMT,  (sscanf(opt->arg, "%lf", &Ctrl->C.value)) != 1, "Syntax error -C option: Can't decipher value\n");
+				n_errors += gmt_M_check_condition (GMT, (sscanf(opt->arg, "%lf", &Ctrl->C.value)) != 1,
+				                                       "Syntax error -C option: Can't decipher value\n");
 				break;
 			case 'D':
 				Ctrl->D.active = true;
-				n_errors += GMT_check_condition (GMT,  (sscanf(opt->arg, "%lf", &Ctrl->D.value)) != 1, "Syntax error -D option: Can't decipher value\n");
+				n_errors += gmt_M_check_condition (GMT, (sscanf(opt->arg, "%lf", &Ctrl->D.value)) != 1,
+				                                       "Syntax error -D option: Can't decipher value\n");
 				break;
 			case 'F':
 				Ctrl->F.active = true;
-				n_errors += GMT_check_condition (GMT,  (sscanf(opt->arg, "%lf/%lf", &Ctrl->F.xy_filter, &Ctrl->F.z_filter)) != 2, "Syntax error -F option: Can't decipher values\n");
+				n_errors += gmt_M_check_condition (GMT, (sscanf(opt->arg, "%lf/%lf", &Ctrl->F.xy_filter, &Ctrl->F.z_filter)) != 2,
+				                                       "Syntax error -F option: Can't decipher values\n");
 				break;
 			case 'G':
-				if (GMT_compat_check (GMT, 4)) {
+				if (gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -G option is deprecated; use -g instead.\n");
 					GMT->common.g.active = true;
-					if (GMT_is_geographic (GMT, GMT_IN))	
+					if (gmt_M_is_geographic (GMT, GMT_IN))	
 						sprintf (txt_a, "D%sk", opt->arg);	/* Hardwired to be km */
 					else
 						sprintf (txt_a, "d%s", opt->arg);	/* Cartesian */
 					n_errors += gmt_parse_g_option (GMT, txt_a);
 				}
 				else
-					n_errors += GMT_default_error (GMT, opt->option);
+					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'M':
-				if (GMT_compat_check (GMT, 4)) {
+				if (gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -M is deprecated; -fg was set instead, use this in the future.\n");
-					if (!GMT_is_geographic (GMT, GMT_IN)) GMT_parse_common_options (GMT, "f", 'f', "g"); /* Set -fg unless already set */
+					if (!gmt_M_is_geographic (GMT, GMT_IN)) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Set -fg unless already set */
 				}
 				else
-					n_errors += GMT_default_error (GMT, opt->option);
+					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'N':
 				Ctrl->N.active = true;
@@ -276,35 +278,37 @@ int GMT_splitxyz_parse (struct GMT_CTRL *GMT, struct SPLITXYZ_CTRL *Ctrl, struct
 				Ctrl->S.active = true;
 				break;
 			case 'Z':
-				if (GMT_compat_check (GMT, 5)) /* Warn and pass through */
+				if (gmt_M_compat_check (GMT, 5)) /* Warn and pass through */
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -Z option is deprecated and not longer required.\n");
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, Ctrl->D.value < 0.0, "Syntax error -D option: Minimum segment distance must be positive\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->C.value <= 0.0, "Syntax error -C option: Course change tolerance must be positive\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->A.tolerance < 0.0, "Syntax error -A option: Azimuth tolerance must be positive\n");
-	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_OUT] && !Ctrl->N.name, "Syntax error: Binary output requires a namestem in -N\n");
-	n_errors += GMT_check_binary_io (GMT, (Ctrl->S.active) ? 5 : 3);
-	n_errors += GMT_check_condition (GMT, n_files > 1, "Syntax error: Only one output destination can be specified\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->N.active && Ctrl->N.name && !strstr (Ctrl->N.name, "%"), "Syntax error -N: Output template must contain %%d\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->D.value < 0.0, "Syntax error -D option: Minimum segment distance must be positive\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->C.value <= 0.0, "Syntax error -C option: Course change tolerance must be positive\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->A.tolerance < 0.0, "Syntax error -A option: Azimuth tolerance must be positive\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.b.active[GMT_OUT] && !Ctrl->N.name,
+	                                 "Syntax error: Binary output requires a namestem in -N\n");
+	n_errors += gmt_check_binary_io (GMT, (Ctrl->S.active) ? 5 : 3);
+	n_errors += gmt_M_check_condition (GMT, n_files > 1, "Syntax error: Only one output destination can be specified\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->N.active && Ctrl->N.name && !strstr (Ctrl->N.name, "%"),
+	                                 "Syntax error -N: Output template must contain %%d\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_splitxyz_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_splitxyz (void *V_API, int mode, void *args) {
-	unsigned int i, j, d_col, h_col, z_cols, xy_cols[2] = {0, 1};
-	unsigned int output_choice[SPLITXYZ_N_OUTPUT_CHOICES], n_outputs = 0;
+	unsigned int i, j, d_col, h_col, z_cols, xy_cols[2] = {0, 1}, io_mode = 0;
+	unsigned int output_choice[SPLITXYZ_N_OUTPUT_CHOICES], n_outputs = 0, n_in;
 	int error = 0;
-	bool ok, io_mode = 0, first = true, no_z_column;
+	bool ok, first = true, no_z_column;
 	uint64_t dim[4] = {1, 0, 0, 0};
 	
 	size_t n_alloc_seg = 0, n_alloc = 0;
@@ -321,38 +325,43 @@ int GMT_splitxyz (void *V_API, int mode, void *args) {
 	struct SPLITXYZ_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_splitxyz_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_splitxyz_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_splitxyz_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_splitxyz_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_splitxyz_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the splitxyz main code ----------------------------*/
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
-	if ((error = GMT_set_cols (GMT, GMT_IN, 3)) != GMT_OK) {
+	n_in = (Ctrl->S.active) ? 5 : 3;
+	if ((error = gmt_set_cols (GMT, GMT_IN, n_in)) != GMT_NOERROR) {
 		Return (error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_LINE, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_LINE, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data input */
 		Return (API->error);
 	}
 	if ((D[GMT_IN] = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, 0, GMT_READ_FILEBREAK, NULL, NULL, NULL)) == NULL) {
 		Return (API->error);
 	}
+	if (D[GMT_IN]->n_columns < n_in) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Input data have %d column(s) but at least %u are needed\n", (int)D[GMT_IN]->n_columns, n_in);
+		Return (GMT_DIM_TOO_SMALL);
+	}
 
-	GMT_memset (output_choice, SPLITXYZ_N_OUTPUT_CHOICES, int);
+	gmt_M_memset (output_choice, SPLITXYZ_N_OUTPUT_CHOICES, int);
 	no_z_column = (D[GMT_IN]->n_columns == 2);
 	
 	if (no_z_column && Ctrl->S.active) {
@@ -392,8 +401,8 @@ int GMT_splitxyz (void *V_API, int mode, void *args) {
 		}
 		n_outputs++;
 	}
-	if (GMT_is_geographic (GMT, GMT_IN))
-		GMT_set_geographic (GMT, GMT_OUT);
+	if (gmt_M_is_geographic (GMT, GMT_IN))
+		gmt_set_geographic (GMT, GMT_OUT);
 
 	if (n_outputs == 0) {	/* Generate default -Q setting (all) */
 		n_outputs = 5 - no_z_column;
@@ -407,21 +416,17 @@ int GMT_splitxyz (void *V_API, int mode, void *args) {
 	Ctrl->A.azimuth = D2R * (90.0 - Ctrl->A.azimuth);	/* Work in cartesian angle and radians  */
 	Ctrl->C.value *= D2R;
 	if (Ctrl->F.active) fwork = filterxy_setup (GMT);
-	if (Ctrl->N.active) {
-		int n_formats;
-		for (col = n_formats = 0; Ctrl->N.name[col]; col++) if (Ctrl->N.name[col] == '%') n_formats++;
-		io_mode = (n_formats == 2) ? GMT_WRITE_TABLE_SEGMENT: GMT_WRITE_SEGMENT;
-	}
-	else
-		GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
+	if (!Ctrl->N.active)
+		gmt_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
 
-	if ((error = GMT_set_cols (GMT, GMT_OUT, n_outputs)) != GMT_OK) {
+	if ((error = gmt_set_cols (GMT, GMT_OUT, n_outputs)) != GMT_NOERROR) {
 		Return (error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+	/* Registers default output destination, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {
 		Return (API->error);	/* Enables data output and sets access mode */
 	}
 
@@ -435,66 +440,66 @@ int GMT_splitxyz (void *V_API, int mode, void *args) {
 		h_col = no_z_column + 3;
 	}
 	z_cols = 2;
-	S_out = GMT_memory (GMT, NULL, 1, struct GMT_DATASEGMENT);
+	S_out = gmt_M_memory (GMT, NULL, 1, struct GMT_DATASEGMENT);
 	
 	nprofiles = 0;
 	for (tbl = 0; tbl < D[GMT_IN]->n_tables; tbl++) {
 		T = D[GMT_IN]->table[tbl];
 		if (!Ctrl->S.active) {	/* Must extend table with 2 cols to hold d and az */
-			T->min = GMT_memory (GMT, T->min, n_columns, double);
-			T->max = GMT_memory (GMT, T->max, n_columns, double);
+			T->min = gmt_M_memory (GMT, T->min, n_columns, double);
+			T->max = gmt_M_memory (GMT, T->max, n_columns, double);
 		}
 		GMT_Report (API, GMT_MSG_VERBOSE, "Working on file %s\n", T->file[GMT_IN]);
 
 		for (seg = 0; seg < D[GMT_IN]->table[tbl]->n_segments; seg++) {	/* For each segment in the table */
 			S = T->segment[seg];
 			if (!Ctrl->S.active) {	/* Must extend table with 2 cols to hold d and az */
-				S->coord = GMT_memory (GMT, S->coord, n_columns, double *);
-				S->min = GMT_memory (GMT, S->min, n_columns, double);
-				S->max = GMT_memory (GMT, S->max, n_columns, double);
-				for (col = D[GMT_IN]->n_columns; col < n_columns; col++) S->coord[col] = GMT_memory (GMT, NULL, S->n_rows, double);
+				S->data = gmt_M_memory (GMT, S->data, n_columns, double *);
+				S->min = gmt_M_memory (GMT, S->min, n_columns, double);
+				S->max = gmt_M_memory (GMT, S->max, n_columns, double);
+				for (col = D[GMT_IN]->n_columns; col < n_columns; col++) S->data[col] = gmt_M_memory (GMT, NULL, S->n_rows, double);
 			}
 			
-			if (Ctrl->S.active) S->coord[h_col][0] = D2R * (90.0 - S->coord[h_col][0]);	/* Angles are stored as CCW angles in radians */
+			if (Ctrl->S.active) S->data[h_col][0] = D2R * (90.0 - S->data[h_col][0]);	/* Angles are stored as CCW angles in radians */
 			for (row = 1; row < S->n_rows; row++) {
 				if (!Ctrl->S.active) {	/* Must extend table with 2 cols to hold d and az */
-					dy = S->coord[GMT_Y][row] - S->coord[GMT_Y][row-1];
-					if (GMT_is_geographic (GMT, GMT_IN)) {
-						GMT_set_delta_lon (S->coord[GMT_X][row-1], S->coord[GMT_X][row], dx);
+					dy = S->data[GMT_Y][row] - S->data[GMT_Y][row-1];
+					if (gmt_M_is_geographic (GMT, GMT_IN)) {
+						gmt_M_set_delta_lon (S->data[GMT_X][row-1], S->data[GMT_X][row], dx);
 						dy *= GMT->current.proj.DIST_KM_PR_DEG;
-						dx *= (GMT->current.proj.DIST_KM_PR_DEG * cosd (0.5 * (S->coord[GMT_Y][row] + S->coord[GMT_Y][row-1])));
+						dx *= (GMT->current.proj.DIST_KM_PR_DEG * cosd (0.5 * (S->data[GMT_Y][row] + S->data[GMT_Y][row-1])));
 					}
 					else
-						dx = S->coord[GMT_X][row] - S->coord[GMT_X][row-1];
+						dx = S->data[GMT_X][row] - S->data[GMT_X][row-1];
 					if (dy == 0.0 && dx == 0.0) {
-						S->coord[d_col][row] = S->coord[d_col][row-1];
-						S->coord[h_col][row] = S->coord[h_col][row-1];
+						S->data[d_col][row] = S->data[d_col][row-1];
+						S->data[h_col][row] = S->data[h_col][row-1];
 					}
 					else {
-						S->coord[d_col][row] = S->coord[d_col][row-1] + hypot (dx,dy);
-						S->coord[h_col][row] = d_atan2(dy,dx);	/* Angles are stored as CCW angles in radians */
+						S->data[d_col][row] = S->data[d_col][row-1] + hypot (dx,dy);
+						S->data[h_col][row] = d_atan2(dy,dx);	/* Angles are stored as CCW angles in radians */
 					}
 				}
 				else 
-					S->coord[h_col][row] = D2R * (90.0 - S->coord[h_col][row]);	/* Angles are stored as CCW angles in radians */
+					S->data[h_col][row] = D2R * (90.0 - S->data[h_col][row]);	/* Angles are stored as CCW angles in radians */
 			}
-			if (!Ctrl->S.active) S->coord[h_col][0] = S->coord[h_col][1];
+			if (!Ctrl->S.active) S->data[h_col][0] = S->data[h_col][1];
 			
 			/* Here a complete segment is ready for further processing */
 			/* Now we have read the data and can filter z, if necessary.  */
 
-			if (Ctrl->F.active) filter_cols (GMT, S->coord, 0, S->n_rows, d_col, 1, &z_cols, Ctrl->F.z_filter, fwork);
+			if (Ctrl->F.active) filter_cols (GMT, S->data, 0, S->n_rows, d_col, 1, &z_cols, Ctrl->F.z_filter, fwork);
 
 			/* Now we are ready to search for segments.  */
 
 			begin = end = 0;
 			while (end < S->n_rows-1) {
-				sincos (S->coord[h_col][begin], &last_s, &last_c);
+				sincos (S->data[h_col][begin], &last_s, &last_c);
 				csum = last_c;	ssum = last_s;
 				ok = true;
 				while (ok && end < S->n_rows-1) {
 					end++;
-					sincos (S->coord[h_col][end], &this_s, &this_c);
+					sincos (S->data[h_col][end], &this_s, &this_c);
 					dotprod = this_c * last_c + this_s * last_s;
 					if (fabs (dotprod) > 1.0) dotprod = copysign (1.0, dotprod);
 					if (d_acos (dotprod) > Ctrl->C.value) {	/* Fails due to too much change in azimuth  */
@@ -513,30 +518,30 @@ int GMT_splitxyz (void *V_API, int mode, void *args) {
 				if (ok) end++;	/* Last point in input should be included in this segment  */
 
 				if (end - begin - 1) { /* There are at least two points in the list.  */
-					if ((S->coord[d_col][end-1] - S->coord[d_col][begin]) >= Ctrl->D.value) {
+					if ((S->data[d_col][end-1] - S->data[d_col][begin]) >= Ctrl->D.value) {
 						/* List is long enough.  Check strike. Compute mean_azim in range [-pi/2, pi/2] */
 
 						mean_azim = d_atan2 (ssum, csum);
 						mean_azim = fabs (mean_azim - Ctrl->A.azimuth);
 						if (mean_azim <= Ctrl->A.tolerance) {	/* List has acceptable strike.  */
-							if (Ctrl->F.active) filter_cols (GMT, S->coord, begin, end, d_col, 2, xy_cols, Ctrl->F.xy_filter, fwork);
+							if (Ctrl->F.active) filter_cols (GMT, S->data, begin, end, d_col, 2, xy_cols, Ctrl->F.xy_filter, fwork);
 							nprofiles++;
 
 							n_out = end - begin;
 							if ((n_total + n_out) >= n_alloc) {
 								n_alloc = (first) ? D[GMT_IN]->n_records : n_alloc * 2;
-								GMT_alloc_segment (GMT, S_out, n_alloc, n_outputs, first);
+								gmt_alloc_datasegment (GMT, S_out, n_alloc, n_outputs, first);
 								first = false;
 							}
 
 							for (row = begin; row < end; row++, k++) {
 								for (j = 0; j < n_outputs; j++) {	/* Remember to convert CCW angles back to azimuths */
-									S_out->coord[j][k] = (output_choice[j] == h_col) ? 90.0 - R2D * S->coord[h_col][row] : S->coord[output_choice[j]][row];
+									S_out->data[j][k] = (output_choice[j] == h_col) ? 90.0 - R2D * S->data[h_col][row] : S->data[output_choice[j]][row];
 								}
 							}
 							if (seg2 == n_alloc_seg) {
 								n_alloc_seg = (n_alloc_seg == 0) ? D[GMT_IN]->n_segments : n_alloc_seg * 2;
-								rec = GMT_memory (GMT, rec, n_alloc_seg, uint64_t);
+								rec = gmt_M_memory (GMT, rec, n_alloc_seg, uint64_t);
 							}
 							rec[seg2++] = k;
 							n_total += n_out;
@@ -546,53 +551,60 @@ int GMT_splitxyz (void *V_API, int mode, void *args) {
 				begin = end;
 			}
 			if (!Ctrl->S.active) {	/* Must remove the 2 cols we added  */
-				for (col = D[GMT_IN]->n_columns; col < n_columns; col++) GMT_free (GMT, S->coord[col]);
-				S->coord = GMT_memory (GMT, S->coord, S->n_columns, double *);
-				S->min = GMT_memory (GMT, S->min, S->n_columns, double);
-				S->max = GMT_memory (GMT, S->max, S->n_columns, double);
+				for (col = D[GMT_IN]->n_columns; col < n_columns; col++) gmt_M_free (GMT, S->data[col]);
+				S->data = gmt_M_memory (GMT, S->data, S->n_columns, double *);
+				S->min = gmt_M_memory (GMT, S->min, S->n_columns, double);
+				S->max = gmt_M_memory (GMT, S->max, S->n_columns, double);
 			}
 		}
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+	if (Ctrl->F.active) gmt_M_free (GMT, fwork);
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
+		gmt_M_free (GMT, rec);
+		gmt_free_segment (GMT, &S_out);
 		Return (API->error);
 	}
 	
 	/* Get here when all profiles have been found and written.  */
 
-	if (nprofiles > 1) GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
+	if (nprofiles > 1) gmt_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
 
 	dim[GMT_SEG] = seg2;	dim[GMT_COL] = n_outputs;
-	if ((D[GMT_OUT] = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (API->error);	/* An empty table */
-	for (seg = 0; seg < seg2; seg++) {	/* We fake a table by setting the coord pointers to point to various points in our single S_out arrays */
+	if ((D[GMT_OUT] = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
+		gmt_M_free (GMT, rec);
+		gmt_free_segment (GMT, &S_out);
+		Return (API->error);	/* An empty table */
+	}
+	for (seg = 0; seg < seg2; seg++) {	/* We fake a table by setting the data pointers to point to various points in our single S_out arrays */
 		S = D[GMT_OUT]->table[0]->segment[seg];
 		k = (seg == 0) ? 0 : rec[seg-1];
 		n = (seg == 0) ? rec[seg] : rec[seg] - rec[seg-1];
-		for (j = 0; j < n_outputs; j++) S->coord[j] = &(S_out->coord[j][k]);
+		for (j = 0; j < n_outputs; j++) S->data[j] = &(S_out->data[j][k]);
 		S->n_rows = n;
 		sprintf (header, "Profile %" PRIu64" -I%" PRIu64, seg, seg);
 		S->header = strdup (header);
 		S->id = seg;
 	}
+	gmt_M_free (GMT, rec);
 
 	GMT_Report (API, GMT_MSG_VERBOSE, " Split %" PRIu64 " data into %" PRIu64 " segments.\n", D[GMT_IN]->n_records, nprofiles);
 	if (Ctrl->N.active) {
 		int n_formats = 0;
-		if (!Ctrl->N.name) Ctrl->N.name = (GMT->common.b.active[GMT_OUT]) ? strdup ("splitxyz_segment_%d.bin") : strdup ("splitxyz_segment_%d.txt");
 		for (k = 0; Ctrl->N.name[k]; k++) if (Ctrl->N.name[k] == '%') n_formats++;
-		D[GMT_OUT]->io_mode = (n_formats == 2) ? GMT_WRITE_TABLE_SEGMENT: GMT_WRITE_SEGMENT;
+		io_mode = (n_formats == 2) ? GMT_WRITE_TABLE_SEGMENT: GMT_WRITE_SEGMENT;
 		/* The io_mode tells the i/o function to split segments into files */
-		if (Ctrl->Out.file) free ((void*)Ctrl->Out.file);
+		gmt_M_str_free (Ctrl->Out.file);
 		Ctrl->Out.file = strdup (Ctrl->N.name);
 	}
-	if (GMT_Write_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_PLP, io_mode, NULL, Ctrl->Out.file, D[GMT_OUT]) != GMT_OK) {
+	if (GMT_Write_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_PLP, io_mode, NULL, Ctrl->Out.file, D[GMT_OUT]) != GMT_NOERROR) {
+		gmt_free_segment (GMT, &S_out);
 		Return (API->error);
 	}
 
-	/* Must set coord pointers to NULL since they were not allocated */
-	for (seg = 0; seg < seg2; seg++) for (j = 0; j < n_outputs; j++) D[GMT_OUT]->table[0]->segment[seg]->coord[j] = NULL;
-	GMT_free_segment (GMT, &S_out, GMT_ALLOC_INTERNALLY);
-	if (Ctrl->F.active) GMT_free (GMT, fwork);
-	GMT_free (GMT, rec);
+	/* Must set data pointers to NULL since they were not allocated */
+	for (seg = 0; seg < seg2; seg++)
+		for (j = 0; j < n_outputs; j++) D[GMT_OUT]->table[0]->segment[seg]->data[j] = NULL;
+	gmt_free_segment (GMT, &S_out);
 
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

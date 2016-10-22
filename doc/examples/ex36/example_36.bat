@@ -1,5 +1,5 @@
 REM             GMT EXAMPLE 36
-REM             $Id
+REM             $Id$
 REM
 REM Purpose:    Illustrate sphinterpolate with Mars radii data
 REM GMT progs:  psxy, makecpt, grdimage, sphinterpolate
@@ -10,7 +10,7 @@ echo GMT EXAMPLE 36
 set ps=example_36.ps
 
 REM Interpolate data of Mars radius from Mariner9 and Viking Orbiter spacecrafts
-gmt makecpt -Crainbow -T-7000/15000/1000 -Z > tt.cpt
+gmt makecpt -Crainbow -T-7000/15000 > tt.cpt
 REM Piecewise linear interpolation; no tension
 gmt sphinterpolate mars370.txt -Rg -I1 -Q0 -Gtt.nc
 gmt grdimage tt.nc -JH0/6i -Bag -Ctt.cpt -P -Xc -Y7.25i -K  > %ps%

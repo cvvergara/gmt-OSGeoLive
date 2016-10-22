@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_datalist.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: x2sys_datalist.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *      Copyright (c) 1999-2015 by P. Wessel
+ *      Copyright (c) 1999-2016 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #define THIS_MODULE_NAME	"x2sys_datalist"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Extract content of track data files"
-#define THIS_MODULE_KEYS	"LTi,ITi,>DO,RG-"
+#define THIS_MODULE_KEYS	">D}"
 
 #include "x2sys.h"
 
@@ -68,32 +68,32 @@ struct X2SYS_ADJUST {
 	double *d, *c;
 };
 
-void *New_x2sys_datalist_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct X2SYS_DATALIST_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct X2SYS_DATALIST_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct X2SYS_DATALIST_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 
 	return (C);
 }
 
-void Free_x2sys_datalist_Ctrl (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C->F.flags) free (C->F.flags);
-	if (C->I.file) free (C->I.file);
-	if (C->L.file) free (C->L.file);
-	if (C->T.TAG) free (C->T.TAG);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->F.flags);
+	gmt_M_str_free (C->I.file);
+	gmt_M_str_free (C->L.file);
+	gmt_M_str_free (C->T.TAG);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_x2sys_datalist_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: x2sys_datalist <files> -T<TAG> [-A] [-E] [-F<fields>] [-L[<corrtable.txt>]] [-I<ignorelist>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-S] [%s] [%s] [%s]\n\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_bo_OPT, GMT_do_OPT);
 	
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 	
 	GMT_Message (API, GMT_TIME_NONE, "\t<files> is one or more datafiles, or give =<files.lis> for a file with a list of datafiles.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T <TAG> is the system tag for the data set.\n");
@@ -110,10 +110,10 @@ int GMT_x2sys_datalist_usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   (Note: data columns exclude navigation (lon|x|lat|y|time) columns.)\n");
 	GMT_Option (API, "V,bo,do,.");
 	
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_x2sys_datalist_parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *Ctrl, struct GMT_OPTION *options) {
 
 	/* This parses the options provided to grdcut and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
@@ -121,7 +121,7 @@ int GMT_x2sys_datalist_parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0;
+	unsigned int n_errors = 0, n_files[2] = {0, 0};
 	struct GMT_OPTION *opt = NULL;
 
 	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
@@ -129,8 +129,11 @@ int GMT_x2sys_datalist_parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *
 		switch (opt->option) {
 			/* Common parameters */
 
-			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
+			case '<':	/* Skip input files since their paths depend on tag */
+				n_files[GMT_IN]++;
+				break;
+			case '>':	/* Got named output file */
+				n_files[GMT_OUT]++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -146,13 +149,13 @@ int GMT_x2sys_datalist_parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *
 				Ctrl->F.flags = strdup (opt->arg);
 				break;
 			case 'I':
-				if ((Ctrl->I.active = GMT_check_filearg (GMT, 'I', opt->arg, GMT_IN, GMT_IS_TEXTSET)) != 0)
+				if ((Ctrl->I.active = gmt_check_filearg (GMT, 'I', opt->arg, GMT_IN, GMT_IS_TEXTSET)) != 0)
 					Ctrl->I.file = strdup (opt->arg);
 				else
 					n_errors++;
 				break;
 			case 'L':	/* Crossover correction table */
-				if ((Ctrl->L.active = GMT_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_TEXTSET)) != 0)
+				if ((Ctrl->L.active = gmt_check_filearg (GMT, 'L', opt->arg, GMT_IN, GMT_IS_TEXTSET)) != 0)
 					Ctrl->L.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -165,20 +168,21 @@ int GMT_x2sys_datalist_parse (struct GMT_CTRL *GMT, struct X2SYS_DATALIST_CTRL *
 				Ctrl->T.TAG = strdup (opt->arg);
 				break;
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
 
-	n_errors += GMT_check_condition (GMT, !Ctrl->T.active || !Ctrl->T.TAG, "Syntax error: -T must be used to set the TAG.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->F.active && !Ctrl->F.flags, "Syntax error: -F must be given a comma-separated list of columns.\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.active && !Ctrl->I.file, "Syntax error: -I must be given a filename.\n");
+	n_errors += gmt_M_check_condition (GMT, n_files[GMT_IN] == 0, "Syntax error: No track files given\n");
+	n_errors += gmt_M_check_condition (GMT, n_files[GMT_OUT] > 1, "Syntax error: More than one output file given\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->T.active || !Ctrl->T.TAG, "Syntax error: -T must be used to set the TAG.\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->F.active && !Ctrl->F.flags, "Syntax error: -F must be given a comma-separated list of columns.\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && !Ctrl->I.file, "Syntax error: -I must be given a filename.\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-bool x2sys_load_adjustments (struct GMT_CTRL *GMT, char *DIR, char *TAG, char *track, char *column, struct X2SYS_ADJUST **A)
-{
+GMT_LOCAL bool x2sys_load_adjustments (struct GMT_CTRL *GMT, char *DIR, char *TAG, char *track, char *column, struct X2SYS_ADJUST **A) {
 	unsigned int k, type[2] = {GMT_IS_FLOAT, GMT_IS_FLOAT};
 	int n_fields;
 	uint64_t n = 0, n_expected_fields = 2;
@@ -189,11 +193,11 @@ bool x2sys_load_adjustments (struct GMT_CTRL *GMT, char *DIR, char *TAG, char *t
 	struct X2SYS_ADJUST *adj = NULL;
 	
 	sprintf (file, "%s/%s/%s.%s.adj", DIR, TAG, track, column);
-	if ((fp = GMT_fopen (GMT, file, "r")) == NULL) return false;	/* Nuthin' to read */
+	if ((fp = gmt_fopen (GMT, file, "r")) == NULL) return false;	/* Nuthin' to read */
 	
-	adj = GMT_memory (GMT, NULL, 1, struct X2SYS_ADJUST);
-	adj->d = GMT_memory (GMT, NULL, n_alloc, double);
-	adj->c = GMT_memory (GMT, NULL, n_alloc, double);
+	adj = gmt_M_memory (GMT, NULL, 1, struct X2SYS_ADJUST);
+	adj->d = gmt_M_memory (GMT, NULL, n_alloc, double);
+	adj->c = gmt_M_memory (GMT, NULL, n_alloc, double);
 	for (k = 0; k < 2; k++) uint_swap (type[k], GMT->current.io.col_type[GMT_IN][k]);	/* Save original input type setting */
 	while ((in = GMT->current.io.input (GMT, fp, &n_expected_fields, &n_fields)) != NULL && !(GMT->current.io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 		adj->d[n] = in[0];
@@ -201,24 +205,23 @@ bool x2sys_load_adjustments (struct GMT_CTRL *GMT, char *DIR, char *TAG, char *t
 		n++;
 		if (n == n_alloc) {
 			n_alloc <<= 1;
-			adj->d = GMT_memory (GMT, adj->d, n_alloc, double);
-			adj->c = GMT_memory (GMT, adj->c, n_alloc, double);
+			adj->d = gmt_M_memory (GMT, adj->d, n_alloc, double);
+			adj->c = gmt_M_memory (GMT, adj->c, n_alloc, double);
 		}
 	}
-	GMT_fclose (GMT, fp);
-	adj->d = GMT_memory (GMT, adj->d, n, double);
-	adj->c = GMT_memory (GMT, adj->c, n, double);
+	gmt_fclose (GMT, fp);
+	adj->d = gmt_M_memory (GMT, adj->d, n, double);
+	adj->c = gmt_M_memory (GMT, adj->c, n, double);
 	adj->n = n;
 	*A = adj;
 	for (k = 0; k < 2; k++) uint_swap (GMT->current.io.col_type[GMT_IN][k], type[k]);	/* Restore original input type setting */
 	return (true);
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_x2sys_datalist_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_x2sys_datalist (void *V_API, int mode, void *args)
-{
+int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 	char **trk_name = NULL, **ignore = NULL;
 
 	int error = 0, this_col, xpos = -1, ypos = -1, tpos = -1;
@@ -244,34 +247,35 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 	struct X2SYS_DATALIST_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_x2sys_datalist_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_x2sys_datalist_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_x2sys_datalist_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_x2sys_datalist_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_x2sys_datalist_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the x2sys_datalist main code ----------------------------*/
 
 	if ((n_tracks = x2sys_get_tracknames (GMT, options, &trk_name, &cmdline_files)) == 0) {
 		GMT_Report (API, GMT_MSG_NORMAL, "No datafiles given!\n");
-		Return (EXIT_FAILURE);		
+		Return (GMT_RUNTIME_ERROR);		
 	}
 
 	if (Ctrl->I.active && (k = x2sys_read_list (GMT, Ctrl->I.file, &ignore, &n_ignore)) != X2SYS_NOERROR) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: Ignore file %s cannot be read - aborting\n", Ctrl->I.file);
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		x2sys_free_list (GMT, trk_name, n_tracks);
+		GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 	}
 
 	x2sys_err_fail (GMT, x2sys_set_system (GMT, Ctrl->T.TAG, &s, &B, &GMT->current.io), Ctrl->T.TAG);
@@ -280,9 +284,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 
 	s->ascii_out = !GMT->common.b.active[1];
 
-	if (!GMT->common.R.active) GMT_memcpy (GMT->common.R.wesn, B.wesn, 4, double);
-
-	out = GMT_memory (GMT, NULL, s->n_fields, double);
+	if (!GMT->common.R.active) gmt_M_memcpy (GMT->common.R.wesn, B.wesn, 4, double);
 
 	if (GMT->common.b.active[GMT_OUT]) gmt_formatting = false;
 
@@ -290,7 +292,8 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 		if (xpos == -1 || ypos == -1) {
 			GMT_Report (API, GMT_MSG_NORMAL, "The -R option was selected but lon,lat not included in -F\n");
 			x2sys_end (GMT, s);
-			Return (EXIT_FAILURE);		
+			x2sys_free_list (GMT, trk_name, n_tracks);
+			Return (GMT_RUNTIME_ERROR);		
 		}
 		/* Supply dummy linear proj */
 		GMT->current.proj.projection = GMT->current.proj.xyz_projection[0] = GMT->current.proj.xyz_projection[1] = GMT_LINEAR;
@@ -300,7 +303,10 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 			GMT->common.R.wesn[XLO] += 360.0;
 			GMT->common.R.wesn[XHI] += 360.0;
 		}
-		if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_PROJECTION_ERROR);
+		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) {
+			x2sys_free_list (GMT, trk_name, n_tracks);
+			Return (GMT_PROJECTION_ERROR);
+		}
 	}
 
 	if (Ctrl->S.active) {	/* Must count output data columns (except t, x, y) */
@@ -333,11 +339,13 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 			strcpy (auxlist[MGD77_AUX_SP].header, "v(km/hr)");
 			break;
 		case 'm':
-			if (GMT_compat_check (GMT, 4)) /* Warn and fall through */
+			if (gmt_M_compat_check (GMT, 4)) /* Warn and fall through */
 				GMT_Report (API, GMT_MSG_COMPAT, "Warning: Unit m for miles is deprecated; use unit M instead\n");
 			else {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Unit m for miles is not recognized\n");
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				x2sys_end (GMT, s);
+				x2sys_free_list (GMT, trk_name, n_tracks);
+				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 				break;
 			}
 		case 'M':
@@ -367,11 +375,13 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 			strcpy (auxlist[MGD77_AUX_DS].header, "d(km)");
 			break;
 		case 'm':
-			if (GMT_compat_check (GMT, 4)) /* Warn and fall through */
+			if (gmt_M_compat_check (GMT, 4)) /* Warn and fall through */
 				GMT_Report (API, GMT_MSG_COMPAT, "Warning: Unit m for miles is deprecated; use unit M instead\n");
 			else {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Unit m for miles is not recognized\n");
-				GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				x2sys_end (GMT, s);
+				x2sys_free_list (GMT, trk_name, n_tracks);
+				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 				break;
 			}
 		case 'M':
@@ -386,7 +396,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 	}
 	t_scale = GMT->current.setting.time_system.scale;	/* Convert user's TIME_UNIT to seconds */
 
-	GMT_init_distaz (GMT, s->dist_flag ? GMT_MAP_DIST_UNIT : 'X', s->dist_flag, GMT_MAP_DIST);
+	gmt_init_distaz (GMT, s->dist_flag ? GMT_MAP_DIST_UNIT : 'X', s->dist_flag, GMT_MAP_DIST);
 	
 	if (Ctrl->L.active) {	/* Load an ephemeral correction table */
 		x2sys_get_corrtable (GMT, s, Ctrl->L.file, n_tracks, trk_name, NULL, aux, auxlist, &CORR);
@@ -394,7 +404,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 			GMT_Report (API, GMT_MSG_NORMAL, "Selected correction table requires velocity which implies time (not selected)\n");
 			MGD77_Free_Correction (GMT, CORR, n_tracks);
 			x2sys_free_list (GMT, trk_name, n_tracks);
-			GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+			GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 		}
 	}
 	/* Override default GMT->current.io.col_type[GMT_OUT] settings */
@@ -421,19 +431,25 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 		gmt_formatting = false;
 	}
 	o_mode = (gmt_formatting) ? GMT_IS_TEXTSET : GMT_IS_DATASET;
-	if (GMT_Init_IO (API, o_mode, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+	if (GMT_Init_IO (API, o_mode, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
+		x2sys_end (GMT, s);
+		x2sys_free_list (GMT, trk_name, n_tracks);
 		Return (API->error);
 	}
-	GMT_set_cols (GMT, GMT_OUT, s->n_out_columns);
-	if (GMT_Begin_IO (API, o_mode, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	gmt_set_cols (GMT, GMT_OUT, s->n_out_columns);
+	if (GMT_Begin_IO (API, o_mode, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		x2sys_end (GMT, s);
+		x2sys_free_list (GMT, trk_name, n_tracks);
 		Return (API->error);
 	}
+	
+	out = gmt_M_memory (GMT, NULL, s->n_fields, double);
 
 	if (Ctrl->A.active) {	/* Allocate an along-track adjustment table */
-		A = GMT_memory (GMT, NULL, s->n_out_columns, struct X2SYS_ADJUST *);
-		adj_col = GMT_memory (GMT, NULL, s->n_out_columns, bool);
+		A = gmt_M_memory (GMT, NULL, s->n_out_columns, struct X2SYS_ADJUST *);
+		adj_col = gmt_M_memory (GMT, NULL, s->n_out_columns, bool);
 	}
-	if (Ctrl->E.active) GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Enable segment headers */
+	if (Ctrl->E.active) gmt_set_segmentheader (GMT, GMT_OUT, true);	/* Enable segment headers */
 	
 	for (trk_no = 0; trk_no < n_tracks; trk_no++) {	/* Process each track */
 
@@ -460,36 +476,36 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 
 		cumulative_dist = 0.0;
 		for (row = 0; row < p.n_rows; row++) {	/* Process all records in this file */
-			if (GMT->common.R.active && GMT_map_outside (GMT, data[xpos][row], data[ypos][row])) continue;	/* Point is outside region */
+			if (GMT->common.R.active && gmt_map_outside (GMT, data[xpos][row], data[ypos][row])) continue;	/* Point is outside region */
 			if (Ctrl->S.active) {	/* Skip record if all data columns are NaN (not considering lon,lat,time) */
 				for (ocol = bad = 0; ocol < s->n_out_columns; ocol++) {
 					this_col = s->out_order[ocol];
 					if (this_col == s->t_col) continue;
 					if (this_col == s->x_col) continue;
 					if (this_col == s->y_col) continue;
-					if (GMT_is_dnan (data[ocol][row])) bad++;
+					if (gmt_M_is_dnan (data[ocol][row])) bad++;
 				}
 				if (bad == n_data_col_out) continue;	/* Yep, just NaNs here */
 			}
 			if (auxlist[MGD77_AUX_AZ].requested) {	/* Need azimuths to be computed from track coordinates */
 				if (row == 0)	/* Look forward from first to second point to get an azimuth at the first point */
-					aux_dvalue[MGD77_AUX_AZ] = GMT_az_backaz (GMT, data[xpos][1], data[ypos][1], data[xpos][0], data[ypos][0], false);
+					aux_dvalue[MGD77_AUX_AZ] = gmt_az_backaz (GMT, data[xpos][1], data[ypos][1], data[xpos][0], data[ypos][0], false);
 				else		/* else go from previous to current point */
-					aux_dvalue[MGD77_AUX_AZ] = GMT_az_backaz (GMT, data[xpos][row], data[ypos][row], data[xpos][row-1], data[ypos][row-1], false);
+					aux_dvalue[MGD77_AUX_AZ] = gmt_az_backaz (GMT, data[xpos][row], data[ypos][row], data[xpos][row-1], data[ypos][row-1], false);
 			}
 			if (auxlist[MGD77_AUX_DS].requested) {	/* Need distances to be computed from track coordinates */
-				ds = (row == 0) ? 0.0 : dist_scale * GMT_distance (GMT, data[xpos][row], data[ypos][row], data[xpos][row-1], data[ypos][row-1]);
+				ds = (row == 0) ? 0.0 : dist_scale * gmt_distance (GMT, data[xpos][row], data[ypos][row], data[xpos][row-1], data[ypos][row-1]);
 				cumulative_dist += ds;
 				aux_dvalue[MGD77_AUX_DS] = cumulative_dist;
 			}
 			if (auxlist[MGD77_AUX_SP].requested) {	/* Need speed to be computed from track coordinates and time */
 				dt = (row == 0) ? data[tpos][1] - data[tpos][0] : data[tpos][row] - data[tpos][row-1];
-				aux_dvalue[MGD77_AUX_SP] = (GMT_is_dnan (dt) || dt == 0.0) ? GMT->session.d_NaN : vel_scale * ds / (dt * t_scale);
+				aux_dvalue[MGD77_AUX_SP] = (gmt_M_is_dnan (dt) || dt == 0.0) ? GMT->session.d_NaN : vel_scale * ds / (dt * t_scale);
 			}
 			for (ocol = 0; ocol < s->n_out_columns; ocol++) {	/* Load output record one column at the time */
 				correction = (Ctrl->L.active) ? MGD77_Correction (GMT, CORR[trk_no][ocol].term, data, aux_dvalue, row) : 0.0;
 				if (Ctrl->A.active && adj_col[ocol]) {	/* Determine along-track adjustment */
-					if (GMT_intpol (GMT, A[ocol]->d, A[ocol]->c, A[ocol]->n, 1, &aux_dvalue[MGD77_AUX_DS], &adj_amount, GMT->current.setting.interpolant)) {
+					if (gmt_intpol (GMT, A[ocol]->d, A[ocol]->c, A[ocol]->n, 1, &aux_dvalue[MGD77_AUX_DS], &adj_amount, GMT->current.setting.interpolant)) {
 						GMT_Report (API, GMT_MSG_NORMAL, "Error interpolating adjustment for %s near row %" PRIu64 " - no adjustment made!\n", s->info[s->out_order[ocol]].name, row);
 						adj_amount = 0.0;
 					}
@@ -501,9 +517,9 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 				char fmt_record[GMT_BUFSIZ] = {""}, text[GMT_LEN64] = {""};
 				for (ocol = 0; ocol < s->n_out_columns; ocol++) {
 					if (s->info[s->out_order[ocol]].format[0] == '-')
-						GMT_ascii_format_col (GMT, text, out[ocol], GMT_OUT, ocol);
+						gmt_ascii_format_col (GMT, text, out[ocol], GMT_OUT, ocol);
 					else {
-						if (GMT_is_dnan (out[ocol]))
+						if (gmt_M_is_dnan (out[ocol]))
 							sprintf (text, "NaN");
 						else
 							sprintf (text, s->info[s->out_order[ocol]].format, out[ocol]);
@@ -521,13 +537,13 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 		/* Free memory allocated for the current data set */
 		x2sys_free_data (GMT, data, s->n_out_columns, &p);
 		for (ocol = 0; ocol < s->n_out_columns; ocol++) if (Ctrl->A.active && adj_col[ocol]) {
-			GMT_free (GMT, A[ocol]->d);
-			GMT_free (GMT, A[ocol]->c);
-			GMT_free (GMT, A[ocol]);
+			gmt_M_free (GMT, A[ocol]->d);
+			gmt_M_free (GMT, A[ocol]->c);
+			gmt_M_free (GMT, A[ocol]);
 		}
 	}
 
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 		Return (API->error);
 	}
 
@@ -536,13 +552,13 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args)
 	if (Ctrl->L.active) MGD77_Free_Correction (GMT, CORR, n_tracks);
 
 	x2sys_end (GMT, s);
-	GMT_free (GMT, out);
+	gmt_M_free (GMT, out);
 	if (Ctrl->A.active) {
-		GMT_free (GMT, A);
-		GMT_free (GMT, adj_col);
+		gmt_M_free (GMT, A);
+		gmt_M_free (GMT, adj_col);
 	}
 	x2sys_free_list (GMT, trk_name, n_tracks);
 	if (Ctrl->I.active) x2sys_free_list (GMT, ignore, n_ignore);
 	
-	Return (GMT_OK);
+	Return (GMT_NOERROR);
 }

@@ -1,7 +1,7 @@
 #
-# $Id: ConfigDefault.cmake 15220 2015-11-12 00:52:04Z fwobbe $
+# $Id: ConfigDefault.cmake 17229 2016-10-21 08:32:03Z fwobbe $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -37,18 +37,18 @@ set (GMT_PACKAGE_DESCRIPTION_SUMMARY "The Generic Mapping Tools")
 
 # GMT_VERSION_YEAR is set to current date in
 # cmake/modules/ConfigCMake.cmake if not specified here:
-set (GMT_VERSION_YEAR "2015")
+set (GMT_VERSION_YEAR "2016")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION_MAJOR 5)
-set (GMT_PACKAGE_VERSION_MINOR 2)
+set (GMT_PACKAGE_VERSION_MINOR 3)
 set (GMT_PACKAGE_VERSION_PATCH 1)
 
 # The subversion revision of the GMT source code.
 # This is manually set when making GMT *public* releases.
 # However, when making internal releases or just an ordinary developer build, leave it
 # empty; if it is empty, the revision number is automatically populated for you on build.
-set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "15220")
+set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "17229")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION "${GMT_PACKAGE_VERSION_MAJOR}.${GMT_PACKAGE_VERSION_MINOR}.${GMT_PACKAGE_VERSION_PATCH}")
@@ -75,7 +75,9 @@ if (NOT DEFINED FLOCK)
 endif (NOT DEFINED FLOCK)
 
 # Build supplements is on
-set (BUILD_SUPPLEMENTS TRUE)
+if (NOT DEFINED BUILD_SUPPLEMENTS)
+	set (BUILD_SUPPLEMENTS TRUE)
+endif (NOT DEFINED BUILD_SUPPLEMENTS)
 
 # Install into traditional directory structure per default
 if (NOT DEFINED GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
@@ -173,7 +175,9 @@ if (NOT DEFINED CMAKE_VERBOSE_MAKEFILE)
 endif (NOT DEFINED CMAKE_VERBOSE_MAKEFILE)
 
 # prefer shared libs over static
-set (BUILD_SHARED_LIBS true)
+if (NOT DEFINED BUILD_SHARED_LIBS)
+	set (BUILD_SHARED_LIBS true)
+endif (NOT DEFINED BUILD_SHARED_LIBS)
 set (CMAKE_FIND_STATIC LAST)
 
 # look also for lib64 when building 64-bit binaries
@@ -185,6 +189,8 @@ endif (NOT DEFINED FIND_LIBRARY_USE_LIB64_PATHS)
 set (CMAKE_FIND_FRAMEWORK LAST)
 
 # install GMT developer include files
-set (BUILD_DEVELOPER TRUE)
+if (NOT DEFINED BUILD_DEVELOPER)
+	set (BUILD_DEVELOPER true)
+endif (NOT DEFINED BUILD_DEVELOPER)
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

@@ -1,8 +1,8 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77sniffer.h 15178 2015-11-06 10:45:03Z fwobbe $	
+ *	$Id: mgd77sniffer.h 16544 2016-06-14 00:15:52Z pwessel $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
- *    Copyright (c) 2004-2015 by P. Wessel and M. T. Chandler
+ *    Copyright (c) 2004-2016 by P. Wessel and M. T. Chandler
  *	File:	mgd77sniffer.h
  *
  *	Include file for mgd77sniffer
@@ -99,7 +99,7 @@ struct BAD_SECTION {	/* To flag a range of records as bad for given field */
 
 struct MGD77_GRID_INFO {
 	struct GMT_GRID *G;
-	unsigned int one_or_zero, nx, ny, col, g_pts, format, mode, mx, n_nan;
+	unsigned int one_or_zero, n_columns, n_rows, col, g_pts, format, mode, mx, n_nan;
 	int sign;
 	bool interpolate;
 	double scale, max_lat;

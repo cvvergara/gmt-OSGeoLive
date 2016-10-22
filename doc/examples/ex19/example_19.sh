@@ -1,9 +1,9 @@
 #!/bin/bash
 #		GMT EXAMPLE 19
-#		$Id: example_19.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#		$Id: example_19.sh 16792 2016-07-13 21:12:21Z pwessel $
 #
 # Purpose:	Illustrates various color pattern effects for maps
-# GMT progs:	gmtset, grdimage, grdmath, makecpt, pscoast, pstext, psimage
+# GMT modules:	grdimage, grdmath, makecpt, pscoast, pstext, psimage
 # Unix progs:	rm
 #
 ps=example_19.ps
@@ -12,16 +12,16 @@ ps=example_19.ps
 
 gmt grdmath -Rd -I1 -r Y COSD 2 POW = lat.nc
 gmt grdmath -Rd -I1 -r X = lon.nc
-echo "0 white 1 blue" > lat.cpt
-gmt makecpt -Crainbow -T-180/180/360 -Z > lon.cpt
+gmt makecpt -Cwhite,blue -T0,1 -Z -N > lat.cpt
+gmt makecpt -Crainbow -T-180/180 > lon.cpt
 gmt grdimage lat.nc -JI0/6.5i -Clat.cpt -P -K -Y7.5i -B0 -nl > $ps
 gmt pscoast -R -J -O -K -Dc -A5000 -Gc >> $ps
 gmt grdimage lon.nc -J -Clon.cpt -O -K -nl >> $ps
 gmt pscoast -R -J -O -K -Q >> $ps
 gmt pscoast -R -J -O -K -Dc -A5000 -Wthinnest >> $ps
-echo "0 20 13TH INTERNATIONAL" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red=thinner >> $ps
+echo "0 20 14TH INTERNATIONAL" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red=thinner >> $ps
 echo "0 -10 GMT CONFERENCE" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red=thinner >> $ps
-echo "0 -30 Honolulu, Hawaii, April 1, 2016" | gmt pstext -R -J -O -K \
+echo "0 -30 Honolulu, Hawaii, April 1, 2017" | gmt pstext -R -J -O -K \
 	-F+f18p,Helvetica-Bold,green=thinnest >> $ps
 
 # Then show example of color patterns and placing a PostScript image
@@ -38,9 +38,9 @@ gmt pscoast -R -J -O -K -Dc -A5000 -Gc >> $ps
 gmt grdimage lat.nc -J -Clat.cpt -O -K -nl >> $ps
 gmt pscoast -R -J -O -K -Q >> $ps
 gmt pscoast -R -J -O -K -Dc -A5000 -Wthinnest >> $ps
-echo "0 20 13TH INTERNATIONAL" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red=thinner >> $ps
+echo "0 20 14TH INTERNATIONAL" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red=thinner >> $ps
 echo "0 -10 GMT CONFERENCE" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,red=thinner >> $ps
-echo "0 -30 Honolulu, Hawaii, April 1, 2016" | gmt pstext -R -J -O \
+echo "0 -30 Honolulu, Hawaii, April 1, 2017" | gmt pstext -R -J -O \
 	-F+f18p,Helvetica-Bold,green=thinnest >> $ps
 
 rm -f l*.nc l*.cpt gmt.conf

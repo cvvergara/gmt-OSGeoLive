@@ -28,13 +28,27 @@ Installing
 Contrary to the rest of all **GMT** products the Julia wrapper has to live in a Github repository. At the time of
 this writing the wrapper was not yet registered within the Julia package manager, so to install it one has to
 access the Github address directly. After installing Julia and from within its shell (*aka* the REPL) issue this
-command: (but refer to Julia's `package manager <http://docs.julialang.org/en/release-0.4/stdlib/pkg/?highlight=init#package-manager-functions>`_
+command: (but refer to Julia's `package manager <http://docs.julialang.org/en/release-0.4/stdlib/pkg/?highlight=init#package-manager-functions>`_)
+
+  ::
 
     Pkg.clone("git://github.com/joa-quim/GMT.jl.git")
 
 Now you are ready to start using the **GMT** wrapper and the only condition for it to work is that the GMT5.2 shared libs
-are listed in your path. On Windows, the only version tested so far, the **GMT** installer takes care of that but be
-careful that no other previous version is found first.
+are listed in your path. On Windows the **GMT** installer takes care of that but be careful that no other previous version
+is found first.
+
+On UNIX things are more complicated (*surprise*). On OSX, the only other OS tested so far by us, we got a working version
+by running, in the Julia *REPL*
+
+  ::
+
+    push!(Libdl.DL_LOAD_PATH, "/Users/j/programs/gmt5/lib")
+
+this adds, for one particular user case, the *gmt/lib* directory to the list of system locations searched for valid libraries.
+There might be more problems finding other gmt dependencies but with Homebrew builds it works because those dependencies
+are located at /usr/local/lib and the system finds them with no other help. To make that line permanent, add it to your
+~/.juliarc.jl file (if don't have one yet, create it).
 
 Using
 =====
@@ -50,10 +64,10 @@ Azimuthal projection
     gmt("pscoast -Rg -JA280/30/3.5i -Bg -Dc -A1000 -Gnavy -P > GMT_lambert_az_hemi.ps")
 
 Note the ``using GMT`` command. We need to do that to load the ``GMT.jl`` wrapper and the first time it will
-take a little longer because it need to compile the module's code but following commands will run at same
+take a little longer because it will need to *JIT* compile the module's code. Following commands, however, will run at same
 speed as the command line calls to **GMT**.
 
-But that is not particularly interesting as after all we could do the exact same thing on the a shell
+However, the above example is not particularly interesting as after all we could do the exact same thing on the a shell
 command line. Things start to get interesting when we can send data *in* and *out* from Julia to
 **GMT**. So, consider the following example
 
@@ -137,30 +151,89 @@ Things only complicate a little more for the cases where we can have more than o
 *output* arguments. The file *gallery.jl* in *test* directory, that reproduces the examples in the
 Gallery section of the **GMT** documentation, has many (not so trivial) examples on usage of the Julia GMT5.2 API.
 
+To run the examples in *gallery.jl* we have to load the file first, which is located in your .julia directory.
+For me it lives in *C:/j/.julia/v0.4/GMT/test/gallery.jl* and we have to edit it to set the path to the **GMT**
+root dir so that the data file used in examples can be found. After that, run
 
+  ::
+
+    include("C:/j/.julia/v0.4/GMT/test/gallery.jl")
+
+now the examples are wrapped in functions named *ex01*, *ex02*, ... *ex45* (not all are yet ported/working) and we
+just call them with
+
+  ::
+
+    ex01()
 
 .. _grid-type:
 
 .. code-block:: c
 
-  ProjectionRefPROJ4     # Projection string in PROJ4 syntax (Optional)
-  ProjectionRefWKT       # Projection string in WKT syntax (Optional)
-  range                  # 1x6 vector with [x_min x_max y_min y_max z_min z_max]
-  inc                    # 1x2 vector with [x_inc y_inc]
-  n_rows                 # Number of rows in grid
-  n_columns              # Number of columns in grid
-  n_bands                # Not-yet used (always == 1)
-  registration           # Registration type: 0 -> Grid registration; 1 -> Pixel registration
-  NoDataValue            # The value of nodata
-  title                  # Title (Optional)
-  remark                 # Remark (Optional)
-  command                # Command used to create the grid (Optional) 
-  DataType               # 'float' or 'double'
-  x                      # [1 x n_columns] vector with XX coordinates
-  y                      # [1 x n_rows]    vector with YY coordinates
-  z                      # [n_rows x n_columns] grid array
-  x_units                # Units of XX axis (Optional)
-  y_units                # Units of YY axis (Optional)
-  z_units                # Units of ZZ axis (Optional)
+    type GMTJL_GRID   # The type holding a local header and data of a GMT grid
+        ProjectionRefPROJ4::ASCIIString    # Projection string in PROJ4 syntax (Optional)
+        ProjectionRefWKT::ASCIIString      # Projection string in WKT syntax (Optional)
+        range::Array{Float64,1}            # 1x6 vector with [x_min x_max y_min y_max z_min z_max]
+        inc::Array{Float64,1}              # 1x2 vector with [x_inc y_inc]
+        n_rows::Int                        # Number of rows in grid
+        n_columns::Int                     # Number of columns in grid
+        n_bands::Int                       # Not-yet used (always == 1)
+        registration::Int                  # Registration type: 0 -> Grid registration; 1 -> Pixel registration
+        NoDataValue::Float64               # The value of nodata
+        title::ASCIIString                 # Title (Optional)
+        remark::ASCIIString                # Remark (Optional)
+        command::ASCIIString               # Command used to create the grid (Optional)
+        DataType::ASCIIString              # 'float' or 'double'
+        x::Array{Float64,1}                # [1 x n_columns] vector with XX coordinates
+        y::Array{Float64,1}                # [1 x n_rows]    vector with YY coordinates
+        z::Array{Float32,2}                # [n_rows x n_columns] grid array
+        x_units::ASCIIString               # Units of XX axis (Optional)
+        y_units::ASCIIString               # Units of YY axis (Optional)
+        z_units::ASCIIString               # Units of ZZ axis (Optional)
+    end
 
 Definition of the *grid type* that holds a grid and its metadata.
+
+
+.. _img-type:
+
+.. code-block:: c
+
+    type GMTJL_IMAGE     # The type holding a local header and data of a GMT image
+        ProjectionRefPROJ4::ASCIIString    # Projection string in PROJ4 syntax (Optional)
+        ProjectionRefWKT::ASCIIString      # Projection string in WKT syntax (Optional)
+        range::Array{Float64,1}            # 1x6 vector with [x_min x_max y_min y_max z_min z_max]
+        inc::Array{Float64,1}              # 1x2 vector with [x_inc y_inc]
+        n_rows::Int                        # Number of rows in image
+        n_columns::Int                     # Number of columns in image
+        n_bands::Int                       # Number of bands in image
+        registration::Int                  # Registration type: 0 -> Grid registration; 1 -> Pixel registration
+        NoDataValue::Float64               # The value of nodata
+        title::ASCIIString                 # Title (Optional)
+        remark::ASCIIString                # Remark (Optional)
+        command::ASCIIString               # Command used to create the image (Optional)
+        DataType::ASCIIString              # 'uint8' or 'int8' (needs checking)
+        x::Array{Float64,1}                # [1 x n_columns] vector with XX coordinates
+        y::Array{Float64,1}                # [1 x n_rows]    vector with YY coordinates
+        image::Array{UInt8,3}              # [n_rows x n_columns x n_bands] image array
+        x_units::ASCIIString               # Units of XX axis (Optional)
+        y_units::ASCIIString               # Units of YY axis (Optional)
+        z_units::ASCIIString               # Units of ZZ axis (Optional) ==> MAKES NO SENSE
+        colormap::Array{Clong,1}           # 
+        alpha::Array{UInt8,2}              # A [n_rows x n_columns] alpha array
+    end
+
+Definition of the *image type* that holds an image and its metadata.
+
+.. _cpt-type:
+
+.. code-block:: c
+
+    type GMTJL_CPT
+        colormap::Array{Float64,2}
+        alpha::Array{Float64,1}
+        range::Array{Float64,2}
+        rangeMinMax::Array{Float64,1}
+    end
+
+Definition of the *cpt type* that holds a CPT paltette.

@@ -6,7 +6,7 @@ mapproject
 
 .. only:: not man
 
-    mapproject - Do forward and inverse map transformations, datum conversions and geodesy
+    mapproject - Forward and inverse map transformations, datum conversions and geodesy
 
 Synopsis
 --------
@@ -21,7 +21,7 @@ Synopsis
 [ |-E|\ [*datum*\ ] ] [ |-F|\ [*unit*\ ] ]
 [ |-G|\ [*x0*/*y0*/][[**+**\ \|\ **-**]\ *unit*][\ **+**\ \|\ **-**] ]
 [ |-I| ]
-[ |-L|\ *line.xy*\ [/[**+**\ \|\ **-**]\ *unit*][**+**] ]
+[ |-L|\ *line.xy*\ [**+u**\ [**+**\ \|\ **-**]\ *unit*][**+p**] ]
 [ |-N|\ [**a**\ \|\ **c**\ \|\ **g**\ \|\ **m**] ]
 [ |-Q|\ [**d**\ \|\ **e** ]
 [ |-S| ]
@@ -111,11 +111,10 @@ Optional Arguments
 .. _-E:
 
 **-E**\ [*datum*\ ]
-    Convert from geodetic (lon, lat, height) to Earth Centered Earth
-    Fixed (ECEF) (x,y,z) coordinates (add **-I** for the inverse
-    conversion). Append datum ID (see **-Qd**) or give
+    Convert from geodetic (lon, lat, height) to Earth Centered Earth Fixed (ECEF) (x,y,z) coordinates
+    (add **-I** for the inverse conversion). Append datum ID (see **-Qd**) or give
     *ellipsoid*:*dx*,\ *dy*,\ *dz* where *ellipsoid* may be an ellipsoid
-    ID (see **-Qe**) or given as *a*\ [,*inv_f*], where *a* is the
+    ID (see **-Qe**) or given as *a*\ [,\ *inv_f*], where *a* is the
     semi-major axis and *inv_f* is the inverse flattening (0 if
     omitted). If *datum* is - or not given we assume WGS-84.
 
@@ -131,14 +130,15 @@ Optional Arguments
 .. _-G:
 
 **-G**\ [*x0*/*y0*/][[**+**\ \|\ **-**]\ *unit*][\ **+**\ \|\ **-**]
-    Calculate distances along track *or* to the optional point set with
-    **-G**\ *x0/y0*. Append the distance unit (see UNITS), including
+    Calculate distances along track *or* to the optional *fixed* point set
+    with **-G**\ *x0/y0*. Append the distance unit (see UNITS), including
     **c** (Cartesian distance using input coordinates) or **C**
     (Cartesian distance using projected coordinates). The **C** unit
-    requires **-R** and **-J** to be set. With no fixed point is given
-    we calculate cumulate distances along track. Append **-** to obtain
-    incremental distance between successive points. Append **+** to
-    specify the 2nd point via two extra columns in the input file.
+    requires **-R** and **-J** to be set. When no fixed point is given
+    we calculate cumulative distances along the track defined by the input
+    points. Append **-** to obtain *incremental* distances between
+    successive points instead. Finally, append **+** to use obtain a
+    *variable* 2nd point (*x0*/*y0*) via columns 3-4 in the input file.
 
 .. _-I:
 
@@ -147,14 +147,14 @@ Optional Arguments
 
 .. _-L:
 
-**-L**\ *line.xy*\ [/[**+**\ \|\ **-**]\ *unit*][**+**\ ]
+**-L**\ *line.xy*\ [**+u**\ [**+**\ \|\ **-**]\ *unit*][**+p**]
     Determine the shortest distance from the input data points to the
     line(s) given in the ASCII multisegment file *line.xy*. The distance
     and the coordinates of the nearest point will be appended to the
     output as three new columns. Append the distance unit (see UNITS),
     including **c** (Cartesian distance using input coordinates) or
     **C** (Cartesian distance using projected coordinates). The **C**
-    unit requires **-R** and **-J** to be set. Finally, append **+** to
+    unit requires **-R** and **-J** to be set. Finally, append **+p** to
     report the line segment id and the fractional point number instead
     of lon/lat of the nearest point.
 
@@ -284,7 +284,7 @@ file coastline.xy, run
 
    ::
 
-    gmt mapproject quakes.dat -Lcoastline.xy/k > quake_dist.dat
+    gmt mapproject quakes.dat -Lcoastline.xy+uk > quake_dist.dat
 
 Restrictions
 ------------

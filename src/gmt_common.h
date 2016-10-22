@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_common.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_common.h 16931 2016-08-18 21:40:44Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -47,7 +47,6 @@ enum GMT_enum_gaps {GMT_NEGGAP_IN_COL = 0,	/* Check if previous minus current co
 
 #define MAX_ASPATIAL 64		/* No more than 64 aspatial options in -a */
 
-//#define GMT_SHORTHAND_OPTIONS	"BJRXxYcp"	/* All of the shorthand options */
 #define GMT_SHORTHAND_OPTIONS	"BJRXYcp"	/* All of the shorthand options */
 #define GMT_CRITICAL_OPT_ORDER "-VJfrRb"	/* If given options among these must be parsed first and in this order */
 
@@ -117,6 +116,7 @@ struct GMT_COMMON {
 		int ogr[MAX_ASPATIAL];	/* Column order, or -1 if not set */
 		unsigned int type[MAX_ASPATIAL];
 		char *name[MAX_ASPATIAL];
+		char string[GMT_LEN256];
 	} a;
 	struct b {	/* -b[i][o][s|S][d|D][#cols][cvar1/var2/...] */
 		bool active[2];		/* true if current input/output is in native binary format */
@@ -160,7 +160,7 @@ struct GMT_COMMON {
 		char *colnames;	/* Not set by -h but maintained here */
 	} h;
 	struct i {	/* -i<col>|<colrange>,... */
-		bool active;
+		bool active, orig;
 		uint64_t n_cols;
 	} i;
 	struct n {	/* -n[b|c|l|n][+a][+b<BC>][+c][+t<threshold>] */
@@ -171,6 +171,7 @@ struct GMT_COMMON {
 		bool bc_set;	/* true if +b was parsed */
 		char BC[4];		/* For BC settings via +bg|n[x|y]|p[x|y] */
 		double threshold;	/* Defaults to 0.5 */
+		char string[GMT_LEN64];	/* Copy of argument */
 	} n;
 	struct o {	/* -o<col>|<colrange>,... */
 		bool active;

@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
- *	$Id: mgd77.h 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: mgd77.h 16945 2016-08-19 02:40:15Z remko $
  * 
- *    Copyright (c) 2005-2015 by P. Wessel
+ *    Copyright (c) 2005-2016 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *
  *  File:	mgd77.h
@@ -39,7 +39,9 @@
 #define MGD77_N_NUMBER_FIELDS	24		/* Original 24 numerical data columns in MGD77 */
 #define MGD77_N_STRING_FIELDS	3		/* Original 3 text data columns in MGD77 */
 #define MGD77_N_HEADER_ITEMS	72		/* Number of individual header items in the MGD77 header */
-#define MGD77_N_MAG_RF		18		/* Number of different Mag ref fields so far in MGD77 docs */
+#define MGD77_N_MAG_RF		20		/* Number of different Mag ref fields so far in MGD77 docs */
+/* When updating, also update MGD77_IGRF_LAST_ID = MGD77_N_MAR_RF - 2 below, and the list in mgd77magref.h */
+
 /* Specific to MGD77T: */
 #define MGD77T_HEADER_LENGTH	4096U		/* Length of MGD77 ASCII header records */
 #define MGD77T_N_NUMBER_FIELDS	27		/* Original 24+3 numerical data columns in MGD77T */
@@ -124,7 +126,8 @@
 #define MGD77_IGF_1967		3
 #define MGD77_IGF_1980		4
 
-#define MGD77_IGRF_LAST_ID	20	/* IGRF fields IDs in MGD77 are 3,4,11-MGD77_IGRF_LAST_ID.  Update when more fields are added */
+#define MGD77_IGRF_LAST_ID	18	/* IGRF fields IDs in MGD77 are 3,4,11-MGD77_IGRF_LAST_ID.  Update when more fields are added */
+/* When updating, also update MGD_N_MAG_RF = MGD77_IGRF_LAST_ID + 2 above, and the list in mgd77magref.h */
 
 #define TWT_PDR_WRAP	10.0						/* The 10 second PDR wrap-around we see in SIO cruises */
 #define TWT_PDR_WRAP_TRIGGER	0.5 * TWT_PDR_WRAP	/* Any jump in TWT that exceeds this triggers a wrap */
@@ -225,6 +228,8 @@ typedef char* Text;	/* Used to indicate character strings */
 #define MGD77_COL_ADJ_FAA	4	/* Compute faa from gobs - igf */
 #define MGD77_COL_ADJ_FAA_EOT	5	/* Compute faa from gobs - igf + eot */
 
+#define mgd77_set_bit(k) (1 << (k))
+
 struct MGD77_COLINFO {
 	char *abbrev;		/* Short name that identifies this column */
 	char *name;		/* Longer, descriptive name for column */
@@ -303,15 +308,15 @@ struct MGD77_CM4 {	/* For use with cm4field.c and initialized by MGD77_CM4_init 
 
 /* We may want to output columns that themselves are not stored in the MGD77[+] files but
  * rather are computed based on data that are stored in the file.  We consider such information
- * as AUXILLARY columns and insert them between the observed columns when needed.  The following
+ * as AUXILIARY columns and insert them between the observed columns when needed.  The following
  * structures are used to facilitate this process. */
 
 #ifdef USE_CM4
-#define N_MGD77_AUX	22		/* Number of auxilliary derived columns for MGD77 data, including optional CM4 */
+#define N_MGD77_AUX	22		/* Number of auxiliary derived columns for MGD77 data, including optional CM4 */
 #else
-#define N_MGD77_AUX	21		/* Number of auxilliary derived columns for MGD77 data */
+#define N_MGD77_AUX	21		/* Number of auxiliary derived columns for MGD77 data */
 #endif
-#define N_GENERIC_AUX	4		/* Number of auxilliary derived columns for general files (dist, azim, cc, vel) */
+#define N_GENERIC_AUX	4		/* Number of auxiliary derived columns for general files (dist, azim, cc, vel) */
 
 #define MGD77_AUX_DS	0	/* Distance */
 #define MGD77_AUX_AZ	1	/* Azimuth */
@@ -575,7 +580,6 @@ EXTERN_MSC int MGD77_carter_get_zone (struct GMT_CTRL *GMT, int bin, struct MGD7
 
 /* Global variables used by MGD77 programs */
 
-EXTERN_MSC struct MGD77_RECORD_DEFAULTS mgd77defs[MGD77_N_DATA_EXTENDED];
 EXTERN_MSC double MGD77_NaN_val[7], MGD77_Low_val[7], MGD77_High_val[7];
 EXTERN_MSC char *MGD77_suffix[MGD77_N_FORMATS];
 EXTERN_MSC bool MGD77_format_allowed[MGD77_N_FORMATS];	/* By default we allow opening of files in any format.  See MGD77_Ignore_Format() */

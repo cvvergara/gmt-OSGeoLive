@@ -1,4 +1,4 @@
-REM		$Id: example_11.bat 15178 2015-11-06 10:45:03Z fwobbe $
+REM		$Id: example_11.bat 16750 2016-07-09 05:44:02Z pwessel $
 REM		GMT EXAMPLE 11
 REM
 REM Purpose:	Create a 3-D RGB Cube
@@ -9,7 +9,7 @@ REM Use psxy to plot "cut-along-the-dotted" lines.
 echo GMT EXAMPLE 11
 set ps=example_11.ps
 
-gmt gmtset MAP_TICK_LENGTH_PRIMARY 0
+gmt set MAP_TICK_LENGTH_PRIMARY 0
 
 gmt psxy cut-here.txt -Wthinnest,. -R-51/306/0/1071 -JX3.5i/10.5i -X2.5i -Y0.5i -P -K > %ps%
 
@@ -20,7 +20,7 @@ gmt grdmath -I1 -R0/255/0/255 X = x.nc
 gmt grdmath -I1 -R Y = y.nc
 gmt grdmath -I1 -R 0 = c.nc
 
-gmt gmtset FONT_ANNOT_PRIMARY 12p,Helvetica-Bold
+gmt set FONT_ANNOT_PRIMARY 12p,Helvetica-Bold
 
 gmt grdimage x.nc y.nc c.nc -JX2.5i/-2.5i -R -K -O -X0.5i >> %ps%
 gmt psxy rays.txt -J -R -K -O >> %ps%

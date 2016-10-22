@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegyz.c 15191 2015-11-07 21:28:37Z pwessel $
+ *	$Id: pssegyz.c 16706 2016-07-04 02:52:44Z pwessel $
  *
- *    Copyright (c) 1999-2015 by T. Henstock
+ *    Copyright (c) 1999-2016 by T. Henstock
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* pssegyzz program to plot segy files in 3d in postscript with variable trace spacing option
@@ -36,7 +36,7 @@
 #define THIS_MODULE_NAME	"pssegyz"
 #define THIS_MODULE_LIB		"segy"
 #define THIS_MODULE_PURPOSE	"Plot a SEGY file on a map in 3-D"
-#define THIS_MODULE_KEYS	">XO,RG-"
+#define THIS_MODULE_KEYS	">X}"
 
 #include "gmt_dev.h"
 #include "segy_io.h"
@@ -113,10 +113,10 @@ struct PSSEGYZ_CTRL {
 	} Z;
 };
 
-void *New_pssegyz_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
+GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct PSSEGYZ_CTRL *C;
 
-	C = GMT_memory (GMT, NULL, 1, struct PSSEGYZ_CTRL);
+	C = gmt_M_memory (GMT, NULL, 1, struct PSSEGYZ_CTRL);
 
 	/* Initialize values whose defaults are not 0/false/NULL */
 
@@ -127,23 +127,22 @@ void *New_pssegyz_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new
 	return (C);
 }
 
-void Free_pssegyz_Ctrl (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *C) {	/* Deallocate control structure */
+GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
-	if (C && C->In.file) free (C->In.file);
-	if (C && C->T.file) free (C->T.file);
-	GMT_free (GMT, C);
+	gmt_M_str_free (C->In.file);
+	gmt_M_str_free (C->T.file);
+	gmt_M_free (GMT, C);
 }
 
-int GMT_pssegyz_usage (struct GMTAPI_CTRL *API, int level)
-{
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
+	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: pssegyz [<segyfile>] -D<dev> -F<color> | -W %s\n", GMT_Jx_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [-A] [-C<clip>] [-E<slop>] [-I] [-K] [-L<nsamp>]\n", GMT_Rx_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-M<ntraces>] [-N] [-O] [-P] [-Q<mode><value>] [-S<header>] [-T<tracefile>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W] [%s]\n\t[%s] [-Z] [%s]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<segyfile> is an IEEE SEGY file [or standard input].\n\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Set <dev> to give deviation in X units of plot for 1.0 on scaled trace.\n");
@@ -175,11 +174,10 @@ int GMT_pssegyz_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Suppress plotting traces whose rms amplitude is 0.\n");
 	GMT_Option (API, "c,p,t,.");
 
-	return (EXIT_FAILURE);
+	return (GMT_MODULE_USAGE);
 }
 
-int GMT_pssegyz_parse (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *Ctrl, struct GMT_OPTION *options)
-{
+GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *Ctrl, struct GMT_OPTION *options) {
 	/* This parses the options provided to pssegyz and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
 	 * Any GMT common options will override values set previously by other commands.
@@ -197,7 +195,7 @@ int GMT_pssegyz_parse (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *Ctrl, struct G
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
+				if ((Ctrl->In.active = gmt_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) != 0)
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -227,9 +225,9 @@ int GMT_pssegyz_parse (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *Ctrl, struct G
 				break;
 			case 'F':
 				Ctrl->F.active = true;
-				if (GMT_getrgb (GMT, opt->arg, Ctrl->F.rgb)) {
+				if (gmt_getrgb (GMT, opt->arg, Ctrl->F.rgb)) {
 					n_errors++;
-					GMT_rgb_syntax (GMT, 'F', " ");
+					gmt_rgb_syntax (GMT, 'F', " ");
 				}
 				break;
 			case 'I':
@@ -313,24 +311,24 @@ int GMT_pssegyz_parse (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *Ctrl, struct G
 				break;
 
 			default:	/* Report bad options */
-				n_errors += GMT_default_error (GMT, opt->option);
+				n_errors += gmt_default_error (GMT, opt->option);
 				break;
 		}
 	}
-	n_errors += GMT_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify the -R option\n");
-	n_errors += GMT_check_condition (GMT, GMT->common.R.wesn[ZLO]  == GMT->common.R.wesn[ZHI], "Syntax error: Must specify z range in -R option\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && !Ctrl->T.file, "Syntax error: Option -T requires a file name\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->T.active && Ctrl->T.file && access (Ctrl->T.file, R_OK), "Syntax error: Cannot file file %s\n", Ctrl->T.file);
-	n_errors += GMT_check_condition (GMT, Ctrl->E.value < 0.0, "Syntax error -E option: Slop cannot be negative\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->I.active && !Ctrl->F.active, "Syntax error: Must specify -F with -I\n");
-	n_errors += GMT_check_condition (GMT, !Ctrl->F.active && !Ctrl->W.active, "Syntax error: Must specify -F or -W\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->D.value[GMT_X] < 0.0 || Ctrl->D.value[GMT_Y] < 0.0, "Syntax error: Must specify a positive deviation\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify the -R option\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.wesn[ZLO]  == GMT->common.R.wesn[ZHI], "Syntax error: Must specify z range in -R option\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && !Ctrl->T.file, "Syntax error: Option -T requires a file name\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && Ctrl->T.file && access (Ctrl->T.file, R_OK), "Syntax error: Cannot file file %s\n", Ctrl->T.file);
+	n_errors += gmt_M_check_condition (GMT, Ctrl->E.value < 0.0, "Syntax error -E option: Slop cannot be negative\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && !Ctrl->F.active, "Syntax error: Must specify -F with -I\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->F.active && !Ctrl->W.active, "Syntax error: Must specify -F or -W\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->D.value[GMT_X] < 0.0 || Ctrl->D.value[GMT_Y] < 0.0, "Syntax error: Must specify a positive deviation\n");
 
-	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
+	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
-double segyz_rms (float *data, int n_samp)
-{	/* function to return rms amplitude of n_samp values from the array data */
+GMT_LOCAL double segyz_rms (float *data, int n_samp) {
+	/* function to return rms amplitude of n_samp values from the array data */
 	int ix;
 	double sumsq = 0.0;
 
@@ -340,8 +338,8 @@ double segyz_rms (float *data, int n_samp)
 	return (sumsq);
 }
 
-int segyz_paint (int ix, int iy, unsigned char *bitmap, int bm_nx, int bm_ny)
-{	/* ix iy is pixel to paint */
+GMT_LOCAL int segyz_paint (int ix, int iy, unsigned char *bitmap, int bm_nx, int bm_ny) {
+	/* ix iy is pixel to paint */
 	static unsigned char bmask[8]={128, 64, 32, 16, 8, 4, 2, 1};
 	int byte, quot, rem;
 
@@ -355,13 +353,12 @@ int segyz_paint (int ix, int iy, unsigned char *bitmap, int bm_nx, int bm_ny)
 	return (0);
 }
 
-void wig_bmap (struct GMT_CTRL *GMT, double x0, double y0, float data0, float data1, double z0, double z1, double dev_x, double dev_y, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny) /* apply current sample with all options to bitmap */
-{
+GMT_LOCAL void wig_bmap (struct GMT_CTRL *GMT, double x0, double y0, float data0, float data1, double z0, double z1, double dev_x, double dev_y, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny) /* apply current sample with all options to bitmap */ {
 	int px0, px1, py0, py1, ix, iy;
 	double xp0, xp1, yp0, yp1, slope;
 
-	GMT_geoz_to_xy (GMT, x0+(double)data0*dev_x, y0+(double)data0*dev_y, z0, &xp0, &yp0); /* returns 2 ends of line segment in plot coords */
-	GMT_geoz_to_xy (GMT, x0+(double)data1*dev_x, y0+(double)data1*dev_y, z1, &xp1, &yp1);
+	gmt_geoz_to_xy (GMT, x0+(double)data0*dev_x, y0+(double)data0*dev_y, z0, &xp0, &yp0); /* returns 2 ends of line segment in plot coords */
+	gmt_geoz_to_xy (GMT, x0+(double)data1*dev_x, y0+(double)data1*dev_y, z1, &xp1, &yp1);
 	slope = (yp1 - yp0) / (xp1 - xp0);
 
 	px0 = irint ((xp0 - GMT->current.proj.z_project.xmin) * dpi);
@@ -401,10 +398,10 @@ void wig_bmap (struct GMT_CTRL *GMT, double x0, double y0, float data0, float da
 	}
 }
 
-void shade_quad (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y_edge, double slope1, double slope0, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny)
-/* shade a quadrilateral with two sides parallel to x axis, one side at y=y0 with ends at x0 and x1,
-with lines with gradients slope0 and slope1 respectively */
-{
+GMT_LOCAL void shade_quad (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y_edge, double slope1, double slope0, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny) {
+	/* shade a quadrilateral with two sides parallel to x axis, one side at y=y0 with ends at x0 and x1,
+	   with lines with gradients slope0 and slope1 respectively */
+
 	int pedge_y, py0, iy, ix1, ix2, ix;
 
 	if (y0 == y_edge) return;
@@ -434,10 +431,10 @@ with lines with gradients slope0 and slope1 respectively */
 	}
 }
 
-void shade_tri (struct GMT_CTRL *GMT, double apex_x, double apex_y, double edge_y, double slope, double slope0, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny)
-/* shade a triangle specified by apex coordinates, y coordinate of an edge (parallel to x-axis)
-and slopes of the two other sides */
-{
+GMT_LOCAL void shade_tri (struct GMT_CTRL *GMT, double apex_x, double apex_y, double edge_y, double slope, double slope0, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny) {
+	/* shade a triangle specified by apex coordinates, y coordinate of an edge (parallel to x-axis)
+	   and slopes of the two other sides */
+
 	int papex_y, pedge_y, iy, ix, x1, x2;
 
 #ifdef DEBUG
@@ -480,8 +477,8 @@ and slopes of the two other sides */
 }
 
 #define NPTS 4 /* 4 points for the general case here */
-void segyz_shade_bmap (struct GMT_CTRL *GMT, double x0, double y0, float data0, float data1, double z0, double z1, int negative, double dev_x, double dev_y, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny) /* apply current samples with all options to bitmap */
-{
+GMT_LOCAL void segyz_shade_bmap (struct GMT_CTRL *GMT, double x0, double y0, float data0, float data1, double z0, double z1, int negative, double dev_x, double dev_y, double dpi, unsigned char *bitmap, int bm_nx, int bm_ny) {
+	/* apply current samples with all options to bitmap */
 	int ix, iy;
 	double xp[NPTS], yp[NPTS], interp, slope01, slope02, slope12, slope13, slope23, slope03;
 	double slope0, slope1, slope2, slope3;
@@ -503,10 +500,10 @@ void segyz_shade_bmap (struct GMT_CTRL *GMT, double x0, double y0, float data0, 
 		}
 	}
 
-	GMT_geoz_to_xy (GMT, x0+(double)data0*dev_x, y0+(double)data0*dev_y, z0, &xp[0], &yp[0]); /* returns 2 ends of line segment in plot coords */
-	GMT_geoz_to_xy (GMT, x0+(double)data1*dev_x, y0+(double)data1*dev_y, z1, &xp[1], &yp[1]);
-	GMT_geoz_to_xy (GMT, x0, y0, z0, &xp[2], &yp[2]); /* to get position of zero at each point*/
-	GMT_geoz_to_xy (GMT, x0, y0, z1, &xp[3], &yp[3]); /* to get position of zero at each point*/
+	gmt_geoz_to_xy (GMT, x0+(double)data0*dev_x, y0+(double)data0*dev_y, z0, &xp[0], &yp[0]); /* returns 2 ends of line segment in plot coords */
+	gmt_geoz_to_xy (GMT, x0+(double)data1*dev_x, y0+(double)data1*dev_y, z1, &xp[1], &yp[1]);
+	gmt_geoz_to_xy (GMT, x0, y0, z0, &xp[2], &yp[2]); /* to get position of zero at each point*/
+	gmt_geoz_to_xy (GMT, x0, y0, z1, &xp[3], &yp[3]); /* to get position of zero at each point*/
 
 	/* now have four corner coordinates - need to sort them */
 	for (ix = 0; ix < NPTS-1; ix++)
@@ -556,10 +553,10 @@ void segyz_shade_bmap (struct GMT_CTRL *GMT, double x0, double y0, float data0, 
 	}
 }
 
-void segyz_plot_trace (struct GMT_CTRL *GMT, float *data, double dz, double x0, double y0, int n_samp, int do_fill, int negative, int plot_wig, float toffset, double dev_x, double dev_y, double dpi, unsigned char *bitmap, int  bm_nx, int bm_ny)
+GMT_LOCAL void segyz_plot_trace (struct GMT_CTRL *GMT, float *data, double dz, double x0, double y0, int n_samp, int do_fill, int negative, int plot_wig, float toffset, double dev_x, double dev_y, double dpi, unsigned char *bitmap, int  bm_nx, int bm_ny) {
 	/* shell function to loop over all samples in the current trace, determine plot options
 	 * and call the appropriate bitmap routine */
-{
+
 	int iz, paint_wiggle;
 	float z0 = (float)GMT->common.R.wesn[ZLO], z1;
 
@@ -579,19 +576,14 @@ void segyz_plot_trace (struct GMT_CTRL *GMT, float *data, double dz, double x0, 
 	}
 }
 
-#define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {Free_pssegyz_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define bailout(code) {gmt_M_free_options (mode); return (code);}
+#define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_pssegyz (void *V_API, int mode, void *args)
-{
+int GMT_pssegyz (void *V_API, int mode, void *args) {
 	int nm, ix, iz, n_samp = 0, check, bm_nx, bm_ny, error;
-
 	double xlen, ylen, xpix, ypix, x0, y0, trans[3] = {-1.0,-1.0,-1.0};
-
 	float scale = 1.0f, toffset = 0.0f;
-
 	unsigned char *bitmap = NULL;
-
 	char reelhead[3200] = {""};
 	float *data = NULL;
 	FILE *fpi = NULL;
@@ -602,33 +594,33 @@ int GMT_pssegyz (void *V_API, int mode, void *args)
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
 	struct GMT_OPTION *options = NULL;
 	struct PSL_CTRL *PSL = NULL;				/* General PSL interal parameters */
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
+	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
 	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_pssegyz_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
+	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_pssegyz_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_pssegyz_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
+	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
 	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
-	Ctrl = New_pssegyz_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_pssegyz_parse (GMT, Ctrl, options)) != 0) Return (error);
+	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
+	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the pssegyz main code ----------------------------*/
 
-	if (!GMT_IS_LINEAR (GMT)) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: you asked for a non-rectangular projection. \n It will probably still work, but be prepared for problems\n");
+	if (!gmt_M_is_linear (GMT)) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: you asked for a non-rectangular projection. \n It will probably still work, but be prepared for problems\n");
 
 	if (Ctrl->In.active) {
 		GMT_Report (API, GMT_MSG_VERBOSE, "Will read segy file %s\n", Ctrl->In.file);
 		if ((fpi = fopen (Ctrl->In.file, "rb")) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Cannot find segy file %s\n", Ctrl->In.file);
-			Return (EXIT_FAILURE);
+			Return (GMT_ERROR_ON_FOPEN);
 		}
 	}
 	else {
@@ -637,13 +629,19 @@ int GMT_pssegyz (void *V_API, int mode, void *args)
 	}
 
 	/* set up map projection and PS plotting */
-	if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_PROJECTION_ERROR);
-	if ((PSL = GMT_plotinit (GMT, options)) == NULL) Return (GMT_RUNTIME_ERROR);
-	/* In this program we DO NOT want to call GMT_plane_perspective since that is already in the SEGV projection
+	if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) {
+		if (fpi != stdin) fclose (fpi);
+		Return (GMT_PROJECTION_ERROR);
+	}
+	if ((PSL = gmt_plotinit (GMT, options)) == NULL) {
+		if (fpi != stdin) fclose (fpi);
+		Return (GMT_RUNTIME_ERROR);
+	}
+	/* In this program we DO NOT want to call gmt_plane_perspective since that is already in the SEGV projection
 	 * Per Tim Henstock, Nov, 2015.
-	 * GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
+	 * gmt_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
 	 */
-	GMT_plotcanvas (GMT);	/* Fill canvas if requested */
+	gmt_plotcanvas (GMT);	/* Fill canvas if requested */
 
 	/* define area for plotting and size of array for bitmap */
 	xlen = GMT->current.proj.rect[XHI] - GMT->current.proj.rect[XLO];
@@ -655,8 +653,8 @@ int GMT_pssegyz (void *V_API, int mode, void *args)
 	bm_ny = irint (ypix);
 	nm = bm_nx * bm_ny;
 
-	if ((check = get_segy_reelhd (fpi, reelhead)) != true) {GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;}
-	if ((check = get_segy_binhd (fpi, &binhead)) != true) {GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;}
+	if ((check = segy_get_reelhd (fpi, reelhead)) != true) {GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;}
+	if ((check = segy_get_binhd (fpi, &binhead)) != true) {GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;}
 
 	if (Ctrl->A.active) {
 /* this is a little-endian system, and we need to byte-swap ints in the reel header - we only
@@ -683,7 +681,7 @@ use a few of these*/
 
 	if (!Ctrl->L.value) { /* no number of samples still - a problem! */
 		GMT_Report (API, GMT_MSG_NORMAL, "Error, number of samples per trace unknown\n");
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 	}
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Number of samples is %d\n", n_samp);
@@ -700,13 +698,13 @@ use a few of these*/
 
 	if (!Ctrl->Q.value[Y_ID]) { /* still no sample interval at this point is a problem! */
 		GMT_Report (API, GMT_MSG_NORMAL, "Error, no sample interval in reel header\n");
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 	}
 
-	bitmap = GMT_memory (GMT, NULL, nm, unsigned char);
+	bitmap = gmt_M_memory (GMT, NULL, nm, unsigned char);
 
 	ix = 0;
-	while ((ix < Ctrl->M.value) && (header = get_segy_header (fpi)) != 0) {
+	while ((ix < Ctrl->M.value) && (header = segy_get_header (fpi)) != 0) {
 		/* read traces one by one */
 		/* check true location header for x */
 		if (Ctrl->S.mode[GMT_X] == PLOT_OFFSET) {
@@ -787,10 +785,10 @@ use a few of these*/
 			GMT_Report (API, GMT_MSG_VERBOSE, "time shifted by %f\n", toffset);
 		}
 
-		data = get_segy_data (fpi, header);	/* read a trace */
+		data = segy_get_data (fpi, header);	/* read a trace */
 		/* get number of samples in _this_ trace (e.g. OMEGA has strange ideas about SEGY standard)
 		   or set to number in reel header */
-                if ((n_samp = samp_rd (header)) != 0) n_samp = Ctrl->L.value;
+                if ((n_samp = segy_samp_rd (header)) != 0) n_samp = Ctrl->L.value;
 
 		if (Ctrl->A.active) {
 			/* need to swap the order of the bytes in the data even though assuming IEEE format */
@@ -813,8 +811,8 @@ use a few of these*/
 		}
 
 		if (!Ctrl->Z.active || scale) segyz_plot_trace (GMT, data, Ctrl->Q.value[Y_ID], x0, y0, n_samp, Ctrl->F.active, Ctrl->I.active, Ctrl->W.active, toffset, Ctrl->D.value[GMT_X], Ctrl->D.value[GMT_Y], Ctrl->Q.value[I_ID], bitmap, bm_nx, bm_ny);
-		free (data);
-		free (header);
+		gmt_M_str_free (data);
+		gmt_M_str_free (header);
 		ix++;
 	}
 
@@ -823,11 +821,11 @@ use a few of these*/
 
 	if (fpi != stdin) fclose (fpi);
 
-	/* Not needed, see above for why.  GMT_plane_perspective (GMT, -1, 0.0); */
+	/* Not needed, see above for why.  gmt_plane_perspective (GMT, -1, 0.0); */
 
-	GMT_plotend (GMT);
+	gmt_plotend (GMT);
 
-	GMT_free (GMT, bitmap);
+	gmt_M_free (GMT, bitmap);
 
-	Return (EXIT_SUCCESS);
+	Return (GMT_NOERROR);
 }

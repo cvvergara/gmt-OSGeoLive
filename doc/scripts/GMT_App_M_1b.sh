@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: GMT_App_M_1b.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#	$Id: GMT_App_M_1b.sh 16674 2016-06-29 21:24:14Z pwessel $
 #
 #	Makes the inserts for Appendix M(cpt)
 #
@@ -13,7 +13,7 @@ let n2=n/2
 # dy is line spacing and y0 is total box height
 
 gmt gmtset MAP_FRAME_PEN thinner FONT_ANNOT_PRIMARY 8p MAP_TICK_LENGTH_PRIMARY 0.1i MAP_ANNOT_OFFSET_PRIMARY 0.04i
-gmt psbasemap -R0/6.1/0/6.9 -Jx1i -P -K -B0 > $ps
+gmt psbasemap -R0/6.1/0/7.5 -Jx1i -P -K -B0 > $ps
 
 i=1
 y=0.475
@@ -24,9 +24,9 @@ do
 	j=`expr $i + 1`
 	left=`sed -n ${j}p tt.lis`
 	right=`sed -n ${i}p tt.lis`
-	gmt makecpt -C$left -Z > tt.left.cpt
+	gmt makecpt -C$left > tt.left.cpt
 	gmt makecpt -C$left -T-1/1/0.25 > tt.left2.cpt
-	gmt makecpt -C$right -Z > tt.right.cpt
+	gmt makecpt -C$right > tt.right.cpt
 	gmt makecpt -C$right -T-1/1/0.25 > tt.right2.cpt
 	gmt psscale -D1.55i/${y}i+w2.70i/0.125i+h+jTC -Ctt.left.cpt -B0 -O -K >> $ps
 	gmt psscale -D4.50i/${y}i+w2.70i/0.125i+h+jTC -Ctt.right.cpt -B0 -O -K >> $ps

@@ -1,9 +1,9 @@
 #!/bin/bash
 #               GMT EXAMPLE 45
-#               $Id$
+#               $Id: example_45.sh 16652 2016-06-28 21:02:26Z pwessel $
 #
 # Purpose:      Illustrate use of trend1d mixed models
-# GMT progs:    pstext, psxy, trend1d
+# GMT modules:  pstext, psxy, trend1d
 # Unix progs:   echo, rm
 #
 

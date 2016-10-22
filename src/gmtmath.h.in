@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------
  *
- *  $Id: gmtmath.h.in 14318 2015-06-04 19:17:42Z pwessel $
+ *  $Id: gmtmath.h.in 15944 2016-03-26 08:43:39Z pwessel $
  *
- *  Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo,
+ *  Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
  *  See LICENSE.TXT file for copying and redistribution conditions.
  *
@@ -23,7 +23,7 @@
 
 #define GMTMATH_N_OPERATORS @GMTMATH_N_OPERATORS@
 
-void gmtmath_init (int (*ops[])(struct GMT_CTRL *, struct GMTMATH_INFO *, struct GMTMATH_STACK **S, unsigned int, unsigned int), unsigned int n_args[], unsigned int n_out[])
+GMT_LOCAL void gmtmath_init (int (*ops[])(struct GMT_CTRL *, struct GMTMATH_INFO *, struct GMTMATH_STACK **S, unsigned int, unsigned int), unsigned int n_args[], unsigned int n_out[])
 {
 
 	/* Operator function	# of operands	# of outputs */

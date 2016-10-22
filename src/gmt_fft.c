@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_fft.c 15178 2015-11-06 10:45:03Z fwobbe $
+ *	$Id: gmt_fft.c 16555 2016-06-16 22:49:46Z pwessel $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -38,21 +38,13 @@
  *  Configure the implementation with gmtset GMT_FFT.
  *
  *--------------------------------------------------------------------------
- * These prototypes are declared in gmt.h and coded in gmt_api.c
+ * Public functions declared in gmt_dev.h ():
  *
- * GMT_FFT_Option     : Lets user code display FFT options
- * GMT_FFT_Parse      : Allows parsing of user option for the FFT settings
- * GMT_FFT_Create     : Initializes the 1-D or 2-D FFT machinery, preps the table/grid.
- * GMT_FFT            : 1-D or 2-D FFT
- * GMT_FFT_Wavenumber : Return any wavenumber given index
- * GMT_FFT_Destroy    : Frees the FFT machinery.
  *
  */
 
 #include "gmt_dev.h"
 #include "gmt_internals.h"
-
-static inline struct GMTAPI_CTRL * gmt_get_api_ptr (struct GMTAPI_CTRL *ptr) {return (ptr);}
 
 static char *GMT_fft_algo[] = {
 	"Auto-Select",
@@ -69,30 +61,27 @@ static char *GMT_fft_algo[] = {
  * grdfft.c and potential/gravfft.c as examples.
  */
 
-/* first 2 cols from table III of Singleton's paper on fft.... */
-#define N_SINGLETON_LIST	117
-int Singleton_list[N_SINGLETON_LIST] = {
-	64,72,75,80,81,90,96,100,108,120,125,128,135,144,150,160,162,180,192,200,
-	216,225,240,243,250,256,270,288,300,320,324,360,375,384,400,405,432,450,480,
-	486,500,512,540,576,600,625,640,648,675,720,729,750,768,800,810,864,900,960,
-	972,1000,1024,1080,1125,1152,1200,1215,1250,1280,1296,1350,1440,1458,1500,
-	1536,1600,1620,1728,1800,1875,1920,1944,2000,2025,2048,2160,2187,2250,2304,
-	2400,2430,2500,2560,2592,2700,2880,2916,3000,3072,3125,3200,3240,3375,3456,
-	3600,3645,3750,3840,3888,4000,4096,4320,4374,4500,4608,4800,4860,5000};
-
-void gmt_fft_Singleton_list (struct GMTAPI_CTRL *API) {
-	unsigned int k;
-	char message[GMT_LEN16] = {""};
-	GMT_Message (API, GMT_TIME_NONE, "\t\"Good\" numbers for FFT dimensions [Singleton, 1967]:\n");
-	for (k = 0; k < N_SINGLETON_LIST; k++) {
-		sprintf (message, "\t%d", Singleton_list[k]);
-		if ((k+1) % 10 == 0 || k == (N_SINGLETON_LIST-1)) strcat (message, "\n");
-		GMT_Message (API, GMT_TIME_NONE, message);
-	}
+static inline uint64_t propose_radix2 (uint64_t n) {
+	/* Returns the smallest base 2 exponent, log2n, that satisfies: 2^log2n >= n */
+	uint64_t log2n = 1;
+	while ( 1ULL<<log2n < n ) ++log2n; /* log2n = 1<<(unsigned)ceil(log2(n)); */
+	return log2n;
 }
 
-uint64_t get_non_symmetric_f (unsigned int *f, unsigned int n)
-{
+static inline uint64_t radix2 (uint64_t n) {
+	/* Returns the base 2 exponent that represents 'n' if 'n' is a power of 2,
+	 * 0 otherwise */
+	uint64_t log2n = 1ULL;
+	while ( 1ULL<<log2n < n ) ++log2n; /* log2n = 1<<(unsigned)ceil(log2(n)); */
+	if (n == 1ULL<<log2n)
+		return log2n;
+	return 0ULL;
+}
+
+static inline struct GMT_FFT_WAVENUMBER * fft_get_fftwave_ptr (struct GMT_FFT_WAVENUMBER *ptr) {return (ptr);}
+static inline struct GMTAPI_CTRL * fft_get_api_ptr (struct GMTAPI_CTRL *ptr)  {return (ptr);}
+
+GMT_LOCAL uint64_t fft_get_non_symmetric_f (unsigned int *f, unsigned int n) {
 	/* Return the product of the non-symmetric factors in f[]  */
 	unsigned int i = 0, j = 1, retval = 1;
 
@@ -112,12 +101,11 @@ uint64_t get_non_symmetric_f (unsigned int *f, unsigned int n)
 #define FSIGNIF			24
 #endif
 
-void gmt_fourt_stats (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny, unsigned int *f, double *r, size_t *s, double *t)
-{
+void gmtfft_fourt_stats (struct GMT_CTRL *GMT, unsigned int n_columns, unsigned int n_rows, unsigned int *f, double *r, size_t *s, double *t) {
 	/* Find the proportional run time, t, and rms relative error, r,
-	 * of a Fourier transform of size nx,ny.  Also gives s, the size
+	 * of a Fourier transform of size n_columns,n_rows.  Also gives s, the size
 	 * of the workspace that will be needed by the transform.
-	 * To use this routine for a 1-D transform, set ny = 1.
+	 * To use this routine for a 1-D transform, set n_rows = 1.
 	 * 
 	 * This is all based on the comments in Norman Brenner's code
 	 * FOURT, from which our C codes are translated.
@@ -155,16 +143,16 @@ void gmt_fourt_stats (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny, un
 	uint64_t nonsymx, nonsymy, nonsym, storage, ntotal;
 	double err_scale;
 
-	/* Find workspace needed.  First find non_symmetric factors in nx, ny  */
-	n_factors = GMT_get_prime_factors (GMT, nx, f);
-	nonsymx = get_non_symmetric_f (f, n_factors);
-	n_factors = GMT_get_prime_factors (GMT, ny, f);
-	nonsymy = get_non_symmetric_f (f, n_factors);
+	/* Find workspace needed.  First find non_symmetric factors in n_columns, n_rows  */
+	n_factors = gmt_get_prime_factors (GMT, n_columns, f);
+	nonsymx = fft_get_non_symmetric_f (f, n_factors);
+	n_factors = gmt_get_prime_factors (GMT, n_rows, f);
+	nonsymy = fft_get_non_symmetric_f (f, n_factors);
 	nonsym = MAX (nonsymx, nonsymy);
 
 	/* Now get factors of ntotal  */
-	ntotal = GMT_get_nm (GMT, nx, ny);
-	n_factors = GMT_get_prime_factors (GMT, ntotal, f);
+	ntotal = gmt_M_get_nm (GMT, n_columns, n_rows);
+	n_factors = gmt_get_prime_factors (GMT, ntotal, f);
 	storage = MAX (nonsym, f[n_factors-1]);
 	*s = (storage == 2) ? 0 : storage;
 
@@ -187,8 +175,7 @@ void gmt_fourt_stats (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny, un
 	return;
 }
 
-void GMT_suggest_fft_dim (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny, struct GMT_FFT_SUGGESTION *fft_sug, bool do_print)
-{
+void gmtlib_suggest_fft_dim (struct GMT_CTRL *GMT, unsigned int n_columns, unsigned int n_rows, struct GMT_FFT_SUGGESTION *fft_sug, bool do_print) {
 	unsigned int f[32], xstop, ystop;
 	unsigned int nx_best_t, ny_best_t;
 	unsigned int nx_best_e, ny_best_e;
@@ -199,34 +186,34 @@ void GMT_suggest_fft_dim (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny
 	double current_time, best_time, given_time, s_time, e_time;
 	double current_err, best_err, given_err, s_err, t_err;
 
-	gmt_fourt_stats (GMT, nx, ny, f, &given_err, &given_space, &given_time);
-	given_space += nx * ny;
+	gmtfft_fourt_stats (GMT, n_columns, n_rows, f, &given_err, &given_space, &given_time);
+	given_space += n_columns * n_rows;
 	given_space *= 8;
 	if (do_print)
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, " Data dimension\t%d %d\ttime factor %.8g\trms error %.8e\tbytes %" PRIuS "\n", nx, ny, given_time, given_err, given_space);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, " Data dimension\t%d %d\ttime factor %.8g\trms error %.8e\tbytes %" PRIuS "\n", n_columns, n_rows, given_time, given_err, given_space);
 
 	best_err = s_err = t_err = given_err;
 	best_time = s_time = e_time = given_time;
 	best_space = t_space = e_space = given_space;
-	nx_best_e = nx_best_t = nx_best_s = nx;
-	ny_best_e = ny_best_t = ny_best_s = ny;
+	nx_best_e = nx_best_t = nx_best_s = n_columns;
+	ny_best_e = ny_best_t = ny_best_s = n_rows;
 
-	xstop = 2 * nx;
-	ystop = 2 * ny;
+	xstop = 2 * n_columns;
+	ystop = 2 * n_rows;
 
 	for (nx2 = 2; nx2 <= xstop; nx2 *= 2) {
 	  	for (nx3 = 1; nx3 <= xstop; nx3 *= 3) {
 		    for (nx5 = 1; nx5 <= xstop; nx5 *= 5) {
 		        nxg = nx2 * nx3 * nx5;
-		        if (nxg < nx || nxg > xstop) continue;
+		        if (nxg < n_columns || nxg > xstop) continue;
 
 		        for (ny2 = 2; ny2 <= ystop; ny2 *= 2) {
 		          for (ny3 = 1; ny3 <= ystop; ny3 *= 3) {
 		            for (ny5 = 1; ny5 <= ystop; ny5 *= 5) {
 		                nyg = ny2 * ny3 * ny5;
-		                if (nyg < ny || nyg > ystop) continue;
+		                if (nyg < n_rows || nyg > ystop) continue;
 
-			gmt_fourt_stats (GMT, nxg, nyg, f, &current_err, &current_space, &current_time);
+			gmtfft_fourt_stats (GMT, nxg, nyg, f, &current_err, &current_space, &current_time);
 			current_space += nxg*nyg;
 			current_space *= 8;
 			if (current_err < best_err) {
@@ -268,22 +255,22 @@ void GMT_suggest_fft_dim (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny
 			nx_best_s, ny_best_s, s_time, s_err, best_space);
 	}
 	/* Fastest solution */
-	fft_sug[0].nx = nx_best_t;
-	fft_sug[0].ny = ny_best_t;
+	fft_sug[0].n_columns = nx_best_t;
+	fft_sug[0].n_rows = ny_best_t;
 	fft_sug[0].worksize = (t_space/8) - (nx_best_t * ny_best_t);
 	fft_sug[0].totalbytes = t_space;
 	fft_sug[0].run_time = best_time;
 	fft_sug[0].rms_rel_err = t_err;
 	/* Most accurate solution */
-	fft_sug[1].nx = nx_best_e;
-	fft_sug[1].ny = ny_best_e;
+	fft_sug[1].n_columns = nx_best_e;
+	fft_sug[1].n_rows = ny_best_e;
 	fft_sug[1].worksize = (e_space/8) - (nx_best_e * ny_best_e);
 	fft_sug[1].totalbytes = e_space;
 	fft_sug[1].run_time = e_time;
 	fft_sug[1].rms_rel_err = best_err;
 	/* Least storage solution */
-	fft_sug[2].nx = nx_best_s;
-	fft_sug[2].ny = ny_best_s;
+	fft_sug[2].n_columns = nx_best_s;
+	fft_sug[2].n_rows = ny_best_s;
 	fft_sug[2].worksize = (best_space/8) - (nx_best_s * ny_best_s);
 	fft_sug[2].totalbytes = best_space;
 	fft_sug[2].run_time = s_time;
@@ -292,8 +279,7 @@ void GMT_suggest_fft_dim (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny
 	return;
 }
 
-double GMT_fft_kx (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
+GMT_LOCAL double fft_kx (uint64_t k, struct GMT_FFT_WAVENUMBER *K) {
 	/* Return the value of kx given k,
 	 * where kx = 2 pi / lambda x,
 	 * and k refers to the position
@@ -304,8 +290,7 @@ double GMT_fft_kx (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
 	return (ii * K->delta_kx);
 }
 
-double GMT_fft_ky (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
+GMT_LOCAL double fft_ky (uint64_t k, struct GMT_FFT_WAVENUMBER *K) {
 	/* Return the value of ky given k,
 	 * where ky = 2 pi / lambda y,
 	 * and k refers to the position
@@ -316,17 +301,15 @@ double GMT_fft_ky (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
 	return (jj * K->delta_ky);
 }
 
-double GMT_fft_kr (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
+GMT_LOCAL double fft_kr (uint64_t k, struct GMT_FFT_WAVENUMBER *K) {
 	/* Return the value of sqrt(kx*kx + ky*ky),
 	 * where k refers to the position
 	 * in the complex data array Grid->data[k].  */
 
-	return (hypot (GMT_fft_kx (k, K), GMT_fft_ky (k, K)));
+	return (hypot (fft_kx (k, K), fft_ky (k, K)));
 }
 
-double GMT_fft_get_wave (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
+double gmt_fft_get_wave (uint64_t k, struct GMT_FFT_WAVENUMBER *K) {
 	/* Return the value of kx, ky. or kr,
 	 * where k refers to the position
 	 * in the complex data array Grid->data[k].
@@ -335,25 +318,24 @@ double GMT_fft_get_wave (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
 	return (K->k_ptr (k, K));
 }
 
-double GMT_fft_any_wave (uint64_t k, unsigned int mode, struct GMT_FFT_WAVENUMBER *K)
-{	/* Lets you specify which wavenumber you want */
+double gmt_fft_any_wave (uint64_t k, unsigned int mode, struct GMT_FFT_WAVENUMBER *K) {
+	/* Lets you specify which wavenumber you want */
 	double wave = 0.0;
 
 	switch (mode) {	/* Select which wavenumber we need */
-		case GMT_FFT_K_IS_KX: wave = GMT_fft_kx (k, K); break;
-		case GMT_FFT_K_IS_KY: wave = GMT_fft_ky (k, K); break;
-		case GMT_FFT_K_IS_KR: wave = GMT_fft_kr (k, K); break;
+		case GMT_FFT_K_IS_KX: wave = fft_kx (k, K); break;
+		case GMT_FFT_K_IS_KY: wave = fft_ky (k, K); break;
+		case GMT_FFT_K_IS_KR: wave = fft_kr (k, K); break;
 	}
 	return (wave);
 }
 
-int GMT_fft_set_wave (struct GMT_CTRL *GMT, unsigned int mode, struct GMT_FFT_WAVENUMBER *K)
-{
+int gmt_fft_set_wave (struct GMT_CTRL *GMT, unsigned int mode, struct GMT_FFT_WAVENUMBER *K) {
 	/* Change wavenumber selection */
 	switch (mode) {	/* Select which wavenumber we need */
-		case GMT_FFT_K_IS_KX: K->k_ptr = GMT_fft_kx; break;
-		case GMT_FFT_K_IS_KY: K->k_ptr = GMT_fft_ky; break;
-		case GMT_FFT_K_IS_KR: K->k_ptr = GMT_fft_kr; break;
+		case GMT_FFT_K_IS_KX: K->k_ptr = fft_kx; break;
+		case GMT_FFT_K_IS_KY: K->k_ptr = fft_ky; break;
+		case GMT_FFT_K_IS_KR: K->k_ptr = fft_kr; break;
 		default:
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Bad mode selected (%u) - exit\n", mode);
 			GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
@@ -362,338 +344,21 @@ int GMT_fft_set_wave (struct GMT_CTRL *GMT, unsigned int mode, struct GMT_FFT_WA
 	return GMT_OK;
 }
 
-void gmt_fft_taper (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GMT_FFT_INFO *F)
-{
-	/* mode sets if and how tapering will be performed [see GMT_FFT_EXTEND_* constants].
-	 * width is relative width in percent of the margin that will be tapered [100]. */
-	int il1, ir1, il2, ir2, jb1, jb2, jt1, jt2, im, jm, j, end_i, end_j, min_i, min_j, one;
-	int i, i_data_start, j_data_start, mx, i_width, j_width, width_percent;
-	unsigned int ju, start_component = 0, stop_component = 0, component;
-	uint64_t off;
-	char *method[2] = {"edge-point", "mirror"}, *comp[2] = {"real", "imaginary"};
-	float *datac = Grid->data, scale, cos_wt;
-	double width;
-	struct GMT_GRID_HEADER *h = Grid->header;	/* For shorthand */
-
-	width_percent = irint (F->taper_width);
-
-	if ((Grid->header->nx == F->nx && Grid->header->ny == F->ny) || F->taper_mode == GMT_FFT_EXTEND_NONE) {
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Data and FFT dimensions are equal - no data extension will take place\n");
-		/* But there may still be interior tapering */
-		if (F->taper_mode != GMT_FFT_EXTEND_NONE) {	/* Nothing to do since no outside pad */
-			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Data and FFT dimensions are equal - no tapering will be performed\n");
-			return;
-		}
-		if (F->taper_mode == GMT_FFT_EXTEND_NONE && width_percent == 100) {	/* No interior taper specified */
-			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "No interior tapering will be performed\n");
-			return;
-		}
-	}
-	
-	if (Grid->header->arrangement == GMT_GRID_IS_INTERLEAVED) {
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Demultiplexing complex grid before tapering can take place.\n");
-		GMT_grd_mux_demux (GMT, Grid->header, Grid->data, GMT_GRID_IS_SERIAL);
-	}
-	
-	/* Note that if nx2 = nx+1 and ny2 = ny + 1, then this routine
-	 * will do nothing; thus a single row/column of zeros may be
-	 * added to the bottom/right of the input array and it cannot
-	 * be tapered.  But when (nx2 - nx)%2 == 1 or ditto for y,
-	 * this is zero anyway.  */
-
-	i_data_start = GMT->current.io.pad[XLO];	/* Some shorthands for readability */
-	j_data_start = GMT->current.io.pad[YHI];
-	mx = h->mx;
-	one = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? 0 : 1;	/* 0 is the boundry point which we want to taper to 0 for the interior taper */
-	
-	if (width_percent == 0) {
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Tapering has been disabled via +t0\n");
-	}
-	if (width_percent == 100 && F->taper_mode == GMT_FFT_EXTEND_NONE) {	/* Means user set +n but did not specify +t<taper> as 100% is unreasonable for interior */
-		width_percent = 0;
-		width = 0.0;
-	}
-	else
-		width = F->taper_width / 100.0;	/* Was percent, now fraction */
-	
-	if (F->taper_mode == GMT_FFT_EXTEND_NONE) {	/* No extension, just tapering inside the data grid */
-		i_width = irint (Grid->header->nx * width);	/* Interior columns over which tapering will take place */
-		j_width = irint (Grid->header->ny * width);	/* Extended rows over which tapering will take place */
-	}
-	else {	/* We wish to extend data into the margin pads between FFT grid and data grid */
-		i_width = irint (i_data_start * width);	/* Extended columns over which tapering will take place */
-		j_width = irint (j_data_start * width);	/* Extended rows over which tapering will take place */
-	}
-	if (i_width == 0 && j_width == 0) one = 1;	/* So we do nothing further down */
-
-	/* Determine how many complex components (1 or 2) to taper, and which one(s) */
-	start_component = (Grid->header->complex_mode & GMT_GRID_IS_COMPLEX_REAL) ? 0 : 1;
-	stop_component  = (Grid->header->complex_mode & GMT_GRID_IS_COMPLEX_IMAG) ? 1 : 0;
-
-	for (component = start_component; component <= stop_component; component++) {	/* Loop over 1 or 2 components */
-		off = component * Grid->header->size / 2;	/* offset to start of this component in grid */
-
-		/* First reflect about xmin and xmax, either point symmetric about edge point OR mirror symmetric */
-
-		if (F->taper_mode != GMT_FFT_EXTEND_NONE) {
-			for (im = 1; im <= i_width; im++) {
-				il1 = -im;	/* Outside xmin; left of edge 1  */
-				ir1 = im;	/* Inside xmin; right of edge 1  */
-				il2 = il1 + h->nx - 1;	/* Inside xmax; left of edge 2  */
-				ir2 = ir1 + h->nx - 1;	/* Outside xmax; right of edge 2  */
-				for (ju = 0; ju < h->ny; ju++) {
-					if (F->taper_mode == GMT_FFT_EXTEND_POINT_SYMMETRY) {
-						datac[GMT_IJP(h,ju,il1)+off] = 2.0f * datac[GMT_IJP(h,ju,0)+off]       - datac[GMT_IJP(h,ju,ir1)+off];
-						datac[GMT_IJP(h,ju,ir2)+off] = 2.0f * datac[GMT_IJP(h,ju,h->nx-1)+off] - datac[GMT_IJP(h,ju,il2)+off];
-					}
-					else {	/* Mirroring */
-						datac[GMT_IJP(h,ju,il1)+off] = datac[GMT_IJP(h,ju,ir1)+off];
-						datac[GMT_IJP(h,ju,ir2)+off] = datac[GMT_IJP(h,ju,il2)+off];
-					}
-				}
-			}
-		}
-
-		/* Next, reflect about ymin and ymax.
-		 * At the same time, since x has been reflected,
-		 * we can use these vals and taper on y edges */
-
-		scale = (float)(M_PI / (j_width + 1));	/* Full 2*pi over y taper range */
-		min_i = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? 0 : -i_width;
-		end_i = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? (int)Grid->header->nx : mx - i_width;
-		for (jm = one; jm <= j_width; jm++) {	/* Loop over width of strip to taper */
-			jb1 = -jm;	/* Outside ymin; bottom side of edge 1  */
-			jt1 = jm;	/* Inside ymin; top side of edge 1  */
-			jb2 = jb1 + h->ny - 1;	/* Inside ymax; bottom side of edge 2  */
-			jt2 = jt1 + h->ny - 1;	/* Outside ymax; bottom side of edge 2  */
-			cos_wt = 0.5f * (1.0f + cosf (jm * scale));
-			if (F->taper_mode == GMT_FFT_EXTEND_NONE) cos_wt = 1.0f - cos_wt;	/* Reverse weights for the interior */
-			for (i = min_i; i < end_i; i++) {
-				if (F->taper_mode == GMT_FFT_EXTEND_POINT_SYMMETRY) {
-					datac[GMT_IJP(h,jb1,i)+off] = cos_wt * (2.0f * datac[GMT_IJP(h,0,i)+off]       - datac[GMT_IJP(h,jt1,i)+off]);
-					datac[GMT_IJP(h,jt2,i)+off] = cos_wt * (2.0f * datac[GMT_IJP(h,h->ny-1,i)+off] - datac[GMT_IJP(h,jb2,i)+off]);
-				}
-				else if (F->taper_mode == GMT_FFT_EXTEND_MIRROR_SYMMETRY) {
-					datac[GMT_IJP(h,jb1,i)+off] = cos_wt * datac[GMT_IJP(h,jt1,i)+off];
-					datac[GMT_IJP(h,jt2,i)+off] = cos_wt * datac[GMT_IJP(h,jb2,i)+off];
-				}
-				else {	/* Interior tapering only */
-					datac[GMT_IJP(h,jt1,i)+off] *= cos_wt;
-					datac[GMT_IJP(h,jb2,i)+off] *= cos_wt;
-				}
-			}
-		}
-		/* Now, cos taper the x edges */
-		scale = (float)(M_PI / (i_width + 1));	/* Full 2*pi over x taper range */
-		end_j = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? h->ny : h->my - j_data_start;
-		min_j = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? 0 : -j_width;
-		for (im = one; im <= i_width; im++) {
-			il1 = -im;
-			ir1 = im;
-			il2 = il1 + h->nx - 1;
-			ir2 = ir1 + h->nx - 1;
-			cos_wt = (float)(0.5f * (1.0f + cosf (im * scale)));
-			if (F->taper_mode == GMT_FFT_EXTEND_NONE) cos_wt = 1.0f - cos_wt;	/* Switch to weights for the interior */
-			for (j = min_j; j < end_j; j++) {
-				if (F->taper_mode == GMT_FFT_EXTEND_NONE) {
-					datac[GMT_IJP(h,j,ir1)+off] *= cos_wt;
-					datac[GMT_IJP(h,j,il2)+off] *= cos_wt;
-				}
-				else {
-					datac[GMT_IJP(h,j,il1)+off] *= cos_wt;
-					datac[GMT_IJP(h,j,ir2)+off] *= cos_wt;
-				}
-			}
-		}
-
-		if (F->taper_mode == GMT_FFT_EXTEND_NONE)
-			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Grid margin (%s component) tapered to zero over %d %% of data width and height\n", comp[component], width_percent);
-		else
-			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Grid (%s component) extended via %s symmetry at all edges, then tapered to zero over %d %% of extended area\n", comp[component], method[F->taper_mode], width_percent);
-	}
+/*! . */
+double GMT_FFT_Wavenumber (void *V_API, uint64_t k, unsigned int mode, void *v_K) {
+	/* Lets you specify which 1-D or 2-D wavenumber you want */
+	struct GMT_FFT_WAVENUMBER *K = fft_get_fftwave_ptr (v_K);
+	gmt_M_unused(V_API);
+	if (K->dim == 2) return (gmt_fft_any_wave (k, mode, K));
+	else return (fft_kx (k, K));
 }
 
-char *file_name_with_suffix (struct GMT_CTRL *GMT, char *name, char *suffix)
-{
-	static char file[GMT_BUFSIZ];
-	uint64_t i, j;
-	size_t len;
-	
-	if ((len = strlen (name)) == 0) {	/* Grids that are being created have no filename yet */
-		sprintf (file, "tmpgrid_%s.grd", suffix);
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Created grid has no name to derive new names from; choose %s\n", file);
-		return (file);
-	}
-	for (i = len; i > 0 && name[i] != '/'; i--);	/* i points to 1st char in name after slash, or 0 if no leading dirs */
-	if (i) i++;	/* Move to 1st char after / */
-	for (j = len; j > 0 && name[j] != '.'; j--);	/* j points to period before extension, or it is 0 if no extension */
-	strcpy (file, &name[i]);			/* Make a full copy of filename without leading directories */
-	len = strlen (file);
-	for (i = len; i > 0 && file[i] != '.'; i--);	/* i now points to period before extension in file, or it is 0 if no extension */
-	if (i) file[i] = '\0';	/* Truncate at the extension */
-	strcat (file, "_");
-	strcat (file, suffix);
-	if (j) strcat (file, &name[j]);
-	return (file);
+#ifdef FORTRAN_API
+double GMT_FFT_Wavenumber_ (uint64_t *k, unsigned int *mode, void *v_K) {
+	/* Fortran version: We pass the global GMT_FORTRAN structure */
+	return (GMT_FFT_Wavenumber (GMT_FORTRAN, *k, *mode, v_K));
 }
-
-void gmt_grd_save_taper (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, char *suffix)
-{
-	/* Write the intermediate grid that will be passed to the FFT to file.
-	 * This grid may have been a mean, mid-value, or plane removed, may
-	 * have data filled into an extended margin, and may have been taperer.
-	 * Normally, the complex grid will be in serial layout, but just in case
-	 * we check and add a demux step if required.  The FFT will also check
-	 * and multiplex the grid (again) if needed.
-	 */
-	unsigned int pad[4];
-	struct GMT_GRID_HEADER save;
-	char *file = NULL;
-	
-	if (Grid->header->arrangement == GMT_GRID_IS_INTERLEAVED) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Demultiplexing complex grid before saving can take place.\n");
-		GMT_grd_mux_demux (GMT, Grid->header, Grid->data, GMT_GRID_IS_SERIAL);
-	}
-	GMT_memcpy (&save, Grid->header, 1U, struct GMT_GRID_HEADER);	/* Save what we have before messing around */
-	GMT_memcpy (pad, Grid->header->pad, 4U, unsigned int);		/* Save current pad, then set pad to zero */
-	/* Extend w/e/s/n to what it would be if the pad was not present */
-	Grid->header->wesn[XLO] -= Grid->header->pad[XLO] * Grid->header->inc[GMT_X];
-	Grid->header->wesn[XHI] += Grid->header->pad[XHI] * Grid->header->inc[GMT_X];
-	Grid->header->wesn[YLO] -= Grid->header->pad[YLO] * Grid->header->inc[GMT_Y];
-	Grid->header->wesn[YHI] += Grid->header->pad[YHI] * Grid->header->inc[GMT_Y];
-	GMT_memset (Grid->header->pad,   4U, unsigned int);	/* Set header pad to {0,0,0,0} */
-	GMT_memset (GMT->current.io.pad, 4U, unsigned int);	/* set GMT default pad to {0,0,0,0} */
-	GMT_set_grddim (GMT, Grid->header);	/* Recompute all dimensions */
-	if ((file = file_name_with_suffix (GMT, Grid->header->name, suffix)) == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to get file name for file %s\n", Grid->header->name);
-		return;
-	}
-	
-	if (GMT_Write_Data (GMT->parent, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY | GMT_GRID_IS_COMPLEX_REAL, NULL, file, Grid) != GMT_OK)
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Intermediate detrended, extended, and tapered grid could not be written to %s\n", file);
-	else
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Intermediate detrended, extended, and tapered grid written to %s\n", file);
-	
-	GMT_memcpy (Grid->header, &save, 1U, struct GMT_GRID_HEADER);	/* Restore original, including the original pad */
-	GMT_memcpy (GMT->current.io.pad, pad, 4U, unsigned int);	/* Restore GMT default pad */
-}
-
-void gmt_grd_save_fft (struct GMT_CTRL *GMT, struct GMT_GRID *G, struct GMT_FFT_INFO *F)
-{
-	/* Save the raw spectrum as two files (real,imag) or (mag,phase), depending on mode.
-	 * We must first do an "fftshift" operation as in Matlab, to put the 0 frequency
-	 * value in the center of the grid. */
-	uint64_t row, col, i_ij, o_ij;
-	unsigned int nx_2, ny_2, k, pad[4], mode, wmode[2] = {GMT_GRID_IS_COMPLEX_REAL, GMT_GRID_IS_COMPLEX_IMAG};
-	double wesn[4], inc[2];
-	float re, im;
-	char *file = NULL, *suffix[2][2] = {{"real", "imag"}, {"mag", "phase"}};
-	struct GMT_GRID *Grid = NULL;
-	struct GMT_FFT_WAVENUMBER *K = F->K;
-
-	if (K == NULL) return;
-	
-	mode = (F->polar) ? 1 : 0;
-
-	GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Write components of complex raw spectrum with file suffix %s and %s\n", suffix[mode][0], suffix[mode][1]);
-
-	if (G->header->arrangement == GMT_GRID_IS_SERIAL) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Cannot save complex grid unless it is interleaved.\n");
-		return;
-	}
-	/* Prepare wavenumber domain limits and increments */
-	nx_2 = K->nx2 / 2;	ny_2 = K->ny2 / 2;
-	wesn[XLO] = -K->delta_kx * nx_2;	wesn[XHI] =  K->delta_kx * (nx_2 - 1);
-	wesn[YLO] = -K->delta_ky * (ny_2 - 1);	wesn[YHI] =  K->delta_ky * ny_2;
-	inc[GMT_X] = K->delta_kx;		inc[GMT_Y] = K->delta_ky;
-	GMT_memcpy (pad, GMT->current.io.pad, 4U, unsigned int);	/* Save current GMT pad */
-	for (k = 0; k < 4; k++) GMT->current.io.pad[k] = 0;		/* No pad is what we need for this application */
-
-	/* Set up and allocate the temporary grid. */
-	if ((Grid = GMT_Create_Data (GMT->parent, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc, \
-		G->header->registration | GMT_GRID_IS_COMPLEX_MASK, 0, NULL)) == NULL) {	/* Note: 0 for pad since no BC work needed for this temporary grid */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to create complex output grid for %s\n", Grid->header->name);
-		return;
-	}
-			
-	strcpy (Grid->header->x_units, "m^(-1)");	strcpy (Grid->header->y_units, "m^(-1)");
-	strcpy (Grid->header->z_units, G->header->z_units);
-	strcpy (Grid->header->remark, "Applied fftshift: kx = 0 at (nx/2 + 1) and ky = 0 at ny/2");
-
-	for (row = 0; row < ny_2; row++) {	/* Swap values from 1/3 and 2/4 quadrants */
-		for (col = 0; col < nx_2; col++) {
-			i_ij = 2*GMT_IJ0 (Grid->header, row, col);
-			o_ij = 2*GMT_IJ0 (Grid->header, row+ny_2, col+nx_2);
-			re = Grid->data[i_ij]; im = Grid->data[i_ij+1];
-			if (F->polar) {	/* Want magnitude and phase */
-				Grid->data[i_ij]   = (float)hypot (G->data[o_ij], G->data[o_ij+1]);
-				Grid->data[i_ij+1] = (float)d_atan2 (G->data[o_ij+1], G->data[o_ij]);
-				Grid->data[o_ij]   = (float)hypot (re, im);
-				Grid->data[o_ij+1] = (float)d_atan2 (im, re);
-			}
-			else {		/* Retain real and imag components as is */
-				Grid->data[i_ij] = G->data[o_ij];	Grid->data[i_ij+1] = G->data[o_ij+1];
-				Grid->data[o_ij] = re;	Grid->data[o_ij+1] = im;
-			}
-			i_ij = 2*GMT_IJ0 (Grid->header, row+ny_2, col);
-			o_ij = 2*GMT_IJ0 (Grid->header, row, col+nx_2);
-			re = Grid->data[i_ij]; im = Grid->data[i_ij+1];
-			if (F->polar) {	/* Want magnitude and phase */
-				Grid->data[i_ij]   = (float)hypot (G->data[o_ij], G->data[o_ij+1]);
-				Grid->data[i_ij+1] = (float)d_atan2 (G->data[o_ij+1], G->data[o_ij]);
-				Grid->data[o_ij]   = (float)hypot (re, im);
-				Grid->data[o_ij+1] = (float)d_atan2 (im, re);
-			}
-			else {		/* Retain real and imag components as is */
-				Grid->data[i_ij] = G->data[o_ij];	Grid->data[i_ij+1] = G->data[o_ij+1];
-				Grid->data[o_ij] = re;	Grid->data[o_ij+1] = im;
-			}
-		}
-	}
-	for (k = 0; k < 2; k++) {	/* Write the two grids */
-		if ((file = file_name_with_suffix (GMT, G->header->name, suffix[mode][k])) == NULL) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to get file name for file %s\n", Grid->header->name);
-			return;
-		}
-		sprintf (Grid->header->title, "The %s part of FFT transformed input grid %s", suffix[mode][k], G->header->name);
-		if (k == 1 && mode) strcpy (Grid->header->z_units, "radians");
-		if (GMT_Write_Data (GMT->parent, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY | wmode[k], NULL, file, Grid) != GMT_OK) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "%s could not be written\n", file);
-			return;
-		}
-	}
-	if (GMT_Destroy_Data (GMT->parent, &Grid) != GMT_OK) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error freeing temporary grid\n");
-	}
-
-	GMT_memcpy (GMT->current.io.pad, pad, 4U, unsigned int);	/* Restore GMT pad */
-}
-
-void gmt_fft_save2d (struct GMT_CTRL *GMT, struct GMT_GRID *G, unsigned int direction, struct GMT_FFT_WAVENUMBER *K)
-{
-	/* Handle the writing of the grid going into the FFT and comping out of the FFT, per F settings */
-
-	if (G == NULL || (K == NULL ||  K->info == NULL)) return;
-	if (direction == GMT_IN  && K->info->save[GMT_IN])  gmt_grd_save_taper (GMT, G, K->info->suffix);
-	if (direction == GMT_OUT && K->info->save[GMT_OUT]) gmt_grd_save_fft (GMT, G, K->info);
-}
-
-static inline uint64_t propose_radix2 (uint64_t n) {
-	/* Returns the smallest base 2 exponent, log2n, that satisfies: 2^log2n >= n */
-	uint64_t log2n = 1;
-	while ( 1ULL<<log2n < n ) ++log2n; /* log2n = 1<<(unsigned)ceil(log2(n)); */
-	return log2n;
-}
-
-static inline uint64_t radix2 (uint64_t n) {
-	/* Returns the base 2 exponent that represents 'n' if 'n' is a power of 2,
-	 * 0 otherwise */
-	uint64_t log2n = 1ULL;
-	while ( 1ULL<<log2n < n ) ++log2n; /* log2n = 1<<(unsigned)ceil(log2(n)); */
-	if (n == 1ULL<<log2n)
-		return log2n;
-	return 0ULL;
-}
+#endif
 
 #ifdef HAVE_FFTW3F
 
@@ -701,7 +366,7 @@ static inline uint64_t radix2 (uint64_t n) {
 
 #define FFTWF_WISDOM_FILENAME "fftwf_wisdom"
 
-char *gmt_fftwf_wisdom_filename (struct GMT_CTRL *GMT) {
+GMT_LOCAL char *fft_fftwf_wisdom_filename (struct GMT_CTRL *GMT) {
 	static char wisdom_file[PATH_MAX+256] = "\0";
 	char hostname[257];
 	if (*wisdom_file == '\0') { /* wisdom_file has not been set yet */
@@ -722,7 +387,7 @@ char *gmt_fftwf_wisdom_filename (struct GMT_CTRL *GMT) {
 }
 
 /* Wrapper around fftwf_import_wisdom_from_filename */
-void gmt_fftwf_import_wisdom_from_filename (struct GMT_CTRL *GMT) {
+GMT_LOCAL void fft_fftwf_import_wisdom_from_filename (struct GMT_CTRL *GMT) {
 	static bool already_imported = false;
 	char *filenames[3], **filename = filenames;
 	int status;
@@ -734,7 +399,7 @@ void gmt_fftwf_import_wisdom_from_filename (struct GMT_CTRL *GMT) {
 
 	/* Initialize filenames */
 	filenames[0] = FFTWF_WISDOM_FILENAME; /* 1st try importing wisdom from file in current dir */
-	filenames[1] = gmt_fftwf_wisdom_filename(GMT); /* 2nd try wisdom file in USERDIR */
+	filenames[1] = fft_fftwf_wisdom_filename(GMT); /* 2nd try wisdom file in USERDIR */
 	filenames[2] = NULL; /* end of array */
 
 	while (*filename != NULL) {
@@ -752,8 +417,8 @@ void gmt_fftwf_import_wisdom_from_filename (struct GMT_CTRL *GMT) {
 }
 
 /* Wrapper around fftwf_export_wisdom_to_filename */
-void gmt_fftwf_export_wisdom_to_filename (struct GMT_CTRL *GMT) {
-	char *filename = gmt_fftwf_wisdom_filename(GMT);
+GMT_LOCAL void fft_fftwf_export_wisdom_to_filename (struct GMT_CTRL *GMT) {
+	char *filename = fft_fftwf_wisdom_filename(GMT);
 	int status;
 
 	if (filename == NULL)
@@ -767,7 +432,7 @@ void gmt_fftwf_export_wisdom_to_filename (struct GMT_CTRL *GMT) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Exporting FFTW Wisdom to file failed: %s\n", filename);
 }
 
-fftwf_plan gmt_fftwf_plan_dft(struct GMT_CTRL *GMT, unsigned ny, unsigned nx, fftwf_complex *data, int direction) {
+GMT_LOCAL fftwf_plan gmt_fftwf_plan_dft(struct GMT_CTRL *GMT, unsigned n_rows, unsigned n_columns, fftwf_complex *data, int direction) {
 	/* The first two arguments, n0 and n1, are the size of the two-dimensional
 	 * transform you are trying to compute. The size n can be any positive
 	 * integer, but sizes that are products of small factors are transformed
@@ -809,25 +474,25 @@ fftwf_plan gmt_fftwf_plan_dft(struct GMT_CTRL *GMT, unsigned ny, unsigned nx, ff
 	cout = cin; /* in-place transform */
 
 	if (GMT->current.setting.fftw_plan != FFTW_ESTIMATE) {
-		gmt_fftwf_import_wisdom_from_filename (GMT);
-		if (ny == 0) /* 1d DFT */
-			plan = fftwf_plan_dft_1d(nx, cin, cout, sign, FFTW_WISDOM_ONLY | GMT->current.setting.fftw_plan);
+		fft_fftwf_import_wisdom_from_filename (GMT);
+		if (n_rows == 0) /* 1d DFT */
+			plan = fftwf_plan_dft_1d(n_columns, cin, cout, sign, FFTW_WISDOM_ONLY | GMT->current.setting.fftw_plan);
 		else /* 2d DFT */
-			plan = fftwf_plan_dft_2d(ny, nx, cin, cout, sign, FFTW_WISDOM_ONLY | GMT->current.setting.fftw_plan);
+			plan = fftwf_plan_dft_2d(n_rows, n_columns, cin, cout, sign, FFTW_WISDOM_ONLY | GMT->current.setting.fftw_plan);
 		if (plan == NULL) {
 			/* No Wisdom available
 			 * Need extra memory to prevent overwriting data while planning */
-			fftwf_complex *in_place_tmp = fftwf_malloc (2 * (ny == 0 ? 1 : ny) * nx * sizeof(float));
+			fftwf_complex *in_place_tmp = fftwf_malloc (2 * (n_rows == 0 ? 1 : n_rows) * n_columns * sizeof(float));
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Generating new FFTW Wisdom, be patient...\n");
-			if (ny == 0) /* 1d DFT */
-				plan = fftwf_plan_dft_1d(nx, in_place_tmp, in_place_tmp, sign, GMT->current.setting.fftw_plan);
+			if (n_rows == 0) /* 1d DFT */
+				plan = fftwf_plan_dft_1d(n_columns, in_place_tmp, in_place_tmp, sign, GMT->current.setting.fftw_plan);
 			else /* 2d DFT */
-				plan = fftwf_plan_dft_2d(ny, nx, in_place_tmp, in_place_tmp, sign, GMT->current.setting.fftw_plan);
+				plan = fftwf_plan_dft_2d(n_rows, n_columns, in_place_tmp, in_place_tmp, sign, GMT->current.setting.fftw_plan);
 			fftwf_destroy_plan(plan); /* deallocate plan */
 			plan = NULL;
 			fftwf_free (in_place_tmp);
 			/* Save new Wisdom */
-			gmt_fftwf_export_wisdom_to_filename (GMT);
+			fft_fftwf_export_wisdom_to_filename (GMT);
 		}
 		else
 			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Using preexisting FFTW Wisdom.\n");
@@ -836,23 +501,23 @@ fftwf_plan gmt_fftwf_plan_dft(struct GMT_CTRL *GMT, unsigned ny, unsigned nx, ff
 		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Picking a (probably sub-optimal) FFTW plan quickly.\n");
 
 	if (plan == NULL) { /* If either FFTW_ESTIMATE or new Wisdom generated */
-		if (ny == 0) /* 1d DFT */
-			plan = fftwf_plan_dft_1d(nx, cin, cout, sign, GMT->current.setting.fftw_plan);
+		if (n_rows == 0) /* 1d DFT */
+			plan = fftwf_plan_dft_1d(n_columns, cin, cout, sign, GMT->current.setting.fftw_plan);
 		else /* 2d DFT */
-			plan = fftwf_plan_dft_2d(ny, nx, cin, cout, sign, GMT->current.setting.fftw_plan);
+			plan = fftwf_plan_dft_2d(n_rows, n_columns, cin, cout, sign, GMT->current.setting.fftw_plan);
 	}
 
 	if (plan == NULL) { /* There was a problem creating a plan */
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Could not create FFTW plan.\n");
-		GMT_exit (GMT, EXIT_FAILURE); return NULL;
+		GMT_exit (GMT, GMT_ARG_IS_NULL); return NULL;
 	}
 
 	return plan;
 }
 
-int GMT_fft_1d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode) {
+GMT_LOCAL int fft_1d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode) {
 	fftwf_plan plan = NULL;
-	GMT_UNUSED(mode);
+	gmt_M_unused(mode);
 
 	/* Generate FFTW plan for complex 1d DFT */
 	plan = gmt_fftwf_plan_dft(GMT, 0, n, (fftwf_complex*)data, direction);
@@ -862,12 +527,12 @@ int GMT_fft_1d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int n, int dir
 	return GMT_NOERROR;
 }
 
-int GMT_fft_2d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode) {
+GMT_LOCAL int fft_2d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int n_columns, unsigned int n_rows, int direction, unsigned int mode) {
 	fftwf_plan plan = NULL;
-	GMT_UNUSED(mode);
+	gmt_M_unused(mode);
 
 	/* Generate FFTW plan for complex 2d DFT */
-	plan = gmt_fftwf_plan_dft(GMT, ny, nx, (fftwf_complex*)data, direction);
+	plan = gmt_fftwf_plan_dft(GMT, n_rows, n_columns, (fftwf_complex*)data, direction);
 	fftwf_execute(plan);      /* do transform */
 	fftwf_destroy_plan(plan); /* deallocate plan */
 
@@ -878,17 +543,15 @@ int GMT_fft_2d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsign
 
 #ifdef __APPLE__ /* Accelerate framework */
 
-void GMT_fft_1d_vDSP_reset (struct GMT_FFT_HIDDEN *Z)
-{
+GMT_LOCAL void fft_1d_vDSP_reset (struct GMT_FFT_HIDDEN *Z) {
 	if (Z->setup_1d) {	/* Free single-precision FFT data structure and arrays */
 		vDSP_destroy_fftsetup (Z->setup_1d);
-		free (Z->dsp_split_complex_1d.realp);
-		free (Z->dsp_split_complex_1d.imagp);
+		gmt_M_str_free (Z->dsp_split_complex_1d.realp);
+		gmt_M_str_free (Z->dsp_split_complex_1d.imagp);
 	}
 }
 
-int GMT_fft_1d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode)
-{
+GMT_LOCAL int fft_1d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode) {
 	FFTDirection fft_direction = direction == GMT_FFT_FWD ?
 			kFFTDirection_Forward : kFFTDirection_Inverse;
 	DSPComplex *dsp_complex = (DSPComplex *)data;
@@ -896,7 +559,7 @@ int GMT_fft_1d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n, int dire
 	/* Base 2 exponent that specifies the largest power of
 	 * two that can be processed by fft: */
 	vDSP_Length log2n = radix2 (n);
-	GMT_UNUSED(mode);
+	gmt_M_unused(mode);
 
 	if (log2n == 0) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Need Radix-2 input try: %u [n]\n", 1U<<propose_radix2 (n));
@@ -906,7 +569,7 @@ int GMT_fft_1d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n, int dire
 	if (GMT->current.fft.n_1d != n) {	/* Must update the FFT setup arrays */
 		/* Build data structure that contains precalculated data for use by
 		 * single-precision FFT functions: */
-		GMT_fft_1d_vDSP_reset (&GMT->current.fft);
+		fft_1d_vDSP_reset (&GMT->current.fft);
 		GMT->current.fft.setup_1d = vDSP_create_fftsetup (log2n, kFFTRadix2);
 		GMT->current.fft.dsp_split_complex_1d.realp = malloc (n * sizeof(float));
 		GMT->current.fft.dsp_split_complex_1d.imagp = malloc (n * sizeof(float));
@@ -925,38 +588,36 @@ int GMT_fft_1d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n, int dire
 	return GMT_NOERROR;
 }
 
-void GMT_fft_2d_vDSP_reset (struct GMT_FFT_HIDDEN *Z)
-{
+GMT_LOCAL void fft_2d_vDSP_reset (struct GMT_FFT_HIDDEN *Z) {
 	if (Z->setup_2d) {	/* Free single-precision 2D FFT data structure and arrays */
 		vDSP_destroy_fftsetup (Z->setup_2d);
-		free (Z->dsp_split_complex_2d.realp);
-		free (Z->dsp_split_complex_2d.imagp);
+		gmt_M_str_free (Z->dsp_split_complex_2d.realp);
+		gmt_M_str_free (Z->dsp_split_complex_2d.imagp);
 	}
 }
 
-int GMT_fft_2d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode)
-{
+GMT_LOCAL int fft_2d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n_columns, unsigned int n_rows, int direction, unsigned int mode) {
 	FFTDirection fft_direction = direction == GMT_FFT_FWD ?
 			kFFTDirection_Forward : kFFTDirection_Inverse;
 	DSPComplex *dsp_complex = (DSPComplex *)data;
 
 	/* Base 2 exponent that specifies the largest power of
 	 * two that can be processed by fft: */
-	vDSP_Length log2nx = radix2 (nx);
-	vDSP_Length log2ny = radix2 (ny);
-	unsigned int n_xy = nx * ny;
-	GMT_UNUSED(mode);
+	vDSP_Length log2nx = radix2 (n_columns);
+	vDSP_Length log2ny = radix2 (n_rows);
+	unsigned int n_xy = n_columns * n_rows;
+	gmt_M_unused(mode);
 
 	if (log2nx == 0 || log2ny == 0) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Need Radix-2 input try: %u/%u [nx/ny]\n",
-				1U<<propose_radix2 (nx), 1U<<propose_radix2 (ny));
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Need Radix-2 input try: %u/%u [n_columns/n_rows]\n",
+				1U<<propose_radix2 (n_columns), 1U<<propose_radix2 (n_rows));
 		return -1;
 	}
 
 	if (GMT->current.fft.n_2d != n_xy) {	/* Must update the 2-D FFT setup arrays */
 		/* Build data structure that contains precalculated data for use by
 	 	* single-precision FFT functions: */
-		GMT_fft_2d_vDSP_reset (&GMT->current.fft);
+		fft_2d_vDSP_reset (&GMT->current.fft);
 		GMT->current.fft.setup_2d = vDSP_create_fftsetup (MAX (log2nx, log2ny), kFFTRadix2);
 		GMT->current.fft.dsp_split_complex_2d.realp = malloc (n_xy * sizeof(float));
 		GMT->current.fft.dsp_split_complex_2d.imagp = malloc (n_xy * sizeof(float));
@@ -969,7 +630,7 @@ int GMT_fft_2d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigne
 	vDSP_ctoz (dsp_complex, 2, &GMT->current.fft.dsp_split_complex_2d, 1, n_xy);
 
 	/* complex: */
-	/* PW note 10/26/2014: We used to pass log2ny, log2nx to vDSP_fft2d_zipbut that gave bad results for nx != ny.
+	/* PW note 10/26/2014: We used to pass log2ny, log2nx to vDSP_fft2d_zipbut that gave bad results for n_columns != n_rows.
 	 * I assume this is because Accelerate expects columns but we pass rows. Now matches KISS, FFTW, etc. */
 	vDSP_fft2d_zip (GMT->current.fft.setup_2d, &GMT->current.fft.dsp_split_complex_2d, 1, 0, log2nx, log2ny, fft_direction);
 	/* real:
@@ -985,42 +646,39 @@ int GMT_fft_2d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigne
 
 #include "kiss_fft/kiss_fftnd.h"
 
-int GMT_fft_1d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode)
-{
+GMT_LOCAL int fft_1d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode) {
 	kiss_fft_cpx *fin, *fout;
 	kiss_fft_cfg config;
-	GMT_UNUSED(GMT); GMT_UNUSED(mode);
+	gmt_M_unused(GMT); gmt_M_unused(mode);
 
 	/* Initialize a FFT (or IFFT) config/state data structure */
 	config = kiss_fft_alloc(n, direction == GMT_FFT_INV, NULL, NULL);
 	fin = fout = (kiss_fft_cpx *)data;
 	kiss_fft (config, fin, fout); /* do transform */
-	free (config); /* Free config data structure */
+	gmt_M_str_free (config); /* Free config data structure */
 
 	return GMT_NOERROR;
 }
 
-int GMT_fft_2d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode)
-{
-	const int dim[2] = {ny, nx}; /* dimensions of fft */
+GMT_LOCAL int fft_2d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int n_columns, unsigned int n_rows, int direction, unsigned int mode) {
+	const int dim[2] = {n_rows, n_columns}; /* dimensions of fft */
 	const int dimcount = 2;      /* number of dimensions */
 	kiss_fft_cpx *fin, *fout;
 	kiss_fftnd_cfg config;
-	GMT_UNUSED(GMT); GMT_UNUSED(mode);
+	gmt_M_unused(GMT); gmt_M_unused(mode);
 
 	/* Initialize a FFT (or IFFT) config/state data structure */
 	config = kiss_fftnd_alloc (dim, dimcount, direction == GMT_FFT_INV, NULL, NULL);
 
 	fin = fout = (kiss_fft_cpx *)data;
 	kiss_fftnd (config, fin, fout); /* do transform */
-	free (config); /* Free config data structure */
+	gmt_M_str_free (config); /* Free config data structure */
 
 	return GMT_NOERROR;
 }
 
 
-int BRENNER_fourt_ (float *data, int *nn, int *ndim, int *ksign, int *iform, float *work)
-{
+GMT_LOCAL int fft_brenner_fourt_f (float *data, int *nn, int *ndim, int *ksign, int *iform, float *work) {
 
     /* System generated locals */
     int i__1, i__2, i__3, i__4, i__5, i__6, i__7, i__8, i__9, i__10, i__11, i__12;
@@ -1870,27 +1528,9 @@ L920:
     return 0;
 } /* fourt_ */
 
-int gmt_get_non_symmetric_f (unsigned int *f, unsigned int n_in)
-{
-        /* Return the product of the non-symmetric factors in f[]  */
-	
-        int i = 0, j = 1, retval = 1, n = n_in;
-	
-        if (n == 1) return (f[0]);
-        while (i < n) {
-                while (j < n && f[j] == f[i]) j++;
-                if ((j-i)%2) retval *= f[i];
-                i = j;
-                j = i + 1;
-        }
-        if (retval == 1) retval = 0;        /* There are no non-sym factors  */
-        return (retval);
-}
-
-size_t brenner_worksize (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny)
-{
+GMT_LOCAL size_t fft_brenner_worksize (struct GMT_CTRL *GMT, unsigned int n_columns, unsigned int n_rows) {
         /* Find the size of the workspace that will be needed by the transform.
-         * To use this routine for a 1-D transform, set ny = 1.
+         * To use this routine for a 1-D transform, set n_rows = 1.
          * 
          * This is all based on the comments in Norman Brenner's code
          * FOURT, from which our C codes are translated.
@@ -1907,26 +1547,25 @@ size_t brenner_worksize (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny)
         unsigned int f[32], n_factors, nonsymx, nonsymy, nonsym;
         size_t storage, ntotal;
 	
-        /* Find workspace needed.  First find non_symmetric factors in nx, ny  */
-        n_factors = GMT_get_prime_factors (GMT, nx, f);
-        nonsymx = gmt_get_non_symmetric_f (f, n_factors);
-        n_factors = GMT_get_prime_factors (GMT, ny, f);
-        nonsymy = gmt_get_non_symmetric_f (f, n_factors);
+        /* Find workspace needed.  First find non_symmetric factors in n_columns, n_rows  */
+        n_factors = gmt_get_prime_factors (GMT, n_columns, f);
+        nonsymx = (unsigned int)fft_get_non_symmetric_f (f, n_factors);
+        n_factors = gmt_get_prime_factors (GMT, n_rows, f);
+        nonsymy = (unsigned int)fft_get_non_symmetric_f (f, n_factors);
         nonsym = MAX (nonsymx, nonsymy);
 	
         /* Now get factors of ntotal  */
-        ntotal = GMT_get_nm (GMT, nx, ny);
-        n_factors = GMT_get_prime_factors (GMT, ntotal, f);
-        storage = MAX (nonsym, f[n_factors-1]);
+        ntotal = gmt_M_get_nm (GMT, n_columns, n_rows);
+        n_factors = gmt_get_prime_factors (GMT, ntotal, f);
+        storage = (n_factors > 0) ? MAX (nonsym, f[n_factors-1]) : nonsym;
         if (storage != 2) storage *= 2;
-        if (storage < nx) storage = nx;
-        if (storage < ny) storage = ny;
+        if (storage < n_columns) storage = n_columns;
+        if (storage < n_rows) storage = n_rows;
         return (2 * storage);
 }
 
-/* C-callable wrapper for BRENNER_fourt_ */
-int GMT_fft_1d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode)
-{
+/* C-callable wrapper for fft_brenner_fourt_f */
+GMT_LOCAL int fft_1d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode) {
         /* void GMT_fourt (struct GMT_CTRL *GMT, float *data, int *nn, int ndim, int ksign, int iform, float *work) */
         /* Data array */
         /* Dimension array */
@@ -1940,14 +1579,13 @@ int GMT_fft_1d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int n, int d
         float *work = NULL;
 	
         ksign = (direction == GMT_FFT_INV) ? +1 : -1;
-        if ((work_size = brenner_worksize (GMT, n, 1))) work = GMT_memory (GMT, NULL, work_size, float);
-        (void) BRENNER_fourt_ (data, &n_signed, &ndim, &ksign, &kmode, work);
-        if (work_size) GMT_free (GMT, work);	
+        if ((work_size = fft_brenner_worksize (GMT, n, 1))) work = gmt_M_memory (GMT, NULL, work_size, float);
+        (void) fft_brenner_fourt_f (data, &n_signed, &ndim, &ksign, &kmode, work);
+        gmt_M_free (GMT, work);	
         return (GMT_OK);
 }
 	
-int GMT_fft_2d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode)
-{
+GMT_LOCAL int fft_2d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int n_columns, unsigned int n_rows, int direction, unsigned int mode) {
         /* Data array */
         /* Dimension array */
         /* Number of dimensions */
@@ -1955,19 +1593,19 @@ int GMT_fft_2d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsi
         /* Real(0) or complex(1) data */
         /* Work array */
 
-        int ksign, ndim = 2, nn[2] = {nx, ny}, kmode = mode;
+        int ksign, ndim = 2, nn[2] = {n_columns, n_rows}, kmode = mode;
         size_t work_size = 0;
         float *work = NULL;
 
         ksign = (direction == GMT_FFT_INV) ? +1 : -1;
-        if ((work_size = brenner_worksize (GMT, nx, ny))) work = GMT_memory (GMT, NULL, work_size, float);
+        if ((work_size = fft_brenner_worksize (GMT, n_columns, n_rows))) work = gmt_M_memory (GMT, NULL, work_size, float);
         GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Brenner_fourt_ work size = %" PRIuS "\n", work_size);
-        (void) BRENNER_fourt_ (data, nn, &ndim, &ksign, &kmode, work);
-        if (work_size) GMT_free (GMT, work);
+        (void) fft_brenner_fourt_f (data, nn, &ndim, &ksign, &kmode, work);
+        gmt_M_free (GMT, work);
         return (GMT_OK);
 }
 
-int gmt_fft_1d_selection (struct GMT_CTRL *GMT, uint64_t n) {
+GMT_LOCAL int fft_1d_selection (struct GMT_CTRL *GMT, uint64_t n) {
 	/* Returns the most suitable 1-D FFT for the job - or the one requested via GMT_FFT */
 	if (GMT->current.setting.fft != k_fft_auto) {
 		/* Specific selection requested */
@@ -1983,7 +1621,7 @@ int gmt_fft_1d_selection (struct GMT_CTRL *GMT, uint64_t n) {
 	return k_fft_kiss; /* Default/fallback general-purpose FFT */
 }
 
-int gmt_fft_2d_selection (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny) {
+GMT_LOCAL int fft_2d_selection (struct GMT_CTRL *GMT, unsigned int n_columns, unsigned int n_rows) {
 	/* Returns the most suitable 2-D FFT for the job - or the one requested via GMT_FFT */
 	if (GMT->current.setting.fft != k_fft_auto) {
 		/* Specific selection requested */
@@ -1992,7 +1630,7 @@ int gmt_fft_2d_selection (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Desired FFT Algorithm (%s) not configured - choosing suitable alternative.\n", GMT_fft_algo[GMT->current.setting.fft]);
 	}
 	/* Here we want automatic selection from available candidates */
-	if (GMT->session.fft2d[k_fft_accelerate] && radix2 (nx) && radix2 (ny))
+	if (GMT->session.fft2d[k_fft_accelerate] && radix2 (n_columns) && radix2 (n_rows))
 		return k_fft_accelerate; /* Use if Radix-2 under OS/X */
 	if (GMT->session.fft2d[k_fft_fftw])
 		return k_fft_fftw;
@@ -2006,44 +1644,58 @@ int GMT_FFT_1D (void *V_API, float *data, uint64_t n, int direction, unsigned in
 	 * mode is either GMT_FFT_REAL or GMT_FFT_COMPLEX
 	 */
 	int status, use;
-	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);
+	struct GMTAPI_CTRL *API = fft_get_api_ptr (V_API);
 	struct GMT_CTRL *GMT = API->GMT;
 	assert (mode == GMT_FFT_COMPLEX); /* GMT_FFT_REAL not implemented yet */
-	use = gmt_fft_1d_selection (GMT, n);
+	use = fft_1d_selection (GMT, n);
 	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "1-D FFT using %s\n", GMT_fft_algo[use]);
 	status = GMT->session.fft1d[use] (GMT, data, (unsigned int)n, direction, mode);
 	if (direction == GMT_FFT_INV) {	/* Undo the 2/nm factor */
 		uint64_t nm = 2ULL * n;
-		GMT_scale_and_offset_f (GMT, data, nm, 2.0 / nm, 0);
+		gmt_scale_and_offset_f (GMT, data, nm, 2.0 / nm, 0);
 	}
 	return status;
 }
 
-int GMT_FFT_2D (void *V_API, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode) {
-	/* data is an array of length nx*ny (or 2*nx*ny for complex) data points
-	 * nx, ny is the number of data nodes
+#ifdef FORTRAN_API
+int GMT_FFT_1D_ (float *data, uint64_t *n, int *direction, unsigned int *mode) {
+	/* Fortran version: We pass the global GMT_FORTRAN structure */
+	return (GMT_FFT_1D (GMT_FORTRAN, data, *n, *direction, *mode));
+}
+#endif
+
+int GMT_FFT_2D (void *V_API, float *data, unsigned int n_columns, unsigned int n_rows, int direction, unsigned int mode) {
+	/* data is an array of length n_columns*n_rows (or 2*n_columns*n_rows for complex) data points
+	 * n_columns, n_rows is the number of data nodes
 	 * direction is either GMT_FFT_FWD (forward) or GMT_FFT_INV (inverse)
 	 * mode is either GMT_FFT_REAL or GMT_FFT_COMPLEX
 	 */
 	int status, use;
-	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);
+	struct GMTAPI_CTRL *API = fft_get_api_ptr (V_API);
 	struct GMT_CTRL *GMT = API->GMT;
 	assert (mode == GMT_FFT_COMPLEX); /* GMT_FFT_REAL not implemented yet */
-	use = gmt_fft_2d_selection (GMT, nx, ny);
+	use = fft_2d_selection (GMT, n_columns, n_rows);
 	
 	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "2-D FFT using %s\n", GMT_fft_algo[use]);
-	status = GMT->session.fft2d[use] (GMT, data, nx, ny, direction, mode);
+	status = GMT->session.fft2d[use] (GMT, data, n_columns, n_rows, direction, mode);
 	if (direction == GMT_FFT_INV) {	/* Undo the 2/nm factor */
-		uint64_t nm = 2ULL * nx * ny;
-		GMT_scale_and_offset_f (GMT, data, nm, 2.0 / nm, 0);
+		uint64_t nm = 2ULL * n_columns * n_rows;
+		gmt_scale_and_offset_f (GMT, data, nm, 2.0 / nm, 0);
 	}
 	return status;
 }
 
-void GMT_fft_initialization (struct GMT_CTRL *GMT) {
-	/* Called by GMT_begin and sets up pointers to the available FFT calls */
+#ifdef FORTRAN_API
+int GMT_FFT_2D_ (float *data, unsigned int *n_columns, unsigned int *n_rows, int *direction, unsigned int *mode) {
+	/* Fortran version: We pass the global GMT_FORTRAN structure */
+	return (GMT_FFT_2D (GMT_FORTRAN, data, *n_columns, *n_rows, *direction, *mode));
+}
+#endif
+
+void gmt_fft_initialization (struct GMT_CTRL *GMT) {
+	/* Called by gmt_begin and sets up pointers to the available FFT calls */
 #if defined HAVE_FFTW3F_THREADS
-	int n_cpu = GMT_get_num_processors();
+	int n_cpu = gmtlib_get_num_processors();
 
 	if (n_cpu > 1 && !GMT->current.setting.fftwf_threads) {
 		/* one-time initialization required to use FFTW3 threads */
@@ -2062,29 +1714,32 @@ void GMT_fft_initialization (struct GMT_CTRL *GMT) {
 
 #ifdef __APPLE__
 	/* OS X Accelerate Framework */
-	GMT->session.fft1d[k_fft_accelerate] = &GMT_fft_1d_vDSP;
-	GMT->session.fft2d[k_fft_accelerate] = &GMT_fft_2d_vDSP;
+	GMT->session.fft1d[k_fft_accelerate] = &fft_1d_vDSP;
+	GMT->session.fft2d[k_fft_accelerate] = &fft_2d_vDSP;
 #endif
 #ifdef HAVE_FFTW3F
 	/* single precision FFTW3 */
-	GMT->session.fft1d[k_fft_fftw] = &GMT_fft_1d_fftwf;
-	GMT->session.fft2d[k_fft_fftw] = &GMT_fft_2d_fftwf;
+	GMT->session.fft1d[k_fft_fftw] = &fft_1d_fftwf;
+	GMT->session.fft2d[k_fft_fftw] = &fft_2d_fftwf;
 #endif /* HAVE_FFTW3F */
 	/* Kiss FFT is the integrated fallback */
-	GMT->session.fft1d[k_fft_kiss] = &GMT_fft_1d_kiss;
-	GMT->session.fft2d[k_fft_kiss] = &GMT_fft_2d_kiss;
+	GMT->session.fft1d[k_fft_kiss] = &fft_1d_kiss;
+	GMT->session.fft2d[k_fft_kiss] = &fft_2d_kiss;
 	/* Brenner FFT is the legacy fallback */
-	GMT->session.fft1d[k_fft_brenner] = &GMT_fft_1d_brenner;
-	GMT->session.fft2d[k_fft_brenner] = &GMT_fft_2d_brenner;
+	GMT->session.fft1d[k_fft_brenner] = &fft_1d_brenner;
+	GMT->session.fft2d[k_fft_brenner] = &fft_2d_brenner;
 }
 
-void GMT_fft_cleanup (struct GMT_CTRL *GMT) {
-	/* Called by GMT_end */
+void gmt_fft_cleanup (struct GMT_CTRL *GMT) {
+	/* Called by gmt_end */
+#ifndef __APPLE__
+	gmt_M_unused(GMT);
+#endif
 #if defined HAVE_FFTW3F_THREADS
 	fftwf_cleanup_threads(); /* clean resources allocated internally by FFTW */
 #endif
 #ifdef __APPLE__ /* Accelerate framework */
-	GMT_fft_1d_vDSP_reset (&GMT->current.fft);
-	GMT_fft_2d_vDSP_reset (&GMT->current.fft);
+	fft_1d_vDSP_reset (&GMT->current.fft);
+	fft_2d_vDSP_reset (&GMT->current.fft);
 #endif
 }

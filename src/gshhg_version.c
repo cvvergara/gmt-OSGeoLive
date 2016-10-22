@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gshhg_version.c 13846 2014-12-28 21:46:54Z pwessel $
+ *	$Id: gshhg_version.c 15995 2016-03-31 15:44:12Z jluis $
  *
- *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -68,7 +68,7 @@ int gshhg_get_version (const char* filename, struct GSHHG_VERSION *gshhg_version
 		fprintf(stderr, FAILURE_PREFIX "cannot inquire version attribute length from file \"%s\" (%d).\n", filename, status);
 		return 0;
 	}
-	if (v_len == 0 || v_len > BUF_SIZE) {
+	if (v_len == 0 || v_len > BUF_SIZE-1) {
 		nc_close(ncid);
 		fprintf(stderr, FAILURE_PREFIX "invalid version attribute length: %" PRIuS "\n", v_len);
 		return 0;
@@ -101,7 +101,7 @@ int gshhg_get_version (const char* filename, struct GSHHG_VERSION *gshhg_version
 
 /* Check if GSHHG file meets the min version requirement */
 int gshhg_require_min_version (const char* filename, const struct GSHHG_VERSION min_version) {
-  struct GSHHG_VERSION version;
+	struct GSHHG_VERSION version;
 	/* get version of file */
 	if ( ! gshhg_get_version (filename, &version) )
 		return 0;

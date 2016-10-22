@@ -1,7 +1,7 @@
 #
-# $Id: CMakeLists.txt 15178 2015-11-06 10:45:03Z fwobbe $
+# $Id: CMakeLists.txt 15757 2016-02-24 23:25:49Z pwessel $
 #
-# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 # source files
 set (SUPPL_LIB_SRCS okbfuns.h okbfuns.c)
-set (SUPPL_PROGS_SRCS grdredpol.c gmtgravmag3d.c gmtflexure.c gravfft.c
+set (SUPPL_PROGS_SRCS grdredpol.c gmtgravmag3d.c gmtflexure.c gravfft.c gpsgridder.c
 	grdflexure.c grdgravmag3d.c grdseamount.c talwani2d.c talwani3d.c)
 
 # lib sources

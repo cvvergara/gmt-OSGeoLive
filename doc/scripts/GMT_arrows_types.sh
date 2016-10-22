@@ -1,17 +1,19 @@
 #!/bin/bash
-#       $Id: GMT_arrows_types.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#       $Id: GMT_arrows_types.sh 15897 2016-03-18 04:15:52Z pwessel $
 #
 # Demonstrate how arrows heads can look like (just doing Cartesian arrows here)
 ps=GMT_arrows_types.ps
 # Cartesian straight arrows
-gmt psxy -R0/10/0/5 -JX5.75i/1.75i -P -S -W1.5p -Gred -K -B0 --MAP_VECTOR_SHAPE=0 << EOF > $ps
-0.5	0.5	4.5	0.5	v0.25i+s+e+a60
+gmt psxy -R0/10/0/7 -JX5.75i/1.75i -P -S -W1.5p -Gred -K -B0 --MAP_VECTOR_SHAPE=0 << EOF > $ps
+0.5	0.5	4.5	0.5	v0.25i+s+e+a40
 0.5	1.5	4.5	1.5	v0.25i+s+b
 0.5	2.5	4.5	2.5	v0.25i+s+e+b
 EOF
 gmt psxy -R -J -O -S -W1.5p -Gred -K --MAP_VECTOR_SHAPE=0.5 << EOF >> $ps
 0.5	3.5	4.5	3.5	v0.25i+s+e+b
 0.5	4.5	4.5	4.5	v0.25i+s+b+a45
+0.5	5.5	4.5	5.5	v0.25i+s+e+bi
+0.9	6.5	4.1	6.5	v0.25i+s+eI+bI
 EOF
 gmt psxy -R -J -O -S -W1.5p -Gred -K -X2.875i << EOF >> $ps
 0.5	0.5	4.5	0.5	v0.25i+s+et
@@ -21,6 +23,10 @@ EOF
 gmt psxy -R -J -O -S -W1.5p -Gred -K --MAP_VECTOR_SHAPE=0.5 << EOF >> $ps
 0.5	3.5	4.5	3.5	v0.25i+s+e+bt
 0.5	4.5	4.5	4.5	v0.25i+s+b+ec+a45
+EOF
+gmt psxy -R -J -O -S -W1.5p -Gred -K --MAP_VECTOR_SHAPE=0.5 << EOF >> $ps
+0.5	5.5	4.5	5.5	v0.25i+s+b+ei
+0.5	6.5	4.5	6.5	v0.25i+s+bA+eA
 EOF
 
 gmt psxy -R -J -O -T >> $ps

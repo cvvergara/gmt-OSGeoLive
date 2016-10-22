@@ -18,8 +18,8 @@ Synopsis
 [ |-A| ]
 |SYN_OPT-B|
 [ |-D|\ [**j**\ \|\ **J**]\ *dx*\ [/*dy*][\ **v**\ [*pen*]] ]
-[ |-F|\ [**+a**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+h**][\ **+j**\ [*justify*]][\ **+l**] ] 
-[ |-G|\ *color* ] [ |-J|\ ((**z**\ \|\ **Z**\ *parameters* ]
+[ |-F|\ [**+a**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+j**\ [*justify*]][\ **+h**\ \|\ **+l** \|\ **+l** \|\ **+r**\ [*first*] \|\ **+t**\ *text*\ \|\ **z**\ [*format*]] ] 
+[ |-G|\ *color* ] [ |-J|\ *parameters* ]
 [ |-K| ]
 [ |-L| ] [ |-M| ] [ |-N| ] [ |-O| ] [ |-P| ]
 [ |-Q|\ **l**\ \|\ **u** ]
@@ -133,7 +133,7 @@ Optional Arguments
 
 .. _-F:
 
-**-F**\ [**+a**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+h**][\ **+j**\ [*justify*]][\ **+l**] 
+|-F|\ [**+a**\ \|\ **A**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+j**\ [*justify*]][\ **+h**\ \|\ **+l** \|\ **+l** \|\ **+r**\ [*first*] \|\ **+t**\ *text*\ \|\ **z**\ [*format*]]
     By default, text will be placed horizontally, using the primary
     annotation font attributes (:ref:`FONT_ANNOT_PRIMARY <FONT_ANNOT_PRIMARY>`), and centered
     on the data point. Use this option to override these defaults by
@@ -142,7 +142,8 @@ Optional Arguments
     font (size,fontname,color); if no font info is given then the input
     file must have this information in one of its columns. Use **+a** to
     set the angle; if no angle is given then the input file must have
-    this as a column. Use **+j** to set the justification; if no
+    this as a column. Alternatively, use **+A** to force text-baselines
+    to convert into the -90/+90 range.  Use **+j** to set the justification; if no
     justification is given then the input file must have this as a
     column. Items read from the data file should be in the same order as
     specified with the **-F** option. Example:
@@ -155,7 +156,9 @@ Optional Arguments
     at the Upper Left corner of the map.  Normally, the text to be plotted
     comes from the data record.  Instead, use **+h** or **+l** to select the
     text as the most recent segment header or segment label, respectively in
-    a multisegment input file.
+    a multisegment input file, **+r** to use the record number (counting up from *first*),
+    **+t**\ *text* to set a fixed text string, or **z**\ to format incoming *z* values
+    to a string using the supplied *format* [use FORMAT_FLOAT_MAP].
 
 .. _-G:
 
