@@ -2,6 +2,9 @@ gmt (5.3.1+dfsg-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Update Homepage URL to not include 'projects/gmt' path.
+  * Update copyright file, changes:
+    - Update copyright years for copyright holders
+    - Add Dongdong Tian to copyright holders
 
  -- Bas Couwenberg <sebastic@debian.org>  Sat, 22 Oct 2016 10:16:26 +0200
 

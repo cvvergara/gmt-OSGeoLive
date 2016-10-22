@@ -32,8 +32,9 @@ Files-Excluded: src/triangle.c
  man_release/*
 
 Files: *
-Copyright: 1991-2015, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
-           1991-2015, T. Henstock
+Copyright: 1991-2016, P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+           1991-2016, T. Henstock
+                2016, Dongdong Tian
            1996-2012, G. Patau
 License: LGPL-3+
 
