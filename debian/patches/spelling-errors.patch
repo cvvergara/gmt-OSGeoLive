@@ -8,6 +8,7 @@ Description: Fix spelling errors.
  * exlusive  -> exclusive
 Author: Bas Couwenberg <sebastic@debian.org>
 Forwarded: http://gmt.soest.hawaii.edu/issues/985
+Applied-Upstream: http://gmt.soest.hawaii.edu/projects/gmt/repository/revisions/17237
 
 --- a/src/meca/pspolar.c
 +++ b/src/meca/pspolar.c
