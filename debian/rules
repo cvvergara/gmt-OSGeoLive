@@ -16,7 +16,6 @@ BUILD_DATE=$(shell dpkg-parsechangelog | sed -ne 's/^Date: //p' | LC_ALL=C date 
 MANPAGES:=$(wildcard debian/man/*.*.xml)
 
 BUILDDIR = $(CURDIR)/debian/build
-DESTDIR  = $(CURDIR)/debian/tmp
 
 CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
              -DCMAKE_C_FLAGS="-fstrict-aliasing $(CFLAGS)" \
@@ -39,17 +38,11 @@ CMAKE_OPTS = -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 override_dh_clean:
 	dh_clean debian/man/*.1
 
-override_dh_auto_clean:
-	rm -rf $(BUILDDIR) $(DESTDIR)
-	dh_auto_clean
-
 override_dh_auto_configure:
-	dh_auto_configure -B $(BUILDDIR) -- $(CMAKE_OPTS)
+	dh_auto_configure -- $(CMAKE_OPTS)
 
 override_dh_auto_build-arch:
-	mkdir $(BUILDDIR) || true 
-	cd $(BUILDDIR) && cmake $(CMAKE_OPTS) ../..
-	$(MAKE) -C $(BUILDDIR) CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 
+	dh_auto_build -a
 
 override_dh_auto_build-indep:
 	$(MAKE) -C $(BUILDDIR) docs_man docs_html
@@ -61,7 +54,6 @@ override_dh_auto_install:
 	  mv `basename $$x | sed 's/.xml$$//'` `dirname $$x` ; \
 	done
 
-	DESTDIR=$(DESTDIR) $(MAKE) -C $(BUILDDIR) install
 	dh_auto_install
 
 	# Uncompress examples stuff 
