@@ -1,11 +1,11 @@
-gmt (5.3.2+dfsg-1) UNRELEASED; urgency=medium
+gmt (5.3.2+dfsg-1~exp1) experimental; urgency=medium
 
   * New upstream release.
   * Update copyright years for copyright holders.
   * Drop spelling-errors.patch, applied upstream.
   * Update symbols for 5.3.2.
 
- -- Bas Couwenberg <sebastic@debian.org>  Sun, 26 Feb 2017 11:56:02 +0100
+ -- Bas Couwenberg <sebastic@debian.org>  Sun, 26 Feb 2017 12:11:15 +0100
 
 gmt (5.3.1+dfsg-2) unstable; urgency=medium
 
