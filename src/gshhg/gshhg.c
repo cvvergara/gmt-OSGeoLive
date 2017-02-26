@@ -1,13 +1,13 @@
-/*	$Id: gshhg.c 16697 2016-07-03 06:17:50Z pwessel $
+/*	$Id: gshhg.c 17543 2017-02-09 14:14:29Z jluis $
  *
- *	Copyright (c) 1996-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1996-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  * PROGRAM:	gshhg.c
  * AUTHOR:	Paul Wessel (pwessel@hawaii.edu)
  * CREATED:	JAN. 28, 1996
  * DATE:	JAN 1, 2015
- * PURPOSE:	To extract ASCII data from the binary GSHHG geography databas
+ * PURPOSE:	To extract ASCII data from the binary GSHHG geography database
  *		as described in the 1996 Wessel & Smith JGR Data Analysis Note.
  * VERSION:	1-JAN-2015.  For use with GSHHG version 2.3.4
  *

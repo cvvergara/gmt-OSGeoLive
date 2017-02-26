@@ -1,6 +1,6 @@
-/* $Id: gmt_sharedlibs.c 17004 2016-08-24 18:04:44Z jluis $
+/* $Id: gmt_sharedlibs.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 2012-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2012-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
 
@@ -44,7 +44,7 @@ void *dlsym (void *handle, const char *name) {
 }
 
 char *dlerror (void) {
-	/* Reports last error occured */
+	/* Reports last error occurred */
 	int len, error_code;
 	static char errstr[GMT_LEN128];
         

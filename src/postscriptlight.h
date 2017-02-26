@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight.h 16589 2016-06-21 01:06:47Z jluis $
+ *	$Id: postscriptlight.h 17460 2017-01-22 22:55:48Z pwessel $
  *
- *	Copyright (c) 2009-2016 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2017 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -198,11 +198,11 @@ enum PSL_enum_txt {PSL_TXT_INIT	= 1,
 /* Verbosity levels */
 
 enum PSL_enum_verbose {PSL_MSG_QUIET = 0,	/* No messages whatsoever */
-	PSL_MSG_FATAL,		/* Fatal errors */
+	PSL_MSG_NORMAL,		/* Default output, e.g., warnings and errors only */
 	PSL_MSG_TICTOC,		/* To print a tic-toc elapsed time message */
 	PSL_MSG_COMPAT,		/* Compatibility warnings */
-	PSL_MSG_NORMAL,		/* Warnings level -V */
-	PSL_MSG_VERBOSE,	/* Longer verbose, -Vl in some programs */
+	PSL_MSG_VERBOSE,	/* Warnings level -V */
+	PSL_MSG_LONG_VERBOSE,	/* Longer verbose, -Vl in some programs */
 	PSL_MSG_DEBUG};		/* Debug messages for developers mostly */
 
 /* Color spaces */
@@ -243,7 +243,7 @@ struct PSL_CTRL {
 		FILE *err;			/* Error stream (NULL means stderr)		*/
 		char *encoding;			/* The encoding name. e.g. ISO-8859-1		*/
 		char *session;			/* The session name (NULL)			*/
-		int runmode;			/* Nonzero if we are being called from a multi-module enviroment (0 for commandline)	*/
+		int runmode;			/* Nonzero if we are being called from a multi-module environment (0 for commandline)	*/
 		int unit;			/* 0 = cm, 1 = inch, 2 = meter			*/
 		int copies;			/* Number of copies for this plot		*/
 		double page_rgb[4];		/* RGB color for background paper [white]	*/
@@ -274,7 +274,7 @@ struct PSL_CTRL {
 	struct INTERNAL {	/* Variables used internally only */
 		char *SHAREDIR;			/* Pointer to path of directory with postscriptlight subdirectory */
 		char *USERDIR;			/* Pointer to path of directory with user definitions */
-		char *buffer;			/* Pointer to buffer where PS will be "writen" when memory == 1 */
+		char *buffer;			/* Pointer to buffer where PS will be "written" when memory == 1 */
 		char *user_image[PSL_N_PATTERNS];	/* Name of user patterns		*/
 		char origin[2];			/* 'r', 'a', 'f', 'c' depending on reference for new origin x and y coordinate */
 		double offset[2];		/* Origin offset [1/1]				*/
@@ -313,8 +313,8 @@ struct PSL_CTRL {
 		struct PSL_FONT {
 			double height;		/* Height of A for unit fontsize */
 			char *name;		/* Name of this font */
-			int encoded;		/* true if we never should reencode this font (e.g. symbols) */
-						/* This is also changed to true after we do reencode a font */
+			int encoded;		/* true if we never should re-encode this font (e.g. symbols) */
+						/* This is also changed to true after we do re-encode a font */
 		} *font;	/* Pointer to array of font structures 		*/
 		struct PSL_PATTERN {
 			int nx, ny;	/* Dimension of pattern image */
@@ -406,7 +406,7 @@ EXTERN_MSC int PSL_defcolor (struct PSL_CTRL *PSL, const char *param, double rgb
 EXTERN_MSC int PSL_deftextdim (struct PSL_CTRL *PSL, const char *dim, double fontsize, char *text);
 EXTERN_MSC int PSL_defunits (struct PSL_CTRL *PSL, const char *param, double value);
 
-EXTERN_MSC unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
+EXTERN_MSC unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, size_t *nbytes, unsigned char *input);
 EXTERN_MSC void psl_set_txt_array (struct PSL_CTRL *PSL, const char *param, char *array[], int n);
 EXTERN_MSC void psl_set_int_array (struct PSL_CTRL *PSL, const char *param, int *array, int n);
 

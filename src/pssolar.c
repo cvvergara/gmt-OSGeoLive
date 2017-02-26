@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssolar.c 16835 2016-07-19 03:18:51Z pwessel $
+ *	$Id: pssolar.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -81,7 +81,6 @@ struct PSSOLAR_CTRL {
 	} T;
 	struct PSSOL_W {		/* -W<pen> */
 		bool active;
-		unsigned int mode;	/* 0 = normal, 1 = -C applies to pen color only, 2 = -C applies to symbol fill & pen color */
 		struct GMT_PEN pen;
 	} W;
 };
@@ -146,6 +145,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   c means civil twilight.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   n means nautical twilight.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   a means astronomical twilight.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Add +d<date> in ISO format, e.g, +d2000-04-25, to compute terminators\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   for this date. If necessary, append time zone via +z<TZ>.\n");
 	GMT_Option (API, "U,V");
 	gmt_pen_syntax (API->GMT, 'W', "Specify outline pen attributes [Default is no outline].", 0);
 	GMT_Option (API, "X,c,o,p");
@@ -239,13 +240,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSOLAR_CTRL *Ctrl, struct GMT
 				break;
 			case 'W':		/* Pen */
 				Ctrl->W.active = true;
-				j = 0;
-				if (opt->arg[j] == '-') {Ctrl->W.mode = 1; j++;}
-				if (opt->arg[j] == '+') {Ctrl->W.mode = 2; j++;}
-				if (opt->arg[j] && gmt_getpen (GMT, &opt->arg[j], &Ctrl->W.pen)) {
-					gmt_pen_syntax (GMT, 'W', "sets pen attributes [Default pen is %s]:", 3);
-					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "\t   A leading + applies cpt color (-C) to both symbol fill and pen.\n");
-					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "\t   A leading - applies cpt color (-C) to the pen only.\n");
+				if (gmt_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
+					gmt_pen_syntax (GMT, 'W', " ", 0);
 					n_errors++;
 				}
 				break;
@@ -403,9 +399,9 @@ int GMT_pssolar (void *V_API, int mode, void *args) {
 	char    record[GMT_LEN256] = {""};
 
 	struct  PSSOLAR_CTRL *Ctrl = NULL;
-	struct  GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct  GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct  GMT_OPTION *options = NULL;
-	struct  PSL_CTRL *PSL = NULL;			/* General PSL interal parameters */
+	struct  PSL_CTRL *PSL = NULL;			/* General PSL internal parameters */
 	struct  GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 	struct  SUN_PARAMS *Sun = NULL;
 	struct	GMT_DATASEGMENT *S = NULL;
@@ -444,11 +440,15 @@ int GMT_pssolar (void *V_API, int mode, void *args) {
 				gmt_M_free (GMT, Sun);
 				Return (API->error);
 			}
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+				gmt_M_free (GMT, Sun);
+				Return (API->error);
+			}
 			out[0] = -Sun->HourAngle;		out[1] = Sun->SolarDec;		out[2] = Sun->SolarAzim;
 			out[3] = Sun->SolarElevation;		out[4] = Sun->Sunrise;		out[5] = Sun->Sunset;
 			out[6] = Sun->SolarNoon;		out[7] = Sun->Sunlight_duration;out[8] = Sun->SolarElevationCorrected;
 			out[9] = Sun->EQ_time;
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) { 
 				gmt_M_free (GMT, Sun);
 				Return (API->error);
@@ -460,6 +460,10 @@ int GMT_pssolar (void *V_API, int mode, void *args) {
 				Return (API->error);
 			}
 			if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_OFF) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+				gmt_M_free (GMT, Sun);
+				Return (API->error);
+			}
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
 				gmt_M_free (GMT, Sun);
 				Return (API->error);
 			}
@@ -502,6 +506,10 @@ int GMT_pssolar (void *V_API, int mode, void *args) {
 			gmt_M_free (GMT, Sun);
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_LINE) != GMT_NOERROR) {	/* Sets output geometry */
+			gmt_M_free (GMT, Sun);
+			Return (API->error);
+		}
 		for (n = n_items = 0; n < 4; n++) if (Ctrl->T.radius[n] > 0.0) n_items++;
 
 		for (n = 0; n < 4; n++) {						/* Loop over the number of requested terminators */
@@ -515,7 +523,7 @@ int GMT_pssolar (void *V_API, int mode, void *args) {
 			}
 			for (j = 0; j < n_pts; j++) {
 				out[GMT_X] = S->data[GMT_X][j];	out[GMT_Y] = S->data[GMT_Y][j];
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 			gmt_free_segment (GMT, &S);
 		}

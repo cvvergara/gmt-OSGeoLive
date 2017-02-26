@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_psl.h 16760 2016-07-09 21:51:49Z pwessel $
+ *	$Id: gmt_psl.h 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -40,7 +40,7 @@
  * parsed by the default machinery and stored in the corresponding
  * GMT->setting.ps_* parameters, e.g., PS_PAGE_COLOR is parsed and stored
  * as GMT->setting.ps_page_color.  All of these are used as arguments to
- * PSL_beginsession, PSL_set_defaults, and PSL_beginplot which sets teh
+ * PSL_beginsession, PSL_set_defaults, and PSL_beginplot which sets the
  * internal PSL variables.
  * A few of these parameters can also be modified via the GMT command
  * line options: -P -U -X -Y -c.  These options simply change the values as

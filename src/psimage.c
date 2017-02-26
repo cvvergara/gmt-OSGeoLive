@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psimage.c 17224 2016-10-19 16:14:30Z remko $
+ *	$Id: psimage.c 17460 2017-01-22 22:55:48Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -102,16 +102,16 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t<imagefile> is an EPS or image file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Option (API, "B");
-	gmt_refpoint_syntax (API->GMT, 'D', "Specify reference point for the image", GMT_ANCHOR_IMAGE, 3);
+	gmt_refpoint_syntax (API->GMT, "D", "Specify reference point for the image", GMT_ANCHOR_IMAGE, 3);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Set width (and height) of image with +w<width>/[/<height>].  If <height> = 0\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   then the original aspect ratio is maintained.  If <width> < 0\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   then we use absolute value as width and interpolate image in PostScript.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, set image dpi (dots per inch) with +r.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use +n to replicate image <n_columns> by <n_rows> times [Default is no replication].\n");
 	gmt_mappanel_syntax (API->GMT, 'F', "Specify a rectangular panel behind the image", 1);
-	GMT_Message (API, GMT_TIME_NONE, "\t-Gb and -Gf (1-bit images only) sets the background and foreground color,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   respectively. Set <color> = - for transparency [Default is black and white].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Gt (not for 1-bit images) indicate which color to be made transparent\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-Gb and -Gf (1-bit images only) set the background and foreground color,\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   respectively. Use <color> = - for transparency [Default is black and white].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-Gt (not for 1-bit images) indicate which color should be made transparent\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default no transparency].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Invert 1-bit images (does not affect 8 or 24-bit images).\n");
 	GMT_Option (API, "J-Z,K");
@@ -372,11 +372,12 @@ GMT_LOCAL int find_unique_color (struct GMT_CTRL *GMT, unsigned char *rgba, size
 
 #define bailout(code) {gmt_M_free_options (mode); return (code);}
 #define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
-EXTERN_MSC unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, int *nbytes, unsigned char *input);
+EXTERN_MSC unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, size_t *nbytes, unsigned char *input);
 
 int GMT_psimage (void *V_API, int mode, void *args) {
-	int i, j, n, PS_interpolate = 1, PS_transparent = 1, known = 0, error = 0;
+	int i, j, PS_interpolate = 1, PS_transparent = 1, known = 0, error = 0;
 	unsigned int row, col;
+	size_t n;
 	bool free_GMT = false, did_gray = false;
 
 	double x, y, wesn[4];
@@ -388,9 +389,9 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 	struct imageinfo header;
 
 	struct PSIMAGE_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 #ifdef HAVE_GDAL
 	int k, r = 0, g = 0, b = 0, has_trans = 0;
 	unsigned char colormap[4*256];

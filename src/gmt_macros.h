@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_macros.h 16722 2016-07-06 13:46:09Z remko $
+ *	$Id: gmt_macros.h 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * gmt_macros.h contains definitions of macros used throught GMT.
+ * gmt_macros.h contains definitions of macros used through GMT.
  *
  * Author:	Paul Wessel
  * Date:	01-OCT-2009
@@ -25,7 +25,7 @@
 
 /*!
  * \file gmt_macros.h
- * \brief Definitions of macros used throught GMT.
+ * \brief Definitions of macros used through GMT.
  */
 
 #ifndef _GMT_MACROS_H
@@ -89,13 +89,13 @@
 
 /*! Macros for swapping misc data types */
 
-#define bool_swap(x, y) {bool bool_tmp; bool_tmp = x, x = y, y = bool_tmp;}
-#define char_swap(x, y) {char char_tmp; char_tmp = x, x = y, y = char_tmp;}
-#define uint64_swap(x, y) {uint64_t uint64_t_tmp; uint64_t_tmp = x, x = y, y = uint64_t_tmp;}
-#define int_swap(x, y) {int int_tmp; int_tmp = x, x = y, y = int_tmp;}
-#define uint_swap(x, y) {unsigned int uint_tmp; uint_tmp = x, x = y, y = uint_tmp;}
-#define double_swap(x, y) {double double_tmp; double_tmp = x, x = y, y = double_tmp;}
-#define float_swap(x, y) {float float_tmp; float_tmp = x, x = y, y = float_tmp;}
+#define gmt_M_bool_swap(x, y) {bool bool_tmp; bool_tmp = x, x = y, y = bool_tmp;}
+#define gmt_M_char_swap(x, y) {char char_tmp; char_tmp = x, x = y, y = char_tmp;}
+#define gmt_M_uint64_swap(x, y) {uint64_t uint64_t_tmp; uint64_t_tmp = x, x = y, y = uint64_t_tmp;}
+#define gmt_M_int_swap(x, y) {int int_tmp; int_tmp = x, x = y, y = int_tmp;}
+#define gmt_M_uint_swap(x, y) {unsigned int uint_tmp; uint_tmp = x, x = y, y = uint_tmp;}
+#define gmt_M_double_swap(x, y) {double double_tmp; double_tmp = x, x = y, y = double_tmp;}
+#define gmt_M_float_swap(x, y) {float float_tmp; float_tmp = x, x = y, y = float_tmp;}
 
 /*! Macro to ensure proper value and sign of a change in longitude from lon1 to lon2 */
 #define gmt_M_set_delta_lon(lon1,lon2,delta) {delta = lon2 - lon1; if (fabs (delta) > 180.0) delta = copysign (360.0 - fabs (delta), -delta);}

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pscoast.c 17156 2016-10-01 02:40:53Z pwessel $
+ *	$Id: pscoast.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -528,6 +528,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCOAST_CTRL *Ctrl, struct GMT
 				if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_OFF) != GMT_NOERROR) {
 					return (API->error);
 				}
+				if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+					return (API->error);
+				}
 				GMT_Put_Record (API, GMT_WRITE_TEXT, record);	/* Write text record to output destination */
 				if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 					return (API->error);
@@ -688,9 +691,9 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 	struct GMT_BR b, r;
 	struct GMT_GSHHS_POL *p = NULL;
 	struct PSCOAST_CTRL *Ctrl = NULL;		/* Control structure specific to program */
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
@@ -796,6 +799,9 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+			Return (API->error);
+		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_LINE) != GMT_NOERROR) {	/* Sets output geometry */
 			Return (API->error);
 		}
 		if (Ctrl->W.active) {
@@ -1044,7 +1050,7 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 					for (k = 0; k < p[i].n; k++) {
 						out[GMT_X] = p[i].lon[k];
 						out[GMT_Y] = p[i].lat[k];
-						GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+						GMT_Put_Record (API, GMT_WRITE_DATA, out);
 					}
 				}
 				else if (Ctrl->W.use[p[i].level-1]) {
@@ -1073,7 +1079,7 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 		gmt_shore_cleanup (GMT, &c);
 	}
 
-	(void)gmt_DCW_operation (GMT, &Ctrl->E.info, NULL, Ctrl->M.active ? GMT_DCW_DUMP : GMT_DCW_PLOT);
+	if (Ctrl->E.info.mode > GMT_DCW_REGION) (void)gmt_DCW_operation (GMT, &Ctrl->E.info, NULL, Ctrl->M.active ? GMT_DCW_DUMP : GMT_DCW_PLOT);
 
 	if (clipping) PSL_beginclipping (PSL, xtmp, ytmp, 0, GMT->session.no_rgb, 2);	/* End clippath */
 
@@ -1107,7 +1113,7 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 					for (k = 0; k < p[i].n; k++) {
 						out[GMT_X] = p[i].lon[k];
 						out[GMT_Y] = p[i].lat[k];
-						GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+						GMT_Put_Record (API, GMT_WRITE_DATA, out);
 					}
 				}
 				else {
@@ -1168,7 +1174,7 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 					for (k = 0; k < p[i].n; k++) {
 						out[GMT_X] = p[i].lon[k];
 						out[GMT_Y] = p[i].lat[k];
-						GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+						GMT_Put_Record (API, GMT_WRITE_DATA, out);
 					}
 				}
 				else {

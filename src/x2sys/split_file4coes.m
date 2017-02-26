@@ -21,9 +21,9 @@ function split_file4coes(fname, n_int)
 %			of 'cruzados_%d.txt', e.g. cruzados_5.txt
 
 %  -------------------------------------------------------------------------------------
-% 	$Id: split_file4coes.m 13846 2014-12-28 21:46:54Z pwessel $
+% 	$Id: split_file4coes.m 17450 2017-01-16 21:34:35Z pwessel $
 % 
-%       Copyright (c) 1999-2015 by J. Luis
+%       Copyright (c) 1999-2017 by J. Luis
 %       See LICENSE.TXT file for copying and redistribution conditions.
 %
 %       This program is free software; you can redistribute it and/or modify
@@ -68,7 +68,7 @@ function split_file4coes(fname, n_int)
 		[mimi, ind(k)] = min(difa);		% Find indices of where to split the main file
 	end
 
-	% Now write the N_INT splitted files
+	% Now write the N_INT split files
 	for (k = 1:numel(lim)-1)
 		fout = sprintf('cruzados_%d.txt', k);
 		if (~isempty(PATO))				% Prepend path

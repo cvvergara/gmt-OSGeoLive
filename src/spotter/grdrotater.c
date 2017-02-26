@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdrotater.c 16846 2016-07-22 05:59:07Z pwessel $
+ *	$Id: grdrotater.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *   Copyright (c) 1999-2016 by P. Wessel
+ *   Copyright (c) 1999-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -525,7 +525,7 @@ int GMT_grdrotater (void *V_API, int mode, void *args) {
 			}
 			gmt_set_seg_polar (GMT, Sr);	/* Determine if it is a polar cap */
 		}
-		gmt_set_tbl_minmax (GMT, polr);	/* Update table domain */
+		gmt_set_tbl_minmax (GMT, GMT_IS_POLY, polr);	/* Update table domain */
 		if (!Ctrl->N.active && not_global) {
 			char dfile[GMT_BUFSIZ] = {""}, *file = NULL;
 			if (Ctrl->T.n_times > 1) {

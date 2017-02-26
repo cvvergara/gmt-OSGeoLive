@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: originator.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: originator.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *   Copyright (c) 2000-2016 by P. Wessel
+ *   Copyright (c) 2000-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -478,11 +478,14 @@ int GMT_originator (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	n_read = smt = 0;
 	do {	/* Keep returning records until we reach EOF */
 		n_read++;
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
 			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all headers */
@@ -629,13 +632,13 @@ int GMT_originator (void *V_API, int mode, void *args) {
 				out[0] = hot[0].np_time;
 				out[1] = hot[0].np_dist * hot[0].np_sign;
 				out[2] = z_smt;
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 			else if (Ctrl->L.mode == 2) {	/* Want omega, dist, z output */
 				out[0] = spotter_t2w (GMT, p, n_stages, hot[0].np_time);
 				out[1] = hot[0].np_dist * hot[0].np_sign;
 				out[2] = z_smt;
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 			else if (Ctrl->L.mode == 3) {	/* Want x, y, time, dist, z output */
 				out[GMT_X] = hot[0].np_lon;
@@ -643,7 +646,7 @@ int GMT_originator (void *V_API, int mode, void *args) {
 				out[2] = hot[0].np_time;
 				out[3] = hot[0].np_dist * hot[0].np_sign;
 				out[4] = z_smt;
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 			else {	/* Conventional originator output */
 				if (t_smt == 180.0)

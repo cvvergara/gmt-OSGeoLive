@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtmath.c 17146 2016-09-30 01:43:51Z pwessel $
+ *	$Id: gmtmath.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -132,7 +132,7 @@ struct GMTMATH_INFO {
 	bool irregular;	/* true if t_inc varies */
 	bool roots_found;	/* true if roots have been solved for */
 	bool local;		/* Per segment operation (true) or global operation (false) */
-	bool notime;		/* No time-array avaible for operators who depend on that */
+	bool notime;		/* No time-array available for operators who depend on that */
 	unsigned int n_roots;	/* Number of roots found */
 	unsigned int fit_mode;	/* Used for {LSQ|SVD}FIT */
 	unsigned int w_mode;	/* Used for weighted fit */
@@ -393,7 +393,7 @@ GMT_LOCAL int solve_LS_system (struct GMT_CTRL *GMT, struct GMTMATH_INFO *info, 
 		D = GMT_Duplicate_Data (GMT->parent, GMT_IS_DATASET, GMT_DUPLICATE_ALLOC, S->D);	/* Same table length as S->D, but with up to n_cols columns (lon, lat, dist, g1, g2, ...) */
 		S->D->dim[GMT_COL] = k;	/* Reset the original columns */
 		if (D->table[0]->n_segments > 1) gmt_set_segmentheader (GMT, GMT_OUT, true);	/* More than one segment triggers -mo */
-		load_column (D, 0, info->T, COL_T);	/* Place the time-column in first ouput column */
+		load_column (D, 0, info->T, COL_T);	/* Place the time-column in first output column */
 		for (seg = k = 0; seg < info->T->n_segments; seg++) {
 			for (row = 0; row < T->segment[seg]->n_rows; row++, k++) {
 				D->table[0]->segment[seg]->data[1][row] = T->segment[seg]->data[rhs][row];
@@ -1317,7 +1317,7 @@ GMT_LOCAL int table_COL (struct GMT_CTRL *GMT, struct GMTMATH_INFO *info, struct
 
 	if (gmt_assign_ptrs (GMT, last, S, &T, &T_prev) == UINT_MAX) return -1;	/* Set up pointers and prev; exit if running out of stack */
 
-	if (!S[last]->constant || S[last]->factor < 0.0 || (k = urint (S[last]->factor) >= info->n_col)) {
+	if (!S[last]->constant || S[last]->factor < 0.0 || ((k = urint (S[last]->factor)) >= info->n_col)) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error, argument to COL must be a constant column number (0 <= k < n_col)!\n");
 		return -1;
 	}
@@ -1830,8 +1830,8 @@ GMT_LOCAL int table_EXCH (struct GMT_CTRL *GMT, struct GMTMATH_INFO *info, struc
 	prev = last - 1;
 	D = S[last]->D;
 	S[last]->D = S[prev]->D;	S[prev]->D = D;
-	bool_swap (S[last]->constant, S[prev]->constant);
-	double_swap (S[last]->factor, S[prev]->factor);
+	gmt_M_bool_swap (S[last]->constant, S[prev]->constant);
+	gmt_M_double_swap (S[last]->factor, S[prev]->factor);
 	return 0;
 }
 
@@ -1908,7 +1908,7 @@ GMT_LOCAL int table_FLIPUD (struct GMT_CTRL *GMT, struct GMTMATH_INFO *info, str
 	gmt_M_unused(GMT);
 	/* Reverse the order of points in a column */
 	if (S[last]->constant) return 0;
-	for (s = 0; s < info->T->n_segments; s++) for (row = 0, k = info->T->segment[s]->n_rows-1; row < info->T->segment[s]->n_rows/2; row++, k--) double_swap (T->segment[s]->data[col][row], T->segment[s]->data[col][k]);
+	for (s = 0; s < info->T->n_segments; s++) for (row = 0, k = info->T->segment[s]->n_rows-1; row < info->T->segment[s]->n_rows/2; row++, k--) gmt_M_double_swap (T->segment[s]->data[col][row], T->segment[s]->data[col][k]);
 	return 0;
 }
 
@@ -5064,7 +5064,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 	for (seg = n_records = 0; seg < info.T->n_segments; seg++) {	/* Create normalized times and possibly reverse time (-I) */
 		off = 0.5 * (info.T->segment[seg]->data[COL_T][info.T->segment[seg]->n_rows-1] + info.T->segment[seg]->data[COL_T][0]);
 		scale = 2.0 / (info.T->segment[seg]->data[COL_T][info.T->segment[seg]->n_rows-1] - info.T->segment[seg]->data[COL_T][0]);
-		if (Ctrl->I.active) for (row = 0; row < info.T->segment[seg]->n_rows/2; row++) double_swap (info.T->segment[seg]->data[COL_T][row], info.T->segment[seg]->data[COL_T][info.T->segment[seg]->n_rows-1-row]);	/* Reverse time series */
+		if (Ctrl->I.active) for (row = 0; row < info.T->segment[seg]->n_rows/2; row++) gmt_M_double_swap (info.T->segment[seg]->data[COL_T][row], info.T->segment[seg]->data[COL_T][info.T->segment[seg]->n_rows-1-row]);	/* Reverse time series */
 		for (row = 0; row < info.T->segment[seg]->n_rows; row++) {
 			info.T->segment[seg]->data[COL_TN][row] = (info.T->segment[seg]->data[COL_T][row] - off) * scale;
 			info.T->segment[seg]->data[COL_TJ][row] = (unsigned int)((Ctrl->I.active) ? info.T->segment[seg]->n_rows - row - 1 : row);
@@ -5074,14 +5074,14 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 	info.t_min = Ctrl->T.min;	info.t_max = Ctrl->T.max;	info.t_inc = Ctrl->T.inc;
 	info.n_col = n_columns;		info.local = Ctrl->L.active;
 	info.notime = Ctrl->T.notime;
-	gmt_set_tbl_minmax (GMT, info.T);
+	gmt_set_tbl_minmax (GMT, GMT_IS_POINT, info.T);
 
 	if (Ctrl->A.active) {	/* Set up A * x = b, with the table holding the extended matrix [ A | [w | ] b ], with w the optional weights */
 		if (!stack[0]->D)
 			stack[0]->D = gmt_alloc_dataset (GMT, Template, 0, n_columns, GMT_ALLOC_NORMAL);
 		load_column (stack[0]->D, n_columns-1, rhs, 1);		/* Always put the r.h.s of the Ax = b equation in the last column of the item on the stack */
 		if (!Ctrl->A.null) load_column (stack[0]->D, Ctrl->N.tcol, rhs, 0);	/* Optionally, put the t vector in the time column of the item on the stack */
-		gmt_set_tbl_minmax (GMT, stack[0]->D->table[0]);
+		gmt_set_tbl_minmax (GMT, stack[0]->D->geometry, stack[0]->D->table[0]);
 		nstack = 1;
 		info.fit_mode = Ctrl->A.e_mode;
 		info.w_mode = Ctrl->A.w_mode;
@@ -5186,7 +5186,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 					if (!stack[nstack]->D)
 						stack[nstack]->D = gmt_alloc_dataset (GMT, Template, 0, n_columns, GMT_ALLOC_NORMAL);
 					for (j = 0; j < n_columns; j++) if (no_C || !Ctrl->C.cols[j]) load_column (stack[nstack]->D, j, recall[k]->stored.D->table[0], j);
-					gmt_set_tbl_minmax (GMT, stack[nstack]->D->table[0]);
+					gmt_set_tbl_minmax (GMT, stack[nstack]->D->geometry, stack[nstack]->D->table[0]);
 				}
 				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "@%s ", recall[k]->label);
 				nstack++;
@@ -5219,7 +5219,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 					stack[nstack]->D = gmt_alloc_dataset (GMT, Template, 0, n_columns, GMT_ALLOC_NORMAL);
 				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "T ");
 				for (j = 0; j < n_columns; j++) if (no_C || !Ctrl->C.cols[j]) load_column (stack[nstack]->D, j, info.T, COL_T);
-				gmt_set_tbl_minmax (GMT, stack[nstack]->D->table[0]);
+				gmt_set_tbl_minmax (GMT, stack[nstack]->D->geometry, stack[nstack]->D->table[0]);
 			}
 			else if (op == GMTMATH_ARG_IS_t_MATRIX) {	/* Need to set up matrix of normalized t-values */
 				if (Ctrl->T.notime) {
@@ -5230,14 +5230,14 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 					stack[nstack]->D = gmt_alloc_dataset (GMT, Template, 0, n_columns, GMT_ALLOC_NORMAL);
 				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "TNORM ");
 				for (j = 0; j < n_columns; j++) if (no_C || !Ctrl->C.cols[j]) load_column (stack[nstack]->D, j, info.T, COL_TN);
-				gmt_set_tbl_minmax (GMT, stack[nstack]->D->table[0]);
+				gmt_set_tbl_minmax (GMT, stack[nstack]->D->geometry, stack[nstack]->D->table[0]);
 			}
 			else if (op == GMTMATH_ARG_IS_J_MATRIX) {	/* Need to set up matrix of row numbers */
 				if (!stack[nstack]->D)
 					stack[nstack]->D = gmt_alloc_dataset (GMT, Template, 0, n_columns, GMT_ALLOC_NORMAL);
 				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "TROW ");
 				for (j = 0; j < n_columns; j++) if (no_C || !Ctrl->C.cols[j]) load_column (stack[nstack]->D, j, info.T, COL_TJ);
-				gmt_set_tbl_minmax (GMT, stack[nstack]->D->table[0]);
+				gmt_set_tbl_minmax (GMT, stack[nstack]->D->geometry, stack[nstack]->D->table[0]);
 			}
 			else if (op == GMTMATH_ARG_IS_FILE) {		/* Filename given */
 				struct GMT_DATASET *F = NULL;
@@ -5258,7 +5258,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 					T_in = F->table[0];	/* Only one table since only a single file */
 				}
 				for (j = 0; j < n_columns; j++) if (no_C || !Ctrl->C.cols[j]) load_column (stack[nstack]->D, j, T_in, j);
-				gmt_set_tbl_minmax (GMT, stack[nstack]->D->table[0]);
+				gmt_set_tbl_minmax (GMT, stack[nstack]->D->geometry, stack[nstack]->D->table[0]);
 				if (!same_size (stack[nstack]->D, Template)) {
 					GMT_Report (API, GMT_MSG_NORMAL, "tables not of same size!\n");
 					Return (GMT_RUNTIME_ERROR);
@@ -5345,7 +5345,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 			else if (!Ctrl->C.cols[j])
 				load_const_column (stack[0]->D, j, stack[0]->factor);
 		}
-		gmt_set_tbl_minmax (GMT, stack[0]->D->table[0]);
+		gmt_set_tbl_minmax (GMT, stack[0]->D->geometry, stack[0]->D->table[0]);
 	}
 
 	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "\n");
@@ -5376,7 +5376,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 		}
 		if (place_t_col && Ctrl->N.tcol < R->n_columns) {
 			load_column (R, Ctrl->N.tcol, info.T, COL_T);	/* Put T in the time column of the item on the stack if possible */
-			gmt_set_tbl_minmax (GMT, R->table[0]);
+			gmt_set_tbl_minmax (GMT, R->geometry, R->table[0]);
 		}
 		if ((error = gmt_set_cols (GMT, GMT_OUT, R->n_columns)) != 0) Return (error);	/* Since -bo might have been used */
 		if (Ctrl->S.active) {	/* Only get one record per segment */

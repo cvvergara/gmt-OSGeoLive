@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_resources.h 17018 2016-08-28 23:21:12Z pwessel $
+ *	$Id: gmt_resources.h 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 2012-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2012-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 /*
  * gmt_resources.h contains the definitions for the six GMT resources
  * GMT_DATASET, GMT_GRID, GMT_IMAGE, GMT_PALETTE, GMT_POSTSCRIPT, GMT_TEXTSET
- * as well as the two auxilliary resources GMT_MATRIX and GMT_VECTOR,
+ * as well as the two auxiliary resources GMT_MATRIX and GMT_VECTOR,
  * as well as all named enums.
  *
  * Author:	Paul Wessel
@@ -97,7 +97,7 @@ enum GMT_enum_family {
 	GMT_IS_DATASET = 0,	/* Entity is a data table */
 	GMT_IS_GRID,		/* Entity is a grid */
 	GMT_IS_IMAGE,		/* Entity is a 1- or 3-layer unsigned char image */
-	GMT_IS_PALETTE,		/* Entity is a color pallete table */
+	GMT_IS_PALETTE,		/* Entity is a color palette table */
 	GMT_IS_POSTSCRIPT,	/* Entity is a PostScript content struct */
 	GMT_IS_TEXTSET,		/* Entity is a text table */
 	GMT_IS_MATRIX,		/* Entity is user matrix */
@@ -161,14 +161,16 @@ enum GMT_enum_ioset {
 	GMT_IO_UNREG = 16384};		/* Tell GMT_End_IO to unregister all accessed resources. */
 
 enum GMT_enum_read {
-	GMT_READ_DOUBLE = 0,		/* Read ASCII data record and return double array */
+	GMT_READ_DATA = 0,		/* Read ASCII data record and return double array */
+	GMT_READ_DOUBLE = 0,		/* Read ASCII data record and return double array [obsolete, replaced by GMT_READ_DATA for clarity] */
 	GMT_READ_NORMAL = 0,		/* Normal read mode [Default] */
 	GMT_READ_TEXT = 1,		/* Read ASCII data record and return text string */
 	GMT_READ_MIXED = 2,		/* Read ASCII data record and return double array but tolerate conversion errors */
 	GMT_READ_FILEBREAK = 4};	/* Add to mode to indicate we want to know when each file end is reached [continuous] */
 
 enum GMT_enum_write {
-	GMT_WRITE_DOUBLE = 0,		/* Write double array to output */
+	GMT_WRITE_DATA = 0,		/* Write double array to output */
+	GMT_WRITE_DOUBLE = 0,		/* Write double array to output [obsolete, replaced by GMT_WRITE_DATA for clarity] */
 	GMT_WRITE_TEXT = 1,		/* Write ASCII current record to output */
 	GMT_WRITE_SEGMENT_HEADER = 2,	/* Write segment header record to output */
 	GMT_WRITE_TABLE_HEADER = 3,	/* Write current record as table header to output */
@@ -194,12 +196,13 @@ enum GMT_enum_alloc {
 	GMT_ALLOC_INTERNALLY = 1,	/* Allocated by GMT: We may reallocate as needed and free when no longer needed */
 	GMT_ALLOC_NORMAL = 0,		/* Normal allocation of new dataset based on shape of input dataset */
 	GMT_ALLOC_VERTICAL = 4,		/* Allocate a single table for data set to hold all input tables by vertical concatenation */
-	GMT_ALLOC_HORIZONTAL = 8};	/* Alocate a single table for data set to hold all input tables by horizontal (paste) concatenations */
+	GMT_ALLOC_HORIZONTAL = 8};	/* Allocate a single table for data set to hold all input tables by horizontal (paste) concatenations */
 
 enum GMT_enum_duplicate {
 	GMT_DUPLICATE_NONE = 0,		/* Duplicate data set structure but no allocate&copy of data records|grid|image */
 	GMT_DUPLICATE_ALLOC,		/* Duplicate data set structure and allocate space for data records|grid|image, but no copy */
-	GMT_DUPLICATE_DATA};		/* Duplicate data set structure, allocate space for data records|grid|image, and copy */
+	GMT_DUPLICATE_DATA,		/* Duplicate data set structure, allocate space for data records|grid|image, and copy */
+	GMT_DUPLICATE_RESET = 4};	/* During duplicate, reset copy to normal system grid pad if original is different */
 
 /* Various directions and modes to call the FFT */
 enum GMT_enum_FFT {
@@ -221,7 +224,7 @@ enum GMT_enum_verbose {GMT_MSG_QUIET = 0,  /* No messages whatsoever */
 	GMT_MSG_TICTOC,                        /* To print a tic-toc elapsed time message */
 	GMT_MSG_COMPAT,                        /* Compatibility warnings */
 	GMT_MSG_VERBOSE,                       /* Verbose level */
-	GMT_MSG_LONG_VERBOSE,                  /* Longer verbose */
+	GMT_MSG_LONG_VERBOSE,                  /* Longer verbose, -Vl in some programs */
 	GMT_MSG_DEBUG};                        /* Debug messages for developers mostly */
 
 /*============================================================ */
@@ -250,6 +253,7 @@ enum GMT_enum_dimindex {
 };
 
 enum GMT_enum_gridio {
+	GMT_GRID_IS_CARTESIAN	   = 0U,    /* Grid is not geographic but Cartesian */
 	GMT_GRID_IS_REAL	   = 0U,    /* Read|write a normal real-valued grid */
 	GMT_GRID_ALL		   = 0U,    /* Read|write both grid header and the entire grid (no subset) */
 	GMT_GRID_HEADER_ONLY	   = 1U,    /* Just read|write the grid header */
@@ -260,7 +264,8 @@ enum GMT_enum_gridio {
 	GMT_GRID_NO_HEADER	   = 16U,   /* Write a native grid without the leading grid header */
 	GMT_GRID_ROW_BY_ROW	   = 32U,   /* Read|write the grid array one row at the time sequentially */
 	GMT_GRID_ROW_BY_ROW_MANUAL = 64U,   /* Read|write the grid array one row at the time in any order */
-	GMT_GRID_XY		   = 128U}; /* Allocate and initialize x,y vectors */
+	GMT_GRID_XY		   = 128U,  /* Allocate and initialize x,y vectors */
+	GMT_GRID_IS_GEO		   = 256U}; /* Grid is a geographic grid, not Cartesian */
 
 /* These lengths (except GMT_GRID_VARNAME_LEN80) must NOT be changed as they are part of grd definition */
 enum GMT_enum_grdlen {
@@ -352,8 +357,8 @@ struct GMT_GRID_HEADER {
 	size_t z_chunksize[2];           /* chunk size (lat,lon) */
 	unsigned int z_shuffle;          /* if shuffle filter is turned on */
 	unsigned int z_deflate_level;    /* if deflate filter is in use */
-	unsigned int z_scale_autoadust;  /* if z_scale_factor should be auto-detected */
-	unsigned int z_offset_autoadust; /* if z_add_offset should be auto-detected */
+	unsigned int z_scale_autoadjust; /* if z_scale_factor should be auto-detected */
+	unsigned int z_offset_autoadjust;/* if z_add_offset should be auto-detected */
 					 /* xy_*[] is separate settings for GMT_IN and GMT_OUT */
 	unsigned int xy_adjust[2];	 /* 1 if +u<unit> was parsed and scale set, 3 if xy has been adjusted, 0 otherwise */
 	unsigned int xy_mode[2];	 /* 1 if +U<unit> was parsed, 0 otherwise */
@@ -630,7 +635,7 @@ struct GMT_PALETTE {		/* Holds all pen, color, and fill-related parameters */
 	/* Variables we document for the API: */
 	unsigned int n_headers;		/* Number of CPT header records (0 if no header) */
 	unsigned int n_colors;		/* Number of colors in CPT lookup table */
-	unsigned int mode;		/* Flags controling use of BFN colors */
+	unsigned int mode;		/* Flags controlling use of BFN colors */
 	struct GMT_LUT *data;		/* CPT lookup table read by gmtlib_read_cpt */
 	struct GMT_BFN bfn[3];		/* Structures with back/fore/nan colors */
 	char **header;			/* Array with all CPT header records, if any) */		/* Content not counted by sizeof (struct) */

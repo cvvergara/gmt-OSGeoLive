@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdflexure.c 16722 2016-07-06 13:46:09Z remko $
+ *	$Id: grdflexure.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -245,9 +245,9 @@ unsigned int gmt_modeltime_array (struct GMT_CTRL *GMT, char *arg, bool *log, st
 			e_time = gmt_get_modeltime (B, &e_unit, &e_scale);
 			i_time = gmt_get_modeltime (C, &i_unit, &i_scale);
 			if (e_time > s_time) {	/* Enforce that old time is larger */
-				double_swap (s_time,  e_time);
-				double_swap (s_scale, e_scale);
-				char_swap   (s_unit,  e_unit);
+				gmt_M_double_swap (s_time,  e_time);
+				gmt_M_double_swap (s_scale, e_scale);
+				gmt_M_char_swap (s_unit,  e_unit);
 			}
 			if (*log) {	/* Equidistant spacing in log10(time).  Here we got number of output points directly, compute log10 (increment) */
 				n_eval_times = urint (i_time);
@@ -891,7 +891,7 @@ int GMT_grdflexure (void *V_API, int mode, void *args) {
 	else	/* With a single load -> flexure operation we can just recycle the input grid for the output */
 		Out = Load[0]->Grid;
 
-	/* Here, Load[] contains all the input load grids and their laod times, ready to go as H(kx,ky) */
+	/* Here, Load[] contains all the input load grids and their load times, ready to go as H(kx,ky) */
 
 	if (Ctrl->L.active) {	/* Must create a textset to hold names of all output grids */
 		uint64_t dim[3] = {1, 1, Ctrl->T.n_eval_times};

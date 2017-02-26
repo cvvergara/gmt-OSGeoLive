@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- *	$Id: cm4_functions.c 17138 2016-09-25 23:03:40Z jluis $
+ *	$Id: cm4_functions.c 17389 2017-01-09 21:31:14Z jluis $
  *
  *
  *  File:	cm4_functions.c
@@ -207,7 +207,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	}
 	
 	c_unused = fgets(line, GMT_BUFSIZ, fp);
-	(void)(c_unused++); /* silence -Wunused-but-set-variable and PVS warning of double assignement */
+	(void)(c_unused++); /* silence -Wunused-but-set-variable and PVS warning of double assignment */
 	sscanf (line, "%d", &lum1);
 	c_unused = fgets(line, GMT_BUFSIZ, fp);
 	(void)c_unused; /* silence -Wunused-but-set-variable */
@@ -327,9 +327,9 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 			}
 			jaft = 0;
 			n = 0;
-			n_Dst_rows = 18262;	/* Current (13-05-2009) number of lines in Dst_all.wdc file */
-			dstx = calloc(((size_t)n_Dst_rows * 24U), sizeof(double));
-			/* One improvment would be to compute year_min/year_max and retain only the needed data in dstx */
+			n_Dst_rows = 21884 * 24;		/* Current (13-05-2009) number of lines in Dst_all.wdc file */
+			dstx = calloc(((size_t)n_Dst_rows), sizeof(double));
+			/* One improvement would be to compute year_min/year_max and retain only the needed data in dstx */
 
 			while (fgets (line, GMT_BUFSIZ, fp)) {
 				sscanf (&line[3], "%2d %2d", &jyr, &jmon);
@@ -343,11 +343,11 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 					jaft = 1;
 					mjdl = jmjd;
 				}
-				if (n >= n_Dst_rows) {
-					n_Dst_rows += 1000;
+				k = (jmjd - mjdl) * 24;
+				if (k >= n_Dst_rows) {
+					n_Dst_rows += (100 * 24);
 					dstx = realloc(dstx, (size_t)(n_Dst_rows * 24) * sizeof(double));
 				}
-				k = (jmjd - mjdl) * 24;
 				for (j = 0; j < 24; ++j)
 					dstx[k + j] = (double)jdst[j];
 				n++;
@@ -434,7 +434,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	pleg = calloc(4422U, sizeof(double));
 	rcur = calloc(9104U, sizeof(double));
 
-	/* LOOP over number of input points (many computations below are useless repeated - room for improvment */
+	/* LOOP over number of input points (many computations below are useless repeated - room for improvement */
 	for (n = 0; n < Ctrl->CM4_DATA.n_pts; ++n) {
 		memset(bmdl, 0, 21 * sizeof(double));
 		if (Ctrl->CM4_L.curr)

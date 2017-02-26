@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_list.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: x2sys_list.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *      Copyright (c) 1999-2016 by P. Wessel
+ *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -271,7 +271,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, struct 
 		}
 		if (Ctrl->F.flags[i] == 'n') mixed = true;		/* Both numbers and text - cannot use binary output */
 	}
-	/* GMT->parent->mode means we are calling from mex or Python and dont want to get textsets back */
+	/* GMT->parent->mode means we are calling from mex or Python and don't want to get textsets back */
 	n_errors += gmt_M_check_condition (GMT, (mixed || GMT->parent->mode) && GMT->common.b.active[GMT_OUT], "Syntax error: Cannot use -Fn with binary output\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
@@ -518,6 +518,9 @@ int GMT_x2sys_list (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, o_mode, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 	gmt_set_tableheader (GMT, GMT_OUT, true);
 	gmt_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
 	if (!GMT->common.b.active[GMT_OUT]) {	/* Write 3 header records */
@@ -595,7 +598,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args) {
 						strcat (record, "vel");
 					break;
 				case 'w':	/* Composite weight of crossover */
-					fprintf (GMT->session.std[GMT_OUT], "weight");
+					strcat (record, "weight");
 					break;
 				case 'x':	/* x coordinate of crossover */
 					(s->geographic) ? strcat (record, "lon") : strcat (record, "x");
@@ -741,7 +744,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args) {
 			if (mixed)
 				GMT_Put_Record (API, GMT_WRITE_TEXT, record);
 			else
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 		}
 	}
 	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */

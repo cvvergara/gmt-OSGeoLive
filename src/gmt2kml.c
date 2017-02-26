@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt2kml.c 16609 2016-06-22 14:15:19Z jluis $
+ *	$Id: gmt2kml.c 17503 2017-01-30 23:14:43Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -202,11 +202,11 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Append color palette name to color symbols by third column z-value.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D File with HTML snippets to use for data description [none].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-E Extend feature down to the ground [no extrusion].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-F Feature type; choose from (e)vent, (s)symbol, (t)imespan, (l)ine, or (p)olygon [s].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-F Feature type; choose from (e)vent, (s)ymbol, (t)imespan, (l)ine, or (p)olygon [s].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   All features expect lon, lat in the first two columns.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Value or altitude is given in the third column (see -A and -C).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Event requires a timestamp in the next column.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Timespan requires begin and end timestamps in the next two columns\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Timespan requires begin and end ISO timestamps in the next two columns\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   (use NaN for unlimited begin and/or end times).\n");
 	gmt_rgb_syntax (API->GMT, 'G', "Set color for symbol/polygon fill (-Gf<color>) or label (-Gn<color>).");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default polygon fill is lightorange with 75%% transparency.\n");
@@ -414,14 +414,14 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMT2KML_CTRL *Ctrl, struct GMT
 				else if (opt->arg[0])
 					n_errors += gmt_parse_R_option (GMT, opt->arg);
 				break;
-			case 'S':	/* Scale for symbol or text */
+			case 'S':	/* Scale for symbol (c) or text (n) */
 				Ctrl->S.active = true;
-				if (opt->arg[0] == 'f')
+				if (opt->arg[0] == 'c')
 					Ctrl->S.scale[F_ID] = atof (&opt->arg[1]);
 				else if (opt->arg[0] == 'n')
 					Ctrl->S.scale[N_ID] = atof (&opt->arg[1]);
 				else {
-					GMT_Message (API, GMT_TIME_NONE, "-S requires f or n, then size\n");
+					GMT_Message (API, GMT_TIME_NONE, "-S requires c or n, then nondimensional scale\n");
 					n_errors++;
 				}
 				break;
@@ -692,7 +692,7 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 	struct GMT_DATASET *Dd = NULL;
 	struct GMT_TEXTSET *Dt = NULL;
 	struct GMT2KML_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
@@ -739,12 +739,14 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_OFF) != GMT_NOERROR) {
 		Return (API->error);	/* Enables data output and sets access mode */
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, Ctrl->F.geometry) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	/* Now we are ready to take on some input values */
 
 	out[GMT_Z] = Ctrl->A.altitude;
 	strcpy (GMT->current.setting.io_col_separator, ",");		/* Specify comma-separated output */
-	GMT->current.io.geo.range = GMT_IS_M180_TO_P180_RANGE;		/* Want -180/+180 longitude output format */
 	strcpy (GMT->current.setting.format_float_out, "%.12g");	/* Make sure we use enough decimals */
 	n_coord = (Ctrl->F.mode < LINE) ? Ctrl->F.mode + 2 : 2;		/* This is a cryptic way to determine if there are 2,3 or 4 columns... */
 	get_z = (Ctrl->C.active || Ctrl->A.get_alt);
@@ -821,6 +823,8 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 	if (use_folder) {
 		kml_print (API, N++, "<%s>\n", Document[KML_FOLDER]);
 		kml_print (API, N, "<name>%s</name>\n", Ctrl->T.folder);
+		if (Ctrl->Z.invisible) kml_print (API, N, "<visibility>0</visibility>\n");
+		if (Ctrl->Z.open) kml_print (API, N, "<open>1</open>\n");
 	}
 
 	if (Ctrl->D.active) {	/* Add in a description HTML snipped */
@@ -864,7 +868,7 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 		}
 		n_tables = Dt->n_tables;
 	}
-	if (GMT->common.R.active && first) {	/* Issue Region tag as given on commmand line */
+	if (GMT->common.R.active && first) {	/* Issue Region tag as given on command line */
 		place_region_tag (API, GMT->common.R.wesn, Ctrl->Z.min, Ctrl->Z.max, N);
 		first = false;
 	}
@@ -1118,7 +1122,7 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 					if (row > 0 && no_dateline && crossed_dateline (out[GMT_X], last_x)) {
 						/* GE cannot handle polygons crossing the dateline; warn for now */
 						GMT_Report (API, GMT_MSG_NORMAL,
-						            "Warning: At least on polygon is straddling the Dateline. Google Earth will wrap these the wrong way\n");
+						            "Warning: At least one polygon is straddling the Dateline. Google Earth will wrap these the wrong way\n");
 						GMT_Report (API, GMT_MSG_NORMAL,
 						            "Split such polygons into East and West parts and plot them as separate polygons.\n");
 						GMT_Report (API, GMT_MSG_NORMAL, "Use gmtconvert to help in this conversion.\n");

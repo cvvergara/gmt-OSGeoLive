@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalread.h 17110 2016-09-18 22:59:42Z jluis $
+ *	$Id: gmt_gdalread.h 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #include <cpl_string.h>
 #include <cpl_conv.h>
 
-/*! Structure to control which options are transmited to gmt_gdalwrite */
+/*! Structure to control which options are transmitted to gmt_gdalwrite */
 struct GMT_GDALWRITE_CTRL {
 	char   *driver;            /* The GDAL diver name */
 	char   *type;              /* Data type */
@@ -61,7 +61,7 @@ struct GMT_GDALWRITE_CTRL {
 	} P;
 };
 
-/*! Structure to control which options are transmited to gmt_gdalread */
+/*! Structure to control which options are transmitted to gmt_gdalread */
 struct GMT_GDALREAD_IN_CTRL {
 	struct GD_B {	/* Band selection */
 		int active;
@@ -136,7 +136,7 @@ struct GDAL_BAND_FNAMES {
 	double  ScaleOffset[2];
 };
 
-/*! Structure with the output data transmited by gmt_gdalread */
+/*! Structure with the output data transmitted by gmt_gdalread */
 struct GMT_GDALREAD_OUT_CTRL {
 	/* active is true if the option has been activated */
 	struct UInt8 {			/* Declare byte pointer */

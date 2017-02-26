@@ -1,6 +1,6 @@
 #!/bin/bash
 #               GMT ANIMATION 02
-#               $Id: anim_02.sh 16750 2016-07-09 05:44:02Z pwessel $
+#               $Id: anim_02.sh 17326 2016-11-08 20:28:56Z pwessel $
 #
 # Purpose:      Make web page with simple animated GIF of a DEM grid
 # GMT modules   gmtmath, grdgradient, makecpt, grdimage psxy, psconvert
@@ -57,7 +57,7 @@ cat << END > ${name}.html
 We make illuminated images of topography from a section of Colorado and
 vary the azimuth of the illumination (see arrow).  As the light-source sweeps around
 the area over 360 degrees we notice that different features in the data
-become hightlighted.  This is because the illumination is based on data
+become highlighted.  This is because the illumination is based on data
 gradients and such derivatives will high-light short-wavelength signal.
 Again, our animation uses GraphicsMagick's convert tool to make an animated GIF file
 with a 0.1 second pause between the 36 frames.

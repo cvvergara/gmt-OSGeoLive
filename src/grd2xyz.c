@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2xyz.c 16725 2016-07-06 19:36:45Z pwessel $
+ *	$Id: grd2xyz.c 17588 2017-02-23 23:35:14Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -273,6 +273,9 @@ int GMT_grd2xyz (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT != GMT_NOERROR)) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	out[3] = Ctrl->W.weight;
 		
@@ -306,7 +309,7 @@ int GMT_grd2xyz (void *V_API, int mode, void *args) {
 			GMT->common.b.active[GMT_OUT] = io.binary;	/* May have to set binary as well */
 			GMT->current.setting.io_lonlat_toggle[GMT_OUT] = false;	/* Since no x,y involved here */
 			if (GMT->current.setting.io_nan_mode && GMT->current.io.io_nan_col[0] == GMT_Z) 
-				{rst = true; GMT->current.io.io_nan_col[0] = GMT_X;}	/* Since we dont do xy here, only z */
+				{rst = true; GMT->current.io.io_nan_col[0] = GMT_X;}	/* Since we don't do xy here, only z */
 			for (ij = 0; ij < io.n_expected; ij++) {
 				ij_gmt = io.get_gmt_ij (&io, G, ij);	/* Get the corresponding grid node */
 				d_value = G->data[ij_gmt];
@@ -315,8 +318,8 @@ int GMT_grd2xyz (void *V_API, int mode, void *args) {
 					d_value = GMT->common.d.nan_proxy[GMT_OUT];
 				else if (gmt_z_input_is_nan_proxy (GMT, GMT_Z, d_value))	/* The inverse: Grid node is nan-proxy and -di was set, so change to NaN */
 					d_value = GMT->session.d_NaN;
-				write_error = GMT_Put_Record (API, GMT_WRITE_DOUBLE, &d_value);
-				if (write_error != 0) n_suppressed++;	/* Bad value caught by -s[r] */
+				write_error = GMT_Put_Record (API, GMT_WRITE_DATA, &d_value);
+				if (write_error == GMT_NOTSET) n_suppressed++;	/* Bad value caught by -s[r] */
 			}
 			GMT->current.io.output = save;			/* Reset pointer */
 			GMT->common.b.active[GMT_OUT] = previous;	/* Reset binary */
@@ -439,8 +442,8 @@ int GMT_grd2xyz (void *V_API, int mode, void *args) {
 					else if (gmt_z_input_is_nan_proxy (GMT, GMT_Z, out[GMT_Z]))
 						out[GMT_Z] = GMT->session.d_NaN;
 				}
-				write_error = GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);		/* Write this to output */
-				if (write_error != 0) n_suppressed++;	/* Bad value caught by -s[r] */
+				write_error = GMT_Put_Record (API, GMT_WRITE_DATA, out);		/* Write this to output */
+				if (write_error == GMT_NOTSET) n_suppressed++;	/* Bad value caught by -s[r] */
 			}
 			gmt_M_free (GMT, x);
 			gmt_M_free (GMT, y);

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtread.c 16802 2016-07-14 21:33:47Z pwessel $
+ *	$Id: gmtread.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -36,11 +36,11 @@
 /* Control structure for read */
 
 struct GMTREAD_CTRL {
-	struct IO {	/* Need two args with filenames */
+	struct GMTREAD_IO {	/* Need two args with filenames */
 		bool active[2];
 		char *file[2];
 	} IO;
-	struct T {	/* -T sets data type */
+	struct GMTREAD_T {	/* -T sets data type */
 		bool active;
 		enum GMT_enum_family mode;
 	} T;

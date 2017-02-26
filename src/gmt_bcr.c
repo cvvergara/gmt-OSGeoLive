@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_bcr.c 16849 2016-07-22 18:45:29Z pwessel $
+ *	$Id: gmt_bcr.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -236,7 +236,7 @@ double gmt_bcr_get_z_fast (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, 
 	   this routine returns the desired interpolated value (nearest-neighbor, bilinear
 	   B-spline or bicubic) at xx, yy.
 	   Same as gmt_bcr_get_z but no check for Nan or outside, so calling program
-	   must make sure we dont go outside array or pass nans.
+	   must make sure we don't go outside array or pass nans.
 	*/
 
 	unsigned int i, j;

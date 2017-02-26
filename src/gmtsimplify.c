@@ -1,7 +1,7 @@
 /*
- *	$Id: gmtsimplify.c 16697 2016-07-03 06:17:50Z pwessel $
+ *	$Id: gmtsimplify.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -366,7 +366,7 @@ int GMT_gmtsimplify (void *V_API, int mode, void *args) {
 	
 	for (tbl = 0; tbl < D[GMT_IN]->n_tables; tbl++) {
 		n_in_tbl = 0;
-		D[GMT_OUT]->table[tbl]->segment = gmt_M_memory (GMT, NULL, D[GMT_IN]->table[tbl]->n_segments, struct GMT_DATASEGMENT *);	/* Inital (and max) allocation of segments */
+		D[GMT_OUT]->table[tbl]->segment = gmt_M_memory (GMT, NULL, D[GMT_IN]->table[tbl]->n_segments, struct GMT_DATASEGMENT *);	/* Initial (and max) allocation of segments */
 		for (seg_in = seg_out = 0; seg_in < D[GMT_IN]->table[tbl]->n_segments; seg_in++) {
 			S[GMT_IN]  = D[GMT_IN]->table[tbl]->segment[seg_in];
 			/* If input segment is a closed polygon then the simplified segment must have at least 4 points, else 3 is enough */

@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_cross.c 17153 2016-09-30 23:41:38Z jluis $
+ *	$Id: x2sys_cross.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *      Copyright (c) 1999-2016 by P. Wessel
+ *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -532,6 +532,9 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	for (A = 0; A < n_tracks; A++) {	/* Loop over all files */
 		if (duplicate[A]) continue;
@@ -634,7 +637,7 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 					out[0] = XC.x[i];
 					out[1] = XC.y[i];
 					if (s->geographic) gmt_lon_range_adjust (s->geodetic, &out[0]);
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 				}
 				gmt_x_free (GMT, &XC);
 			}
@@ -838,7 +841,7 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 					}
 
 					if (s->geographic) gmt_lon_range_adjust (s->geodetic, &out[0]);
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 				}
 
 				gmt_x_free (GMT, &XC);

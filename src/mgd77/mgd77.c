@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------
- *  $Id: mgd77.c 17163 2016-10-03 19:17:34Z pwessel $
+ *  $Id: mgd77.c 17590 2017-02-24 00:06:07Z pwessel $
  *
- *  Copyright (c) 2005-2016 by P. Wessel
+ *  Copyright (c) 2005-2017 by P. Wessel
  *  See README file for copying and redistribution conditions.
  *
  *  File:       mgd77.c
@@ -1995,6 +1995,8 @@ static int MGD77_Read_Data_cdf (struct GMT_CTRL *GMT, char *file, struct MGD77_C
 		else {
 			values = MGD77_Read_Column (GMT, F->nc_id, start, count, scale, offset, &(S->H.info[c].col[id]));
 #if 0
+		/* Only mgd77list reports times that may need to be modified (e..g, to get hours from start)
+		 * so we dont do anything here but let that happen naturally later. */
 			if (F->adjust_time && !strcmp (S->H.info[c].col[id].abbrev, "time")) {	/* Change epoch */
 				for (rec = 0; rec < count[0]; rec++) values[rec] = MGD77_utime2time (GMT, F, values[rec]);
 			}
@@ -2068,7 +2070,7 @@ static int MGD77_Read_Data_cdf (struct GMT_CTRL *GMT, char *file, struct MGD77_C
 		char *abbrev[N_E77_AUX_FIELDS] = {"time", "lat", "lon", "twt", "mtf1", "gobs", "eot"};
 		/* First make sure the auxiliary data fields are set */
 		for (i = 0; i < N_E77_AUX_FIELDS; i++) {
-			if (!E.needed[i]) continue;	/* Dont need this particular column */
+			if (!E.needed[i]) continue;	/* Don't need this particular column */
 			if (E.got_it[nc_id[i]]) {	/* This aux is actually one of the output columns so we have already read it - just use a pointer */
 				s_col = MGD77_Info_from_Abbrev (GMT, abbrev[i], &S->H, &c, &id);	/* Which output column is it? */
 				if (s_col == MGD77_NOT_SET) s_col = 0; /* Just to stem a Coverity issue */
@@ -2098,7 +2100,7 @@ static int MGD77_Read_Data_cdf (struct GMT_CTRL *GMT, char *file, struct MGD77_C
 					has_prev_twt = true;
 					prev_twt = E.aux[E77_AUX_FIELD_TWT][rec];
 				}
-				E.aux[E77_AUX_FIELD_TWT][rec] += twt_pdrwrap_corr;	/* aux could be either auxilliary or pointer to output column */
+				E.aux[E77_AUX_FIELD_TWT][rec] += twt_pdrwrap_corr;	/* aux could be either auxiliary or pointer to output column */
 			}
 		}
 
@@ -2136,7 +2138,7 @@ static int MGD77_Read_Data_cdf (struct GMT_CTRL *GMT, char *file, struct MGD77_C
 			}
 		}
 
-		for (i = 0; i < N_E77_AUX_FIELDS; i++) {	/* Free auxilliary columns not part of the output */
+		for (i = 0; i < N_E77_AUX_FIELDS; i++) {	/* Free auxiliary columns not part of the output */
 			if (E.needed[i] == 2) gmt_M_free (GMT, E.aux[i]);
 		}
 	}
@@ -2222,7 +2224,12 @@ static int MGD77_Read_Data_Record_cdf (struct GMT_CTRL *GMT, struct MGD77_CONTRO
 			MGD77_do_scale_offset_after_read (GMT, &dvals[n_val], 1, H->info[c].col[id].factor, H->info[c].col[id].offset, MGD77_NaN_val[H->info[c].col[id].type]);
 			n_val++;
 		}
-		/* if (F->adjust_time && H->info[c].col[id].var_id == NCPOS_TIME) dvals[n_val] = MGD77_utime2time (GMT, F, dvals[n_val]); */
+		/* Would have been helpful with a comment here as to why this is excluded. */
+#if 0
+		/* Only mgd77list reports times that may need to be modified (e..g, to get hours from start)
+ 		* so we dont do anything here but let that happen naturally later. */
+		if (F->adjust_time && H->info[c].col[id].var_id == NCPOS_TIME) dvals[n_val] = MGD77_utime2time (GMT, F, dvals[n_val]);
+#endif
 	}
 	return (MGD77_NO_ERROR);
 }
@@ -2693,8 +2700,9 @@ int MGD77_Get_Path (struct GMT_CTRL *GMT, char *track_path, char *track, struct 
 	bool append = false, hard_path;
 	char geo_path[GMT_BUFSIZ] = {""};
 
-	for (fmt = 0; fmt < MGD77_FORMAT_ANY; fmt++) {	/* Determine if given track name contains one of the 3 possible extensions */
-		if (strchr (track, '.') && (strlen(track)-strlen(MGD77_suffix[fmt])) > 0 && !strncmp (&track[strlen(track)-strlen(MGD77_suffix[fmt])], MGD77_suffix[fmt], strlen(MGD77_suffix[fmt]))) has_suffix = fmt;
+	for (fmt = 0; fmt < MGD77_FORMAT_ANY; fmt++) {	/* Determine if given track name contains one of the 4 possible extensions */
+		if (strchr (track, '.') && (strlen(track)-strlen(MGD77_suffix[fmt])) > 0 && !strncmp (&track[strlen(track)-strlen(MGD77_suffix[fmt])], MGD77_suffix[fmt], strlen(MGD77_suffix[fmt])))
+			has_suffix = fmt;
 	}
 
 	if (has_suffix != MGD77_NOT_SET && !MGD77_format_allowed[has_suffix]) {	/* Filename clashes with allowed extensions */
@@ -2730,8 +2738,8 @@ int MGD77_Get_Path (struct GMT_CTRL *GMT, char *track_path, char *track, struct 
 			f_start = f_stop = MGD77_FORMAT_M7T;
 			break;
 		case MGD77_FORMAT_ANY:		/* Not set, try all */
-			f_start = MGD77_FORMAT_M77;
-			f_stop  = MGD77_FORMAT_M7T;
+			f_start = MGD77_FORMAT_CDF;
+			f_stop  = MGD77_FORMAT_TBL;
 			break;
 		default:	/* Bad */
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Bad file format specified given (%d)\n", F->format);
@@ -2812,7 +2820,7 @@ int MGD77_Open_File (struct GMT_CTRL *GMT, char *leg, struct MGD77_CONTROL *F, i
 			return (MGD77_ERROR_OPEN_FILE);
 		}
 		mode[0] = 'w';
-		for (k = 0; k < MGD77_FORMAT_ANY; k++) {	/* Determine if given leg name contains one of the 3 possible extensions */
+		for (k = 0; k < MGD77_FORMAT_ANY; k++) {	/* Determine if given leg name contains one of the 4 possible extensions */
 			if ((strlen(leg)-strlen(MGD77_suffix[k])) > 0 && !strncmp (&leg[strlen(leg)-strlen(MGD77_suffix[k])], MGD77_suffix[k], strlen(MGD77_suffix[k]))) has_suffix = k;
 		}
 		if (has_suffix == MGD77_NOT_SET)	/* file name given without extension */
@@ -3734,19 +3742,19 @@ void MGD77_Ignore_Format (struct GMT_CTRL *GMT, int format) {
 
 	 gmt_M_unused(GMT);
 	 if (format == MGD77_FORMAT_ANY) {
-	 	MGD77_format_allowed[MGD77_FORMAT_M77] = true;
 	 	MGD77_format_allowed[MGD77_FORMAT_CDF] = true;
-	 	MGD77_format_allowed[MGD77_FORMAT_TBL] = true;
+	 	MGD77_format_allowed[MGD77_FORMAT_M77] = true;
 	 	MGD77_format_allowed[MGD77_FORMAT_M7T] = true;
+	 	MGD77_format_allowed[MGD77_FORMAT_TBL] = true;
 	}
-	else if (format >= MGD77_FORMAT_M77 && format <= MGD77_FORMAT_TBL)
+	else if (format >= MGD77_FORMAT_CDF && format <= MGD77_FORMAT_TBL)
 		MGD77_format_allowed[format] = false;
 }
 
 int MGD77_Select_Format (struct GMT_CTRL *GMT, int format) {
 	/* Allow user to select just one format and turn off all others */
 
-	if (format >= MGD77_FORMAT_M77 && format <= MGD77_FORMAT_TBL) {
+	if (format >= MGD77_FORMAT_CDF && format <= MGD77_FORMAT_TBL) {
 	 	MGD77_format_allowed[MGD77_FORMAT_M77] = false;
 	 	MGD77_format_allowed[MGD77_FORMAT_CDF] = false;
 	 	MGD77_format_allowed[MGD77_FORMAT_TBL] = false;
@@ -3795,11 +3803,17 @@ void MGD77_Init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F) {
 	mgd77_init_columns (F);
 	F->use_flags[MGD77_M77_SET] = F->use_flags[MGD77_CDF_SET] = true;		/* true means programs will use error bitflags (if present) when returning data */
 	F->use_corrections[MGD77_M77_SET] = F->use_corrections[MGD77_CDF_SET] = true;	/* true means we will apply correction factors (if present) when reading data */
-	gmt_get_time_system (GMT, "unix", &(GMT->current.setting.time_system));						/* MGD77+ uses GMT's Unix time epoch */
+#if 0
+	/* This looks like nonsense to me: It ignores any --TIME_* settings we may have used and
+	 * forces unix time so that only absolute time or seconds from 1970 will work.  Commented
+	 * out but probably will need to be chopped.  P. Wessel, Dec 14, 2016 */
+	gmt_get_time_system (GMT, "unix", &(GMT->current.setting.time_system));		/* MGD77+ uses GMT's Unix time epoch */
 	gmt_init_time_system_structure (GMT, &(GMT->current.setting.time_system));
-	gmt_get_time_system (GMT, "unix", &(F->utime));						/* MGD77+ uses GMT's Unix time epoch */
+#endif
+	gmt_get_time_system (GMT, "unix", &(F->utime));		/* MGD77+ uses GMT's Unix time epoch */
 	gmt_init_time_system_structure (GMT, &(F->utime));
-	if (strcmp (F->utime.epoch, GMT->current.setting.time_system.epoch)) F->adjust_time = true;	/* Since MGD77+ uses unix time we must convert to new epoch */
+	/* Since MGD77+ uses UNIX time we may need convert to a different epoch if GMT settings have changed. */
+	if (strcmp (F->utime.epoch, GMT->current.setting.time_system.epoch)) F->adjust_time = true;
 	gmt_M_memset (mgd77_range, MGD77_N_DATA_EXTENDED, struct MGD77_LIMITS);
 	for (i = 0; i < MGD77_SET_COLS; i++) MGD77_this_bit[i] = 1U << i;
 	strncpy (F->user, gmt_putusername(GMT), MGD77_COL_ABBREV_LEN);
@@ -3868,7 +3882,7 @@ int MGD77_Select_Columns (struct GMT_CTRL *GMT, char *arg, struct MGD77_CONTROL 
 	 * Third [set] are list of columns whose bitflag must be either be 1 (+) or 0 (-).
 	 * The presence of the : also turns the automatic use of ALL flags off.
 	 * option is a bitflag integer that controls how to handle constraints and exact matches.
-	 * If option == 0 then we wont bitch about repeated columns.
+	 * If option == 0 then we won't bitch about repeated columns.
 	 */
 
 	char p[GMT_BUFSIZ] = {""}, cstring[GMT_BUFSIZ] = {""}, bstring[GMT_BUFSIZ] = {""}, word[GMT_LEN256] = {""}, value[GMT_LEN256] = {""};
@@ -4398,6 +4412,7 @@ void MGD77_Free_Dataset (struct GMT_CTRL *GMT, struct MGD77_DATASET **D) {
 	mgd77_free_plain_mgd77 (&S->H);
 	gmt_M_free (GMT, S->H.author);
 	gmt_M_free (GMT, S->H.history);
+	gmt_M_free (GMT, S->H.E77);
 	gmt_M_free (GMT, S);
 	D = NULL;
 }
@@ -5472,7 +5487,7 @@ double MGD77_Recalc_Mag_Anomaly_CM4 (struct GMT_CTRL *GMT, double time, double l
 
 unsigned int MGD77_Scan_Corrtable (struct GMT_CTRL *GMT, char *tablefile, char **cruises, unsigned int n_cruises, unsigned int n_fields, char **field_names, char ***item_names, unsigned int mode) {
 	/* This function scans the correction table to determine which named columns
-	 * are needed for corrections as well as which auxilliary variables (e.g.,
+	 * are needed for corrections as well as which auxiliary variables (e.g.,
 	 * time, dist, heading) are needed.
 	 * Returns number of entries in the list, or 0.
 	 */
@@ -5683,8 +5698,8 @@ int MGD77_Parse_Corrtable (struct GMT_CTRL *GMT, char *tablefile, char **cruises
 					c->origin = 0.0;
 				}
 				if ((c->id = MGD77_Match_List (GMT, name, n_fields, field_names)) == MGD77_NOT_SET) {;	/* Not a recognized column */
-					for (i = 0; i < n_aux; i++) if (!strcmp (name, aux_names[i])) c->id = i;	/* check auxilliaries */
-					if (c->id == MGD77_NOT_SET) { /* Not an auxilliary column either */
+					for (i = 0; i < n_aux; i++) if (!strcmp (name, aux_names[i])) c->id = i;	/* check auxiliaries */
+					if (c->id == MGD77_NOT_SET) { /* Not an auxiliary column either */
 						GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Column %s not found - requested by the correction table %s!\n", name, tablefile);
 						GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 					}

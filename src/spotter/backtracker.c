@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: backtracker.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: backtracker.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *   Copyright (c) 1999-2016 by P. Wessel
+ *   Copyright (c) 1999-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -372,6 +372,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 	uint64_t i, j;
 	uint64_t n_out, n_expected_fields, col;
 	unsigned int n_stages = 0;	/* Number of stage poles */
+	unsigned int geometry;
 	int n_fields, error;		/* Misc. signed counters */
 	int spotter_way = 0;		/* Either SPOTTER_FWD or SPOTTER_BACK */
 	bool make_path = false;		/* true means create continuous path, false works on discrete points */
@@ -452,6 +453,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 
 	n_out = (Ctrl->S.active) ? 4 : 3;	/* Append smt id number as 4th column when individual files are requested */
 	if (Ctrl->W.active) n_out = 5 + !(Ctrl->W.mode == 0);
+	geometry = (make_path) ? GMT_IS_LINE : GMT_IS_POINT;
 
 	/* Specify input and output expected columns */
 	if ((error = gmt_set_cols (GMT, GMT_IN, n_expected_fields)) != GMT_NOERROR) {
@@ -477,10 +479,13 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, geometry) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	do {	/* Keep returning records until we reach EOF */
 		n_read++;
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
 			if (gmt_M_rec_is_table_header (GMT)) {	/* Skip all table headers */
@@ -504,7 +509,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 			gmt_cart_to_geo (GMT, &out[GMT_Y], &out[GMT_X], y, true);	/* Recover lon lat representation; true to get degrees */
 			out[GMT_Y] = gmt_lat_swap (GMT, out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 			gmt_M_memcpy (&out[GMT_Z], &in[GMT_Z], n_fields - 2, double);
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			continue;
 		}
 
@@ -567,7 +572,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 					out[GMT_X] = lon * R2D;
 					out[GMT_Y] = gmt_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 					out[GMT_Z] = t;
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 					t += Ctrl->L.d_km;	/* dt, actually */
 				}
 				t -= Ctrl->L.d_km;	/* Last time used in the loop */
@@ -582,7 +587,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 					out[GMT_X] = lon * R2D;
 					out[GMT_Y] = gmt_lat_swap (GMT, lat * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
 					out[GMT_Z] = t_end;
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 				}
 			}
 			else {
@@ -600,7 +605,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 					if (Ctrl->A.mode && (out[GMT_Z] < t_low || out[GMT_Z] > t_high)) continue;
 					out[GMT_X] = c[i] * R2D;
 					out[GMT_Y] = gmt_lat_swap (GMT, c[i+1] * R2D, GMT_LATSWAP_O2G);	/* Convert back to geodetic */
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 				}
 			}
 			gmt_M_free (GMT, c);
@@ -623,7 +628,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 				for (col = 2; col < n_expected_fields; col++) out[col] = in[col];
 			}
 			out[GMT_Y] = gmt_lat_swap (GMT, out[GMT_Y], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);
 		}
 
 		n_points++;

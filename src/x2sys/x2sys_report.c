@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_report.c 17104 2016-09-18 01:33:17Z jluis $
+ *	$Id: x2sys_report.c 17503 2017-01-30 23:14:43Z pwessel $
  *
- *      Copyright (c) 1999-2016 by P. Wessel
+ *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -351,6 +351,10 @@ int GMT_x2sys_report (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {
 		gmt_M_free (GMT, R);
 		Return (API->error);	/* Enables data output and sets access mode */
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+		gmt_M_free (GMT, R);
+		Return (API->error);
 	}
 	gmt_set_tableheader (GMT, GMT_OUT, true);	/* Turn on -ho explicitly */
 	

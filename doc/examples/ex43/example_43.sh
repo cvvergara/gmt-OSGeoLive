@@ -1,6 +1,6 @@
 #!/bin/bash
 #               GMT EXAMPLE 43
-#               $Id: example_43.sh 16793 2016-07-13 23:30:30Z pwessel $
+#               $Id: example_43.sh 17434 2017-01-12 22:59:32Z pwessel $
 #
 # Purpose:      Illustrate regression and outlier detection
 # GMT modules:  gmtregress, psbasemap, pslegend, pstext, psxy
@@ -24,7 +24,7 @@ gmt psxy -R-2/6/-1/5 -JX6i -O -K -L+d+p0.25p,- -Gcornsilk1 rls_line.txt >> $ps
 gmt psxy -R -J -O -K rls_line.txt -W3p >> $ps
 gmt psxy -R -J -O -K ls_line.txt -W1p,- >> $ps
 gmt psxy -R -J -O -K -Sc0.15i -Ct.cpt -Wfaint -i0,1,6 model.txt >> $ps
-awk '{print $1, $2, NR}' A.txt | gmt pstext -R -J -O -K -F+f8p+jCM  -B0 >> $ps
+gmt pstext A.txt -R -J -O -K -F+f8p+jCM+r1 -B0 >> $ps
 # Build legend
 cat << EOF > legend.txt
 H 18 Times-Roman Index of Animals

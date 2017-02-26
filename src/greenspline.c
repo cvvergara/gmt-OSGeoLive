@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: greenspline.c 16798 2016-07-14 19:03:58Z pwessel $
+ *	$Id: greenspline.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -212,8 +212,8 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *C) {	/*
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: greenspline [<table>] -G<outfile> [-A<gradientfile>+f<format>] [-E[<misfittable>]");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-I<dx>[/<dy>[/<dz>]] [-C[n|r|v]<val>[+f<file>]] [-D<mode>] [-L] [-N<nodefile>] [-Q<az>]n");
+	GMT_Message (API, GMT_TIME_NONE, "usage: greenspline [<table>] -G<outfile> [-A<gradientfile>+f<format>] [-E[<misfittable>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-I<dx>[/<dy>[/<dz>]] [-C[n|r|v]<val>[+f<file>]] [-D<mode>] [-L] [-N<nodefile>] [-Q<az>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-R<xmin>/<xmax[/<ymin>/<ymax>[/<zmin>/<zmax>]]][-Sc|l|t|r|p|q[<pars>]] [-T<maskgrid>] [%s]\n", GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-W[w]] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]%s[%s]\n\n",
 		GMT_bi_OPT, GMT_d_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT, GMT_colon_OPT);
@@ -1387,7 +1387,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 	char *mem_unit[3] = {"kb", "Mb", "Gb"};
 
 	double *obs = NULL, **D = NULL, **X = NULL, *alpha = NULL, *in = NULL, *orig_obs = NULL;
-	double mem, part, C, p_val, r, par[N_PARAMS], norm[GSP_LENGTH], az = 0, grad, weight_i, weight_j;
+	double mem, part, C, p_val, r, par[N_PARAMS], norm[GSP_LENGTH], az = 0, grad, weight_col, weight_row;
 	double *A = NULL, r_min, r_max, err_sum = 0.0;
 #ifdef DEBUG
 	double x0 = 0.0, x1 = 5.0;
@@ -1506,7 +1506,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 	n = m = n_read = 0;
 	r_min = DBL_MAX;	r_max = -DBL_MAX;
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 				for (p = 0; p < n_alloc; p++) gmt_M_free (GMT, X[p]);
 				gmt_M_free (GMT, X);	gmt_M_free (GMT, obs);
@@ -1527,7 +1527,16 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 		}
 
 		for (k = 0; k < dimension; k++) X[n][k] = in[k];	/* Get coordinates + optional weights (if -W) */
-		if (Ctrl->W.active) X[n][k] = in[w_col];
+		if (Ctrl->W.active) {	/* Planning a weighted solution */
+			if (Ctrl->W.mode == 0) {	/* Got sigma, must convert to weight */
+				err_sum += in[w_col] * in[w_col];	/* Sum up variance first */
+				X[n][dimension] = 1.0 / in[w_col];
+			}
+			else {	/* Got weight */
+				err_sum += pow (in[w_col], -2.0);	/* Sum up variance */
+				X[n][dimension] = in[w_col];
+			}
+		}
 		/* Check for duplicates */
 		skip = false;
 		for (i = 0; !skip && i < n; i++) {
@@ -1804,7 +1813,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 			n_ok = Grid->header->nm;
 			Z.nz = 1;	/* So that output logic will work for 1-D */
 		}
-		else {	/* Just a temporary internal grid created and destroyed withing greenspline */
+		else {	/* Just a temporary internal grid created and destroyed within greenspline */
 			if ((Grid = gmt_create_grid (GMT)) == NULL) Return (API->error);
 			delete_grid = true;
 			Grid->header->wesn[XLO] = Ctrl->R3.range[0];	Grid->header->wesn[XHI] = Ctrl->R3.range[1];
@@ -1955,7 +1964,20 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 
 	do_normalization (API, X, obs, n, normalize, dimension, norm);
 
-	/* Set up linear system Ax = z */
+	/* Set up linear system Ax = z. To clarify, the matrix A will be
+	 * of size nm by nm, where nm = n + m. Again, n is the number of
+	 * value constraints and m is the number of gradient constraints.
+	 * for most problems m will be 0.
+	 * The loops below takes advantage of the fact that A will be symmetrical
+	 * (except for terms involving gradients where A_ij = -A_ji).  So we
+	 * start the loop over columns as col = row and deal with A)ij and A_ji
+	 * at the same time since we can evaluate the same costly G() function
+	 * [or dGdr () function)]  once.  Because of this we need to obtain the
+	 * weight for two different rows and we do that by calling the two weights
+	 * weight_row and weight_col, meaning it refers to observation weight
+	 * number col and row.  In the end, each row in A plus the row in obs
+	 * are scaled by weight_row.
+	 */
 
 	mem = ((double)nm * (double)nm * (double)sizeof (double)) / 1024.0;	/* In kb */
 	unit = 0;
@@ -1965,51 +1987,60 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Build linear system using %s\n", method[Ctrl->S.mode]);
 
-	weight_i = weight_j = 1.0;
-	for (j = 0; j < nm; j++) {	/* For each value or slope constraint */
+	weight_col = weight_row = 1.0;
+	for (row = 0; row < nm; row++) {	/* For each value or slope constraint */
 		if (Ctrl->W.active) {
-			if (Ctrl->W.mode == 0) {	/* Got sigma */
-				err_sum += X[j][dimension] * X[j][dimension];
-				weight_j = 1.0 / X[j][dimension];
-			}
-			else {	/* Got weight */
-				err_sum += pow (X[j][dimension], -2.0);
-				weight_j = X[j][dimension];
-			}
-			weight_j = (Ctrl->W.mode == 0) ? 1.0 / X[j][dimension] : X[j][dimension];
-			obs[j] *= weight_j;
+			weight_row = X[row][dimension];
+			obs[row] *= weight_row;
 		}
-		for (i = j; i < nm; i++) {
-			if (Ctrl->W.active) weight_i = (Ctrl->W.mode == 0) ? 1.0 / X[i][dimension] : X[i][dimension];
-			ij = j * nm + i;
-			ji = i * nm + j;
-			r = get_radius (GMT, X[i], X[j], dimension);
-			if (j < n) {	/* Value constraint */
+		for (col = row; col < nm; col++) {
+			if (Ctrl->W.active) weight_col = X[col][dimension];
+			ij = row * nm + col;
+			ji = col * nm + row;
+			r = get_radius (GMT, X[col], X[row], dimension);
+			if (row < n) {	/* Value constraint (so entire row uses G) */
 				A[ij] = G (GMT, r, par, Lz);
-				if (ij == ji) continue;	/* Do the diagonal terms only once */
-				if (i < n) {
-					A[ji] = weight_i * A[ij];
+				if (ij == ji) {	/* Do the diagonal terms only once */
+					A[ij] *= weight_row;
+					continue;
+				}
+				if (col < n) {
+					A[ji] = weight_col * A[ij];
 				}
 				else {
 					/* Get D, the directional cosine between the two points */
 					/* Then get C = gmt_dot3v (GMT, D, dataD); */
 					/* A[ji] = dGdr (r, par, Lg) * C; */
-					C = get_dircosine (GMT, D[i-n], X[i], X[j], dimension, false);
+					C = get_dircosine (GMT, D[col-n], X[col], X[row], dimension, false);
 					grad = dGdr (GMT, r, par, Lg);
-					A[ji] = weight_i * grad * C;
+					A[ji] = weight_col * grad * C;
 				}
-				A[ij] *= weight_j;
+				A[ij] *= weight_row;
 			}
-			else if (i > n) {	/* Remaining gradient constraints */
-				if (ij == ji) continue;	/* Diagonal gradient terms are zero */
-				C = get_dircosine (GMT, D[j-n], X[i], X[j], dimension, true);
+			else if (col > n) {	/* Remaining gradient constraints (entire row uses dGdr) */
+				if (ij == ji) continue;	/* Diagonal gradient term from a point to itself is zero */
+				C = get_dircosine (GMT, D[row-n], X[col], X[row], dimension, true);
 				grad = dGdr (GMT, r, par, Lg);
-				A[ij] = weight_j * grad * C;
-				C = get_dircosine (GMT, D[i-n], X[i], X[j], dimension, false);
-				A[ji] = weight_i * grad * C;
+				A[ij] = weight_row * grad * C;
+				C = get_dircosine (GMT, D[col-n], X[col], X[row], dimension, false);
+				A[ji] = weight_col * grad * C;
 			}
 		}
 	}
+#if 0 /* Dump the A | b matrices */
+	fprintf (stderr, "Weight | Matrix row | obs\n");
+	for (row = 0; row < nm; row++) {
+		if (Ctrl->W.active)
+			fprintf (stderr, "%12.6f\t|\t", X[row][dimension]);
+		else
+			fprintf (stderr, "%12.6f\t|\t", 1.0);
+		ij = row * nm;
+		fprintf (stderr, "%12.6f", A[ij++]);
+		for (col = 1; col < nm; col++, ij++) fprintf (stderr, "\t%12.6f", A[ij]);
+		fprintf (stderr, "\t|\t%12.6f\n", obs[row]);
+	}
+#endif
+
 	if (Ctrl->W.active) {
 		err_sum = sqrt (err_sum / nm);	/* Mean data variance */
 		GMT_Report (API, GMT_MSG_VERBOSE, "Mean data uncertainty is %g\n", err_sum);
@@ -2174,6 +2205,9 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			Return (API->error);
+		}
 		if ((error = gmt_set_cols (GMT, GMT_OUT, dimension + 1)) != GMT_NOERROR) {
 			Return (error);
 		}
@@ -2194,7 +2228,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 					out[dimension] += alpha[p] * part;
 				}
 				out[dimension] = undo_normalization (out, out[dimension], normalize, norm, dimension);
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 		}
 		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
@@ -2228,6 +2262,10 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 				Return (API->error);
 			}
 			if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+				gmt_M_free (GMT, xp);
+				Return (API->error);
+			}
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
 				gmt_M_free (GMT, xp);
 				Return (API->error);
 			}
@@ -2274,7 +2312,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 				for (col = 0; col < Grid->header->n_columns; col++) {
 					V[GMT_X] = xp[col];
 					V[dimension] = GMT->hidden.mem_coord[GMT_X][col];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, V);
+					GMT_Put_Record (API, GMT_WRITE_DATA, V);
 				}
 			}
 			else if (dimension == 3) {	/* Must dump 3-D grid as ASCII slices for now */
@@ -2285,7 +2323,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 						V[GMT_X] = xp[col];
 						ij = gmt_M_ijp (Grid->header, row, col) + nz_off;
 						V[dimension] = Out->data[ij];
-						GMT_Put_Record (API, GMT_WRITE_DOUBLE, V);
+						GMT_Put_Record (API, GMT_WRITE_DATA, V);
 					}
 				}
 			}

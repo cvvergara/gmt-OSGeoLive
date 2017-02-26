@@ -14,10 +14,10 @@ Synopsis
 .. include:: common_SYN_OPTs.rst_
 
 **grd2cpt** *grid* [ |-A|\ [**+**\ ]\ *transparency* ]
-[ |-C|\ *cpt* ] [ |-D|\ [**i**\ \|\ **o**] ]
+[ |-C|\ *cpt* ] [ |-D|\ [**i**] ]
 [ |-E|\ [*nlevels*] ]
 [ |-F|\ [**R**\ \|\ **r**\ \|\ **h**\ \|\ **c** ][**+c**\ ]]
-[ |-G|\ *zlo*\ /\ *zhi* ] [ |-I| ]
+[ |-G|\ *zlo*\ /\ *zhi* ] [ |-I|\ [**c**][**z**] ]
 [ |-L|\ *minlimit/maxlimit* ]
 [ |-M| ] [ |-N| ]
 [ |-Q|\ [**i**\ \|\ **o**] ]
@@ -97,7 +97,7 @@ Optional Arguments
 
 .. _-D:
 
-**-D**\ [**i**\ \|\ **o**]
+**-D**\ [**i**]
     Select the back- and foreground colors to match the colors for
     lowest and highest *z*-values in the output CPT [Default uses
     the colors specified in the master file, or those defined by the
@@ -126,15 +126,18 @@ Optional Arguments
     Truncate the incoming CPT so that the lowest and highest z-levels
     are to *zlo* and *zhi*.  If one of these equal NaN then
     we leave that end of the CPT alone.  The truncation takes place
-    before any resampling.
+    before any resampling. See also :ref:`manipulating_CPTs`
 
 .. _-I:
 
-**-I**
-    Reverses the sense of color progression in the master CPT. Also
+**-I**\ [**c**][**z**]
+    Append **c** [Default] to reverse the sense of color progression in the master CPT. Also
     exchanges the foreground and background colors, including those
     specified by the parameters :ref:`COLOR_BACKGROUND <COLOR_BACKGROUND>` and
     :ref:`COLOR_FOREGROUND <COLOR_FOREGROUND>`.
+    Append **z** to reverse the sign of z-values in the color table.  Note that
+    this change of *z*-direction happens before **-G** and **-T** values are used
+    so the latter much be compatible with the changed *z*-range. See also :ref:`manipulating_CPTs`
 
 .. _-L:
 

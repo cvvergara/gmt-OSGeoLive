@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: gmtwhich.c 16555 2016-06-16 22:49:46Z pwessel $
+ *    $Id: gmtwhich.c 17503 2017-01-30 23:14:43Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -154,6 +154,9 @@ int GMT_gmtwhich (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_OFF) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		Return (API->error);
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
 		Return (API->error);
 	}
 	

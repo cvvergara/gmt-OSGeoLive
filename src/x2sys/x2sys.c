@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.c 17153 2016-09-30 23:41:38Z jluis $
+ *	$Id: x2sys.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *      Copyright (c) 1999-2016 by P. Wessel
+ *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -516,11 +516,8 @@ double *x2sys_dummytimes (struct GMT_CTRL *GMT, uint64_t n) {
 	double *t;
 
 	/* Make monotonically increasing dummy time sequence */
-
 	t = gmt_M_memory (GMT, NULL, n, double);
-
 	for (i = 0; i < n; i++) t[i] = (double)i;
-
 	return (t);
 }
 
@@ -835,7 +832,8 @@ int x2sys_read_mgd77file (struct GMT_CTRL *GMT, char *fname, double ***data, str
 	j = 0;
 	while (!MGD77_Read_Data_Record (GMT, &MC, &H, dvals, tvals)) {		/* While able to read a data record */
 		gmt_lon_range_adjust (s->geodetic, &dvals[MGD77_LONGITUDE]);
-		for (i = 0; i < s->n_out_columns; i++) z[i][j] = dvals[col[i]];
+		for (i = 0; i < s->n_out_columns; i++)
+			z[i][j] = dvals[col[i]];
 		if (p->year == 0 && !gmt_M_is_dnan (dvals[0])) p->year = get_first_year (GMT, dvals[0]);
 		j++;
 		if (j == n_alloc) {
@@ -969,7 +967,7 @@ int x2sys_read_ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, struct
 }
 
 int x2sys_read_list (struct GMT_CTRL *GMT, char *file, char ***list, unsigned int *nf) {
-	unsigned int n = 0;
+	unsigned int n = 0, first;
 	size_t n_alloc = GMT_CHUNK;
 	char **p = NULL, line[GMT_BUFSIZ] = {""}, name[GMT_LEN64] = {""};
 	FILE *fp = NULL;
@@ -985,7 +983,8 @@ int x2sys_read_list (struct GMT_CTRL *GMT, char *file, char ***list, unsigned in
 	while (fgets (line, GMT_BUFSIZ, fp)) {
 		gmt_chop (line);	/* Remove trailing CR or LF */
 		sscanf (line, "%s", name);
-		p[n] = strdup (name);
+		first = (strncmp (name, "./", 2U)) ? 0 : 2;	/* Skip leading ./ for local directory */
+		p[n] = strdup (&name[first]);
 		n++;
 		if (n == n_alloc) {
 			n_alloc <<= 1;
@@ -1712,7 +1711,8 @@ uint64_t x2sys_read_coe_dbase (struct GMT_CTRL *GMT, struct X2SYS_INFO *S, char 
 		if (!(coe_kind & 2) &&  strcmp (trk[0], trk[1])) skip = true;	/* Do not want external crossovers */
 		if (one_trk && (strcmp (one_trk, trk[0]) && strcmp (one_trk, trk[1]))) skip = true;	/* Looking for a specific track and these do not match */
 		if (!skip && n_ignore) {	/* See if one of the tracks are in the ignore list */
-			for (k = 0; !skip && k < n_ignore; k++) if (!strcmp (trk[0], ignore[k]) || !strcmp (trk[1], ignore[k])) skip = true;
+			for (k = 0; !skip && k < n_ignore; k++)
+				if (!strcmp (trk[0], ignore[k]) || !strcmp (trk[1], ignore[k])) skip = true;
 		}
 		if (skip) {	/* Skip this pair's data records */
 			while ((t = fgets (line, GMT_BUFSIZ, fp)) != NULL && line[0] != '>') rec_no++;
@@ -1733,7 +1733,7 @@ uint64_t x2sys_read_coe_dbase (struct GMT_CTRL *GMT, struct X2SYS_INFO *S, char 
 			else
 				id[k] = s_id;
 		}
-		/* Sanity check - make sure we dont already have this pair */
+		/* Sanity check - make sure we don't already have this pair */
 		for (p = 0, skip = false; !skip && p < n_pairs; p++) {
 			if ((P[p].id[0] == id[0] && P[p].id[1] == id[1]) || (P[p].id[0] == id[1] && P[p].id[1] == id[0])) {
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, 
@@ -1887,7 +1887,7 @@ int x2sys_find_track (struct GMT_CTRL *GMT, char *name, char **list, unsigned in
 int x2sys_get_tracknames (struct GMT_CTRL *GMT, struct GMT_OPTION *options, char ***filelist, bool *cmdline) {
 	/* Return list of track names given on command line or via =list mechanism.
 	 * The names do not have the track extension. */
-	unsigned int i, A;
+	unsigned int i, A, first;
 	size_t n_alloc, add_chunk;
 	char **file = NULL, *p = NULL;
 	struct GMT_OPTION *opt = NULL, *list = NULL;
@@ -1911,8 +1911,8 @@ int x2sys_get_tracknames (struct GMT_CTRL *GMT, struct GMT_OPTION *options, char
 		*cmdline = true;
 		for (opt = options, A = 0; opt; opt = opt->next) {
 			if (opt->option != GMT_OPT_INFILE) continue;	/* Skip options */
-
-			file[A++] = strdup (opt->arg);
+			first = (strncmp (opt->arg, "./", 2U)) ? 0 : 2;	/* Skip leading ./ for local directory */
+			file[A++] = strdup (&(opt->arg[first]));
 			if (A == n_alloc) {
 				add_chunk <<= 1;
 				n_alloc += add_chunk;
@@ -1940,7 +1940,8 @@ GMT_LOCAL unsigned int separate_aux_columns2 (struct GMT_CTRL *GMT, unsigned int
 	gmt_M_unused(GMT);
 	/* Based on what item_name contains, we copy over info on the 3 aux fields (dist, azim, vel) from auxlist to aux */
 	for (i = k = n_aux = 0; i < n_items; i++) {
-		for (j = 0, this_aux = MGD77_NOT_SET; j < N_GENERIC_AUX && this_aux == MGD77_NOT_SET; j++) if (!strcmp (auxlist[j].name, item_name[i])) this_aux = j;
+		for (j = 0, this_aux = MGD77_NOT_SET; j < N_GENERIC_AUX && this_aux == MGD77_NOT_SET; j++)
+			if (!strcmp (auxlist[j].name, item_name[i])) this_aux = j;
 		if (this_aux != MGD77_NOT_SET) {	/* Found a request for an auxiliary column  */
 			aux[n_aux].type = auxlist[this_aux].type;
 			aux[n_aux].text = auxlist[this_aux].text;

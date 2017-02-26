@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: pscoupe.c 16706 2016-07-04 02:52:44Z pwessel $
+ *    $Id: pscoupe.c 17326 2016-11-08 20:28:56Z pwessel $
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Donated to the GMT project by G. Patau upon her retirement from IGPG
@@ -789,9 +789,9 @@ int GMT_pscoupe (void *V_API, int mode, void *args) {
 	struct GMT_PALETTE *CPT = NULL;
 
 	struct PSCOUPE_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/

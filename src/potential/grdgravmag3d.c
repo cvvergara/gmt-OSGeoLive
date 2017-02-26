@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdgravmag3d.c 17121 2016-09-21 23:07:26Z jluis $
+ *	$Id: grdgravmag3d.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -199,7 +199,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\tgrdfile_top is the grdfile whose gravity effect is to be computed.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If two grids are provided then the gravity/magnetic efect of the\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   If two grids are provided then the gravity/magnetic effect of the\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   volume between them is computed\n\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Sets body density in SI.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Passes file with locations where anomaly is going to be computed.\n");
@@ -659,12 +659,6 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 			Return (GMT_RUNTIME_ERROR);
 		}
 
-		if ((GridA->header->z_scale_factor != GridS->header->z_scale_factor) ||
-		    (GridA->header->z_add_offset != GridS->header->z_add_offset)) {
-			GMT_Report(API, GMT_MSG_NORMAL, "Up surface and source grid scale/offset not compatible!\n");
-			Return(GMT_RUNTIME_ERROR);
-		}
-
 		if (fabs (GridA->header->inc[GMT_X] - GridS->header->inc[GMT_X]) > 1.0e-6 ||
 		          fabs(GridA->header->inc[GMT_Y] - GridS->header->inc[GMT_Y]) > 1.0e-6) {
 			GMT_Report(API, GMT_MSG_NORMAL, "Up surface and source grid increments do not match!\n");
@@ -974,12 +968,14 @@ L1:
 
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) 	/* Enables data output and sets access mode */
 			Return (API->error);
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR)	/* Sets output geometry */
+			Return (API->error);
 
 		for (k = 0; k < ndata; k++) {
 			out[GMT_X] = point->segment[0]->data[GMT_X][k];
 			out[GMT_Y] = point->segment[0]->data[GMT_Y][k];
 			out[GMT_Z] = g[k];
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 		}
 
 		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) 	/* Disables further data input */
@@ -1071,7 +1067,7 @@ GMT_LOCAL int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_C
 		body_desc->ind = gmt_M_memory (GMT, NULL, body_desc->n_v[0], unsigned int);
 	if (*body_verts == NULL) *body_verts = gmt_M_memory (GMT, NULL, 2, struct BODY_VERTS);
 
-	body_desc->ind[0] = 0;	body_desc->ind[1] = 1;	/* NOT USED REALY AREN'T THEY? */
+	body_desc->ind[0] = 0;	body_desc->ind[1] = 1;	/* NOT USED REALLY AREN'T THEY? */
 
 	return(0);
 }
@@ -1207,7 +1203,7 @@ GMT_LOCAL void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
 	d_func[2] = bhatta;
 
 	indf = (Ctrl->H.pirtt) ? 1 + Ctrl->H.bhatta : 0;
-	rho_or_mag = (Ctrl->C.active) ? Ctrl->C.rho : Ctrl->H.m_int;	/* What are we computing? (But it may be overriden below) */
+	rho_or_mag = (Ctrl->C.active) ? Ctrl->C.rho : Ctrl->H.m_int;	/* What are we computing? (But it may be overridden below) */
 
 	/* For Bhattacharya, select which component */
 	pm = (Ctrl->H.f_tot) ? 0 : ((Ctrl->H.x_comp) ? 1 : ((Ctrl->H.y_comp) ? 2 : ((Ctrl->H.z_comp) ? 3 : ((Ctrl->H.h_comp) ? 4 : 0)) ));

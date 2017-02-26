@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: trend1d.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: trend1d.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -138,7 +138,7 @@ GMT_LOCAL int read_data_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA **dat
 
 	i = 0;
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (GMT->parent, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (GMT->parent, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				return (GMT_RUNTIME_ERROR);
 			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all headers */
@@ -212,7 +212,7 @@ GMT_LOCAL void write_output_trend (struct GMT_CTRL *GMT, struct TREND1D_DATA *da
 					break;
 			}
 		}
-		GMT_Put_Record (GMT->parent, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+		GMT_Put_Record (GMT->parent, GMT_WRITE_DATA, out);	/* Write this to output */
 	}
 }
 
@@ -854,11 +854,14 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	if (!Ctrl->model_parameters)	/* Write any or all of the 'xymrw' */
 		write_output_trend (GMT, data, n_data, Ctrl->F.col, Ctrl->n_outputs);
 	else				/* Write only the model parameters */
-		GMT_Put_Record (API, GMT_WRITE_DOUBLE, c_model);
+		GMT_Put_Record (API, GMT_WRITE_DATA, c_model);
 
 	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
 		Return (API->error);

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdfft.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdfft.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 #define GMT_FFT_DIM	2	/* Dimension of FFT needed */
 
 #ifdef DEBUG
-/* For debuging -E; running this in debug and setting it to true will also output the number of estimates per radial k */
+/* For debugging -E; running this in debug and setting it to true will also output the number of estimates per radial k */
 static bool show_n = false;
 #endif
 

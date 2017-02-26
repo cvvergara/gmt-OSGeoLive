@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_datalist.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: x2sys_datalist.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *      Copyright (c) 1999-2016 by P. Wessel
+ *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -198,7 +198,7 @@ GMT_LOCAL bool x2sys_load_adjustments (struct GMT_CTRL *GMT, char *DIR, char *TA
 	adj = gmt_M_memory (GMT, NULL, 1, struct X2SYS_ADJUST);
 	adj->d = gmt_M_memory (GMT, NULL, n_alloc, double);
 	adj->c = gmt_M_memory (GMT, NULL, n_alloc, double);
-	for (k = 0; k < 2; k++) uint_swap (type[k], GMT->current.io.col_type[GMT_IN][k]);	/* Save original input type setting */
+	for (k = 0; k < 2; k++) gmt_M_uint_swap (type[k], GMT->current.io.col_type[GMT_IN][k]);	/* Save original input type setting */
 	while ((in = GMT->current.io.input (GMT, fp, &n_expected_fields, &n_fields)) != NULL && !(GMT->current.io.status & GMT_IO_EOF)) {	/* Not yet EOF */
 		adj->d[n] = in[0];
 		adj->c[n] = in[1];
@@ -214,7 +214,7 @@ GMT_LOCAL bool x2sys_load_adjustments (struct GMT_CTRL *GMT, char *DIR, char *TA
 	adj->c = gmt_M_memory (GMT, adj->c, n, double);
 	adj->n = n;
 	*A = adj;
-	for (k = 0; k < 2; k++) uint_swap (GMT->current.io.col_type[GMT_IN][k], type[k]);	/* Restore original input type setting */
+	for (k = 0; k < 2; k++) gmt_M_uint_swap (GMT->current.io.col_type[GMT_IN][k], type[k]);	/* Restore original input type setting */
 	return (true);
 }
 
@@ -285,29 +285,6 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 	s->ascii_out = !GMT->common.b.active[1];
 
 	if (!GMT->common.R.active) gmt_M_memcpy (GMT->common.R.wesn, B.wesn, 4, double);
-
-	if (GMT->common.b.active[GMT_OUT]) gmt_formatting = false;
-
-	if (GMT->common.R.active) {	/* Restrict output to given domain */
-		if (xpos == -1 || ypos == -1) {
-			GMT_Report (API, GMT_MSG_NORMAL, "The -R option was selected but lon,lat not included in -F\n");
-			x2sys_end (GMT, s);
-			x2sys_free_list (GMT, trk_name, n_tracks);
-			Return (GMT_RUNTIME_ERROR);		
-		}
-		/* Supply dummy linear proj */
-		GMT->current.proj.projection = GMT->current.proj.xyz_projection[0] = GMT->current.proj.xyz_projection[1] = GMT_LINEAR;
-		GMT->current.proj.pars[0] = GMT->current.proj.pars[1] = 1.0;
-		GMT->common.J.active = true;
-		if (GMT->common.R.wesn[XLO] < 0.0 && GMT->common.R.wesn[XHI] < 0.0) {
-			GMT->common.R.wesn[XLO] += 360.0;
-			GMT->common.R.wesn[XHI] += 360.0;
-		}
-		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) {
-			x2sys_free_list (GMT, trk_name, n_tracks);
-			Return (GMT_PROJECTION_ERROR);
-		}
-	}
 
 	if (Ctrl->S.active) {	/* Must count output data columns (except t, x, y) */
 		for (ocol = n_data_col_out = 0; ocol < s->n_out_columns; ocol++) {
@@ -426,6 +403,30 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 
 		if (s->info[s->out_order[ocol]].format[0] != '-') gmt_formatting = true;
 	}
+
+	if (GMT->common.b.active[GMT_OUT]) gmt_formatting = false;		/* The above lime might very well had set it to true */
+
+	if (GMT->common.R.active) {	/* Restrict output to given domain */
+		if (xpos == -1 || ypos == -1) {
+			GMT_Report (API, GMT_MSG_NORMAL, "The -R option was selected but lon,lat not included in -F\n");
+			x2sys_end (GMT, s);
+			x2sys_free_list (GMT, trk_name, n_tracks);
+			Return (GMT_RUNTIME_ERROR);		
+		}
+		/* Supply dummy linear proj */
+		GMT->current.proj.projection = GMT->current.proj.xyz_projection[0] = GMT->current.proj.xyz_projection[1] = GMT_LINEAR;
+		GMT->current.proj.pars[0] = GMT->current.proj.pars[1] = 1.0;
+		GMT->common.J.active = true;
+		if (GMT->common.R.wesn[XLO] < 0.0 && GMT->common.R.wesn[XHI] < 0.0) {
+			GMT->common.R.wesn[XLO] += 360.0;
+			GMT->common.R.wesn[XHI] += 360.0;
+		}
+		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) {
+			x2sys_free_list (GMT, trk_name, n_tracks);
+			Return (GMT_PROJECTION_ERROR);
+		}
+	}
+
 	if (API->mode && gmt_formatting) {
 		GMT_Report (API, GMT_MSG_DEBUG, "Disabling text formatting for external interface\n");
 		gmt_formatting = false;
@@ -438,6 +439,11 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 	}
 	gmt_set_cols (GMT, GMT_OUT, s->n_out_columns);
 	if (GMT_Begin_IO (API, o_mode, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		x2sys_end (GMT, s);
+		x2sys_free_list (GMT, trk_name, n_tracks);
+		Return (API->error);
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
 		x2sys_end (GMT, s);
 		x2sys_free_list (GMT, trk_name, n_tracks);
 		Return (API->error);
@@ -466,7 +472,8 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 		if (Ctrl->L.active && s->t_col >= 0) MGD77_Init_Correction (GMT, CORR[trk_no], data);	/* Initialize origins if needed */
 
 		if (Ctrl->A.active) {	/* Load along-track adjustments */
-			for (k = 0; k < s->n_out_columns; k++) adj_col[k] = x2sys_load_adjustments (GMT, X2SYS_HOME, Ctrl->T.TAG, trk_name[trk_no], s->info[s->out_order[k]].name, &A[k]);
+			for (k = 0; k < s->n_out_columns; k++)
+				adj_col[k] = x2sys_load_adjustments (GMT, X2SYS_HOME, Ctrl->T.TAG, trk_name[trk_no], s->info[s->out_order[k]].name, &A[k]);
 		}
 
 		if (Ctrl->E.active) {	/* Insert a segment header between files */
@@ -530,7 +537,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 				GMT_Put_Record (API, GMT_WRITE_TEXT, fmt_record);
 			}
 			else {
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 		}
 

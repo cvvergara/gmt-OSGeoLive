@@ -1,8 +1,8 @@
 @ECHO OFF
 REM  
-REM	$Id: gmtswitch.bat 15757 2016-02-24 23:25:49Z pwessel $
+REM	$Id: gmtswitch.bat 17449 2017-01-16 21:27:04Z pwessel $
 REM
-REM	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+REM	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 REM	See LICENSE.TXT file for copying and redistribution conditions.
 REM
 REM	This program is free software; you can redistribute it and/or modify

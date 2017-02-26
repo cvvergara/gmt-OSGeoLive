@@ -19,7 +19,7 @@ Synopsis
 [ |-E|\ [*nlevels*] ]
 [ |-F|\ [**R**\ \|\ **r**\ \|\ **h**\ \|\ **c** ][**+c**\ ]]
 [ |-G|\ *zlo*\ /\ *zhi* ]
-[ |-I| ] [ |-M| ]
+[ |-I|\ [**c**][**z**] ] [ |-M| ]
 [ |-N| ] [ |-Q|\ [**i**\ \|\ **o**] ]
 [ |-T|\ *z_min*/*z_max*\ [/*z_inc*\ [+]] \| **-T**\ *ztable* \| **-T**\ *z1,z2,...,zn* ]
 [ |-V|\ [*level*\ ] ] [ |-W| ] [ |-Z| ]
@@ -117,15 +117,19 @@ Optional Arguments
     Truncate the incoming CPT so that the lowest and highest z-levels
     are to *zlo* and *zhi*.  If one of these equal NaN then
     we leave that end of the CPT alone.  The truncation takes place
-    before any resampling.
+    before any resampling. See also :ref:`manipulating_CPTs`
 
 .. _-I:
 
-**-I**
-    Reverses the sense of color progression in the master CPT. Also
+**-I**\ [**c**][**z**]
+    Append **c** [Default] to reverse the sense of color progression in the master CPT. Also
     exchanges the foreground and background colors, including those
     specified by the parameters :ref:`COLOR_BACKGROUND <COLOR_BACKGROUND>` and
     :ref:`COLOR_FOREGROUND <COLOR_FOREGROUND>`.
+    Append **z** to reverse the sign of z-values in the color table.  Note that
+    this change of *z*-direction happens before **-G** and **-T** values are used
+    so the latter much be compatible with the changed *z*-range.
+    See also :ref:`manipulating_CPTs`
 
 .. _-M:
 
@@ -158,7 +162,7 @@ Optional Arguments
     discretely at intervals *z_inc* between *z_min* and *z_max*;
     append a trailing **+** to interpret *z_inc* as the number of desired intervals instead.
     Alternatively, give the name of a ASCII file that has one z-value
-    per record, or provide a list of comma-separated z-values instead
+    per record, or provide a list of comma-separated z-values instead.
     If **-T** is not given, the existing range in the master
     CPT will be used intact.
 
@@ -241,6 +245,16 @@ the data table depths.txt (with lon, lat, depths), run
    ::
 
     gmt makecpt -Cgebco depths.txt -i2 -Z -E24 > my_depths.cpt
+
+To use the gebco color table but reverse the z-values so it can be used for
+positive depth values, try
+
+   ::
+
+    gmt makecpt -Cgebco -Iz > my_positive_gebco.cpt
+
+To create a 24-level rainbow color table suitable for plotting the depths in
+the data table depths.txt (with lon, lat, depths), run
 
 To make a custom discrete color table for depth of seismicity, using red color for
 hypocenters between 0 and 100 km, green for 100-300 km, and blue for deep (300-1000 km)

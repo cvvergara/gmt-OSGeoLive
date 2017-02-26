@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdraster.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdraster.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -798,7 +798,7 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 	/* Check if given argument is an integer ID.  If so, assign iselect, else set it to UINT_MAX */
 
 	tselect = strdup (Ctrl->In.file);
-	gmt_str_toupper (tselect);	/* Make it upper case - which wont affect integers */
+	gmt_str_toupper (tselect);	/* Make it upper case - which won't affect integers */
 	for (j = i = 0; tselect[j] && i == 0; j++) if (!isdigit ((int)tselect[j])) i = 1;
 	if (i == 0)
 		iselect = atoi (tselect);
@@ -998,6 +998,10 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 			gmt_M_free (GMT, x);
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			gmt_M_free (GMT, x);
+			Return (API->error);
+		}
 	} else {	/* Need an entire (padded) grid */
 		Grid->data = gmt_M_memory_aligned (GMT, NULL, Grid->header->size, float);
 	}
@@ -1066,7 +1070,7 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 				for (col = 0; col < Grid->header->n_columns; col++) {
 					out[0] = x[col];
 					out[2] = Grid->data[col];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 				}
 			}
 		}
@@ -1145,7 +1149,7 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 				for (col = 0; col < Grid->header->n_columns; col++) {
 					out[GMT_X] = x[col];
 					out[GMT_Z] = Grid->data[col];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 				}
 			}
 		}

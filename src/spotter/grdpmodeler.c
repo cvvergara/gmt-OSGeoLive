@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdpmodeler.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdpmodeler.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *   Copyright (c) 1999-2016 by P. Wessel
+ *   Copyright (c) 1999-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -396,6 +396,9 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args) {
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			Return (API->error);
+		}
 		GMT_Report (API, GMT_MSG_VERBOSE, "Evaluate %d model predictions based on %s\n", Ctrl->S.n_items, Ctrl->E.rot.file);
 		out = gmt_M_memory (GMT, NULL, Ctrl->S.n_items + 3, double);
 	}
@@ -507,7 +510,7 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args) {
 			else
 				out[k+3] = value;
 		}
-		if (!Ctrl->G.active) GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+		if (!Ctrl->G.active) GMT_Put_Record (API, GMT_WRITE_DATA, out);
 	}
 
 	if (n_outside) GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " points fell outside the polygonal boundary\n", n_outside);

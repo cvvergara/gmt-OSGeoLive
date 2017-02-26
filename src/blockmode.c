@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *    $Id: blockmode.c 17124 2016-09-22 21:35:10Z jluis $
+ *    $Id: blockmode.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,7 @@ struct BIN_MODE_INFO {	/* Used for histogram binning */
 	double i_offset;	/* 0.5 if we are to bin using the center the bins on multiples of width, else 0.0 */
 	double o_offset;	/* 0.0 if we are to report center the bins on multiples of width, else 0.5 */
 	double i_width;		/* 1/width, to avoid divisions later */
-	double *count;		/* The histogram counts (double to accomodate weighted data), to be reset before each spatial block */
+	double *count;		/* The histogram counts (double to accommodate weighted data), to be reset before each spatial block */
 	int min, max;		/* The raw min,max bin numbers (min can be negative) */
 	int mode_choice;	/* For multiple modes: BLOCKMODE_LOW picks lowest, BLOCKMODE_AVE picks average, BLOCKMODE_HIGH picks highest */
 	unsigned int n_bins;/* Number of bins required */
@@ -250,7 +250,7 @@ GMT_LOCAL double bin_mode (struct GMT_CTRL *GMT, struct BLK_DATA *d, uint64_t n,
 		B->count[bin] += d[i].a[BLK_W];		/* Add up counts or weights */
 		if (B->count[bin] > mode_count) {	/* New max count value; make a note */
 			mode_count = B->count[bin];	/* Highest count so far... */
-			mode_bin = bin;			/* ...occuring for this bin */
+			mode_bin = bin;			/* ...occurring for this bin */
 			n_modes = 1;			/* Only one of these so far */
 		}
 		else if (doubleAlmostEqual (B->count[bin], mode_count)) n_modes++;	/* Bin has same peak as previous best mode; increase mode count */
@@ -506,7 +506,7 @@ int GMT_blockmode (void *V_API, int mode, void *args) {
 	is_integer = true;	/* Until proven otherwise */
 
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
 			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
@@ -582,6 +582,9 @@ int GMT_blockmode (void *V_API, int mode, void *args) {
 
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		gmt_M_free (GMT, data);
+		Return (API->error);
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
 		Return (API->error);
 	}
 
@@ -724,7 +727,7 @@ int GMT_blockmode (void *V_API, int mode, void *args) {
 		if (Ctrl->W.weighted[GMT_OUT]) out[w_col] = (Ctrl->W.sigma[GMT_OUT]) ? 1.0 / weight : weight;
 		if (emode) out[i_col] = (double)src_id;
 
-		GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+		GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 
 		n_cells_filled++;
 		first_in_cell = first_in_new_cell;

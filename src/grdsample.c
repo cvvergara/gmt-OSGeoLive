@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdsample.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdsample.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -296,7 +296,7 @@ int GMT_grdsample (void *V_API, int mode, void *args) {
 		     wesn[YHI] > (Gin->header->wesn[YHI] + Gin->header->inc[GMT_Y]) ||
 		     wesn[XLO] < (Gin->header->wesn[XLO] - Gin->header->inc[GMT_X]) ||
 		     wesn[XHI] > (Gin->header->wesn[XHI] + Gin->header->inc[GMT_X])) && GMT->current.io.grd_info.active) {
-			/* If the limits were specified via -R<grid> adjust those limits to maximum allowd by resampling grid */
+			/* If the limits were specified via -R<grid> adjust those limits to maximum allowed by resampling grid */
 			adjust_R (API, Ctrl, Gin, wesn);
 		}
 		else {

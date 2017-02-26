@@ -1,9 +1,9 @@
 #!/bin/bash
-#	$Id: gmt_shell_functions.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#	$Id: gmt_shell_functions.sh 17326 2016-11-08 20:28:56Z pwessel $
 #
 # These functions can be used from any sh/bash script by specifying
 # . gmt_shell_functions.sh
-# in your script. Placing it in .bashrc makes the functions avaiable
+# in your script. Placing it in .bashrc makes the functions available
 # on the command line as well.  See documentation for usage.
 #
 #----GMT SHELL FUNCTIONS--------------------

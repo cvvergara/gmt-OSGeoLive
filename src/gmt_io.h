@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_io.h 16811 2016-07-15 23:02:04Z pwessel $
+ *	$Id: gmt_io.h 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -78,7 +78,7 @@ enum GMT_enum_ogr {
 	GMT_IS_MULTILINESTRING,
 	GMT_IS_MULTIPOLYGON};
 
-/*! Codes for aspatial assocation with segment header options: */
+/*! Codes for aspatial association with segment header options: */
 enum GMT_enum_segopt {
 	/*! -D */	GMT_IS_D = -1,
 	/*! -G */	GMT_IS_G = -2,

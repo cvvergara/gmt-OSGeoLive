@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegy.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: pssegy.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *    Copyright (c) 1999-2016 by T. Henstock
+ *    Copyright (c) 1999-2017 by T. Henstock
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* pssegy program to plot segy files in postscript with variable trace spacing option
@@ -468,9 +468,9 @@ int GMT_pssegy (void *V_API, int mode, void *args) {
 	FILE *fpi = NULL, *fpt = NULL;
 
 	struct PSSEGY_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;				/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;				/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/

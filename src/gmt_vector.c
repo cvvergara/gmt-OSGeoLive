@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_vector.c 16722 2016-07-06 13:46:09Z remko $
+ *	$Id: gmt_vector.c 17528 2017-02-05 08:02:49Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -41,7 +41,7 @@ GMT_LOCAL void vector_switchrows (double *a, double *b, unsigned int n1, unsigne
 	memcpy(a+n*n1, a+n*n2, sizeof(double)*n);
 	memcpy(a+n*n2, oa, sizeof(double)*n);
 
-	double_swap (b[n1], b[n2]);
+	gmt_M_double_swap (b[n1], b[n2]);
 
 	gmt_M_str_free (oa);
 }
@@ -1372,7 +1372,7 @@ uint64_t gmt_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 	uint64_t i, j, n_new, n_step = 0;
 	double a[3], b[3], x[3], *lon = NULL, *lat = NULL;
 	double c, d, fraction, theta, minlon, maxlon;
-	double dlon, lon_i;
+	double dlon, lon_i, boost, f_lat_a, f_lat_b;
 
 	if (!gmt_M_is_geographic (GMT, GMT_IN)) return (vector_fix_up_path_cartonly (GMT, a_lon, a_lat, n, mode));	/* Stair case only */
 
@@ -1391,14 +1391,26 @@ uint64_t gmt_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 	if (step <= 0.0) step = GMT->current.map.path_step;	/* Based on GMT->current.setting.map_line_step converted to degrees */
 	if (step <= 0.0) step = 0.1;				/* Safety valve when no -J and step not set. */
 
-	/* Must be careful with connecting longitudes along a parallel since often the
+	/* 1) Must be careful with connecting longitudes along a parallel since often the
 	 * longitudes might be of different sign.  E.g., first may be +115 and the second is -165.
 	 * Naive math would find a jump of -280 degrees but really it is just 80.  The test below
-	 * tries to handle these artificial jumps. */
+	 * tries to handle these artificial jumps.
+	 * 2) When very close to a pole the distance between two input points can be very small
+	 * and hence the number of steps n_step will be small.  This can lead to large jumps in
+	 * longitude that can later confuse us as to when we cross a periodic boundary.
+	 * We try to mitigate that by scaling up the number of steps by a boost factor that is 1
+	 * away from poles and from |lat| = 75 increases to 100 very close to the pole. */
 
+	f_lat_a = fabs (lat[0]);
 	for (i = 1; i < n; i++) {
+		f_lat_b = fabs (lat[i]);
 
 		gmt_geo_to_cart (GMT, lat[i], lon[i], b, true);	/* End point of current arc */
+		boost = (MIN(f_lat_a, f_lat_b) > 75.0) ? 100.0 : 1.0;	/* Enforce closer sampling close to poles */
+		if (MIN(f_lat_a, f_lat_b) > 75.0)	/* Enforce closer sampling close to poles */
+			boost = 1.0 + 10.0 * (MAX(f_lat_a, f_lat_b) - 75.0);	/* Crude way to get a boost from 1 at 80 to ~101 at the pole */
+		else
+			boost = 1.0;
 
 		if (mode == GMT_STAIRS_Y) {	/* First follow meridian, then parallel */
 			dlon = lon[i]-lon[i-1];	/* Beware of jumps due to sign differences */
@@ -1451,10 +1463,19 @@ uint64_t gmt_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 		}
 
 		/* Follow great circle */
-		else if ((theta = d_acosd (gmt_dot3v (GMT, a, b))) == 180.0)	/* trouble, no unique great circle */
-			GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning: Two points in input list are antipodal - no resampling taken place!\n");
+		else if ((theta = d_acosd (gmt_dot3v (GMT, a, b))) == 180.0) {	/* trouble, no unique great circle */
+			if (gmt_M_is_spherical (GMT) || ((lat[i] + lat[i-1]) == 0.0)) {
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Two points in input list are antipodal - great circle resampling is not unique!\n");
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Fix input data or use project -A to generate athe desired great circle by providing an azimuth.\n");
+			}
+			else {
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Two points in input list are antipodal - great circle resampling is not unique!\n");
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "There are two possible geodesics but GMT does not currently calculate geodesics.\n");
+			}
+			return 0;
+		}
 
-		else if ((n_step = lrint (theta / step)) > 1) {	/* Must insert (n_step - 1) points, i.e. create n_step intervals */
+		else if ((n_step = lrint (boost * theta / step)) > 1) {	/* Must insert (n_step - 1) points, i.e. create n_step intervals */
 			fraction = 1.0 / (double)n_step;
 			minlon = MIN (lon[i-1], lon[i]);
 			maxlon = MAX (lon[i-1], lon[i]);
@@ -1479,6 +1500,7 @@ uint64_t gmt_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 		GMT->hidden.mem_coord[GMT_X][n_new] = lon[i];	GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i];
 		n_new++;
 		gmt_M_cpy3v (a, b);
+		f_lat_a = f_lat_b;
 	}
 
 	/* Destroy old allocated memory and put the new one in place */

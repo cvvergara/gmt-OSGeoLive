@@ -1,5 +1,5 @@
 #
-# $Id: GmtManpages.cmake 15759 2016-02-24 23:36:11Z pwessel $
+# $Id: GmtManpages.cmake 17449 2017-01-16 21:27:04Z pwessel $
 #
 # - Generates manpages from txt-files and creates installation targets
 # GMT_CREATE_MANPAGES ("${MAN_FILES}" [DEPENDS [DEPENDS2] ...]])
@@ -11,7 +11,7 @@
 #  set (MAN_FILES user.1 system.2 special.4 formats.5)
 #  GMT_CREATE_MANPAGES ("${MAN_FILES}")
 #
-# Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 if(NOT DEFINED _GMT_MANPAGES_CMAKE_)
 	set(_GMT_MANPAGES_CMAKE_ "DEFINED")
 
-	# usefull macros
+	# useful macros
 	include (GmtHelperMacros)
 
 	# Find groff front-end

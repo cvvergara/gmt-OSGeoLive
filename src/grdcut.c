@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcut.c 16798 2016-07-14 19:03:58Z pwessel $
+ *	$Id: grdcut.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -517,12 +517,21 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 		if (outside[XHI]) pad[XHI] += urint ((wesn_requested[XHI] - G->header->wesn[XHI]) * G->header->r_inc[GMT_X]);
 		if (outside[YLO]) pad[YLO] += urint ((G->header->wesn[YLO] - wesn_requested[YLO]) * G->header->r_inc[GMT_Y]);
 		if (outside[YHI]) pad[YHI] += urint ((wesn_requested[YHI] - G->header->wesn[YHI]) * G->header->r_inc[GMT_Y]);
-		gmt_M_grd_setpad (GMT, G->header, pad);	/* Set the active pad */
 		gmt_M_memcpy (GMT->current.io.pad, pad, 4, unsigned int);	/* Change default pad */
-		gmt_set_grddim (GMT, G->header);	/* Update dimensions given the change of pad */
+		if (!gmt_M_file_is_memory (Ctrl->In.file)) {	/* If a memory grid we end up duplicating below so only do this in the other cases */
+			gmt_M_grd_setpad (GMT, G->header, pad);	/* Set the active pad before reading */
+			gmt_set_grddim (GMT, G->header);	/* Update dimensions given the change of pad */
+		}
 	}
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY | add_mode, wesn_new, Ctrl->In.file, G) == NULL) {	/* Get subset */
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY | add_mode, wesn_new, Ctrl->In.file, G) == NULL) {	/* Get subset (unless memory file) */
 		Return (API->error);
+	}
+	if (gmt_M_file_is_memory (Ctrl->In.file) && (Ctrl->N.active || gmt_M_file_is_memory (Ctrl->G.file))) {
+		/* Cannot manipulate the same grid in two different ways so we must make a duplicate of the input grid */
+		struct GMT_GRID *G_dup = NULL;	/* For the duplicate; we eliminate any unnecessary padding using GMT_DUPLICATE_RESET */
+		if ((G_dup = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_DATA | GMT_DUPLICATE_RESET, G)) == NULL)
+			Return (API->error);
+		G = G_dup;	/* Since G was not allocated here anyway - it came from the outside and will be deleted there */
 	}
 	if (Ctrl->N.active && extend) {	/* Now shrink pad back to default and simultaneously extend region and apply nodata values */
 		unsigned int xlo, xhi, ylo, yhi, row, col;

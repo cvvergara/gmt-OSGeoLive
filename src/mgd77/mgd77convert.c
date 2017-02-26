@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77convert.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: mgd77convert.c 17496 2017-01-28 23:56:41Z pwessel $
  *
- *    Copyright (c) 2005-2016 by P. Wessel
+ *    Copyright (c) 2005-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -211,8 +211,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77CONVERT_CTRL *Ctrl, struc
 int GMT_mgd77convert (void *V_API, int mode, void *args) {
 	int i, argno, n_cruises = 0, n_paths, error = 0;
 	
-	char file[GMT_BUFSIZ] = {""}, **list = NULL, *fcode = "actm";
-	char *format_name[MGD77_N_FORMATS] = {"MGD77 ASCII", "MGD77+ netCDF", "ASCII table", "MGD77T ASCII"};
+	char file[GMT_BUFSIZ] = {""}, **list = NULL, *fcode = "cmat";
+	char *format_name[MGD77_N_FORMATS] = {"MGD77+ netCDF", "MGD77T ASCII", "MGD77 ASCII", "ASCII table"};
 
 	struct MGD77_CONTROL M;
 	struct MGD77_DATASET *D = NULL;
@@ -306,14 +306,13 @@ int GMT_mgd77convert (void *V_API, int mode, void *args) {
 	if (Ctrl->F.format == Ctrl->T.format) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: The two formats chosen are the same\n");
 	
 	if (Ctrl->T.format == MGD77_FORMAT_TBL && !(strcmp (GMT->current.setting.format_float_out, "%lg") & strcmp (GMT->current.setting.format_float_out, "%g"))) {
-		strcpy (GMT->current.setting.format_float_out, "%.10g");	/* To avoid loosing precision upon rereading this file */
+		strcpy (GMT->current.setting.format_float_out, "%.10g");	/* To avoid losing precision upon rereading this file */
 	}
 	
 	if (Ctrl->T.format == MGD77_FORMAT_CDF && Ctrl->D.active) MGD77_select_high_resolution (GMT);
 	
 	for (argno = 0; argno < n_paths; argno++) {		/* Process each ID */
 	
-		D = MGD77_Create_Dataset (GMT);	/* Get data structure w/header */
 		MGD77_Reset (GMT, &M);		/* Reset to start fresh for next file */
 
 		M.format = Ctrl->F.format;	/* Set input file's format and read everything into memory */
@@ -322,6 +321,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args) {
 		MGD77_Ignore_Format (GMT, MGD77_FORMAT_ANY);	/* Reset to all formats OK, then ... */
 		for (i = 0; i < MGD77_N_FORMATS; i++) if (i != M.format) MGD77_Ignore_Format (GMT, i);		/* ...only allow the specified input format */
 		if (MGD77_Open_File (GMT, list[argno], &M, MGD77_READ_MODE)) continue;
+		D = MGD77_Create_Dataset (GMT);	/* Get data structure w/header */
 		if (MGD77_Read_Header_Record (GMT, list[argno], &M, &D->H)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error reading header sequence for cruise %s\n", list[argno]);
 			Return (GMT_DATA_READ_ERROR);
