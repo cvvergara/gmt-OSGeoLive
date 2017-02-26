@@ -1,3 +1,9 @@
+gmt (5.3.2+dfsg-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Sun, 26 Feb 2017 11:56:02 +0100
+
 gmt (5.3.1+dfsg-2) unstable; urgency=medium
 
   * Use dh_auto_{clean,build,install} instead of custom commands.
