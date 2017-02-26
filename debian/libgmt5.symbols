@@ -71,6 +71,7 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_Set_Columns@Base 5.3.1
  GMT_Set_Comment@Base 5.1.2
  GMT_Set_Default@Base 5.2.1
+ GMT_Set_Geometry@Base 5.3.2
  GMT_Set_Index@Base 5.3.1
  GMT_Status_IO@Base 5.1.2
  GMT_Surface_Global@Base 5.1.2
@@ -482,6 +483,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_grinten@Base 5.3.1
  gmt_guess_sharedir@Base 5.3.1
  gmt_hammer@Base 5.3.1
+ gmt_handle5_plussign@Base 5.3.2
  gmt_hash_init@Base 5.3.1
  gmt_hash_lookup@Base 5.3.1
  gmt_hold_contour@Base 5.3.1
@@ -652,6 +654,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_parse_d_option@Base 5.2.1
  gmt_parse_g_option@Base 5.1.2
  gmt_parse_i_option@Base 5.1.2
+ gmt_parse_inv_cpt@Base 5.3.2
  gmt_parse_model@Base 5.3.1
  gmt_parse_o_option@Base 5.1.2
  gmt_parse_range@Base 5.1.2
