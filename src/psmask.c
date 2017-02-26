@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psmask.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: psmask.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -386,8 +386,8 @@ GMT_LOCAL void orient_contours (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *h,
 	if (reverse) {	/* Must reverse order of contour */
 		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Change orientation of closed polygon\n");
 		for (i = 0, j = n-1; i < n/2; i++, j--) {
-			double_swap (x[i], x[j]);
-			double_swap (y[i], y[j]);
+			gmt_M_double_swap (x[i], x[j]);
+			gmt_M_double_swap (y[i], y[j]);
 		}
 	}
 }
@@ -618,9 +618,9 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 	struct GMT_GRID *Grid = NULL;
 	struct PSMASK_INFO info;
 	struct PSMASK_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
@@ -737,7 +737,7 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 		n_read = 0;
 		do {	/* Keep returning records until we reach EOF */
 			n_read++;
-			if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+			if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 				if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 					Return (GMT_RUNTIME_ERROR);
 				if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
@@ -760,6 +760,32 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 				grd[ij] = 1;
 			}
 			else {	/* Set coordinate of this node */
+				if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Make special checks for N and S poles */
+					if (gmt_M_is_Npole (in[GMT_Y])) {	/* N pole */
+						if (Ctrl->S.radius == 0.0) {	/* Only set the N pole row */
+							gmt_M_col_loop (GMT, Grid, 0, col, ij)	/* Set this entire N row */
+								grd[ij] = 1;
+							continue;
+						}
+						for (row = 0; row < Grid->header->n_rows && (distance = gmt_distance (GMT, 0.0, 90.0, grd_x0[0], grd_y0[row])) <= Ctrl->S.radius; row++) {
+							gmt_M_col_loop (GMT, Grid, row, col, ij)	/* Set this entire row */
+								grd[ij] = 1;
+						}
+						continue;
+					}
+					else if (gmt_M_is_Spole (in[GMT_Y])) {	/* S pole */
+						if (Ctrl->S.radius == 0.0) {	/* Only set the S pole row */
+							gmt_M_col_loop (GMT, Grid, Grid->header->n_rows - 1, col, ij)	/* Set this entire S row */
+								grd[ij] = 1;
+							continue;
+						}
+						for (row = Grid->header->n_rows; row > 0 && (distance = gmt_distance (GMT, 0.0, -90.0, grd_x0[0], grd_y0[row-1])) <= Ctrl->S.radius; row--) {
+							gmt_M_col_loop (GMT, Grid, row-1, col, ij)	/* Set this entire row */
+								grd[ij] = 1;
+						}
+						continue;
+					}
+				}
 
 				x0 = gmt_M_grd_col_to_x (GMT, col, Grid->header);
 				y0 = gmt_M_grd_row_to_y (GMT, row, Grid->header);

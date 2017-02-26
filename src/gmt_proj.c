@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_proj.c 16821 2016-07-16 20:08:53Z pwessel $
+ *	$Id: gmt_proj.c 17528 2017-02-05 08:02:49Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -81,7 +81,7 @@
 #define GMT_PROJ_IS_ZERO(x) (fabs (x) < GMT_PROJ_CONV_LIMIT)
 
 GMT_LOCAL double proj_robinson_spline (struct GMT_CTRL *GMT, double xp, double *x, double *y, double *c) {
-	/* Compute the interpolated values from the Robinson coefficients */
+	/* Returns the interpolated value y(xp) from the Robinson coefficients */
 
 	int j = 0, j1;
 	double yp, a, b, h, ih, dx;
@@ -718,6 +718,56 @@ void gmt_icyleqdist (struct GMT_CTRL *GMT, double *lon, double *lat, double x, d
 
 /* -JJ MILLER CYLINDRICAL PROJECTION */
 
+//#define CHRISTMAS
+/* Turning on Christmas makes the Miller projection a triangular projection
+ * that projects 90 degrees of longitude and latitudes 45-90 into a 45-degree
+ * triangle.  Doing all for quadrants results in a square map with radial
+ * meridians and lots of distortion along the boundaries.  This was used to
+ * build a 3-D cube of the world with this triangle projection being used to
+ * map the top (N polar to 34N) and bottom (S pole to 45S) sides, with the
+ * remaining 4 sides just being -JQ maps.  I left it here since I may want
+ * to mess with this in the future.  P. Wessel, Dec. 2016.
+ */
+#ifdef CHRISTMAS
+/* Bypass Miller projection entirely and introduce a triangle projection */
+void gmt_vmiller (struct GMT_CTRL *GMT, double lon0, double slat) {
+	/* Set up a Cylindrical equidistant transformation */
+	GMT->current.proj.north_pole = (slat > 0.0);
+	proj_check_R_J (GMT, &lon0);
+	GMT->current.proj.central_meridian = lon0;
+	GMT->current.proj.j_x = 0.25 * D2R * GMT->current.proj.EQ_RAD;
+	GMT->current.proj.j_y = 0.25 * D2R * GMT->current.proj.EQ_RAD;
+	GMT->current.proj.j_ix = 1.0 / GMT->current.proj.j_x;
+	GMT->current.proj.j_iy = 1.0 / GMT->current.proj.j_y;
+}
+
+void gmt_miller (struct GMT_CTRL *GMT, double lon, double lat, double *x, double *y) {
+	/* Convert lon/lat to Cylindrical equidistant x/y */
+
+	gmt_M_wind_lon (GMT, lon)	/* Remove central meridian and place lon in -180/+180 range */
+	if (lat > 0.0) {
+		*x = (0.5 + lon * (90.0 - lat) / 4050.0) * GMT->current.proj.j_x;
+		*y = ((lat-45.0) / 90.0) * GMT->current.proj.j_y;
+	}
+	else {
+		*x = (0.5 - lon * (90.0 + lat) / 4050.0) * GMT->current.proj.j_x;
+		*y = -((lat+45) / 90.0) * GMT->current.proj.j_y;
+	}
+}
+
+void gmt_imiller (struct GMT_CTRL *GMT, double *lon, double *lat, double x, double y) {
+	/* Convert Cylindrical equal-area x/y to lon/lat */
+
+	if (GMT->current.proj.north_pole) {
+		*lat = 45.0 + 90.0 * y * GMT->current.proj.j_iy;
+		*lon = (4050.0 * (x * GMT->current.proj.j_ix - 0.5)) / (90.0 - *lat) + GMT->current.proj.central_meridian;
+	}
+	else {
+		*lat = -(45.0 + 90.0 * y * GMT->current.proj.j_iy);
+		*lon = -(4050.0 * (x * GMT->current.proj.j_ix - 0.5)) / (90.0 + *lat) + GMT->current.proj.central_meridian;
+	}
+}
+#else
 void gmt_vmiller (struct GMT_CTRL *GMT, double lon0) {
 	/* Set up a Miller Cylindrical transformation */
 
@@ -743,6 +793,7 @@ void gmt_imiller (struct GMT_CTRL *GMT, double *lon, double *lat, double x, doub
 	*lon = x * GMT->current.proj.j_ix + GMT->current.proj.central_meridian;
 	*lat = 2.5 * atand (exp (y * GMT->current.proj.j_iy)) - 112.5;
 }
+#endif
 
 /* -JCyl_stere CYLINDRICAL STEREOGRAPHIC PROJECTION */
 
@@ -2428,14 +2479,16 @@ void gmt_vrobinson (struct GMT_CTRL *GMT, double lon0) {
 	GMT->current.proj.n_phi[17] = 85;	GMT->current.proj.n_X[17] = 0.5722;	GMT->current.proj.n_Y[17] = 0.9761;
 	GMT->current.proj.n_phi[18] = 90;	GMT->current.proj.n_X[18] = 0.5322;	GMT->current.proj.n_Y[18] = 1.0000;
 	if (GMT->current.setting.interpolant == GMT_SPLINE_CUBIC) {	/* Natural cubic spline */
-		err_flag  = gmtlib_cspline (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_X, GMT_N_ROBINSON, GMT->current.proj.n_x_coeff);
-		err_flag += gmtlib_cspline (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_Y, GMT_N_ROBINSON, GMT->current.proj.n_y_coeff);
-		err_flag += gmtlib_cspline (GMT, GMT->current.proj.n_Y, GMT->current.proj.n_phi, GMT_N_ROBINSON, GMT->current.proj.n_iy_coeff);
+		err_flag  = gmtlib_cspline (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_X,   GMT_N_ROBINSON, GMT->current.proj.n_x_coeff);
+		err_flag += gmtlib_cspline (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_Y,   GMT_N_ROBINSON, GMT->current.proj.n_y_coeff);
+		err_flag += gmtlib_cspline (GMT, GMT->current.proj.n_Y,   GMT->current.proj.n_X,   GMT_N_ROBINSON, GMT->current.proj.n_yx_coeff);
+		err_flag += gmtlib_cspline (GMT, GMT->current.proj.n_Y,   GMT->current.proj.n_phi, GMT_N_ROBINSON, GMT->current.proj.n_iy_coeff);
 	}
 	else {	/* Akimas spline */
-		err_flag  = gmtlib_akima (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_X, GMT_N_ROBINSON, GMT->current.proj.n_x_coeff);
-		err_flag += gmtlib_akima (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_Y, GMT_N_ROBINSON, GMT->current.proj.n_y_coeff);
-		err_flag += gmtlib_akima (GMT, GMT->current.proj.n_Y, GMT->current.proj.n_phi, GMT_N_ROBINSON, GMT->current.proj.n_iy_coeff);
+		err_flag  = gmtlib_akima (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_X,   GMT_N_ROBINSON, GMT->current.proj.n_x_coeff);
+		err_flag += gmtlib_akima (GMT, GMT->current.proj.n_phi, GMT->current.proj.n_Y,   GMT_N_ROBINSON, GMT->current.proj.n_y_coeff);
+		err_flag += gmtlib_akima (GMT, GMT->current.proj.n_Y,   GMT->current.proj.n_X,   GMT_N_ROBINSON, GMT->current.proj.n_yx_coeff);
+		err_flag += gmtlib_akima (GMT, GMT->current.proj.n_Y,   GMT->current.proj.n_phi, GMT_N_ROBINSON, GMT->current.proj.n_iy_coeff);
 	}
 	if (err_flag) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error:  Interpolation failed in gmt_vrobinson?\n");
 }
@@ -2475,6 +2528,29 @@ double gmt_left_robinson (struct GMT_CTRL *GMT, double y) {
 	y -= GMT->current.proj.origin[GMT_Y];
 	y *= GMT->current.proj.i_scale[GMT_Y];
 	Y = fabs (y * GMT->current.proj.n_i_cy);
+	X = proj_robinson_spline (GMT, Y, GMT->current.proj.n_Y, GMT->current.proj.n_X, GMT->current.proj.n_yx_coeff);
+	x = GMT->current.proj.n_cx * X * (GMT->common.R.wesn[XLO] - GMT->current.proj.central_meridian);
+	return (x * GMT->current.proj.scale[GMT_X] + GMT->current.proj.origin[GMT_X]);
+}
+
+double gmt_right_robinson (struct GMT_CTRL *GMT, double y) {
+	double x, X, Y;
+
+	y -= GMT->current.proj.origin[GMT_Y];
+	y *= GMT->current.proj.i_scale[GMT_Y];
+	Y = fabs (y * GMT->current.proj.n_i_cy);
+	X = proj_robinson_spline (GMT, Y, GMT->current.proj.n_Y, GMT->current.proj.n_X, GMT->current.proj.n_yx_coeff);
+	x = GMT->current.proj.n_cx * X * (GMT->common.R.wesn[XHI] - GMT->current.proj.central_meridian);
+	return (x * GMT->current.proj.scale[GMT_X] + GMT->current.proj.origin[GMT_X]);
+}
+
+#if 0
+double gmt_left_robinson (struct GMT_CTRL *GMT, double y) {
+	double x, X, Y;
+
+	y -= GMT->current.proj.origin[GMT_Y];
+	y *= GMT->current.proj.i_scale[GMT_Y];
+	Y = fabs (y * GMT->current.proj.n_i_cy);
 	if (gmt_intpol (GMT, GMT->current.proj.n_Y, GMT->current.proj.n_X, GMT_N_ROBINSON, 1, &Y, &X, GMT->current.setting.interpolant)) {
 		gmt_message (GMT, "GMT Internal error in gmt_left_robinson!\n");
 		GMT_exit (GMT, GMT_PROJECTION_ERROR); return GMT->session.d_NaN;
@@ -2498,6 +2574,7 @@ double gmt_right_robinson (struct GMT_CTRL *GMT, double y) {
 	x = GMT->current.proj.n_cx * X * (GMT->common.R.wesn[XHI] - GMT->current.proj.central_meridian);
 	return (x * GMT->current.proj.scale[GMT_X] + GMT->current.proj.origin[GMT_X]);
 }
+#endif
 
 /* -JI SINUSOIDAL EQUAL AREA PROJECTION */
 

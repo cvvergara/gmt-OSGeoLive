@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
-*    $Id: gmtspatial.c 16904 2016-08-13 22:21:14Z pwessel $
+*    $Id: gmtspatial.c 17560 2017-02-17 22:05:42Z pwessel $
 *
-*	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+*	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 *	See LICENSE.TXT file for copying and redistribution conditions.
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU Lesser General Public License as published by
@@ -265,7 +265,7 @@ GMT_LOCAL void write_record (struct GMT_CTRL *GMT, double **R, uint64_t n, uint6
 	uint64_t c;
 	double out[GMT_MAX_COLUMNS];
 	for (c = 0; c < n; c++) out[c] = R[c][p];
-	GMT_Put_Record (GMT->parent, GMT_WRITE_DOUBLE, out);
+	GMT_Put_Record (GMT->parent, GMT_WRITE_DATA, out);
 }
 
 GMT_LOCAL int is_duplicate (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S, struct GMT_DATASET *D, struct DUP *I, struct DUP_INFO **L) {
@@ -314,7 +314,7 @@ GMT_LOCAL int is_duplicate (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S, str
 	
 	/* We first want to obtain the mean distance from one segment to all others.  We do this by computing the
 	 * nearest distance from each point along our segment S to the other segments and compute the average of
-	 * all those distances.  Then we reverse teh search and continue to accumulate averages */
+	 * all those distances.  Then we reverse the search and continue to accumulate averages */
 	
 	/* Process each point along the trace in S and find sum of nearest distances for each segment in table */
 	for (row = 0; row < S->n_rows; row++) {
@@ -429,7 +429,7 @@ GMT_LOCAL int is_duplicate (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S, str
 			D->table[tbl]->segment[seg]->mode = 0;			/* Remove this temporary flag */
 			
 			Sp = D->table[tbl]->segment[seg];	/* This is S', one of the segments that is close to S */
-			if (S->n_rows == Sp->n_rows) {	/* Exacly the same number of data points; check for identical duplicate (possibly reversed) */
+			if (S->n_rows == Sp->n_rows) {	/* Exactly the same number of data points; check for identical duplicate (possibly reversed) */
 				for (row = 0, d1 = d2 = 0.0; row < S->n_rows; row++) {	/* Compare each point along the trace in S and Sp and S and Sp-reversed */
 					d1 += gmt_distance (GMT, S->data[GMT_X][row], S->data[GMT_Y][row], Sp->data[GMT_X][row], Sp->data[GMT_Y][row]);
 					d2 += gmt_distance (GMT, S->data[GMT_X][row], S->data[GMT_Y][row], Sp->data[GMT_X][S->n_rows-row-1], Sp->data[GMT_Y][S->n_rows-row-1]);
@@ -1105,6 +1105,10 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 			gmt_M_free (GMT, NN_dist);	 gmt_M_free (GMT, NN_info);	
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			gmt_M_free (GMT, NN_dist);	 gmt_M_free (GMT, NN_info);	
+			Return (API->error);
+		}
 		if (Ctrl->A.mode) {	/* Need to combine close neighbors until minimum distance >= min_dist, then output revised dataset */
 			n = 0;
 			while (n < n_points && NN_dist[n].distance < Ctrl->A.min_dist) n++;
@@ -1177,7 +1181,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 			out[col++] = NN_dist[k].distance;
 			out[col++] = (double)NN_dist[k].ID;
 			out[col++] = (double)NN_dist[k].neighbor;
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write area or length to output */
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write area or length to output */
 		}
 		if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
 			d_bar /= n_points;
@@ -1217,6 +1221,9 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+			Return (API->error);
+		}
+		if (GMT_Set_Geometry (API, GMT_OUT, geometry) != GMT_NOERROR) {	/* Sets output geometry */
 			Return (API->error);
 		}
 		for (tbl = 0; tbl < D->n_tables; tbl++) {
@@ -1281,7 +1288,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 		if (gmt_M_is_geographic (GMT, GMT_IN)) gmt_init_distaz (GMT, Ctrl->Q.unit, Ctrl->Q.dmode, GMT_MAP_DIST);	/* Default is m using great-circle distances */
 
 		if (Ctrl->Q.header) {	/* Add line length or polygon area stuff to segment header */
-			qmode = Ctrl->Q.mode;	/* Dont know if line or polygon but passing GMT_IS_POLY would close any open polygon, which we want with +p */
+			qmode = Ctrl->Q.mode;	/* Don't know if line or polygon but passing GMT_IS_POLY would close any open polygon, which we want with +p */
 			GMT->current.io.multi_segments[GMT_OUT] = true;	/* To ensure we can write headers */
 		}
 		else {
@@ -1307,6 +1314,9 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 				Return (API->error);
 			}
 			if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+				Return (API->error);
+			}
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
 				Return (API->error);
 			}
 		}
@@ -1358,12 +1368,12 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 				}
 				if (poly && Ctrl->E.active && handedness != Ctrl->E.mode) {	/* Must reverse line */
 					for (row_f = 0, row_l = Sout->n_rows - 1; row_f < Sout->n_rows/2; row_f++, row_l--) {
-						for (col = 0; col < Sout->n_columns; col++) double_swap (Sout->data[col][row_f], Sout->data[col][row_l]);
+						for (col = 0; col < Sout->n_columns; col++) gmt_M_double_swap (Sout->data[col][row_f], Sout->data[col][row_l]);
 					}
 					handedness = Ctrl->E.mode;
 				}
 				if (!new_data)	/* Just write centroid and area|length to output */
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 		}
 		if (Ctrl->Q.header || Ctrl->E.active) {		/* Must write out a revised dataset */
@@ -1440,6 +1450,9 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 		if (GMT_Begin_IO (API, wtype, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, geometry) != GMT_NOERROR) {	/* Sets output geometry */
+			Return (API->error);
+		}
 		wrap = (gmt_M_is_geographic (GMT, GMT_IN) && GMT->common.R.active && gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]));
 
 		sprintf (fmt, "%s%s%s%s%s%s%s%s%%s%s%%s\n", GMT->current.setting.format_float_out, GMT->current.setting.io_col_separator, GMT->current.setting.format_float_out, \
@@ -1497,7 +1510,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 											GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);
 											first = false;
 										}
-										GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+										GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 									}
 									/* Always output crossover point */
 									if (first && GMT->current.io.multi_segments[GMT_OUT]) {	/* Must find unique edges to output only once */
@@ -1510,7 +1523,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 									}
 									for (col = 2; col < S2->n_columns; col++) out[col] = 0.0;
 									out[GMT_X] = xx[px];	out[GMT_Y] = yy[px];
-									GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+									GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 									px++;
 									in = !in;	/* Go from out to in or vice versa */
 									if (!in) first = true;	/* Since we went outside */
@@ -1527,7 +1540,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 												GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);
 												first = false;
 											}
-											GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+											GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 										}
 										go = false;
 									}
@@ -1564,7 +1577,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 								}
 								for (row = 0; row < S2->n_rows; row++) {
 									for (col = 0; col < S2->n_columns; col++) out[col] = S2->data[col][row];
-									GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+									GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 								}
 							}
 						}
@@ -1631,6 +1644,9 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 		if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {
 			gmt_free_segment (GMT, &S2);
 			Return (API->error);				/* Enables data output and sets access mode */
+		}
+		if (GMT_Set_Geometry (API, GMT_OUT, C->geometry) != GMT_NOERROR) {	/* Sets output geometry */
+			Return (API->error);
 		}
 
 		Info = gmt_M_memory (GMT, NULL, C->n_tables, struct DUP_INFO *);
@@ -1765,9 +1781,15 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 			if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 				Return (API->error);
 			}
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+				Return (API->error);
+			}
 		}
 		else {	/* Regular data output */
 			if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_LINE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
+				Return (API->error);
+			}
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_LINE) != GMT_NOERROR) {	/* Sets output geometry */
 				Return (API->error);
 			}
 		}

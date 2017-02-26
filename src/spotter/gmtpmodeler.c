@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtpmodeler.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: gmtpmodeler.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *   Copyright (c) 1999-2016 by P. Wessel
+ *   Copyright (c) 1999-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -314,6 +314,9 @@ int GMT_gmtpmodeler (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 	
 	gmt_init_distaz (GMT, 'd', GMT_GREATCIRCLE, GMT_MAP_DIST);	/* Great circle distances in degrees */
 	if (Ctrl->S.center) GMT->current.io.geo.range = GMT_IS_M180_TO_P180_RANGE;	/* Need +- around 0 here */
@@ -333,7 +336,7 @@ int GMT_gmtpmodeler (void *V_API, int mode, void *args) {
 
 	do {	/* Keep returning records until we reach EOF */
 		n_read++;
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
 			if (gmt_M_rec_is_table_header (GMT)) {	/* Skip all table headers */
@@ -445,7 +448,7 @@ int GMT_gmtpmodeler (void *V_API, int mode, void *args) {
 			}
 			out[k+3] = value;
 		}
-		GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+		GMT_Put_Record (API, GMT_WRITE_DATA, out);
 	} while (true);
 
 	if (GMT_End_IO (API, GMT_IN,  0) != GMT_NOERROR) {	/* Disables further data input */

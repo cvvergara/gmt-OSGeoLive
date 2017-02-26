@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: kml2gmt.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: kml2gmt.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -167,7 +167,7 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 	FILE *fp = NULL;
 
 	struct KML2GMT_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
@@ -201,6 +201,9 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		Return (API->error);
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, Ctrl->F.geometry) != GMT_NOERROR) {	/* Sets output geometry */
 		Return (API->error);
 	}
 
@@ -294,7 +297,7 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 		if (fmode == POINT && single) {	/* Process the single point from current record */
 			for (i = 0; i < length && line[i] != '>'; i++);		/* Find end of <coordinates> */
 			sscanf (&line[i+1], "%lg,%lg,%lg", &out[GMT_X], &out[GMT_Y], &out[GMT_Z]);
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 		}
 		else if (single) {	/* Process multiple points from current single record */
 			for (i = 0; i < length && line[i] != '>'; i++);		/* Find end of <coordinates> */
@@ -302,14 +305,14 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 			while (gmt_strtok (line, " \t", &pos, word)) {	/* Look for clusters of x,y,z separated by whitespace */
 				n_scan = sscanf (word, "%lg,%lg,%lg", &out[GMT_X], &out[GMT_Y], &out[GMT_Z]);
 				if (n_scan == 2 || n_scan == 3)
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 				else
 					break;
 			}
 		}
 		else {	/* Processes points from separate lines */
 			while (fscanf (fp, "%lg,%lg,%lg", &out[GMT_X], &out[GMT_Y], &out[GMT_Z])) {
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 			}
 		}
 		n_features++;

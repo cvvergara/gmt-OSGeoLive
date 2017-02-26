@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_binlist.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: x2sys_binlist.c 17503 2017-01-30 23:14:43Z pwessel $
  *
- *      Copyright (c) 1999-2016 by P. Wessel
+ *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -287,6 +287,12 @@ int GMT_x2sys_binlist (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		gmt_M_free (GMT, X);
+		if (Ctrl->D.active) gmt_M_free (GMT, dist_bin);
+		x2sys_free_list (GMT, trk_name, n_tracks);
+		Return (API->error);
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
 		gmt_M_free (GMT, X);
 		if (Ctrl->D.active) gmt_M_free (GMT, dist_bin);
 		x2sys_free_list (GMT, trk_name, n_tracks);

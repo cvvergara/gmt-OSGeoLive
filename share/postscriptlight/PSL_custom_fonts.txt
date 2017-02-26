@@ -1,4 +1,4 @@
-#	$Id: PSL_custom_fonts.txt 14657 2015-07-30 21:26:18Z pwessel $
+#	$Id: PSL_custom_fonts.txt 17326 2016-11-08 20:28:56Z pwessel $
 #
 #	Listing of additional PostScript fonts than those found on most PS printers.
 #	Add your extra font information there.  This is the only required change as
@@ -8,7 +8,7 @@
 #	to install new fonts on your particular system.
 #
 #	The fontheight below is the height of A for unit fontsize.
-#	Encoded = 0 if we may reencode this font as needed.
+#	Encoded = 0 if we may re-encode this font as needed.
 #
 #Fontname			Fontheight	Encoded
 Ryumin-Light-EUC-H		0.700		1

@@ -1,5 +1,5 @@
 ////
-$Id: README.WIN32 15178 2015-11-06 10:45:03Z fwobbe $
+$Id: README.WIN32 17326 2016-11-08 20:28:56Z pwessel $
 ////
 
 ** HOWTO install GMT5 on Windows using CMake **
@@ -105,7 +105,7 @@ You need to install MinGW/MSYS and run the cmake from within the MSYS shell.
 Path to the gfortran compiler must also be adapted to ones particular case.
 Note also that the liblapack.dll will introduce by itself new dependencies on:
 libblas.dll, libgfortran-3.dll, libgcc_s_seh-1.dll and libquadmath-0.dll
-It's up to the user to make all these dependecies available to the system at runtime.
+It's up to the user to make all these dependencies available to the system at runtime.
 
 Get LAPACK from http://netlib.org/lapack/lapack.tgz and extract lapack.tgz in
 z:\software\lapack-3.5.0\

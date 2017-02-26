@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sphinterpolate.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: sphinterpolate.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 2008-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2008-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 /*
  * Spherical gridding in tension.  We read input data and want to create
  * a grid using various interpolants on a sphere.  This program relies
- * on two Fortan F77 libraries by Renka:
+ * on two Fortran F77 libraries by Renka:
  * Renka, R, J,, 1997, Algorithm 772: STRIPACK: Delaunay Triangulation
  *     and Voronoi Diagram on the Surface of a Sphere, AMC Trans. Math.
  *     Software, 23 (3), 416-434.
@@ -272,7 +272,7 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args) {
 	w_min = DBL_MAX;	w_max = -DBL_MAX;
 	
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) { 		/* Bail if there are any read errors */
 				gmt_M_free (GMT, xx);	gmt_M_free (GMT, yy);
 				gmt_M_free (GMT, zz);	gmt_M_free (GMT, ww);

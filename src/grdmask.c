@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdmask.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdmask.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -235,7 +235,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMASK_CTRL *Ctrl, struct GMT
 
 int GMT_grdmask (void *V_API, int mode, void *args) {
 	bool periodic = false, periodic_grid = false, do_test = true;
-	unsigned int side = 0, *d_col = NULL, d_row = 0, col_0, row_0;
+	unsigned int side = 0, known_side, *d_col = NULL, d_row = 0, col_0, row_0;
 	unsigned int tbl, gmode, n_pol = 0, max_d_col = 0, n_cols = 2;
 	int row, col, n_columns, n_rows, error = 0;
 	
@@ -243,7 +243,7 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 	
 	char text_item[GMT_LEN64] = {""};
 
-	float mask_val[3];
+	float mask_val[3], value;
 	
 	double distance, xx, yy, z_value, xtmp, radius = 0.0, last_radius = -DBL_MAX, *grd_x0 = NULL, *grd_y0 = NULL;
 
@@ -350,12 +350,18 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 
 	D = Din;	/* The default is to work with the input data as is */
 	if (!Ctrl->S.active && GMT->current.map.path_mode == GMT_RESAMPLE_PATH) {	/* Resample all polygons to desired resolution, once and for all */
+		uint64_t n_new;
 		if (D->alloc_mode == GMT_ALLOC_EXTERNALLY)
 			D = GMT_Duplicate_Data (API, GMT_IS_DATASET, GMT_DUPLICATE_ALLOC + GMT_ALLOC_NORMAL, Din);
 		for (tbl = 0; tbl < D->n_tables; tbl++) {
 			for (seg = 0; seg < D->table[tbl]->n_segments; seg++) {	/* For each segment in the table */
 				S = D->table[tbl]->segment[seg];	/* Current segment */
-				S->n_rows = gmt_fix_up_path (GMT, &S->data[GMT_X], &S->data[GMT_Y], S->n_rows, Ctrl->A.step, Ctrl->A.mode);
+				if ((n_new = gmt_fix_up_path (GMT, &S->data[GMT_X], &S->data[GMT_Y], S->n_rows, Ctrl->A.step, Ctrl->A.mode)) == 0) {
+					if (D->alloc_mode == GMT_ALLOC_EXTERNALLY) GMT_Destroy_Data (API, &D);
+					Return (GMT_RUNTIME_ERROR);
+				}
+				S->n_rows = n_new;
+				gmt_set_seg_minmax (GMT, D->geometry, S);	/* Update min/max */
 			}
 		}
 	}
@@ -369,7 +375,37 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 					xtmp = S->data[GMT_X][k];	/* Make copy since we may have to adjust by +-360 */
 					if (gmt_x_is_outside (GMT, &xtmp, Grid->header->wesn[XLO], Grid->header->wesn[XHI])) continue;	/* Outside x-range (or longitude) */
 
-					/* OK, this point is within bounds, but may be exactly on the border */
+					if (Ctrl->S.variable_radius) radius = S->data[GMT_Z][k];
+					if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Make special checks for N and S poles */
+						if (gmt_M_is_Npole (S->data[GMT_Y][k])) {	/* N pole */
+							if (radius == 0.0) {	/* Only set the N pole row */
+								gmt_M_col_loop (GMT, Grid, 0, col, ij)	/* Set this entire N row */
+									Grid->data[ij] = mask_val[GMT_INSIDE];
+								continue;
+							}
+							for (row = 0; row < (int)Grid->header->n_rows && (distance = gmt_distance (GMT, 0.0, 90.0, grd_x0[0], grd_y0[row])) <= radius; row++) {
+								value = (doubleAlmostEqualZero (distance, radius)) ? mask_val[GMT_ONEDGE] : mask_val[GMT_INSIDE];	/* The onedge or inside value */
+								gmt_M_col_loop (GMT, Grid, row, col, ij)	/* Set this entire row */
+									Grid->data[ij] = value;
+							}
+							continue;
+						}
+						else if (gmt_M_is_Spole (S->data[GMT_Y][k])) {	/* S pole */
+							if (radius == 0.0) {	/* Only set the S pole row */
+								gmt_M_col_loop (GMT, Grid, Grid->header->n_rows - 1, col, ij)	/* Set this entire S row */
+									Grid->data[ij] = mask_val[GMT_INSIDE];
+								continue;
+							}
+							for (row = (int)(Grid->header->n_rows - 1); row >= 0 && (distance = gmt_distance (GMT, 0.0, -90.0, grd_x0[0], grd_y0[row])) <= radius; row--) {
+								value = (doubleAlmostEqualZero (distance, radius)) ? mask_val[GMT_ONEDGE] : mask_val[GMT_INSIDE];	/* The onedge or inside value */
+								gmt_M_col_loop (GMT, Grid, row, col, ij)	/* Set this entire row */
+									Grid->data[ij] = value;
+							}
+							continue;
+						}
+					}
+
+					/* OK, not a pole and this point is within bounds, but may be exactly on the border */
 
 					col_0 = (unsigned int)gmt_M_grd_x_to_col (GMT, xtmp, Grid->header);
 					if (col_0 == Grid->header->n_columns) col_0--;	/* Was exactly on the xmax edge */
@@ -382,7 +418,6 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 						ij = gmt_M_ijp (Grid->header, row_0, col);
 						Grid->data[ij] = mask_val[GMT_INSIDE];	/* This is also the nearest node */
 					}
-					if (Ctrl->S.variable_radius) radius = S->data[GMT_Z][k];
 					if (radius == 0.0) continue;	/* Only consider the nearest node */
 					/* Here we also include all the nodes within the search radius */
 					if (Ctrl->S.variable_radius && !doubleAlmostEqual (radius, last_radius)) {	/* Init d_row/d_col etc */
@@ -431,29 +466,33 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 						do_test = true;
 						switch (S->pole) {
 							case 0:	/* Not a polar cap */
-								if (yy < S->min[GMT_Y] || yy > S->max[GMT_Y]) continue;	/* Outside */
+								if (yy < S->min[GMT_Y] || yy > S->max[GMT_Y]) continue;	/* Outside, no need to check */
 								break;
 							case -1:	/* S polar cap */
-								if (yy > S->max[GMT_Y]) continue;
-								if (yy < S->lat_limit) side = GMT_INSIDE, do_test = false;
+								if (yy > S->max[GMT_Y]) continue;	/* Outside, no need to check */
+								if (yy < S->lat_limit) known_side = GMT_INSIDE, do_test = false;	/* Guaranteed inside, set answer */
 								break;
 							case +1:	/* N polar cap */
-								if (yy < S->min[GMT_Y]) continue;
-								if (yy > S->lat_limit) side = GMT_INSIDE, do_test = false;
+								if (yy < S->min[GMT_Y]) continue;	/* Outside, no need to check */
+								if (yy > S->lat_limit) known_side = GMT_INSIDE, do_test = false;	/* Guaranteed inside, set answer */
 								break;
 						}
 					}
 					else if (yy < S->min[GMT_Y] || yy > S->max[GMT_Y])	/* Cartesian case */
-						continue;
+						continue;	/* Outside, no need to check */
 
-					/* Here we will have to consider the x coordinates as well */
+					/* Here we will have to consider the x coordinates as well (or known_side is set) */
 #ifdef _OPENMP
-#pragma omp parallel for private(col,xx,side,ij) shared(Grid,n_columns,do_test,yy,S,row,Ctrl,z_value,mask_val)
+#pragma omp parallel for private(col,xx,side,ij) shared(Grid,n_columns,do_test,known_side,yy,S,row,Ctrl,z_value,mask_val)
 #endif
 					for (col = 0; col < n_columns; col++) {
 						xx = gmt_M_grd_col_to_x (GMT, col, Grid->header);
-						side = 0;
-						if (do_test && (side = gmt_inonout (GMT, xx, yy, S)) == 0) continue;	/* Outside polygon, go to next point */
+						if (do_test) {	/* Must consider xx to determine if we are inside */
+							if ((side = gmt_inonout (GMT, xx, yy, S)) == GMT_OUTSIDE)
+								continue;	/* Outside polygon, go to next point */
+						}
+						else	/* Already know the answer */
+							side = known_side;
 						/* Here, point is inside or on edge, we must assign value */
 
 						ij = gmt_M_ijp (Grid->header, row, col);

@@ -88,7 +88,7 @@ Optional Arguments
 
 **-N**
     Suppress the writing of the GMT header structure. This is useful
-    when you want to write a native grid to be used by **grdraster**. It
+    when you want to write a native grid to be used by :doc:`grdraster`. It
     only applies to native grids and is ignored for netCDF output. 
 
 .. _-R:
@@ -262,19 +262,17 @@ image.nc, assuming the range in image.nc is 0-1 and we need 0-255, run
 
     gmt grdconvert image.nc -R-60/-40/-40/-30 image.ras8=rb/255/0 -V
 
-To convert etopo2.nc to etopo2.i2 that can be used by **grdraster**, try
+To convert etopo2.nc to etopo2.i2 that can be used by :doc:`grdraster`, try
 
    ::
 
     gmt grdconvert etopo2.nc etopo2.i2=bs -N -V
 
-To creat a dumb file saved as a 32 bits float GeoTiff using GDAL, run
-
-   ::
-
-    gmt grdmath -Rd -I10 X Y MUL = lixo.tiff=gd:GTiff
-
 See Also
 --------
 
-:doc:`gmt.conf`, :doc:`gmt`, :doc:`grdmath`
+:doc:`gmt.conf`,
+:doc:`gmt`,
+:doc:`grdmath`,
+:doc:`grdraster`
+

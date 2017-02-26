@@ -1,9 +1,9 @@
 function [ps, path] = GMT_grinten(out_path)
 % OUT_PATH -> Path to where the PS file will be written
 % PS       -> Full name of the created postscript file (built from OUT_PATH)
-% PATH     -> Path to where this file lives (usefull for gmtest.m)
+% PATH     -> Path to where this file lives (useful for gmtest.m)
 %
-%	$Id: GMT_grinten.m 14912 2015-09-24 15:55:02Z jluis $
+%	$Id: GMT_grinten.m 17326 2016-11-08 20:28:56Z pwessel $
 
 	full = mfilename('fullpath');
 	[pato, fname] = fileparts(full);

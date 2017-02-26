@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
  *	$Id: surface.c 15861 2016-03-10 04:17:28Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -522,7 +522,7 @@ GMT_LOCAL int compare_points (const void *point_1v, const void *point_2v, void *
 	dist_1 = (point_1->x - x0) * (point_1->x - x0) + (point_1->y - y0) * (point_1->y - y0);
 	/* Try to speed things up by first checking if point_2 x-distance from x0 alone exceeds point_1's radial distance */
 	dist_2 = (point_2->x - x0) * (point_2->x - x0);	/* Just dx^2 */
-	if (dist_1 < dist_2) return (-1);	/* Dont need to consider the y-distance */
+	if (dist_1 < dist_2) return (-1);	/* Don't need to consider the y-distance */
 	/* Did not exceed, so now we must finalize the dist_2 calculation by including the y-separation */
 	dist_2 += (point_2->y - y0) * (point_2->y - y0);
 	if (dist_1 < dist_2) return (-1);
@@ -867,7 +867,7 @@ GMT_LOCAL int read_data_surface (struct GMT_CTRL *GMT, struct SURFACE_INFO *C, s
 		return (GMT->parent->error);
 
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (GMT->parent, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (GMT->parent, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 				return (GMT_RUNTIME_ERROR);
 			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all headers */

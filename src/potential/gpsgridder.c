@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gpsgridder.c 17161 2016-10-03 18:52:32Z pwessel $
+ *	$Id: gpsgridder.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -101,9 +101,9 @@ enum Gpsgridded_enum {	/* Indices for coeff array for normalization */
 	GMT_WV		= 3,
 	GPS_TREND	= 1,	/* Remove/Restore linear trend */
 	GPS_NORM	= 2,	/* Normalize residual data to 0-1 range */
-	GPS_FUNC_Q	= 0,	/* Next 3 are indicies into G[] */
-	GPS_FUNC_P	= 1,	/* Next 3 are indicies into G[] */
-	GPS_FUNC_W	= 2,	/* Next 3 are indicies into G[] */
+	GPS_FUNC_Q	= 0,	/* Next 3 are indices into G[] */
+	GPS_FUNC_P	= 1,	/* Next 3 are indices into G[] */
+	GPS_FUNC_W	= 2,	/* Next 3 are indices into G[] */
 };
 
 GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
@@ -523,7 +523,7 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 
 	/*---------------------------- This is the gpsgridder main code ----------------------------*/
 
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gpsgridder IS NOT A WORKING MODULE YET!\n");
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gpsgridder is considered experimental - use at your own rist!\n");
 
 	gmt_enable_threads (GMT);	/* Set number of active threads, if supported */
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
@@ -569,7 +569,7 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 	n_uv = n_read = 0;
 	r_min = DBL_MAX;	r_max = -DBL_MAX;
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 				gmt_M_free (GMT, X);
 				Return (GMT_RUNTIME_ERROR);
@@ -621,7 +621,7 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 				X[n_uv][GMT_WV] = 1.0 / X[n_uv][GMT_WV];
 			}
 			else	/* Must unscramble sigmas */
-				err_sum += pow (X[n_uv][GMT_WU], -1.0) + pow (X[n_uv][GMT_WV], -2.0);
+				err_sum += pow (X[n_uv][GMT_WU], -2.0) + pow (X[n_uv][GMT_WV], -2.0);
 		}
 		n_uv++;			/* Added a new data constraint */
 		if (n_uv == n_alloc) {	/* Get more memory */
@@ -747,23 +747,19 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 	GMT_Report (API, GMT_MSG_VERBOSE, "Build linear system Ax = b\n");
 
 	weight_u = weight_v = 1.0;
-	for (j = 0; j < n_uv; j++) {	/* For each data constraint pair (u,v): j refers to a row */
+	for (row = 0; row < n_uv; row++) {	/* For each data constraint pair (u,v)_row */
 		if (Ctrl->W.active) {	/* Apply any weights */
-			weight_u = X[j][GMT_WU];
-			weight_v = X[j][GMT_WV];
-			u[j] *= weight_u;
-			v[j] *= weight_v;
+			weight_u = X[row][GMT_WU];
+			weight_v = X[row][GMT_WV];
+			u[row] *= weight_u;
+			v[row] *= weight_v;
 		}
-		for (i = 0; i < n_uv; i++) {	/* i refers to a column */
-			if (Ctrl->W.active) {
-				weight_u = X[i][GMT_WU];
-				weight_v = X[i][GMT_WV];
-			}
-			Gu_ij  = j * n_params + i;		/* Index for Gu term */
-			Guv_ij = Gu_ij + n_uv;		/* Index for Guv term */
-			Gvu_ij = (j+n_uv) * n_params + i;	/* Index for Gvu term */
-			Gv_ij  = Gvu_ij + n_uv;		/* Index for Gv term */
-			get_gps_dxdy (GMT, X[i], X[j], &dx, &dy, geo);
+		for (col = 0; col < n_uv; col++) {	/* For each data constraint pair (u,v)_col  */
+			Gu_ij  = row * n_params + col;			/* Index for Gu term */
+			Guv_ij = Gu_ij + n_uv;					/* Index for Guv term */
+			Gvu_ij = (row+n_uv) * n_params + col;	/* Index for Gvu term */
+			Gv_ij  = Gvu_ij + n_uv;					/* Index for Gv term */
+			get_gps_dxdy (GMT, X[col], X[row], &dx, &dy, geo);
 			evaluate_greensfunctions (dx, dy, par, G);
 			A[Gu_ij]  = weight_u * G[GPS_FUNC_Q];
 			A[Gv_ij]  = weight_v * G[GPS_FUNC_P];
@@ -771,6 +767,19 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 			A[Gvu_ij] = weight_v * G[GPS_FUNC_W];
 		}
 	}
+#if 0 /* Dump the A | b matrices */
+	fprintf (stderr, "Weight | Matrix row | obs\n");
+	for (row = 0; row < n_params; row++) {
+		if (Ctrl->W.active)
+			fprintf (stderr, "%12.6f\t|\t", (row < n_uv) ? X[row][GMT_WU] : X[row-n_uv][GMT_WV]);
+		else
+			fprintf (stderr, "%12.6f\t|\t", 1.0);
+		ij = row * n_params;
+		fprintf (stderr, "%12.6f", A[ij++]);
+		for (col = 1; col < n_params; col++, ij++) fprintf (stderr, "\t%12.6f", A[ij]);
+		fprintf (stderr, "\t|\t%12.6f\n", (row < n_uv) ? u[row] : v[row-n_uv]);
+	}
+#endif
 
 	gmt_M_memcpy (&u[n_uv], v, n_uv, double);	/* Place v array at end of u array */
 	obs = u;				/* Use obs to refer to this combined u,v array */
@@ -829,7 +838,7 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 			if (Ctrl->C.mode == 2)
 				GMT_Report (API, GMT_MSG_VERBOSE, "Eigen-value ratios s(i)/s(0) saved to %s\n", Ctrl->C.file);
 			else
-				GMT_Report (API, GMT_MSG_VERBOSE, "Eigen-values saved to %s\n", Ctrl->C.file);
+				GMT_Report (API, GMT_MSG_VERBOSE, "Eigen-values s(i) saved to %s\n", Ctrl->C.file);
 			gmt_M_free (GMT, eig);
 
 			if (Ctrl->C.value < 0.0) {	/* We are done */
@@ -973,6 +982,9 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			Return (API->error);
+		}
 		if ((error = gmt_set_cols (GMT, GMT_OUT, 4)) != GMT_NOERROR) {
 			Return (error);
 		}
@@ -992,7 +1004,7 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 					out[GMT_V] += (alpha_y[p] * G[GPS_FUNC_P] + alpha_x[p] * G[GPS_FUNC_W]);
 				}
 				undo_gps_normalization (out, normalize, norm);
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 		}
 		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */

@@ -831,6 +831,8 @@ any of them to see the full syntax of each function.
     +--------------------------+-------------------------------------------------------+
     | GMT_Set_Columns_         | Specify how many output columns to use for rec-by-rec |
     +--------------------------+-------------------------------------------------------+
+    | GMT_Set_Geometry_        | Specify data geometry for rec-by-rec i/o              |
+    +--------------------------+-------------------------------------------------------+
     | GMT_Set_Index_           | Convert row, col into a grid or image index           |
     +--------------------------+-------------------------------------------------------+
     | GMT_Status_IO_           | Check status of record-by-record i/o                  |
@@ -1325,7 +1327,10 @@ are addressed by
 which returns a pointer to the allocated resource. Specify which
 :ref:`family <tbl-family>` and select ``mode`` from ``GMT_DUPLICATE_DATA``,
 ``GMT_DUPLICATE_ALLOC``, and ``GMT_DUPLICATE_NONE``, as discussed above
-(also see ``mode`` discussion above). For :ref:`GMT_DATASET <struct-dataset>` and :ref:`GMT_TEXTSET <struct-textset>` you can
+(also see ``mode`` discussion above). For :ref:`GMT_GRID <struct-grid>`
+you may add ``GMT_DUPLICATE_RESET`` which will ensure the duplicate grid
+will have normal padding (useful when the original has non-standard padding).
+For :ref:`GMT_DATASET <struct-dataset>` and :ref:`GMT_TEXTSET <struct-textset>` you can
 add modifiers ``GMT_ALLOC_VERTICAL`` or ``GMT_ALLOC_HORIZONTAL`` to the ``mode`` if you
 wish to put all the data into a single long table or to paste all tables
 side-by-side, respectively (thus getting one wide table instead).
@@ -1354,7 +1359,7 @@ In this case you will use
     void *GMT_Convert_Data (void *API, void *In, unsigned int family_in,
 		void *Out, unsigned int family_out, unsigned int flag[]);
 
-which returns a pointer to the converted resource. Specify the neeeded
+which returns a pointer to the converted resource. Specify the needed
 :ref:`family <tbl-family>` for both the input and output resources and set the
 (up to) three flags passed via the ``flag`` array.  The first ``flag[0]``
 determines how table headers and segment headers should be handled.
@@ -1652,6 +1657,22 @@ written during initialization; choose between ``GMT_HEADER_ON`` and
 ``GMT_HEADER_OFF``. The function returns 1 if there is an
 error; otherwise it returns 0.
 
+Set data geometry
+~~~~~~~~~~~~~~~~~
+
+Typically only done for output data written record by record, we designate
+the data set's geometry by calling
+
+.. _GMT_Set_Geometry:
+
+  ::
+
+    int _GMT_Set_Geometry (void *API,  unsigned int direction, unsigned int geometry);
+
+where ``direction`` is either ``GMT_IN`` or ``GMT_OUT`` and :ref:`geometry <tbl-geometry>`
+sets the geometry that will be produced (or read).
+
+
 Importing a data record
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1674,7 +1695,7 @@ identify segment headers we instead return a NULL pointer. The ``nfields``
 integer pointer will return the number of fields returned; pass NULL if your
 program should ignore this information.
 
-Normally (i.e., ``mode`` = ``GMT_READ_DOUBLE``), we return a pointer to
+Normally (i.e., ``mode`` = ``GMT_READ_DATA``), we return a pointer to
 a double array. To read text records, supply instead ``mode`` =
 ``GMT_READ_TEXT`` and we will return a pointer to the text
 record. However, if you have input records that mixes organized
@@ -2204,7 +2225,10 @@ where ``data`` is a pointer to any of the four structures discussed previously.
     using GMT_Put_Row_. By default the rows will be automatically
     processed in order. To completely specify which row to be written,
     use ``GMT_GRID_ROW_BY_ROW_MANUAL`` instead; this requires a file format
-    that supports direct writes, such as netCDF.
+    that supports direct writes, such as netCDF.  Finally, if you are
+    preparing a geographic grid outside of GMT you need to add the mode
+    ``GMT_GRID_IS_GEO`` to ensure that the proper metadata will be written
+    to the netCDF header, thus letting the grid be recognized as such.
 
 Note: If ``method`` is GMT_IS_FILE, :ref:`family <tbl-family>` is ``GMT_IS_GRID``,
 and the filename implies a change from NaN to another value then the grid is
@@ -2281,8 +2305,8 @@ initialize the destination with GMT_Init_IO_. Note that for families
 :ref:`GMT_DATASET <struct-dataset>` structure directly. As mentioned, ``mode`` affects what is
 actually written:
 
-**GMT_WRITE_DOUBLE**.
-    Normal operation that builds the current output record from the values in ``rec``.
+**GMT_WRITE_DATA**.
+    Normal operation that builds the current output record from the numerical values in ``rec``.
 
 **GMT_WRITE_TEXT**.
     For ASCII output mode we write the text string ``rec``. If ``rec``
@@ -2863,11 +2887,11 @@ as other languages (Python, Java, Julia, etc.) or tools (MATLAB, Octave,
 etc.) need to manipulate linked options in a special way.  For instance,
 a GMT call in the MATLAB or Octave application might look like
 
-  ::
+.. code-block:: none
 
-    table = gmt ('blockmean -R30W/30E/10S/10N -I2m', [x y z]);
-    grid  = gmt ('surface -R -I2m -Lu', table, high_limit_grid);
-    grid2 = gmt ('grdmath ? LOG10 ? MUL', grid, grid);
+    table = gmt('blockmean -R30W/30E/10S/10N -I2m', [x y z]);
+    grid  = gmt('surface -R -I2m -Lu', table, high_limit_grid);
+    grid2 = gmt('grdmath ? LOG10 ? MUL', grid, grid);
 
 Most of the time our implicit rules will take care of the ordering.  The
 rule says that all required input data items must be listed before any
@@ -2889,7 +2913,7 @@ The prototype is
   ::
 
     struct GMT_RESOURCE *GMT_Encode_Options (void *API, const char *module, int n_in,
-    	struct GMT_OPTION **head, int *n_items);
+    	                                       struct GMT_OPTION **head, int *n_items);
 
 where ``module`` is the name of the module whose linked options are
 pointed to by ``*head``, ``n_in`` contains the number of *input*
@@ -2962,7 +2986,7 @@ your program needs to present the FFT option usage you can call
   ::
 
     unsigned int GMT_FFT_Option (void *API, char option, unsigned int dim,
-    	const char *string);
+    	                           const char *string);
 
 Here, ``option`` is the unique character used for this particular
 program option (most GMT programs have standardized on using 'N' but
@@ -2996,7 +3020,7 @@ conveniently performed for you by
   ::
 
     void *GMT_FFT_Create (void *API, void *X, unsigned int dim,
-    	unsigned int mode, void *F);
+    	                    unsigned int mode, void *F);
 
 Here, ``X`` is either your dataset or grid pointer, ``dim`` is the
 dimension of the transform (1 or 2 only), ``mode`` passes various flags to the setup, such as whether
@@ -3062,7 +3086,7 @@ A lower-level 2-D FFT is also available via
   ::
 
     int GMT_FFT_2D (void *API, float *data, unsigned int n_columns,
-    	unsigned int n_rows, int direction, unsigned int mode);
+    	              unsigned int n_rows, int direction, unsigned int mode);
 
 which takes as ``direction`` either ``GMT_FFT_FWD`` or ``GMT_FFT_INV``. The
 ``mode`` is used to specify if we pass a real (``GMT_FFT_REAL``) or complex
@@ -3167,7 +3191,7 @@ To inquire about the range of information in a grid, use
   ::
 
     int GMT_F77_readgrdinfo (unsigned int dim[], double limits[], double inc[],
-    	char *title, char *remark, const char *file)
+    	                       char *title, char *remark, const char *file)
 
 where ``dim`` returns the grid width, height, and registration, ``limits`` returns the min and max values for x, y, and z
 as three consecutive pairs, ``inc`` returns the x and y increments, while the ``title`` and ``remark``
@@ -3182,7 +3206,7 @@ To actually read the grid, we use
   ::
 
     int GMT_F77_readgrd (float *array, unsigned int dim[], double wesn[],
-    	double inc[], char *title, char *remark, const char *file)
+    	                   double inc[], char *title, char *remark, const char *file)
 
 where ``array`` is the 1-D grid data array, ``dim`` returns the grid width, height, and registration,
 ``limits`` returns the min and max values for x, y, and z, ``inc`` returns the x and y increments, and
@@ -3198,8 +3222,8 @@ Finally, to write a grid to file you can use
 
   ::
 
-    int GMT_F77_writegrd_(float *array, unsigned int dim[], double wesn[],
-    	double inc[], const char *title, const char *remark, const char *file)
+    int GMT_F77_writegrd_(float *array, unsigned int dim[], double wesn[], double inc[],
+    	                    const char *title, const char *remark, const char *file)
 
 where ``array`` is the 1-D grid data array, ``dim`` specifies the grid width, height, and registration,
 ``limits`` may be used to specify a subset (normally, just pass zeros), ``inc`` specifies the x and y increments,
@@ -3442,8 +3466,8 @@ The full definition of the ``GMT_GRID_HEADER`` structure.  Most of these members
        size_t       z_chunksize[2];     /* chunk size (lat,lon) */
        unsigned int z_shuffle;          /* if shuffle filter is turned on */
        unsigned int z_deflate_level;    /* if deflate filter is in use */
-       unsigned int z_scale_autoadust;  /* if z_scale_factor should be auto-detected */
-       unsigned int z_offset_autoadust; /* if z_add_offset should be auto-detected */
+       unsigned int z_scale_autoadjust; /* if z_scale_factor should be auto-detected */
+       unsigned int z_offset_autoadjust;/* if z_add_offset should be auto-detected */
                                         /* xy_*[] is separate settings for GMT_IN and GMT_OUT */
        unsigned int xy_adjust[2];       /* 1 if +u<unit> was parsed and scale set, 3 if xy has been adjusted, 0 otherwise */
        unsigned int xy_mode[2];         /* 1 if +U<unit> was parsed, 0 otherwise */

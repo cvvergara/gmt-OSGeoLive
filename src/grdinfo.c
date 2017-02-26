@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdinfo.c 17163 2016-10-03 19:17:34Z pwessel $
+ *	$Id: grdinfo.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -298,6 +298,9 @@ int GMT_grdinfo (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, o_type, GMT_OUT, GMT_HEADER_OFF) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 	if (n_cols && (error = gmt_set_cols (GMT, GMT_OUT, n_cols)) != 0) Return (error);	/* Set number of output columns */
 	
 	for (opt = options; opt; opt = opt->next) {	/* Loop over arguments, skip options */ 
@@ -424,6 +427,9 @@ int GMT_grdinfo (void *V_API, int mode, void *args) {
 			gmt_ascii_format_col (GMT, text, G->header->inc[GMT_Y], GMT_OUT, GMT_Z);	strcat (record, text);
 			GMT_Put_Record (API, GMT_WRITE_TEXT, record);
 		} else if (Ctrl->I.active && Ctrl->I.status == GRDINFO_GIVE_BOUNDBOX) {
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POLY) != GMT_NOERROR) {	/* Sets output geometry */
+				Return (API->error);
+			}
 			sprintf (record, "> Bounding box for %s", G->header->name);
 			GMT_Put_Record (API, GMT_WRITE_TEXT, record);
 			/* LL */
@@ -441,6 +447,10 @@ int GMT_grdinfo (void *V_API, int mode, void *args) {
 			/* UL */
 			gmt_ascii_format_col (GMT, record, G->header->wesn[XLO], GMT_OUT, GMT_X);	strcat (record, sep);
 			gmt_ascii_format_col (GMT, text,   G->header->wesn[YHI], GMT_OUT, GMT_Y);	strcat (record, text);
+			GMT_Put_Record (API, GMT_WRITE_TEXT, record);
+			/* LL (repeat to close polygon) */
+			gmt_ascii_format_col (GMT, record, G->header->wesn[XLO], GMT_OUT, GMT_X);	strcat (record, sep);
+			gmt_ascii_format_col (GMT, text,   G->header->wesn[YLO], GMT_OUT, GMT_Y);	strcat (record, text);
 			GMT_Put_Record (API, GMT_WRITE_TEXT, record);
 		} else if (Ctrl->C.active && !Ctrl->I.active) {
 			if (API->mode) {	/* External interface, return as data with no leading text */
@@ -463,7 +473,7 @@ int GMT_grdinfo (void *V_API, int mode, void *args) {
 				if (Ctrl->M.active) {
 					out[col++] = (double)n_nan;
 				}
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 			else {	/* Command-line usage */
 				sprintf (record, "%s%s", G->header->name, sep);
@@ -665,7 +675,7 @@ int GMT_grdinfo (void *V_API, int mode, void *args) {
 		global_xmax = ceil  (global_xmax / Ctrl->I.inc[GMT_X]) * Ctrl->I.inc[GMT_X];
 		global_ymin = floor (global_ymin / Ctrl->I.inc[GMT_Y]) * Ctrl->I.inc[GMT_Y];
 		global_ymax = ceil  (global_ymax / Ctrl->I.inc[GMT_Y]) * Ctrl->I.inc[GMT_Y];
-		if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must make sure we dont get outside valid bounds */
+		if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must make sure we don't get outside valid bounds */
 			if (global_ymin < -90.0) {
 				global_ymin = -90.0;
 				GMT_Report (API, GMT_MSG_VERBOSE, "Warning: Using -I caused south to become < -90.  Reset to -90.\n");
@@ -683,9 +693,9 @@ int GMT_grdinfo (void *V_API, int mode, void *args) {
 		if (API->mode) {	/* External interface, return as data with no leading text */
 			/* w e s n z0 z1 */
 			out[XLO] = global_xmin;		out[XHI] = global_xmax;
-			out[YLO] = global_xmin;		out[YHI] = global_xmax;
+			out[YLO] = global_ymin;		out[YHI] = global_ymax;
 			out[ZLO] = global_zmin;		out[ZHI] = global_zmax;
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);
 		}
 		else {	/* Command-line usage */
 			sprintf (record, "%d%s", n_grds, sep);
@@ -745,7 +755,7 @@ int GMT_grdinfo (void *V_API, int mode, void *args) {
 		global_xmax = ceil  (global_xmax / Ctrl->I.inc[GMT_X]) * Ctrl->I.inc[GMT_X];
 		global_ymin = floor (global_ymin / Ctrl->I.inc[GMT_Y]) * Ctrl->I.inc[GMT_Y];
 		global_ymax = ceil  (global_ymax / Ctrl->I.inc[GMT_Y]) * Ctrl->I.inc[GMT_Y];
-		if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must make sure we dont get outside valid bounds */
+		if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must make sure we don't get outside valid bounds */
 			if (global_ymin < -90.0) {
 				global_ymin = -90.0;
 				GMT_Report (API, GMT_MSG_VERBOSE, "Warning: Using -I caused south to become < -90.  Reset to -90.\n");

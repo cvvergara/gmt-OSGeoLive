@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_project.h 17154 2016-10-01 00:23:46Z pwessel $
+ *	$Id: gmt_project.h 17528 2017-02-05 08:02:49Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,9 @@ EXTERN_MSC double gmtmap_lat_swap_quick (struct GMT_CTRL *GMT, double lat, doubl
 
 /*! Macros returns true if the two coordinates are lon/lat; way should be GMT_IN or GMT_OUT */
 #define gmt_M_x_is_lon(C,way) (C->current.io.col_type[way][GMT_X] == GMT_IS_LON)
+#define gmt_M_y_is_lon(C,way) (C->current.io.col_type[way][GMT_Y] == GMT_IS_LON)
 #define gmt_M_y_is_lat(C,way) (C->current.io.col_type[way][GMT_Y] == GMT_IS_LAT)
+#define gmt_M_x_is_lat(C,way) (C->current.io.col_type[way][GMT_Y] == GMT_IS_LAT)
 #define gmt_M_is_geographic(C,way) (gmt_M_x_is_lon(C,way) && gmt_M_y_is_lat(C,way))
 
 #define GMT_N_PROJECTIONS	29	/* Total number of projections in GMT */
@@ -142,10 +144,12 @@ enum gmt_enum_units {GMT_IS_METER = 0,
 /* Return 0 for Flat Earth, 1 for Great-circles, 2 for geodesics, and 3 for loxodromes */
 #define gmt_M_sph_mode(C) (gmt_M_is_flatearth (C) ? GMT_FLATEARTH : (gmt_M_is_spherical (C) ? GMT_GREATCIRCLE : (C->current.map.loxodrome ? GMT_LOXODROME : GMT_GEODESIC)))
 
-//#define gmt_M_360_range(w,e) (doubleAlmostEqual (fabs((e) - (w)), 360.0))	/* PW: Reconsider this later perhaps but for now too tight */
+//#define gmt_M_360_range(w,e) (doubleAlmostEqual (fabs((e) - (w)), 360.0))	/* PW: Reconsider this later perhaps but for now too tight [see issue #954] */
 #define gmt_M_180_range(s,n) (doubleAlmostEqual (fabs((n) - (s)), 180.0))
 #define gmt_M_360_range(w,e) (gmt_M_is_zero (fabs ((e) - (w)) - 360.0))
 #define gmt_M_is_pole(y) (doubleAlmostEqual (fabs(y), 90.0))
+#define gmt_M_is_Npole(y) (gmt_M_is_zero(y-90.0))
+#define gmt_M_is_Spole(y) (gmt_M_is_zero(y+90.0))
 #define gmt_M_is_zero(x) (fabs (x) < GMT_CONV8_LIMIT)
 
 #ifndef D2R
@@ -340,7 +344,7 @@ struct GMT_PROJ {
 	double n_cx, n_cy;	/* = = 0.8487R, 1.3523R */
 	double n_i_cy;
 	double n_phi[GMT_N_ROBINSON], n_X[GMT_N_ROBINSON], n_Y[GMT_N_ROBINSON];
-	double n_x_coeff[3*GMT_N_ROBINSON], n_y_coeff[3*GMT_N_ROBINSON], n_iy_coeff[3*GMT_N_ROBINSON];
+	double n_x_coeff[3*GMT_N_ROBINSON], n_y_coeff[3*GMT_N_ROBINSON], n_yx_coeff[3*GMT_N_ROBINSON], n_iy_coeff[3*GMT_N_ROBINSON];
 
 	/* Eckert IV Projection */
 

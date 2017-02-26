@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77info.c 16950 2016-08-19 05:17:22Z remko $
+ *	$Id: mgd77info.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *    Copyright (c) 2004-2016 by P. Wessel
+ *    Copyright (c) 2004-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -24,7 +24,7 @@
 #define THIS_MODULE_NAME	"mgd77info"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Extract information about MGD77 files"
-#define THIS_MODULE_KEYS	">T}"
+#define THIS_MODULE_KEYS	""
 
 #include "gmt_dev.h"
 #include "mgd77.h"

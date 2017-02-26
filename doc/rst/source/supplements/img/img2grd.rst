@@ -157,6 +157,8 @@ Optional Arguments
     file. Versions since 1995 have had *maxlon* = 360.0, while some
     earlier files had *maxlon* = 390.0. [Default is 360.0].
 
+.. include:: ../../explain_-n.rst_
+
 .. include:: ../../explain_help.rst_
 
 Geographic Examples
@@ -186,7 +188,7 @@ Mercator Examples
 
 Since the img files are in a Mercator projection, you should NOT extract
 a geographic grid if your plan is to make a Mercator map. If you did
-that you end of projecting and reprojection the grid, loosing
+that you end of projecting and reprojection the grid, losing
 short-wavelength detail. Better to use **-M** and plot the grid using a
 linear projection with the same scale as the desired Mercator projection
 (see GMT Example 29).

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvolume.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdvolume.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -533,7 +533,7 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 		GMT_Report (API, GMT_MSG_VERBOSE, "Subtracting %g and multiplying by %g\n", Ctrl->Z.offset, Ctrl->Z.scale);
 		Work->header->z_min = (Work->header->z_min - Ctrl->Z.offset) * Ctrl->Z.scale;
 		Work->header->z_max = (Work->header->z_max - Ctrl->Z.offset) * Ctrl->Z.scale;
-		if (Ctrl->Z.scale < 0.0) double_swap (Work->header->z_min, Work->header->z_max);
+		if (Ctrl->Z.scale < 0.0) gmt_M_double_swap (Work->header->z_min, Work->header->z_max);
 		/* Since gmt_scale_and_offset_f applies z' = z * scale + offset we must adjust Z.offset first: */
 		Ctrl->Z.offset *= Ctrl->Z.scale;
 		gmt_scale_and_offset_f (GMT, Work->data, Work->header->size, Ctrl->Z.scale, Ctrl->Z.offset);
@@ -555,7 +555,7 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 		
 		for (ij = 0; ij < Work->header->size; ij++) {
 			Work->data[ij] -= (float)take_out;		/* Take out the zero value */
-			if (Work->data[ij] == 0.0) Work->data[ij] = (float)small;	/* But we dont want exactly zero, just + or - */
+			if (Work->data[ij] == 0.0) Work->data[ij] = (float)small;	/* But we don't want exactly zero, just + or - */
 		}
 		if (Ctrl->L.active) this_base -= take_out;
 
@@ -693,23 +693,27 @@ int GMT_grdvolume (void *V_API, int mode, void *args) {
 		gmt_M_free (GMT, area);		gmt_M_free (GMT, vol);		gmt_M_free (GMT, height);
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+		gmt_M_free (GMT, area);		gmt_M_free (GMT, vol);		gmt_M_free (GMT, height);
+		Return (API->error);
+	}
 
 	gmt_set_cartesian (GMT, GMT_OUT);	/* Since no coordinates are written */
 
 	if (Ctrl->T.active) {	/* Determine the best contour value and return the corresponding information for that contour only */
 		c = ors_find_kink (GMT, height, n_contours, Ctrl->T.mode);
 		out[0] = Ctrl->C.low + c * Ctrl->C.inc;	out[1] = area[c];	out[2] = vol[c];	out[3] = height[c];
-		GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+		GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 	}
 	else {			/* Return information for all contours (possibly one if -C<val> was used) */
 		if (Ctrl->C.reverse) {
 			out[0] = 0;	out[1] = area[0] - area[1];	out[2] = vol[0] - vol[1];	out[3] = out[2] / out[1];
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 		}
 		else {
 			for (c = 0; c < n_contours; c++) {
 				out[0] = Ctrl->C.low + c * Ctrl->C.inc;	out[1] = area[c];	out[2] = vol[c];	out[3] = height[c];
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 			}
 		}
 	}

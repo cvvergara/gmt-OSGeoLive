@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pscontour.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: pscontour.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -752,9 +752,9 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 	struct GMT_PALETTE *P = NULL;
 	struct SAVE *save = NULL;
 	struct PSCONTOUR_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
@@ -816,7 +816,7 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 	skip_triangles = (Ctrl->S.active && Ctrl->S.mode == 1);
 
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) { 	/* Bail if there are any read errors */
 				gmt_M_free (GMT, x);	gmt_M_free (GMT, y);	gmt_M_free (GMT, z);
 				Return (GMT_RUNTIME_ERROR);
@@ -950,7 +950,7 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 				n_skipped++;
 			}
 		}
-		if (n_skipped) GMT_Report (API, GMT_MSG_VERBOSE, "Skipped %u triangles whose verticies are all outside the domain.\n", n_skipped);
+		if (n_skipped) GMT_Report (API, GMT_MSG_VERBOSE, "Skipped %u triangles whose vertices are all outside the domain.\n", n_skipped);
 	}
 	
 	if (Ctrl->C.cpt) {	/* We already read the CPT */

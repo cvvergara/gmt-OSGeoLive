@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalwrite.c 16941 2016-08-19 01:28:31Z remko $
+ *	$Id: gmt_gdalwrite.c 17467 2017-01-23 01:57:23Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
  *		common formats such as JPEG or PNG.
  *		The trick is to create an intermediary MEM diver, write the data to it
  *		and finally use it as a dataset argument to GDALCreateCopy. One could not
- *		do this from the begining because this method needs a Dataset and we didn't
+ *		do this from the beginning because this method needs a Dataset and we didn't
  *		have any to start with. Only the pointer to 'data'.
  *		This all story needs bo checked for potential memory leaks.
  *
@@ -204,11 +204,12 @@ int gmt_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GMT_GDALWRITE_CTRL 
 	data = prhs->data;
 
 	/* Find out in which data type was given the input array */
-	/* The two first cases bellow are messy. Decision should be made by a mem layout code stored in prhs */
+	/* The two first cases below are messy. Decision should be made by a mem layout code stored in prhs */
 	if (!strcmp(prhs->type,"byte")) {		/* This case arrives here via grdimage */
+		uint64_t imsize = gmt_M_get_nm (GMT, n_cols, n_rows);
 		typeCLASS = GDT_Byte;
 		n_byteOffset = 1;
-		outByte = gmt_M_memory (GMT, NULL, n_cols*n_rows, unsigned char);
+		outByte = gmt_M_memory (GMT, NULL, imsize, unsigned char);
 	}
 	else if (!strcmp(prhs->type,"uint8")) {
 		typeCLASS = GDT_Byte;
@@ -348,7 +349,7 @@ int gmt_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GMT_GDALWRITE_CTRL 
 	}
 
 	for (i = 0; i < n_bands; i++) {
-		/* A problem with writing to the MEM driver is that it tests that we dont overflow
+		/* A problem with writing to the MEM driver is that it tests that we don't overflow
 		   but the issue is that the test is done on the MEM declared size, whilst we are
 		   actually using a larger array, and the dimensions passed to GDALRasterIO refer
 		   to it. The trick was to offset the initial position of the 'data' array in
@@ -367,10 +368,11 @@ int gmt_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GMT_GDALWRITE_CTRL 
 					/* Only set NoData if nan_value contains an integer value */
 					GDALSetRasterNoDataValue(hBand, prhs->nan_value);
 				if (!strcmp(prhs->type, "byte")) {
-					/* This case arrives here from a separate path. It started in grdimage and an originaly
+					/* This case arrives here from a separate path. It started in grdimage and an originally
 					   data was in uchar but padded and possibly 3D (RGB) */
+					uint64_t imsize = gmt_M_get_nm (GMT, n_cols, n_rows);
 					tmpByte = (unsigned char *)data;
-					for (nn = 0; nn < (uint64_t)n_cols*n_rows; nn++)
+					for (nn = 0; nn < imsize; nn++)
 						outByte[nn] = tmpByte[nn*n_bands + i];
 
 					if ((gdal_err = GDALRasterIO(hBand, GF_Write, 0, 0, n_cols, n_rows, outByte, n_cols, n_rows, typeCLASS, 0, 0)) != CE_None)
@@ -378,7 +380,7 @@ int gmt_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GMT_GDALWRITE_CTRL 
 				}
 				else {
 					/* Here 'data' was converted to uchar in gmt_customio.c/gmt_gdal_write_grd */
-					ijk = i * n_cols * n_rows;
+					ijk = i * gmt_M_get_nm (GMT, n_cols, n_rows);
 					if ((gdal_err = GDALRasterIO(hBand, GF_Write, 0, 0, n_cols, n_rows, &img[ijk], n_cols, n_rows, typeCLASS, 0, 0)) != CE_None)
 						GMT_Report(GMT->parent, GMT_MSG_NORMAL, "GDALRasterIO failed to write band %d [err = %d]\n", i, gdal_err);
 				}

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdseamount.c 16722 2016-07-06 13:46:09Z remko $
+ *	$Id: grdseamount.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -485,7 +485,7 @@ GMT_LOCAL int parse_the_record (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *C
 	}
 	
 	if (Ctrl->T.active && in[n_expected-2] < in[n_expected-1])
-		double_swap (in[n_expected-2], in[n_expected-1]);	/* Ensure start time is always larger */
+		gmt_M_double_swap (in[n_expected-2], in[n_expected-1]);	/* Ensure start time is always larger */
 	return 0;	/* OK */	
 }
 
@@ -661,7 +661,7 @@ int GMT_grdseamount (void *V_API, int mode, void *args) {
 					out[col++] = area;
 					out[col++] = volume;
 					out[col++] = height;
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 				}
 				GMT_Report (API, GMT_MSG_VERBOSE, "Seamount %" PRIu64 " area, volume, mean height: %g %g %g\n", n_smts, area, volume, height);
 			}

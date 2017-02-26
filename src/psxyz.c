@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psxyz.c 17185 2016-10-13 03:09:39Z pwessel $
+ *	$Id: psxyz.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -438,21 +438,21 @@ GMT_LOCAL void column3D (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x, d
 		switch (GMT->current.proj.z_project.face[i]) {
 			case 0:	/* yz plane positive side */
 				sign = 1.0;
-				/* Purposefully fall throught after flipping the sign */
+				/* Purposefully fall through after flipping the sign */
 			case 1:	/* negative side */
 				gmt_plane_perspective (GMT, GMT_X, x + sign * x_size);
 				PSL_plotbox (PSL, y - y_size, z - z_size, y + y_size, z + z_size);
 				break;
 			case 2:	/* xz plane positive side */
 				sign = 1.0;
-				/* Purposefully fall throught after flipping the sign */
+				/* Purposefully fall through after flipping the sign */
 			case 3:	/* negative side */
 				gmt_plane_perspective (GMT, GMT_Y, y + sign * y_size);
 				PSL_plotbox (PSL, x - x_size, z - z_size, x + x_size, z + z_size);
 				break;
 			case 4:	/* xy plane positive side */
 				sign = 1.0;
-				/* Purposefully fall throught after flipping the sign */
+				/* Purposefully fall through after flipping the sign */
 			case 5:	/* negative side */
 				gmt_plane_perspective (GMT, GMT_Z, z + sign * z_size);
 				PSL_plotbox (PSL, x - x_size, y - y_size, x + x_size, y + y_size);
@@ -519,9 +519,9 @@ int GMT_psxyz (void *V_API, int mode, void *args) {
 	struct GMT_DATASEGMENT *L = NULL;
 	struct PSXYZ_DATA *data = NULL;
 	struct PSXYZ_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
@@ -685,12 +685,12 @@ int GMT_psxyz (void *V_API, int mode, void *args) {
 	}
 	else {	/* Here we can process data records (ASCII or binary) */
 		set_type = GMT_IS_DATASET;
-		read_mode = GMT_READ_DOUBLE;
+		read_mode = GMT_READ_DATA;
 	}
 	in = GMT->current.io.curr_rec;
 
 	if (not_line) {	/* symbol part (not counting GMT_SYMBOL_FRONT and GMT_SYMBOL_QUOTED_LINE) */
-		bool periodic = false;
+		bool periodic = false, delayed_unit_scaling[2] = {false, false};
 		unsigned int n_warn[3] = {0, 0, 0}, warn, item, n_times;
 		double in2[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, *p_in = GMT->current.io.curr_rec;
 		double xpos[2], width, d;
@@ -720,6 +720,15 @@ int GMT_psxyz (void *V_API, int mode, void *args) {
 			else
 				GMT->current.io.col_type[GMT_IN][ex2] = GMT->current.io.col_type[GMT_IN][ex3] = GMT_IS_GEODIMENSION;
 		}
+		if (S.read_size && GMT->current.io.col[GMT_IN][ex1].convert) {	/* Doing math on the size column, must delay unit conversion unless inch */
+			GMT->current.io.col_type[GMT_IN][ex1] = GMT_IS_FLOAT;
+			delayed_unit_scaling[GMT_X] = (S.u_set && S.u != GMT_INCH);
+		}
+		if (S.read_size && GMT->current.io.col[GMT_IN][ex2].convert) {	/* Doing math on the size column, must delay unit conversion unless inch */
+			GMT->current.io.col_type[GMT_IN][ex2] = GMT_IS_FLOAT;
+			delayed_unit_scaling[GMT_Y] = (S.u_set && S.u != GMT_INCH);
+		}
+		
 		if (!read_symbol) API->object[API->current_item[GMT_IN]]->n_expected_fields = n_needed;
 		n = 0;
 		do {	/* Keep returning records until we reach EOF */
@@ -821,7 +830,9 @@ int GMT_psxyz (void *V_API, int mode, void *args) {
 			}
 			if (S.read_size) {	/* Update sizes from input */
 				S.size_x = in[ex1] * S.factor;
+				if (delayed_unit_scaling[GMT_X]) S.size_x *= GMT->session.u2u[S.u][GMT_INCH];
 				S.size_y = in[ex2];
+				if (delayed_unit_scaling[GMT_Y]) S.size_y *= GMT->session.u2u[S.u][GMT_INCH];
 			}
 			data[n].dim[0] = S.size_x;
 			data[n].dim[1] = S.size_y;

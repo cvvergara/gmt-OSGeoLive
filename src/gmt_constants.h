@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_constants.h 16803 2016-07-14 23:45:35Z pwessel $
+ *	$Id: gmt_constants.h 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
- * gmt_constants.h contains definitions of constants used throught GMT.
+ * gmt_constants.h contains definitions of constants used through GMT.
  *
  * Author:	Paul Wessel
  * Date:	01-OCT-2009
@@ -25,7 +25,7 @@
 
 /*!
  * \file gmt_constants.h
- * \brief Definitions of constants used throught GMT.
+ * \brief Definitions of constants used through GMT.
  */
 
 #ifndef _GMT_CONSTANTS_H
@@ -156,7 +156,10 @@ enum GMT_swap_direction {
 #define GMT_GRID_LAYOUT		"TRS"	/* Standard GMT scanline single-item grid */
 #define GMT_IMAGE_LAYOUT	"TRBa"	/* Standard GMT scanline band-interleaved image */
 
+#define GMT_CPT_CONTINUOUS	8	/* Final CPT should be continuous */
 #define GMT_CPT_TEMPORARY	16	/* CPT was built from list of colors, e.g., red,green,255,blue,... */
+#define GMT_CPT_C_REVERSE	1	/* Reverse CPT colors */
+#define GMT_CPT_Z_REVERSE	2	/* Reverse CPT z-values */
 
 /*! Codes for grdtrack */
 enum GMT_enum_tracklayout {
@@ -192,7 +195,7 @@ enum GMT_enum_model {
 	GMT_POLYNOMIAL = 0, GMT_CHEBYSHEV, GMT_COSINE, GMT_SINE, GMT_FOURIER
 	};
 
-/*! Various array indeces of fonts and pens */
+/*! Various array indices of fonts and pens */
 enum GMT_enum_index {
 	GMT_PRIMARY = 0, GMT_SECONDARY = 1
 	};

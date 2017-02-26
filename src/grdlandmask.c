@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdlandmask.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdlandmask.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@ struct GRDLANDMASK_CTRL {	/* All control options for this program (except common
 	} A;
 	struct GRDLNDM_D {	/* -D<resolution> */
 		bool active;
-		bool force;	/* if true, select next highest level if current set is not avaialble */
+		bool force;	/* if true, select next highest level if current set is not available */
 		char set;	/* One of f, h, i, l, c */
 	} D;
 	struct GRDLNDM_E {	/* -E */

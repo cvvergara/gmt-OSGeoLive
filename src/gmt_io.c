@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_io.c 17149 2016-09-30 21:26:07Z pwessel $
+ *	$Id: gmt_io.c 17588 2017-02-23 23:35:14Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
  *
  *  gmtlib_getuserpath     Get pathname of file in "user directories" (GMT->session.TMPDIR, CWD, HOME, GMT->session.USERDIR)
  *  gmt_getdatapath     Get pathname of file in "data directories" (CWD, GMT_{USER,DATA,GRID,IMG}DIR)
- *  gmt_getsharepath    Get pathname of file in "share directries" (CWD, GMT->session.USERDIR, GMT->session.SHAREDIR tree)
+ *  gmt_getsharepath    Get pathname of file in "share directories" (CWD, GMT->session.USERDIR, GMT->session.SHAREDIR tree)
  *  gmt_fopen:          Open a file using gmt_getdatapath
  *  gmt_fclose:         Close a file
  *  gmtlib_io_init:        Init GMT_IO structure
@@ -752,7 +752,7 @@ GMT_LOCAL bool gmtio_get_binary_input (struct GMT_CTRL *GMT, FILE *fp, uint64_t 
 	uint64_t i;
 
 	if (n > GMT_MAX_COLUMNS) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Number of data columns (%d) exceeds limit (GMT_MAX_COLUMS = %d)\n", n, GMT_MAX_COLUMNS);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Number of data columns (%d) exceeds limit (GMT_MAX_COLUMNS = %d)\n", n, GMT_MAX_COLUMNS);
 		return (true);	/* Done with this file */
 	}
 	for (i = 0; i < n; i++) {
@@ -792,9 +792,9 @@ GMT_LOCAL int gmtio_bin_output (struct GMT_CTRL *GMT, FILE *fp, uint64_t n, doub
 	uint64_t i, n_out, col_pos;
 	double val;
 
-	if (gmt_skip_output (GMT, ptr, n)) return (0);	/* Record was skipped via -s[a|r] */
+	if (gmt_skip_output (GMT, ptr, n)) return (-1);	/* Record was skipped via -s[a|r] */
 	if (GMT->current.setting.io_lonlat_toggle[GMT_OUT])		/* Write lat/lon instead of lon/lat */
-		double_swap (ptr[GMT_X], ptr[GMT_Y]);
+		gmt_M_double_swap (ptr[GMT_X], ptr[GMT_Y]);
 	n_out = (GMT->common.o.active) ? GMT->common.o.n_cols : n;
 	for (i = 0, k = 0; i < n_out; i++) {
 		col_pos = (GMT->common.o.active) ? GMT->current.io.col[GMT_OUT][i].col : i;	/* Which data column to pick */
@@ -805,7 +805,7 @@ GMT_LOCAL int gmtio_bin_output (struct GMT_CTRL *GMT, FILE *fp, uint64_t n, doub
 		k += GMT->current.io.fmt[GMT_OUT][i].io (GMT, fp, 1, &val);
 		if (GMT->current.io.fmt[GMT_OUT][i].skip > 0) gmtio_x_write (GMT, fp, GMT->current.io.fmt[GMT_OUT][i].skip);	/* Post-fill */
 	}
-	return (k);
+	return (0);
 }
 
 /*! . */
@@ -814,7 +814,7 @@ GMT_LOCAL int gmtio_ascii_output (struct GMT_CTRL *GMT, FILE *fp, uint64_t n, do
 	int e = 0, wn = 0;
 	double val;
 
-	if (gmt_skip_output (GMT, ptr, n)) return (0);	/* Record was skipped via -s[a|r] */
+	if (gmt_skip_output (GMT, ptr, n)) return (-1);	/* Record was skipped via -s[a|r] */
 	n_out = (GMT->common.o.active) ? GMT->common.o.n_cols : n;
 
 	last = n_out - 1;				/* Last filed, need to output linefeed instead of delimiter */
@@ -839,7 +839,7 @@ GMT_LOCAL int gmtio_ascii_output (struct GMT_CTRL *GMT, FILE *fp, uint64_t n, do
 
 		wn += e;
 	}
-	return ((e < 0) ? e : wn);
+	return ((e < 0) ? -1 : 0);
 }
 
 /*! . */
@@ -1771,14 +1771,14 @@ GMT_LOCAL int gmtio_get_dms_order (struct GMT_CTRL *GMT, char *text, struct GMT_
 	 * Items not encountered are left as -1.
 	 */
 
-	unsigned int j, n_d, n_m, n_s, n_x, n_dec, order, error = 0;
+	unsigned int j, n_d, n_m, n_s, n_x, n_dec, n_period, order, error = 0;
 	int sequence[3], last, i_signed, n_delim;
 	size_t i1, i;
 	bool big_to_small;
 
 	for (i = 0; i < 3; i++) S->order[i] = -1;	/* Meaning not encountered yet */
 
-	n_d = n_m = n_s = n_x = n_dec = n_delim = 0;
+	n_d = n_m = n_s = n_x = n_dec = n_delim = n_period = 0;
 	S->delimiter[0][0] = S->delimiter[0][1] = S->delimiter[1][0] = S->delimiter[1][1] = 0;
 	sequence[0] = sequence[1] = sequence[2] = -1;
 
@@ -1836,6 +1836,7 @@ GMT_LOCAL int gmtio_get_dms_order (struct GMT_CTRL *GMT, char *text, struct GMT_
 				n_s++;
 				break;
 			case '.':	/* Decimal point for seconds? */
+				n_period++;
 				if (text[i+1] == 'x')
 					n_dec++;
 				else {	/* Must be a delimiter */
@@ -1887,6 +1888,8 @@ GMT_LOCAL int gmtio_get_dms_order (struct GMT_CTRL *GMT, char *text, struct GMT_
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: Unacceptable dmmss template %s\n", text);
 		GMT_exit (GMT, GMT_PARSE_ERROR); return GMT_PARSE_ERROR;
 	}
+	else if (n_period > 1)
+		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "WARNING: Multiple periods in dmmss template %s is likely to lead to confusion\n", text);
 	return (GMT_NOERROR);
 }
 
@@ -2626,7 +2629,7 @@ GMT_LOCAL int gmtio_prep_ogr_output (struct GMT_CTRL *GMT, struct GMT_DATASET *D
 			}
 			gmtio_alloc_ogr_seg (GMT, T->segment[seg], T->ogr->n_aspatial);	/* Copy over any feature-specific values */
 			T->segment[seg]->ogr->pol_mode = GMT_IS_PERIMETER;
-			gmt_set_seg_minmax (GMT, T->segment[seg]);	/* Make sure min/max are set per polygon */
+			gmt_set_seg_minmax (GMT, T->ogr->geometry, T->segment[seg]);	/* Make sure min/max are set per polygon */
 
 		}
 		/* OK, they are all polygons.  Determine any polygon holes: if a point is fully inside another polygon (not on the edge) */
@@ -3204,7 +3207,7 @@ GMT_LOCAL void *gmtio_ascii_input (struct GMT_CTRL *GMT, FILE *fp, uint64_t *n, 
 		            col_no, *n, GMT->current.io.rec_no);
 
 	if (GMT->current.setting.io_lonlat_toggle[GMT_IN] && col_no >= 2)
-		double_swap (GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]);	/* Got lat/lon instead of lon/lat */
+		gmt_M_double_swap (GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]);	/* Got lat/lon instead of lon/lat */
 	if (GMT->current.proj.inv_coordinates) gmtio_adjust_projected (GMT);	/* Must apply inverse projection to get lon, lat */
 	if (GMT->current.io.col_type[GMT_IN][GMT_X] & GMT_IS_LON)		/* Must account for periodicity in 360 as per current rule*/
 		gmtio_adjust_periodic_x (GMT);
@@ -3332,7 +3335,7 @@ GMT_LOCAL int gmtio_write_table (struct GMT_CTRL *GMT, void *dest, unsigned int 
 			}
 		}
 		if (GMT->current.io.multi_segments[GMT_OUT]) {	/* Want to write segment headers */
-			if (table->segment[seg]->ogr) gmtio_build_segheader_from_ogr (GMT, GMT_OUT, table->segment[seg]);	/* We have access to OGR metadata */
+			if (!GMT->common.a.output && table->segment[seg]->ogr) gmtio_build_segheader_from_ogr (GMT, GMT_OUT, table->segment[seg]);	/* We have access to OGR metadata */
 			if (table->segment[seg]->header)
 				strncpy (GMT->current.io.segment_header, table->segment[seg]->header, GMT_BUFSIZ-1);
 			else
@@ -3365,7 +3368,7 @@ GMT_LOCAL int gmtio_write_table (struct GMT_CTRL *GMT, void *dest, unsigned int 
 /*! . */
 GMT_LOCAL void * gmtio_nc_input (struct GMT_CTRL *GMT, FILE *fp, uint64_t *n, int *retval)
 {	/* netCDF tables contain information about the number of records, so we can use a
-	 * faster startegy: When file is opened, determine number of rows and columns and
+	 * faster strategy: When file is opened, determine number of rows and columns and
 	 * preallocate all the column vectors.  Then, when we ask for the first data record
 	 * we read the entire data set.  We then simply return the values corresponding to
 	 * the current row.  Note some variables may be 2-D and we then consider them as a
@@ -3919,10 +3922,10 @@ void gmt_set_tableheader (struct GMT_CTRL *GMT, int direction, bool true_false) 
 /*! . */
 int gmt_z_output (struct GMT_CTRL *GMT, FILE *fp, uint64_t n, double *data) {
 	int err;
-	if (gmt_skip_output (GMT, data, n)) return (0);	/* Record was skipped via -s[a|r] */
+	if (gmt_skip_output (GMT, data, n)) return (-1);	/* Record was skipped via -s[a|r] */
 	err = GMT->current.io.write_item (GMT, fp, n, data);
 	/* Cast below since the output functions are declared with uint64_t but cannot really exceed 4096... SHould change uint64_t to uint32_t */
-	return (err ? -1 : (int)n);	/* Return -1 if failed, else n items written */
+	return (err ? -1 : 0);	/* Return -1 if failed, else n items written */
 }
 
 /* gmt_z_input and gmt_z_output are used in grd2xyz/xyz2grd to fascilitate reading of one-col items via the general i/o machinery */
@@ -3986,7 +3989,7 @@ int gmtlib_process_binary_input (struct GMT_CTRL *GMT, uint64_t n_read) {
 		if (GMT->current.io.curr_rec[GMT_X] == GMT->current.io.prev_rec[GMT_X] && GMT->current.io.curr_rec[GMT_Y] == GMT->current.io.prev_rec[GMT_Y]) return (2);	/* Yes, duplicate */
 	}
 	if (GMT->current.setting.io_lonlat_toggle[GMT_IN] && n_read >= 2)
-		double_swap (GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]);	/* Got lat/lon instead of lon/lat */
+		gmt_M_double_swap (GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]);	/* Got lat/lon instead of lon/lat */
 	if (GMT->current.proj.inv_coordinates) gmtio_adjust_projected (GMT);	/* Must apply inverse projection to get lon, lat */
 	if (GMT->current.io.col_type[GMT_IN][GMT_X] & GMT_IS_LON) gmtio_adjust_periodic_x (GMT);	/* Must account for periodicity in 360 */
 	else if (GMT->current.io.col_type[GMT_IN][GMT_Y] & GMT_IS_LON) gmtio_adjust_periodic_y (GMT);	/* Must account for periodicity in 360 as per current rule*/
@@ -4508,7 +4511,7 @@ int gmt_access (struct GMT_CTRL *GMT, const char* filename, int mode) {
 	if ((c = gmtlib_file_unitscale (file))) c[0] = '\0';	/* Chop off any x/u unit specification */
 	if (mode == W_OK)
 		return (access (file, mode));	/* When writing, only look in current directory */
-	if (mode == R_OK || mode == F_OK) {	/* Look in special directories when reading or just checking for existance */
+	if (mode == R_OK || mode == F_OK) {	/* Look in special directories when reading or just checking for existence */
 		char path[GMT_BUFSIZ];
 		return (gmt_getdatapath (GMT, file, path, mode) ? 0 : -1);
 	}
@@ -4644,7 +4647,7 @@ bool gmt_skip_output (struct GMT_CTRL *GMT, double *cols, uint64_t n_cols) {
 	uint64_t c, n_nan;
 
 	if (n_cols > GMT_MAX_COLUMNS) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Number of output data columns (%d) exceeds limit (GMT_MAX_COLUMS = %d)\n", n_cols, GMT_MAX_COLUMNS);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Number of output data columns (%d) exceeds limit (GMT_MAX_COLUMNS = %d)\n", n_cols, GMT_MAX_COLUMNS);
 		return (true);	/* Skip record since we cannot access that many columns */
 	}
 	if (GMT->current.setting.io_nan_mode == GMT_IO_NAN_OK) return (false);				/* Normal case; output the record */
@@ -4680,9 +4683,9 @@ void gmt_format_abstime_output (struct GMT_CTRL *GMT, double dt, char *text) {
 	char date[GMT_LEN16] = {""}, tclock[GMT_LEN16] = {""};
 
 	gmt_format_calendar (GMT, date, tclock, &GMT->current.io.date_output, &GMT->current.io.clock_output, false, 1, dt);
-	if (date[0] == '\0')	/* No date wanted hence dont use T */
+	if (date[0] == '\0')	/* No date wanted hence don't use T */
 		sprintf (text, "%s", tclock);
-	else if (tclock[0] == '\0')	/* No clock wanted hence dont use T */
+	else if (tclock[0] == '\0')	/* No clock wanted hence don't use T */
 		sprintf (text, "%s", date);
 	else	/* ISO format */
 		sprintf (text, "%sT%s", date, tclock);
@@ -4943,6 +4946,7 @@ void gmt_set_seg_polar (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S) {
 	 * true of course. */
 	int answer;
 
+	if ((GMT->current.io.col_type[GMT_IN][GMT_X] & GMT_IS_GEO) == 0 || S->n_columns < 2) return;	/* No can do */
 	if ((answer = gmtlib_determine_pole (GMT, S->data[GMT_X], S->data[GMT_Y], S->n_rows)) == -99) return;	/* No good */
 	if (answer) {	/* true if contains a pole; adjust rectangular bounds and set pole flag */
 		S->pole = (answer < 0) ? -1 : +1;
@@ -5080,7 +5084,7 @@ void gmt_write_segmentheader (struct GMT_CTRL *GMT, FILE *fp, uint64_t n_cols) {
 void gmtlib_io_binary_header (struct GMT_CTRL *GMT, FILE *fp, unsigned int dir) {
 	uint64_t k;
 	char c = ' ';
-	if (dir == GMT_IN) {	/* Use fread since we dont know if input is a stream or a file */
+	if (dir == GMT_IN) {	/* Use fread since we don't know if input is a stream or a file */
 		size_t nr = 0;
 		for (k = 0; k < GMT->current.setting.io_n_header_items; k++) nr += gmt_M_fread (&c, sizeof (char), 1U, fp);
 	}
@@ -5973,7 +5977,7 @@ int gmt_scanf (struct GMT_CTRL *GMT, char *s, unsigned int expectation, double *
 			break;
 
 		case  GMT_IS_UNKNOWN:
-			/* True if we dont know but must try both geographic or float formats  */
+			/* True if we don't know but must try both geographic or float formats  */
 			type = gmtio_scanf_geo (s, val);
 			if ((type == GMT_IS_LON) && GMT->current.io.warn_geo_as_cartesion) {
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "GMT: Longitude input data detected and successfully converted but will be considered Cartesian coordinates.\n");
@@ -6124,7 +6128,7 @@ struct GMT_TEXTTABLE * gmtlib_read_texttable (struct GMT_CTRL *GMT, void *source
 			n_row_alloc = GMT_CHUNK;
 			row = 0;
 			if (!no_segments) {
-				in = gmtio_ascii_textinput (GMT, fp, &ncol, &status);	/* Don't read if we didnt read a segment header up front */
+				in = gmtio_ascii_textinput (GMT, fp, &ncol, &status);	/* Don't read if we didn't read a segment header up front */
 				n_read++;
 			}
 			no_segments = false;	/* This has now served its purpose */
@@ -6182,7 +6186,7 @@ struct GMT_TEXTTABLE * gmtlib_read_texttable (struct GMT_CTRL *GMT, void *source
 }
 
 /*! . */
-void gmt_set_seg_minmax (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S) {
+void gmt_set_seg_minmax (struct GMT_CTRL *GMT, unsigned int geometry, struct GMT_DATASEGMENT *S) {
 	/* Determine the min/max values for each column in the segment */
 	uint64_t row, col;
 
@@ -6201,10 +6205,12 @@ void gmt_set_seg_minmax (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S) {
 			}
 		}
 	}
+	if (geometry == GMT_IS_POLY)
+		gmt_set_seg_polar (GMT, S);
 }
 
 /*! . */
-void gmt_set_tbl_minmax (struct GMT_CTRL *GMT, struct GMT_DATATABLE *T) {
+void gmt_set_tbl_minmax (struct GMT_CTRL *GMT, unsigned int geometry, struct GMT_DATATABLE *T) {
 	/* Update the min/max of all segments and the entire table */
 	uint64_t seg, col;
 	struct GMT_DATASEGMENT *S = NULL;
@@ -6220,7 +6226,7 @@ void gmt_set_tbl_minmax (struct GMT_CTRL *GMT, struct GMT_DATATABLE *T) {
 	T->n_records = 0;
 	for (seg = 0; seg < T->n_segments; seg++) {
 		S = T->segment[seg];
-		gmt_set_seg_minmax (GMT, S);
+		gmt_set_seg_minmax (GMT, geometry, S);
 		if (S->n_rows == 0) continue;
 		for (col = 0; col < T->n_columns; col++) {
 			if (S->min[col] < T->min[col]) T->min[col] = S->min[col];
@@ -6245,7 +6251,7 @@ void gmtlib_set_dataset_minmax (struct GMT_CTRL *GMT, struct GMT_DATASET *D) {
 	D->n_records = D->n_segments = 0;
 	for (tbl = 0; tbl < D->n_tables; tbl++) {
 		T = D->table[tbl];
-		gmt_set_tbl_minmax (GMT, T);
+		gmt_set_tbl_minmax (GMT, D->geometry, T);
 		for (col = 0; col < D->n_columns; col++) {
 			if (T->min[col] < D->min[col]) D->min[col] = T->min[col];
 			if (T->max[col] > D->max[col]) D->max[col] = T->max[col];
@@ -6460,7 +6466,7 @@ bool gmt_parse_segment_item (struct GMT_CTRL *GMT, char *in_string, char *patter
 	if (!out_string) return (true);	/* If NULL is passed as out_string then we just return true if we find the option */
 	out_string[0] = '\0';	/* Reset string to empty before we try to set it below */
 	k = (size_t)t - (size_t)in_string; /* Position of pattern in in_string */
-	if (k && !(in_string[k-1] == ' ' || in_string[k-1] == '\t')) return (false);	/* Option not first or preceeded by whitespace */
+	if (k && !(in_string[k-1] == ' ' || in_string[k-1] == '\t')) return (false);	/* Option not first or preceded by whitespace */
 	t += 2;	/* Position of the argument */
 	if (t[0] == '\"')	/* Double quoted argument, must scan from next character until terminal quote */
 		sscanf (++t, "%[^\"]", out_string);
@@ -7112,8 +7118,7 @@ struct GMT_DATATABLE * gmtlib_read_table (struct GMT_CTRL *GMT, void *source, un
 		}
 		else {	/* OK to populate segment and increment counters */
 			gmtlib_assign_segment (GMT, T->segment[seg], row, T->segment[seg]->n_columns);	/* Allocate and place arrays into segment */
-			gmt_set_seg_minmax (GMT, T->segment[seg]);	/* Set min/max */
-			if (poly && (GMT->current.io.col_type[GMT_IN][GMT_X] & GMT_IS_GEO)) gmt_set_seg_polar (GMT, T->segment[seg]);
+			gmt_set_seg_minmax (GMT, *geometry, T->segment[seg]);	/* Set min/max */
 			T->n_records += row;		/* Total number of records so far */
 			T->segment[seg]->id = seg;	/* Internal segment number */
 		}
@@ -7210,14 +7215,14 @@ struct GMT_DATASET * gmt_alloc_dataset (struct GMT_CTRL *GMT, struct GMT_DATASET
 		D->table[0]->n_headers  = Din->table[0]->n_headers;
 		if (D->table[0]->n_headers) D->table[0]->header = gmt_M_memory (GMT, NULL, D->table[0]->n_headers, char *);
 		for (hdr = 0; hdr < D->table[0]->n_headers; hdr++) {	/* Concatenate headers */
-			for (tbl = len = 0; tbl < Din->n_tables; tbl++) len += (strlen (Din->table[tbl]->header[hdr]) + 2);
+			for (tbl = len = 0; tbl < Din->n_tables; tbl++) if (Din->table[tbl]->header) len += (strlen (Din->table[tbl]->header[hdr]) + 2);
 			D->table[0]->header[hdr] = calloc (len, sizeof (char));
 			strncpy (D->table[0]->header[hdr], Din->table[0]->header[hdr], len);
 			if (Din->n_tables > 1) gmt_chop (D->table[0]->header[hdr]);	/* Remove newline */
 			for (tbl = 1; tbl < Din->n_tables; tbl++) {	/* Now go across tables to paste */
 				if (tbl < (Din->n_tables - 1)) gmt_chop (Din->table[tbl]->header[hdr]);
 				strcat (D->table[0]->header[hdr], "\t");
-				strcat (D->table[0]->header[hdr], Din->table[tbl]->header[hdr]);
+				if (Din->table[tbl]->header) strcat (D->table[0]->header[hdr], Din->table[tbl]->header[hdr]);
 			}
 		}
 
@@ -7746,7 +7751,7 @@ int gmt_conv_intext2dbl (struct GMT_CTRL *GMT, char *record, unsigned int ncols)
 		gmt_scanf (GMT, p, GMT->current.io.col_type[GMT_IN][k], &GMT->current.io.curr_rec[k]);	/* Be tolerant of errors */
 		k++;
 	}
-	if (GMT->current.setting.io_lonlat_toggle[GMT_IN] && k >= 2) double_swap (GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]);	/* Got lat/lon instead of lon/lat */
+	if (GMT->current.setting.io_lonlat_toggle[GMT_IN] && k >= 2) gmt_M_double_swap (GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]);	/* Got lat/lon instead of lon/lat */
 	if (GMT->current.io.col_type[GMT_IN][GMT_X] & GMT_IS_LON)		/* Must account for periodicity in 360 */
 		gmtio_adjust_periodic_x (GMT);
 	else if (GMT->current.io.col_type[GMT_IN][GMT_Y] & GMT_IS_LON)	/* Must account for periodicity in 360 as per current rule*/

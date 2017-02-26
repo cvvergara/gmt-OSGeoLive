@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
- *	$Id: mgd77.h 16945 2016-08-19 02:40:15Z remko $
+ *	$Id: mgd77.h 17496 2017-01-28 23:56:41Z pwessel $
  * 
- *    Copyright (c) 2005-2016 by P. Wessel
+ *    Copyright (c) 2005-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
  *
  *  File:	mgd77.h
@@ -94,10 +94,10 @@
 #define MGD77_SET_ALLEXACT	4
 
 #define MGD77_N_FORMATS		4
-#define MGD77_FORMAT_M77	0
-#define MGD77_FORMAT_CDF	1
-#define MGD77_FORMAT_TBL	2
-#define MGD77_FORMAT_M7T	3
+#define MGD77_FORMAT_CDF	0
+#define MGD77_FORMAT_M7T	1
+#define MGD77_FORMAT_M77	2
+#define MGD77_FORMAT_TBL	3
 #define MGD77_FORMAT_ANY	4
 
 #define MGD77_READ_MODE		0

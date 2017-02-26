@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalread.c 17124 2016-09-22 21:35:10Z jluis $
+ *	$Id: gmt_gdalread.c 17543 2017-02-09 14:14:29Z jluis $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -326,7 +326,7 @@ GMT_LOCAL int populate_metadata (struct GMT_CTRL *GMT, struct GMT_GDALREAD_OUT_C
 	int     i, j;
 	int     status, bSuccess;	/* success or failure */
 	int     nBand, raster_count;
-	int     bGotMin, bGotMax;	/* To know if driver transmited Min/Max */
+	int     bGotMin, bGotMax;	/* To know if driver transmitted Min/Max */
 	bool    got_noDataValue = false, pixel_reg = false;
 	double  adfGeoTransform[6];	/* bounds on the dataset */
 	double  tmpdble;		/* temporary value */
@@ -396,6 +396,10 @@ GMT_LOCAL int populate_metadata (struct GMT_CTRL *GMT, struct GMT_GDALREAD_OUT_C
 			Ctrl->GeoTransform[3] = dfULY;
 		}
 	}
+	else if (adfGeoTransform[1] != 1 && adfGeoTransform[5] != 1) {	/* Patch a possible GDAL bug. Raised after issue #1030 */
+		adfGeoTransform[1] = adfGeoTransform[5] = 1;
+		GMT_Report(GMT->parent, GMT_MSG_VERBOSE, "Warning: GDAL seamed to have returned garbage in adfGeoTransform. Arbitrarily setting inc = 1.\n");
+	}
 
 	/* ------------------------------------------------------------------------- */
 	/* Get driver information */
@@ -417,7 +421,7 @@ GMT_LOCAL int populate_metadata (struct GMT_CTRL *GMT, struct GMT_GDALREAD_OUT_C
 							" This configuration is not supported.\n");
 			GDALClose(hDataset);
 			GDALDestroyDriverManager();
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Quiting with error\n");
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Quitting with error\n");
 			return(-1);
 		}
 
@@ -431,7 +435,7 @@ GMT_LOCAL int populate_metadata (struct GMT_CTRL *GMT, struct GMT_GDALREAD_OUT_C
 		    || anSrcWin[1] + anSrcWin[3] > GDALGetRasterYSize(hDataset)) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Computed -srcwin falls outside raster size of %dx%d.\n",
 			            GDALGetRasterXSize(hDataset), GDALGetRasterYSize(hDataset));
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Quiting with error\n");
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Quitting with error\n");
 			return(-1);
 		}
 		Ctrl->RasterXsize = nXSize = anSrcWin[2];
@@ -457,7 +461,7 @@ GMT_LOCAL int populate_metadata (struct GMT_CTRL *GMT, struct GMT_GDALREAD_OUT_C
 
 		hBand = GDALGetRasterBand(hDataset, nBand+1);
 
-		if (!got_R) {		/* Not sure about what will realy happen in this case */
+		if (!got_R) {		/* Not sure about what will really happen in this case */
 			Ctrl->band_field_names[nBand].XSize = GDALGetRasterBandXSize(hBand);
 			Ctrl->band_field_names[nBand].YSize = GDALGetRasterBandYSize(hBand);
 		}
@@ -673,7 +677,7 @@ int gmt_is_gdal_grid (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
 
 int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD_IN_CTRL *prhs, struct GMT_GDALREAD_OUT_CTRL *Ctrl) {
 	const char	*format = NULL;
-	int	nRGBA = 1;	/* 1 for BSQ; 3 for RGB and 4 for RGBA (If needed, value is updated bellow) */
+	int	nRGBA = 1;	/* 1 for BSQ; 3 for RGB and 4 for RGBA (If needed, value is updated below) */
 	int	complex_mode = 0;	/* 0 real only. 1|2 if complex array is to hold real (1) and imaginary (2) parts */
 	int	nPixelSize, nBands, i, nReqBands = 0;
 	int	anSrcWin[4], xOrigin = 0, yOrigin = 0;
@@ -745,6 +749,8 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 			do_BIP = false;
 		if (topdown && rowmajor) just_copy = true;		/* Means we will send out the data as it came from gdal */
 		if (!topdown && rowmajor) copy_flipud = true;	/* Means we will send out the data as it came from gdal */
+		/* Send back the info that I->header->mem_layout must be updated */
+		strncpy(prhs->O.mem_layout, GMT->current.gdal_read_in.O.mem_layout, 4);
 	}
 
 	if (prhs->p.active) pad = prhs->p.pad;
@@ -843,7 +849,7 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 		return (-1);
 	}
 
-	/* Some formats (tipically DEMs) have their origin at Bottom Left corner.
+	/* Some formats (typically DEMs) have their origin at Bottom Left corner.
 	   For those we have to flip the data matrix to be in accord with matlab (Top Left) */
 
 	hDriver = GDALGetDatasetDriver(hDataset);
@@ -1036,7 +1042,7 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 		if (jump) {
 			nXSize = nBufXSize;
 			nYSize = nBufYSize;
-			i_x_nXYSize = i*(nXSize + pad_w + pad_e)*(nYSize + pad_s + pad_n);		/* We don't need to recompute this everytime */
+			i_x_nXYSize = i*(nXSize + pad_w + pad_e)*(nYSize + pad_s + pad_n);		/* We don't need to recompute this every time */
 		}
 		else
 			i_x_nXYSize = i * (nBufXSize + pad_w + pad_e) * (nBufYSize + pad_s + pad_n);

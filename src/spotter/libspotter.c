@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: libspotter.c 17215 2016-10-18 20:01:10Z pwessel $
+ *	$Id: libspotter.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *   Copyright (c) 1999-2016 by P. Wessel
+ *   Copyright (c) 1999-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -480,7 +480,7 @@ unsigned int spotter_init (struct GMT_CTRL *GMT, char *file, struct EULER **p, b
 			if (strstr (comment, "cross-over") || strstr (comment, "cross over") || strstr (comment, "crossover")) continue;	/* Skip GPlates cross-over rotations */
 			if (A_id == p1 && B_id == p2 && !V2) {	/* Exactly what we wanted */
 				e[i].lon = lon;	e[i].lat = lat;	e[i].omega = rot;	e[i].t_start = t;
-				V1 = true;	/* So we dont later find inverse rotations */
+				V1 = true;	/* So we don't later find inverse rotations */
 			}
 			else if (A_id == p2 && B_id == p1 && !V1) {	/* Got the inverse rotation, so change angle sign */
 				e[i].lon = lon;	e[i].lat = lat;	e[i].omega = -rot;	e[i].t_start = t;
@@ -1766,7 +1766,7 @@ void spotter_project_ellipsoid (struct GMT_CTRL *GMT, double axis[], double D[3]
 	par[2] = 1.0/sqrt (0.5 * (A + C - r));
 	par[0] = (gmt_M_is_zero (B)) ? ((A > C) ? 90.0 : 0.0) : 90.0 - atan2 (-0.5 * (A - C - r)/B, 1.0) * R2D;
 	if (par[2] > par[1]) {	/* Switch so that par[1] is the major axis */
-		double_swap (par[1], par[2]);
+		gmt_M_double_swap (par[1], par[2]);
 		par[0] += 90.0;
 		if (par[0] >= 180.0) par[0] -= 180.0;
 	}
@@ -1786,7 +1786,7 @@ void spotter_project_ellipsoid_new (struct GMT_CTRL *GMT, double X[3][3], double
 	par[2] = sqrt (0.5 * (a + c - r));
 	par[0] = (gmt_M_is_zero (b)) ? ((a > c) ? 90.0 : 0.0) : 90.0 - atan2 (-0.5 * (a - c - r)/b, 1.0) * R2D;
 	if (par[2] > par[1]) {	/* Switch so that par[1] is the major axis */
-		double_swap (par[1], par[2]);
+		gmt_M_double_swap (par[1], par[2]);
 		par[0] += 90.0;
 		if (par[0] >= 180.0) par[0] -= 180.0;
 	}

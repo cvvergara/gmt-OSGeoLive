@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: testgmtio.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: testgmtio.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -61,8 +61,8 @@ int main (int argc, char *argv[]) {
 	if ((error = GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON)) != GMT_NOERROR) exit (error);				/* Enables data output and sets access mode */
 	
 	do {	/* Keep returning records until we reach EOF */
-		mode = GMT_WRITE_DOUBLE;	/* Normally we treat data as double precision values */
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE | GMT_READ_FILEBREAK, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
+		mode = GMT_WRITE_DATA;	/* Normally we treat data as double precision values */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA | GMT_READ_FILEBREAK, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) {	/* This check kicks in if the data has bad formatting, text etc */
 				GMT_Report (API, GMT_MSG_VERBOSE, "Error found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "E: ");

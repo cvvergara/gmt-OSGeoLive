@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdtrack.c 16811 2016-07-15 23:02:04Z pwessel $
+ *	$Id: grdtrack.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -236,7 +236,7 @@ GMT_LOCAL int process_one (struct GMT_CTRL *GMT, char *record, struct GRDTRACK_C
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error -G option: Give imgfile, scale, mode [and optionally max_lat]\n");
 			return (0);
 		}
-		else if (gmt_check_filearg (GMT, '<', record, GMT_IN, GMT_IS_GRID))
+		else if (gmt_check_filearg (GMT, '<', line, GMT_IN, GMT_IS_GRID))
 			Ctrl->G.file[ng] = strdup (line);
 		else
 			return (0);
@@ -317,6 +317,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDTRACK_CTRL *Ctrl, struct GM
 					if (mode != 0 && mode != Ctrl->C.dist_mode) n_modes++;
 				}
 				if (c && Ctrl->C.mode) *c = '+';	/* Undo truncation */
+				if (gmt_M_is_geographic (API->GMT, GMT_IN) && n_units && Ctrl->C.unit != 'e' && !strchr (opt->arg, 'e'))
+					n_units = 0;	/* Weird case where user did -fg but did not specify units on all three items and got default e unintentionally */
 				if (n_units) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -C option: Only <length> takes a unit which is shared with <ds> [and <spacing>]\n");
 					n_errors++;
@@ -797,6 +799,7 @@ int GMT_grdtrack (void *V_API, int mode, void *args) {
 
 	if (Ctrl->E.active) {	/* Create profiles rather than read them */
 		double xyz[2][3];
+		bool resample = !(Ctrl->C.active && Ctrl->C.spacing > 0.0);
 
 		if (get_dist_units (GMT, Ctrl->E.lines, &Ctrl->E.unit, &Ctrl->E.mode)) {	/* Bad mixing of units in -E specification */
 			for (g = 0; g < Ctrl->G.n_grids; g++) {	/* Free up the grids */
@@ -820,10 +823,10 @@ int GMT_grdtrack (void *V_API, int mode, void *args) {
 		}
 		if (Ctrl->G.n_grids == 1) {	/* May use min/max for a single grid */
 			gmt_grd_minmax (GMT, GC[0].G, xyz);
-			Din = gmt_make_profiles (GMT, 'E', Ctrl->E.lines, true, false, false, Ctrl->E.step, Ctrl->A.mode, xyz);
+			Din = gmt_make_profiles (GMT, 'E', Ctrl->E.lines, resample, false, false, Ctrl->E.step, Ctrl->A.mode, xyz);
 		}
 		else
-			Din = gmt_make_profiles (GMT, 'E', Ctrl->E.lines, true, false, false, Ctrl->E.step, Ctrl->A.mode, NULL);
+			Din = gmt_make_profiles (GMT, 'E', Ctrl->E.lines, resample, false, false, Ctrl->E.step, Ctrl->A.mode, NULL);
 		if (Din->table[0] == NULL)
 			Return (GMT_RUNTIME_ERROR);
 		Din->n_columns = Din->table[0]->n_columns;	/* Since could have changed via +d */
@@ -1084,6 +1087,9 @@ int GMT_grdtrack (void *V_API, int mode, void *args) {
 		if (GMT_Begin_IO (API, family, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			Return (API->error);
+		}
 
 		gmt_M_memset (line, GMT_BUFSIZ, char);
 		if (Ctrl->Z.active) {	/* Special case were number of output columns is known before reading input records */
@@ -1095,7 +1101,7 @@ int GMT_grdtrack (void *V_API, int mode, void *args) {
 		}
 	
 		ix = (GMT->current.setting.io_lonlat_toggle[GMT_IN]);	iy = 1 - ix;
-		rmode = (pure_ascii && gmt_get_cols (GMT, GMT_IN) >= 2) ? GMT_READ_MIXED : GMT_READ_DOUBLE;
+		rmode = (pure_ascii && gmt_get_cols (GMT, GMT_IN) >= 2) ? GMT_READ_MIXED : GMT_READ_DATA;
 
 		if (Ctrl->T.active) {	/* Want to find nearest non-NaN if the node we find is NaN */
 			Ctrl->T.S = gmt_M_memory (GMT, NULL, 1, struct GMT_ZSEARCH);
@@ -1149,7 +1155,7 @@ int GMT_grdtrack (void *V_API, int mode, void *args) {
 			}
 
 			if (Ctrl->Z.active)	/* Simply print out values */
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, value);
+				GMT_Put_Record (API, GMT_WRITE_DATA, value);
 			else if (pure_ascii && n_fields >= 2) {
 				/* Special case: ASCII i/o and at least 3 columns:
 				   Columns beyond first two could be text strings */
@@ -1180,7 +1186,7 @@ int GMT_grdtrack (void *V_API, int mode, void *args) {
 					out[ks++] = Ctrl->T.S->y[Ctrl->T.S->row];	/* Add our output y value */
 					out[ks++] = Ctrl->T.S->radius;				/* Add our radius */
 				}
-				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				GMT_Put_Record (API, GMT_WRITE_DATA, out);
 			}
 
 			n_points++;

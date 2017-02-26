@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_calclock.c 15822 2016-03-07 00:53:21Z pwessel $
+ *	$Id: gmt_calclock.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -314,7 +314,7 @@ void gmt_gcal_from_rd (struct GMT_CTRL *GMT, int64_t date, struct GMT_GCAL *gcal
 	int64_t prior_days, tempdate;
 	int corexn, tempyear;
 
-	/* Day of the week in 0 thru 6:  */
+	/* Day of the week in 0 through 6:  */
 
 	gcal->day_w = calclock_cal_imod (date, 7);
 

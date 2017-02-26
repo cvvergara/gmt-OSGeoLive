@@ -1,4 +1,4 @@
-	$Id: README.img 15816 2016-03-06 01:24:53Z pwessel $
+	$Id: README.img 17326 2016-11-08 20:28:56Z pwessel $
 
 Maintained by: W H F Smith
 Distributed under the GNU Lesser Public License; see file
@@ -50,7 +50,7 @@ byte-order.  If you install this supplement as part of the
 main GMT installation using the install_gmt script it will
 automatically determine if byte-order swapping should be
 applied and compile that into the program.  Should you want
-to manually controll this (say, because you have already
+to manually control this (say, because you have already
 swapped the data files) you can remote the $(GMTSWAP) macro
 from the makefile.
   Alternatively, if you with to swap the byte-order of the

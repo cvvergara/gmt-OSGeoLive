@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *  Copyright (c) 2016 by Dongdong Tian
+ *  Copyright (c) 2016-2017 by Dongdong Tian
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -170,11 +170,11 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   i: integral\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   q: square\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   r: remove mean value\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   i|q|r can repeat mutiple times. -Frii will convert accerate to displacement.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   i|q|r can repeat multiple times. -Frii will convert accerate to displacement.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   The order of i|q|r controls the order of the data processing.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-G Paint postive or negative portion of traces.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-G Paint positive or negative portion of traces.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If only -G is used, default to fill the positive portion black.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   [p|n] controls the painting of postive portion or negative portion. Repeat -G option to specify fills for pos/neg portion, respectively.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   [p|n] controls the painting of positive portion or negative portion. Repeat -G option to specify fills for pos/neg portion, respectively.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +g<fill>: color to fill\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +t<t0>/<t1>: paint traces between t0 and t1 only. The reference time of t0 and t1 is determined by -T option.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +z<zero>: define zero line. From <zero> to top is positive portion, from <zero> to bottom is negative portion.\n");
@@ -188,7 +188,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t      <alpha> > 0, multiply all traces by size*r^alpha, r is the distance range in km.\n");
 	GMT_Option (API, "O,P");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Plot traces vertically.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Specify the time scale in seconds per <unit> while plotting on geographic plots. Use PROJ_LENGTH_UNIT if <unit> is ommited.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-S Specify the time scale in seconds per <unit> while plotting on geographic plots. Use PROJ_LENGTH_UNIT if <unit> is omitted.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Time alignment. \n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +t<tmark> align all trace along time mark. Choose <tmark> from -5(b), -4(e), -3(o), -2(a), 0-9(t0-t9).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +r<reduce_vel> reduce velocity in km/s.\n");
@@ -376,13 +376,12 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSAC_CTRL *Ctrl, struct GMT_O
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && gmt_M_is_zero(Ctrl->S.sec_per_measure), "Syntax error -S option: <sec_per_measure> must be nonzero\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->T.reduce && gmt_M_is_zero(Ctrl->T.reduce_vel), "Syntax error -T option: <reduce_vel> must be nonzero\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->T.align && !(Ctrl->T.tmark >= -5 && Ctrl->T.tmark <= 9 && Ctrl->T.tmark != -1), "Syntax error -T option: <tmark> should be choosed from -5, -4, -3, -2, 0-9\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->T.align && !(Ctrl->T.tmark >= -5 && Ctrl->T.tmark <= 9 && Ctrl->T.tmark != -1), "Syntax error -T option: <tmark> should be chosen from -5, -4, -3, -2, 0-9\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
 
 GMT_LOCAL double linear_interpolate_x (double x0, double y0, double x1, double y1, double y) {
-	if (y<y0 || y>y1) return x1;  // no extrapolation
 	if (doubleAlmostEqualZero(y0, y1)) return x0;
 	return (x1-x0)/(y1-y0)*(y-y0) + x0;
 }
@@ -436,7 +435,7 @@ GMT_LOCAL void paint_phase(struct GMT_CTRL *GMT, struct PSSAC_CTRL *Ctrl, struct
 
 			/* last point of polygon */
 			yy[ii] = zero;
-			if (i == n)
+			if (i == n || x[i] > t1)
 				xx[ii] = x[i-1];
 			else
 				xx[ii] = linear_interpolate_x(x[i], y[i], x[i-1], y[i-1], yy[ii]);
@@ -567,9 +566,9 @@ int GMT_pssac (void *V_API, int mode, void *args) {	/* High-level function that 
 	SACHEAD hd;
 	struct GMT_PEN current_pen;
 	struct PSSAC_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
@@ -749,7 +748,7 @@ int GMT_pssac (void *V_API, int mode, void *args) {	/* High-level function that 
 			if (!Ctrl->C.active) x0 = hd.b - tref;
 			else                 x0 = Ctrl->C.t0;
 
-			/* determin Y0 */
+			/* determine Y0 */
 			if (Ctrl->E.active) {
 				switch (Ctrl->E.keys[0]) {
 					case 'a':
@@ -849,19 +848,29 @@ int GMT_pssac (void *V_API, int mode, void *args) {	/* High-level function that 
 				if (!Ctrl->Q.active) zero = Ctrl->G.zero[i]*yscale + y0;
 				else                 zero = Ctrl->G.zero[i]*yscale + x0;
 
-				if (!Ctrl->G.cut[i]) {
-					if (!Ctrl->Q.active) {
-						Ctrl->G.t0[i] = (float)x[0];
-						Ctrl->G.t1[i] = (float)x[hd.npts-1];
+ 				if (!Ctrl->G.cut[i]) {
+ 					if (!Ctrl->Q.active) {
+						if (gmt_M_is_linear(GMT)) {
+							Ctrl->G.t0[i] = MAX((float)x[0], (float)GMT->common.R.wesn[XLO]);
+							Ctrl->G.t1[i] = MIN((float)x[hd.npts-1], (float)GMT->common.R.wesn[XHI]);
+						} else {
+ 							Ctrl->G.t0[i] = (float)x[0];
+ 							Ctrl->G.t1[i] = (float)x[hd.npts-1];
+ 						}
 					}
-					else {
-						Ctrl->G.t0[i] = (float)y[0];
-						Ctrl->G.t1[i] = (float)y[hd.npts-1];
-					}
+ 					else {
+						if (gmt_M_is_linear(GMT)) {
+							Ctrl->G.t0[i] = MAX((float)y[0], (float)GMT->common.R.wesn[YLO]);
+							Ctrl->G.t1[i] = MIN((float)y[hd.npts-1], (float)GMT->common.R.wesn[YHI]);
+						} else {
+ 							Ctrl->G.t0[i] = (float)y[0];
+ 							Ctrl->G.t1[i] = (float)y[hd.npts-1];
+ 						}
+ 					}
 				}
 				GMT_Report (API, GMT_MSG_VERBOSE, "=> %s: Painting traces: zero=%g t0=%g t1=%g\n",
 				                                  L[n].file, zero, Ctrl->G.t0[i], Ctrl->G.t1[i]);
-				paint_phase(GMT, Ctrl, PSL, x, y, npts, zero, Ctrl->G.t0[i], Ctrl->G.t1[i], i);
+				paint_phase(GMT, Ctrl, PSL, x, y, hd.npts, zero, Ctrl->G.t0[i], Ctrl->G.t1[i], i);
 			}
 		}
 		gmt_M_free(GMT, x);

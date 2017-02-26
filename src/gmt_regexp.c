@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_regexp.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: gmt_regexp.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -109,7 +109,7 @@ int gmtlib_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *
 		return (0);	/* Match failed */
 	}
 	
-	return (1); /* Match succeded */
+	return (1); /* Match succeeded */
 
 #elif defined HAVE_POSIX_ERE
 
@@ -134,7 +134,7 @@ int gmtlib_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *
 	status = regexec(&re, subject, 0U, NULL, 0);
 	regfree(&re);     /* Release memory used for the compiled pattern */
 	if ( status == 0 )
-		return (1); /* Match succeded */
+		return (1); /* Match succeeded */
 	else if ( status != REG_NOMATCH ) {
 		/* this is when errors have been encountered */
 		regerror(status, &re, err_msg, MAX_ERR_LENGTH);

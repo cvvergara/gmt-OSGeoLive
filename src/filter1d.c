@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: filter1d.c 16696 2016-07-03 01:19:20Z pwessel $
+ *	$Id: filter1d.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -264,7 +264,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct FILTER1D_CTRL *Ctrl, struct GM
 					Ctrl->F.filter = opt->arg[0];
 					Ctrl->F.width = atof (&opt->arg[1]);
 					if (gmt_get_modifier (opt->arg, 'h', txt_a)) Ctrl->F.highpass = true;
-					switch (Ctrl->F.filter) {	/* Get some futher info from some filters */
+					switch (Ctrl->F.filter) {	/* Get some further info from some filters */
 						case 'P':
 						case 'p':
 							c = opt->arg[strlen(opt->arg-1)];
@@ -643,7 +643,7 @@ GMT_LOCAL int do_the_filter (struct GMTAPI_CTRL *C, struct FILTER1D_INFO *F) {
 				else
 					data_sum[i_col] = GMT->session.d_NaN;
 			}
-			if (n_good_ones) GMT_Put_Record (C, GMT_WRITE_DOUBLE, data_sum);
+			if (n_good_ones) GMT_Put_Record (C, GMT_WRITE_DATA, data_sum);
 		}
 		else {
 			if (F->robust) for (i_col = 0; i_col < F->n_cols; ++i_col) F->n_this_col[i_col] = 0;
@@ -707,7 +707,7 @@ GMT_LOCAL int do_the_filter (struct GMTAPI_CTRL *C, struct FILTER1D_INFO *F) {
 					else
 						outval[i_col] = GMT->session.d_NaN;
 				}
-				GMT_Put_Record (C, GMT_WRITE_DOUBLE, outval);
+				GMT_Put_Record (C, GMT_WRITE_DATA, outval);
 			}
 		}
 
@@ -923,6 +923,9 @@ int GMT_filter1d (void *V_API, int mode, void *args) {
 	}
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error, "Error in Begin_IO\n");
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_LINE) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error, "Error in GMT_Set_Geometry\n");
 	}
 
 	allocate_space (GMT, &F);	/* Gets column-specific flags and uint64_t space */

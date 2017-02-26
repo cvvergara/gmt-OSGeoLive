@@ -1,7 +1,7 @@
 #!/bin/bash
-#	$Id: mgd77_codes.sh 15819 2016-03-06 20:54:48Z pwessel $
+#	$Id: mgd77_codes.sh 17326 2016-11-08 20:28:56Z pwessel $
 #
-#	Convert the trkdas.cod file into two useable files:
+#	Convert the trkdas.cod file into two usable files:
 #	1. mgd77_codes.h for inclusion by mgd77info.c
 #	2. mgd77_codes.txt for inclusion by man page mgd77info.txt
 

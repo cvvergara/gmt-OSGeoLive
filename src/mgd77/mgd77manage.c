@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77manage.c 17163 2016-10-03 19:17:34Z pwessel $
+ *	$Id: mgd77manage.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *    Copyright (c) 2005-2016 by P. Wessel
+ *    Copyright (c) 2005-2017 by P. Wessel
  * mgd77manage is used to (1) remove data columns from mgd77+ files
  * or (2) add a new data column to mgd77+ files.  Data can be added
  * from data tables, created from reference field formulas, or by

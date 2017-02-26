@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdspotter.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdspotter.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *   Copyright (c) 1999-2016 by P. Wessel
+ *   Copyright (c) 1999-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -835,7 +835,7 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 		
 		GMT_Report (API, GMT_MSG_VERBOSE, "Start z-slice CVA calculations\n");
 		for (len = strlen (Ctrl->G.file); len > 0 && Ctrl->G.file[len] != '.'; len--);
-		if (Ctrl->G.file[len] == '.') {	/* Make a filename template from the CVA filename using the period as delimeter */
+		if (Ctrl->G.file[len] == '.') {	/* Make a filename template from the CVA filename using the period as delimiter */
 			strncpy (format, Ctrl->G.file, len);	/* Should keep the prefix from a file called prefix.ext */
 			strcat (format, "_%%d");		/* Make filenames like prefix_#.ext */
 			strcat (format, &Ctrl->G.file[len]);	/* Should add the extension from said file */
@@ -1000,6 +1000,11 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 			gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			gmt_M_free (GMT, x_cva);	gmt_M_free (GMT, y_cva);
+			gmt_M_free (GMT, y_smt);	gmt_M_free (GMT, lat_area);
+			Return (API->error);
+		}
 
 		/* Now do bootstrap sampling of flowlines */
 	
@@ -1043,7 +1048,7 @@ int GMT_grdspotter (void *V_API, int mode, void *args) {
 			out[1] = gmt_M_grd_row_to_y (GMT, row, G->header);
 			out[2] = CVA_max;
 			
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 		}
 		GMT_Report (API, GMT_MSG_VERBOSE, "Bootstrap try %d\n", Ctrl->W.n_try);
 		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */

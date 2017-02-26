@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: project.c 16811 2016-07-15 23:02:04Z pwessel $
+ *	$Id: project.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@ struct PROJECT_CTRL {	/* All control options for this program (except common arg
 	} F;
 	struct G {	/* -G<inc>[/<colat>][+] */
 		bool active;
-		bool header;
+		unsigned int header;
 		unsigned int mode;
 		double inc;
 		double colat;
@@ -462,8 +462,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PROJECT_CTRL *Ctrl, struct GMT
 			case 'G':
 				Ctrl->G.active = true;
 				len = strlen (opt->arg) - 1;
-				if (len > 0 && opt->arg[len] == '+') {
-					Ctrl->G.header = true;	/* Wish to place a segment header on output */
+				if (len > 0 && opt->arg[len] == '+') {	/* Old-style + only */
+					Ctrl->G.header = len;	/* Wish to place a segment header on output */
 					opt->arg[len] = 0;	/* Temporarily remove the trailing + sign */
 				}
 				if (sscanf (opt->arg, "%[^/]/%s", txt_a, txt_b) == 2) {	/* Got dist/colat */
@@ -473,7 +473,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PROJECT_CTRL *Ctrl, struct GMT
 				}
 				else
 					Ctrl->G.inc = atof (opt->arg);
-				if (Ctrl->G.header) opt->arg[len] = '+';	/* Restore it */
+				if (Ctrl->G.header) opt->arg[Ctrl->G.header] = '+';	/* Restore the plus-sign */
 				break;
 			case 'L':
 				Ctrl->L.active = true;
@@ -613,7 +613,7 @@ GMT_LOCAL int write_one_segment (struct GMT_CTRL *GMT, struct PROJECT_CTRL *Ctrl
 				else
 					out[k++] = p_data[rec].a[P->output_choice[col]];
 			}
-			GMT_Put_Record (GMT->parent, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+			GMT_Put_Record (GMT->parent, GMT_WRITE_DATA, out);	/* Write this to output */
 		}
 	}
 	gmt_M_free (GMT, out);
@@ -900,6 +900,9 @@ int GMT_project (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_LINE) != GMT_NOERROR) {	/* Sets output geometry */
+				Return (API->error);
+			}
 			for (rec = 0; rec < P.n_used; rec++) {
 				gmt_M_free (GMT, p_data[rec].t);	gmt_M_free (GMT, p_data[rec].z);
 			}
@@ -916,7 +919,7 @@ int GMT_project (void *V_API, int mode, void *args) {
 		}
 		for (rec = 0; rec < P.n_used; rec++) {
 			for (col = 0; col < P.n_outputs; col++) out[col] = p_data[rec].a[P.output_choice[col]];
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);
 		}
 	}
 	else {	/* Must read input file */
@@ -939,7 +942,7 @@ int GMT_project (void *V_API, int mode, void *args) {
 		}
 		pure_ascii = gmt_is_ascii_record (GMT, options);
 
-		rmode = (pure_ascii && gmt_get_cols (GMT, GMT_IN) >= 2) ? GMT_READ_MIXED : GMT_READ_DOUBLE;
+		rmode = (pure_ascii && gmt_get_cols (GMT, GMT_IN) >= 2) ? GMT_READ_MIXED : GMT_READ_DATA;
 		family = (pure_ascii) ? GMT_IS_TEXTSET : GMT_IS_DATASET;
 		geometry = (pure_ascii) ? GMT_IS_NONE : GMT_IS_POINT;
 		
@@ -950,6 +953,9 @@ int GMT_project (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 		if (GMT_Begin_IO (API, family, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+			Return (API->error);
+		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
 			Return (API->error);
 		}
 

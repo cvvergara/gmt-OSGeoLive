@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gravfft.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: gravfft.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -363,7 +363,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT
 			else
 				Ctrl->N.info->trend_mode = override_mode;
 		}
-		if (!n_errors && Ctrl->N.info->trend_mode == GMT_FFT_REMOVE_NOT_SET)		/* No explict detrending mode, so apply default */
+		if (!n_errors && Ctrl->N.info->trend_mode == GMT_FFT_REMOVE_NOT_SET)		/* No explicit detrending mode, so apply default */
 			Ctrl->N.info->trend_mode = override_mode;
 	}
 
@@ -998,7 +998,7 @@ GMT_LOCAL int do_admittance (struct GMT_CTRL *GMT, struct GMT_GRID *GridA, struc
 		nused[ifreq]++;
 	}
 
-	for (k = k_0; k < nk; k++)	/* Coherence is allways needed for error bar computing */
+	for (k = k_0; k < nk; k++)	/* Coherence is always needed for error bar computing */
 		coh[k] = (co_spec[k]*co_spec[k] + quad[k]*quad[k]) / (b_pow[k]*g_pow[k]);
 
 	for (k = k_0; k < nk; k++) {
@@ -1069,7 +1069,7 @@ Lfree:
 
 GMT_LOCAL void compute_only_admitts(struct GMT_CTRL *GMT, struct GRAVFFT_CTRL *Ctrl, struct GMT_FFT_WAVENUMBER *K, double *z_top_or_bot, double delta_pt) {
 
-	/* Calls the apropriate function to compute the theoretical admittance. */
+	/* Calls the appropriate function to compute the theoretical admittance. */
 	K->delta_kx = K->delta_ky = delta_pt;
 	K->nx2 = K->ny2 = Ctrl->C.n_pt * 2;
 

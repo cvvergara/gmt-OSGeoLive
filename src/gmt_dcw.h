@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dcw.h 15767 2016-02-26 04:10:53Z pwessel $
+ *	$Id: gmt_dcw.h 17488 2017-01-26 02:21:14Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,8 @@ enum GMT_DCW_modes {
 	GMT_DCW_REGION	= 1,
 	GMT_DCW_PLOT	= 2,
 	GMT_DCW_DUMP	= 4,
-	GMT_DCW_EXTRACT	= 8
+	GMT_DCW_EXTRACT	= 8,
+	GMT_DCW_LIST	= 16
 };
 
 struct GMT_DCW_ITEM {	/* One set of codes with their color/fill */

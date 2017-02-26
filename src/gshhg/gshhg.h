@@ -1,8 +1,8 @@
-/*	$Id: gshhg.h 16843 2016-07-21 04:01:37Z pwessel $
+/*	$Id: gshhg.h 17449 2017-01-16 21:27:04Z pwessel $
  *
  * Include file defining structures used in the binary GSHHG files
  *
- *	Copyright (c) 1996-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1996-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtflexure.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: gmtflexure.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -455,7 +455,7 @@ GMT_LOCAL int lu_solver (struct GMT_CTRL *GMT, double *a, int n, double *x, doub
  * The equation is
  *	d2/dx2 (D * d2/dx2 w(x)) + T * d2/dx2 w(x) + k(x) * w(x) = p (x)
  * Various boundary conditions may be imposed by setting the
- * variables bc_left and bc_right to on of the permissable values:
+ * variables bc_left and bc_right to on of the permissible values:
  * 	0:	'infinity' condition. w' = w'' = 0.
  *	1:	'periodic'. w' = w''' = 0. (Reflection)
  *	2:	'clamped'. w = const. w' = 0. The value of w must be
@@ -655,13 +655,13 @@ GMT_LOCAL int flx1d (struct GMT_CTRL *GMT, double *w, double *d, double *p, int 
  * a restoring force that depends on the sign of the deflection.  After each
  * iteration, we recompute k(x) so that k(x) = G * (rho_m - rho_infill (or rho_load)) where
  * deflections are positive (i.e. down), whereas k(x) = G * (rho_m - rho_w)
- * at the bulges.  We iterate untill rms of difference is < LIMIT (1 cm)
+ * at the bulges.  We iterate until rms of difference is < LIMIT (1 cm)
  * The equation we solve is
  *
  *	d2/dx2 (D * d2/dx2 w(x)) + T * d2/dx2 w(x) + k(x) * w(x) = p (x)
  *
  * Various boundary conditions may be imposed by setting the
- * variables bc_left and bc_right to on of the permissable values:
+ * variables bc_left and bc_right to on of the permissible values:
  * 	0:	'infinity' condition. w' = w'' = 0.
  *	1:	'periodic'. w' = w''' = 0. (Reflection)
  *	2:	'clamped'. w = const. w' = 0. The value of w must be
@@ -764,7 +764,7 @@ GMT_LOCAL int flx1dk (struct GMT_CTRL *GMT, double w[], double d[], double p[], 
  *	d2/dx2 (D * d2/dx2 w(x)) + T * d2/dx2 [w(x) + w0(x)] + k(x) * w(x) = p (x)
  *
  * Various boundary conditions may be imposed by setting the
- * variables bc_left and bc_right to on of the permissable values:
+ * variables bc_left and bc_right to on of the permissible values:
  * 	0:	'infinity' condition. w' = w'' = 0.
  *	1:	'periodic'. w' = w''' = 0. (Reflection)
  *	2:	'clamped'. w = const. w' = 0. The value of w must be

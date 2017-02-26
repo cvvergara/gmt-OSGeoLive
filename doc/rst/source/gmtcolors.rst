@@ -32,7 +32,7 @@ GMT allows several ways to represent a color:
     ranging from 00 (dark) to FF (light). Upper and lower case are allowed.
 
 **Graylevel**
-    For shades of gray, R = G = B, and only one number needs to be used.
+    For shades of gray, **R** = **G** = **B**\ , and only one number needs to be used.
     This representation is popular with black and white printers.
 
 **H-S-V**
@@ -42,7 +42,7 @@ GMT allows several ways to represent a color:
     This representation can be helpful when hue varies a lot.
 
 **C/M/Y/K**
-    Specify **C**\ yan, **M**\ agenta, **Y**\ ellow, and blacBD(K). Each
+    Specify **C**\ yan, **M**\ agenta, **Y**\ ellow, and blac\ **K**\ . Each
     number is in the range from 0 (no paint) to 1 (maximum paint). This
     representation is used by most color printers.
 
@@ -1066,8 +1066,7 @@ and their equivalent color codes.
 Further Information
 -------------------
 
-For more information on the use of color, read Appendix I of the **GMT
-TECHNICAL REFERENCE AND COOKBOOK**.
+For more information on the use of color, read Chapter :ref:`Color Space` of the **CookBook**.
 
 See Also
 --------

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: rotconverter.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: rotconverter.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *   Copyright (c) 1999-2016 by P. Wessel
+ *   Copyright (c) 1999-2017 by P. Wessel
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -441,6 +441,10 @@ int GMT_rotconverter (void *V_API, int mode, void *args) {
 		gmt_M_free (GMT, a);
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+		gmt_M_free (GMT, a);
+		Return (API->error);
+	}
 
 	if (Ctrl->G.active)		/* GPlates header */
 		sprintf (record, "#plateid%stime%slatitude%slongitude%sangle%sfixedplateid\n", GMT->current.setting.io_col_separator, GMT->current.setting.io_col_separator, GMT->current.setting.io_col_separator, \
@@ -490,7 +494,7 @@ int GMT_rotconverter (void *V_API, int mode, void *args) {
 			spotter_covar_to_record (GMT, &a[stage], K);
 			for (k = 0; k < 9; k++) out[col++] = K[k];
 		}
-		GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+		GMT_Put_Record (API, GMT_WRITE_DATA, out);
 	}
 	
 	gmt_M_free (GMT, a);

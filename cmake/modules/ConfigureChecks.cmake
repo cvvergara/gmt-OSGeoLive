@@ -1,5 +1,5 @@
 #
-# $Id: ConfigureChecks.cmake 15301 2015-12-04 13:59:07Z fwobbe $
+# $Id: ConfigureChecks.cmake 17486 2017-01-24 04:43:22Z pwessel $
 #
 
 if(NOT DEFINED _INCLUDED_CHECK_MACROS_)
@@ -424,13 +424,13 @@ if (HAVE_SINCOS)
 		"
 		#define _GNU_SOURCE
 		#define __EXTENSIONS__
-		include <math.h>
+		#include <math.h>
 		int main () {
 		double s = 0.1, c = 0.2;
 		double s1, c1;
 		s1 = s; c1 = c;
 		sincos (0.5, &s, &c);
-		return !(s == s1 || c == c1);} /* return TRUE if sincos works ok */
+		return !(s == s1 || c == c1);} /* return TRUE if sincos fails */
 		"
 		HAVE_BUGGY_SINCOS)
 	if (HAVE_BUGGY_SINCOS)

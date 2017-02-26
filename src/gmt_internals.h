@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_internals.h 17049 2016-08-31 21:08:56Z pwessel $
+ *	$Id: gmt_internals.h 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify

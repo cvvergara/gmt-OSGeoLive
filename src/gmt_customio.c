@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_customio.c 16849 2016-07-22 18:45:29Z pwessel $
+ *	$Id: gmt_customio.c 17543 2017-02-09 14:14:29Z jluis $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -1222,7 +1222,7 @@ struct srf_header6 {	/* Surfer 6 file header structure */
    and 5 ints followed by doubles. The problem was that after the ints the doubles were not
    read correctly. It looked like everything was displaced by 4 bytes.
    I than found the note about the GMT 64-bit Modification and tried the same trick.
-   While that worked with gcc compiled code, it crashed whith the VC6 compiler.
+   While that worked with gcc compiled code, it crashed with the VC6 compiler.
    Since of the first 3 variables, only the first is important to find out which Surfer
    grid format we are dealing with, I removed them from the header definition (and jump
    12 bytes before reading the header). As a result the header has now one 4 byte char +
@@ -1248,7 +1248,7 @@ struct srf_header7 {	/* Surfer 7 file header structure */
 	double z_max;		/* Maximum z value */
 	double rotation;	/* not currently used */
 	double no_value;	/* If GS were cleverer this would be NaN */
-	char id3[4];		/* Tag ID idicating a data section (DATA) */
+	char id3[4];		/* Tag ID indicating a data section (DATA) */
 	int len_d;		/* Length in bytes of the DATA section */
 };
 
@@ -1921,16 +1921,26 @@ int gmt_gdal_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 		   the same test to search for nodata values other than NaN. Note that gmt_galread sets
 		   unknown nodata return by GDAL as NaN, so in those cases this block of code is not executed */
 
-		/* Pointer arithmetic solution that should be parallelizable */
-		grid += (header->pad[YHI] * header->mx + header->pad[XLO]);	/* Position pointer at start of first row taking pad into acount */
-		for (row = 0; row < header->n_rows; row++) {
-			for (col = 0; col < header->n_columns; col++, grid++) {
-				if (*grid == (float)from_gdalread->nodata) {
-					*grid = GMT->session.f_NaN;
-					header->has_NaNs = GMT_GRID_HAS_NANS;
+		/* Pointer arithmetic solution that should be parallelizable (but those IFs ...) */
+		if (subset) {	/* We had a Sub-region demand so n_rows * n_columns == grid's allocated size */
+			for (row = 0; row < header->n_rows; row++) {
+				for (col = 0; col < header->n_columns; col++, grid++) {
+					if (*grid == (float)from_gdalread->nodata) {
+						*grid = GMT->session.f_NaN;
+						header->has_NaNs = GMT_GRID_HAS_NANS;
+					}
 				}
 			}
-			grid += (header->pad[XLO] + header->pad[XHI]);	/* Advance the pad number of columns */
+		}
+		else {			/* Full region. We are scanning also the padding zone which is known to have only 0's but never mind */
+			for (row = 0; row < header->my; row++) {
+				for (col = 0; col < header->mx; col++, grid++) {
+					if (*grid == (float)from_gdalread->nodata) {
+						*grid = GMT->session.f_NaN;
+						header->has_NaNs = GMT_GRID_HAS_NANS;
+					}
+				}
+			}
 		}
 		grid = &grid[0];	/* Put the pointer pointing back to first element in array */
 	}

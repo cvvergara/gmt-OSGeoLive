@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psxy.c 17185 2016-10-13 03:09:39Z pwessel $
+ *	$Id: psxy.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -765,9 +765,9 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 	struct GMT_TEXTSET *Decorate = NULL;
 	struct GMT_DATASEGMENT *L = NULL;
 	struct PSXY_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	void *record = NULL;	/* Opaque pointer to either a text (buffer) or double (in) record */
@@ -863,8 +863,8 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 	if (Ctrl->E.active) {
 		if (S.read_size) GMT->current.io.col_type[GMT_IN][ex1] = GMT_IS_DIMENSION;	/* Must read symbol size from data record */
 		if (def_err_xy && GMT->current.setting.io_lonlat_toggle[GMT_IN]) {	/* With -:, -E should become -Eyx */
-			uint_swap (xy_errors[GMT_X], xy_errors[GMT_Y]);
-			uint_swap (error_type[GMT_X], error_type[GMT_Y]);
+			gmt_M_uint_swap (xy_errors[GMT_X], xy_errors[GMT_Y]);
+			gmt_M_uint_swap (error_type[GMT_X], error_type[GMT_Y]);
 		}
 		if (xy_errors[GMT_X]) n_cols_start += error_cols[error_type[GMT_X]], error_x = true;
 		if (xy_errors[GMT_Y]) n_cols_start += error_cols[error_type[GMT_Y]], error_y = true;
@@ -897,7 +897,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 
 	if (S.symbol == GMT_SYMBOL_QUOTED_LINE) {
 		if (gmt_contlabel_prep (GMT, &S.G, NULL)) Return (GMT_RUNTIME_ERROR);	/* Needed after map_setup */
-		penset_OK = false;	/* The pen for quoted lines are set within the PSL code itself so we dont do it here in psxy */
+		penset_OK = false;	/* The pen for quoted lines are set within the PSL code itself so we don't do it here in psxy */
 		if (S.G.delay) gmt_map_basemap (GMT);	/* Must do it here due to clipping */
 	}
 	else if (S.symbol == GMT_SYMBOL_DECORATED_LINE) {
@@ -959,7 +959,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 		Return (error);
 	}
 	if (not_line) {	/* Symbol part (not counting GMT_SYMBOL_FRONT, GMT_SYMBOL_QUOTED_LINE, GMT_SYMBOL_DECORATED_LINE) */
-		bool periodic = false;
+		bool periodic = false, delayed_unit_scaling = false;
 		unsigned int n_warn[3] = {0, 0, 0}, set_type, warn, item, n_times, read_mode;
 		double in2[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, *p_in = GMT->current.io.curr_rec;
 		double xpos[2], width = 0.0;
@@ -980,7 +980,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 		}
 		else {	/* Here we can process data records (ASCII or binary) */
 			set_type  = GMT_IS_DATASET;
-			read_mode = GMT_READ_DOUBLE;
+			read_mode = GMT_READ_DATA;
 		}
 		if (GMT_Init_IO (API, set_type, geometry, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Register data input */
 			Return (API->error);
@@ -990,6 +990,11 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 		}
 		PSL_command (GMT->PSL, "V\n");
 		if ((S.symbol == GMT_SYMBOL_ELLIPSE || S.symbol == GMT_SYMBOL_ROTRECT) && S.n_required <= 1) p_in = in2;
+		
+		if (S.read_size && GMT->current.io.col[GMT_IN][ex1].convert) {	/* Doing math on the size column, must delay unit conversion unless inch */
+			GMT->current.io.col_type[GMT_IN][ex1] = GMT_IS_FLOAT;
+			delayed_unit_scaling = (S.u_set && S.u != GMT_INCH);
+		}
 		do {	/* Keep returning records until we reach EOF */
 			if ((record = GMT_Get_Record (API, read_mode, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 				if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
@@ -1154,7 +1159,10 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 				bcol = (S.read_size) ? ex2 : ex1;
 				S.base = in[bcol];	/* Got base from input column */
 			}
-			if (S.read_size) S.size_x = in[ex1] * S.factor;	/* Got size from input column; scale by factor if area unifier is on */
+			if (S.read_size) {
+				S.size_x = in[ex1] * S.factor;	/* Got size from input column; scale by factor if area unifier is on */
+				if (delayed_unit_scaling) S.size_x *= GMT->session.u2u[S.u][GMT_INCH];
+			}
 			dim[0] = S.size_x;
 
 			/* For global periodic maps, symbols plotted close to a periodic boundary may be clipped and should appear
@@ -1449,7 +1457,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 		}
 	}
 	else {	/* Line/polygon part */
-		uint64_t seg, seg_out = 0;
+		uint64_t seg, seg_out = 0, n_new;
 		bool duplicate, resampled;
 		struct GMT_DATASET *D = NULL;	/* Pointer to GMT multisegment table(s) */
 
@@ -1506,9 +1514,14 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 					if (L->n_rows == 2) {	/* Given endpoints we need to resample in order to trim */
 						/* The whole trimming stuff requires at least 2 points per line so we resample */
 						if (gmt_M_is_geographic (GMT, GMT_IN))
-							L->n_rows = gmt_fix_up_path (GMT, &L->data[GMT_X], &L->data[GMT_Y], L->n_rows, Ctrl->A.step, Ctrl->A.mode);
+							n_new = gmt_fix_up_path (GMT, &L->data[GMT_X], &L->data[GMT_Y], L->n_rows, Ctrl->A.step, Ctrl->A.mode);
 						else
-							L->n_rows = gmt_resample_path (GMT, &L->data[GMT_X], &L->data[GMT_Y], L->n_rows, 0.5 * hypot (L->data[GMT_X][1]-L->data[GMT_X][0], L->data[GMT_Y][1]-L->data[GMT_Y][0]), GMT_TRACK_FILL);
+							n_new = gmt_resample_path (GMT, &L->data[GMT_X], &L->data[GMT_Y], L->n_rows, 0.5 * hypot (L->data[GMT_X][1]-L->data[GMT_X][0], L->data[GMT_Y][1]-L->data[GMT_Y][0]), GMT_TRACK_FILL);
+						if (n_new == 0) {
+							Return (GMT_RUNTIME_ERROR);
+						}
+						L->n_rows = n_new;
+						gmt_set_seg_minmax (GMT, D->geometry, L);	/* Update min/max */
 						resampled = true;	/* To avoid doing it twice */
 					}
 					if (gmt_trim_line (GMT, &L->data[GMT_X], &L->data[GMT_Y], &L->n_rows, &current_pen)) continue;	/* Trimmed away completely */
@@ -1584,8 +1597,13 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 					L->data[GMT_Y][L->n_rows-1] = L->data[GMT_Y][0];
 				}
 
-				if (GMT->current.map.path_mode == GMT_RESAMPLE_PATH && !resampled)	/* Resample if spacing is too coarse */
-					L->n_rows = gmt_fix_up_path (GMT, &L->data[GMT_X], &L->data[GMT_Y], L->n_rows, Ctrl->A.step, Ctrl->A.mode);
+				if (GMT->current.map.path_mode == GMT_RESAMPLE_PATH && !resampled) {	/* Resample if spacing is too coarse */
+					if ((n_new = gmt_fix_up_path (GMT, &L->data[GMT_X], &L->data[GMT_Y], L->n_rows, Ctrl->A.step, Ctrl->A.mode)) == 0) {
+						Return (GMT_RUNTIME_ERROR);
+					}
+					L->n_rows = n_new;
+					gmt_set_seg_minmax (GMT, D->geometry, L);	/* Update min/max */
+				}
 
 				if (polygon) {	/* Want a closed polygon (with or without fill and with or without outline) */
 					gmt_setfill (GMT, &current_fill, outline_active);

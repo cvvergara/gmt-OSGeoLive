@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2rgb.c 17008 2016-08-25 20:42:30Z pwessel $
+ *	$Id: grd2rgb.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -209,7 +209,7 @@ GMT_LOCAL int guess_width (struct GMT_CTRL *GMT, char *file, unsigned int byte_p
 
 	if ((*raw_nx) * (*raw_ny) != n_pix) {
 		/* Let's make another attempt to find the right n_columns * n_rows combination. The idea is that we
-	   	failed by a little, so we'll look arround the approximate solution by adding 1 to n_columns and
+	   	failed by a little, so we'll look around the approximate solution by adding 1 to n_columns and
 	   	subtracting 1 to n_rows. Then we revert (subtract 1 to n_columns and add 1 to n_rows). Next apply the
 	   	same test with an offset of 2, and so on until the offset is 10. */
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning: first test based on FFT failed to guess image dimensions.\n\tI'll do now a second try\t");
@@ -394,7 +394,7 @@ int GMT_grd2rgb (void *V_API, int mode, void *args) {
 	struct GMT_GRID *Grid = NULL, *Out = NULL;
 	struct GMT_PALETTE *P = NULL;
 	struct GRD2RGB_CTRL *Ctrl = NULL;
-	struct PSL_CTRL *PSL = NULL;	/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;	/* General PSL internal parameters */
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */

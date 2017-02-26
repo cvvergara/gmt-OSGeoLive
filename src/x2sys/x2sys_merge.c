@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_merge.c 16555 2016-06-16 22:49:46Z pwessel $
+ *	$Id: x2sys_merge.c 17503 2017-01-30 23:14:43Z pwessel $
  *
- *      Copyright (c) 1999-2016 by J. Luis
+ *      Copyright (c) 1999-2017 by J. Luis
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -235,9 +235,15 @@ int GMT_x2sys_merge (void *V_API, int mode, void *args) {
 		clear_mem (GMT, pairs_base, pairs_merge, map_base_start, map_base_end, map_merge_start, map_merge_end, n_base, n_merge);
 		Return (API->error);	/* Enables data output and sets access mode */
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		fclose (fp_merge);
+		fclose (fp_base);
+		clear_mem (GMT, pairs_base, pairs_merge, map_base_start, map_base_end, map_merge_start, map_merge_end, n_base, n_merge);
+		Return (API->error);
+	}
 	gmt_set_tableheader (GMT, GMT_OUT, true);	/* Turn on -ho explicitly */
 
-	/* Jump comment lines in both files and osition the file poiter into the first data line */
+	/* Jump comment lines in both files and osition the file pointer into the first data line */
 	k = i = 0;
 	while (fgets (line, GMT_BUFSIZ, fp_merge) && line[0] == '#') k++;	/* Jump the comment lines in the to-merge file */
 	rewind (fp_merge);

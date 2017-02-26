@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_shore.c 16849 2016-07-22 18:45:29Z pwessel $
+ *	$Id: gmt_shore.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -114,7 +114,7 @@ GMT_LOCAL int shore_get_position (int side, short int x, short int y) {
 GMT_LOCAL int shore_get_next_entry (struct GMT_SHORE *c, int dir, int side, int id) {
 	/* Finds the next entry point on the given side that is further away
 	 * in the <dir> direction than previous point.  It then removes the info
-	 * regarding the new entry from the GSHHS_SIDE structure so it wont be
+	 * regarding the new entry from the GSHHS_SIDE structure so it won't be
 	 * used twice. Because we have added the 4 corners with pos = 65535 we
 	 * know that if there are no segments on a side the procedure will find
 	 * the corner as the last item, always. This is for CCW; when dir = -1
@@ -198,7 +198,7 @@ GMT_LOCAL void shore_path_shift2 (double *lon, unsigned int n, double west, doub
 }
 
 GMT_LOCAL void shore_prepare_sides (struct GMT_CTRL *GMT, struct GMT_SHORE *c, int dir) {
-	/* Initializes the GSHHS_SIDE stuctures for each side, then adds corners and all entering segments */
+	/* Initializes the GSHHS_SIDE structures for each side, then adds corners and all entering segments */
 	int s, i, n[4];
 
 	/* Set corner coordinates */
@@ -230,7 +230,7 @@ GMT_LOCAL void shore_prepare_sides (struct GMT_CTRL *GMT, struct GMT_SHORE *c, i
 		n[i]++;
 	}
 
-	/* We then sort the array of GSHHS_SIDE stucts on their distance from the start of the side */
+	/* We then sort the array of GSHHS_SIDE structs on their distance from the start of the side */
 	for (i = 0; i < 4; i++)	{	/* sort on position */
 		if (dir == 1)
 			qsort (c->side[i], (size_t)c->nside[i], sizeof (struct GSHHS_SIDE), shore_asc_sort);
@@ -787,7 +787,7 @@ int gmt_get_shore_bin (struct GMT_CTRL *GMT, unsigned int b, struct GMT_SHORE *c
 		if (c->two_Antarcticas) {	/* Can apply any -A+ag|i check based on Antarctica source. Note if -A+as was used we may have already skipped this bin but it depends on resolution chosen */
 			if (seg_info_ANT[i]) level = ANT_LEVEL_ICE;	/* Replace the 1 with 5 so Ant polygons now have levels 5 (ice) or 6 (ground) */
 			if (level == ANT_LEVEL_ICE || level == ANT_LEVEL_GROUND) {	/* Need more specific checking */
-				if (c->ant_mode == GSHHS_ANTARCTICA_SKIP) continue;	/* Dont want anything to do with Antarctica */
+				if (c->ant_mode == GSHHS_ANTARCTICA_SKIP) continue;	/* Don't want anything to do with Antarctica */
 				else if (level == ANT_LEVEL_GROUND && c->ant_mode == GSHHS_ANTARCTICA_ICE) continue;	/* Don't use the Grounding line */
 				else if (level == ANT_LEVEL_ICE && c->ant_mode == GSHHS_ANTARCTICA_GROUND && seg_ID[i] == GSHHS_ANTARCTICA_ICE_ID) continue;	/* Use grounding line so skip ice-shelf Antractica continent */
 				level = 1;	/* Reset either shelf-ice or grounding line polygon level to land */
@@ -1347,7 +1347,7 @@ struct GMT_DATASET * gmt_get_gshhg_lines (struct GMT_CTRL *GMT, double wesn[], c
 			D->n_segments += D->table[tbl]->n_segments;	/* Sum up total number of segments across the data set */
 			D->n_records  += D->table[tbl]->n_records;	/* Sum up total number of records across the data set */
 			GMT->current.io.col_type[GMT_IN][GMT_X] = GMT_IS_FLOAT;	/* Avoid longitude adjustments: longitudes are guaranteed to be correct; rounding errors only messes things up */
-			gmt_set_tbl_minmax (GMT, D->table[tbl++]);	/* Determine min/max extent for all segments and the table */
+			gmt_set_tbl_minmax (GMT, GMT_IS_LINE, D->table[tbl++]);	/* Determine min/max extent for all segments and the table */
 			GMT->current.io.col_type[GMT_IN][GMT_X] = GMT_IS_LON;	/* Reset X column to be longitudes */
 		}
 		gmt_free_shore (GMT, &c);	/* Done with this GSHHS bin */

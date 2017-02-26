@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtlogo.c 17222 2016-10-19 03:00:55Z pwessel $
+ *	$Id: gmtlogo.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -84,8 +84,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\tOPTIONS:\n");
-	gmt_refpoint_syntax (API->GMT, 'D', "Specify position of the GMT logo [0/0].", GMT_ANCHOR_LOGO, 1);
-	gmt_refpoint_syntax (API->GMT, 'D', NULL, GMT_ANCHOR_LOGO, 2);
+	gmt_refpoint_syntax (API->GMT, "D", "Specify position of the GMT logo [0/0].", GMT_ANCHOR_LOGO, 1);
+	gmt_refpoint_syntax (API->GMT, "D", NULL, GMT_ANCHOR_LOGO, 2);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use +w<width> to set the width of the GMT logo.\n");
 	gmt_mappanel_syntax (API->GMT, 'F', "Specify a rectangular panel behind the GMT logo", 0);
 	GMT_Option (API, "J-Z,K,O,P,R");
@@ -169,8 +169,8 @@ int GMT_gmtlogo (void *V_API, int mode, void *args) {
 
 	struct GMT_FONT F;
 	struct GMTLOGO_CTRL *Ctrl = NULL;	/* Control structure specific to program */
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMT_OPTION *options = NULL;
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 

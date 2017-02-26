@@ -1,7 +1,7 @@
 /*
- *	$Id: gmtregress.c 17121 2016-09-21 23:07:26Z jluis $
+ *	$Id: gmtregress.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -755,7 +755,7 @@ GMT_LOCAL double regress1D (struct GMT_CTRL *GMT, double *x, double *y, double *
 	gmt_M_memset (par,  GMTREGRESS_NPAR, double);	/* Reset all regression parameters */
 	gmt_M_memset (tpar, GMTREGRESS_NPAR, double);	/* Reset all test regression parameters */
 	if (regression != GMTREGRESS_XY) (void)gmt_demeaning (GMT, x, y, w, n, tpar, U, V, W, NULL, NULL);	/* Do this once except for orthogonal */
-	par[GMTREGRESS_MISFT] = DBL_MAX;	/* Initally we have no fit */
+	par[GMTREGRESS_MISFT] = DBL_MAX;	/* Initially we have no fit */
 	weighted = (regression == GMTREGRESS_X) ? (w && w[GMT_X]) : (w && w[GMT_Y]);	/* true if weights were provided */
 	while (!done) {	/* Keep iterating and zooming in on smaller angle-ranges until misfit is very small */
 		r_a = a_max - a_min;	/* Range of angles */
@@ -831,7 +831,7 @@ GMT_LOCAL double LSxy_regress1D_york (struct GMT_CTRL *GMT, double *X, double *Y
 		/* Step 7: Calculate the corresponding intercept a (which is zero in U-V coordinates so we convert to X-Y) */
 		a = par[GMTREGRESS_YMEAN] - b * par[GMTREGRESS_XMEAN];
 		/* Step 8: Compute the adjusted points x (x,y) are the orthogonal projection of (X,Y) onto the regression line */
-		eval_add (beta, par[GMTREGRESS_XMEAN], x, n);	/* Compute x (we don't actually need y so we dont do that here) */
+		eval_add (beta, par[GMTREGRESS_XMEAN], x, n);	/* Compute x (we don't actually need y so we don't do that here) */
 		/* Step 9: Compute u */
 		x_mean = eval_sumprod2 (W, x, n) / W_sum;	/* Compute x_mean */
 		eval_add (x, -x_mean, u, n);			/* Compute u */
@@ -950,7 +950,7 @@ GMT_LOCAL double *do_regression (struct GMT_CTRL *GMT, double *x_in, double *y_i
 		par[GMTREGRESS_ICEPT] = -par[GMTREGRESS_ICEPT] / par[GMTREGRESS_SLOPE];
 		par[GMTREGRESS_SLOPE] = 1.0 / par[GMTREGRESS_SLOPE];
 		par[GMTREGRESS_ANGLE] = atand (par[GMTREGRESS_SLOPE]);
-		double_swap (par[GMTREGRESS_XMEAN], par[GMTREGRESS_YMEAN]);
+		gmt_M_double_swap (par[GMTREGRESS_XMEAN], par[GMTREGRESS_YMEAN]);
 		par[GMTREGRESS_SIGIC] = par[GMTREGRESS_SIGIC] / par[GMTREGRESS_SLOPE];
 	}
 	if (mode == 0) {	/* Normal mode is to compute normalized residuals (aka z-scores) */
@@ -997,6 +997,8 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 	uint64_t k, seg, tbl, col = 0, row, n_try = 0, n_t, n_alloc = 0, n_columns = GMTREGRESS_N_FARGS;
 
 	int error = 0;
+	
+	unsigned geometry = GMT_IS_NONE;
 	
 	double *x = NULL, *U = NULL, *V = NULL, *W = NULL, *e = NULL, *w[3] = {NULL, NULL, NULL};
 	double t_scale = 0.0, par[GMTREGRESS_NPAR], out[9], *t = NULL;
@@ -1062,6 +1064,7 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 		}
 		if (bad) Return (GMT_RUNTIME_ERROR);
 		if (Ctrl->T.n) t = gmt_M_memory (GMT, NULL, Ctrl->T.n, double);	/* Allocate space for output x-values (unless when -T0 is given) */
+		geometry = GMT_IS_LINE;
 	}
 
 	/* Allocate memory and read in all the files; each file can have many records */
@@ -1082,6 +1085,9 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		Return (API->error);
+	}
+	if (GMT_Set_Geometry (API, GMT_OUT, geometry) != GMT_NOERROR) {	/* Sets output geometry */
 		Return (API->error);
 	}
 	if ((error = gmt_set_cols (GMT, GMT_OUT, n_columns)) != 0) Return (error);
@@ -1145,7 +1151,7 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 				GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, buffer);	/* Also include result in segment header */
 				for (row = 0; row < n_try; row++) {	/* Write the saved results of the experiment */
 					for (k = 0; k < GMTREGRESS_NPAR_MAIN; k++) out[k] = Sa->data[k][row];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this record to output */
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this record to output */
 				}
 			}
 			else {	/* Here we are solving for the best regression */
@@ -1161,7 +1167,7 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 					out[6] = par[GMTREGRESS_ICEPT];
 					out[7] = par[GMTREGRESS_SIGSL];
 					out[8] = par[GMTREGRESS_SIGIC];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this record to output */
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this record to output */
 				}
 				else {
 					/* Make segment header with the findings for best regression */
@@ -1193,7 +1199,7 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 					for (row = 0; row < n_t; row++) {
 						if (!Ctrl->T.active) outlier = (fabs (z_score[row]) > GMTREGRESS_ZSCORE_LIMIT);	/* Gotta exceed this threshold to be a bad boy */
 						if (Ctrl->S.active) {	/* Restrict the output records */
-							if (Ctrl->S.mode == GMTREGRESS_OUTPUT_GOOD && outlier) continue;	/* Dont want the outliers */
+							if (Ctrl->S.mode == GMTREGRESS_OUTPUT_GOOD && outlier) continue;	/* Don't want the outliers */
 							if (Ctrl->S.mode == GMTREGRESS_OUTPUT_BAD && !outlier) continue;	/* Only want the outliers */
 						}
 						for (col = 0; col < n_columns; col++) {	/* Loop over the chosen output columns (-F) */
@@ -1221,7 +1227,7 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 									break;
 							}
 						}
-						GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this record to output */
+						GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this record to output */
 					}
 				}
 				gmt_M_free (GMT, z_score);	/* Done with this array */

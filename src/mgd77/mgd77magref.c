@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77magref.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: mgd77magref.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *    Copyright (c) 2009-2016 by J. Luis and P. Wessel
+ *    Copyright (c) 2009-2017 by J. Luis and P. Wessel
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -566,6 +566,9 @@ int GMT_mgd77magref (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	for (tbl = 0; tbl < Din->n_tables; tbl++) {	/* Loop over all input tables */
 		T = Din->table[tbl];	/* Current table */
@@ -651,7 +654,7 @@ int GMT_mgd77magref (void *V_API, int mode, void *args) {
 					for (j = 0; j < n_field_components; j++)
 						out[n_out++] = Ctrl->CM4->CM4_DATA.out_field[i*n_field_components+j];
 
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 				}
 			}
 			else {					/* DID CM4 and IGRF */
@@ -670,7 +673,7 @@ int GMT_mgd77magref (void *V_API, int mode, void *args) {
 							out[n_out++] = Ctrl->CM4->CM4_DATA.out_field[i*3+j] + igrf_xyz[i*3+j];
 					}
 
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+					GMT_Put_Record (API, GMT_WRITE_DATA, out);
 				}
 			}
 

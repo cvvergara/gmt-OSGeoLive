@@ -1,9 +1,9 @@
 function GMT_insert(out_path::ASCIIString="")
 # OUT_PATH -> Path to where the PS file will be written. If not in input must be set via the "outPath" global var
 # PS       -> Full name of the created postscript file (built from OUT_PATH)
-# PATH     -> Path to where this file lives (usefull for gmtest.m)
+# PATH     -> Path to where this file lives (useful for gmtest.m)
 #
-#	$Id: GMT_insert.jl 15039 2015-10-22 23:28:45Z jluis $
+#	$Id: GMT_insert.jl 17326 2016-11-08 20:28:56Z pwessel $
 
 	global outPath
 	if (isempty(out_path))	out_path = outPath;		end

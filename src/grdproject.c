@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdproject.c 16902 2016-08-12 14:26:22Z jluis $
+ *	$Id: grdproject.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -393,7 +393,7 @@ int GMT_grdproject (void *V_API, int mode, void *args) {
 
 	if (Ctrl->I.active) {	/* Transforming from rectangular projection to geographical */
 
-		/* if (GMT->common.R.oblique) double_swap (s, e); */  /* Got w/s/e/n, make into w/e/s/n */
+		/* if (GMT->common.R.oblique) gmt_M_double_swap (s, e); */  /* Got w/s/e/n, make into w/e/s/n */
 
 		if ((Rect = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);
@@ -402,11 +402,18 @@ int GMT_grdproject (void *V_API, int mode, void *args) {
 		if ((Geo = GMT_Duplicate_Data (API, GMT_IS_GRID, GMT_DUPLICATE_NONE, Rect)) == NULL) Return (API->error);	/* Just to get a header we can change */
 
 		if (gmt_M_is_azimuthal(GMT) && GMT->current.proj.polar) {	/* Watch out for polar cap grids */
-			if (doubleAlmostEqual (GMT->current.proj.pole, -90.0)) {	/* Covers S pole; implies 360 longitude range */
-				wesn[XLO] = -180.0;	wesn[XHI] = +180.0;	wesn[YHI] = MAX(wesn[YLO], wesn[YHI]);	wesn[YLO] = -90.0;
-			}
-			else if (doubleAlmostEqual (GMT->current.proj.pole, +90.0)) {	/* Covers N pole; implies 360 longitude range */
-				wesn[XLO] = -180.0;	wesn[XHI] = +180.0;	wesn[YLO] = MIN(wesn[YLO], wesn[YHI]);	wesn[YHI] = +90.0;
+			double px, py;
+			/* Get projected pole point and determine if it is inside the grid */
+			gmt_geo_to_xy (GMT, 0.0, GMT->current.proj.pole, &px, &py);	/* Projected coordinates of the relevant pole */
+			if (!gmt_M_y_is_outside (GMT, py,  Rect->header->wesn[YLO], Rect->header->wesn[YHI]) &&
+				!gmt_x_is_outside (GMT, &px,  Rect->header->wesn[XLO], Rect->header->wesn[XHI])) {	/* Not outside both projected x or y-range */
+				wesn[XLO] = -180.0;	wesn[XHI] = +180.0;	/* Need a full 360 longitude range */
+				if (GMT->current.proj.north_pole) {	/* And one of the latitude bounds must extend to the right pole */
+					wesn[YLO] = MIN (wesn[YLO], wesn[YHI]);	wesn[YHI] = +90.0;
+				}
+				else {
+					wesn[YHI] = MAX (wesn[YLO], wesn[YHI]);	wesn[YLO] = -90.0;
+				}
 			}
 		}
 		gmt_M_memcpy (Geo->header->wesn, wesn, 4, double);

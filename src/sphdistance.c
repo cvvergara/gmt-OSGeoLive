@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sphdistance.c 16895 2016-08-12 02:52:43Z pwessel $
+ *	$Id: sphdistance.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 2008-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2008-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 
 #define THIS_MODULE_NAME	"sphdistance"
 #define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Create Voronoi distance, node, or nearest-neighbor grid on a sphere"
+#define THIS_MODULE_PURPOSE	"Create Voronoi distance, node, or natural nearest-neighbor grid on a sphere"
 #define THIS_MODULE_KEYS	"<D{,ND(,QD(,GG},Q-("
 
 #include "gmt_dev.h"
@@ -92,7 +92,7 @@ GMT_LOCAL void prepare_polygon (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *P)
 	uint64_t row;
 	double lon_sum = 0.0, lat_sum = 0.0, dlon;
 
-	gmt_set_seg_minmax (GMT, P);	/* Set the domain of the segment */
+	gmt_set_seg_minmax (GMT, GMT_IS_POLY, P);	/* Set the domain of the segment */
 
 	/* Then loop over points to accumulate sums */
 
@@ -157,7 +157,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Conserve memory (Converts lon/lat <--> x/y/z when needed) [store both in memory]. Not used with -Q.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-E Specify the quantity that should be assigned to the grid nodes:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -En The Voronoi polygon ID.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   -Ez The z-value of the Voronoi center node (NN gridding).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   -Ez The z-value of the Voronoi center node (natural NN gridding).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Ed The distance to the nearest data point [Default].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally append resampling interval in spherical degrees for polygon arcs [1].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Set distance unit arc (d)egree, m(e)ter, (f)eet, (k)m, arc (m)inute, (M)ile, (n)autical mile,\n\t   or arc (s)econd [e].\n");
@@ -267,7 +267,7 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 	int error = 0, s_row, south_row, north_row, w_col, e_col;
 
 	unsigned int row, col, p_col, west_col, east_col, nx1, n_in = 0;
-	uint64_t n_dup = 0, n_set = 0, side, ij, node, n = 0;
+	uint64_t n_dup = 0, n_set = 0, side, ij, node, n_new, n = 0;
 	uint64_t vertex, node_stop, node_new, vertex_new, node_last, vertex_last;
 
 	size_t n_alloc, p_alloc = 0;
@@ -400,7 +400,7 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 
 		n = 0;
 		do {	/* Keep returning records until we reach EOF */
-			if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+			if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 				if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
 					Return (GMT_RUNTIME_ERROR);
 				if (gmt_M_rec_is_table_header (GMT)) 	/* Skip all table headers */
@@ -537,7 +537,12 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 
 		/* Here we have the polygon in P */
 
-		P->n_rows = gmt_fix_up_path (GMT, &P->data[GMT_X], &P->data[GMT_Y], P->n_rows, Ctrl->E.dist, GMT_STAIRS_OFF);
+		if ((n_new = gmt_fix_up_path (GMT, &P->data[GMT_X], &P->data[GMT_Y], P->n_rows, Ctrl->E.dist, GMT_STAIRS_OFF)) == 0) {
+			gmt_M_free (GMT, P);
+			gmt_M_free (GMT, grid_lon);	gmt_M_free (GMT, grid_lat);
+			Return (GMT_RUNTIME_ERROR);
+		}
+		P->n_rows = n_new;
 		prepare_polygon (GMT, P);	/* Determine the enclosing sector */
 
 		south_row = (int)gmt_M_grd_y_to_row (GMT, P->min[GMT_Y], Grid->header);

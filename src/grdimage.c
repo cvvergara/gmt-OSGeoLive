@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdimage.c 17153 2016-09-30 23:41:38Z jluis $
+ *	$Id: grdimage.c 17485 2017-01-23 13:20:10Z jluis $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -456,10 +456,10 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 	bool done, need_to_project, normal_x, normal_y, resampled = false, gray_only = false;
 	bool nothing_inside = false, use_intensity_grid;
 	bool do_indexed = false;
-	unsigned int k, n_columns = 0, n_rows = 0, grid_registration = GMT_GRID_NODE_REG, n_grids;
+	unsigned int n_columns = 0, n_rows = 0, grid_registration = GMT_GRID_NODE_REG, n_grids;
 	unsigned int colormask_offset = 0, try, row, actual_row, col;
 	uint64_t node_RGBA = 0;             /* uint64_t for the RGB(A) image array. */
-	uint64_t node, kk, byte, dim[3] = {0, 0, 3};
+	uint64_t node, k, kk, byte, dim[3] = {0, 0, 3};
 	int index = 0, ks, error = 0;
 	
 	char   *img_ProjectionRefPROJ4 = NULL, *way[2] = {"via GDAL", "directly"};
@@ -473,9 +473,9 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 	struct GMT_GRID *Intens_orig = NULL, *Intens_proj = NULL;
 	struct GMT_PALETTE *P = NULL;
 	struct GRDIMAGE_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;	/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;	/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;        /* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;        /* General PSL internal parameters */
 	struct GMT_GRID_HEADER *header_work = NULL;	/* Pointer to a GMT header for the image or grid */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
@@ -834,6 +834,17 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 
 	if (P && P->has_pattern) GMT_Report (API, GMT_MSG_VERBOSE, "Warning: Patterns in CPT will be ignored\n");
 
+	NaN_rgb = (P) ? P->bfn[GMT_NAN].rgb : GMT->current.setting.color_patch[GMT_NAN];
+	if (Ctrl->Q.active) {	/* Want colormask via NaN entries */
+		if (gray_only) {
+			GMT_Report (API, GMT_MSG_VERBOSE, "Your image is grayscale only but -Q requires 24-bit; image will be expanded to 24-bit.\n");
+			gray_only = false;
+			NaN_rgb = red;	/* Arbitrarily pick red as the NaN color since the entire image is gray only */
+			gmt_M_memcpy (P->bfn[GMT_NAN].rgb, red, 4, double);
+		}
+		if (!Ctrl->A.return_image) rgb_used = gmt_M_memory (GMT, NULL, 256*256*256, unsigned char);	/* Keep track of which colors we encounter */
+	}
+
 	if (Ctrl->A.active) {	/* We desire a raster image, not a PostScript plot */
 		int	id, k;
 		unsigned int this_proj = GMT->current.proj.projection;
@@ -855,8 +866,11 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 			img_wesn[YLO] -= 0.5 * img_inc[1];		img_wesn[YHI] += 0.5 * img_inc[1];
 		}
 		if (Ctrl->Q.active) dim[GMT_Z]++;	/* Flag to remind us that we need to allocate a transparency array */
-		if ((Out = GMT_Create_Data(API, GMT_IS_IMAGE, GMT_IS_SURFACE, GMT_GRID_ALL, dim, img_wesn, img_inc, 1, 0, NULL)) == NULL)
+		if ((Out = GMT_Create_Data(API, GMT_IS_IMAGE, GMT_IS_SURFACE, GMT_GRID_ALL, dim, img_wesn, img_inc, 1, 0, NULL)) == NULL) {
+			if (Ctrl->Q.active) gmt_M_free (GMT, rgb_used);
 			Return(API->error);	/* Well, no luck with that allocation */
+		}
+		
 		//strncpy (Out->header->mem_layout, "TRPa", 4);	/* Set the array memory layout */
 
 		/* See if we have valid proj info the chosen projection has a valid PROJ4 setting */
@@ -890,16 +904,6 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 	}
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Evaluate pixel colors\n");
-	NaN_rgb = (P) ? P->bfn[GMT_NAN].rgb : GMT->current.setting.color_patch[GMT_NAN];
-	if (Ctrl->Q.active) {	/* Want colormask via NaN entries */
-		if (gray_only) {
-			GMT_Report (API, GMT_MSG_VERBOSE, "Your image is grayscale only but -Q requires 24-bit; image will be expanded to 24-bit.\n");
-			gray_only = false;
-			NaN_rgb = red;	/* Arbitrarily pick red as the NaN color since the entire image is gray only */
-			gmt_M_memcpy (P->bfn[GMT_NAN].rgb, red, 4, double);
-		}
-		if (!Ctrl->A.return_image) rgb_used = gmt_M_memory (GMT, NULL, 256*256*256, unsigned char);	/* Keep track of which colors we encounter */
-	}
 
 	/* Worry about linear projections with negative scales that may reverse the orientation of the image */
 	normal_x = !(GMT->current.proj.projection == GMT_LINEAR && !GMT->current.proj.xyz_pos[0] && !resampled);
@@ -1022,19 +1026,21 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 		for (kk = 0, P->is_bw = true; P->is_bw && kk < header_work->nm; kk++) 
 			if (!(bitimage_8[kk] == 0 || bitimage_8[kk] == 255)) P->is_bw = false;
 
-	if (P && P->is_bw) {	/* Can get away with a 1-bit image, but we must pack the original byte to 8 image bits */
+	if (P && P->is_bw && !Ctrl->A.active) {	/* Can get away with a 1-bit image, but we must pack the original byte to 8 image bits */
 		int nx8, shift, b_or_w, nx_pixels, k8;
+		uint64_t imsize;
 		unsigned char *bit = NULL;
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Creating 1-bit B/W image\n");
 
 		nx8 = irint (ceil (n_columns / 8.0));	/* Image width must be a multiple of 8 bits, so we round up */
 		nx_pixels = nx8 * 8;	/* The row length in bits after the rounding up */
-		bit = gmt_M_memory (GMT, NULL, nx8 * n_rows, unsigned char);	/* Memory to hold the 1-bit image */
+		imsize = gmt_M_get_nm (GMT, nx8, n_rows);
+		bit = gmt_M_memory (GMT, NULL, imsize, unsigned char);	/* Memory to hold the 1-bit image */
 
 		/* Reprocess the byte image.  Here there are no worries about direction of rows, cols since that was dealt with during color assignment */
 		
-		for (row = k = k8 = 0; row < n_rows; row++) {	/* Process each scanline */
+		for (row = k8 = k = 0; row < n_rows; row++) {	/* Process each scanline */
 			shift = 0; byte = 0;
 			for (col = 0; col < n_columns; col++, k++) {	/* Visit each byte in the original grayshade image */
 				b_or_w = (bitimage_8[k] == 255);	/* Let white == 1, black == 0 */
@@ -1076,7 +1082,7 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 	}
 	else {	/* Dealing with a 24-bit color image */
 		if (Ctrl->A.active) {	/* Creating a raster image, not PostScript */
-			if (Ctrl->Q.active) {	/* Must initialize the transparency byte (alpha): 255 everywhere except at NaNs */
+			if (Ctrl->Q.active) {	/* Must initialize the transparency byte (alpha): 255 everywhere except at NaNs where it should be 0 */
 				memset (Out->alpha, 255, header_work->nm);
 				for (node = row = 0; row < n_rows; row++) {
 					kk = gmt_M_ijpgi (header_work, row, 0); 

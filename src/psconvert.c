@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psconvert.c 17114 2016-09-21 00:34:29Z jluis $
+ *	$Id: psconvert.c 17519 2017-02-02 04:18:12Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,7 @@
 #define GMT_PROG_OPTIONS "-V"
 
 EXTERN_MSC void gmt_str_toupper (char *string);
+EXTERN_MSC void gmt_handle5_plussign (struct GMT_CTRL *GMT, char *in, char *mods, unsigned way);
 
 #ifdef WIN32	/* Special for Windows */
 #	include <windows.h>
@@ -297,6 +298,7 @@ GMT_LOCAL int parse_GE_settings (struct GMT_CTRL *GMT, char *arg, struct PS2RAST
 
 	C->W.active = true;
 	strncpy (txt, arg, GMT_BUFSIZ-1);
+	gmt_handle5_plussign (GMT, txt, "agklnt", 0);	/* Hide any plus signs unless a recognized modifier */
 	while (!error && (gmt_strtok (txt, "+", &pos, p))) {
 		switch (p[0]) {
 			case 'a':	/* Altitude setting */
@@ -340,6 +342,7 @@ GMT_LOCAL int parse_GE_settings (struct GMT_CTRL *GMT, char *arg, struct PS2RAST
 			case 'n':	/* Set KML document layer name */
 				gmt_M_str_free (C->W.overlayname);	/* Already set, free then reset */
 				C->W.overlayname = strdup (&p[1]);
+				gmt_handle5_plussign (GMT, C->W.overlayname, NULL, 1);	/* Recover any non-modifier plus signs */
 				break;
 			case 'o':	/* Produce a KML overlay as a folder subset */
 				C->W.folder = true;
@@ -348,6 +351,7 @@ GMT_LOCAL int parse_GE_settings (struct GMT_CTRL *GMT, char *arg, struct PS2RAST
 			case 't':	/* Set KML document title */
 				gmt_M_str_free (C->W.doctitle);	/* Already set, free then reset */
 				C->W.doctitle = strdup (&p[1]);
+				gmt_handle5_plussign (GMT, C->W.doctitle, NULL, 1);	/* Recover any non-modifier plus signs */
 				break;
 			case 'u':	/* Specify a remote address for image */
 				gmt_M_str_free (C->W.URL);	/* Already set, free then reset */
@@ -914,7 +918,7 @@ GMT_LOCAL int pipe_HR_BB(struct GMTAPI_CTRL *API, struct PS2RASTER_CTRL *Ctrl, c
 
 	/* Find where is the setpagedevice line */
 	if ((pch = strstr(PS->data, "setpagedevice")) != NULL) {
-		while (pch[c_begin] != '\n') c_begin--;		c_begin++;	/* It receeded one too much */
+		while (pch[c_begin] != '\n') c_begin--;		c_begin++;	/* It receded one too much */
 		/* So now we know where the line starts. Put a 'translate' command in its place. */
 		(r == 0) ? sprintf(buf, "%.3f %.3f translate", xt, yt) : sprintf(buf, "%d rotate\n%.3f %.3f translate", r, xt, yt);
 		for (n = 0; n < strlen(buf); n++, c_begin++) pch[c_begin] = buf[n];
@@ -923,7 +927,7 @@ GMT_LOCAL int pipe_HR_BB(struct GMTAPI_CTRL *API, struct PS2RASTER_CTRL *Ctrl, c
 	else {
 		if ((pch = strstr(PS->data, " translate")) != NULL) {		/* If user runs through this function twice 'setpagedevice' was changed to 'translate' */
 			double old_xt, old_yt;
-			while (pch[c_begin] != '\n') c_begin--;		c_begin++;	/* Goto line start but it receeded one too much */
+			while (pch[c_begin] != '\n') c_begin--;		c_begin++;	/* Goto line start but it receded one too much */
 			sscanf (&pch[c_begin], "%lf %lf", &old_xt, &old_yt);
 			(r == 0) ? sprintf(buf, "%.3f %.3f translate", xt + old_xt, yt + old_xt) : sprintf(buf, "%d rotate\n%.3f %.3f translate", r, xt + old_xt, yt + old_xt);
 			for (n = 0; n < strlen(buf); n++, c_begin++) pch[c_begin] = buf[n];
@@ -1147,6 +1151,11 @@ int GMT_psconvert (void *V_API, int mode, void *args) {
 
 	/*---------------------------- This is the psconvert main code ----------------------------*/
 
+	if (!Ctrl->L.active && Ctrl->In.n_files == 0) {	/* No files given, bail */
+		GMT_Report (API, GMT_MSG_NORMAL, "No PostScript files specified - exiting.\n");
+		Return (GMT_NOERROR);
+	}
+
 	/* Test if GhostScript can be executed (version query) */
 	sprintf(cmd, "%s --version", Ctrl->G.file);
 	if ((fp = popen(cmd, "r")) != NULL) {
@@ -1363,6 +1372,7 @@ int GMT_psconvert (void *V_API, int mode, void *args) {
 				if (!Ctrl->L.active)			/* Otherwise ps_names contents are the Garbageman territory */
 					for (kk = 0; kk < Ctrl->In.n_files; kk++) gmt_M_str_free (ps_names[kk]);
 				gmt_M_free (GMT, ps_names);
+				gmt_M_free (GMT, PS);
 				Return (GMT_RUNTIME_ERROR);
 			}
 			while (read_source (GMT, &line, &line_size, fp, PS->data, &pos) != EOF) {
@@ -1412,11 +1422,13 @@ int GMT_psconvert (void *V_API, int mode, void *args) {
 				GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
 				remove (BB_file);
 				if (delete) remove (ps_file);	/* Since we created a temporary file from the memdata */
+				gmt_M_free (GMT, PS);
 				Return (GMT_RUNTIME_ERROR);
 			}
 			if ((fpb = fopen (BB_file, "r")) == NULL) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to open file %s\n", BB_file);
 				if (delete) remove (ps_file);	/* Since we created a temporary file from the memdata */
+				gmt_M_free (GMT, PS);
 				Return (GMT_ERROR_ON_FOPEN);
 			}
 			while ((file_line_reader (GMT, &line, &line_size, fpb, NULL, NULL) != EOF) && !got_BB) {
@@ -1448,6 +1460,7 @@ int GMT_psconvert (void *V_API, int mode, void *args) {
 							GMT_Report (API, GMT_MSG_NORMAL, "System call [%s] returned error %d.\n", cmd, sys_retval);
 							remove (tmp_file);
 							if (delete) remove (ps_file);	/* Since we created a temporary file from the memdata */
+							gmt_M_free (GMT, PS);
 							Return (GMT_RUNTIME_ERROR);
 						}
 						/* must leave loop because fpb has been closed and read_source would
@@ -1503,7 +1516,7 @@ int GMT_psconvert (void *V_API, int mode, void *args) {
 			else if (!got_BB && strstr (line, "%%BoundingBox:")) {
 				sscanf (&line[14], "%s %s %s %s",c1,c2,c3,c4);
 				if (strncmp (c1, "(atend)", 7)) {	/* Got actual numbers */
-					if (!got_HRBB) {	/* Only assign values if we havent seen the high-res version yet */
+					if (!got_HRBB) {	/* Only assign values if we haven't seen the high-res version yet */
 						x0 = atoi (c1);		y0 = atoi (c2);
 						x1 = atoi (c3);		y1 = atoi (c4);
 					}
@@ -1863,22 +1876,25 @@ int GMT_psconvert (void *V_API, int mode, void *args) {
 			strncpy (tag, &ext[Ctrl->T.device][1], 16U);
 			gmt_str_toupper (tag);
 
-			if (transparency) {
+			if (transparency) {	/* Get here when PDF is _NOT_ the final output format but an intermediate format */
 				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "PS file with transparency must be converted to PDF before creating %s\n", tag);
 				/* Temporarily change output device to PDF to get the PDF tmp file */
 				Ctrl->T.device = GS_DEV_PDF;
-				/* After conversion, convert the tmp PDF file to desired format via a 2nd gs call */
-				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert to PDF...\n");
-			}
-			else
-				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert to %s...\n", tag);
-
-			if (!Ctrl->F.active || return_image) {
-				if (Ctrl->D.active) sprintf (out_file, "%s/", Ctrl->D.dir);	/* Use specified output directory */
+				/* After conversion, we convert the tmp PDF file to desired format via a 2nd gs call */
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert to intermediate PDF...\n");
 				strncat (out_file, &ps_file[pos_file], (size_t)(pos_ext - pos_file));
+				strcat (out_file, "_intermediate");
 			}
-			else
-				strncpy (out_file, Ctrl->F.file, GMT_BUFSIZ-1);
+			else {	/* Output is the final result */
+					GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert to %s...\n", tag);
+
+				if (!Ctrl->F.active || return_image) {
+					if (Ctrl->D.active) sprintf (out_file, "%s/", Ctrl->D.dir);	/* Use specified output directory */
+					strncat (out_file, &ps_file[pos_file], (size_t)(pos_ext - pos_file));
+				}
+				else
+					strncpy (out_file, Ctrl->F.file, GMT_BUFSIZ-1);
+			}
 			strcat (out_file, ext[Ctrl->T.device]);
 
 			if (Ctrl->A.new_dpi_x) {	/* We have a resize request (was Ctrl->A.resize = true;) */
@@ -1925,7 +1941,7 @@ int GMT_psconvert (void *V_API, int mode, void *args) {
 					            ps_file, out_file);
 				/* else: Either a good closed GMT PS file or one of unknown origin */
 			}
-			if (transparency) {	/* Now convert PDF to desired format */
+			if (transparency) {	/* Now convert temporary PDF to desired format */
 				char pdf_file[GMT_BUFSIZ] = {""};
 				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert PDF with transparency to %s...\n", tag);
 				Ctrl->T.device = dest_device;	/* Reset output device type */

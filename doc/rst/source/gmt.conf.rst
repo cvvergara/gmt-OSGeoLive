@@ -706,7 +706,9 @@ fonts can be found in the :doc:`gmt` man page.
     parallel the longitude and latitude directions (e.g., rectangular
     projections, polar projections). For situations where all boundary
     ticks and annotations must be inside the maps (e.g., for preparing
-    geotiffs), chose **inside**.
+    geotiffs), chose **inside**.  Finally, for Cartesian plots you can
+    also choose **graph**\ , which adds a vector to the end of each axis.
+    This works best when you reduce the number of axes plotted.
 
 .. _MAP_FRAME_WIDTH:
 
@@ -811,7 +813,7 @@ fonts can be found in the :doc:`gmt` man page.
 .. _MAP_TICK_LENGTH:
 
 **MAP_TICK_LENGTH**
-    Sets both **MAP_TICK_LENGTH_PRIMARY** and **MAP_TICK_LENGH_SECONDARY** to the value specified.
+    Sets both **MAP_TICK_LENGTH_PRIMARY** and **MAP_TICK_LENGTH_SECONDARY** to the value specified.
     This setting is not included in the **gmt.conf** file.
 
 .. _MAP_TICK_LENGTH_PRIMARY:
@@ -998,7 +1000,7 @@ fonts can be found in the :doc:`gmt` man page.
     Applies when geodesics are approximated by great circle distances on
     an equivalent sphere or when surface areas are computed. Select from
     mean (R_1), authalic (R_2), volumetric (R_3), meridional, or
-    quadratic [authalic]. See also PROJ_MEAN_RADIUS.
+    quadratic [authalic].
 
 .. _PROJ_SCALE_FACTOR:
 

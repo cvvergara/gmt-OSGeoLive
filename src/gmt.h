@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.h 17077 2016-09-05 05:05:02Z pwessel $
+ *	$Id: gmt.h 17503 2017-01-30 23:14:43Z pwessel $
  *
- *	Copyright (c) 1991-2016
+ *	Copyright (c) 1991-2017
  *	P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
@@ -64,7 +64,7 @@ extern "C" {
  *=====================================================================================
  */
 
-/* 23 Primary API functions */
+/* 24 Primary API functions */
 EXTERN_MSC void * GMT_Create_Session  (const char *tag, unsigned int pad, unsigned int mode, int (*print_func) (FILE *, const char *));
 EXTERN_MSC void * GMT_Create_Data     (void *API, unsigned int family, unsigned int geometry, unsigned int mode, uint64_t dim[],
                                           double *wesn, double *inc, unsigned int registration, int pad, void *data);
@@ -87,6 +87,7 @@ EXTERN_MSC int GMT_Put_Record         (void *API, unsigned int mode, void *recor
 EXTERN_MSC int GMT_Get_Row            (void *API, int rec_no, struct GMT_GRID *G, float *row);
 EXTERN_MSC int GMT_Put_Row            (void *API, int rec_no, struct GMT_GRID *G, float *row);
 EXTERN_MSC int GMT_Set_Comment        (void *API, unsigned int family, unsigned int mode, void *arg, void *data);
+EXTERN_MSC int GMT_Set_Geometry	      (void *API, unsigned int direction, unsigned int geometry);
 EXTERN_MSC int GMT_Get_Family	      (void *API, unsigned int direction, struct GMT_OPTION *head);
 
 /* These functions are new in 5.3 and are being considered beta */

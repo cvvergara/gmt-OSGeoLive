@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtgravmag3d.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: gmtgravmag3d.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -286,6 +286,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct XYZOKB_CTRL *Ctrl, struct GMT_
 						else if (pch && pch[0] == '3') Ctrl->T.m_var3 = true;
 						else if (pch && pch[0] == '4') Ctrl->T.m_var4 = true;
 						else Ctrl->T.m_var1 = true;
+						Ctrl->T.xyz_file[strlen(Ctrl->T.xyz_file)-2] = '\0';	/* In any case the "+m" must go out of fname */
 					}
 				}
 				else if (opt->arg[0] == 'v') {
@@ -468,7 +469,7 @@ int GMT_gmtgravmag3d (void *V_API, int mode, void *args) {
 		ndata_t = retval;
 
 		t_center = gmt_M_memory (GMT, NULL, ndata_t, struct TRI_CENTER);
-		/* compute aproximate center of each triangle */
+		/* compute approximate center of each triangle */
 		n_swap = check_triang_cw (ndata_t, 0);
 		set_center (ndata_t);
 	}
@@ -543,7 +544,7 @@ int GMT_gmtgravmag3d (void *V_API, int mode, void *args) {
 	 	body_desc.ind[14] = 0;	body_desc.ind[15] = 2;	body_desc.ind[16] = 5;	body_desc.ind[17] = 3;
 
 	 	/* Actually, for the gravity case we can save lots of computations because the flux
-	 	   through the vertical walls does not contibute to gravity anomaly, which is vertical */
+	 	   through the vertical walls does not contribute to gravity anomaly, which is vertical */
 		if (Ctrl->C.active)
 			body_desc.n_f = 2;		/* Number of prism facets that count */
 	}
@@ -650,7 +651,7 @@ int GMT_gmtgravmag3d (void *V_API, int mode, void *args) {
 			j++;
 		}
 		km = (int)((Ctrl->T.m_var)  ? i : 0);	/* Variable magnetization (intensity) */
-		pm = (int)((Ctrl->T.m_var4) ? i : 0);	/* When al 5 paremeters (F, Mag) may be variable (undocumented) */
+		pm = (int)((Ctrl->T.m_var4) ? i : 0);	/* When al 5 parameters (F, Mag) may be variable (undocumented) */
 
 		/* Don't waste time with zero mag triangles */
 		if (Ctrl->H.active && Ctrl->T.m_var && okabe_mag_var[i].rk[0] == 0 && okabe_mag_var[i].rk[1] == 0 && okabe_mag_var[i].rk[2] == 0)
@@ -727,13 +728,17 @@ int GMT_gmtgravmag3d (void *V_API, int mode, void *args) {
 			gmt_M_free (GMT, loc_or);	gmt_M_free (GMT, y_obs);	gmt_M_free (GMT, body_verts);
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+			gmt_M_free (GMT, loc_or);	gmt_M_free (GMT, y_obs);	gmt_M_free (GMT, body_verts);
+			Return (API->error);
+		}
 		strcpy (save, GMT->current.setting.format_float_out);
 		strcpy (GMT->current.setting.format_float_out, "%.9g");	/* Make sure we use enough decimals */
 		for (k = 0; k < ndata_p; k++) {
 			out[GMT_X] = point->segment[0]->data[GMT_X][k];
 			out[GMT_Y] = point->segment[0]->data[GMT_Y][k];
 			out[GMT_Z] = g[k];
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 		}
 		strcpy (GMT->current.setting.format_float_out, save);
 		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data input */
@@ -992,7 +997,7 @@ GMT_LOCAL int read_stl (struct GMT_CTRL *GMT, char *fname, double z_dir) {
 
 /* -----------------------------------------------------------------*/
 GMT_LOCAL int facet_triangulate (struct XYZOKB_CTRL *Ctrl, struct BODY_VERTS *body_verts, unsigned int i, bool bat) {
-	/* Sets coodinates for the facet whose effect is beeing calculated */
+	/* Sets coordinates for the facet whose effect is being calculated */
 	double x_a, x_b, x_c, y_a, y_b, y_c, z_a, z_b, z_c;
 	gmt_M_unused (bat);
 	x_a = triang[vert[i].a].x;	x_b = triang[vert[i].b].x;	x_c = triang[vert[i].c].x;
@@ -1071,7 +1076,7 @@ GMT_LOCAL int facet_triangulate (struct XYZOKB_CTRL *Ctrl, struct BODY_VERTS *bo
 
 /* -----------------------------------------------------------------*/
 GMT_LOCAL int facet_raw (struct XYZOKB_CTRL *Ctrl, struct BODY_VERTS *body_verts, unsigned int i, bool geo) {
-	/* Sets coodinates for the facet in the RAW format */
+	/* Sets coordinates for the facet in the RAW format */
 	double cos_a, cos_b, cos_c, x_a, x_b, x_c, y_a, y_b, y_c, z_a, z_b, z_c;
 
 	x_a = raw_mesh[i].t1[0];   x_b = raw_mesh[i].t2[0];   x_c = raw_mesh[i].t3[0];
@@ -1090,12 +1095,12 @@ GMT_LOCAL int facet_raw (struct XYZOKB_CTRL *Ctrl, struct BODY_VERTS *body_verts
 	body_verts[0].z = z_a;
 	body_verts[1].z = z_b;
 	body_verts[2].z = z_c;
-	return 1; /* Allways return 1 */
+	return 1; /* Always return 1 */
 }
 
 /* ---------------------------------------------------------------------- */
 GMT_LOCAL void set_center (unsigned int n_triang) {
-	/* Calculates triangle center by an aproximate (iterative) formula */
+	/* Calculates triangle center by an approximate (iterative) formula */
 	unsigned int i, j, k = 5;
 	double x, y, z, xa[6], ya[6], xb[6], yb[6], xc[6], yc[6];
 

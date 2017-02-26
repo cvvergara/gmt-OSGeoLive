@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_synopsis.h 16544 2016-06-14 00:15:52Z pwessel $
+ *	$Id: gmt_synopsis.h 17525 2017-02-03 12:14:48Z jluis $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -71,7 +71,7 @@
 #define GMT_OFFSET	"[+o<dx>[/<dy>]]"
 #define GMT_TROSE_DIR	GMT_XYANCHOR "+w<width>[+f[<level>]]" GMT_JUSTIFY "[+l<w,e,s,n>]" GMT_OFFSET
 #define GMT_TROSE_MAG	GMT_XYANCHOR "+w<width>[+d[<dec>[/<dlabel>]]][+i<pen>]" GMT_JUSTIFY "[+l<w,e,s,n>][+p<pen>][+t<ints>]" GMT_OFFSET
-#define GMT_SCALE	GMT_XYANCHOR "+c[<slon>/]<slat>+w<length>[e|f|M|n|k|u][+a<align>][+f][+l[<label>]]" GMT_OFFSET "[+u]"
+#define GMT_SCALE	GMT_XYANCHOR "+c[<slon>/]<slat>+w<length>[e|f|M|n|k|u][+a<align>][+f]" GMT_JUSTIFY "[+l[<label>]]" GMT_OFFSET "[+u]"
 #define GMT_INSERT_A	GMT_XYANCHOR "+w<width>[<unit>][/<height>[<unit>]]" GMT_JUSTIFY GMT_OFFSET "[+s<file>]"
 #define GMT_INSERT_B	"[<unit>]<xmin>/<xmax>/<ymin>/<ymax>[r][+s<file>]"
 
@@ -98,7 +98,7 @@
 #define GMT_J_OPT	"-J<args>"
 #define GMT_R2_OPT	"-R[<unit>]<xmin>/<xmax>/<ymin>/<ymax>[r]"
 #define GMT_R3_OPT	"-R[<unit>]<xmin>/<xmax>/<ymin>/<ymax>[/<zmin>/<zmax>][r]"
-#define GMT_U_OPT	"-U[<just>/<dx>/<dy>/][c|<label>]"
+#define GMT_U_OPT	"-U[[<just>]/<dx>/<dy>/][c|<label>]"
 #define GMT_V_OPT	"-V[<level>]"
 #define GMT_X_OPT	"-X[a|c|r]<xshift>[<unit>]"
 #define GMT_Y_OPT	"-Y[a|c|r]<yshift>[<unit>]"
@@ -115,11 +115,11 @@
 #define GMT_p_OPT	"-p[x|y|z]<azim>/<elev>[/<zlevel>][+w<lon0>/<lat0>[/<z0>][+v<x0>/<y0>]"
 #define GMT_r_OPT	"-r"
 #define GMT_s_OPT	"-s[<cols>][a|r]"
-#define GMT_t_OPT	"-t<+a|[-]n>"
+#define GMT_t_OPT	"-t<transp>"
 #define GMT_colon_OPT	"-:[i|o]"
 
 /*! Macro for tools that need to specify FFT information (prepend option flag, e.g., -N and put GMT_FFT_OPT inside [] ) */
 
-#define GMT_FFT_OPT "[f|q|s|<n_columns>/<n_rows>][+a|d|l][+e|m|n][+t<width>][+w<suffix>][+z[p]]"
+#define GMT_FFT_OPT "[f|s|<n_columns>/<n_rows>][+a|d|l][+e|m|n][+t<width>][+v][+w<suffix>][+z[p]]"
 
 #endif /* GMT_SYNOPSIS_H */

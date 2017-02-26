@@ -1,5 +1,5 @@
 /*
- * $Id: dimfilter.c 16706 2016-07-04 02:52:44Z pwessel $
+ * $Id: dimfilter.c 17560 2017-02-17 22:05:42Z pwessel $
  *
  * dimfilter.c  reads a grdfile and creates filtered grd file
  *
@@ -973,6 +973,9 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			Return (API->error);
 		}
+		if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
+			Return (API->error);
+		}
 		gmt_set_cartesian (GMT, GMT_OUT);	/* No coordinates here */
 
 		/* Check the crucial condition to run the program*/
@@ -1017,7 +1020,7 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 			out[2] = (Ctrl->Q.err_cols) ? err_sum / Ctrl->Q.err_cols : 0.0;
 
 			/* print out the results */
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
+			GMT_Put_Record (API, GMT_WRITE_DATA, out);	/* Write this to output */
 
 			GMT_Report (API, GMT_MSG_DEBUG, "line %d passed\n", err_l);
 			err_l++;

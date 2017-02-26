@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: psclip.c 16835 2016-07-19 03:18:51Z pwessel $
+ *	$Id: psclip.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -198,9 +198,9 @@ int GMT_psclip (void *V_API, int mode, void *args) {
 	double x0, y0;
 
 	struct PSCLIP_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;		/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
@@ -247,7 +247,7 @@ int GMT_psclip (void *V_API, int mode, void *args) {
 	if (!Ctrl->C.active) {	/* Start new clip_path */
 		unsigned int tbl, first = (Ctrl->N.active) ? 0 : 1;
 		bool duplicate;
-		uint64_t row, seg;
+		uint64_t row, seg, n_new;
 		struct GMT_DATASET *D = NULL;
 		struct GMT_DATASEGMENT *S = NULL;
 
@@ -279,7 +279,11 @@ int GMT_psclip (void *V_API, int mode, void *args) {
 						S = gmt_duplicate_segment (GMT, D->table[tbl]->segment[seg]);
 					}
 					if (GMT->current.map.path_mode == GMT_RESAMPLE_PATH) {	/* Resample if spacing is too coarse or stair-case is requested */
-						S->n_rows = gmt_fix_up_path (GMT, &S->data[GMT_X], &S->data[GMT_Y], S->n_rows, Ctrl->A.step, Ctrl->A.mode);
+						if ((n_new = gmt_fix_up_path (GMT, &S->data[GMT_X], &S->data[GMT_Y], S->n_rows, Ctrl->A.step, Ctrl->A.mode)) == 0) {
+							Return (GMT_RUNTIME_ERROR);
+						}
+						S->n_rows = n_new;
+						gmt_set_seg_minmax (GMT, D->geometry, S);	/* Update min/max */
 						GMT_Report (API, GMT_MSG_DEBUG, "Resample polygon, now has %d points\n", S->n_rows);
 					}
 

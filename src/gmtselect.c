@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtselect.c 17207 2016-10-16 03:37:46Z pwessel $
+ *	$Id: gmtselect.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,7 @@ struct GMTSELECT_DATA {	/* Used for temporary storage when sorting data on x coo
 
 struct GMTSELECT_ZLIMIT {	/* Used to hold info for each -Z option given */
 	unsigned int col;	/* Column to test */
-	bool equal;	/* Just check if z == min withing 5 ULps */
+	bool equal;	/* Just check if z == min within 5 ULps */
 	double min;	/* Smallest z-value to pass through, for this column */
 	double max;	/* Largest z-value to pass through, for this column */
 };
@@ -93,7 +93,7 @@ struct GMTSELECT_CTRL {	/* All control options for this program (except common a
 	} C;
 	struct GMTSELECT_D {	/* -D<resolution> */
 		bool active;
-		bool force;	/* if true, select next highest level if current set is not avaialble */
+		bool force;	/* if true, select next highest level if current set is not available */
 		char set;	/* One of f, h, i, l, c */
 	} D;
 	struct GMTSELECT_E {	/* -E<operators> , <op> = combination or f,n */
@@ -612,7 +612,7 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 	shuffle = (GMT->current.setting.io_lonlat_toggle[GMT_IN] != GMT->current.setting.io_lonlat_toggle[GMT_OUT]);	/* Must rewrite output record */
 	n_minimum = Ctrl->Z.max_col;	/* Minimum number of columns in ASCII input */
 	
-	if (!GMT->common.R.active && Ctrl->N.active) {	/* If we use coastline data or used -fg but didnt give -R we implicitly set -Rg */
+	if (!GMT->common.R.active && Ctrl->N.active) {	/* If we use coastline data or used -fg but didn't give -R we implicitly set -Rg */
 		GMT->common.R.active = true;
 		GMT->common.R.wesn[XLO] = 0.0;	GMT->common.R.wesn[XHI] = 360.0;	GMT->common.R.wesn[YLO] = -90.0;	GMT->common.R.wesn[YHI] = +90.0;
 		gmt_set_geographic (GMT, GMT_IN);
@@ -792,12 +792,15 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		Return (API->error);
+	}
 
 	/* Now we are ready to take on some input values */
 
 	just_copy_record = (gmt_is_ascii_record (GMT, options) && !shuffle && !GMT->common.s.active);
 	GMT->common.b.ncol[GMT_OUT] = UINT_MAX;	/* Flag to have it reset to GMT->common.b.ncol[GMT_IN] when writing */
-	r_mode = (just_copy_record) ? GMT_READ_MIXED : GMT_READ_DOUBLE;
+	r_mode = (just_copy_record) ? GMT_READ_MIXED : GMT_READ_DATA;
 	gmt_set_segmentheader (GMT, GMT_OUT, false);	/* Since processing of -C|L|F files might have turned it on [should be determined below] */
 	
 	do {	/* Keep returning records until we reach EOF */
@@ -979,7 +982,7 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 			GMT_Put_Record (API, GMT_WRITE_TEXT, NULL);
 		}
 		else
-			GMT_Put_Record (API, GMT_WRITE_DOUBLE, in);
+			GMT_Put_Record (API, GMT_WRITE_DATA, in);
 		n_pass++;
 	} while (true);
 	

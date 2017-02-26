@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_stat.c 16783 2016-07-12 02:23:25Z pwessel $
+ *	$Id: gmt_stat.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -292,7 +292,7 @@ GMT_LOCAL int gmtstat_inc_beta (struct GMT_CTRL *GMT, double a, double b, double
 		/* Here there is disagreement on the range of x which
 			converges efficiently.  Abramowitz and Stegun
 			say to use x < (a - 1) / (a + b - 2).  Editions
-			of Numerical Recipes thru mid 1987 say
+			of Numerical Recipes through mid 1987 say
 			x < ( (a + 1) / (a + b + 1), but the code has
 			x < ( (a + 1) / (a + b + 2).  Editions printed
 			late 1987 and after say x < ( (a + 1) / (a + b + 2)
@@ -2047,7 +2047,7 @@ double gmt_extreme (struct GMT_CTRL *GMT, double x[], uint64_t n, double x_defau
 	*  kind: -1 means only consider negative values.
 	*  kind:  0 means consider all values.
 	*  kind: +1 means only consider positive values.
-	*  way:  -1 means look for mimimum.
+	*  way:  -1 means look for minimum.
 	*  way:  +1 means look for maximum.
 	* If kind is non-zero we assign x_default is no values are found.
 	* If kind == 0 we expect x_default to be set so that x[0] will reset x_select.

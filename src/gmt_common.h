@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_common.h 16931 2016-08-18 21:40:44Z pwessel $
+ *	$Id: gmt_common.h 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -48,7 +48,7 @@ enum GMT_enum_gaps {GMT_NEGGAP_IN_COL = 0,	/* Check if previous minus current co
 #define MAX_ASPATIAL 64		/* No more than 64 aspatial options in -a */
 
 #define GMT_SHORTHAND_OPTIONS	"BJRXYcp"	/* All of the shorthand options */
-#define GMT_CRITICAL_OPT_ORDER "-VJfrRb"	/* If given options among these must be parsed first and in this order */
+#define GMT_CRITICAL_OPT_ORDER	"V-JfrRb"	/* If given options among these must be parsed first and in this order */
 
 /*! Structure with all information given via the common GMT command-line options -R -J .. */
 struct GMT_COMMON {
@@ -121,7 +121,7 @@ struct GMT_COMMON {
 	struct b {	/* -b[i][o][s|S][d|D][#cols][cvar1/var2/...] */
 		bool active[2];		/* true if current input/output is in native binary format */
 		bool nc[2];		/* True if netcdf i/o */
-		bool o_delay;		/* true if we dont know number of output columns until we have read at least one input record */
+		bool o_delay;		/* true if we don't know number of output columns until we have read at least one input record */
 		enum GMT_swap_direction swab[2];	/* k_swap_in or k_swap_out if current binary input/output must be byte-swapped, else k_swap_none */
 		uint64_t ncol[2];		/* Number of expected columns of input/output
 						   0 means it will be determined by program */

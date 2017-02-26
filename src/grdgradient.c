@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdgradient.c 16722 2016-07-06 13:46:09Z remko $
+ *	$Id: grdgradient.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -101,7 +101,7 @@ GMT_LOCAL double specular (double n_columns, double n_rows, double nz, double *s
 	   R = SPECULAR(Nx,Ny,Nz,S,V) returns the reflectance of a surface with
 	   normal vector components [Nx,Ny,Nz].  S and V specify the direction
 	   to the light source and to the viewer, respectively. 
-	   For the time beeing I'm using V = [azim elev] = [0 90] so the following
+	   For the time being I'm using V = [azim elev] = [0 90] so the following
 
 	   V[0] =  sind(V[0])*cosd(V[1]);
 	   V[1] = -cosd(V[0])*cosd(V[1]);

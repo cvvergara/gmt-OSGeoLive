@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: grdhisteq.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: grdhisteq.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 1991-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -251,7 +251,7 @@ GMT_LOCAL int do_hist_equalization (struct GMT_CTRL *GMT, struct GMT_GRID *Grid,
 
 		if (dump_intervals) {	/* Write records to file or stdout */
 			out[GMT_X] = (double)Grid->data[i]; out[GMT_Y] = (double)Grid->data[j]; out[GMT_Z] = (double)current_cell;
-			GMT_Put_Record (GMT->parent, GMT_WRITE_DOUBLE, out);
+			GMT_Put_Record (GMT->parent, GMT_WRITE_DATA, out);
 		}
 
 		i = j;
@@ -393,6 +393,9 @@ int GMT_grdhisteq (void *V_API, int mode, void *args) {
 				Return (API->error);
 			}
 			if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+				Return (API->error);
+			}
+			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
 				Return (API->error);
 			}
 		}

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: sphtriangulate.c 16697 2016-07-03 06:17:50Z pwessel $
+ *	$Id: sphtriangulate.c 17560 2017-02-17 22:05:42Z pwessel $
  *
- *	Copyright (c) 2008-2016 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2008-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -163,7 +163,7 @@ GMT_LOCAL int stripack_delaunay_output (struct GMT_CTRL *GMT, double *lon, doubl
 		}
 		for (kk = 0; kk < n_arcs; ++kk)
 			if (arc[kk].begin > arc[kk].end)
-				uint64_swap (arc[kk].begin, arc[kk].end);
+				gmt_M_uint64_swap (arc[kk].begin, arc[kk].end);
 
 		/* Sort and eliminate duplicate arcs */
 		qsort (arc, n_arcs, sizeof (struct STRPACK_ARC), sph_compare_arc);
@@ -301,6 +301,10 @@ GMT_LOCAL int stripack_voronoi_output (struct GMT_CTRL *GMT, uint64_t n, double 
 		} while (node_new != node_stop);
 
 		if (!get_arcs) {	/* Finalize the polygon information */
+			/* Explicitly close the polygon */
+			plon[vertex] = plon[0];
+			plat[vertex] = plat[0];
+			vertex++;
 			S[0] = Dout[0]->table[0]->segment[node];	/* Local shorthand to current output segment */
 			if (get_area) {
 				area_km2 = area_polygon * R2;	/* Get correct area units */
@@ -326,7 +330,7 @@ GMT_LOCAL int stripack_voronoi_output (struct GMT_CTRL *GMT, uint64_t n, double 
 	if (get_arcs) {	/* Process arcs */
 		for (k = 0; k < n_arcs; ++k)
 			if (arc[k].begin > arc[k].end)
-			uint64_swap (arc[k].begin, arc[k].end);
+			gmt_M_uint64_swap (arc[k].begin, arc[k].end);
 
 		/* Sort and exclude duplicates */
 		qsort (arc, n_arcs, sizeof (struct STRPACK_ARC), sph_compare_arc);
@@ -588,7 +592,7 @@ int GMT_sphtriangulate (void *V_API, int mode, void *args) {
 	n = 0;
 
 	do {	/* Keep returning records until we reach EOF */
-		if ((in = GMT_Get_Record (API, GMT_READ_DOUBLE, NULL)) == NULL) {	/* Read next record, get NULL if special case */
+		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) { 		/* Bail if there are any read errors */
 				gmt_M_free (GMT, lon);	gmt_M_free (GMT, lat);
 				gmt_M_free (GMT, xx);	gmt_M_free (GMT, yy);

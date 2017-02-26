@@ -1,4 +1,4 @@
-/*	$Id: gmt_mgg_header2.c 16544 2016-06-14 00:15:52Z pwessel $
+/*	$Id: gmt_mgg_header2.c 17326 2016-11-08 20:28:56Z pwessel $
  *
  *	Code donated by David Divens, NOAA/NGDC
  *	Distributed under the GNU Public License (see LICENSE.TXT for details)
@@ -129,13 +129,13 @@ GMT_LOCAL int grd98_GMTtoMGG2 (struct GMT_GRID_HEADER *gmt, MGG_GRID_HEADER_2 *m
 	mgg->minValue    = irint(gmt->z_min * mgg->precision);
 	mgg->maxValue    = irint(gmt->z_max * mgg->precision);
 
-	/* Data fits in two byte boundry */
+	/* Data fits in two byte boundary */
 	if ((-SHRT_MAX <= mgg->minValue) && (mgg->maxValue <= SHRT_MAX)) {
 		mgg->numType = sizeof (short);
 		mgg->nanValue = (short)SHRT_MIN;
 	}
 #ifdef MGG_BYTE_SIZE
-	/* Data fits in one byte boundry */
+	/* Data fits in one byte boundary */
 	if ((gmt->z_min >= 0) && (gmt->z_max <= 127)) {
 		mgg->numType   = sizeof (char);
 		mgg->nanValue  = (char)255;

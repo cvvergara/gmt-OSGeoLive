@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegyz.c 16706 2016-07-04 02:52:44Z pwessel $
+ *	$Id: pssegyz.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *    Copyright (c) 1999-2016 by T. Henstock
+ *    Copyright (c) 1999-2017 by T. Henstock
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /* pssegyzz program to plot segy files in 3d in postscript with variable trace spacing option
@@ -483,7 +483,7 @@ GMT_LOCAL void segyz_shade_bmap (struct GMT_CTRL *GMT, double x0, double y0, flo
 	double xp[NPTS], yp[NPTS], interp, slope01, slope02, slope12, slope13, slope23, slope03;
 	double slope0, slope1, slope2, slope3;
 
-	if (data0 == 0.0 && data1 == 0.0) return; /* probably shouldn't strictly, but pathological enough I dont really want to deal with it! */
+	if (data0 == 0.0 && data1 == 0.0) return; /* probably shouldn't strictly, but pathological enough I don't really want to deal with it! */
 
 	interp = 0.0;
 	if ((data0 * data1) < 0.0) {
@@ -509,8 +509,8 @@ GMT_LOCAL void segyz_shade_bmap (struct GMT_CTRL *GMT, double x0, double y0, flo
 	for (ix = 0; ix < NPTS-1; ix++)
 		for (iy = ix + 1; iy < NPTS; iy++)
 			if (yp[ix] > yp[iy]) {
-				double_swap (yp[iy], yp[ix]);
-				double_swap (xp[iy], xp[ix]);
+				gmt_M_double_swap (yp[iy], yp[ix]);
+				gmt_M_double_swap (xp[iy], xp[ix]);
 			}
 
 
@@ -591,9 +591,9 @@ int GMT_pssegyz (void *V_API, int mode, void *args) {
 	SEGYREEL binhead;
 
 	struct PSSEGYZ_CTRL *Ctrl = NULL;
-	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
+	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT internal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct PSL_CTRL *PSL = NULL;				/* General PSL interal parameters */
+	struct PSL_CTRL *PSL = NULL;				/* General PSL internal parameters */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/

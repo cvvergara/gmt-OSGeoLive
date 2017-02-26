@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight_f77.c 15757 2016-02-24 23:25:49Z pwessel $
+ *	$Id: postscriptlight_f77.c 17449 2017-01-16 21:27:04Z pwessel $
  *
- *	Copyright (c) 2009-2016 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2017 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -57,7 +57,7 @@
  * PSL_plotsymbol	: Plots a geometric symbol and [optionally] fills it
  * PSL_plottext		: Plots textstring
  * PSL_plottextbox	: Draw a filled box around a textstring
- * PSL_plottextline	: Place labels along paths (straigt or curved), set clip path, draw line
+ * PSL_plottextline	: Place labels along paths (straight or curved), set clip path, draw line
  * PSL_loadimage	: Read image file of supported type
  * PSL_command		: Writes a given PostScript statement to the plot file
  * PSL_comment		: Writes a comment statement to the plot file
