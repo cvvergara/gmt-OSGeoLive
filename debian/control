@@ -38,8 +38,10 @@ Recommends: gmt-gshhg-data | gmt-gshhg-low,
             gmt-dcw,
             gmt-doc
 Suggests: gmt-examples
-Breaks: libgenome-perl (<< 0.06-3~)
-Replaces: libgenome-perl (<< 0.06-3~)
+Breaks: libgenome-perl (<< 0.06-3~),
+        libgmt-dev (<< 5.3.2+dfsg-1~exp2)
+Replaces: libgenome-perl (<< 0.06-3~),
+          libgmt-dev (<< 5.3.2+dfsg-1~exp2)
 Description: Generic Mapping Tools
  GMT is a collection of tools that allow users to manipulate
  (x,y) and (x,y,z) data sets (including filtering, trend fitting, gridding,
