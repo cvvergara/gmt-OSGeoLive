@@ -1,3 +1,9 @@
+gmt (5.3.3+dfsg-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Thu, 23 Mar 2017 22:52:09 +0100
+
 gmt (5.3.2+dfsg-1~exp2) experimental; urgency=medium
 
   * Move supplements plugin from libgmt-dev to gmt package.
