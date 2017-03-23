@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psxy.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: psxy.c 17739 2017-03-21 06:25:59Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -726,7 +726,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OP
 
 	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && gmt_parse_symbol_option (GMT, Ctrl->S.arg, S, 0, true), "Syntax error -S option\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->E.active && (S->symbol == GMT_SYMBOL_VECTOR || S->symbol == GMT_SYMBOL_GEOVECTOR || S->symbol == GMT_SYMBOL_MARC \
-		|| S->symbol == GMT_SYMBOL_ELLIPSE || S->symbol == GMT_SYMBOL_FRONT || S->symbol == GMT_SYMBOL_QUOTED_LINE || S->symbol == GMT_SYMBOL_DECORATED_LINE || S->symbol == GMT_SYMBOL_ROTRECT), "Syntax error -E option: Incompatible with -Se, -Sf, -Sj, -Sm|M, -Sq, -Sv|V, -S=\n");
+		|| S->symbol == GMT_SYMBOL_ELLIPSE || S->symbol == GMT_SYMBOL_FRONT || S->symbol == GMT_SYMBOL_QUOTED_LINE || S->symbol == GMT_SYMBOL_DECORATED_LINE \
+		|| S->symbol == GMT_SYMBOL_ROTRECT), "Syntax error -E option: Incompatible with -Se, -Sf, -Sj, -Sm|M, -Sq, -Sv|V, -S=\n");
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
 	n_errors += gmt_M_check_condition (GMT, GMT->common.b.active[GMT_IN] && S->symbol == GMT_SYMBOL_NOT_SET, "Syntax error: Binary input data cannot have symbol information\n");
@@ -929,7 +930,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 		GMT->current.io.col_type[GMT_IN][pos2y] = GMT_IS_FLOAT;	/* Just the users dy component, not length */
 	if (S.symbol == GMT_SYMBOL_VECTOR || S.symbol == GMT_SYMBOL_GEOVECTOR || S.symbol == GMT_SYMBOL_MARC ) {	/* One of the vector symbols */
 		geovector = (S.symbol == GMT_SYMBOL_GEOVECTOR);
-		if ((S.v.status & GMT_VEC_FILL) == 0) Ctrl->G.active = false;	/* Want no fill so override -G*/
+		if ((S.v.status & GMT_VEC_FILL) == 0) Ctrl->G.active = false;	/* Want no fill so override -G */
 		if (S.v.status & GMT_VEC_FILL) S.v.fill = current_fill;		/* Override -G<fill> (if set) with specified head fill */
 	}
 	bcol = (S.read_size) ? ex2 : ex1;
@@ -1034,7 +1035,9 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 
 				/* First establish the symbol type given at the end of the record */
 				gmt_chop (text_rec);	/* Get rid of \n \r */
-				i = (unsigned int)strlen (text_rec) - 1;
+				i = (unsigned int)strlen (text_rec);
+				if (i == 0) continue;	/* A blank line snuck through */
+				i--;
 				while (text_rec[i] && !strchr (" \t", (int)text_rec[i])) i--;
 				if (S.read_symbol_cmd == 1) gmt_parse_symbol_option (GMT, &text_rec[i+1], &S, 0, false);
 				for (j = n_cols_start; j < 6; j++) GMT->current.io.col_type[GMT_IN][j] = GMT_IS_DIMENSION;		/* Since these may have units appended */
@@ -1352,7 +1355,8 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 							x_2 -= dx;		y_2 -= dy;
 						}
 					}
-					if (S.v.parsed_v4 && gmt_M_compat_check (GMT, 4)) {	/* Got v_width directly from V4 syntax so no messing with it here if under compatibility */
+					if (S.v.parsed_v4) {	/* Got v_width directly from V4 syntax so no messing with it here if under compatibility */
+						/* Now plot the old GMT V4 vector instead */
 						/* But have to improvise as far as outline|fill goes... */
 						if (outline_active) S.v.status |= PSL_VEC_OUTLINE;	/* Choosing to draw head outline */
 						if (fill_active) S.v.status |= PSL_VEC_FILL;		/* Choosing to fill head */
@@ -1521,7 +1525,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 							Return (GMT_RUNTIME_ERROR);
 						}
 						L->n_rows = n_new;
-						gmt_set_seg_minmax (GMT, D->geometry, L);	/* Update min/max */
+						gmt_set_seg_minmax (GMT, D->geometry, 2, L);	/* Update min/max of x/y only */
 						resampled = true;	/* To avoid doing it twice */
 					}
 					if (gmt_trim_line (GMT, &L->data[GMT_X], &L->data[GMT_Y], &L->n_rows, &current_pen)) continue;	/* Trimmed away completely */
@@ -1602,7 +1606,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 						Return (GMT_RUNTIME_ERROR);
 					}
 					L->n_rows = n_new;
-					gmt_set_seg_minmax (GMT, D->geometry, L);	/* Update min/max */
+					gmt_set_seg_minmax (GMT, D->geometry, 2, L);	/* Update min/max of x/y only */
 				}
 
 				if (polygon) {	/* Want a closed polygon (with or without fill and with or without outline) */

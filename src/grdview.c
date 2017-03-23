@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdview.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdview.c 17625 2017-03-06 04:01:24Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -563,7 +563,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDVIEW_CTRL *Ctrl, struct GMT
 			case 'S':	/* Smoothing of contours */
 				Ctrl->S.active = true;
 				sval = atoi (opt->arg);
-				n_errors += gmt_M_check_condition (GMT, sval, "Syntax error -S option: smooth value must be positive\n");
+				n_errors += gmt_M_check_condition (GMT, sval <= 0, "Syntax error -S option: smooth value must be positive\n");
 				Ctrl->S.value = sval;
 				break;
 			case 'T':	/* Tile plot */

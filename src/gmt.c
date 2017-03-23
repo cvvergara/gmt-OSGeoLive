@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt.c 17644 2017-03-12 02:09:29Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -30,6 +30,12 @@
 #include "gmt_dev.h"
 
 #if !(defined(WIN32) || defined(NO_SIGHANDLER))
+#if	__APPLE__
+	/* Apple Xcode expects _Nullable to be defined but it is not if gcc */
+#ifndef _Nullable
+#	define _Nullable
+#	endif
+#	endif
 #	include <signal.h>
 #	include "common_sighandler.h"
 #endif

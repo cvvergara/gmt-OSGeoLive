@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.c 17592 2017-02-24 00:40:55Z pwessel $
+ *	$Id: gmt_plot.c 17670 2017-03-14 15:58:06Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -558,9 +558,13 @@ GMT_LOCAL void plot_x_grid (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double s
 	double x1, y1, x2, y2;
 
 	for (i = 0; i < nx; i++) {
-		gmt_geo_to_xy (GMT, x[i], s, &x1, &y1);
-		gmt_geo_to_xy (GMT, x[i], n, &x2, &y2);
-		PSL_plotsegment (PSL, x1, y1, x2, y2);
+		if (gmt_M_is_geographic (GMT, GMT_IN))
+			plot_map_lonline (GMT, PSL, x[i], s, n);
+		else {
+			gmt_geo_to_xy (GMT, x[i], s, &x1, &y1);
+			gmt_geo_to_xy (GMT, x[i], n, &x2, &y2);
+			PSL_plotsegment (PSL, x1, y1, x2, y2);
+		}
 	}
 }
 
@@ -617,9 +621,13 @@ GMT_LOCAL void plot_y_grid (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w
 	double x1, y1, x2, y2;
 
 	for (i = 0; i < ny; i++) {
-		gmt_geo_to_xy (GMT, w, y[i], &x1, &y1);
-		gmt_geo_to_xy (GMT, e, y[i], &x2, &y2);
-		PSL_plotsegment (PSL, x1, y1, x2, y2);
+		if (gmt_M_is_geographic (GMT, GMT_IN))
+			plot_map_latline (GMT, PSL, y[i], w, e);
+		else {
+			gmt_geo_to_xy (GMT, w, y[i], &x1, &y1);
+			gmt_geo_to_xy (GMT, e, y[i], &x2, &y2);
+			PSL_plotsegment (PSL, x1, y1, x2, y2);
+		}
 	}
 }
 
@@ -5892,7 +5900,7 @@ void gmt_geo_wedge (struct GMT_CTRL *GMT, double xlon, double xlat, double radiu
 		return;
 	}
 	S->n_rows = n_new;
-	gmt_set_seg_minmax (GMT, (mode == 3) ? GMT_IS_POLY : GMT_IS_LINE, S);	/* Update min/max */
+	gmt_set_seg_minmax (GMT, (mode == 3) ? GMT_IS_POLY : GMT_IS_LINE, 2, S);	/* Update min/max of x/y only */
 
 	gmt_geo_polygons (GMT, S);
 
@@ -6294,6 +6302,21 @@ void gmt_plane_perspective (struct GMT_CTRL *GMT, int plane, double level) {
 	/* Store value of plane */
 	GMT->current.proj.z_project.plane = plane;
 }
+
+#if 0
+void gmt_vector_v4 (struct PSL_CTRL *PSL, double x0, double y0, double x1, double y1, double tailwidth, double headlength, double headwidth, double shape, struct GMT_FILL *fill, int outline)
+{
+	/* Plots the GMT4 vector symbol */
+
+	if (fill && fill->use_pattern) {	/* Setup pattern first */
+		int rgb[3] = {-3, -3, -3};
+		rgb[1] = (int)ps_pattern (fill->pattern_no, fill->pattern, fill->inverse, fill->dpi, outline, fill->f_rgb, fill->b_rgb);
+		psl_vector_v4 (PSL, x0, y0, param, rgb, outline);
+	}
+	else	/* Just draw as we please */
+		psl_vector_v4 (PSL, x0, y0, param, fill->rgb, outline);
+}
+#endif
 
 /* All functions involved in reading, writing, duplicating GMT_POSTSCRIPT structs and their PostScript content */
 

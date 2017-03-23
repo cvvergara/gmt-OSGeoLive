@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pscoast.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: pscoast.c 17630 2017-03-07 20:45:58Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -497,6 +497,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCOAST_CTRL *Ctrl, struct GMT
 		}
 	}
 
+	/* If no -E modes were selected then we default to dump provided -M was given */
+	if (Ctrl->E.info.mode == 0 && Ctrl->M.active) Ctrl->E.info.mode = GMT_DCW_DUMP;
+	
 	if (gmt_DCW_list (GMT, Ctrl->E.info.mode)) return 1;
 
 	if (Ctrl->C.active && !(Ctrl->G.active || Ctrl->S.active || Ctrl->W.active)) {	/* Just lakes, fix -A */

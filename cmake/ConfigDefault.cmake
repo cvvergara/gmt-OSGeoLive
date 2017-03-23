@@ -1,5 +1,5 @@
 #
-# $Id: ConfigDefault.cmake 17595 2017-02-24 00:53:29Z jluis $
+# $Id: ConfigDefault.cmake 17744 2017-03-22 18:50:05Z jluis $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -42,13 +42,13 @@ set (GMT_VERSION_YEAR "2017")
 # The GMT package version.
 set (GMT_PACKAGE_VERSION_MAJOR 5)
 set (GMT_PACKAGE_VERSION_MINOR 3)
-set (GMT_PACKAGE_VERSION_PATCH 2)
+set (GMT_PACKAGE_VERSION_PATCH 3)
 
 # The subversion revision of the GMT source code.
 # This is manually set when making GMT *public* releases.
 # However, when making internal releases or just an ordinary developer build, leave it
 # empty; if it is empty, the revision number is automatically populated for you on build.
-set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "17593")
+set (GMT_SOURCE_CODE_CONTROL_VERSION_STRING "17743")
 
 # The GMT package version.
 set (GMT_PACKAGE_VERSION "${GMT_PACKAGE_VERSION_MAJOR}.${GMT_PACKAGE_VERSION_MINOR}.${GMT_PACKAGE_VERSION_PATCH}")

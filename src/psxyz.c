@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psxyz.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: psxyz.c 17739 2017-03-21 06:25:59Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -767,7 +767,9 @@ int GMT_psxyz (void *V_API, int mode, void *args) {
 				text_rec = (char *)record;
 				/* First establish the symbol type given at the end of the record */
 				gmt_chop (text_rec);	/* Get rid of \n \r */
-				i = strlen (text_rec) - 1;
+				i = (unsigned int)strlen (text_rec);
+				if (i == 0) continue;	/* A blank line snuck through */
+				i--;
 				while (text_rec[i] && !strchr (" \t", (int)text_rec[i])) i--;
 				gmt_parse_symbol_option (GMT, &text_rec[i+1], &S, 1, false);
 				for (j = n_cols_start; j < 7; j++) GMT->current.io.col_type[GMT_IN][j] = GMT_IS_DIMENSION;		/* Since these may have units appended */
