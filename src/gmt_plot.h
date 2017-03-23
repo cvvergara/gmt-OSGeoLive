@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_plot.h 17670 2017-03-14 15:58:06Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -55,6 +55,7 @@
 #define GMT_SYMBOL_TRIANGLE	((int)'t')
 #define GMT_SYMBOL_CUBE		((int)'u')
 #define GMT_SYMBOL_VECTOR	((int)'v')
+#define GMT_SYMBOL_VECTOR_V4	999
 #define GMT_SYMBOL_WEDGE	((int)'w')
 #define GMT_SYMBOL_CROSS	((int)'x')
 #define GMT_SYMBOL_YDASH	((int)'y')

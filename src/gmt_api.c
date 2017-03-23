@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_api.c 17580 2017-02-23 06:35:24Z pwessel $
+ *	$Id: gmt_api.c 17680 2017-03-14 19:09:34Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -6626,7 +6626,7 @@ void *GMT_Read_Data (void *V_API, unsigned int family, unsigned int method, unsi
 				return_null (API, API->error);
 			}
 			if ((item = gmtapi_validate_id (API, family, in_ID, GMT_IN, GMTAPI_MODULE_INPUT)) == GMT_NOTSET)
-				return_null (API, GMT_NOTSET);	/* Some internal error... */
+				return_null (API, API->error);	/* Some internal error... */
 			API->object[item]->selected = true;
 		}
 		gmtlib_free_list (API->GMT, filelist, n_files);	/* Free the file list */

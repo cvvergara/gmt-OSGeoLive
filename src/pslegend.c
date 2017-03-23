@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pslegend.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: pslegend.c 17733 2017-03-20 20:03:03Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -135,7 +135,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSLEGEND_CTRL *Ctrl, struct GM
 			case 'D':	/* Sets position and size of legend */
 				Ctrl->D.active = true;
 				if (strstr (opt->arg, "+w")) {	/* New syntax: 	*/
-					if ((Ctrl->D.refpoint = gmt_get_refpoint (GMT, opt->arg)) == NULL) {
+					if ((Ctrl->D.refpoint = gmt_get_refpoint (GMT, opt->arg, 'D')) == NULL) {
 						n_errors++;	/* Failed basic parsing */
 						break;
 					}
@@ -323,7 +323,8 @@ int GMT_pslegend (void *V_API, int mode, void *args) {
 	/* High-level function that implements the pslegend task */
 	unsigned int tbl, pos;
 	int i, justify = 0, n = 0, n_columns = 1, n_col, col, error = 0, column_number = 0, id, n_scan, status = 0;
-	bool flush_paragraph = false, v_line_draw_now = false, gave_label, gave_mapscale_options, did_old = false, drawn = false;
+	bool flush_paragraph = false, v_line_draw_now = false, gave_label, gave_mapscale_options, did_old = false;
+	bool drawn = false, b_cpt = false;
 	uint64_t seg, row, n_fronts = 0, n_quoted_lines = 0;
 	size_t n_char = 0;
 	char txt_a[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, txt_c[GMT_LEN256] = {""}, txt_d[GMT_LEN256] = {""};
@@ -435,6 +436,7 @@ int GMT_pslegend (void *V_API, int mode, void *args) {
 						if ((c = strchr (bar_height, '+')) != NULL) c[0] = 0;	/* Chop off any modifiers so we can compute the height */
 						height += gmt_M_to_inch (GMT, bar_height) + GMT->current.setting.map_tick_length[0] + GMT->current.setting.map_annot_offset[0] + FONT_HEIGHT_PRIMARY * GMT->current.setting.font_annot[GMT_PRIMARY].size / PSL_POINTS_PER_INCH;
 						column_number = 0;
+						if (strstr (&line[2], "-B")) b_cpt = true;	/* Passed -B options with the bar presecription */
 						break;
 
 					case 'A':	/* Color change, no height implication */
@@ -607,6 +609,12 @@ int GMT_pslegend (void *V_API, int mode, void *args) {
 	}
 	if ((PSL = gmt_plotinit (GMT, options)) == NULL) Return (GMT_RUNTIME_ERROR);
 	gmt_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
+
+	gmt_plotcanvas (GMT);	/* Fill canvas if requested */
+	gmt_map_basemap (GMT);	/* Plot basemap if requested */
+
+	if (GMT->current.map.frame.draw && b_cpt)	/* Two conflicting -B settings, reset main -B since we just finished the frame */
+		gmt_M_memset (&(GMT->current.map.frame), 1, struct GMT_PLOT_FRAME);
 
 	/* Must reset any -X -Y to 0 so they are not used further in the GMT_modules we call below */
 	gmt_M_memset (GMT->current.setting.map_origin, 2, double);
@@ -1407,7 +1415,6 @@ int GMT_pslegend (void *V_API, int mode, void *args) {
 	PSL_setorigin (PSL, -x_orig, -y_orig, 0.0, PSL_INV);	/* Reset */
 	Ctrl->D.refpoint->x = x_orig;	Ctrl->D.refpoint->y = y_orig;
 
-	gmt_map_basemap (GMT);
 	gmt_plotend (GMT);
 
 	for (id = 0; id < N_DAT; id++) {

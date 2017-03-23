@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psscale.c 17582 2017-02-23 21:04:54Z pwessel $
+ *	$Id: psscale.c 17733 2017-03-20 20:03:03Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -252,7 +252,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSCALE_CTRL *Ctrl, struct GMT
 				break;
 			case 'D':
 				Ctrl->D.active = true;
-				if ((Ctrl->D.refpoint = gmt_get_refpoint (GMT, opt->arg)) == NULL)
+				if ((Ctrl->D.refpoint = gmt_get_refpoint (GMT, opt->arg, 'D')) == NULL)
 					n_errors++;	/* Failed basic parsing */
 				else if (strstr (Ctrl->D.refpoint->args, "+w")) {	/* New syntax: */
 					/* Args are +w<length>/<width>[+e[b|f][<length>]][+h][+j<justify>][+ma|c|l|u][+n[<txt>]][+o<dx>[/<dy>]] */

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdimage.c 17485 2017-01-23 13:20:10Z jluis $
+ *	$Id: grdimage.c 17670 2017-03-14 15:58:06Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -1027,8 +1027,8 @@ int GMT_grdimage (void *V_API, int mode, void *args) {
 			if (!(bitimage_8[kk] == 0 || bitimage_8[kk] == 255)) P->is_bw = false;
 
 	if (P && P->is_bw && !Ctrl->A.active) {	/* Can get away with a 1-bit image, but we must pack the original byte to 8 image bits */
-		int nx8, shift, b_or_w, nx_pixels, k8;
-		uint64_t imsize;
+		int nx8, shift, b_or_w, nx_pixels;
+		uint64_t imsize, k8;
 		unsigned char *bit = NULL;
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Creating 1-bit B/W image\n");

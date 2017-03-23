@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_init.c 17543 2017-02-09 14:14:29Z jluis $
+ *	$Id: gmt_init.c 17731 2017-03-20 19:48:52Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -6071,7 +6071,7 @@ void gmt_mapscale_syntax (struct GMT_CTRL *GMT, char option, char *string) {
 	gmt_message (GMT, "\t-%c %s\n", option, string);
 	gmt_refpoint_syntax (GMT, "L", NULL, GMT_ANCHOR_MAPSCALE, 3);
 	gmt_message (GMT, "\t   Use +c<slat> (with central longitude) or +c<slon>/<slat> to specify scale origin.\n");
-	gmt_message (GMT, "\t   Set scale length with +w<length> and append a unit from %s [km].  Use -%cf to draw a \"fancy\" scale [Default is plain].\n", GMT_LEN_UNITS2_DISPLAY, option);
+	gmt_message (GMT, "\t   Set scale length with +w<length> and append a unit from %s [km].\n", GMT_LEN_UNITS2_DISPLAY);
 	gmt_message (GMT, "\t   Several modifiers are optional:\n");
 	gmt_message (GMT, "\t   Add +f to draw a \"fancy\" scale [Default is plain].\n");
 	gmt_message (GMT, "\t   By default, the scale label equals the distance unit name and is placed on top [+at].  Use the +l<label>\n");

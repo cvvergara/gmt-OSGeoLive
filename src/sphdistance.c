@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: sphdistance.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: sphdistance.c 17618 2017-03-05 22:58:12Z pwessel $
  *
  *	Copyright (c) 2008-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -92,7 +92,7 @@ GMT_LOCAL void prepare_polygon (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *P)
 	uint64_t row;
 	double lon_sum = 0.0, lat_sum = 0.0, dlon;
 
-	gmt_set_seg_minmax (GMT, GMT_IS_POLY, P);	/* Set the domain of the segment */
+	gmt_set_seg_minmax (GMT, GMT_IS_POLY, 0, P);	/* Set the domain of the segment */
 
 	/* Then loop over points to accumulate sums */
 
