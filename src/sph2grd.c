@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: sph2grd.c 17449 2017-01-16 21:27:04Z pwessel $
+ *    $Id: sph2grd.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -22,14 +22,14 @@
  * Date:	1-JUN-2013
  */
  
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"sph2grd"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Compute grid from spherical harmonic coefficients"
 #define THIS_MODULE_KEYS	"<D{,GG}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->RVbhirs" GMT_ADD_x_OPT
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "->RVbdhirs" GMT_ADD_x_OPT
 
 #ifndef M_LN2
 #define M_LN2 0.69314718055994530942  /* log_e 2 */
@@ -53,10 +53,6 @@ struct SPH2GRD_CTRL {	/* All control options for this program (except common arg
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct F {	/* -F[k]<lc>/<lp>/<hp>/<hc> or -F[k]<lo>/<hi> */
 		bool active;
 		bool km;	/* True if filter was specified in km instead of harmonic degree */
@@ -96,8 +92,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: sph2grd [coeff_file] -G<grdfile> %s\n", GMT_I_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t%s [-Dg|n] [-E] [-F[k]<filter>] [-N<norm>] [-Q]\n\t[%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]%s\n\n",
-		GMT_Rgeo_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t%s [-Dg|n] [-E] [-F[k]<filter>] [-N<norm>] [-Q]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]%s\n\n",
+		GMT_Rgeo_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -122,7 +118,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   g: Geodesy normalization - inner products summed over surface equal 4pi\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   s: Schmidt normalization - as used in geomagnetism\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Coefficients have phase convention from physics, i.e., the (-1)^m factor\n");
-	GMT_Option (API, "V,bi4,h,i,r,s,x,.");
+	GMT_Option (API, "V,bi4,e,h,i,r,s,x,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -186,11 +182,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SPH2GRD_CTRL *Ctrl, struct GMT
 					n_errors++;
 				break;
 			case 'I':
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'N':
 				Ctrl->N.active = true;
@@ -206,9 +198,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SPH2GRD_CTRL *Ctrl, struct GMT
 		}
 	}
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error: Must specify output grid file\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->D.active && !(Ctrl->D.mode == 'g' || Ctrl->D.mode == 'n'), "Syntax error -D option: Must append g or n\n");
 	n_errors += gmt_M_check_condition (GMT, strchr ("mgs", Ctrl->N.mode) == NULL, "Syntax error: -N Normalization must be one of m, g, or s\\n");
@@ -249,8 +241,8 @@ int GMT_sph2grd (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -367,7 +359,7 @@ int GMT_sph2grd (void *V_API, int mode, void *args) {
 	if (Ctrl->N.mode == 's') GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Schmidt normalization - as used in geomagnetism\n");
 	
 	/* Allocate output grid */
-	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, NULL, NULL, \
 		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "Grid evaluated from spherical harmonic coefficients", Grid)) Return (API->error);
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
@@ -463,7 +455,7 @@ int GMT_sph2grd (void *V_API, int mode, void *args) {
 	GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Finished 100 %% of evaluation\n");
 	
 	GMT_Report (API, GMT_MSG_VERBOSE, "Write grid to file\n");
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_NOERROR)
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Grid) != GMT_NOERROR)
 		error = API->error;
 	else
 		error = 0;

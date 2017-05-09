@@ -39,7 +39,6 @@ Synopsis
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
 [ |SYN_OPT-bo| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-p| ]
 [ |SYN_OPT-t| ]
 
@@ -296,8 +295,6 @@ Optional Arguments
 .. |Add_-bo| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-bo.rst_
 
-.. include:: explain_-c.rst_
-
 .. |Add_perspective| unicode:: 0x20 .. just an invisible code
 .. include:: explain_perspective.rst_
 
@@ -323,7 +320,7 @@ Mercator map at scale 1 cm/degree, run
 
    ::
 
-    gmt pscoast -R-30/-10/60/65 -Jm1c -B5 -Gp100/28 > iceland.ps
+    gmt pscoast -R-30/-10/60/65 -Jm1c -B5 -Gp28+r100 > iceland.ps
 
 To initiate a clip path for Africa so that the subsequent colorimage of
 gridded topography is only seen over land, using a Mercator map at scale

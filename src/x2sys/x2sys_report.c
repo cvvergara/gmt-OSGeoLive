@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_report.c 17503 2017-01-30 23:14:43Z pwessel $
+ *	$Id: x2sys_report.c 18074 2017-04-30 04:54:09Z pwessel $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -25,14 +25,16 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "mgd77/mgd77.h"
+#include "x2sys.h"
+
 #define THIS_MODULE_NAME	"x2sys_report"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Report statistics from crossover data base"
 #define THIS_MODULE_KEYS	">T}"
-
-#include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->RV"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->RV"
 
 #define XREPORT_EXTERNAL	1
 #define XREPORT_INTERNAL	2
@@ -254,8 +256,8 @@ int GMT_x2sys_report (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -346,14 +348,17 @@ int GMT_x2sys_report (void *V_API, int mode, void *args) {
 
 	if (GMT_Init_IO (API, GMT_IS_TEXTSET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
 		gmt_M_free (GMT, R);
+		gmt_M_free (GMT, trk_name);
 		Return (API->error);
 	}
 	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {
 		gmt_M_free (GMT, R);
+		gmt_M_free (GMT, trk_name);
 		Return (API->error);	/* Enables data output and sets access mode */
 	}
 	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_NONE) != GMT_NOERROR) {	/* Sets output geometry */
 		gmt_M_free (GMT, R);
+		gmt_M_free (GMT, trk_name);
 		Return (API->error);
 	}
 	gmt_set_tableheader (GMT, GMT_OUT, true);	/* Turn on -ho explicitly */

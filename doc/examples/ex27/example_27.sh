@@ -1,19 +1,16 @@
 #!/bin/bash
 #		GMT EXAMPLE 27
-#		$Id: example_27.sh 16652 2016-06-28 21:02:26Z pwessel $
+#		$Id: example_27.sh 18074 2017-04-30 04:54:09Z pwessel $
 #
 # Purpose:	Illustrates how to plot Mercator img grids
-# GMT modules:	makecpt, mapproject, grdgradient, grdimage, grdinfo, pscoast
+# GMT modules:	makecpt, grdimage, grdinfo, pscoast
 # GMT supplement: img2grd (to read Sandwell/Smith img files)
-# Unix progs:	rm, grep, $AWK
+# Unix progs:	rm
 #
 ps=example_27.ps
 
 # Gravity in tasman_grav.nc is in 0.1 mGal increments and the grid
 # is already in projected Mercator x/y units.
-# First get gradients.
-
-gmt grdgradient tasman_grav.nc -Nt1 -A45 -Gtasman_grav_i.nc
 
 # Make a suitable cpt file for mGal
 
@@ -21,12 +18,12 @@ gmt makecpt -T-120/120 -Crainbow > grav.cpt
 
 # Since this is a Mercator grid we use a linear projection
 
-gmt grdimage tasman_grav.nc=ns/0.1 -Itasman_grav_i.nc -Jx0.25i -Cgrav.cpt -P -K > $ps
+gmt grdimage tasman_grav.nc=ns+s0.1 -I+a45+nt1 -Jx0.25i -Cgrav.cpt -P -K > $ps
 
-# Then use gmt pscoast to plot land; get original -R from grid remark
+# Then use gmt pscoast to plot land; get original -R from grid img remark
 # and use Mercator gmt projection with same scale as above on a spherical Earth
 
-R=`gmt grdinfo tasman_grav.nc | grep Remark | $AWK '{print $NF}'`
+R=`gmt grdinfo tasman_grav.nc -Ii`
 
 gmt pscoast $R -Jm0.25i -Ba10f5 -BWSne -O -K -Gblack --PROJ_ELLIPSOID=Sphere \
 	-Cwhite -Dh+ --FORMAT_GEO_MAP=dddF >> $ps
@@ -37,4 +34,4 @@ gmt psscale -DjTL+o1c+w2i/0.15i -R -J -Cgrav.cpt -Bx50f10 -By+lmGal -I -O -F+gwh
 
 # Clean up
 
-rm -f grav.cpt *_i.nc
+rm -f grav.cpt

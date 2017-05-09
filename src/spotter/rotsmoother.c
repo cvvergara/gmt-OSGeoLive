@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id$
+ *	$Id: rotsmoother.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *   Copyright (c) 2016-2017 by P. Wessel
  *
@@ -33,14 +33,15 @@
  * Binary data files cannot have header records
  */
 
+#include "gmt_dev.h"
+#include "spotter.h"
+
 #define THIS_MODULE_NAME	"rotsmoother"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Get mean rotations and covarience matrices from set of finate rotations"
 #define THIS_MODULE_KEYS	"<D{,>D}"
-
-#include "spotter.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdfghios" GMT_OPT("HMm")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vbdefghios" GMT_OPT("HMm")
 
 struct ROTSMOOTHER_CTRL {	/* All control options for this program (except common args) */
 	/* active is true if the option has been activated */
@@ -101,8 +102,8 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct ROTSMOOTHER_CTRL *C) {	/*
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: rotsmoother [<table>] [-A] [-C] [-N] [-S] [-T<time(s)>] [%s] [-W] [-Z] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
-		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: rotsmoother [<table>] [-A] [-C] [-N] [-S] [-T<time(s)>] [%s] [-W] [-Z] [%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n",
+		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -121,7 +122,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Option (API, "V");
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Expect weights in last column for a weighted mean rotation [no weights].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Report negative opening angles [positive].\n");
-	GMT_Option (API, "bi3,bo,d,h,i,o,s,:,.");
+	GMT_Option (API, "bi3,bo,d,e,h,i,o,s,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -276,8 +277,8 @@ int GMT_rotsmoother (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -325,6 +326,7 @@ int GMT_rotsmoother (void *V_API, int mode, void *args) {
 				GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);
 				continue;
 			}
+			assert (in != NULL);						/* Should never get here */
 		}
 
 		/* Convert to geocentric, load parameters  */
@@ -367,10 +369,6 @@ int GMT_rotsmoother (void *V_API, int mode, void *args) {
 	if (!Ctrl->A.active) GMT_Report (API, GMT_MSG_VERBOSE, "Range of input ages   = %g/%g\n", min_rot_age, max_rot_age);
 	GMT_Report (API, GMT_MSG_VERBOSE, "Range of input angles = %g/%g\n", min_rot_angle, max_rot_angle);
 
-	/* Sort the entire dataset on increasing ages */
-	
-	qsort (D, n_read, sizeof (struct AGEROT), compare_ages);
-	
 	if ((error = gmt_set_cols (GMT, GMT_OUT, n_cols)) != GMT_NOERROR) {
 		gmt_M_free (GMT, D);
 		Return (error);

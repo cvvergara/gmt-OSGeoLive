@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77_recalc.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: mgd77_recalc.h 17451 2017-01-16 21:36:06Z pwessel $
  *
  *    Copyright (c) 2004-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.

@@ -30,15 +30,15 @@ provided that the above copyright notice appear in all copies, that both
 that copyright notice and this permission notice appear in supporting documentation.
 */
 
+#include "gmt_dev.h"
+#include "sacio.h"
+
 #define THIS_MODULE_NAME	"pssac"
 #define THIS_MODULE_LIB		"meca"
 #define THIS_MODULE_PURPOSE	"Plot seismograms in SAC format on maps"
 #define THIS_MODULE_KEYS	">XO,RG-"
-
-#include "gmt_dev.h"
-#include "sacio.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcht"
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYht" GMT_OPT("c")
 
 /* Control structure for pssac */
 
@@ -137,7 +137,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t[-G[p|n][+g<fill>][+t<t0>/<t1>][+z<zero>]] [-K] [-M<size>[<unit>]/<alpha>] [-O] [-P] [-Q]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-S<sec_per_measure>[<unit>]] [-T[+t<tmark>][+r<reduce_vel>][+s<shift>]] \n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W<pen>]\n", GMT_U_OPT, GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] \n\t[%s] [%s]\n", GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_h_OPT, GMT_t_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s]\n", GMT_X_OPT, GMT_Y_OPT, GMT_h_OPT, GMT_t_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\n");
 
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
@@ -195,7 +195,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   +s<shift> shift all traces by <shift> seconds.\n");
 	GMT_Option (API, "U,V");
 	gmt_pen_syntax (API->GMT, 'W', "Set pen attributes [Default pen is %s]:", 0);
-	GMT_Option (API, "X,c,h,t");
+	GMT_Option (API, "X,h,t");
 	GMT_Option (API, ".");
 
 	return (EXIT_FAILURE);
@@ -269,7 +269,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSAC_CTRL *Ctrl, struct GMT_O
 				}
 				Ctrl->G.active[k] = true;
 				pos = j;
-				while (gmt_getmodopt (GMT, opt->arg, "gtz", &pos, p)) {
+				while (gmt_getmodopt (GMT, 'G', opt->arg, "gtz", &pos, p, &n_errors) && n_errors == 0) {
 					switch (p[0]) {
 						case 'g':  /* fill */
 							if (gmt_getfill (GMT, &p[1], &Ctrl->G.fill[k])) {
@@ -287,9 +287,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSAC_CTRL *Ctrl, struct GMT_O
 								n_errors++;
 							}
 							break;
-						default:
-							GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -G: -G+g<fill>+z<zero>+t<t0>/<t1>\n");
-							break;
+						default: break;	/* These are caught in gmt_getmodopt so break is just for Coverity */
 					}
 				}
 				break;
@@ -338,7 +336,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSAC_CTRL *Ctrl, struct GMT_O
 				pos = 0;
 				Ctrl->T.active = true;
 				Ctrl->T.shift = 0.0;  /* default no shift */
-				while (gmt_getmodopt (GMT, opt->arg, "trs", &pos, p)) {
+				while (gmt_getmodopt (GMT, 'T', opt->arg, "trs", &pos, p, &n_errors) && n_errors == 0) {
 					switch (p[0]) {
 						case 't':
 							Ctrl->T.align = true;
@@ -351,10 +349,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSAC_CTRL *Ctrl, struct GMT_O
 						case 's':
 							Ctrl->T.shift = atof (&p[1]);
 							break;
-						default:
-							GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -T option: -T+t<align>+r<reduce_vel>+s<shift>");
-							n_errors++;
-							break;
+						default: break;	/* These are caught in gmt_getmodopt so break is just for Coverity */
 					}
 				}
 				break;
@@ -372,7 +367,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSAC_CTRL *Ctrl, struct GMT_O
 
 	/* Check that the options selected are mutually consistent */
 
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && gmt_M_is_zero(Ctrl->S.sec_per_measure), "Syntax error -S option: <sec_per_measure> must be nonzero\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->T.reduce && gmt_M_is_zero(Ctrl->T.reduce_vel), "Syntax error -T option: <reduce_vel> must be nonzero\n");
@@ -517,9 +512,9 @@ GMT_LOCAL int init_sac_list (struct GMT_CTRL *GMT, char **files, unsigned int n_
 				if (gmt_M_rec_is_eof(GMT))  /* Reached end of file */
 					break;
 			}
-			if (line == NULL) {
-				GMT_Report (GMT, GMT_MSG_NORMAL, "line == NULL where code does not account for it. Unknown consequence.\n");
-				break;
+			if (line == NULL) {	/* Crazy safety valve but it should never get here*/
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal error: input pointer is NULL where it should not be, aborting\n");
+				return (GMT_PTR_IS_NULL);
 			}
 
 			nr = sscanf (line, "%s %lf %lf %s", file, &x, &y, pen);
@@ -582,8 +577,8 @@ int GMT_pssac (void *V_API, int mode, void *args) {	/* High-level function that 
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -678,7 +673,7 @@ int GMT_pssac (void *V_API, int mode, void *args) {	/* High-level function that 
 		else if (Ctrl->S.active) dt = hd.delta/Ctrl->S.sec_per_measure;
 		else {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: -S option is needed in geographic plots.\n");
-			gmt_M_free(GMT, x);		gmt_M_free(GMT, y);
+			gmt_M_free(GMT, x);		gmt_M_free(GMT, y);		gmt_M_free (GMT, L);
 			gmt_M_free(GMT, data);
 			Return(EXIT_FAILURE);
 		}

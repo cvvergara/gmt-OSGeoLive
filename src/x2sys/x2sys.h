@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: x2sys.h 17780 2017-03-25 20:54:11Z pwessel $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -67,9 +67,6 @@
  * \file x2sys.h
  * \brief Declaration for the X2SYS and XOVER structures.
  */
-
-#include "mgd77/mgd77.h"
-#include "gmt_dev.h"
 
 /* Here are legacy functions for old GMT MGG supplement needed in x2sys */
 

@@ -24,6 +24,7 @@ Synopsis
 [ |SYN_OPT-a| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
 [ |SYN_OPT-h| ]
@@ -114,7 +115,7 @@ Optional Arguments
     **c**\ : Form continuous line segments for each group [Default].
     **r**\ : Form line segments from a reference point reset for each group.
     **n**\ : Form networks of line segments between all points in each group.
-    **v**\ : Form vector line segments suitable for psxy **-Sv+s**.
+    **v**\ : Form vector line segments suitable for :doc:`psxy` **-Sv+s**.
     Optionally, append the one of four segmentation methods to define the group:
     **a**\ : Ignore all segment headers, i.e., let all points belong to a single group,
     and set group reference point to the very first point of the first file.
@@ -194,6 +195,9 @@ Optional Arguments
 
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_

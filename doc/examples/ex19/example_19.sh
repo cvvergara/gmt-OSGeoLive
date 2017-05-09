@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 19
-#		$Id: example_19.sh 16792 2016-07-13 21:12:21Z pwessel $
+#		$Id: example_19.sh 17436 2017-01-13 00:22:07Z pwessel $
 #
 # Purpose:	Illustrates various color pattern effects for maps
 # GMT modules:	grdimage, grdmath, makecpt, pscoast, pstext, psimage
@@ -26,7 +26,7 @@ echo "0 -30 Honolulu, Hawaii, April 1, 2017" | gmt pstext -R -J -O -K \
 
 # Then show example of color patterns and placing a PostScript image
 
-gmt pscoast -R -J -O -K -Dc -A5000 -Gp100/86:FredByellow -Sp100/circuit.ras -B0 -Y-3.25i >> $ps
+gmt pscoast -R -J -O -K -Dc -A5000 -Gp86+fred+byellow+r100 -Spcircuit.ras+r100 -B0 -Y-3.25i >> $ps
 echo "0 30 SILLY USES OF" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,lightgreen=thinner >> $ps
 echo "0 -30 COLOR PATTERNS" | gmt pstext -R -J -O -K -F+f32p,Helvetica-Bold,magenta=thinner >> $ps
 gmt psimage -DjCM+w3i -R -J GMT_covertext.eps -O -K >> $ps

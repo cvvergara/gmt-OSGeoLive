@@ -28,7 +28,17 @@ Synopsis
 **gmt** module module-options
 
 where module is the name of a GMT module and the options are those
-that pertain to that particular module.  If no module is given then
+that pertain to that particular module.  A few special modules
+are also available:
+
+**gmt clear** *items*
+
+while delete the user's history.  Choose between *history* (deletes the
+gmt.history file in the current directory), *conf* (deletes the gmt.conf
+file in the current directory), *cache* (deletes the user's cache directory
+and all of its content), or *all* (does all of the above).
+
+If no module is given then
 several other options are available:
 
 **-**\ **-help**
@@ -150,8 +160,6 @@ programs. No space between the option flag and the associated arguments.
 
 .. include:: explain_-bo_full.rst_
 
-.. include:: explain_-c_full.rst_
-
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d_full.rst_
 
@@ -160,6 +168,9 @@ programs. No space between the option flag and the associated arguments.
 
 .. |Add_-do| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-do_full.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e_full.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f_full.rst_

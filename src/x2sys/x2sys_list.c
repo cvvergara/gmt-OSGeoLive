@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_list.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: x2sys_list.c 18083 2017-04-30 21:06:41Z jluis $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -25,14 +25,16 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "mgd77/mgd77.h"
+#include "x2sys.h"
+
 #define THIS_MODULE_NAME	"x2sys_list"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Extract subset from crossover data base"
 #define THIS_MODULE_KEYS	">D}"
-
-#include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->RV"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->RV"
 
 #define GMT_T	3	/* Just used to indicate abs time formatting */
 #define LETTERS "acdhiInNtTvwxyz"
@@ -271,8 +273,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct X2SYS_LIST_CTRL *Ctrl, struct 
 		}
 		if (Ctrl->F.flags[i] == 'n') mixed = true;		/* Both numbers and text - cannot use binary output */
 	}
-	/* GMT->parent->mode means we are calling from mex or Python and don't want to get textsets back */
-	n_errors += gmt_M_check_condition (GMT, (mixed || GMT->parent->mode) && GMT->common.b.active[GMT_OUT], "Syntax error: Cannot use -Fn with binary output\n");
+	/* GMT->parent->external means we are calling from mex or Python and don't want to get textsets back */
+	n_errors += gmt_M_check_condition (GMT, (mixed || GMT->parent->external) && GMT->common.b.active[GMT_OUT], "Syntax error: Cannot use -Fn with binary output\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
@@ -327,8 +329,8 @@ int GMT_x2sys_list (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -354,6 +356,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args) {
 	if (Ctrl->C.col) x2sys_err_fail (GMT, x2sys_pick_fields (GMT, Ctrl->C.col, s), "-C");
 	if (s->n_out_columns != 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: -C must specify a single column name\n");
+		x2sys_end (GMT, s);
 		Return (GMT_RUNTIME_ERROR);
 	}
 	
@@ -367,7 +370,7 @@ int GMT_x2sys_list (void *V_API, int mode, void *args) {
 	/* Read the entire data base; note the -I, R and -S options are applied during reading */
 	
 	from = (Ctrl->In.file) ? Ctrl->In.file : tofrom[GMT_IN];
-	if (GMT->common.R.active) wesn = GMT->common.R.wesn;	/* Passed a sub region request */
+	if (GMT->common.R.active[RSET]) wesn = GMT->common.R.wesn;	/* Passed a sub region request */
 	GMT_Report (API, GMT_MSG_VERBOSE, "Read crossover database from %s...\n", from);
 	np = x2sys_read_coe_dbase (GMT, s, Ctrl->In.file, Ctrl->I.file, wesn, Ctrl->C.col, coe_kind, Ctrl->S.file, &P, &nx, &n_tracks);
 	GMT_Report (API, GMT_MSG_VERBOSE, "Found %" PRIu64 " pairs and a total of %" PRIu64 " crossover records.\n", np, nx);
@@ -512,13 +515,22 @@ int GMT_x2sys_list (void *V_API, int mode, void *args) {
 
 	o_mode = (mixed) ? GMT_IS_TEXTSET : GMT_IS_DATASET;
 	if (GMT_Init_IO (API, o_mode, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
+		gmt_M_free (GMT, trk_name);
+		gmt_M_free (GMT, trk_nx);
+		gmt_M_free (GMT, weights);
 		Return (API->error);
 	}
 	gmt_set_cols (GMT, GMT_OUT, n_output);
 	if (GMT_Begin_IO (API, o_mode, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		gmt_M_free (GMT, trk_name);
+		gmt_M_free (GMT, trk_nx);
+		gmt_M_free (GMT, weights);
 		Return (API->error);
 	}
 	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		gmt_M_free (GMT, trk_name);
+		gmt_M_free (GMT, trk_nx);
+		gmt_M_free (GMT, weights);
 		Return (API->error);
 	}
 	gmt_set_tableheader (GMT, GMT_OUT, true);

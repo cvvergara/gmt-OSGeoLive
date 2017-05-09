@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtconvert.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmtconvert.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -28,14 +28,14 @@
  * headers, and only report segments that passes a segment header search.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"gmtconvert"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Convert, paste, or extract columns from data tables"
 #define THIS_MODULE_KEYS	"<D{,>D}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vabdfghios" GMT_OPT("HMm")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vabdefghios" GMT_OPT("HMm")
 
 EXTERN_MSC int gmt_get_ogr_id (struct GMT_OGR *G, char *name);
 EXTERN_MSC int gmt_parse_o_option (struct GMT_CTRL *GMT, char *arg);
@@ -117,7 +117,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: gmtconvert [<table>] [-A] [-C[+l<min>][+u<max>][+i]] [-D[<template>[+o<orig>]]] [-E[f|l|m<stride>]] [-F<arg>] [-I[tsr]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-Q[~]<selection>] [-S[~]\"search string\"] [-T] [%s] [%s]\n\t[%s] [%s] [%s] [%s]\n", GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-Q[~]<selection>] [-S[~]\"search string\"] [-T] [%s] [%s]\n\t[%s] [%s] [%s] [%s] [%s]\n", GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -158,12 +158,12 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Only output segments whose headers contain the pattern \"string\".\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -S~\"string\" to output segment that DO NOT contain this pattern.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If your pattern begins with ~, escape it with \\~.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   To match OGR aspatial values, use name=value.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   To match against extended regular expressions use -S[~]/regexp/[i].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   To match OGR aspatial values, use name=value, and to match against\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   extended regular expressions use -S[~]/regexp/[i] (i for insensitive).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Give +f<file> for a file list with such patterns, one per line.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   To give a single pattern starting with +f, escape it with \\+f.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Prevent the writing of segment headers.\n");
-	GMT_Option (API, "V,a,bi,bo,d,f,g,h,i,o,s,:,.");
+	GMT_Option (API, "V,a,bi,bo,d,e,f,g,h,i,o,s,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -203,7 +203,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *Ctrl, struct 
 			case 'C':	/* record-count selection mode */
 				Ctrl->C.active = true;
 				pos = 0;
-				while (gmt_getmodopt (GMT, opt->arg, "ilu", &pos, p)) {	/* Looking for +i, +l, +u */
+				while (gmt_getmodopt (GMT, 'C', opt->arg, "ilu", &pos, p, &n_errors) && n_errors == 0) {	/* Looking for +i, +l, +u */
 					switch (p[0]) {
 						case 'i':	/* Invert selection */
 							Ctrl->C.invert = true;	break;
@@ -219,8 +219,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *Ctrl, struct 
 							else
 								Ctrl->C.max = (uint64_t)value;
 							break;
-						default:
-							n_errors++;	break;
+						default:	/* These are caught in gmt_getmodopt so break is just for Coverity */
+							break;
 					}
 				}
 				break;
@@ -381,8 +381,8 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -479,7 +479,7 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 		for (seg = 0; seg < D[GMT_IN]->table[tbl_ver]->n_segments; seg++) {	/* For each segment in the tables */
 			if (Ctrl->L.active) D[GMT_OUT]->table[tbl_ver]->segment[seg]->mode = GMT_WRITE_HEADER;	/* Only write segment header */
 			if (Ctrl->S.active) {		/* See if the combined segment header has text matching our search string */
-				match = gmt_get_text_selection (GMT, Ctrl->S.select, D[GMT_IN]->table[tbl_ver]->segment[seg], match);
+				match = gmt_get_segtext_selection (GMT, Ctrl->S.select, D[GMT_IN]->table[tbl_ver]->segment[seg], match);
 				if (Ctrl->S.select->invert == match) D[GMT_OUT]->table[tbl_ver]->segment[seg]->mode = GMT_WRITE_SKIP;	/* Mark segment to be skipped */
 			}
 			if (Ctrl->Q.active && !gmt_get_int_selection (GMT, Ctrl->Q.select, seg)) D[GMT_OUT]->table[tbl_ver]->segment[seg]->mode = GMT_WRITE_SKIP;	/* Mark segment to be skipped */

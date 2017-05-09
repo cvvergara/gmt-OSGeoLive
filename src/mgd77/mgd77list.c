@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77list.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: mgd77list.c 17831 2017-03-31 22:28:43Z pwessel $
  *
  *    Copyright (c) 2004-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -32,15 +32,15 @@
  *
  */
  
+#include "gmt_dev.h"
+#include "mgd77.h"
+
 #define THIS_MODULE_NAME	"mgd77list"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Extract data from MGD77 files"
 #define THIS_MODULE_KEYS	">?}"
-
-#include "gmt_dev.h"
-#include "mgd77.h"
-
-#define GMT_PROG_OPTIONS "-:RVbdh"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:RVbdh"
 
 #define MGD77_FMT  "drt,id,tz,year,month,day,hour,dmin,lat,lon,ptc,twt,depth,bcc,btc,mtf1,mtf2,mag,msens,diur,msd,gobs,eot,faa,nqc,sln,sspn"
 #define MGD77_ALL  "drt,id,time,lat,lon,ptc,twt,depth,bcc,btc,mtf1,mtf2,mag,msens,diur,msd,gobs,eot,faa,nqc,sln,sspn"
@@ -812,8 +812,8 @@ int GMT_mgd77list (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -1247,7 +1247,7 @@ int GMT_mgd77list (void *V_API, int mode, void *args) {
 			if (Ctrl->S.active && (cumulative_dist < Ctrl->S.start || cumulative_dist >= Ctrl->S.stop)) continue;
 			if (Ctrl->D.mode && gmt_M_is_dnan (dvalue[t_col][rec])) continue;
 			if (this_limit_on_time && (dvalue[t_col][rec] < Ctrl->D.start || dvalue[t_col][rec] >= Ctrl->D.stop)) continue;
-			if (GMT->common.R.active) {	/* Check is lat/lon is outside specified area */
+			if (GMT->common.R.active[RSET]) {	/* Check is lat/lon is outside specified area */
 				if (dvalue[y_col][rec] < GMT->common.R.wesn[YLO] || dvalue[y_col][rec] > GMT->common.R.wesn[YHI]) continue;
 				while (dvalue[x_col][rec] > GMT->common.R.wesn[XHI]) dvalue[x_col][rec] -= 360.0;
 				while (dvalue[x_col][rec] < GMT->common.R.wesn[XLO]) dvalue[x_col][rec] += 360.0;

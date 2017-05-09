@@ -32,7 +32,7 @@ command: (but refer to Julia's `package manager <http://docs.julialang.org/en/re
 
   ::
 
-    Pkg.clone("git://github.com/joa-quim/GMT.jl.git")
+    Pkg.add("GMT")
 
 Now you are ready to start using the **GMT** wrapper and the only condition for it to work is that the GMT5.2 shared libs
 are listed in your path. On Windows the **GMT** installer takes care of that but be careful that no other previous version
@@ -102,7 +102,7 @@ but compute the CPT separately.
   ::
 
    cpt = gmt("grd2cpt -Cblue,red", G);
-   gmt("grdimage -JX8c -Ba -P -C -G > crap_img.ps", cpt, G)
+   gmt("grdimage -JX8c -Ba -P -C -G > crap_img.ps", G, cpt)
 
 Now we had to explicitly write the **-C** & **-G** (well, actually we could have omitted the **-G** because
 it's a mandatory input but that would make the things more confusing). Note also the order of the input data variables.
@@ -113,11 +113,11 @@ made of colored filled circles.
 
 .. code-block:: none
 
-   x = linspace(-pi, pi)';            # The *xx* var
+   x = linspace(-pi, pi);             # The *xx* var
    seno = sin(x);                     # *yy*
    xyz  = [x seno seno];              # Duplicate *yy* so that it can be colored
    cpt  = gmt("makecpt -T-1/1/0.1");  # Create a CPT
-   gmt("psxy -R-3.2/3.2/-1.1/1.1 -JX12c -Sc0.1c -C -P -Ba > seno.ps", cpt, xyz)
+   gmt("psxy -R-3.2/3.2/-1.1/1.1 -JX12c -Sc0.1c -C -P -Ba > seno.ps", xyz, cpt)
 
 The poin here is that we had to give *cpt, xyz* and not *xyz, cpt* (which would error) because input data
 associated with an option letter **always comes first** and has to respect the corresponding options order
@@ -170,7 +170,7 @@ just call them with
 
 .. code-block:: none
 
-    type GMTJL_GRID               # The type holding a local header and data of a GMT grid
+    type GMTgrid                  # The type holding a local header and data of a GMT grid
        proj4::String              # Projection string in PROJ4 syntax (Optional)
        wkt::String                # Projection string in WKT syntax (Optional)
        range::Array{Float64,1}    # 1x6 vector with [x_min x_max y_min y_max z_min z_max]
@@ -221,15 +221,49 @@ Definition of the *grid type* that holds a grid and its metadata.
 
 Definition of the *image type* that holds an image and its metadata.
 
-.. _cpt-type:
+.. _dataset-type:
 
 .. code-block:: c
 
-    type GMTJL_CPT
+    type GMTdataset
+        header::String
+        data::Array{Float64,2}
+        text::Array{Any,1}
+        comment::Array{Any,1}
+        proj4::String
+        wkt::String
+    end
+
+Definition of the *daset type*.
+
+.. _cpt-type:
+
+.. code-block:: none
+
+    type GMTcpt
         colormap::Array{Float64,2}
         alpha::Array{Float64,1}
         range::Array{Float64,2}
-        rangeMinMax::Array{Float64,1}
+        minmax::Array{Float64,1}
+        bfn::Array{Float64,2}
+        depth::Cint
+        hinge::Cdouble
+        cpt::Array{Float64,2}
+        model::String
+        comment::Array{Any,1}   # Cell array with any comments
     end
 
 Definition of the *cpt type* that holds a CPT paltette.
+
+.. _ps-type:
+
+.. code-block:: none
+
+    type GMTps
+        postscript::String      # Actual PS plot (text string)
+        length::Int             # Byte length of postscript
+        mode::Int               # 1 = Has header, 2 = Has trailer, 3 = Has both
+        comment::Array{Any,1}   # Cell array with any comments
+    end
+
+Definition of the *PotScript type*.

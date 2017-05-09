@@ -1,6 +1,6 @@
 #!/bin/bash
 #               GMT EXAMPLE 46
-#               $Id$
+#               $Id: example_46.sh 18071 2017-04-30 00:32:27Z pwessel $
 #
 # Purpose:      Illustrate use of pssolar to plot day/night terminators
 # GMT modules:  pssolar, pscoast, psxy
@@ -12,4 +12,4 @@ gmt pssolar -R  -J -Td+d2016-02-09T16:00:00 -Gnavy@95 -K -O >> $ps
 gmt pssolar -R  -J -Tc+d2016-02-09T16:00:00 -Gnavy@85 -K -O >> $ps
 gmt pssolar -R  -J -Tn+d2016-02-09T16:00:00 -Gnavy@80 -K -O >> $ps
 gmt pssolar -R  -J -Ta+d2016-02-09T16:00:00 -Gnavy@80 -K -O >> $ps
-gmt pssolar -I+d2016-02-09T16:00:00 -C | gmt psxy -R -J -Sksunglasses/1.5c -Gyellow -O >> $ps
+gmt pssolar -I+d2016-02-09T16:00:00 -C | gmt psxy -R -J -Sk"${src:-.}"/sunglasses/1.5c -O >> $ps

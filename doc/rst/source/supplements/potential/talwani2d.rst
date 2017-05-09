@@ -15,13 +15,15 @@ Synopsis
 
 **talwani2d** [ *modeltable* ]
 [ |-A| ] [ |-D|\ *rho* ] ]
-[ |-F|\ **f**\ \|\ **n**\ \|\ **v** ] 
+[ |-F|\ **f**\ \|\ **n**\ [*lat*]\ \|\ **v** ] 
 [ |-M|\ [**h**]\ [**v**] ]
 [ |-N|\ *trackfile* ]
 [ |-T|\ *min*\ *max*\ /*inc* ]
 [ |-Z|\ *level*\ [*ymin*\ /*ymax*\ ] ]
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-bi| ]
+[ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-i| ]
 [ |SYN_OPT-o| ]
 [ |SYN_OPT-x| ]
@@ -65,9 +67,10 @@ Optional Arguments
 
 .. _-F:
 
-**-F**\ **f**\ \|\ **n**\ \|\ **v**
+**-F**\ **f**\ \|\ **n**\ [*lat*]\ \|\ **v**
     Specify desired gravitational field component.  Choose between **f** (free-air anomaly) [Default],
-    **n** (geoid) or **v** (vertical gravity gradient).
+    **n** (geoid, and optionally append average latitude for normal gravity reference value [45])
+    or **v** (vertical gravity gradient).
 
 .. _-M:
 
@@ -95,6 +98,12 @@ Optional Arguments
 
 .. |Add_-bi| replace:: [Default is 2 input columns]. 
 .. include:: ../../explain_-bi.rst_
+
+.. |Add_-d| unicode:: 0x20 .. just an invisible code
+.. include:: ../../explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: ../../explain_-e.rst_
 
 .. |Add_-h| replace:: Not used with binary data.
 .. include:: ../../explain_-h.rst_

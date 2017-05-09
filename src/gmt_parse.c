@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_parse.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_parse.c 17911 2017-04-13 05:45:46Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -59,6 +59,7 @@
  */
  
 #include "gmt_dev.h"
+#include "gmt_internals.h"
 
 static char *GMT_unique_option[GMT_N_UNIQUE] = {	/* The common GMT command-line options [ just the subset that accepts arguments (e.g., -O is not listed) ] */
 #include "gmt_unique.h"
@@ -216,12 +217,12 @@ GMT_LOCAL unsigned int parse_check_extended_R (struct GMT_CTRL *GMT, struct GMT_
 	/* Now look for -Idx[/dy] option */
 	for (opt = options; opt; opt = opt->next) {
 		if (opt->option == 'I' && opt->arg[0]) {
-			if (!gmt_getinc (GMT, opt->arg, GMT->common.API_I.inc)) {	/* Successful parsing */
-				GMT->common.API_I.active = true;
+			if (!gmt_getinc (GMT, opt->arg, GMT->common.R.inc)) {	/* Successful parsing */
+				GMT->common.R.active[ISET] = true;
 			}
 		}
 	}
-	if (GMT->common.API_I.active)
+	if (GMT->common.R.active[ISET])
 		return 0;
 	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: -R[L|C|R][T|M|B]<x0>/<y0>/<n_columns>/<ny> requires grid spacings via -I\n");
 	return 1;
@@ -265,15 +266,14 @@ GMT_LOCAL int parse_complete_options (struct GMT_CTRL *GMT, struct GMT_OPTION *o
 
 	for (opt = options; opt; opt = opt->next) {
 		if (!strchr (GMT_SHORTHAND_OPTIONS, opt->option)) continue;	/* Not one of the shorthand options */
+		if (GMT->current.setting.run_mode == GMT_MODERN && opt->option == 'B') continue;	/* The -B option is NOT a shorthand option under modern mode */
 		update = false;
 		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "History: Process -%c%s.\n", opt->option, opt->arg);
 
 		str[0] = opt->option; str[1] = str[2] = '\0';
 		if (opt->option == 'J') {               /* -J is special since it can be -J or -J<code> */
 			/* Always look up "J" first. It comes before "J?" and tells what the last -J was */
-			for (k = 0, id = -1; k < GMT_N_UNIQUE && id == -1; k++)
-				if (!strcmp (GMT_unique_option[k], str)) id = k;
-			if (id < 0) Return;	/* No -J found */
+			if ((id = gmtlib_get_option_id (0, str)) == -1) Return;	/* No -J found at all - nothing more to do */
 			if (opt->arg && opt->arg[0]) {      /* Gave -J<code>[<args>] so we either use or update history and continue */
 				str[1] = opt->arg[0];
 				/* Remember this last -J<code> for later use as -J, but do not remember it when -Jz|Z */
@@ -288,9 +288,7 @@ GMT_LOCAL int parse_complete_options (struct GMT_CTRL *GMT, struct GMT_OPTION *o
 				str[1] = GMT->init.history[id][0];
 			}
 			/* Continue looking for -J<code> */
-			for (k = id + 1, id = -1; k < GMT_N_UNIQUE && id == -1; k++)
-				if (!strcmp (GMT_unique_option[k], str)) id = k;
-			if (id < 0) Return;
+			if ((id = gmtlib_get_option_id (id + 1, str)) == -1) Return;	/* No -J<code> found */
 		}
 		else if (opt->option == 'B') {          /* -B is also special since there may be many of these, or just -B */
 			if (B_replace) {                    /* Only -B is given and we want to use the history */
@@ -315,9 +313,9 @@ GMT_LOCAL int parse_complete_options (struct GMT_CTRL *GMT, struct GMT_OPTION *o
 			}
 		}
 		else {	/* Gave -R[<args>], -V[<args>] etc., so we either use or update the history and continue */
-			for (k = 0, id = -1; k < GMT_N_UNIQUE && id == -1; k++)
-				if (!strcmp (GMT_unique_option[k], str)) id = k;	/* Find entry in history array */
-			if (id < 0) Return;                 /* Error: user gave shorthand option but there is no record in the history */
+			if ((id = gmtlib_get_option_id (0, str)) == -1) Return;	/* Error: user gave shorthand option but there is no record in the history */
+			if (GMT->current.setting.run_mode == GMT_MODERN && opt->option == 'R' && !GMT->current.ps.active)	/* Check RG instead */
+				id++;	/* RG follows R in gmt_unique.h order [Modern mode only] */
 			if (opt->arg && opt->arg[0]) update = true;	/* Gave -R<args>, -V<args> etc. so we we want to update history and continue */
 		}
 		if (opt->option != 'B') {               /* Do -B separately again after the loop so skip it here */
@@ -550,6 +548,38 @@ int GMT_Destroy_Options (void *V_API, struct GMT_OPTION **head) {
 }
 
 /*! . */
+struct GMT_OPTION * GMT_Duplicate_Options (void *V_API, struct GMT_OPTION *head) {
+	/* Create an identical copy of the linked list of options pointed to by head */
+	struct GMT_OPTION *opt = NULL, *new_opt = NULL, *new_head = NULL;
+	struct GMTAPI_CTRL *API = NULL;
+
+	if (V_API == NULL) return_null (V_API, GMT_NOT_A_SESSION);	/* GMT_Create_Session has not been called */
+	if (head == NULL)  return_null (V_API, GMT_OPTION_LIST_NULL);	/* No list of options was given */
+	API = parse_get_api_ptr (V_API);	/* Cast void pointer to a GMTAPI_CTRL pointer */
+
+	for (opt = head; opt; opt = opt->next) {	/* Loop over all options in the linked list */
+		if ((new_opt = GMT_Make_Option (API, opt->option, opt->arg)) == NULL)
+			return_null (API, API->error);	/* Create the new option structure given the args, or return the error */
+		if ((new_head = GMT_Append_Option (API, new_opt, new_head)) == NULL)		/* Hook new option to the end of the list (or initiate list if new == NULL) */
+			return_null (API, API->error);	/* Create the new option structure given the args, or return the error */
+	}
+	return (new_head);
+}
+
+/*! . */
+int GMT_Free_Option (void *V_API, struct GMT_OPTION **opt) {
+	struct GMTAPI_CTRL *API = NULL;
+	/* Free the memory pointed to by *opt */
+	if (V_API == NULL) return_error (V_API, GMT_NOT_A_SESSION);	/* GMT_Create_Session has not been called */
+	if (*opt == NULL)  return_error (V_API, GMT_OPTION_LIST_NULL);	/* No list of options was given */
+	API = parse_get_api_ptr (V_API);	/* Cast void pointer to a GMTAPI_CTRL pointer */
+	gmt_M_str_free ((*opt)->arg);	/* The option had a text argument allocated by strdup, so free it first */
+	gmt_M_free (API->GMT, *opt);	/* Then free the structure which was allocated by gmt_M_memory */
+	*opt = NULL;
+	return (GMT_OK);	/* No error encountered */
+}
+
+/*! . */
 char **GMT_Create_Args (void *V_API, int *argc, struct GMT_OPTION *head) {
 	/* This function creates a character array with the command line options that
 	 * correspond to the linked options provided.  It is the inverse of GMT_Create_Options.
@@ -738,6 +768,7 @@ int GMT_Expand_Option (void *V_API, struct GMT_OPTION *opt, const char *arg) {
 	s_length = strlen (arg); 
 	if ((s_length + strlen (opt->arg)) > BUFSIZ) return_error (V_API, GMT_DIM_TOO_LARGE);		/* Don't have room */
 
+	s_length = strlen(arg); 
 	while (opt->arg[in]) {
 		if (opt->arg[in] == '\"') quote = !quote;
 		if (opt->arg[in] == '?' && !quote) {	/* Found an unquoted questionmark */
@@ -777,6 +808,7 @@ struct GMT_OPTION *GMT_Append_Option (void *V_API, struct GMT_OPTION *new_opt, s
 	/* Append new_opt to end the list */
 	current->next = new_opt;
 	new_opt->previous = current;
+	new_opt->next = NULL;	/* Since at end of the list and may have had junk */
 
 	return (head);		/* Return head of list */
 }

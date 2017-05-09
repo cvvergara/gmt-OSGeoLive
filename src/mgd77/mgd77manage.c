@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77manage.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: mgd77manage.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *    Copyright (c) 2005-2017 by P. Wessel
  * mgd77manage is used to (1) remove data columns from mgd77+ files
@@ -18,16 +18,16 @@
  *
  */
 
-#define THIS_MODULE_NAME	"mgd77manage"
-#define THIS_MODULE_LIB		"mgd77"
-#define THIS_MODULE_PURPOSE	"Manage the content of MGD77+ files"
-#define THIS_MODULE_KEYS	""
-
 #include "gmt_dev.h"
 #include "mgd77.h"
 #include "mgd77_e77.h"	/* E77 Header Errata Codes */
 
-#define GMT_PROG_OPTIONS "-RVbn"
+#define THIS_MODULE_NAME	"mgd77manage"
+#define THIS_MODULE_LIB		"mgd77"
+#define THIS_MODULE_PURPOSE	"Manage the content of MGD77+ files"
+#define THIS_MODULE_KEYS	""
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-RVbn"
 
 #define N_PAR		7
 #define COL_SCALE	0
@@ -542,8 +542,8 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -610,8 +610,8 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 	else if (Ctrl->A.mode == MODE_g) {	/* Read regular GMT grid */
 		double wesn[4];
 		gmt_M_memset (wesn, 4, double);
-		if (GMT->common.R.active) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
-		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->A.file, NULL)) == NULL) {	/* Get data */
+		if (GMT->common.R.active[RSET]) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
+		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn, Ctrl->A.file, NULL)) == NULL) {	/* Get data */
 			Return (API->error);
 		}
 		interpolate = (GMT->common.n.threshold > 0.0);
@@ -619,7 +619,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 	else if (Ctrl->A.mode == MODE_i) {	/* Read Sandwell/Smith IMG file */
 		double wesn[4];
 		gmt_M_memset (wesn, 4, double);
-		if (GMT->common.R.active) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
+		if (GMT->common.R.active[RSET]) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting for subset */
 		if ((G = gmt_create_grid (GMT)) == NULL) Return (API->error);
 		gmt_read_img (GMT, Ctrl->A.file, G, wesn, Ctrl->A.parameters[IMG_SCALE], urint(Ctrl->A.parameters[IMG_MODE]),
 		              Ctrl->A.parameters[IMG_LAT], true);
@@ -831,8 +831,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 			/* Rename the old file for now */
 			
 			sprintf (oldfile, "%s.old", In.path);
-			if (rename (In.path, oldfile)) {
-				GMT_Report (API, GMT_MSG_NORMAL, "Unable to rename %s to %s\n", In.path, oldfile);
+			if (gmt_rename_file (GMT, In.path, oldfile)) {
 				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 			}
 			
@@ -852,7 +851,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 
 			/* Now we can safely remove the old file */
 			
-			if (remove (oldfile)) {
+			if (gmt_remove_file (GMT, oldfile))	{
 				GMT_Report (API, GMT_MSG_NORMAL, "Error removing the old version of %s\n", list[argno]);
 				GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
 			}
@@ -1205,7 +1204,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 
 			MGD77_nc_status (GMT, nc_open (In.path, NC_WRITE, &In.nc_id));	/* Open the file */
 			MGD77_nc_status (GMT, nc_redef (In.nc_id));				/* Enter define mode */
-			old_flags = MGD77_Remove_E77 (GMT, &In);				/* Remove any previously revised header parameters */
+			(void)MGD77_Remove_E77 (GMT, &In);				/* Remove any previously revised header parameters */
 			while (gmt_fgets (GMT, line, GMT_BUFSIZ, fp_e) && strncmp (line, "# Errata: Data", 14U)) {	/* Read until we get to data record section */
 				if (line[0] == '#' || line[0] == '\n') continue;	/* Skip comments */
 				gmt_chop (line);					/* Rid the world of CR/LF */
@@ -1262,7 +1261,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 						GMT_Message (API, GMT_TIME_NONE, "Warning: Correction found for %s which is not in this cruise?\n", field);
 					}
 					else {
-						k = MGD77_Info_from_Abbrev (GMT, field, &(D->H), &set, &item);
+						(void) MGD77_Info_from_Abbrev (GMT, field, &(D->H), &set, &item);
 						value = atof (answer);
 						switch (number) {
 							case E77_HDR_PDR:	/* Must deal with undetected Precision Depth Recorder wrap-arounds - this also force recalc of depth when data is read*/
@@ -1328,7 +1327,6 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 				}
 			}
 			/* Now start on data record section */
-			has_time = true;
 			if ((it = skip_if_missing (GMT, "time", list[argno], &In, &D)) == MGD77_NOT_SET)
 				has_time = false;
 			else {	/* See if we really have time or if they are all NaN */

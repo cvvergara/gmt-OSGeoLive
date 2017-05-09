@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtselect.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: gmtselect.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -42,14 +42,14 @@
  * Both binary and ASCII data files are accommodated
  */
  
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"gmtselect"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Select data table subsets based on multiple spatial criteria"
 #define THIS_MODULE_KEYS	"<D{,CD(=,FD(,LD(=,>D},GG("
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>JRVabdfghios" GMT_OPT("HMm")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>JRVabdefghios" GMT_OPT("HMm")
 
 #define GMTSELECT_N_CLASSES	(GSHHS_MAX_LEVEL + 1)	/* Number of bands separated by the levels */
 
@@ -232,9 +232,9 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "usage: gmtselect [<table>] [%s]\n", GMT_A_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-C<ptfile>+d%s] [-D<resolution>][+] [-E[f][n]] [-F<polygon>] [-G<gridmask>] [%s]\n",
 	             GMT_DIST_OPT, GMT_J_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-I[cfglrsz] [-L<lfile>+d%s[+p]] [-N<info>] [%s]\n\t[%s] [%s] [-Z<min>[/<max>][+c<col>]] "
-	             "[%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
-	             GMT_DIST_OPT, GMT_Rgeo_OPT, GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT,
+	GMT_Message (API, GMT_TIME_NONE, "\t[-I[cfglrsz] [-L<lfile>+d%s[+p]] [-N<info>] [%s]\n\t[%s] [-Z<min>[/<max>][+c<col>]] [%s] "
+	             "[%s]\n\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
+	             GMT_DIST_OPT, GMT_Rgeo_OPT, GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT,
 				 GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -288,7 +288,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   The -Z option is repeatable.\n");
 	GMT_Option (API, "a,bi0");
 	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is 2 input columns (3 if -Z is used).\n");
-	GMT_Option (API, "bo,d,f,g,h,i");
+	GMT_Option (API, "bo,d,e,f,g,h,i");
 	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Does not apply to files given via -C, -F, or -L.\n");
 	GMT_Option (API, "o,s,:,.");
 	
@@ -532,7 +532,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTSELECT_CTRL *Ctrl, struct G
 				break;
 		}
 	}
-	if (Ctrl->Z.max_col == 1 && (Ctrl->C.active || Ctrl->E.active || Ctrl->F.active || Ctrl->L.active || Ctrl->N.active || GMT->common.R.active)) Ctrl->Z.max_col = 2;
+	if (Ctrl->Z.max_col == 1 && (Ctrl->C.active || Ctrl->E.active || Ctrl->F.active || Ctrl->L.active || Ctrl->N.active || GMT->common.R.active[RSET])) Ctrl->Z.max_col = 2;
 	if (Ctrl->Z.n_tests) Ctrl->Z.limit = gmt_M_memory (GMT, Ctrl->Z.limit, Ctrl->Z.n_tests, struct GMTSELECT_ZLIMIT);
 
 	n_errors += gmt_M_check_condition (GMT, Ctrl->C.mode == -1, "Syntax error -C: Unrecognized distance unit\n");
@@ -598,8 +598,8 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -612,12 +612,12 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 	shuffle = (GMT->current.setting.io_lonlat_toggle[GMT_IN] != GMT->current.setting.io_lonlat_toggle[GMT_OUT]);	/* Must rewrite output record */
 	n_minimum = Ctrl->Z.max_col;	/* Minimum number of columns in ASCII input */
 	
-	if (!GMT->common.R.active && Ctrl->N.active) {	/* If we use coastline data or used -fg but didn't give -R we implicitly set -Rg */
-		GMT->common.R.active = true;
+	if (!GMT->common.R.active[RSET] && Ctrl->N.active) {	/* If we use coastline data or used -fg but didn't give -R we implicitly set -Rg */
+		GMT->common.R.active[RSET] = true;
 		GMT->common.R.wesn[XLO] = 0.0;	GMT->common.R.wesn[XHI] = 360.0;	GMT->common.R.wesn[YLO] = -90.0;	GMT->common.R.wesn[YHI] = +90.0;
 		gmt_set_geographic (GMT, GMT_IN);
 	}
-	if (GMT->common.R.active) {	/* -R was set directly or indirectly; hence must set -J if not supplied */
+	if (GMT->common.R.active[RSET]) {	/* -R was set directly or indirectly; hence must set -J if not supplied */
 		if (!GMT->common.J.active) {	/* -J not specified, set one implicitly */
 			/* Supply dummy linear proj */
 			GMT->current.proj.projection = GMT->current.proj.xyz_projection[GMT_X] = GMT->current.proj.xyz_projection[GMT_Y] = GMT_LINEAR;
@@ -768,7 +768,7 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 	}
 
 	if (Ctrl->G.active) {	/* Grid mask */
-		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, NULL)) == NULL) {
+		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, NULL)) == NULL) {
 			Return (API->error);
 		}
 	}
@@ -805,19 +805,19 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 	
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (API, r_mode, &n_fields)) == NULL) {	/* Read next record, get NULL if special case */
-			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
-			if (gmt_M_rec_is_table_header (GMT)) {	/* Echo table headers */
-				GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, NULL);
-				continue;
 			}
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			else if (gmt_M_rec_is_table_header (GMT)) {	/* Echo table headers */
+				GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, NULL);
+			}
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
 			else if (gmt_M_rec_is_segment_header (GMT)) {
 				output_header = true;
 				need_header = GMT->current.io.multi_segments[GMT_OUT];	/* Only need to break up segments */
-				continue;
 			}
+			continue;							/* Go back and read the next record */
 		}
 		
 		/* Data record to process */
@@ -853,7 +853,7 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 		}
 
 		lon = in[GMT_X];	/* Use copy since we may have to wrap 360 */
-		if (GMT->common.R.active) {	/* Apply region test */
+		if (GMT->common.R.active[RSET]) {	/* Apply region test */
 			inside = !gmt_map_outside (GMT, lon, in[GMT_Y]);
 			if (inside != Ctrl->I.pass[GMT_SELECT_R]) { output_header = need_header; continue;}
 		}

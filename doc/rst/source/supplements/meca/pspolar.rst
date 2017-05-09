@@ -30,8 +30,8 @@ pspolar [ *table* ] |-D|\ *lon/lat* |-J|\ *parameters*
 [ |-W|\ *pen* ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-di| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
 [ |SYN_OPT-t| ]
@@ -159,10 +159,11 @@ Optional Arguments
     **-Qh**
         Use special format derived from HYPO71 output
 
-    **-Qs**\ *half-size*/[**V**\ [*v_width/h_length/h_width/shape*]][**G**\ *color*][**L**]
-        Plots S polarity azimuth. S polarity is in last column. It may be a vector (**V** flag) or a segment.
-        Give *half-size,v_width,h_length,h_width* in default units (unless **c**, **i**,
-        or **p** is appended). [**L**] flag is for outline.
+    **-Qs**\ *half-size*\ [**+v**\ *v_size*\ [*vecspecs*]]
+        Plots S polarity azimuth. S polarity is in last column. Append **+v** to select a vector
+        and append head size and any vector specifications.  If **+v** is given without arguments then we
+	default to **+v**\ 0.3i+e+gblack [Default is a line segment].
+        Give *half-size* in default units (unless **c**, **i**, or **p** is appended).
         See `Vector Attributes`_ for specifying additional attributes.
 
     **-Qt**\ *pen*
@@ -190,9 +191,11 @@ Optional Arguments
 .. _-X:
 
 .. include:: ../../explain_-XY.rst_
-.. include:: ../../explain_-c.rst_
 .. |Add_-di| unicode:: 0x20 .. just an invisible code
 .. include:: ../../explain_-di.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: ../../explain_-e.rst_
 
 .. include:: ../../explain_-icols.rst_
 .. include:: ../../explain_-t.rst_

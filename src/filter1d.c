@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: filter1d.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: filter1d.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -38,14 +38,14 @@
  *
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"filter1d"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Time domain filtering of 1-D data tables"
 #define THIS_MODULE_KEYS	"<D{,>D},FD(1"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vabdfghio" GMT_OPT("HMm")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vabdefghio" GMT_OPT("HMm")
 
 /* Control structure for filter1d */
 
@@ -65,10 +65,6 @@ struct FILTER1D_CTRL {
 		int mode;	/* -1/0/+1 */
 		char *file;	/* Character codes for the filter */
 	} F;
-	struct I {	/* -I<ignoreval> */
-		bool active;	/* true when input values that equal value should be discarded */
-		double value;
-	} I;
 	struct L {	/* -L<lackwidth> */
 		bool active;
 		double value;
@@ -85,7 +81,7 @@ struct FILTER1D_CTRL {
 		bool active;
 		double value;
 	} S;
-	struct T {	/* -T<tmin/tmax/tinc>[+] */
+	struct T {	/* -T<tmin/tmax/tinc>[+n] */
 		bool active;
 		double min, max, inc;
 	} T;
@@ -158,6 +154,8 @@ struct FILTER1D_INFO {	/* Control structure for all aspects of the filter setup 
 	struct GMT_DATASET *Fin;	/* Pointer to table with custom weight coefficients (optional) */
 };
 
+EXTERN_MSC unsigned int gmt_parse_d_option (struct GMT_CTRL *GMT, char *arg);
+
 GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new control structure */
 	struct FILTER1D_CTRL *C;
 
@@ -177,16 +175,16 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT,struct FILTER1D_CTRL *C) {	/* Dea
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: filter1d [<table>] -F<type><width>[<mode>][+h] [-D<increment>] [-E] [-I<ignore_val>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-L<lack_width>] [-N<t_col>] [-Q<q_factor>] [-S<symmetry>] [-T<t_min>/<t_max>/<t_inc>[+]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
-		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: filter1d [<table>] -F<type><width>[<modifiers>] [-D<increment>] [-E] [-I<ignore_val>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-L<lack_width>] [-N<t_col>] [-Q<q_factor>] [-S<symmetry>] [-T<t_min>/<t_max>/<t_inc>[+n]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
+		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Set filtertype.  Choose from convolution and non-convolution filters\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   and append filter <width> in same units as time column.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Default is a low-pass filter; append +h for a high-pass filter.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append +h select high-pass filtering [Default is low-pass filtering].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Convolution filters:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     b: Boxcar : Weights are equal.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     c: Cosine arch : Weights given by cosine arch.\n");
@@ -196,7 +194,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t     m: Median : Return the median value.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     p: Maximum likelihood probability (mode) estimator : Return the mode.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t        By default, we return the average mode if more than one is found.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t        Append - or + to the width to return the smallest or largest mode instead.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t        Append +l to return the lowest mode if multiple modes are found [return average].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t        Append +u to return the uppermost mode if multiple modes are found [return average].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     l: Lower : Return minimum of all points.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     L: Lower+ : Return minimum of all positive points.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     u: Upper : Return maximum of all points.\n");
@@ -223,8 +222,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   between 0 and 1.  If ( (abs(n_left - n_right)) / (n_left + n_right) ) > factor,\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   then no output will be given at this point [Default does not check Symmetry].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Make evenly spaced output time steps from <t_min> to <t_max> by <t_inc> [Default uses input times].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append + to <t_inc> to indicate number of t-values to produce instead.\n");
-	GMT_Option (API, "V,bi,bo,d,f,g,h,i,o,:,.");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append +n to <t_inc> to indicate number of t-values to produce instead.\n");
+	GMT_Option (API, "V,bi,bo,d,e,f,g,h,i,o,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -238,7 +237,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct FILTER1D_CTRL *Ctrl, struct GM
 
 	unsigned int n_errors = 0;
 	int sval = 0;
-	char c, txt_a[GMT_LEN64] = {""}, txt_b[GMT_LEN64] = {""};
+	char *c = NULL, p, txt_a[GMT_LEN64] = {""}, txt_b[GMT_LEN64] = {""};
 	struct GMT_OPTION *opt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
 
@@ -263,13 +262,18 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct FILTER1D_CTRL *Ctrl, struct GM
 				if (opt->arg[0] && strchr ("BbCcGgMmPpLlUuFf", opt->arg[0])) {	/* OK filter code */
 					Ctrl->F.filter = opt->arg[0];
 					Ctrl->F.width = atof (&opt->arg[1]);
-					if (gmt_get_modifier (opt->arg, 'h', txt_a)) Ctrl->F.highpass = true;
+					if ((c = strstr (opt->arg, "+h"))) {	/* Want high-pass filter */
+						Ctrl->F.highpass = true;
+						c[0] = '\0';	/* Chop off +h */
+					}
 					switch (Ctrl->F.filter) {	/* Get some further info from some filters */
 						case 'P':
 						case 'p':
-							c = opt->arg[strlen(opt->arg-1)];
-							if (c == '-') Ctrl->F.mode = -1;
-							if (c == '+') Ctrl->F.mode = +1;
+							p = opt->arg[strlen(opt->arg-1)];	/* Last character */
+							if (strstr (opt->arg, "+l")) Ctrl->F.mode = -1;
+							else if (strstr (opt->arg, "+u")) Ctrl->F.mode = +1;
+							else if (p == '-') Ctrl->F.mode = -1;	/* Old style */
+							else if (p == '+') Ctrl->F.mode = +1;	/* Old style */
 							break;
 						case 'F':
 						case 'f':
@@ -290,9 +294,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct FILTER1D_CTRL *Ctrl, struct GM
 					++n_errors;
 				}
 				break;
-			case 'I':	/* Activate the ignore option */
-				Ctrl->I.value = atof (opt->arg);
-				Ctrl->I.active = true;
+			case 'I':	/* DEPRECATED: Activate the ignore option.  This is now -di<value> and happens during reading */
+				sprintf (txt_a, "i%s", opt->arg);
+				n_errors += gmt_parse_d_option (GMT, txt_a);
 				break;
 			case 'L':	/* Check for lack of data */
 				Ctrl->L.active = true;
@@ -334,7 +338,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct FILTER1D_CTRL *Ctrl, struct GM
 				else {
 					gmt_scanf_arg (GMT, txt_a, GMT_IS_UNKNOWN, &Ctrl->T.min);
 					gmt_scanf_arg (GMT, txt_b, GMT_IS_UNKNOWN, &Ctrl->T.max);
-					if (opt->arg[strlen(opt->arg)-1] == '+') {	/* Gave number of points instead; calculate inc */
+					if (strstr (opt->arg, "+n") || opt->arg[strlen(opt->arg)-1] == '+') {	/* Gave number of points instead; calculate inc */
 						Ctrl->T.inc = (Ctrl->T.max - Ctrl->T.min) / (Ctrl->T.inc - 1.0);
 					}
 				}
@@ -491,7 +495,6 @@ GMT_LOCAL int lack_check (struct FILTER1D_INFO *F, uint64_t i_col, uint64_t left
 			lacking = true;
 		else {
 			last_t = F->data[F->t_col][this_row];
-			last_row = this_row;
 			++this_row;
 		}
 	}
@@ -827,8 +830,8 @@ int GMT_filter1d (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error, "Error parsing filter1d options\n");
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error, "Error parsing filter1d options\n");
 	Ctrl = New_Ctrl (GMT);		/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error, "Error parsing filter1d options\n");
 
@@ -956,10 +959,7 @@ int GMT_filter1d (void *V_API, int mode, void *args) {
 				last_time = new_time;
 				for (col = 0; col < F.n_cols; ++col) {
 					in = D->table[tbl]->segment[seg]->data[col][row];
-					if (Ctrl->I.active && in == Ctrl->I.value)
-						F.data[col][F.n_rows] = GMT->session.d_NaN;
-					else
-						F.data[col][F.n_rows] = in;
+					F.data[col][F.n_rows] = in;
 					if (F.robust || (F.filter_type == FILTER1D_MEDIAN) ) {
 						if (in > F.max_loc[col]) F.max_loc[col] = in;
 						if (in < F.min_loc[col]) F.min_loc[col] = in;

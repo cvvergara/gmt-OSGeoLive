@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: fitcircle.c 17560 2017-02-17 22:05:42Z pwessel $
+ *    $Id: fitcircle.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -72,14 +72,14 @@
 	  2) New option to only output pole and ave, i.e., not text messages
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"fitcircle"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Find mean position and great [or small] circle fit to points on sphere"
 #define THIS_MODULE_KEYS	"<D{,>T},>DF"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vabdfghio" GMT_OPT("H")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vabdefghio" GMT_OPT("H")
 
 struct FITCIRCLE_CTRL {	/* All control options for this program (except common args) */
 	/* active is true if the option has been activated */
@@ -121,8 +121,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: fitcircle [<table>] -L[<norm>] [-F[<flags>]] [-S[<lat>]] [%s] [%s]\n", GMT_V_OPT, GMT_a_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
-		GMT_bi_OPT, GMT_di_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
+		GMT_bi_OPT, GMT_di_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -140,7 +140,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   If -L3 is used we repeat the output for m|n|s|c (if selected).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Attempt to fit a small circle rather than a great circle.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally append the latitude <lat> of the small circle you want to fit.\n");
-	GMT_Option (API, "V,a,bi,di,f,g,h,i,o,:,.");
+	GMT_Option (API, "V,a,bi,di,e,f,g,h,i,o,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -278,7 +278,7 @@ GMT_LOCAL double get_small_circle (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *
 		sincosd (slat, &afactor, &bfactor);
 		for (i = 0; i < 3; i++) scpole[i] = (afactor * a[i] + bfactor * b[i]);
 		gmt_normalize3v (GMT, scpole);
-		fit = circle_misfit (GMT, data, ndata, scpole, norm, work, &circle_distance);
+		(void)circle_misfit (GMT, data, ndata, scpole, norm, work, &circle_distance);
 		return (90.0-slat);
 	}
 
@@ -307,7 +307,6 @@ GMT_LOCAL double get_small_circle (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *
 	oldfit = fit;
 
 	/* Now, while not converged, take golden section of wider interval.  */
-	length_ab   = d_acos (gmt_dot3v (GMT, a, b));
 	length_aold = d_acos (gmt_dot3v (GMT, a, oldpole));
 	length_bold = d_acos (gmt_dot3v (GMT, b, oldpole));
 	do {
@@ -378,8 +377,8 @@ int GMT_fitcircle (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -403,12 +402,12 @@ int GMT_fitcircle (void *V_API, int mode, void *args) {
 
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
-			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
-				continue;
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			}
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			continue;	/* Go back and read the next record */
 		}
 
 		/* Data record to process */

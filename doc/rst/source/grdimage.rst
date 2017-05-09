@@ -19,7 +19,7 @@ Synopsis
 [ |-C|\ *cpt* ]
 [ |-D|\ [**r**\ ] ] [ |-E|\ [\ **i**\ \|\ *dpi*] ] |-J|\ *parameters*
 [ |-G|\ [**f**\ \|\ **b**]\ *color* ]
-[ |-I|\ [*intensfile*\ \|\ *intensity*] ]
+[ |-I|\ [*intensfile*\ \|\ *intensity*\ \|\ *modifiers*] ]
 [ |-J|\ **z**\ \|\ **-Z**\ *parameters* ]
 [ |-K| ] [ |-M| ] [ |-N| ]
 [ |-O| ] [ |-P| ] [ |-Q| ]
@@ -28,7 +28,6 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-n| ]
 [ |SYN_OPT-p| ]
@@ -151,13 +150,14 @@ Optional Arguments
 
 .. _-I:
 
-**-I**\ [*intensfile*\ \|\ *intensity*]
+**-I**\ [*intensfile*\ \|\ *intensity*\ \|\ *modifiers*]
     Gives the name of a grid file with intensities in the (-1,+1) range,
     or a constant intensity to apply everywhere; this simply affects the
     ambient light.  If no argument is given then we derive an intensity
     grid from the input data grid *grd_z* via a call to :doc:`grdgradient`
-    using the arguments **-A**\ -45 and **-Nt**\ 1 for that module. If you want
-    other settings then run :doc:`grdgradient` separately first.
+    using the arguments **-A**\ -45 and **-Nt**\ 1 for that module. You can
+    append **+a**\ *azimuth and **+n**\ *args* to override those values.  If you want
+    more specific intensities then run :doc:`grdgradient` separately first.
     [Default is no illumination].
 
 .. include:: explain_-Jz.rst_
@@ -215,8 +215,6 @@ Optional Arguments
 .. _-X:
 
 .. include:: explain_-XY.rst_
-
-.. include:: explain_-c.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_

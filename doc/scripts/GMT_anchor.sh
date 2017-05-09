@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: GMT_anchor.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#	$Id: GMT_anchor.sh 17436 2017-01-13 00:22:07Z pwessel $
 #
 ps=GMT_anchor.ps
 gmt psbasemap -R0/1/0/1 -JX5i/2i -Ba1f0.5 -BwSnE+gbisque -P -K -DjTL+o0.7i/0.5i+w1.5i/0.75i -F+glightgreen+p1p > $ps
@@ -36,7 +36,7 @@ gmt psxy -R -J -O -K -Sc0.075i -Gcyan -W0.25p -N << EOF >> $ps
 0.29	0.75
 0.44	0.75
 EOF
-gmt pstext -R -J -O -K -F+f14p,Helvetica-Bold+j -Dj0.25iv0.25p -N << EOF >> $ps
+gmt pstext -R -J -O -K -F+f14p,Helvetica-Bold+j -Dj0.25i+v0.25p -N << EOF >> $ps
 0	0  	RT	LB
 0.5	0  	CT	CB
 1	0  	LT	RB

@@ -24,6 +24,7 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
 [ **-r** ]
@@ -49,7 +50,8 @@ Required Arguments
 .. _-G:
 
 **-G**\ *grdfile*
-    Name of the output grid to hold the computed distances.
+    Name of the output grid to hold the computed distances (but see **-E**
+    for other node value options).
 
 Optional Arguments
 ------------------
@@ -124,6 +126,9 @@ Optional Arguments
 
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-h| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-h.rst_

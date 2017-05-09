@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdgravmag3d.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: grdgravmag3d.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -30,20 +30,19 @@
  *
  */
 
-#define THIS_MODULE_NAME	"grdgravmag3d"
-#define THIS_MODULE_LIB		"potential"
-#define THIS_MODULE_PURPOSE	"Computes the gravity effect of one (or two) grids by the method of Okabe"
-#define THIS_MODULE_KEYS	"<G{+,FD(,GG}"
-
 #include "gmt_dev.h"
 #include "okbfuns.h"
 #include "../mgd77/mgd77.h"
-
 #ifdef HAVE_GLIB_GTHREAD
 #include <glib.h>
 #endif
 
-#define GMT_PROG_OPTIONS "-:RVfx"
+#define THIS_MODULE_NAME	"grdgravmag3d"
+#define THIS_MODULE_LIB		"potential"
+#define THIS_MODULE_PURPOSE	"Computes the gravity effect of one (or two) grids by the method of Okabe"
+#define THIS_MODULE_KEYS	"<G{+,FD(,GG}"
+#define THIS_MODULE_NEEDS	"g"
+#define THIS_MODULE_OPTIONS "-:RVfx"
 
 typedef void (*PFV) ();		/* pointer to a function returning void */
 typedef double (*PFD) ();		/* pointer to a function returning double */
@@ -422,7 +421,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct GMT_
 	                                "Syntax error: -S Radius is NaN or negative\n");
 	n_errors += gmt_M_check_condition(GMT, !Ctrl->G.active && !Ctrl->F.active,
 	                                "Error: Must specify either -G or -F options\n");
-	n_errors += gmt_M_check_condition(GMT, !GMT->common.R.active && Ctrl->Q.active && !Ctrl->Q.n_pad,
+	n_errors += gmt_M_check_condition(GMT, !GMT->common.R.active[RSET] && Ctrl->Q.active && !Ctrl->Q.n_pad,
 	                                "Error: Cannot specify -Q<pad>|<region> without -R option\n");
 	n_errors += gmt_M_check_condition(GMT, Ctrl->C.rho == 0.0 && !Ctrl->H.active,
 	                                "Error: Must specify either -Cdensity or -H<stuff>\n");
@@ -483,9 +482,9 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	GMT->common.x.n_threads = 1;        /* Default to use only one core (we may change this to max cores) */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -515,14 +514,14 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 	/* ---------------------------------------------------------------------------- */
 
-	if ((GridA = GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL,
+	if ((GridA = GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL,
 	                           Ctrl->In.file[0], NULL)) == NULL) 	/* Get header only */
 		Return(API->error);
 
 	if (Ctrl->G.active) {
 		double wesn[4], inc[2];
 		/* Use the -R region for output if set; otherwise match grid domain */
-		gmt_M_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : GridA->header->wesn), 4, double);
+		gmt_M_memcpy (wesn, (GMT->common.R.active[RSET] ? GMT->common.R.wesn : GridA->header->wesn), 4, double);
 		gmt_M_memcpy (inc, (Ctrl->I.active ? Ctrl->I.inc : GridA->header->inc), 2, double);
 		if (wesn[XLO] < GridA->header->wesn[XLO]) error = true;
 		if (wesn[XHI] > GridA->header->wesn[XHI]) error = true;
@@ -535,7 +534,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 			Return(GMT_RUNTIME_ERROR);
 		}
 
-		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc,
+		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, wesn, inc,
 			GridA->header->registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 		GMT_Report(API, GMT_MSG_VERBOSE, "Grid dimensions are n_columns = %d, n_rows = %d\n",
@@ -544,7 +543,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 	GMT_Report(API, GMT_MSG_VERBOSE, "Allocates memory and read data file\n");
 
-	if (!GMT->common.R.active)
+	if (!GMT->common.R.active[RSET])
 		gmt_M_memcpy(wesn_new, GridA->header->wesn, 4, double);
 	else
 		gmt_M_memcpy(wesn_new, GMT->common.R.wesn,  4, double);
@@ -556,11 +555,11 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 			        wesn_new[XHI] + Ctrl->Q.pad_dist, wesn_new[YLO] - Ctrl->Q.pad_dist,
 			        wesn_new[YHI] + Ctrl->Q.pad_dist);
 
-		GMT->common.R.active = false;
+		GMT->common.R.active[RSET] = false;
 		gmt_parse_common_options(GMT, "R", 'R', Ctrl->Q.region);	/* Use the -R parsing machinery to handle this */
 		gmt_M_memcpy(wesn_padded, GMT->common.R.wesn, 4, double);
 		gmt_M_memcpy(GMT->common.R.wesn, wesn_new, 4, double);		/* Reset previous WESN */
-		GMT->common.R.active = true;
+		GMT->common.R.active[RSET] = true;
 
 		if (wesn_padded[XLO] < GridA->header->wesn[XLO]) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Request padding at the West border exceed grid limit, trimming it\n");
@@ -582,13 +581,13 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 	else
 		gmt_M_memcpy (wesn_padded, GridA->header->wesn, 4, double);
 
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_padded,
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn_padded,
 	                   Ctrl->In.file[0], GridA) == NULL) {			/* Get subset, or all */
 		Return (API->error);
 	}
 
 	/* Check that Inner region request does not exceeds input grid limits */
-	if (GMT->common.R.active && Ctrl->G.active) {
+	if (GMT->common.R.active[RSET] && Ctrl->G.active) {
 		if (Gout->header->wesn[XLO] < GridA->header->wesn[XLO] ||
 		    Gout->header->wesn[XHI] > GridA->header->wesn[XHI]) {
 			GMT_Report (API, GMT_MSG_NORMAL, " Selected region exceeds the X-boundaries of the grid file!\n");
@@ -625,7 +624,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 	/* -------------- In case we have one second grid, for bottom surface -------------- */
 	if (Ctrl->In.file[1]) {
-		if ((GridB = GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL,
+		if ((GridB = GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL,
 		                           Ctrl->In.file[1], NULL)) == NULL) {	/* Get header only */
 			Return(API->error);
 		}
@@ -635,7 +634,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 			Return (GMT_RUNTIME_ERROR);
 		}
 
-		if (GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_padded,
+		if (GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn_padded,
 		                  Ctrl->In.file[1], GridB) == NULL) {			/* Get subset, or all */
 			Return(API->error);
 		}
@@ -649,7 +648,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 
 	/* -------------- In case we have  a source (magnetization) grid -------------------- */
 	if (Ctrl->H.got_maggrid) {
-		if ((GridS = GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL,
+		if ((GridS = GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL,
 		                           Ctrl->H.magfile, NULL)) == NULL) {	/* Get header only */
 			Return(API->error);
 		}
@@ -665,7 +664,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 			Return(GMT_RUNTIME_ERROR);
 		}
 
-		if (GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_padded,
+		if (GMT_Read_Data(API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn_padded,
 		                   Ctrl->H.magfile, GridS) == NULL) {			/* Get subset, or all */
 			Return(API->error);
 		}
@@ -955,7 +954,7 @@ L1:
 		}
 
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Gout)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_NOERROR)
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Gout) != GMT_NOERROR)
 			Return (API->error);
 	}
 	else {

@@ -13,7 +13,7 @@ Synopsis
 
 .. include:: common_SYN_OPTs.rst_
 
-**trend2d** [ *table* ] |-F|\ **xyzmrw** |-N|\ *n_model*\ [**r**]
+**trend2d** [ *table* ] |-F|\ **xyzmrw** |-N|\ *n_model*\ [**+r**]
 [ *xyz[w]file* ]
 [ |-C|\ *condition\_number* ]
 [ |-I|\ [*confidence\_level*] ]
@@ -21,6 +21,7 @@ Synopsis
 [ |-W| ] [
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
@@ -44,7 +45,7 @@ to grdtrend):
 
 The user must specify **-N**\ *n\_model*, the number of model parameters
 to use; thus, **-N**\ *4* fits a bilinear trend, **-N**\ *6* a quadratic
-surface, and so on. Optionally, append **r** to perform a robust fit. In
+surface, and so on. Optionally, append **+r** to perform a robust fit. In
 this case, the program will iteratively reweight the data based on a
 robust scale estimate, in order to converge to a solution insensitive to
 outliers. This may be handy when separating a "regional" field from a
@@ -64,10 +65,10 @@ Required Arguments
 
 .. _-N:
 
-**-N**\ *n\_model*\ [**r**\ ]
+**-N**\ *n\_model*\ [**+r**\ ]
     Specify the number of terms in the model, *n\_model*, and append
-    **r** to do a robust fit. E.g., a robust bilinear model is
-    **-N**\ *4*\ **r**.
+    **+r** to do a robust fit. E.g., a robust bilinear model is
+    **-N**\ *4*\ **+r**.
 
 Optional Arguments
 ------------------
@@ -116,6 +117,9 @@ Optional Arguments
 
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
@@ -187,14 +191,14 @@ To make the above planar trend robust with respect to outliers, use:
 
    ::
 
-    gmt trend2d data.xzy -Fxyr -N2r > detrended_data.xyz
+    gmt trend2d data.xzy -Fxyr -N2+r > detrended_data.xyz
 
 To find out how many terms (up to 10 in a robust interpolant are
 significant in fitting data.xyz, use:
 
    ::
 
-    gmt trend2d data.xyz -N10r -I -V
+    gmt trend2d data.xyz -N10+r -I -V
 
 See Also
 --------

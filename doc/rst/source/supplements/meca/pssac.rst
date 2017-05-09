@@ -33,7 +33,6 @@ Synopsis
 [ |-W|\ *pen* ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-t| ]
 
@@ -43,7 +42,7 @@ Description
 -----------
 
 **pssac** reads *SACfiles* in SAC format or reads filenames and controlling parameters
-from *saclist* [or standar input] and generates PostScript that will plot seismograms on a map.
+from *saclist* [or standard input] and generates PostScript that will plot seismograms on a map.
 The PostScript code is written to standard output.
 
 Required Arguments
@@ -211,7 +210,6 @@ Optional Arguments
 .. _-X:
 
 .. include:: ../../explain_-XY.rst_
-.. include:: ../../explain_-c.rst_
 
 .. |Add_-h| unicode:: 0x20 .. just an invisible code
 .. include:: ../../explain_-h.rst_

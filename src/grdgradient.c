@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdgradient.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdgradient.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -30,24 +30,30 @@
  * Version:	5 API
  */
  
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdgradient"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Compute directional gradients from a grid"
-#define THIS_MODULE_KEYS	"<G{,GG},SG)"
+#define THIS_MODULE_KEYS	"<G{,AG(,GG},SG)"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-RVfn"
 
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-RVfn"
-
+enum grdgradient_mode {
+	GRDGRADIENT_FIX = 1,
+	GRDGRADIENT_VAR = 2};
+		
 struct GRDGRADIENT_CTRL {
 	struct In {
 		bool active;
 		char *file;
 	} In;
-	struct A {	/* -A<azim>[/<azim2>] */
+	struct A {	/* -A<azim>[/<azim2>] | -A<file>*/
 		bool active;
 		bool two;
 		double azimuth[2];
+		unsigned int mode;
+		char *file;
 	} A;
 	struct D {	/* -D[a][c][o][n] */
 		bool active;
@@ -91,6 +97,7 @@ GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a n
 GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *C) {	/* Deallocate control structure */
 	if (!C) return;
 	gmt_M_str_free (C->In.file);	
+	gmt_M_str_free (C->A.file);	
 	gmt_M_str_free (C->G.file);	
 	gmt_M_str_free (C->S.file);	
 	gmt_M_free (GMT, C);	
@@ -118,38 +125,38 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdgradient <ingrid> -G<outgrid> [-A<azim>[/<azim2>]] [-D[a][c][o][n]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-E[s|p|m]<azim>/<elev>[/<ambient>/<diffuse>/<specular>/<shine>]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-N[t|e][<amp>[/<sigma>[/<offset>]]]] [%s]\n\t[-S<slopegrid>] [%s] [-fg] [%s]\n\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_n_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-E[s|p|m]<azim>/<elev>[+a<ambient>][+d<diffuse>][+p<specular>][+s<shine>]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-N[t|e][<amp>][+s<sigma>][+o<offset>]] [%s]\n\t[-S<slopegrid>] [%s] [-fg] [%s]\n\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_n_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is name of input grid file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-A Set azimuth (0-360 CW from North (+y)) for directional derivatives.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t  -A<azim>/<azim2> will compute two directions and save the one larger in magnitude.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t  -A<azim>/<azim2> will compute two directions and select the one larger in magnitude.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t  If <azim> is a grid we expect variable azimuths on a grid coregistered with <ingrid>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Find the direction of the vector grad z (up-slope direction).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append a to get the aspect instead (down-slope direction).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append c to report Cartesian angle (0-360 CCW from East (+x-axis)) [Default: azimuth].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append o to get bidirectional orientations [0-180] rather than directions [0-360].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append n to add 90 degrees to the values from c or o.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-E Compute Lambertian radiance appropriate to use with grdimage/grdview.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   -E<azim/elev> sets azimuth and elevation of light vector.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   -E<azim>/<elev>/<ambient>/<diffuse>/<specular>/<shine> sets azim, elev and\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t    other parameters that control the reflectance properties of the surface\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t    [Default values are: 0.55/0.6/0.4/10].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t    Specify '=' to get the default value (e.g., -E60/30/=/0.5).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append s to use a simpler Lambertian algorithm (note that with this form\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   you only have to provide the azimuth and elevation parameters).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append p to use the Peucker piecewise linear approximation (simpler but faster algorithm).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append m to use another algorithm that gives results close to ESRI's 'hillshade' but faster\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Note that in this case the azimuth and elevation are hardwired to 315 and 45 degrees.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   This means that even if you provide other values they will be ignored.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Provide the azimuth and elevation of the light vector.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append any of [+a<ambient>][+d<diffuse>][+p<specular>][+s<shine>]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     for parameters that control the reflectance properties of the surface\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     [Default values are: +a0.55+d0.6p0.4+s10].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Es for a simpler Lambertian algorithm (note that with this algorithm\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     you only have to provide azimuth and elevation).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Ep for the Peucker piecewise linear approximation (simpler but faster algorithm).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Em for another algorithm that gives results close to ESRI's 'hillshade' but faster\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     In this case the azimuth and elevation are hardwired to 315 and 45 degrees;\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t     if you provide other values they will be ignored.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Output file for results from -A or -D.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Normalize gradients so that max |grad| = <amp> [1.0].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t  -Nt will make atan transform, then scale to <amp> [1.0].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t  -Ne will make exp  transform, then scale to <amp> [1.0].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t  -Nt<amp>/<sigma>[/<offset>] or -Ne<amp>/<sigma>[/<offset>] sets sigma\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     (and offset) for transform. [sigma, offset estimated from data].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t    For -Nt|e, optionally append +s<sigma> and/or +o<offset> to set\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t    sigma and offset for transform [Default estimates from the data].\n");
 	GMT_Option (API, "R");
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Output file for |grad z|; requires -D.\n");
 	GMT_Option (API, "V");
@@ -169,7 +176,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, struct
 
 	unsigned int n_errors = 0, n_files = 0, j, entry, pos;
 	int n_opt_args = 0;
-	char ptr[GMT_BUFSIZ];
+	char p[GMT_BUFSIZ] = {""}, *c = NULL;
 	struct GMT_OPTION *opt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
 
@@ -188,8 +195,15 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, struct
 
 			case 'A':	/* Set azimuth */
 				Ctrl->A.active = true;
-				j = sscanf(opt->arg, "%lf/%lf", &Ctrl->A.azimuth[0], &Ctrl->A.azimuth[1]);
-				Ctrl->A.two = (j == 2);
+				if (!gmt_access (GMT, opt->arg, F_OK)) {	/* file exists */
+					Ctrl->A.file = strdup (opt->arg);
+					Ctrl->A.mode = GRDGRADIENT_VAR;
+				}
+				else {
+					j = sscanf (opt->arg, "%lf/%lf", &Ctrl->A.azimuth[0], &Ctrl->A.azimuth[1]);
+					Ctrl->A.two = (j == 2);
+					Ctrl->A.mode = GRDGRADIENT_FIX;
+				}
 				break;
 			case 'D':	/* Find direction of grad|z| */
 				Ctrl->D.active = true;
@@ -230,27 +244,45 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, struct
 						break;
 					default:
 						Ctrl->E.mode = 3;	/* "full" Lambertian case */
-						n_errors += gmt_M_check_condition (GMT, sscanf(opt->arg, "%lf/%lf", &Ctrl->E.azimuth, &Ctrl->E.elevation) < 2, "Syntax error -E option: Must give at least azimuth and elevation\n");
-						entry = pos = 0;
-						while (entry < 6 && (gmt_strtok (opt->arg, "/", &pos, ptr))) {
-							switch (entry) {
-								case 2:
-									if (ptr[0] != '=') Ctrl->E.ambient = atof (ptr);
-									break;
-								case 3:
-									if (ptr[0] != '=') Ctrl->E.diffuse = atof (ptr);
-									break;
-								case 4:
-									if (ptr[0] != '=') Ctrl->E.specular = atof (ptr);
-									break;
-								case 5:
-									if (ptr[0] != '=') Ctrl->E.shine = atof (ptr);
-									break;
+						if ((c = gmt_first_modifier (GMT, opt->arg, "adps"))) {	/* Process any modifiers */
+							pos = 0;	/* Reset to start of new word */
+							while (gmt_getmodopt (GMT, 'E', c, "adps", &pos, p, &n_errors) && n_errors == 0) {
+								switch (p[0]) {
+									case 'a': Ctrl->E.ambient  = atof (&p[1]); break;
+									case 'd': Ctrl->E.diffuse  = atof (&p[1]); break;
+									case 'p': Ctrl->E.specular = atof (&p[1]); break;
+									case 's': Ctrl->E.shine    = atof (&p[1]); break;
+									default: break;	/* These are caught in gmt_getmodopt so break is just for Coverity */
+								}
 							}
-							entry++;
+							c[0] = '\0';	/* Chop off all modifiers so range can be determined */
+							n_errors += gmt_M_check_condition (GMT, sscanf(opt->arg, "%lf/%lf", &Ctrl->E.azimuth, &Ctrl->E.elevation) < 2, "Syntax error -E option: Must give at least azimuth and elevation\n");
+						}
+						else {	/* Old-style args */
+							n_errors += gmt_M_check_condition (GMT, sscanf(opt->arg, "%lf/%lf", &Ctrl->E.azimuth, &Ctrl->E.elevation) < 2, "Syntax error -E option: Must give at least azimuth and elevation\n");
+							entry = pos = 0;
+							while (entry < 6 && (gmt_strtok (opt->arg, "/", &pos, p))) {
+								switch (entry) {
+									case 2:
+										if (p[0] != '=') Ctrl->E.ambient = atof (p);
+										break;
+									case 3:
+										if (p[0] != '=') Ctrl->E.diffuse = atof (p);
+										break;
+									case 4:
+										if (p[0] != '=') Ctrl->E.specular = atof (p);
+										break;
+									case 5:
+										if (p[0] != '=') Ctrl->E.shine = atof (p);
+										break;
+								}
+								entry++;
+							}
 						}
 						break;
 				}
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Settings are %g/%g+a%g+d%g+p%g+s%g\n",
+					Ctrl->E.azimuth, Ctrl->E.elevation, Ctrl->E.ambient, Ctrl->E.diffuse, Ctrl->E.specular, Ctrl->E.shine);
 				break;
 			case 'G':	/* Output grid */
 				if ((Ctrl->G.active = gmt_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
@@ -261,7 +293,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, struct
 			case 'L':	/* GMT4 BCs */
 				if (gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -L is deprecated; -n+b%s was set instead, use this in the future.\n", opt->arg);
-					strncpy (GMT->common.n.BC, opt->arg, 4U);
+					gmt_strncpy (GMT->common.n.BC, opt->arg, 4U);
 					/* We turn on geographic coordinates if -Lg is given by faking -fg */
 					/* But since GMT_parse_f_option is private to gmt_init and all it does */
 					/* in this case are 2 lines below we code it here */
@@ -283,19 +315,27 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, struct
 					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'N':	/* Normalization */
-				Ctrl->N.active = true;
-				j = 0;
-				if (opt->arg[j]) {
-					if (opt->arg[j] == 't' || opt->arg[j] == 'T') {
-						Ctrl->N.mode = 1;
-						j++;
-					}
-					else if (opt->arg[j] == 'e' || opt->arg[j] == 'E') {
-						Ctrl->N.mode = 2;
-						j++;
-					}
-					n_opt_args = sscanf(&opt->arg[j], "%lf/%lf/%lf", &Ctrl->N.norm, &Ctrl->N.sigma, &Ctrl->N.offset);
+				Ctrl->N.active = true;	j = 0;
+				if (opt->arg[0] && strchr ("et", opt->arg[0])) {
+					Ctrl->N.mode = (opt->arg[0] == 't') ? 1 : 2;
+					j = 1;
 				}
+				if ((c = gmt_first_modifier (GMT, opt->arg, "os"))) {	/* Process any modifiers */
+					pos = 0;	/* Reset to start of new word */
+					while (gmt_getmodopt (GMT, 'N', c, "os", &pos, p, &n_errors) && n_errors == 0) {
+						switch (p[0]) {
+							case 'o': Ctrl->N.offset = atof (&p[1]); break;
+							case 's': Ctrl->N.sigma  = atof (&p[1]); break;
+							default: break;	/* These are caught in gmt_getmodopt so break is just for Coverity */
+						}
+					}
+					c[0] = '\0';	/* Chop off all modifiers so range can be determined */
+					if (opt->arg[j]) Ctrl->N.norm = atof (&opt->arg[j]);
+				}
+				else if (opt->arg[j])	/* Old-style args */
+					n_opt_args = sscanf (&opt->arg[j], "%lf/%lf/%lf", &Ctrl->N.norm, &Ctrl->N.sigma, &Ctrl->N.offset);
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Settings are %g+o%g+s%g\n",
+					Ctrl->N.norm, Ctrl->N.offset, Ctrl->N.sigma);
 				break;
 			case 'S':	/* Slope grid */
 				if ((Ctrl->S.active = gmt_check_filearg (GMT, 'S', opt->arg, GMT_OUT, GMT_IS_GRID)))
@@ -336,13 +376,13 @@ int GMT_grdgradient (void *V_API, int mode, void *args) {
 	
 	char format[GMT_BUFSIZ] = {""}, buffer[GMT_GRID_REMARK_LEN160] = {""};
 	
-	double dx_grid, dy_grid, x_factor = 0.0, x_factor_set, y_factor, dzdx, dzdy, ave_gradient, wesn[4];
+	double dx_grid, dy_grid, x_factor = 0.0, x_factor_set, y_factor, y_factor_set, dzdx, dzdy, ave_gradient, wesn[4];
 	double azim, denom, max_gradient = 0.0, min_gradient = 0.0, rpi, lat, output, one;
 	double x_factor2 = 0.0, x_factor2_set = 0.0, y_factor2 = 0.0, dzdx2 = 0.0, dzdy2 = 0.0, dzds1, dzds2;
 	double p0 = 0.0, q0 = 0.0, p0q0_cte = 1.0, norm_z, mag, s[3], lim_x, lim_y, lim_z;
 	double k_ads = 0.0, diffuse, spec, r_min = DBL_MAX, r_max = -DBL_MAX, scale, sin_Az[2] = {0.0, 0.0};
 	
-	struct GMT_GRID *Surf = NULL, *Slope = NULL, *Out = NULL;
+	struct GMT_GRID *Surf = NULL, *Slope = NULL, *Out = NULL, *A = NULL;
 	struct GRDGRADIENT_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
@@ -359,8 +399,8 @@ int GMT_grdgradient (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -368,16 +408,29 @@ int GMT_grdgradient (void *V_API, int mode, void *args) {
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid\n");
 	gmt_M_memset (s, 3, double);
+	gmt_M_memset (wesn, 4, double);
 	gmt_set_pad (GMT, 2U);	/* Ensure space for BCs in case an API passed pad == 0 */
 	
-	if (Ctrl->N.active && Ctrl->N.sigma  != 0.0) sigma_set  = true;
-	if (Ctrl->N.active && Ctrl->N.offset != 0.0) offset_set = true;
+	if (Ctrl->N.active) {
+		char *answer = "NT";
+		if (Ctrl->N.sigma  != 0.0) sigma_set  = true;
+		if (Ctrl->N.offset != 0.0) offset_set = true;
+		GMT_Report (API, GMT_MSG_LONG_VERBOSE, " sigma_set = %c  offset_set = %c\n", answer[sigma_set], answer[offset_set]);
+	}
+
 	if (Ctrl->A.active) {	/* Get azimuth in 0-360 range */
-		while (Ctrl->A.azimuth[0] < 0.0) Ctrl->A.azimuth[0] += 360.0;
-		while (Ctrl->A.azimuth[0] > 360.0) Ctrl->A.azimuth[0] -= 360.0;
-		if (Ctrl->A.two) {
-			while (Ctrl->A.azimuth[1] < 0.0) Ctrl->A.azimuth[1] += 360.0;
-			while (Ctrl->A.azimuth[1] > 360.0) Ctrl->A.azimuth[1] -= 360.0;
+		if (Ctrl->A.mode == GRDGRADIENT_VAR) {	/* Got variable azimuth(s) */
+			if ((A = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->A.file, NULL)) == NULL) {
+				Return (API->error);
+			}
+		}
+		else {	/* Got fixed azimuth(s) */
+			while (Ctrl->A.azimuth[0] < 0.0) Ctrl->A.azimuth[0] += 360.0;
+			while (Ctrl->A.azimuth[0] > 360.0) Ctrl->A.azimuth[0] -= 360.0;
+			if (Ctrl->A.two) {
+				while (Ctrl->A.azimuth[1] < 0.0) Ctrl->A.azimuth[1] += 360.0;
+				while (Ctrl->A.azimuth[1] > 360.0) Ctrl->A.azimuth[1] -= 360.0;
+			}
 		}
 	}
 	if (Ctrl->E.active) {	/* Get azimuth in 0-360 range */
@@ -399,16 +452,35 @@ int GMT_grdgradient (void *V_API, int mode, void *args) {
 		s[2] = sind (Ctrl->E.elevation);
 	}
 
-	gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting, if any */
+	if (GMT->common.R.active[RSET]) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting, if any */
 
-	if ((Surf = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
+	if ((Surf = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
 		Return (API->error);
 	}
 	if (gmt_M_is_subset (GMT, Surf->header, wesn)) gmt_M_err_fail (GMT, gmt_adjust_loose_wesn (GMT, wesn, Surf->header), "");	/* Subset requested; make sure wesn matches header spacing */
 	gmt_grd_init (GMT, Surf->header, options, true);
 
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->In.file, Surf) == NULL) {	/* Get subset */
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn, Ctrl->In.file, Surf) == NULL) {	/* Get subset */
 		Return (API->error);
+	}
+
+	if (Ctrl->A.mode == GRDGRADIENT_VAR) {	/* IGiven 2 grids, make sure they are co-registered and has same size, registration, etc. */
+		if (Surf->header->registration != A->header->registration) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Input and azimuth grids have different registrations!\n");
+			Return (GMT_RUNTIME_ERROR);
+		}
+		if (!gmt_M_grd_same_shape (GMT, Surf, A)) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Input and azimuth grids have different dimensions\n");
+			Return (GMT_RUNTIME_ERROR);
+		}
+		if (!gmt_M_grd_same_region (GMT, Surf, A)) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Input and azimuth grids have different regions\n");
+			Return (GMT_RUNTIME_ERROR);
+		}
+		if (!gmt_M_grd_same_inc (GMT, Surf, A)) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Input and azimuth grids have different intervals\n");
+			Return (GMT_RUNTIME_ERROR);
+		}
 	}
 
 	if (Ctrl->S.active) {	/* Want slope grid */
@@ -431,8 +503,8 @@ int GMT_grdgradient (void *V_API, int mode, void *args) {
 	}
 	one = (Ctrl->D.active) ? +1.0 : -1.0;	/* With -D we want positive grad direction, not negative as for shading (-A, -E) */
 	x_factor_set = one / (2.0 * dx_grid);
-	y_factor = one / (2.0 * dy_grid);
-	if (Ctrl->A.active) {	/* Convert azimuths to radians to save multiplication later */
+	y_factor = y_factor_set = one / (2.0 * dy_grid);
+	if (Ctrl->A.mode == GRDGRADIENT_FIX) {	/* Convert fixed azimuths to radians to save multiplication later */
 		if (Ctrl->A.two) {
 			Ctrl->A.azimuth[1] *= D2R;
 			sin_Az[1] = sin (Ctrl->A.azimuth[1]);
@@ -471,24 +543,29 @@ int GMT_grdgradient (void *V_API, int mode, void *args) {
 		if (gmt_M_is_geographic (GMT, GMT_IN) && !Ctrl->E.active) {	/* Evaluate latitude-dependent factors */
 			lat = gmt_M_grd_row_to_y (GMT, row, Surf->header);
 			dx_grid = GMT->current.proj.DIST_M_PR_DEG * Surf->header->inc[GMT_X] * cosd (lat);
-			if (dx_grid > 0.0) x_factor = one / (2.0 * dx_grid);	/* Use previous value at the poles */
-			if (Ctrl->A.active) {
+			if (dx_grid > 0.0) x_factor = x_factor_set = one / (2.0 * dx_grid);	/* Use previous value at the poles */
+			if (Ctrl->A.mode == GRDGRADIENT_FIX) {
 				if (Ctrl->A.two) x_factor2 = x_factor * sin_Az[1];
 				x_factor *= sin_Az[0];
 			}
 		}
 		else {	/* Use the constant factors */
 			x_factor = x_factor_set;
-			if (Ctrl->A.two) x_factor2 = x_factor2_set;
+			if (Ctrl->A.mode == GRDGRADIENT_FIX && Ctrl->A.two) x_factor2 = x_factor2_set;
 		}
 		for (col = 0; col < Surf->header->n_columns; col++, ij0++) {
 			ij = gmt_M_ijp (Surf->header, row, col);	/* Index into padded grid */
 			for (n = 0, bad = false; !bad && n < 4; n++) if (gmt_M_is_fnan (Surf->data[ij+p[n]])) bad = true;
-			if (bad) {	/* One of star corners = NaN; assign NaN answers and skip to next node */
+			if (bad) {	/* One of the 4-star corners = NaN; assign NaN answer and skip to next node */
 				index = (new_grid) ? ij : ij0;
 				Out->data[index] = GMT->session.f_NaN;
 				if (Ctrl->S.active) Slope->data[ij] = GMT->session.f_NaN;
 				continue;
+			}
+			if (Ctrl->A.mode == GRDGRADIENT_VAR) {	/* Must update azimuth for every node */
+				Ctrl->A.azimuth[0] = A->data[ij] * D2R;
+				x_factor = x_factor_set * sin (Ctrl->A.azimuth[0]);
+				y_factor = y_factor_set * cos (Ctrl->A.azimuth[0]);
 			}
 
 			/* We can now evaluate the central finite differences */
@@ -666,14 +743,14 @@ int GMT_grdgradient (void *V_API, int mode, void *args) {
 
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Out)) Return (API->error);
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, buffer, Out)) Return (API->error);
-	if (Ctrl->G.active && GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Out) != GMT_NOERROR) {
+	if (Ctrl->G.active && GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Out) != GMT_NOERROR) {
 		Return (API->error);
 	}
 
 	if (Ctrl->S.active) {
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Slope)) Return (API->error);
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "Magnitude of grad (z)", Slope)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->S.file, Slope) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->S.file, Slope) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}

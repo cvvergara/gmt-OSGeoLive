@@ -16,13 +16,14 @@ Synopsis
 **xyz2grd** [ *table* ] |-G|\ *grdfile*
 |SYN_OPT-I|
 |SYN_OPT-R|
-[ |-A|\ [**f**\ \|\ **l**\ \|\ **m**\ \|\ **n**\ \|\ **r**\ \|\ **s**\ \|\ **u**\ \|\ **z**] ] 
-[ |-D|\ *xname*/*yname*/*zname*/*scale*/*offset*/*invalid*/*title*/*remark* ]
+[ |-A|\ [**d**\ \|\ **f**\ \|\ **l**\ \|\ **m**\ \|\ **n**\ \|\ **r**\ \|\ **S**\ \|\ **s**\ \|\ **u**\ \|\ **z**] ]
+[ |-D|\ [**+x**\ *xname*][**+y**\ *yname*][**+z**\ *zname*][**+s**\ *scale*][**+o**\ *offset*][**+n**\ *invalid*][**+t**\ *title*][**+r**\ *remark*] ]
 [ |-S|\ [*zfile*] ]
 [ |SYN_OPT-V| ]
 [ |-Z|\ [*flags*\ ] ]
 [ |SYN_OPT-bi| ]
 [ |SYN_OPT-di| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
@@ -51,7 +52,7 @@ Required Arguments
 
 **-G**\ *grdfile*
     *grdfile* is the name of the binary output grid file. (See GRID FILE
-    FORMAT below.) 
+    FORMAT below.)
 
 .. _-I:
 
@@ -72,14 +73,15 @@ Optional Arguments
 
 .. _-A:
 
-**-A**\ [**f**\ \|\ **l**\ \|\ **m**\ \|\ **n**\ \|\ **r**\ \|\ **s**\ \|\ **u**\ \|\ **z**]
+**-A**\ [**d**\ \|\ **f**\ \|\ **l**\ \|\ **m**\ \|\ **n**\ \|\ **r**\ \|\ **S**\ \|\ **s**\ \|\ **u**\ \|\ **z**]
     By default we will calculate mean values if multiple entries fall on
     the same node. Use **-A** to change this behavior, except it is
     ignored if **-Z** is given. Append **f** or **s** to simply keep the
     first or last data point that was assigned to each node. Append
-    **l** or **u** to find the lowest (minimum) or upper (maximum) value
-    at each node, respectively. Append **m** or **r** to compute mean or
-    RMS value at each node, respectively. Append **n** to simply count
+    **l** or **u** or **d** to find the lowest (minimum) or upper (maximum) value
+    or the difference between the maximum and miminum value
+    at each node, respectively. Append **m** or **r** or **S** to compute mean or
+    RMS value or standard deviation at each node, respectively. Append **n** to simply count
     the number of data points that were assigned to each node (this only
     requires two input columns *x* and *y* as *z* is not consulted). Append
     **z** to sum multiple values that belong to the same node.
@@ -93,7 +95,7 @@ Optional Arguments
 **-S**\ [*zfile*]
     Swap the byte-order of the input only. No grid file is produced. You
     must also supply the **-Z** option. The output is written to *zfile*
-    (or stdout if not supplied). 
+    (or stdout if not supplied).
 
 .. _-V:
 
@@ -149,15 +151,18 @@ Optional Arguments
     Note that **-Z** only applies to 1-column input. The difference
     between **A** and **a** is that the latter can decode both
     *date*\ **T**\ *clock* and *ddd:mm:ss[.xx]* formats while the former
-    is strictly for regular floating point values. 
+    is strictly for regular floating point values.
 
 .. |Add_-bi| replace:: [Default is 3 input columns]. This option only applies
-    to xyz input files; see **-Z** for z tables. 
+    to xyz input files; see **-Z** for z tables.
 .. include:: explain_-bi.rst_
 
 .. |Add_-di| replace:: Also sets nodes with no input xyz triplet to this value
     [Default is NaN].
 .. include:: explain_-di.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
@@ -195,20 +200,20 @@ Examples
 
 To create a grid file from the ASCII data in hawaii\_grv.xyz, use
 
-    gmt xyz2grd hawaii_grv.xyz -Ddegree/degree/mGal/1/0//"Hawaiian Gravity"/"GRS-80 Ellipsoid used" \
+    gmt xyz2grd hawaii_grv.xyz -D+xdegree+ydegree+zGal+t"Hawaiian Gravity"+r"GRS-80 Ellipsoid used" \
                 -Ghawaii_grv_new.nc -R198/208/18/25 -I5m -V
 
 To create a grid file from the raw binary (3-column, single-precision
 scanline-oriented data raw.b, use
 
-    gmt xyz2grd raw.b -Dm/m/m/1/0 -Graw.nc -R0/100/0/100 -I1 -V -Z -bi3f
+    gmt xyz2grd raw.b -D+xm+ym+zm -Graw.nc -R0/100/0/100 -I1 -V -Z -bi3f
 
 To make a grid file from the raw binary USGS DEM (short integer
 scanline-oriented data topo30.b on the NGDC global relief Data CD-ROM,
 with values of -9999 indicate missing data, one must on some machine
 reverse the byte-order. On such machines (like Sun), use
 
-    gmt xyz2grd topo30.b -Dm/m/m/1/0 -Gustopo.nc -R234/294/24/50 -I30s -di-9999 -ZTLhw
+    gmt xyz2grd topo30.b -D+xm+ym+zm -Gustopo.nc -R234/294/24/50 -I30s -di-9999 -ZTLhw
 
 Say you have received a binary file with 4-byte floating points that
 were written on a machine of different byte-order than yours. You can
@@ -227,6 +232,3 @@ See Also
 :doc:`nearneighbor`,
 :doc:`surface`,
 :doc:`triangulate`
-
-
-

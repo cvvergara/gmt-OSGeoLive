@@ -1,4 +1,4 @@
-#	$Id: gmt_keywords.txt 15178 2015-11-06 10:45:03Z fwobbe $
+#	$Id: gmt_keywords.txt 18041 2017-04-26 23:09:48Z pwessel $
 #
 # List of all GMT 5 defaults parameters.
 #
@@ -21,6 +21,7 @@ COLOR_HSV_MIN_V			# Minimum value assigned for most positive intensity value
 #-------------------------------------------------------
 # DIR Group:	Directories to use
 #-------------------------------------------------------
+DIR_CACHE			# Directory for downloaded data
 DIR_DATA			# Colon-separated list of dirs where we look for data
 DIR_DCW				# Location of DCW file
 DIR_GSHHG			# Location of GSHHG files
@@ -55,6 +56,7 @@ FORMAT_TIME_STAMP		# How to format time for GMT time-stamps
 # GMT Group:	Misc. GMT settings
 #-------------------------------------------------------
 GMT_COMPATIBILITY		# Oldest GMT version syntax to parse without error [4 and up]
+GMT_AUTO_DOWNLOAD		# Download GMT-known files or not
 GMT_FFT				# Which FFT algorithm to use
 GMT_HISTORY			# Should we update the command history?
 GMT_INTERPOLANT			# Spline interpolant

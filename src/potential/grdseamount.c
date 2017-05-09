@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdseamount.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: grdseamount.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -29,14 +29,14 @@
  *
  * */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdseamount"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute synthetic seamount (Gaussian, parabolic, cone or disc, circular or elliptical) bathymetry"
 #define THIS_MODULE_KEYS	"<T{,GG},MT),TD("
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:RVbdfhir" GMT_OPT("H")
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:RVbdefhir" GMT_OPT("H")
 
 #define SHAPE_GAUS	0
 #define SHAPE_PARA	1
@@ -84,10 +84,6 @@ struct GRDSEAMOUNT_CTRL {
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct L {	/* -L[<hcut>] */
 		bool active;
 		unsigned int mode;
@@ -155,8 +151,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdseamount [infile(s)] -G<outgrid> %s\n\t%s [-A[<out>/<in>]] [-Cc|d|g|p] [-D%s]\n", GMT_I_OPT, GMT_Rgeo_OPT, GMT_LEN_UNITS2_DISPLAY);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-E] [-F[<flattening>]] [-L[<hcut>]] [-M<list>] [-N<norm>] [-Q<bmode><fmode>] [-S<r_scale>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-T<t0>[/<t1>/<dt>|<file>|<n>[+l]]] [-Z<base>] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s]\n\n",
-		GMT_bi_OPT, GMT_di_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-T<t0>[/<t1>/<dt>|<file>|<n>[+l]]] [-Z<base>] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s]\n\n",
+		GMT_bi_OPT, GMT_di_OPT, GMT_e_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -195,7 +191,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   This option implies two extra input columns with start and stop time for each seamount's life span.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Q to select cumulative versus incremental loads.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Set the reference depth [0].  Not allowed for -Qi.\n");
-	GMT_Option (API, "V,bi,di");
+	GMT_Option (API, "V,bi,di,e");
 	GMT_Message (API, GMT_TIME_NONE, "\t-fg Map units (lon, lat in degree, radius, major, minor in km).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default is Cartesian - no units are implied; but see -D].\n");
 	GMT_Option (API, "h,i,r,:,.");
@@ -269,11 +265,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, struct
 					n_errors++;
 				break;
 			case 'I':	/* Grid spacing */
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'L':	/* List area, volume and mean height only, then exit */
 				Ctrl->L.active = true;
@@ -319,11 +311,11 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, struct
 		}
 	}
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 	n_errors += gmt_M_check_condition (GMT, Ctrl->C.mode == SHAPE_DISC && Ctrl->F.active, "Warning: Cannot specify -F for discs; ignored\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && (Ctrl->N.active || Ctrl->Z.active || Ctrl->L.active || Ctrl->T.active), "Syntax error -A option: Cannot use -L, -N, -T or -Z with -A\n");
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_M_check_condition (GMT, !(Ctrl->G.active || Ctrl->G.file), "Syntax error option -G: Must specify output file or template\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->Z.active && Ctrl->Q.bmode == SMT_INCREMENTAL, "Syntax error option -Z: Cannot be used with -Qi\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && !strchr (Ctrl->G.file, '%'), "Syntax error -G option: Filename template must contain format specifier when -T is used\n");
@@ -533,8 +525,8 @@ int GMT_grdseamount (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != GMT_NOERROR) Return (error);
 
@@ -612,7 +604,7 @@ int GMT_grdseamount (void *V_API, int mode, void *args) {
 	}
 	
 	if (Ctrl->M.active) {	/* Must create textset to hold names of all output grids */
-		uint64_t dim[3] = {1, 1, Ctrl->T.n_times};
+		uint64_t dim[GMT_DIM_SIZE] = {1, 1, Ctrl->T.n_times, 0};
 		unsigned int k, j;
 		if ((L = GMT_Create_Data (API, GMT_IS_TEXTSET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Error creating text set for file %s\n", Ctrl->M.file);
@@ -679,7 +671,7 @@ int GMT_grdseamount (void *V_API, int mode, void *args) {
 	}
 				
 	/* Set up and allocate output grid */
-	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc,
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, NULL, NULL,
 		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 		
 	gmt_set_xy_domain (GMT, wesn, Grid->header);	/* May include some padding if gridline-registered */
@@ -775,18 +767,18 @@ int GMT_grdseamount (void *V_API, int mode, void *args) {
 						sincos ((90.0 - in[GMT_Z]) * D2R, &sa, &ca);	/* in[GMT_Z] is azimuth in degrees, convert to direction, get sin/cos */
 						a = in[3];			/* Semi-major axis */
 						b = in[4];			/* Semi-minor axis */
-						e = in[4] / in[3];		/* Eccentricity */
+						e = b / a;		/* Eccentricity */
 						e2 = e * e;
 						ca2 = ca * ca;
 						sa2 = sa * sa;
-						r_km = in[4] * Ctrl->S.value;	/* Scaled semi-minor axis in user units (Cartesian or km) */
+						r_km = b * Ctrl->S.value;	/* Scaled semi-minor axis in user units (Cartesian or km) */
 						r = r_km;
 						if (map) r *= DEG_PR_KM;	/* Was in km so now it is in degrees, same units as grid coordinates */
 						f = -4.5 / (r_km * r_km);	/* So we can take exp (f * radius_in_km^2) */
 						A = f * (e2 * ca2 + sa2);	/* Elliptical components A, B, C needed to evaluate radius(az) */
 						B = -f * (sa * ca * (1.0 - e2));
 						C = f * (e2 * sa2 + ca2);
-						r_in = in[3];			/* Semi-major axis in user units (Cartesian or km)*/
+						r_in = a;			/* Semi-major axis in user units (Cartesian or km)*/
 						r_km = r_in * Ctrl->S.value;	/* Scaled semi-major axis in user units (Cartesian or km) */
 						r = r_km;			/* Copy of r_km */
 						if (map) r *= DEG_PR_KM;	/* Was in km so now it is in degrees, same units as grid coordinates */
@@ -927,7 +919,7 @@ int GMT_grdseamount (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 		gmt_M_memcpy (data, Grid->data, Grid->header->size, float);	/* This will go away once gmt_nc.c is fixed to leave array alone */
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, file, Grid) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, file, Grid) != GMT_NOERROR) {
 			gmt_M_free (GMT, d_col);	gmt_M_free (GMT, V);		gmt_M_free (GMT, h);
 			gmt_M_free (GMT, V_sum);	gmt_M_free (GMT, h_sum);	gmt_M_free (GMT, data);
 			Return (API->error);

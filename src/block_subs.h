@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: block_subs.h 17449 2017-01-16 21:27:04Z pwessel $
+ *    $Id: block_subs.h 17833 2017-04-01 05:52:50Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -54,10 +54,6 @@ struct BLOCK_CTRL {
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct N {	/* -N<empty> */
 		bool active;
 		double no_data;

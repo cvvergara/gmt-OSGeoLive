@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_init.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: x2sys_init.c 18051 2017-04-28 04:00:39Z pwessel $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -27,16 +27,18 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "mgd77/mgd77.h"
+#include "x2sys.h"
+
 #define THIS_MODULE_NAME	"x2sys_init"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Initialize a new x2sys track database"
 #define THIS_MODULE_KEYS	""
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->RV"
 
-#include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->RV"
-
-extern void x2sys_set_home (struct GMT_CTRL *GMT);
+EXTERN_MSC void x2sys_set_home (struct GMT_CTRL *GMT);
 
 struct X2SYS_INIT_CTRL {
 	struct In {	/*  */
@@ -162,6 +164,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct X2SYS_INIT_CTRL *Ctrl, struct 
 	 */
 
 	unsigned int n_errors = 0, k, n_tags = 0;
+	char *c = NULL;
 	struct GMT_OPTION *opt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
 	/* We are just checking the options for syntax here, not parsing is actually needed */
@@ -188,7 +191,13 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct X2SYS_INIT_CTRL *Ctrl, struct 
 				break;
 			case 'D':
 				Ctrl->D.active = true;
-				Ctrl->D.file = strdup (opt->arg);
+				if ((c = strstr (opt->arg, ".def")) == NULL)
+					Ctrl->D.file = strdup (opt->arg);
+				else {
+					c[0] = '\0';	/* Chop off extension */
+					Ctrl->D.file = strdup (opt->arg);
+					c[0] = '.';	/* Restore extension */
+				}
 				break;
 			case 'E':
 				Ctrl->E.active = true;
@@ -294,8 +303,8 @@ int GMT_x2sys_init (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -349,7 +358,7 @@ int GMT_x2sys_init (void *V_API, int mode, void *args) {
 		GMT_Report (API, GMT_MSG_NORMAL, "File exists: %s\n", tag_file);
 		x2sys_path (GMT, tag_file, path);
 		if (Ctrl->F.active) {
-			if (remove (path))
+			if (gmt_remove_file (GMT, path))
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to remove %s\n", path);
 			else
 				GMT_Report (API, GMT_MSG_VERBOSE, "Removed file %s\n", path);
@@ -361,7 +370,7 @@ int GMT_x2sys_init (void *V_API, int mode, void *args) {
 		GMT_Message (API, GMT_TIME_NONE, "File exists: %s\n", def_file);
 		x2sys_path (GMT, def_file, path);
 		if (Ctrl->F.active) {
-			if (remove (path))
+			if (gmt_remove_file (GMT, path))
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to remove %s\n", path);
 			else
 				GMT_Report (API, GMT_MSG_VERBOSE, "Removed file %s\n", path);
@@ -373,7 +382,7 @@ int GMT_x2sys_init (void *V_API, int mode, void *args) {
 		GMT_Message (API, GMT_TIME_NONE, "File exists: %s\n", track_file);
 		x2sys_path (GMT, track_file, path);
 		if (Ctrl->F.active) {
-			if (remove (path))
+			if (gmt_remove_file (GMT, path))
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to remove %s\n", path);
 			else
 				GMT_Report (API, GMT_MSG_VERBOSE, "Removed file %s\n", path);
@@ -385,7 +394,7 @@ int GMT_x2sys_init (void *V_API, int mode, void *args) {
 		GMT_Message (API, GMT_TIME_NONE, "File exists: %s\n", path_file);
 		x2sys_path (GMT, path_file, path);
 		if (Ctrl->F.active) {
-			if (remove (path))
+			if (gmt_remove_file (GMT, path))
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to remove %s\n", path);
 			else
 				GMT_Report (API, GMT_MSG_VERBOSE, "Removed file %s\n", path);
@@ -397,7 +406,7 @@ int GMT_x2sys_init (void *V_API, int mode, void *args) {
 		GMT_Report (API, GMT_MSG_NORMAL, "File exists: %s\n", bin_file);
 		x2sys_path (GMT, bin_file, path);
 		if (Ctrl->F.active) {
-			if (remove (path))
+			if (gmt_remove_file (GMT, path))
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to remove %s\n", path);
 			else
 				GMT_Report (API, GMT_MSG_VERBOSE, "Removed file %s\n", path);
@@ -433,7 +442,7 @@ int GMT_x2sys_init (void *V_API, int mode, void *args) {
 	if (Ctrl->W.active[0]) fprintf (fp, " -W%s", Ctrl->W.string[0]);
 	if (Ctrl->W.active[1]) fprintf (fp, " -W%s", Ctrl->W.string[1]);
 	(Ctrl->I.active) ? fprintf (fp, " -I%s", Ctrl->I.string) : fprintf (fp, " -I1/1");
-	(GMT->common.R.active) ? fprintf (fp, " -R%g/%g/%g/%g", GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI], GMT->common.R.wesn[YLO], GMT->common.R.wesn[YHI]) : fprintf (fp, " -R0/360/-90/90");
+	(GMT->common.R.active[RSET]) ? fprintf (fp, " -R%g/%g/%g/%g", GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI], GMT->common.R.wesn[YLO], GMT->common.R.wesn[YHI]) : fprintf (fp, " -R0/360/-90/90");
 	fprintf (fp, "\n");
 	x2sys_err_fail (GMT, x2sys_fclose (GMT, tag_file, fp), tag_file);
 

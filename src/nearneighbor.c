@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: nearneighbor.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: nearneighbor.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -31,23 +31,19 @@
  * Version:	5 API
  */
  
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"nearneighbor"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Grid table data using a \"Nearest neighbor\" algorithm"
 #define THIS_MODULE_KEYS	"<D{,GG}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:RVbdfhinrs" GMT_OPT("FH")
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:RVbdefhinrs" GMT_OPT("FH")
 
 #define NN_DEF_SECTORS	4
 
 struct NEARNEIGHBOR_CTRL {	/* All control options for this program (except common args) */
 	/* active is true if the option has been activated */
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct E {	/* -E<empty> */
 		bool active;
 		double value;
@@ -56,9 +52,10 @@ struct NEARNEIGHBOR_CTRL {	/* All control options for this program (except commo
 		bool active;
 		char *file;
 	} G;
-	struct N {	/* -N[<sectors>[/<min_sectors>]] */
+	struct N {	/* -N[<sectors>[/<min_sectors>]] | -Nn */
 		bool active;
 		unsigned int sectors, min_sectors;
+		unsigned int mode;
 	} N;
 	struct S {	/* -S[-|=|+]<radius>[d|e|f|k|m|M|n] */
 		bool active;
@@ -130,7 +127,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: nearneighbor [<table>] -G<outgrid> %s\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t-N<sectors>[/<min_sectors>] %s -S%s\n", GMT_Rgeo_OPT, GMT_RADIUS_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-E<empty>] [%s] [-W] [%s] [%s] [%s]\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_f_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-E<empty>] [%s] [-W] [%s] [%s] [%s] [%s]\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_e_OPT, GMT_f_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n\n", GMT_h_OPT, GMT_i_OPT, GMT_n_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -149,7 +146,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Input <table> has observation weights in 4th column.\n");
 	GMT_Option (API, "bi");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default is 3 (or 4 if -W is set) columns.\n");
-	GMT_Option (API, "di,f,h,i");
+	GMT_Option (API, "di,e,f,h,i");
 	if (gmt_M_showusage (API)) {
 		GMT_Message (API, GMT_TIME_NONE, "\t-n+b<BC> Set boundary conditions.  <BC> can be either:\n");
 		GMT_Message (API, GMT_TIME_NONE, "\t   g for geographic boundary conditions, or one or both of\n");
@@ -199,16 +196,12 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct NEARNEIGHBOR_CTRL *Ctrl, struc
 					n_errors++;
 				break;
 			case 'I':	/* Grid spacings */
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'L':	/* BCs */
 				if (gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -L is deprecated; -n+b%s was set instead, use this in the future.\n", opt->arg);
-					strncpy (GMT->common.n.BC, opt->arg, 4U);
+					gmt_strncpy (GMT->common.n.BC, opt->arg, 4U);
 					/* We turn on geographic coordinates if -Lg is given by faking -fg */
 					/* But since GMT_parse_f_option is private to gmt_init and all it does */
 					/* in this case are 2 lines below we code it here */
@@ -220,12 +213,18 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct NEARNEIGHBOR_CTRL *Ctrl, struc
 				else
 					n_errors += gmt_default_error (GMT, opt->option);
 				break;
-			case 'N':	/* -N[sectors[/minsectors]] */
+			case 'N':	/* -N[sectors[/minsectors]] or -Nn */
 				Ctrl->N.active = true;
-				n = sscanf (opt->arg, "%d/%d", &Ctrl->N.sectors, &Ctrl->N.min_sectors);
-				if (n < 1) Ctrl->N.sectors = NN_DEF_SECTORS;	/* Just gave -N with no args means -N4/4 */
-				if (n < 2) Ctrl->N.min_sectors = irint (Ctrl->N.sectors / 2.0);	/* Giving just -N<sectors> means -N<sectors>/(<sectors>/2) */
-				if (Ctrl->N.sectors < Ctrl->N.min_sectors) Ctrl->N.min_sectors = Ctrl->N.sectors;	/* Minimum cannot be larger than desired */
+				if (opt->arg[0] == 'n') {
+					Ctrl->N.mode = 1;
+					GMT_Report (API, GMT_MSG_NORMAL, "Warning: Option -Nn is experimental and unstable.\n");
+				}
+				else {
+					n = sscanf (opt->arg, "%d/%d", &Ctrl->N.sectors, &Ctrl->N.min_sectors);
+					if (n < 1) Ctrl->N.sectors = NN_DEF_SECTORS;	/* Just gave -N with no args means -N4/4 */
+					if (n < 2) Ctrl->N.min_sectors = irint (Ctrl->N.sectors / 2.0);	/* Giving just -N<sectors> means -N<sectors>/(<sectors>/2) */
+					if (Ctrl->N.sectors < Ctrl->N.min_sectors) Ctrl->N.min_sectors = Ctrl->N.sectors;	/* Minimum cannot be larger than desired */
+				}
 				break;
 			case 'S':	/* Search radius */
 				Ctrl->S.active = true;
@@ -241,16 +240,21 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct NEARNEIGHBOR_CTRL *Ctrl, struc
 		}
 	}
 
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
-
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
-	n_errors += gmt_M_check_condition (GMT, !Ctrl->S.active, "Syntax error: Must specify -S option\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->N.sectors <= 0, "Syntax error -N option: Must specify a positive number of sectors\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -1, "Syntax error -S: Unrecognized unit\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -2, "Syntax error -S: Unable to decode radius\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -3, "Syntax error -S: Radius is negative\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	if (Ctrl->N.active && Ctrl->N.mode) {	/* For Natural NN gridding we cannot have stray options */
+		n_errors += gmt_M_check_condition (GMT, Ctrl->E.active, "Syntax error -Nn: Cannot specify -E option\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->S.active, "Syntax error -Nn: Cannot specify -S option\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->W.active, "Syntax error -Nn: Cannot specify -W option\n");
+	}
+	else {
+		n_errors += gmt_M_check_condition (GMT, Ctrl->N.sectors <= 0, "Syntax error -N option: Must specify a positive number of sectors\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -1, "Syntax error -S: Unrecognized unit\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -2, "Syntax error -S: Unable to decode radius\n");
+		n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -3, "Syntax error -S: Radius is negative\n");
+	}
 	n_errors += gmt_check_binary_io (GMT, (Ctrl->W.active) ? 4 : 3);
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
@@ -291,16 +295,53 @@ int GMT_nearneighbor (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the nearneighbor main code ----------------------------*/
 
+	if (Ctrl->N.mode) {	/* Pass over to triangulate -Qn */
+		/* All the arguments are the same except -Nn needs to become -Qn and -Gfile needs to be a
+		 * virtual file so that we can write it from hear and set correct command history for the grid.
+		 */
+		struct GMT_OPTION *n_ptr = NULL, *g_ptr = NULL;
+		int status = GMT_NOERROR;
+		char string[GMT_STR16] = {""}, *name = NULL;
+		n_ptr = GMT_Find_Option (API, 'N', options);	/* No need to check for NULL since we know -N was given */
+		n_ptr->option = 'Q';	/* Switch to -Qn */
+		/* Create a virtual file name to hold the resulting grid */
+		if (GMT_Open_VirtualFile (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_OUT, NULL, string) == GMT_NOTSET) {
+			Return (API->error);
+		}
+		g_ptr = GMT_Find_Option (API, 'G', options);	/* No need to check for NULL since we know -G was given */
+		name = g_ptr->arg;	/* Temporarily replace the name with the virtual name */
+		g_ptr->arg = string;
+		/* Call triangulate with the given option list */
+		GMT_Report (API, GMT_MSG_DEBUG, "Letting triangulate perform the natural nearest neighbor gridding\n");
+		status = GMT_Call_Module (API, "triangulate", GMT_MODULE_OPT, options);
+		if (status) {
+			GMT_Report (API, GMT_MSG_NORMAL, "GMT_triangulate returned error %d.\n", status);
+			Return (GMT_RUNTIME_ERROR);
+		}
+		if ((Grid = GMT_Read_VirtualFile (API, string)) == NULL) {	/* Load in the resampled grid */
+			Return (API->error);
+		}
+		n_ptr->option = 'N';	/* Switch back to -Nn */
+		g_ptr->arg = name;		/* Reset file name to original output name */
+		gmt_grd_init (GMT, Grid->header, options, true);
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
+			Return (API->error);
+		}
+		Return (GMT_NOERROR);
+	}
+
+	/* Regular nearest neighbor moving average operation */
+	
 	gmt_init_distaz (GMT, Ctrl->S.unit, Ctrl->S.mode, GMT_MAP_DIST);
 
-	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, NULL, NULL, \
 		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 	/* Initialize the input since we are doing record-by-record reading/writing */
@@ -353,12 +394,12 @@ int GMT_nearneighbor (void *V_API, int mode, void *args) {
 	do {	/* Keep returning records until we reach EOF */
 		n_read++;
 		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
-			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
-				continue;
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			}
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			continue;	/* Go back and read the next record */
 		}
 		
 		if (gmt_M_is_dnan (in[GMT_Z])) continue;					/* Skip if z = NaN */
@@ -453,7 +494,7 @@ int GMT_nearneighbor (void *V_API, int mode, void *args) {
 	if (n < n_alloc) point = gmt_M_memory (GMT, point, n, struct NEARNEIGHBOR_POINT);
 	/* Compute weighted averages based on the nearest neighbors */
 
-	if (GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, NULL, NULL, 0, 0, Grid) == NULL) {
+	if (GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, NULL, NULL, 0, 0, Grid) == NULL) {
 		gmt_M_free (GMT, point);	gmt_M_free (GMT, grid_node);	gmt_M_free (GMT, d_col);
 		gmt_M_free (GMT, x0);		gmt_M_free (GMT, y0);
 		Return (API->error);
@@ -510,7 +551,7 @@ int GMT_nearneighbor (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
 		gmt_M_free (GMT, point);	gmt_M_free (GMT, grid_node);	gmt_M_free (GMT, d_col);
 		gmt_M_free (GMT, x0);		gmt_M_free (GMT, y0);
 		Return (API->error);

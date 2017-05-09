@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 17449 2017-01-16 21:27:04Z pwessel $
+# $Id: CMakeLists.txt 18132 2017-05-05 03:05:46Z pwessel $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -36,8 +36,14 @@ include (CreateDebugSym)
 
 # Find libraries
 message (STATUS "Searching dependent libraries. This may take a few minutes...")
+# NetCDF is required
 find_package (NETCDF REQUIRED)
 include_directories (${NETCDF_INCLUDE_DIR})
+
+# libcurl is required since 5.4
+find_package (CURL REQUIRED)
+include_directories (${CURL_INCLUDE_DIRS})
+list (APPEND GMT_OPTIONAL_LIBRARIES ${CURL_LIBRARIES})
 
 if (NOT DEFINED GMT_EXCLUDE_GDAL)
 	find_package (GDAL)
@@ -78,7 +84,7 @@ endif (NOT DEFINED GMT_EXCLUDE_FFTW3)
 if (FFTW3_FOUND)
 	set (HAVE_FFTW3F TRUE CACHE INTERNAL "System has single precision FFTW")
 	if (FFTW3F_THREADS_LIBRARY)
-		set (HAVE_FFTW3F_THREADS TRUE CACHE INTERNAL "System has single precision threadded FFTW")
+		set (HAVE_FFTW3F_THREADS TRUE CACHE INTERNAL "System has single precision threaded FFTW")
 	endif (FFTW3F_THREADS_LIBRARY)
 	include_directories (${FFTW3_INCLUDE_DIR})
 	list (APPEND GMT_OPTIONAL_LIBRARIES ${FFTW3F_LIBRARIES})
@@ -121,7 +127,7 @@ endif (APPLE)
 if (DEFINED GMT_ENABLE_OPENMP)
 	set (GMT_OPENMP TRUE CACHE INTERNAL "Turn on GMT OpenMP")
 endif (DEFINED GMT_ENABLE_OPENMP)
-find_package (OpenMP) # OpenMP not used; disabled for now
+find_package (OpenMP)
 if (OPENMP_FOUND AND GMT_OPENMP)
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 	set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
@@ -130,7 +136,7 @@ if (OPENMP_FOUND AND GMT_OPENMP)
 	set (GMT_CONFIG_OPENMP_MESSAGE "enabled"
 		CACHE INTERNAL "OPENMP config message")
 	if (WIN32 AND OMP_DLL_LOC)
-		# UGLY AND RISKY PATCH FOR THE CPACK BUG OF NOT COPYING THE OMP DLL. tHIS PATCH RELIES
+		# UGLY AND RISKY PATCH FOR THE CPACK BUG OF NOT COPYING THE OMP DLL. THIS PATCH RELIES
 		# ON THE SETING OF THE OMP_DLL_LOC VARIABLE IN ConfigUser.cmake. MINE HAS:
 		# set (OMP_DLL_LOC "C:/Program Files (x86)/Microsoft Visual Studio 12.0/VC/redist/x64/Microsoft.VC120.OPENMP/vcomp120.dll")
 		install(FILES ${OMP_DLL_LOC} DESTINATION bin COMPONENT Libraries)
@@ -254,15 +260,18 @@ set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
 	surface.c trend1d.c trend2d.c triangulate.c xyz2grd.c gmtdefaults.c gmtget.c
 	gmtset.c grdcontour.c grdimage.c grdvector.c grdview.c psbasemap.c psclip.c
 	pscoast.c pscontour.c pshistogram.c psimage.c psmask.c psrose.c psscale.c
-	pssolar.c pstext.c pswiggle.c psxy.c psxyz.c pslegend.c ${EXTRA_MODULES})
+	pssolar.c psternary.c pstext.c pswiggle.c psxy.c psxyz.c pslegend.c ${EXTRA_MODULES})
 
 # Legacy modules for which to install compatibility links via
 # install_module_symlink
 set (GMT_COMPAT_MODULES minmax gmt2rgb gmtstitch gmtdp grdreformat ps2raster)
 
 # libpslib
-set (GMT_PSL_SRCS postscriptlight.c common_string.c common_string.h common_runpath.c
-	common_runpath.h declspec.h gmt_config.h gmt_notposix.h)
+set (GMT_PSL_SRCS postscriptlight.c declspec.h psl_config.h PSL_Standard+.h
+	PSL_Standard.h PSL_ISOLatin1+.h PSL_ISOLatin1.h PSL_ISO-8859-1.h
+	PSL_ISO-8859-2.h PSL_ISO-8859-3.h PSL_ISO-8859-4.h PSL_ISO-8859-5.h
+	PSL_ISO-8859-6.h PSL_ISO-8859-7.h PSL_ISO-8859-8.h PSL_ISO-8859-9.h
+	PSL_ISO-8859-10.h PSL_ISO-8859-13.h PSL_ISO-8859-14.h PSL_ISO-8859-15.h)
 
 # libgmt
 set (GMT_LIB_SRCS block_subs.h common_byteswap.h common_math.h
@@ -274,7 +283,7 @@ set (GMT_LIB_SRCS block_subs.h common_byteswap.h common_math.h
 	gmt_media_size.h gmt_mgg_header2.h gmt_sharedlibs.h gmt_memory.h
 	gmt_core_module.h gmt_nan.h gmt_notposix.h gmt_pennames.h
 	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_psl.h gmt_shore.h
-	gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
+	gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h gmt_cpt_masters.h
 	gmt_types.h gmt_unique.h gmt_version.h gshhg_version.h postscriptlight.h
 	s_rint.h triangle.h gmt.h gmt_resources.h gmt_private.h
 	gmt_error_codes.h gmt_api.c gmt_bcr.c gmt_calclock.c gmt_cdf.c gmt_compat.c
@@ -341,7 +350,7 @@ add_custom_command (OUTPUT gmt_dimensions.h
 	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
 	-D GMT_SRC=${GMT_SOURCE_DIR}
 	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS gmt_media_name.h gmt_pennames.h gmt_unique.h
+	DEPENDS gmt_media_name.h gmt_pennames.h gmt_unique.h gmt_cpt_masters.h
 	gmt_datums.h gmt_colornames.h gmt_ellipsoids.h
 	gmt_keycases.h)
 	# depends on cached line numbers from these generated files:
@@ -371,6 +380,7 @@ add_custom_target (gen_gmt_headers DEPENDS ${GMT_GEN_HDRS})
 
 # Configure header files to pass some of the CMake settings to the source code
 configure_file (gmt_config.h.in gmt_config.h)
+configure_file (psl_config.h.in psl_config.h)
 configure_file (gmt_version.h.in gmt_version.h)
 configure_file (isogmt.in isogmt${GMT_INSTALL_NAME_SUFFIX} @ONLY)
 configure_file (gmt-config.in gmt-config${GMT_INSTALL_NAME_SUFFIX} @ONLY)
@@ -675,6 +685,7 @@ if (BUILD_DEVELOPER)
 	# Install Configured Developer headers [These are produced by cmake from *.h.in files]
 	install (FILES ${PROJECT_BINARY_DIR}/src/config.h ${PROJECT_BINARY_DIR}/src/gmt_config.h
 		${PROJECT_BINARY_DIR}/src/gmt_dimensions.h ${PROJECT_BINARY_DIR}/src/gmt_version.h
+		${PROJECT_BINARY_DIR}/src/psl_config.h
 		DESTINATION ${GMT_INCLUDEDIR}
 		COMPONENT Runtime)
 endif (BUILD_DEVELOPER)

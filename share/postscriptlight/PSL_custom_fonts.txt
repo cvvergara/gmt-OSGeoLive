@@ -1,4 +1,4 @@
-#	$Id: PSL_custom_fonts.txt 17326 2016-11-08 20:28:56Z pwessel $
+#	$Id: PSL_custom_fonts.txt 17328 2016-11-08 20:38:56Z pwessel $
 #
 #	Listing of additional PostScript fonts than those found on most PS printers.
 #	Add your extra font information there.  This is the only required change as

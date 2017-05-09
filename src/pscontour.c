@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pscontour.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: pscontour.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -25,14 +25,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"pscontour"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Contour table data by direct triangulation"
 #define THIS_MODULE_KEYS	"<D{,AT)=t,CC(,ED(,DDD,G?(=1,>X}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>BJKOPRUVXYbcdhipstxy" GMT_OPT("EMm")
+#define THIS_MODULE_NEEDS	"dJ"
+#define THIS_MODULE_OPTIONS "-:>BJKOPRUVXYbdehipstxy" GMT_OPT("EMmc")
 
 struct PSCONTOUR_CTRL {
 	struct GMT_CONTOUR contour;
@@ -303,7 +303,7 @@ GMT_LOCAL void sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, 
 		}
 	}
 
-	form = gmt_setfont (GMT, &GMT->current.setting.font_annot[GMT_PRIMARY]);
+	(void)gmt_setfont (GMT, &GMT->current.setting.font_annot[GMT_PRIMARY]);
 
 	/* Here, only the polygons that are innermost (containing the local max/min, will have do_it = true */
 
@@ -386,8 +386,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "[-E<indextable>] [%s] [-I] [%s] [-K] [-L<pen>] [-N]\n", GMT_CONTG, GMT_Jz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-O] [-P] [-Q<cut>] [-S[p|t]] [%s]\n", GMT_CONTT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-W[a|c]<pen>[+c[l|f]]] [%s] [%s]\n", GMT_U_OPT, GMT_V_OPT, GMT_X_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
-	             GMT_Y_OPT, GMT_b_OPT, GMT_d_OPT, GMT_c_OPT, GMT_h_OPT, GMT_i_OPT, GMT_p_OPT, GMT_t_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
+	             GMT_Y_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_p_OPT, GMT_t_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -451,7 +451,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t        Append l to let pen colors follow the CPT setting (requires -C).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t        Append f to let fill/font colors follow the CPT setting.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t        Default is both effects.\n");
-	GMT_Option (API, "X,bi3,bo,c,d,h,i,p,s,t,:,.");
+	GMT_Option (API, "X,bi3,bo,d,e,h,i,p,s,t,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -469,17 +469,15 @@ GMT_LOCAL unsigned int pscontour_old_T_parser (struct GMT_CTRL *GMT, char *arg, 
 			Ctrl->T.dim[GMT_Y] = gmt_M_to_inch (GMT, txt_b);
 		}
 	}
-	n = 0;
 	for (j = 0; arg[j] && arg[j] != ':'; j++);
 	if (arg[j] == ':') Ctrl->T.label = true, j++;
 	if (arg[j]) {	/* Override high/low markers */
 		if (strlen (&(arg[j])) == 2) {	/* Standard :LH syntax */
 			txt_a[0] = arg[j++];	txt_a[1] = '\0';
 			txt_b[0] = arg[j++];	txt_b[1] = '\0';
-			n = 2;
 		}
 		else if (strchr (&(arg[j]), ',')) {	/* Found :<labellow>,<labelhigh> */
-			n = sscanf (&(arg[j]), "%[^,],%s", txt_a, txt_b);
+			(void)sscanf (&(arg[j]), "%[^,],%s", txt_a, txt_b);
 		}
 		else {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error -T option: Give low and high labels either as +lLH or +l<low>,<high>.\n");
@@ -705,7 +703,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCONTOUR_CTRL *Ctrl, struct G
 
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active && !Ctrl->D.active,
 	                                 "Syntax error: Must specify a map projection with the -J option\n");
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active && !Ctrl->D.active, "Syntax error: Must specify a region with the -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET] && !Ctrl->D.active, "Syntax error: Must specify a region with the -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->C.file && Ctrl->C.interval <= 0.0 && gmt_M_is_dnan (Ctrl->C.single_cont) && gmt_M_is_dnan (Ctrl->A.single_cont), 
 	                                 "Syntax error -C option: Must specify contour interval, file name with levels, or CPT\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->D.active && !Ctrl->E.active && !(Ctrl->W.active || Ctrl->I.active),
@@ -768,8 +766,8 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -800,7 +798,7 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 		}
 	}
 	make_plot = !Ctrl->D.active;	/* Turn off plotting if -D was used */
-	convert = (make_plot || (GMT->common.R.active && GMT->common.J.active));
+	convert = (make_plot || (GMT->common.R.active[RSET] && GMT->common.J.active));
 	get_contours = (Ctrl->D.active || Ctrl->W.active);
 
 	if (GMT->common.J.active && gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_PROJECTION_ERROR);
@@ -821,10 +819,9 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 				gmt_M_free (GMT, x);	gmt_M_free (GMT, y);	gmt_M_free (GMT, z);
 				Return (GMT_RUNTIME_ERROR);
 			}
-			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
-				continue;
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			continue;	/* Go back and read the next record */
 		}
 
 		/* Data record to process */
@@ -1071,7 +1068,7 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 	cont = gmt_M_malloc (GMT, cont, 0, &c_alloc, struct PSCONTOUR);
 
 	if (Ctrl->D.active) {
-		uint64_t dim[4] = {0, 0, 0, 3};
+		uint64_t dim[GMT_DIM_SIZE] = {0, 0, 0, 3};
 		if (!Ctrl->D.file || !strchr (Ctrl->D.file, '%')) {	/* No file given or filename without C-format specifiers means a single output file */
 			io_mode = GMT_WRITE_SET;
 			n_tables = 1;

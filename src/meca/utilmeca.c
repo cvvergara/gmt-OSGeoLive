@@ -1,4 +1,4 @@
-/*	$Id: utilmeca.c 17331 2016-11-10 18:13:44Z pwessel $
+/*	$Id: utilmeca.c 18080 2017-04-30 20:31:30Z jluis $
  *    Copyright (c) 1996-2012 by G. Patau
  *    Donated to the GMT project by G. Patau upon her retirement from IGPG
  *    Distributed under the Lesser GNU Public Licence
@@ -146,7 +146,7 @@ double meca_ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0,
 	/*  argument is DIAMETER!!*/
 	ssize[0] = size;
 	gmt_setfill (GMT, E, outline);
-	PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+	PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 
 	gmt_setfill (GMT, F, outline);
 	if (fabs (pos_NP1_NP2) < EPSIL) {
@@ -337,7 +337,7 @@ double meca_ps_plan (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 	/*  argument is DIAMETER!!*/
 	ssize[0] = size;
 	PSL_setfill (PSL, GMT->session.no_rgb, true);
-	PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+	PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 
 	if (num_of_plane != 2) {
 		for (i = 0; i <= 180; i++) {
@@ -613,12 +613,12 @@ double meca_ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, do
 		if (vi > 0.) {
 			ssize[0] = radius_size*2.0;
 			gmt_setfill (GMT, C, true);
-			PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+			PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 		}
 		if (vi < 0.) {
 			ssize[0] = radius_size*2.0;
 			gmt_setfill (GMT, E, true);
-			PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+			PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 		}
 		return (radius_size*2.);
 	}
@@ -641,12 +641,12 @@ double meca_ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, do
 
 	if (iso < -1) {
 		gmt_setfill (GMT, E, true);
-		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+		PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 		return (size);
 	}
 	else if (iso > 1 - f) {
 		gmt_setfill (GMT, C, true);
-		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+		PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 		return (size);
 	}
 
@@ -717,6 +717,7 @@ double meca_ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, do
 		else {
 			if (fabs (fabs (az - azp) - M_PI) < D2R * 10.) {
 				azi[n][1] = azp;
+				assert (n < 2);
 				azi[++n][0] = az;
 			}
 			if (fabs (fabs (az - azp) - M_PI * 2.) < D2R * 2.) {
@@ -748,18 +749,18 @@ double meca_ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, do
 
 	if (!big_iso) {
 		gmt_setfill (GMT, F2, true);
-		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+		PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 	}
 	else if (d == 2) {
 		fprintf (stderr, "Warning: big isotropic component for record %d, case not fully tested! \n", recno);
 		gmt_setfill (GMT, F1, true);
-		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+		PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 		F1 = E, F2 = C;
 	}
 	else if (d == 0) {
 		fprintf (stderr, "Warning: big isotropic component for record %d, case not fully tested! \n", recno);
 		gmt_setfill (GMT, F1, true);
-		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
+		PSL_plotsymbol (PSL, x0, y0, ssize, PSL_CIRCLE);
 		F2 = E, F1 = C;
 	}
 
@@ -1188,7 +1189,7 @@ int meca_trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps
 
 	dim[0] = x2, dim[1] = y2;
 	dim[2] = vw, dim[3] = hl, dim[4] = hw;
-	dim[5] = vector_shape, dim[6] = GMT_VEC_END | GMT_VEC_FILL;
+	dim[5] = vector_shape, dim[6] = PSL_VEC_END | PSL_VEC_FILL;
 	PSL_plotsymbol (GMT->PSL, x1, y1, dim, PSL_VECTOR);
 
 	/* second, extensional arrow in opposite direction */
@@ -1219,7 +1220,7 @@ int meca_trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps
 	/* compression component */
 	dx = eps2 * s;
 	dy = eps2 * c;
-	dim[6] = GMT_VEC_BEGIN | GMT_VEC_FILL;
+	dim[6] = PSL_VEC_BEGIN | PSL_VEC_FILL;
 	meca_trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps2 > 0.0) {

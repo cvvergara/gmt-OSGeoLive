@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_bcr.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_bcr.c 17985 2017-04-18 14:37:51Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -241,7 +241,7 @@ double gmt_bcr_get_z_fast (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, 
 
 	unsigned int i, j;
 	uint64_t ij, node;
-	double retval, wsum, wx[4], wy[4], w;
+	double retval, wsum, wx[4] = {0.0, 0.0, 0.0, 0.0}, wy[4] = {0.0, 0.0, 0.0, 0.0}, w;
 
 	/* Determine nearest node ij and set weights wx, wy */
 
@@ -277,7 +277,7 @@ double gmt_bcr_get_z (struct GMT_CTRL *GMT, struct GMT_GRID *G, double xx, doubl
 
 	unsigned int i, j;
 	uint64_t ij, node;
-	double retval, wsum, wx[4], wy[4], w;
+	double retval, wsum, wx[4] = {0.0, 0.0, 0.0, 0.0}, wy[4] = {0.0, 0.0, 0.0, 0.0}, w;
 
 	/* First check that xx,yy are not Nan or outside domain - if so return NaN */
 
@@ -319,7 +319,7 @@ int gmtlib_bcr_get_img (struct GMT_CTRL *GMT, struct GMT_IMAGE *G, double xx, do
 
 	unsigned int i, j, b, nb = G->header->n_bands;
 	uint64_t ij;
-	double retval[4], wsum, wx[4], wy[4], w;
+	double retval[4], wsum, wx[4] = {0.0, 0.0, 0.0, 0.0}, wy[4] = {0.0, 0.0, 0.0, 0.0}, w;
 
 	/* First check that xx,yy are not Nan or outside domain - if so return NaN */
 

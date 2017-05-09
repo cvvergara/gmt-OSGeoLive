@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: spotter.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: spotter.h 17780 2017-03-25 20:54:11Z pwessel $
  *
  *   Copyright (c) 1999-2017 by P. Wessel
  *
@@ -27,8 +27,6 @@
  * \file spotter.h
  * \brief Include file for programs that link with libspotter.
  */
-
-#include "gmt_dev.h" /* Requires GMT to compile and link */
 
 #define EQ_RAD 6371.0087714
 #define KM_PR_DEG (EQ_RAD * M_PI / 180.0)

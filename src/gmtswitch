@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#   $Id: gmtswitch 17450 2017-01-16 21:34:35Z pwessel $
+#   $Id: gmtswitch 17451 2017-01-16 21:36:06Z pwessel $
 #
 #   Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 #   See LICENSE.TXT file for copying and redistribution conditions.
@@ -76,7 +76,7 @@ home=`pwd`
 if [ ! -f "$home/.gmtversions" ]; then	# No .gmtversions exists yet, first do that part
   cat << EOF >&2
 
-GMTSWITCH $Revision: 17450 $
+GMTSWITCH $Revision: 17451 $
 
 gmtswitch helps you modify your environment to allow for the switching back and
 forth between several GMT versions, in particular GMT 5 and previous GMT

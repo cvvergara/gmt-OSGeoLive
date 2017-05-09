@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: sphdistance.c 17618 2017-03-05 22:58:12Z pwessel $
+ *	$Id: sphdistance.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 2008-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -35,15 +35,15 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "gmt_sph.h"
+
 #define THIS_MODULE_NAME	"sphdistance"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Create Voronoi distance, node, or natural nearest-neighbor grid on a sphere"
 #define THIS_MODULE_KEYS	"<D{,ND(,QD(,GG},Q-("
-
-#include "gmt_dev.h"
-#include "gmt_sph.h"
-
-#define GMT_PROG_OPTIONS "-:RVbdhirs" GMT_OPT("F")
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:RVbdehirs" GMT_OPT("F")
 
 enum sphdist_modes {
 	SPHD_DIST = 0,
@@ -68,10 +68,6 @@ struct SPHDISTANCE_CTRL {
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct L {	/* -L<unit>] */
 		bool active;
 		char unit;
@@ -141,7 +137,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "==> The hard work is done by algorithms 772 (STRIPACK) & 773 (SSRFPACK) by R. J. Renka [1997] <==\n\n");
 	GMT_Message (API, GMT_TIME_NONE, "usage: sphdistance [<table>] -G<outgrid> %s [-C] [-En|z|d[<dr>]]\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L<unit>] [-N<nodetable>] [-Q<voronoitable>] [%s] [%s] [%s] [%s]\n", GMT_Rgeo_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -167,7 +163,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default performs Voronoi construction on input data first].\n");
 	GMT_Option (API, "Rg");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If no region is specified we default to the entire world [-Rg].\n");
-	GMT_Option (API, "V,bi2,di,h,i,r,s,:,.");
+	GMT_Option (API, "V,bi2,di,e,h,i,r,s,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -218,11 +214,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SPHDISTANCE_CTRL *Ctrl, struct
 					n_errors++;
 				break;
 			case 'I':
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'L':
 				Ctrl->L.active = true;
@@ -247,13 +239,12 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SPHDISTANCE_CTRL *Ctrl, struct
 		}
 	}
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0) GMT->common.b.ncol[GMT_IN] = 3;
 	n_errors += gmt_M_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] < 3, "Syntax error: Binary input data (-bi) must have at least 3 columns\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->Q.active && GMT->common.b.active[GMT_IN] && !Ctrl->N.active, "Syntax error: Binary input data (-bi) with -Q also requires -N.\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
@@ -300,9 +291,9 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	gmt_parse_common_options (GMT, "f", 'f', "g"); /* Implicitly set -fg since this is spherical triangulation */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -312,7 +303,7 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 
 	gmt_init_distaz (GMT, Ctrl->L.unit, gmt_M_sph_mode (GMT), GMT_MAP_DIST);
 
-	if (!GMT->common.R.active) {	/* Default to a global grid */
+	if (!GMT->common.R.active[RSET]) {	/* Default to a global grid */
 		GMT->common.R.wesn[XLO] = 0.0;	GMT->common.R.wesn[XHI] = 360.0;	GMT->common.R.wesn[YLO] = -90.0;	GMT->common.R.wesn[YHI] = 90.0;
 	}
 
@@ -401,16 +392,14 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 		n = 0;
 		do {	/* Keep returning records until we reach EOF */
 			if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-				if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+				if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 					Return (GMT_RUNTIME_ERROR);
-				if (gmt_M_rec_is_table_header (GMT)) 	/* Skip all table headers */
-					continue;
-				if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
-					break;
-				else if (gmt_M_rec_is_segment_header (GMT)) {			/* Parse segment headers */
-					first = true;
-					continue;
 				}
+				else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+					break;
+				else if (gmt_M_rec_is_segment_header (GMT))			/* Parse segment headers */
+					first = true;
+				continue;	/* Go back and read the next record */
 			}
 
 			/* Data record to process - avoid duplicate points as gmt_stripack_lists cannot handle that */
@@ -471,7 +460,7 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 
 	/* OK, time to create and work on the distance grid */
 
-	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, NULL, NULL, \
 		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 	GMT_Report (API, GMT_MSG_VERBOSE, "Start processing distance grid\n");
 
@@ -606,7 +595,7 @@ int GMT_sphdistance (void *V_API, int mode, void *args) {
 	if (Ctrl->E.mode == SPHD_VALUES) gmt_M_free (GMT, z_val);
 
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
 		Return (API->error);
 	}
 

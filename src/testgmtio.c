@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: testgmtio.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: testgmtio.c 17780 2017-03-25 20:54:11Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,7 +26,7 @@
 
 #include "gmt_dev.h"
 
-#define GMT_PROG_OPTIONS "->Vghi"
+#define THIS_MODULE_OPTIONS "->Vghi"
 
 int main (int argc, char *argv[]) {
 	int n_fields = 0, mode = 0,  error = 0;
@@ -43,7 +43,7 @@ int main (int argc, char *argv[]) {
 	if ((options = GMT_Create_Options (API, argc-1, (argv+1))) == NULL) exit (EXIT_FAILURE);
 
 	/* 3. Parse the common GMT options (e.g., -h -V) */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) exit (EXIT_FAILURE);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) exit (EXIT_FAILURE);
 
 	/* 4. Initializing data input via stdin */
 	
@@ -92,6 +92,7 @@ int main (int argc, char *argv[]) {
 				GMT_Report (API, GMT_MSG_VERBOSE, "A gap found in record %" PRIu64 "\n", GMT->current.io.rec_no);
 				API->print_func (stdout, "G: ");
 			}
+			assert (false);						/* Should never get here */
 		}
 		if (gmt_M_rec_is_data (GMT)) {	/* Found a data record */
 			if ((error = gmt_set_cols (GMT, GMT_IN, n_fields)) != 0) exit (EXIT_FAILURE);

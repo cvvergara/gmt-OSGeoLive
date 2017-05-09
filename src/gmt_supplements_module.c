@@ -1,4 +1,4 @@
-/* $Id: gmt_supplements_module.c 17580 2017-02-23 06:35:24Z pwessel $
+/* $Id: gmt_supplements_module.c 17779 2017-03-25 19:56:38Z pwessel $
  *
  * Copyright (c) 2012-2017
  * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
@@ -50,6 +50,7 @@ static struct Gmt_moduleinfo g_supplements_module[] = {
 	{"pssac", "meca", "Plot seismograms in SAC format on maps", ">XO,RG-"},
 	{"psvelo", "meca", "Plot velocity vectors, crosses, and wedges on maps", "<T{,>X}"},
 	{"mgd77convert", "mgd77", "Convert MGD77 data to other file formats", ""},
+	{"mgd77header", "mgd77", "Create MGD77 headers from A77 files", ""},
 	{"mgd77info", "mgd77", "Extract information about MGD77 files", ""},
 	{"mgd77list", "mgd77", "Extract data from MGD77 files", ">?}"},
 	{"mgd77magref", "mgd77", "Evaluate the IGRF or CM4 magnetic field models", "<D{,>D}"},

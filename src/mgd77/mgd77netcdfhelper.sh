@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#   $Id: mgd77netcdfhelper.sh 17449 2017-01-16 21:27:04Z pwessel $
+#   $Id: mgd77netcdfhelper.sh 17451 2017-01-16 21:36:06Z pwessel $
 #
 #   Author:     P. Wessel
 #   Date:       2005-OCT-14

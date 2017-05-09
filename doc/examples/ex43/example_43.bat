@@ -1,5 +1,5 @@
 REM             GMT EXAMPLE 43
-REM             $Id: example_43.bat 17434 2017-01-12 22:59:32Z pwessel $
+REM             $Id: example_43.bat 17435 2017-01-12 23:07:10Z pwessel $
 REM
 REM Purpose:      Illustrate regression and outlier detection
 REM GMT progs:    gmtregress, psbasemap, pstext, psxy

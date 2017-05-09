@@ -1,4 +1,4 @@
-/*	$Id: gmt_mgg_header2.c 17326 2016-11-08 20:28:56Z pwessel $
+/*	$Id: gmt_mgg_header2.c 17328 2016-11-08 20:38:56Z pwessel $
  *
  *	Code donated by David Divens, NOAA/NGDC
  *	Distributed under the GNU Public License (see LICENSE.TXT for details)

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtpmodeler.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: gmtpmodeler.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *   Copyright (c) 1999-2017 by P. Wessel
  *
@@ -24,14 +24,15 @@
  * Ver:		5.3
  */
 
+#include "gmt_dev.h"
+#include "spotter.h"
+
 #define THIS_MODULE_NAME	"gmtpmodeler"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Evaluate a plate motion model at given locations"
 #define THIS_MODULE_KEYS	"<D{,FD(,>D}"
-
-#include "spotter.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdfghios"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vbdefghios"
 
 #define N_PM_ITEMS	9
 #define PM_AZIM		0
@@ -93,8 +94,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: gmtpmodeler <table> %s [-F<polygontable>]\n", SPOTTER_E_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-N<upper_age>] [-SadrswxyXY] [-T<time>] [%s] [%s] [%s]\n\t[%s] [%s]\n\n",
-		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_i_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-N<upper_age>] [-SadrswxyXY] [-T<time>] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\n",
+		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -117,7 +118,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Y : Latitude at origin of crust.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default writes lon,lat,age,<adrswxyXY> to standard output\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Set fixed time of reconstruction to override any input ages.\n");
-	GMT_Option (API, "bi3,bo,d,h,i,o,s,:,.");
+	GMT_Option (API, "bi3,bo,d,e,h,i,o,s,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -246,9 +247,9 @@ int GMT_gmtpmodeler (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -324,8 +325,8 @@ int GMT_gmtpmodeler (void *V_API, int mode, void *args) {
 	if (GMT->current.setting.io_header[GMT_OUT]) {
 		char header[GMT_BUFSIZ] = {""};
 		for (k = 0; k < Ctrl->S.n_items; k++) {
-			strcat (header, tag[k]);
-			if (k < (Ctrl->S.n_items-1)) strcat (header, GMT->current.setting.io_col_separator);
+			strncat (header, tag[k], GMT_BUFSIZ-1);
+			if (k < (Ctrl->S.n_items-1)) strncat (header, GMT->current.setting.io_col_separator, GMT_BUFSIZ-1);
 		}
 		GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, header);	/* Write a header record */
 	}
@@ -349,6 +350,7 @@ int GMT_gmtpmodeler (void *V_API, int mode, void *args) {
 				GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);
 				continue;
 			}
+			assert (in != NULL);						/* Should never get here */
 		}
 
 		/* Data record to process */

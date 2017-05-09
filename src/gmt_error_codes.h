@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_error_codes.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_error_codes.h 17666 2017-03-14 04:01:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -74,6 +74,7 @@ enum Gmt_api_error_code {
 	GMT_NOT_A_VALID_IO_SESSION,
 	GMT_NOT_A_VALID_METHOD,
 	GMT_NOT_A_VALID_MODE,
+	GMT_NOT_A_VALID_MODIFIER,
 	GMT_NOT_A_VALID_MODULE,
 	GMT_NOT_A_VALID_PARAMETER,
 	GMT_NOT_A_VALID_TYPE,
@@ -95,6 +96,7 @@ enum Gmt_api_error_code {
 	GMT_OPTION_HISTORY_ERROR,
 	GMT_OPTION_IS_NULL,
 	GMT_OPTION_LIST_NULL,
+	GMT_OPTION_NOT_ALLOWED,
 	GMT_OPTION_NOT_FOUND,
 	GMT_OPTION_SORT_ERROR,
 	GMT_OUTPUT_NOT_SET,

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcontour.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdcontour.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -25,14 +25,14 @@
  *
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdcontour"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Make contour map using a grid"
 #define THIS_MODULE_KEYS	"<G{,AT)=t,CC(,DDD,>X},G?(=1"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-BJKOPRUVXYbcdfhptxy" GMT_OPT("EMm")
+#define THIS_MODULE_NEEDS	"gJ"
+#define THIS_MODULE_OPTIONS "-BJKOPRUVXYbdfhptxy" GMT_OPT("EMmc")
 
 /* Control structure for grdcontour */
 
@@ -167,9 +167,9 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-D<template>] [-F[l|r]] [%s] [%s] [-K]\n", GMT_J_OPT, GMT_Jz_OPT, GMT_CONTG);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L<low>/<high>] [-O] [-P] [-Q<cut>] [%s]\n", GMT_Rgeoz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-S<smooth>] [%s]\n", GMT_CONTT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W[a|c]<pen>[+c[l|f]]]\n\t[%s] [%s] [-Z[<fact>[/<shift>]][p]]\n",
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W[a|c]<pen>[+c[l|f]]]\n\t[%s] [%s] [-Z[+s<fact>][+o<shift>][+p]\n",
 	                                 GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n", GMT_bo_OPT, GMT_do_OPT, GMT_c_OPT, GMT_ho_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n", GMT_bo_OPT, GMT_do_OPT, GMT_ho_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\n", GMT_p_OPT, GMT_t_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -237,9 +237,9 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t        Append f to let fill/font colors follow the CPT setting.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t        Default is both effects.\n");
 	GMT_Option (API, "X");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Z Subtract <shift> and multiply data by <fact> before contouring [1/0].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append p for z-data that are periodic in 360 (i.e., phase data).\n");
-	GMT_Option (API, "bo3,c,do,f,h,p,t,.");
+	GMT_Message (API, GMT_TIME_NONE, "\t-Z Subtract <shift> (via +o<shift> [0]) and multiply data by <fact> (via +s<fact> [1])\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   before contouring. Append + for z-data that are periodic in 360 (i.e., phase data).\n");
+	GMT_Option (API, "bo3,do,f,h,p,t,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -257,17 +257,15 @@ GMT_LOCAL unsigned int grdcontour_old_T_parser (struct GMT_CTRL *GMT, char *arg,
 			Ctrl->T.dim[GMT_Y] = gmt_M_to_inch (GMT, txt_b);
 		}
 	}
-	n = 0;
 	for (j = 0; arg[j] && arg[j] != ':'; j++);
 	if (arg[j] == ':') Ctrl->T.label = true, j++;
 	if (arg[j]) {	/* Override high/low markers */
 		if (strlen (&(arg[j])) == 2) {	/* Standard :LH syntax */
 			txt_a[0] = arg[j++];	txt_a[1] = '\0';
 			txt_b[0] = arg[j++];	txt_b[1] = '\0';
-			n = 2;
 		}
 		else if (strchr (&(arg[j]), ',')) {	/* Found :<labellow>,<labelhigh> */
-			n = sscanf (&(arg[j]), "%[^,],%s", txt_a, txt_b);
+			sscanf (&(arg[j]), "%[^,],%s", txt_a, txt_b);
 		}
 		else {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL,
@@ -281,6 +279,34 @@ GMT_LOCAL unsigned int grdcontour_old_T_parser (struct GMT_CTRL *GMT, char *arg,
 		}
 	}
 	return (n_errors);
+}
+
+GMT_LOCAL unsigned int parse_Z_opt (struct GMT_CTRL *GMT, char *txt, struct GRDCONTOUR_CTRL *Ctrl) {
+	/* Parse the -Z option: -Z[+s<scale>][+o<offset>][+p] */
+	unsigned int uerr = 0;
+	if (!txt || txt[0] == '\0') {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL,
+    		"Syntax error -Z option: No arguments given\n");
+		return (GMT_PARSE_ERROR);
+	}
+	if (strstr (txt, "+s") || strstr (txt, "+o") || strstr (txt, "+p")) {
+		char p[GMT_LEN64] = {""};
+		unsigned int pos = 0;
+		while (gmt_getmodopt (GMT, 'Z', txt, "sop", &pos, p, &uerr) && uerr == 0) {
+			switch (p[0]) {
+				case 's':	Ctrl->Z.scale = atof (&p[1]);	break;
+				case 'o':	Ctrl->Z.offset = atof (&p[1]);	break;
+				case 'p':	Ctrl->Z.periodic = true;		break;
+				default: 	/* These are caught in gmt_getmodopt so break is just for Coverity */
+					break;
+			}
+		}
+	}
+	else {	/* Old syntax */
+		if (txt[0] && txt[0] != 'p') sscanf (txt, "%lf/%lf", &Ctrl->Z.scale, &Ctrl->Z.offset);
+		Ctrl->Z.periodic = (txt[strlen(txt)-1] == 'p');	/* Phase data */
+	}
+	return (uerr ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
 
 GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, struct GMT_OPTION *options) {
@@ -483,8 +509,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, struct 
 				break;
 			case 'Z':	/* For scaling or phase data */
 				Ctrl->Z.active = true;
-				if (opt->arg[0] && opt->arg[0] != 'p') sscanf (opt->arg, "%lf/%lf", &Ctrl->Z.scale, &Ctrl->Z.offset);
-				Ctrl->Z.periodic = (opt->arg[strlen(opt->arg)-1] == 'p');	/* Phase data */
+				n_errors += parse_Z_opt (GMT, opt->arg, Ctrl);
 				break;
 
 			default:	/* Report bad options */
@@ -849,8 +874,8 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -862,7 +887,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 	GMT->current.map.z_periodic = Ctrl->Z.periodic;	/* Phase data */
 	GMT_Report (API, GMT_MSG_VERBOSE, "Allocate memory and read data file\n");
 
-	if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
+	if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 		Return (API->error);
 	}
 
@@ -871,7 +896,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 
 	/* Determine what wesn to pass to map_setup */
 
-	if (!GMT->common.R.active) gmt_M_memcpy (GMT->common.R.wesn, G->header->wesn, 4, double);	/* -R was not set so we use the grid domain */
+	if (!GMT->common.R.active[RSET]) gmt_M_memcpy (GMT->common.R.wesn, G->header->wesn, 4, double);	/* -R was not set so we use the grid domain */
 
 	if (need_proj && gmt_map_setup (GMT, GMT->common.R.wesn)) Return (GMT_PROJECTION_ERROR);
 
@@ -896,7 +921,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 
 	/* Read data */
 
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->In.file, G) == NULL) {
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn, Ctrl->In.file, G) == NULL) {
 		Return (API->error);
 	}
 
@@ -1022,6 +1047,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 					continue;
 				if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 					break;
+				assert (record != NULL);						/* Should never get here */
 			}
 			if (gmt_is_a_blank_line (record)) continue;	/* Nothing in this record */
 
@@ -1136,7 +1162,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 	edge = gmt_M_memory (GMT, NULL, n_edges, unsigned int);	/* Bit flags used to keep track of contours */
 
 	if (Ctrl->D.active) {
-		uint64_t dim[4] = {0, 0, 0, 3};
+		uint64_t dim[GMT_DIM_SIZE] = {0, 0, 0, 3};
 		if (!Ctrl->D.file || !strchr (Ctrl->D.file, '%'))	/* No file given or filename without C-format specifiers means a single output file */
 			io_mode = GMT_WRITE_SET;
 		else {	/* Must determine the kind of output organization */
@@ -1174,6 +1200,8 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 		n_seg = gmt_M_memory (GMT, NULL, n_tables, uint64_t);
 	}
 
+	gmt_M_memset (rgb, 4, double);
+	
 	if (make_plot) {
 		if (Ctrl->contour.delay) GMT->current.ps.nclip = +2;	/* Signal that this program initiates clipping that will outlive this process */
 		if ((PSL = gmt_plotinit (GMT, options)) == NULL) Return (GMT_RUNTIME_ERROR);

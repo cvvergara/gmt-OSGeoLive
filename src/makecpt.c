@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: makecpt.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: makecpt.c 17897 2017-04-10 03:16:23Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -28,14 +28,14 @@
  *
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"makecpt"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Make GMT color palette tables"
 #define THIS_MODULE_KEYS	">C},ED(,TD("
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->Vbdhi"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->Vbdhi"
 
 EXTERN_MSC unsigned int gmtlib_log_array (struct GMT_CTRL *GMT, double min, double max, double delta, double **array);
 
@@ -82,7 +82,7 @@ struct MAKECPT_CTRL {
 	struct N {	/* -N */
 		bool active;
 	} N;
-	struct T {	/* -T<z_min/z_max[/z_inc>]|<zfile>|<z0,z1,...,zn> */
+	struct T {	/* -T<z_min/z_max[/z_inc>[+n]]|<zfile>|<z0,z1,...,zn> */
 		bool active;
 		bool interpolate;
 		double low, high, inc;
@@ -93,8 +93,9 @@ struct MAKECPT_CTRL {
 		bool active;
 		unsigned int mode;
 	} Q;
-	struct W {	/* -W */
+	struct W {	/* -W[w] */
 		bool active;
+		bool wrap;
 	} W;
 	struct Z {	/* -Z */
 		bool active;
@@ -124,7 +125,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: makecpt [-A[+]<transparency>] [-C<cpt>|colors] [-D[i|o]] [-E<nlevels>] [-F[R|r|h|c][+c]] [-G<zlo>/<zhi>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "	[-I[c][z]] [-L] [-M] [-N] [-Q[i|o]] [-T<z_min>/<z_max>[/<z_inc>[+]] | -T<table> | -T<z1,z2,...zn>] [%s] [-W]\n\t[-Z] [%s] [%s] [%s]\n\t[%s]\n\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_i_OPT, GMT_ho_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "	[-I[c][z]] [-L] [-M] [-N] [-Q[i|o]] [-T<z_min>/<z_max>[/<z_inc>[+n]] | -T<table> | -T<z1,z2,...zn>] [%s] [-W[w]]\n\t[-Z] [%s] [%s] [%s]\n\t[%s]\n\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_i_OPT, GMT_ho_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -155,12 +156,12 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t        If -T<z_min/z_max/z_inc> is given, then z_inc must be 1, 2, or 3\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t        (as in logarithmic annotations; see -B in psbasemap).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Give <z_min>/<z_max> to change the z-range for the colorscale in z-units.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append /<z_inc> to sample the cpt discretely instead, or append + to <z_inc>\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append /<z_inc> to sample the cpt discretely instead, or append +n to <z_inc>\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   to let <z_inc> indicate the number of z-values to produce instead.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, supply (1) a filename with custom z-values or\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   (2) a comma-separated list of custom z-values.\n");
 	GMT_Option (API, "V");
-	GMT_Message (API, GMT_TIME_NONE, "\t-W Do not interpolate color palette.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-W Do not interpolate color palette. Alternatively, append w for a wrapped CPT.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Create a continuous color palette [Default is discontinuous,\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   i.e., constant color intervals]. Without -T or when using -T<z_min>/<z_max> this\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   has no effect; the input palette table is used untouched with possible scaling.\n");
@@ -252,8 +253,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MAKECPT_CTRL *Ctrl, struct GMT
 					Ctrl->T.list = strdup (opt->arg);
 				else {
 					n = sscanf (opt->arg, "%lf/%lf/%lf", &Ctrl->T.low, &Ctrl->T.high, &Ctrl->T.inc);
-					n_errors += gmt_M_check_condition (GMT, n < 2, "Syntax error -T option: Must specify z_min/z_max[/z_inc[+]]\n");
-					if (n == 3 && opt->arg[strlen(opt->arg)-1] == '+') {	/* Gave number of levels instead; calculate inc */
+					n_errors += gmt_M_check_condition (GMT, n < 2, "Syntax error -T option: Must specify z_min/z_max[/z_inc[+n]]\n");
+					if (n == 3 && (strstr(opt->arg, "+n") || opt->arg[strlen(opt->arg)-1] == '+')) {	/* Gave number of levels instead; calculate inc */
 						Ctrl->T.inc = (Ctrl->T.high - Ctrl->T.low) / (Ctrl->T.inc - 1.0);
 					}
 					if (n == 2) Ctrl->T.interpolate = false;
@@ -267,7 +268,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MAKECPT_CTRL *Ctrl, struct GMT
 					Ctrl->Q.mode = 1;
 				break;
 			case 'W':	/* Do not interpolate colors */
-				Ctrl->W.active = true;
+				if (opt->arg[0] == 'w')
+					Ctrl->W.wrap = true;
+				else
+					Ctrl->W.active = true;
 				break;
 			case 'Z':	/* Continuous colors */
 				Ctrl->Z.active = true;
@@ -295,7 +299,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MAKECPT_CTRL *Ctrl, struct GMT
 	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && (Ctrl->A.value < 0.0 || Ctrl->A.value > 1.0),
 	                                   "Syntax error -A: Transparency must be n 0-100 range [0 or opaque]\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->E.active && Ctrl->T.active, "Syntax error -E: Cannot be combined with -T\n");
-	if (Ctrl->T.active && !Ctrl->T.interpolate && Ctrl->Z.active && !strchr (Ctrl->C.file, ',')) {
+	if (Ctrl->T.active && !Ctrl->T.interpolate && Ctrl->Z.active && (Ctrl->C.file == NULL || strchr (Ctrl->C.file, ',') == NULL)) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning -T option: Without z_inc, -Z has no effect (ignored)\n");
 		Ctrl->Z.active = false;
 	}
@@ -332,8 +336,8 @@ int GMT_makecpt (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -371,6 +375,7 @@ int GMT_makecpt (void *V_API, int mode, void *args) {
 
 	if (Pin->categorical) Ctrl->W.active = true;	/* Do not want to sample a categorical table */
 	if (Ctrl->E.active && Ctrl->E.levels == 0) Ctrl->E.levels = Pin->n_colors + 1;	/* Default number of levels */
+	if (Ctrl->W.wrap) Pin->is_wrapping = true;	/* A cyclic CPT has been requested */
 
 	/* Set up arrays */
 
@@ -400,6 +405,7 @@ int GMT_makecpt (void *V_API, int mode, void *args) {
 			extern void gmtlib_init_cpt (struct GMT_CTRL *GMT, struct GMT_PALETTE *P);
 			if (nz != (int)(Pin->n_colors + 1)) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Mistmatch between number of entries in color list and z list\n");
+				gmt_M_free (GMT, z);
 				Return (GMT_RUNTIME_ERROR);
 			}
 			if ((Pout = GMT_Duplicate_Data (API, GMT_IS_PALETTE, GMT_DUPLICATE_ALLOC, Pin)) == NULL) return (API->error);

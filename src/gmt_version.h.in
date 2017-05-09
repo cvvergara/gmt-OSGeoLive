@@ -1,5 +1,5 @@
 /*
- * $Id: gmt_version.h.in 17449 2017-01-16 21:27:04Z pwessel $
+ * $Id: gmt_version.h.in 17858 2017-04-03 22:11:08Z jluis $
  *
  *  Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
@@ -55,7 +55,11 @@
 
 #ifndef GMT_MANPAGE
 #	define GMT_VERSION GMT_version()
+#ifdef _WIN32
+	static _inline char *GMT_version () {
+#else
 	static inline char *GMT_version () {
+#endif
 		/* final string returned by GMT_version() */
 		static char version[] = GMT_STRING GMT_VER_64 GMT_MP;
 		return version;

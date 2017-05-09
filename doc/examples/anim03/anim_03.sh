@@ -1,6 +1,6 @@
 #!/bin/bash
 #               GMT ANIMATION 03
-#               $Id: anim_03.sh 16750 2016-07-09 05:44:02Z pwessel $
+#               $Id: anim_03.sh 17711 2017-03-17 20:55:30Z pwessel $
 #
 # Purpose:      Make web page with simple animated GIF of Iceland topo
 # GMT modules:  grdclip, grdgradient, makecpt, grdview, psxy, psconvert
@@ -24,7 +24,6 @@ ps=${name}.ps
 mkdir -p $$
 frame=0
 gmt grdclip -Sb0/-1 -G$${_above}.nc Iceland.nc
-gmt grdgradient -fg -A45 -Nt1 $${_above}.nc -G$$.nc
 gmt makecpt -Crelief -T-2000/2000/20 > $$.cpt
 while [ ${az} -lt 360 ]; do
 	file=`gmt_set_framename ${name} ${frame}`

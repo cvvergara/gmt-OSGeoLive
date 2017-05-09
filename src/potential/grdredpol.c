@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdredpol.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdredpol.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -22,7 +22,7 @@
  * computes the continuous reduction to the pole (RTP) anomaly by calculating the
  * filter coefficients in the frequency, inverse FT and convolve in space domain.
  * For details on the method see, Luis, J.F and J.M. Miranda (2008), 
- * "Reevaluation of magnetic chrons in the North Atlantic between 35°N and 47°N: 
+ * "Reevaluation of magnetic chrons in the North Atlantic between 35ï¿½N and 47ï¿½N: 
  * Implications for the formation of the Azores Triple Junction and associated plateau, 
  * J. Geophys. Res., 113, B10105, doi:10.1029/2007JB005573 
  *
@@ -31,14 +31,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdredpol"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute the Continuous Reduction To the Pole, AKA differential RTP"
 #define THIS_MODULE_KEYS	"<G{,EG(,GG},ZG)"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-RVn"
+#define THIS_MODULE_NEEDS	"g"
+#define THIS_MODULE_OPTIONS "-RVn"
 
 struct REDPOL_CTRL {
 	struct In {
@@ -1216,14 +1216,14 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
 	/*--------------------------- This is the grdredpol main code --------------------------*/
 
-	if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) /* Get header only */
+	if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) /* Get header only */
 		Return (API->error);
 
 	if (Ctrl->F.compute_n) {
@@ -1236,7 +1236,7 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 	GMT->current.io.pad[XLO] = GMT->current.io.pad[XHI] = n21-1;
 	GMT->current.io.pad[YLO] = GMT->current.io.pad[YHI] = m21-1;
 
-	if (!GMT->common.R.active) 
+	if (!GMT->common.R.active[RSET]) 
 		gmt_M_memcpy (wesn_new, Gin->header->wesn, 4, double);
 	else
 		gmt_M_memcpy (wesn_new, GMT->common.R.wesn, 4, double);
@@ -1249,11 +1249,11 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 
 	gmt_grd_init (GMT, Gin->header, options, true);
 
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_new, Ctrl->In.file, Gin) == NULL) {	/* Get subset */
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn_new, Ctrl->In.file, Gin) == NULL) {	/* Get subset */
 		Return (API->error);
 	}
 
-	if (GMT->common.R.active) {
+	if (GMT->common.R.active[RSET]) {
 		if (wesn_new[XLO] < Gin->header->wesn[XLO] || wesn_new[XHI] > Gin->header->wesn[XHI]) {
 			GMT_Report (API, GMT_MSG_NORMAL, " Selected region exceeds the X-boundaries of the grid file!\n");
 			return (GMT_RUNTIME_ERROR);
@@ -1270,17 +1270,17 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 	/* Section to deal with possible external grids with dip and dec for interpolation */
 
 	if (Ctrl->E.dip_grd_only || Ctrl->E.dip_dec_grd) {
-		if ((Gdip = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->E.dipfile, NULL)) == NULL)	/* Get header only */
+		if ((Gdip = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->E.dipfile, NULL)) == NULL)	/* Get header only */
 			Return (API->error);
 	
-		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_new, Ctrl->E.dipfile, Gdip) == NULL)
+		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn_new, Ctrl->E.dipfile, Gdip) == NULL)
 			Return (API->error);
 	}
 	if (Ctrl->E.dip_dec_grd) {
-		if ((Gdec = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->E.decfile, NULL)) == NULL)
+		if ((Gdec = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->E.decfile, NULL)) == NULL)
 			Return (API->error);
 	
-		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn_new, Ctrl->E.decfile, Gdec) == NULL)
+		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn_new, Ctrl->E.decfile, Gdec) == NULL)
 			Return (API->error);
 	}
 
@@ -1333,7 +1333,7 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 	fi  = TWO_PI / Ctrl->F.ncoef_row;
 	psi = TWO_PI / Ctrl->F.ncoef_col;
 
-	if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn_new, Gin->header->inc, \
+	if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, wesn_new, Gin->header->inc, \
 	                             Gin->header->registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 					
 	if (Ctrl->Z.active) {		/* Create one grid to hold the filter coefficients */
@@ -1342,7 +1342,7 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 		wesn[YLO] = 1;	wesn[YHI] = (double)Ctrl->F.ncoef_row;
 		inc[GMT_X] = inc[GMT_Y] = 1;
 		
-		if ((Gfilt = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc,
+		if ((Gfilt = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, wesn, inc,
 		                              GMT_GRID_PIXEL_REG, 0, NULL)) == NULL) Return (API->error);
 		strcpy (Gfilt->header->title, "Reduction To the Pole filter");
 		strcpy (Gfilt->header->x_units, "radians");
@@ -1369,7 +1369,7 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 			if (!Ctrl->C.const_f) {
 				Ctrl->C.dec = out_igrf[5] * D2R;
 				Ctrl->C.dip = out_igrf[6] * D2R;
-				/* Calculo dos cosenos directores */
+				/* Compute the direction cosines */
 				alfa = -cos(Ctrl->C.dip) * cos(Ctrl->C.dec);
 				beta =  cos(Ctrl->C.dip) * sin(Ctrl->C.dec);
 				gama = -sin(Ctrl->C.dip);
@@ -1377,7 +1377,6 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 			if ((Ctrl->E.dip_grd_only || Ctrl->E.dip_dec_grd)) {	/* */
 				if (Ctrl->E.dip_grd_only) {		/* Use mag DEC = 0 */
 					dip_m = gmt_bcr_get_z(GMT, Gdip, slonm, slatm) * D2R;
-					dec_m = 0;
 					tau = -cos(dip_m);
 					mu  =  0;
 					nu  = -sin(dip_m);
@@ -1443,7 +1442,6 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 						Ctrl->C.dip = out_igrf[6] * D2R;
 						if (Ctrl->E.dip_grd_only) {
 							dip_m = gmt_bcr_get_z(GMT, Gdip, ftlon[row], ftlat[row]) * D2R;
-							dec_m = 0;
 							tau1 = -cos(dip_m);
 							mu1  =  0;
 							nu1  = -sin(dip_m);
@@ -1528,12 +1526,12 @@ int GMT_grdredpol (void *V_API, int mode, void *args) {
 	strcpy (Gout->header->z_units, "nT");
 
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Gout)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
 		Return (API->error);
 	}
 	if (Ctrl->Z.active) {
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Gfilt)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->Z.file, Gfilt) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->Z.file, Gfilt) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}

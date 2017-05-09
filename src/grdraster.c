@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdraster.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: grdraster.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -30,15 +30,15 @@
  * grids using metadata from the grdraster.info table.
  */
 
+#include "gmt_dev.h"
+#include "common_byteswap.h"
+
 #define THIS_MODULE_NAME	"grdraster"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Extract subregion from a binary raster and save as a GMT grid"
 #define THIS_MODULE_KEYS	"GG},TD)"
-
-#include "gmt_dev.h"
-#include "common_byteswap.h"
-
-#define GMT_PROG_OPTIONS "-JRVbdh"
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-JRVbdh"
 
 EXTERN_MSC void gmt_str_toupper (char *string);
 
@@ -51,10 +51,6 @@ struct GRDRASTER_CTRL {
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct T {	/* -T<output_table> */
 		bool active;
 		char *file;
@@ -342,7 +338,7 @@ GMT_LOCAL int load_rasinfo (struct GMT_CTRL *GMT, struct GRDRASTER_INFO **ras, c
 				strncpy(buf, &rasinfo[nfound].h.command[i], j-i);
 				buf[j-i]='\0';
 				reset_coltype (GMT, buf);	/* Make sure geo coordinates will be recognized */
-				GMT->common.R.active = false;	/* Forget that -R was used before */
+				GMT->common.R.active[RSET] = false;	/* Forget that -R was used before */
 				if (gmt_parse_common_options (GMT, "R", 'R', buf)) {
 					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Skipping record in grdraster.info (-R string conversion error).\n");
 					continue;
@@ -697,11 +693,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDRASTER_CTRL *Ctrl, struct G
 				if (opt->arg[0]) Ctrl->G.file = strdup (opt->arg);
 				break;
 			case 'I':
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'T':
 				Ctrl->T.active = true;
@@ -714,10 +706,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDRASTER_CTRL *Ctrl, struct G
 	}
 
 	/* Check that arguments were valid */
-	gmt_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
 
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option.\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option.\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_M_check_condition (GMT, n_files != 1, "Syntax error -I option: You must specify only one raster file ID.\n");
 	if (gmt_M_compat_check (GMT, 4)) {	/* GMT4 LEVEL: In old version we default to triplet output if -G was not set */
 		n_errors += gmt_M_check_condition (GMT, Ctrl->G.active && Ctrl->T.active, "Syntax error: You must select only one of -G or -T.\n");
@@ -772,11 +764,11 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	/* Hardwire a -fg setting since this is geographic data */
 	gmt_set_geographic (GMT, GMT_IN);
 	gmt_set_geographic (GMT, GMT_OUT);
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -788,7 +780,7 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 	/* Since load_rasinfo processed -R options we need to re-parse the main -R */
 
 	r_opt = GMT_Find_Option (GMT->parent, 'R', options);
-	GMT->common.R.active = false;	/* Forget that -R was used before */
+	GMT->common.R.active[RSET] = false;	/* Forget that -R was used before */
 	reset_coltype (GMT, r_opt->arg);	/* Make sure geo coordinates will be recognized */
 	if (gmt_parse_common_options (GMT, "R", 'R', r_opt->arg)) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error reprocessing -R?.\n");
@@ -851,7 +843,7 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 
 	/* OK, here we have a recognized dataset ID */
 
-	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc,
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, NULL, NULL,
 	                             GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) {
 		free (tselect);
 		Return (API->error);
@@ -868,9 +860,9 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 		gmt_set_cartesian (GMT, GMT_OUT);
 	}
 
-	/* Everything looks OK so far.  If (Ctrl->I.active) verify that it will work, else set it.  */
-	if (Ctrl->I.active) {
-		gmt_M_memcpy (Grid->header->inc, Ctrl->I.inc, 2, double);
+	/* Everything looks OK so far.  If (GMT->common.R.active[ISET]) verify that it will work, else set it.  */
+	if (GMT->common.R.active[ISET]) {
+		gmt_M_memcpy (Grid->header->inc, GMT->common.R.inc, 2, double);
 		tol = 0.01 * myras.h.inc[GMT_X];
 		imult = urint (Grid->header->inc[GMT_X] / myras.h.inc[GMT_X]);
 		if (imult < 1 || fabs(Grid->header->inc[GMT_X] - imult * myras.h.inc[GMT_X]) > tol) error++;
@@ -946,7 +938,6 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Warning: Region reset to -R%g/%g/%g/%gr.\n",
 				            Grid->header->wesn[XLO], Grid->header->wesn[YLO], Grid->header->wesn[XHI], Grid->header->wesn[YHI]);
 		}
-		error = 0;
 	}
 
 	/* Now we are ready to go */
@@ -1171,7 +1162,7 @@ int GMT_grdraster (void *V_API, int mode, void *args) {
 	}
 	else {
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}

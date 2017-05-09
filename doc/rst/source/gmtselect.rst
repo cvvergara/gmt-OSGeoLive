@@ -29,6 +29,7 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
 [ |SYN_OPT-h| ]
@@ -41,14 +42,15 @@ Synopsis
 Description
 -----------
 
-**gmtselect** is a filter that reads (longitude, latitude) positions from the first 2 columns of *infiles*
+**gmtselect** is a filter that reads (x, y) or (longitude, latitude) positions from the first 2 columns of *infiles*
 [or standard input] and uses a combination of 1-7 criteria to pass or reject the records. Records can be
 selected based on whether or not they are 1) inside a rectangular region (**-R** [and **-J**]), 2) within
 *dist* km of any point in *pointfile*, 3) within *dist* km of any line in *linefile*, 4) inside one of the
 polygons in the *polygonfile*, 5) inside geographical features (based on coastlines), 6) has z-values
 within a given range, or 7) inside bins of a grid mask whose nodes are non-zero. The sense of the tests can
 be reversed for each of these 6 criteria by using the **-I** option. See option **-:** on how to read
-(latitude,longitude) files. 
+(y,x) or (latitude,longitude) files.  Note: If no projection information is used then you must supply **-fg**
+to tell **gmtselect** that your data are geographical.
 
 Required Arguments
 ------------------
@@ -202,6 +204,9 @@ Optional Arguments
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
 
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
+
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
 
@@ -262,7 +267,7 @@ records from a segment passes the test. Selection is always done point
 by point, not by segment.  That means only points from a segment that
 pass the test will be included in the output.  If you wish to clip the lines
 and include the new boundary points at the segment ends you must use
-gmtspatial instead.
+:doc:`gmtspatial` instead.
 
 Examples
 --------

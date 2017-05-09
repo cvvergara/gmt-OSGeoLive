@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtset.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmtset.c 18018 2017-04-22 00:35:39Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -24,14 +24,14 @@
  *
  */
  
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"gmtset"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Change individual GMT default parameters"
 #define THIS_MODULE_KEYS	""
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-V" GMT_SHORTHAND_OPTIONS
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-V" GMT_SHORTHAND_OPTIONS
 
 /* Control structure for gmtset */
 
@@ -79,7 +79,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Set name of specific gmt.conf file to modify.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default looks for file in current directory.  If not found,\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   it looks in the home directory, if not found it uses GMT defaults.]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tThe modified defaults are written to the current directory as gmt.conf.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tOnly settings that differ from the GMT SI system defaults are written\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   to the file gmt.conf in the current directory.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\t-[" GMT_SHORTHAND_OPTIONS "]<value> (any of these options).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Set the expansion of any of these shorthand options.\n");
 	
@@ -131,11 +132,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTSET_CTRL *Ctrl, struct GMT_
 #define bailout(code) {gmt_M_free_options (mode); return (code);}
 #define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
+EXTERN_MSC void gmtinit_update_keys (struct GMT_CTRL *GMT, bool arg);
+
 int GMT_gmtset (void *V_API, int mode, void *args) {
 	int error = 0;
-
-	char path[GMT_LEN256] = {""};
-	char* gmtconf_file;
 
 	struct GMTSET_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
@@ -155,8 +155,8 @@ int GMT_gmtset (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -164,22 +164,10 @@ int GMT_gmtset (void *V_API, int mode, void *args) {
 
 	/* Read the supplied default file or the users defaults to override system settings */
 
-	if (Ctrl->D.active) {
-		switch (Ctrl->D.mode) {
-			case 's':
-				gmtconf_file = "gmt_SI.conf";
-				break;
-			case 'u':
-				gmtconf_file = "gmt_US.conf";
-				break;
-			default:
-				gmtconf_file = "gmt.conf";
-				break;
-		}
-
-		if (! gmt_getsharepath (GMT, "conf", "", gmtconf_file, path, R_OK))
-			GMT_Report (API, GMT_MSG_NORMAL, "Cannot find GMT configuration file: %s (%s)\n", gmtconf_file, path);
-		gmt_getdefaults (GMT, path);
+	if (Ctrl->D.active) {	/* Start with the system defaults settings which were loaded by GMT_Create_Session */
+		gmtinit_update_keys (GMT, false);
+		if (Ctrl->D.mode == 'u')
+			gmtinit_conf_US (GMT);	/* Change a few to US defaults */
 	}
 	else if (Ctrl->C.active)
 		gmt_getdefaults (GMT, ".gmtdefaults4");

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psmask.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: psmask.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -36,14 +36,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"psmask"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Clip or mask map areas with no data table coverage"
 #define THIS_MODULE_KEYS	"<D{,DDD,C-(,>X},LG)"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>BJKOPRUVXYbcdhipstxy" GMT_OPT("E")
+#define THIS_MODULE_NEEDS	"dJ"
+#define THIS_MODULE_OPTIONS "-:>BJKOPRUVXYbdehiprstxy" GMT_OPT("Ec")
 
 struct PSMASK_CTRL {
 	struct C {	/* -C */
@@ -61,10 +61,6 @@ struct PSMASK_CTRL {
 		bool active;
 		struct GMT_FILL fill;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct L {	/* -L[+|-]<file> */
 		bool active;
 		int mode;	/* -1 = set inside node to NaN, 0 as is, +1 set outside node to NaN */
@@ -432,7 +428,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "usage: psmask <table> %s %s\n", GMT_I_OPT, GMT_J_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [%s] [-C] [-D<template>] [-G<fill>]\n\t[%s] [-K] [-L<grid>] [-N] [-O] [-P] [-Q<min>] [-S%s] [-T]\n", GMT_Rgeoz_OPT, GMT_B_OPT, GMT_Jz_OPT, GMT_RADIUS_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n", GMT_U_OPT, GMT_V_OPT, GMT_X_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n", GMT_Y_OPT, GMT_b_OPT, GMT_d_OPT, GMT_c_OPT, GMT_h_OPT, GMT_i_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n", GMT_Y_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_p_OPT, GMT_r_OPT, GMT_s_OPT, GMT_t_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -462,7 +458,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Default is -S0, i.e., only the nearest node is considered reliable.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Paint tiles [Default will trace data outline].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If set you must also specify a color/fill with -G.\n");
-	GMT_Option (API, "U,V,X,bi2,bo,c,d,h,i,p,r,s,t,:,.");
+	GMT_Option (API, "U,V,X,bi2,bo,d,e,h,i,p,r,s,t,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -534,11 +530,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSMASK_CTRL *Ctrl, struct GMT_
 				}
 				break;
 			case 'I':
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'L':
 				Ctrl->L.active = true;
@@ -571,18 +563,18 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSMASK_CTRL *Ctrl, struct GMT_
 		}
 	}
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	if (Ctrl->C.active) {
 		n_errors += gmt_M_check_condition (GMT, GMT->common.B.active[0] || GMT->common.B.active[1], "Syntax error: Cannot specify -B option in -C mode\n");
 	}
 	else {
-		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 		n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active && !Ctrl->D.active, "Syntax error: Must specify a map projection with the -J option\n");
-		n_errors += gmt_M_check_condition (GMT, !Ctrl->I.active, "Syntax error: Must specify -I option\n");
+		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[ISET], "Syntax error: Must specify -I option\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && !gmt_M_is_rect_graticule(GMT), "Syntax error -T option: Only available with Linear, Mercator, or basic cylindrical projections\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && !(Ctrl->G.fill.rgb[0] >= 0 || Ctrl->G.fill.use_pattern), "Syntax error -T option: Must also specify a tile fill with -G\n");
-		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increments\n");
+		n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increments\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -1, "Syntax error -S: Unrecognized unit\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -2, "Syntax error -S: Unable to decode radius\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->S.mode == -3, "Syntax error -S: Radius is negative\n");
@@ -634,8 +626,8 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -651,7 +643,7 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 	if (!Ctrl->C.active && make_plot && gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_PROJECTION_ERROR);
 
 	if (Ctrl->D.active) {	/* Want to dump the x-y contour lines of the mask */
-		uint64_t dim[4] = {1, 0, 0, 2};
+		uint64_t dim[GMT_DIM_SIZE] = {1, 0, 0, 2};
 		if (Ctrl->D.file && strchr (Ctrl->D.file, '%')) {	/* File given and filename has C-format specifier */
 			/* Must determine the kind of output organization */
 			k = 0;
@@ -687,7 +679,7 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 		gmt_M_memset (&info, 1, struct PSMASK_INFO);
 		info.first_dump = true;
 
-		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
+		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, NULL, NULL, \
 			GMT_GRID_DEFAULT_REG, 1, NULL)) == NULL) Return (API->error);	/* Specifically only need 1 row/col padding */
 		
 		inc2[GMT_X] = 0.5 * Grid->header->inc[GMT_X];
@@ -744,6 +736,7 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 					continue;
 				if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 					break;
+				assert (in != NULL);						/* Should never get here */
 			}
 
 			if (gmt_M_y_is_outside (GMT, in[GMT_Y], Grid->header->wesn[YLO], Grid->header->wesn[YHI])) continue;	/* Outside y-range */
@@ -823,7 +816,7 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 		if (Ctrl->L.active) {	/* Save a copy of the grid to file */
 			struct GMT_GRID *G = NULL;
 			GMT_Report (API, GMT_MSG_VERBOSE, "Saving internal inside|outside grid to file %s\n", Ctrl->L.file);
-			if ((G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Grid->header->wesn, Grid->header->inc, \
+			if ((G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Grid->header->wesn, Grid->header->inc, \
 				Grid->header->registration, 0, NULL)) == NULL) Return (API->error);
 			for (ij = 0; ij < Grid->header->size; ij++) {	/* Copy over the 0/1 grid */
 				switch (Ctrl->L.mode) {
@@ -838,7 +831,7 @@ int GMT_psmask (void *V_API, int mode, void *args) {
 						break;
 				}
 			}
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->L.file, G) != GMT_NOERROR) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->L.file, G) != GMT_NOERROR) {
 				Return (API->error);
 			}
 			if (GMT_Destroy_Data (API, &G) != GMT_NOERROR) {

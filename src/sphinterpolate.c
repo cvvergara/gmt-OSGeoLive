@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: sphinterpolate.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: sphinterpolate.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 2008-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -33,25 +33,21 @@
  * Version:	5 API
  */
  
+#include "gmt_dev.h"
+#include "gmt_sph.h"
+
 #define THIS_MODULE_NAME	"sphinterpolate"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Spherical gridding in tension of data on a sphere"
 #define THIS_MODULE_KEYS	"<D{,GG}"
-
-#include "gmt_dev.h"
-#include "gmt_sph.h"
-
-#define GMT_PROG_OPTIONS "-:RVbdhirs" GMT_OPT("F")
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:RVbdehirs" GMT_OPT("F")
 
 struct SPHINTERPOLATE_CTRL {
 	struct G {	/* -G<grdfile> */
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct Q {	/* -Q<interpolation> */
 		bool active;
 		unsigned int mode;
@@ -97,8 +93,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "==> The hard work is done by algorithms 772 (STRIPACK) & 773 (SSRFPACK) by R. J. Renka [1997] <==\n\n");
 	GMT_Message (API, GMT_TIME_NONE, "usage: sphinterpolate [<table>] -G<outgrid> %s\n", GMT_I_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-Q<mode>][/<args>] [%s] [-T] [%s] [-Z] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n",
-		GMT_Rgeo_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-Q<mode>][/<args>] [%s] [-T] [%s] [-Z] [%s]\n\t[%s] [%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n",
+		GMT_Rgeo_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
                
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -124,7 +120,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Use variable tension (ignored for -Q0) [constant].\n");
 	GMT_Option (API, "V");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Scale data by 1/(max-min) prior to gridding [no scaling].\n");
-	GMT_Option (API, "bi3,di,h,i,r,s,:,.");
+	GMT_Option (API, "bi3,di,e,h,i,r,s,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -157,11 +153,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SPHINTERPOLATE_CTRL *Ctrl, str
 					n_errors++;
 				break;
 			case 'I':
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'Q':
 				Ctrl->Q.active = true;
@@ -200,11 +192,11 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct SPHINTERPOLATE_CTRL *Ctrl, str
 		}
 	}
 	
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0) GMT->common.b.ncol[GMT_IN] = 3;
 	n_errors += gmt_M_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] < 3, "Syntax error: Binary input data (-bi) must have at least 3 columns\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->Q.mode > 3, "Syntax error -T: Must specify a mode in the 0-3 range\n");
 
@@ -241,15 +233,15 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	gmt_parse_common_options (GMT, "f", 'f', "g"); /* Implicitly set -fg since this is spherical triangulation */
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the sphinterpolate main code ----------------------------*/
 
-	if (!GMT->common.R.active) {	/* Default is global region */
+	if (!GMT->common.R.active[RSET]) {	/* Default is global region */
 		GMT->common.R.wesn[XLO] = 0.0;	GMT->common.R.wesn[XHI] = 360.0;	GMT->common.R.wesn[YLO] = -90.0;	GMT->common.R.wesn[YHI] = 90.0;
 	}
 
@@ -278,10 +270,9 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args) {
 				gmt_M_free (GMT, zz);	gmt_M_free (GMT, ww);
 				Return (GMT_RUNTIME_ERROR);
 			}
-			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
-				continue;
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			continue;	/* Go back and read the next record */
 		}
 
 		/* Data record to process */
@@ -314,7 +305,7 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args) {
 	
 	/* Set up output grid */
 	
-	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc,
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, NULL, NULL,
 		                         GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) {
 		gmt_M_free (GMT, xx);	gmt_M_free (GMT, yy);
 		gmt_M_free (GMT, zz);	gmt_M_free (GMT, ww);
@@ -334,7 +325,7 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args) {
 	/* Convert the doubles to float and unto the Fortran transpose order */
 	
 	sf = (w_max - w_min);
-	if (GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, NULL, NULL, 0, 0, Grid) == NULL) {
+	if (GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, NULL, NULL, 0, 0, Grid) == NULL) {
 		gmt_M_free (GMT, surfd);
 		Return (API->error);
 	}
@@ -348,7 +339,7 @@ int GMT_sphinterpolate (void *V_API, int mode, void *args) {
 	/* Write solution */
 	
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Grid) != GMT_NOERROR) {
 		Return (API->error);
 	}
 

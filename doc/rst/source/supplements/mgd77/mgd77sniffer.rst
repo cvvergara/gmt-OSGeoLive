@@ -16,17 +16,19 @@ Synopsis
 **mgd77sniffer** *NGDC-ids* [ |-A|\ *fieldabbrev*,\ *scale*,\ *offset* ]
 [ |-C|\ *maxspd* ]
 [ |-D|\ **d**\ \|\ **e**\ \|\ **E**\ \|\ **f**\ \|\ **l**\ \|\ **m**\ \|\ **s**\ \|\ **v**\ [*r*] ]
+[ |-E| ]
 [ |-G|\ *fieldabbrev*,\ *imggrid*,\ *scale*,\ *mode* or |-G|\ *fieldabbrev*,\ *grid* ]
 [ |-H| ]
 [ |-I|\ *fieldabbrev*,\ *rec1*,\ *recN* ]
-[ |-K| ]
 [ |-L|\ *custom-limits-file* ]
+[ |-M| ]
 [ |-N| ]
 [ |SYN_OPT-R| ]
 [ |-S|\ **d**\ \|\ **s**\ \|\ **t** ]
 [ |-T|\ *gap* ]
 [ |SYN_OPT-V| ]
 [ |-W|\ **c**\ \|\ **g**\ \|\ **o**\ \|\ **s**\ \|\ **t**\ \|\ **v**\ \|\ **x** ]
+[ |-Z|\ *level* ]
 [ |SYN_OPT-bo| ]
 [ |SYN_OPT-do| ]
 [ |SYN_OPT-n| ]
@@ -143,6 +145,15 @@ Optional Arguments
 
     See below for **MGD77 FIELD INFO**.
 
+.. _-E:
+
+**-E**
+    Reverse navigation quality flags (good to bad and vice versa). May
+    be necessary when a majority of navigation fixes are erroneously
+    flagged bad, which can happen when a cruise's first navigation fix
+    is extremely erroneous. Caution! This will affect sniffer output and
+    should only be attempted after careful manual navigation review.
+
 .. _-G:
 
 **-G**\ *information*
@@ -200,15 +211,6 @@ Optional Arguments
     the analysis). Repeat as many times as needed. May not be used for
     multiple cruises.
 
-.. _-K:
-
-**-K**
-    Reverse navigation quality flags (good to bad and vice versa). May
-    be necessary when a majority of navigation fixes are erroneously
-    flagged bad, which can happen when a cruise's first navigation fix
-    is extremely erroneous. Caution! This will affect sniffer output and
-    should only be attempted after careful manual navigation review.
-
 .. _-L:
 
 **-L**\ *custom-limits-file*
@@ -241,16 +243,16 @@ Optional Arguments
     Use a dash '-' to retain a default limit. Hint: to test your custom
     limits, try: mgd77sniffer **-Dl** **-L**\ <yourlimitsfile>
 
+
+.. _-M:
+
+**-M**
+    Adjust navigation on land threshold (meters inland) [100].
+
 .. _-N:
 
 **-N**
     Use nautical units.
-
-.. _-P:
-
-**-P**
-    Flag regression statistics that are outside the specified confidence
-    level. (i.e., -P5 flags coefficients m, b, rms, and r that fall outside 95%.) 
 
 .. _-R:
 
@@ -286,6 +288,12 @@ Optional Arguments
     compatible with any **-D** options. 
 
 .. _-V:
+
+.. _-Z:
+
+**-Z**
+    Flag regression statistics that are outside the specified confidence
+    level. (i.e., **-Z**\ 5 flags coefficients m, b, rms, and r that fall outside 95%.) 
 
 .. |Add_-V| unicode:: 0x20 .. just an invisible code
 .. include:: ../../explain_-V.rst_
@@ -336,7 +344,7 @@ For |-G| the grids must eitehr be in the format used by Sandwell & Smith,
 which is a spherical Mercator 2-byte grid with no header, or any grid type
 supported by GMT and therefore must
 contain a GMT header. A correctly formatted \*.i2 grid file can be
-generated using grdraster as shown below.
+generated using :doc:`grdraster </grdraster>` as shown below.
 
 gmtset GRIDFILE_SHORTHAND TRUE
 
@@ -526,6 +534,7 @@ Sandwell/Smith 2 min gravity version 11, try
 See Also
 --------
 
+:doc:`grdraster </grdraster>`,
 :doc:`mgd77list`,
 :doc:`mgd77track`
 :doc:`x2sys_init <../x2sys/x2sys_init>`

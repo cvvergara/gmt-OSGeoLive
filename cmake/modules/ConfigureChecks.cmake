@@ -1,5 +1,5 @@
 #
-# $Id: ConfigureChecks.cmake 17486 2017-01-24 04:43:22Z pwessel $
+# $Id: ConfigureChecks.cmake 17487 2017-01-24 04:44:14Z pwessel $
 #
 
 if(NOT DEFINED _INCLUDED_CHECK_MACROS_)

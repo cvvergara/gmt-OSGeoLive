@@ -14,7 +14,7 @@ Synopsis
 .. include:: common_SYN_OPTs.rst_
 
 **grdedit** *grid* [ |-A| ] [ |-C| ]
-[ |-D|\ *xname*/*yname*/*zname*/*scale*/*offset*/*invalid*/*title*/*remark* ]
+[ |-D|\ [**+x**\ *xname*][**+y**\ *yname*][**+z**\ *zname*][**+s**\ *scale*][**+o**\ *offset*][**+n**\ *invalid*][**+t**\ *title*][**+r**\ *remark*] ]
 [ |-E|\ [**a**\ \|\ **h**\ \|\ **l**\ \|\ **r**\ \|\ **t**\ \|\ **v**] ]
 [ |-G|\ *outgrid* ]
 [ |-J|\ *parameters* ]
@@ -24,6 +24,7 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-bi| ]
 [ |SYN_OPT-di| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-:| ]
 
@@ -84,7 +85,7 @@ Optional Arguments
 .. _-G:
 
 **-G**\ *outgrid*
-    Normally, grdedit will overwrite the existing grid with the modified grid.
+    Normally, **grdedit** will overwrite the existing grid with the modified grid.
     Use **-G** to write the modified grid to the file *outgrid* instead.
 
 .. _-J:
@@ -133,6 +134,9 @@ Optional Arguments
 .. |Add_-di| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-di.rst_
 
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
+
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
 
@@ -154,7 +158,7 @@ new title in the header. We accomplish this by
 
    ::
 
-    gmt grdedit data.nc -R-60/-50/10/30 -D//////"Gravity Anomalies"
+    gmt grdedit data.nc -R-60/-50/10/30 -D+t"Gravity Anomalies"
 
 The grid world.nc has the limits 0/360/-72/72. To shift the data so that
 the limits would be -180/180/-72/72, use

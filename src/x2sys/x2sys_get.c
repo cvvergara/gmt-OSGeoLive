@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_get.c 17503 2017-01-30 23:14:43Z pwessel $
+ *	$Id: x2sys_get.c 17831 2017-03-31 22:28:43Z pwessel $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -27,14 +27,16 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "mgd77/mgd77.h"
+#include "x2sys.h"
+
 #define THIS_MODULE_NAME	"x2sys_get"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Get track listing from track index database"
 #define THIS_MODULE_KEYS	">T}"
-
-#include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->RV"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->RV"
 
 struct X2SYS_GET_CTRL {
 	struct S2S_GET_C {	/* -C */
@@ -231,8 +233,8 @@ int GMT_x2sys_get (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -247,7 +249,7 @@ int GMT_x2sys_get (void *V_API, int mode, void *args) {
 	else	/* Cartesian data */
 		gmt_set_cartesian (GMT, GMT_OUT);
 		
-	if (!GMT->common.R.active) gmt_M_memcpy (GMT->common.R.wesn, B.wesn, 4, double);	/* Set default region to match TAG region */
+	if (!GMT->common.R.active[RSET]) gmt_M_memcpy (GMT->common.R.wesn, B.wesn, 4, double);	/* Set default region to match TAG region */
 
 	if (Ctrl->F.flags) x2sys_err_fail (GMT, x2sys_pick_fields (GMT, Ctrl->F.flags, s), "-F");
 	for (ii = combo = 0; ii < s->n_out_columns; ii++) combo |= X2SYS_bit (s->out_order[ii]);

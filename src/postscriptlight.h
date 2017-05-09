@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight.h 17460 2017-01-22 22:55:48Z pwessel $
+ *	$Id: postscriptlight.h 18068 2017-04-29 21:40:52Z pwessel $
  *
  *	Copyright (c) 2009-2017 by P. Wessel and R. Scharroo
  *
@@ -20,7 +20,7 @@
  *			   pwessel@hawaii.edu
  *		Remko Scharroo, Altimetrics
  *			   remko@altimetrics.com
- * Version:	5.2 [64-bit enabled API edition]
+ * Version:	5.3 [64-bit enabled API edition, decoupled from GMT]
  * Date:	13-NOV-2015
  */
 
@@ -32,12 +32,14 @@
 #ifndef _POSTSCRIPTLIGHT_H
 #define _POSTSCRIPTLIGHT_H
 
+#define PSL_WITH_GMT4_SUPPORT	/* For as long as we want to be backwards compatible with GMT4 vectors */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* CMake definitions: This must be first! */
-#include "gmt_config.h"
+#include "psl_config.h"
 
 /* Declaration modifiers for DLL support (MSC et al) */
 #include "declspec.h"
@@ -105,11 +107,17 @@ enum PSL_enum_vecattr {
 	PSL_VEC_OFF_BEGIN	= 65536,	/* Starting point of vector should be moved a distance along the line */
 	PSL_VEC_OFF_END		= 131072,	/* End point of vector should be moved a distance along the line */
 	PSL_VEC_MID_FWD		= 262144,	/* End point of vector should be moved a distance along the line */
-	PSL_VEC_MID_BWD		= 524288};	/* End point of vector should be moved a distance along the line */
+	PSL_VEC_MID_BWD		= 524288,	/* End point of vector should be moved a distance along the line */
+	PSL_VEC_COMPONENTS	= 1048576,	/* Not yet needed in postscriptlight: Got vector dx, dy Cartesian components */
+	PSL_VEC_SCALE		= 2097152};	/* Not yet needed in postscriptlight: If not set we determine the required inch-to-degree scale */
+
+/* PSL macros for dealing with vector attributes */
 
 #define PSL_vec_justify(status) ((status>>6)&3)			/* Return justification as 0-3 */
 #define PSL_vec_head(status) ((status)&3)			/* Return head selection as 0-3 */
 #define PSL_vec_side(status,head) (((status>>(2+2*head))&3) ? 2*((status>>(2+2*head))&3)-3 : 0)	/* Return side selection for this head as 0,-1,+1 */
+#define PSL_vec_outline(status) ((status&PSL_VEC_OUTLINE) || (status&PSL_VEC_OUTLINE2))	/* Return true if outline is currently selected */
+#define PSL_vec_fill(status) ((status&PSL_VEC_FILL) || (status&PSL_VEC_FILL2))		/* Return true if fill is currently selected */
 
 /* PSL codes for arguments of PSL_beginplot and other routines */
 
@@ -142,6 +150,7 @@ enum PSL_enum_const {PSL_CM	= 0,
 	PSL_MAX_EPS_FONTS	= 6,
 	PSL_MAX_DIMS		= 12,		/* Max number of dim arguments to PSL_plot_symbol */
 	PSL_N_PATTERNS		= 91,		/* Current number of predefined patterns + 1, # 91 is user-supplied */
+	PSL_NAME_LEN		= 32,		/* Max length of font names */
 	PSL_BUFSIZ		= 256U};
 
 /* PSL codes for pen movements (used by PSL_plotpoint, PSL_plotline, PSL_plotarc) */
@@ -238,6 +247,14 @@ enum PSL_enum_err {PSL_BAD_VALUE = -99,	/* Bad value */
  *			PSL PARAMETERS DEFINITIONS
  *--------------------------------------------------------------------*/
 
+struct PSL_FONT {	/* Definition */
+	char name[PSL_NAME_LEN];/* Name of this font */
+	double height;		/* Height of A for unit fontsize */
+	int encoded;		/* true if we never should re-encode this font (e.g. symbols) */
+				/* This is also changed to true after we do re-encode a font */
+	int encoded_orig;	/* The original setting that we can reset the array to */
+};
+
 struct PSL_CTRL {
 	struct INIT {	/* Parameters set by user via PSL_beginplot() */
 		FILE *err;			/* Error stream (NULL means stderr)		*/
@@ -310,12 +327,7 @@ struct PSL_CTRL {
 		size_t n_alloc;			/* Allocation length of buffer			*/
 		size_t n;			/* Length of buffer				*/
 		FILE *fp;			/* PS output file pointer. NULL = stdout	*/
-		struct PSL_FONT {
-			double height;		/* Height of A for unit fontsize */
-			char *name;		/* Name of this font */
-			int encoded;		/* true if we never should re-encode this font (e.g. symbols) */
-						/* This is also changed to true after we do re-encode a font */
-		} *font;	/* Pointer to array of font structures 		*/
+		struct PSL_FONT *font;		/* Pointer to array of font structures 		*/
 		struct PSL_PATTERN {
 			int nx, ny;	/* Dimension of pattern image */
 			int status, depth, dpi;
@@ -421,7 +433,13 @@ EXTERN_MSC int PSL_command (struct PSL_CTRL *C, const char *format, ...);
 EXTERN_MSC int PSL_comment (struct PSL_CTRL *C, const char *format, ...);
 EXTERN_MSC int PSL_initerr (struct PSL_CTRL *C, const char *format, ...);
 EXTERN_MSC int PSL_message (struct PSL_CTRL *C, int level, const char *format, ...);
-EXTERN_MSC FILE *PSL_fopen (char *file, char *mode);
+EXTERN_MSC FILE *PSL_fopen (struct PSL_CTRL *C, char *file, char *mode);
+EXTERN_MSC int PSL_fclose (struct PSL_CTRL *C);
+
+#ifdef PSL_WITH_GMT4_SUPPORT
+/* Backwards compatible vector symbol from GMT 4 days */
+EXTERN_MSC void psl_vector_v4 (struct PSL_CTRL *PSL, double x, double y, double param[], double rgb[], int outline);
+#endif
 
 /*! Macro for free that excplicitly checks for NULL pointer and sets freed pointer to NULL */
 #define PSL_free(ptr) (free((void *)(ptr)),(ptr)=NULL)

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_defaults.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_defaults.h 18041 2017-04-26 23:09:48Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -89,11 +89,13 @@ struct GMT_DEFAULTS {
 	char format_time_stamp[GMT_LEN256];	/* Specify the format for writing time stamps (see strftime) */
 	/* GMT group */
 	unsigned int compatibility; /* Choose between 4 (GMT4) and up to latest version (5 for now) */
+	unsigned int auto_download;   /* 0 (GMT_NO_DOWNLOAD) or 1 (GMT_YES_DOWNLOAD): For auto-downlaod of known files */
 	unsigned int interpolant; /* Choose between 0 (Linear), 1 (Akima), or 2 (Cubic spline) */
 	unsigned int triangulate; /* 0 for Watson [Default], 1 for Shewchuk (if configured) */
 	unsigned int verbose;     /* Level of verbosity 0-4 [1] */
 	unsigned int fft;         /* Any of FFT_implementations: k_fft_auto, k_fft_accelerate, k_fft_fftw3, k_fft_kiss, k_fft_brenner */
 	unsigned int fftw_plan;   /* Only accessed if HAVE_FFTW3F is defined: Any of FFTW_planner_flags: FFTW_ESTIMATE, FFTW_MEASURE, FFTW_PATIENT, FFTW_EXHAUSTIVE */
+	unsigned int run_mode;     /* Either classic [0] or modern [1] */
 	bool fftwf_threads;   /* Only accessed if HAVE_FFTW3F_THREADS is defined: Any of FFTW_planner_flags: FFTW_ESTIMATE, FFTW_MEASURE, FFTW_PATIENT, FFTW_EXHAUSTIVE */
 	unsigned int history;     /* mode to pass information via history file gmt.history (k_history_off, k_history_read, k_history_write) */
 	unsigned int export_type;     /* What data type to export to external APIs [GMT_DOUBLE] */

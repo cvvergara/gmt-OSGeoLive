@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pssolar.c 17716 2017-03-18 22:13:17Z pwessel $
+ *	$Id: pssolar.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -23,14 +23,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"pssolar"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot day-light terminators and other sunlight parameters"
 #define THIS_MODULE_KEYS	">X},>DI,>DM"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYbcpto"
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYbpto" GMT_OPT("c")
 
 EXTERN_MSC void gmtlib_gcal_from_dt (struct GMT_CTRL *C, double t, struct GMT_GCAL *cal);	/* Break internal time into calendar and clock struct info  */
 
@@ -122,8 +122,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "usage: pssolar [%s] [-C] [-G<fill>] [-I[lon/lat][+d<date>][+z<TZ>]]", GMT_B_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "[%s] [-K] [-M] [-N] [-O]\n", GMT_J_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-P] [-T<dcna>[+d<date>][+z<TZ>]] [%s]\n", GMT_Rgeo_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W<pen>]\n\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT,
-	             GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_o_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W<pen>]\n\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT,
+	             GMT_X_OPT, GMT_Y_OPT, GMT_b_OPT, GMT_o_OPT, GMT_p_OPT, GMT_t_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -149,7 +149,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   for this date. If necessary, append time zone via +z<TZ>.\n");
 	GMT_Option (API, "U,V");
 	gmt_pen_syntax (API->GMT, 'W', "Specify outline pen attributes [Default is no outline].", 0);
-	GMT_Option (API, "X,c,o,p");
+	GMT_Option (API, "X,b,o,p");
 	GMT_Option (API, "t,.");
 
 	return (GMT_MODULE_USAGE);
@@ -264,9 +264,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSOLAR_CTRL *Ctrl, struct GMT
 			gmt_parse_common_options (GMT, "J", 'J', "X14cd/0d");
 			GMT->common.J.active = true;
 		}
-		if (!GMT->common.R.active) {	/*  */
+		if (!GMT->common.R.active[RSET]) {	/*  */
 			gmt_parse_common_options (GMT, "R", 'R', "-180/180/-90/90");
-			GMT->common.R.active = true;
+			GMT->common.R.active[RSET] = true;
 		}
 	}
 
@@ -417,8 +417,8 @@ int GMT_pssolar (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 

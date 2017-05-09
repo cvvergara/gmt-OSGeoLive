@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtgravmag3d.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: gmtgravmag3d.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,15 +26,15 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "okbfuns.h"
+
 #define THIS_MODULE_NAME	"gmtgravmag3d"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute the gravity/magnetic anomaly of a 3-D body by the method of Okabe"
 #define THIS_MODULE_KEYS	"TD{,FD(,GG),>D}"
-
-#include "gmt_dev.h"
-#include "okbfuns.h"
-
-#define GMT_PROG_OPTIONS "-:RVf"
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:RVf"
 
 struct XYZOKB_CTRL {
 	struct XYZOKB_C {	/* -C */
@@ -364,7 +364,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct XYZOKB_CTRL *Ctrl, struct GMT_
 	                                  "Syntax error: vertex file provided (-Tv) but not xyz file (-Tp).\n");
 	n_errors += gmt_M_check_condition(GMT, !Ctrl->G.active && !Ctrl->F.active, "Error: Must specify either -G or -F options\n");
 	n_errors += gmt_M_check_condition(GMT, Ctrl->G.active && !Ctrl->I.active, "Error: Must specify -I option\n");
-	n_errors += gmt_M_check_condition(GMT, Ctrl->G.active && !GMT->common.R.active, "Error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition(GMT, Ctrl->G.active && !GMT->common.R.active[RSET], "Error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition(GMT, Ctrl->C.rho == 0.0 && !Ctrl->H.active && !Ctrl->T.m_var4 ,
 	                                  "Error: Must specify either -Cdensity or -H<stuff>\n");
 	n_errors += gmt_M_check_condition(GMT, Ctrl->G.active && !Ctrl->G.file, "Syntax error -G option: Must specify output file\n");
@@ -424,8 +424,8 @@ int GMT_gmtgravmag3d (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -495,7 +495,7 @@ int GMT_gmtgravmag3d (void *V_API, int mode, void *args) {
 	/* --------------------------------------------------------------------------------------- */
 
 	if (Ctrl->G.active) {
-		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc, \
+		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, NULL, Ctrl->I.inc, \
 			GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 	
 		GMT_Report (API, GMT_MSG_VERBOSE, "Grid dimensions are n_columns = %d, n_rows = %d\n", Gout->header->n_columns, Gout->header->n_rows);
@@ -708,7 +708,7 @@ int GMT_gmtgravmag3d (void *V_API, int mode, void *args) {
 			gmt_M_free (GMT, loc_or);	gmt_M_free (GMT, y_obs);	gmt_M_free (GMT, body_verts);
 			Return (API->error);
 		}
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
 			gmt_M_free (GMT, loc_or);	gmt_M_free (GMT, y_obs);	gmt_M_free (GMT, body_verts);
 			Return (API->error);
 		}

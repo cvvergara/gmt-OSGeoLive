@@ -1,6 +1,6 @@
-/* $Id: gmt_core_module.h 17183 2016-10-12 21:26:47Z pwessel $
+/* $Id: gmt_core_module.h 17846 2017-04-03 06:29:38Z pwessel $
  *
- * Copyright (c) 2012-2016
+ * Copyright (c) 2012-2017
  * by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
  */
@@ -56,6 +56,7 @@ EXTERN_MSC int GMT_grdconvert (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdcut (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdedit (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdfft (void *API, int mode, void *args);
+EXTERN_MSC int GMT_grdfill (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdfilter (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdgradient (void *API, int mode, void *args);
 EXTERN_MSC int GMT_grdhisteq (void *API, int mode, void *args);
@@ -91,6 +92,7 @@ EXTERN_MSC int GMT_psmask (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psrose (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psscale (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pssolar (void *API, int mode, void *args);
+EXTERN_MSC int GMT_psternary (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pstext (void *API, int mode, void *args);
 EXTERN_MSC int GMT_pswiggle (void *API, int mode, void *args);
 EXTERN_MSC int GMT_psxyz (void *API, int mode, void *args);

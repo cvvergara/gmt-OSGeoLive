@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdflexure.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdflexure.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -24,14 +24,15 @@
  *
  * */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdflexure"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute flexural deformation of 3-D surfaces for various rheologies"
 #define THIS_MODULE_KEYS	"<G{,GG},LT),TD("
+#define THIS_MODULE_NEEDS	"g"
+#define THIS_MODULE_OPTIONS "-Vf"
 
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-Vf"
 #define GMT_FFT_DIM	2	/* Dimension of FFT needed */
 
 #define FLX_E	0	/* Elastic */
@@ -700,12 +701,12 @@ GMT_LOCAL struct FLX_GRID *Prepare_Load (struct GMT_CTRL *GMT, struct GMT_OPTION
 	}
 	/* Must initialize a new load grid */
 	GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Read load file %s\n", file);
-	if ((Orig = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, file, NULL)) == NULL) {
+	if ((Orig = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, file, NULL)) == NULL) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error reading the header of file %s - file skipped\n", file);
 		return NULL;
 	}
 	gmt_grd_init (GMT, Orig->header, options, true);	/* Update the header */
-	if ((Orig = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY |
+	if ((Orig = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY |
  		GMT_GRID_IS_COMPLEX_REAL, NULL, file, Orig)) == NULL) {	/* Get data only */
 		GMT_Report (API, GMT_MSG_NORMAL, "Error reading the data of file %s - file skipped\n", file);
 		return NULL;
@@ -818,8 +819,8 @@ int GMT_grdflexure (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -894,7 +895,7 @@ int GMT_grdflexure (void *V_API, int mode, void *args) {
 	/* Here, Load[] contains all the input load grids and their load times, ready to go as H(kx,ky) */
 
 	if (Ctrl->L.active) {	/* Must create a textset to hold names of all output grids */
-		uint64_t dim[3] = {1, 1, Ctrl->T.n_eval_times};
+		uint64_t dim[GMT_DIM_SIZE] = {1, 1, Ctrl->T.n_eval_times, 0};
 		unsigned int k, j;
 		if ((L = GMT_Create_Data (API, GMT_IS_TEXTSET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error creating text set for file %s\n", Ctrl->L.file);
@@ -973,7 +974,7 @@ int GMT_grdflexure (void *V_API, int mode, void *args) {
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Out))
 			Return (API->error);
 
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY |
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY |
 			GMT_GRID_IS_COMPLEX_REAL, NULL, file, Out) != GMT_NOERROR) {	/* This demuxes the grid before writing! */
 				Return (API->error);
 		}

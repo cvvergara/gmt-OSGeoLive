@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 17449 2017-01-16 21:27:04Z pwessel $
+# $Id: CMakeLists.txt 18131 2017-05-05 02:16:34Z pwessel $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -20,7 +20,7 @@
 #
 
 # source files
-set (SUPPL_LIB_SRCS okbfuns.h okbfuns.c)
+set (SUPPL_LIB_SRCS okbfuns.h okbfuns.c talwani.h)
 set (SUPPL_PROGS_SRCS grdredpol.c gmtgravmag3d.c gmtflexure.c gravfft.c gpsgridder.c
 	grdflexure.c grdgravmag3d.c grdseamount.c talwani2d.c talwani3d.c)
 
@@ -30,9 +30,5 @@ set (LIB_SRCS ${SUPPL_LIB_SRCS} ${SUPPL_PROGS_SRCS})
 # create build targets
 string (REPLACE ".c" "" _gmt_modules "${SUPPL_PROGS_SRCS}")
 install_module_symlink (${_gmt_modules})
-
-## Generate manpages
-#string (REPLACE ".c" ".1" SUPPL_MAN_1 "${SUPPL_PROGS_SRCS}")
-#gmt_create_manpages ("${SUPPL_MAN_1}")
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

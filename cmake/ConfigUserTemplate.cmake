@@ -1,5 +1,5 @@
 #
-# $Id: ConfigUserTemplate.cmake 17449 2017-01-16 21:27:04Z pwessel $
+# $Id: ConfigUserTemplate.cmake 17812 2017-03-29 00:01:07Z pwessel $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -234,6 +234,7 @@
 #endif()
 #add_definitions(-DDEBUG)
 #add_definitions(-DMEMDEBUG) # Turn on memory tracking see gmt_support.c for extra info
+#add_definitions(-DDEBUG_MODERN)	# For developers: sets PPID = 0
 #set (CMAKE_C_FLAGS "-Wall -Wdeclaration-after-statement") # recommended even for release build
 #set (CMAKE_C_FLAGS "-Wextra ${CMAKE_C_FLAGS}")            # extra warnings
 #set (CMAKE_C_FLAGS_DEBUG -ggdb3)                          # gdb debugging symbols

@@ -1,4 +1,4 @@
-/* $Id: img2grd.c 17449 2017-01-16 21:27:04Z pwessel $
+/* $Id: img2grd.c 18139 2017-05-05 19:47:59Z pwessel $
  *
  * Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
@@ -52,15 +52,15 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "common_byteswap.h"
+
 #define THIS_MODULE_NAME	"img2grd"
 #define THIS_MODULE_LIB		"img"
 #define THIS_MODULE_PURPOSE	"Extract a subset from an img file in Mercator or Geographic format"
 #define THIS_MODULE_KEYS	"<G{,GG}"
-
-#include "gmt_dev.h"
-#include "common_byteswap.h"
-
-#define GMT_PROG_OPTIONS "-VRn" GMT_OPT("m")
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-VRn" GMT_OPT("m")
 
 /* The following values are used to initialize the default values
 	controlling the range covered by the img file and the size 
@@ -275,10 +275,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct IMG2GRD_CTRL *Ctrl, struct GMT
 				break;
 			case 'N':
 				Ctrl->N.active = true;
-				if ((sscanf (opt->arg, "%d", &Ctrl->N.value)) != 1 || Ctrl->N.value < 1) {
-					n_errors++;
-					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: -N requires an integer > 1.\n");
-				}
+				Ctrl->N.value = atoi (opt->arg);
 				break;
 			case 'S':
 				Ctrl->S.active = true;
@@ -306,8 +303,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct IMG2GRD_CTRL *Ctrl, struct GMT
 
 	n_errors += gmt_M_check_condition (GMT, Ctrl->In.file == NULL, "Syntax error: Must specify input imgfile name.\n");
 	n_errors += gmt_M_check_condition (GMT, n_files > 1, "Syntax error: More than one world image file name given.\n");
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option.\n");
-	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active && (GMT->common.R.wesn[XLO] >= GMT->common.R.wesn[XHI] || GMT->common.R.wesn[YLO] >= GMT->common.R.wesn[YHI]), "Syntax error:Must specify -R with west < east and south < north.\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option.\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[RSET] && (GMT->common.R.wesn[XLO] >= GMT->common.R.wesn[XHI] || GMT->common.R.wesn[YLO] >= GMT->common.R.wesn[YHI]), "Syntax error:Must specify -R with west < east and south < north.\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.active || Ctrl->G.file == NULL, "Syntax error: Must specify output grid file name with -G.\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->D.active && (Ctrl->D.min <= -90 || Ctrl->D.max >= 90.0 || Ctrl->D.max <= Ctrl->D.min), "Syntax error: Min/max latitudes are invalid.\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->T.value < 0 || Ctrl->T.value > 3, "Syntax error: Must specify output type in the range 0-3 with -T.\n");
@@ -315,6 +312,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct IMG2GRD_CTRL *Ctrl, struct GMT
 	n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && Ctrl->I.value <= 0.0, "Syntax error: Requires a positive value with -I.\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->C.active && !Ctrl->M.active, "Syntax error: -C requires -M.\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->E.active && Ctrl->M.active, "Syntax error: -E cannot be used with -M.\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->N.active && Ctrl->N.value < 1, "Syntax error: -N requires an integer > 1.\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
@@ -379,7 +377,7 @@ GMT_LOCAL int img_setup_coord (struct GMT_CTRL *GMT, struct GMT_IMG_RANGE *r, st
 int GMT_img2grd (void *V_API, int mode, void *args) {
 	int error = 0;
 	unsigned int navgsq, navg;	/* navg by navg pixels are averaged if navg > 1; else if navg == 1 do nothing */
-	unsigned int n_columns, n_rows, iout, jout, jinstart, jinstop, k, kk, ion, jj, iin, jin2, ii, kstart, *ix = NULL;
+	unsigned int first, n_columns, n_rows, iout, jout, jinstart, jinstop, k, kk, ion, jj, iin, jin2, ii, kstart, *ix = NULL;
 	int jin, iinstart, iinstop;
 
 	uint64_t ij;
@@ -421,8 +419,8 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -439,8 +437,10 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 		imgrange.maxlat = Ctrl->D.max;
 	}
 
-	if (!gmt_getdatapath (GMT, Ctrl->In.file, infile, R_OK)) {
-		GMT_Report (API, GMT_MSG_NORMAL, "img file %s not found\n", Ctrl->In.file);
+	first = gmt_download_file_if_not_found (GMT, Ctrl->In.file);	/* Deal with downloadable GMT data sets first */
+
+	if (!gmt_getdatapath (GMT, &Ctrl->In.file[first], infile, R_OK)) {
+		GMT_Report (API, GMT_MSG_NORMAL, "img file %s not found\n", &Ctrl->In.file[first]);
 		Return (GMT_GRDIO_FILE_NOT_FOUND);
 	}
 
@@ -601,7 +601,7 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 		bottom = wesn[YLO];
 	}
 	GMT_Report (API, GMT_MSG_DEBUG, "Allocate Grid container for Mercator data\n");
-	if ((Merc = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc, \
+	if ((Merc = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, wesn, inc, \
 		GMT_GRID_PIXEL_REG, GMT_NOTSET, NULL)) == NULL) {
 		fclose (fp);
 		Return (API->error);
@@ -660,8 +660,8 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 		}
 		if ((fread (row, sizeof (int16_t), n_expected, fp) ) != n_expected) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: Read failure at jin = %d.\n", jin);
-			gmt_M_free (GMT, ix);
-			gmt_M_free (GMT, row);
+			gmt_M_free (GMT, ix);	gmt_M_free (GMT, row);
+			fclose (fp);
 			GMT_exit (GMT, GMT_DATA_READ_ERROR); return GMT_DATA_READ_ERROR;
 		}
 
@@ -729,7 +729,7 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 	if (Ctrl->M.active) {	/* Write out the Mercator grid and return, no projection needed */
 		gmt_set_pad (GMT, API->pad);	/* Reset to session default pad before output */
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Merc)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Merc) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Merc) != GMT_NOERROR) {
 			Return (API->error);
 		}
 		Return (GMT_NOERROR);
@@ -753,7 +753,7 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 	}
 	else	/* The output here is the final result */
 		strncpy (output, Ctrl->G.file, GMT_LEN256-1);
-	sprintf (cmd, "-R%g/%g/%g/%g -Jm1i -I %s -G%s --PROJ_ELLIPSOID=Sphere --PROJ_LENGTH_UNIT=inch", west, east, south2, north2, input, output);
+	sprintf (cmd, "-R%g/%g/%g/%g -Jm1i -I %s -G%s --PROJ_ELLIPSOID=Sphere --PROJ_LENGTH_UNIT=inch --GMT_HISTORY=false", west, east, south2, north2, input, output);
 	GMT_Report (API, GMT_MSG_DEBUG, "Calling grdproject %s.\n", cmd);
 	if (GMT_Call_Module (API, "grdproject", GMT_MODULE_CMD, cmd)!= GMT_NOERROR) {	/* Inverse project the grid or fail */
 		Return (API->error);
@@ -786,7 +786,8 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 		if (GMT_Open_VirtualFile (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_IN, Geo, input) != GMT_NOERROR) {
 			Return (API->error);
 		}
-		sprintf (cmd, "-R%g/%g/%g/%g -I%gm %s -G%s -fg", west, east, south, north, Ctrl->I.value, input, Ctrl->G.file);
+		sprintf (cmd, "-R%g/%g/%g/%g -I%gm %s -G%s -fg --GMT_HISTORY=false", west, east, south, north, Ctrl->I.value, input, Ctrl->G.file);
+		GMT_Report (API, GMT_MSG_VERBOSE, "Calling grdsample with args %s\n", cmd);
 		if (GMT_Call_Module (API, "grdsample", GMT_MODULE_CMD, cmd) != GMT_NOERROR) {	/* Resample the grid or fail */
 			Return (API->error);
 		}

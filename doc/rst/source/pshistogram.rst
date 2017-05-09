@@ -31,10 +31,10 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |-Z|\ *type* ]
+[ |-Z|\ [*type*][**+w**] ]
 [ |SYN_OPT-bi| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-di| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
@@ -81,7 +81,8 @@ Optional Arguments
 
 **-A**
     Plot the histogram horizontally from x = 0 [Default is vertically
-    from y = 0]. 
+    from y = 0].  The plot dimensions remain the same, but the two
+    axes are flipped.
 
 .. _-B:
 
@@ -185,7 +186,7 @@ Optional Arguments
 
 .. _-Z:
 
-**-Z**\ *type*
+**-Z**\ [*type*][**+w**]
     Choose between 6 types of histograms: 
 
     * 0 = counts [Default] 
@@ -193,15 +194,19 @@ Optional Arguments
     * 2 = log (1.0 + count) 
     * 3 = log (1.0 + frequency_percent) 
     * 4 = log10 (1.0 + count) 
-    * 5 = log10 (1.0 + frequency_percent). 
+    * 5 = log10 (1.0 + frequency_percent).
+
+    To use weights provided as a second data column instead of pure counts,
+    append **+w**.
 
 .. |Add_-bi| replace:: [Default is 2 input columns]. 
 .. include:: explain_-bi.rst_
 
-.. include:: explain_-c.rst_
-
 .. |Add_-di| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-di.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
@@ -239,7 +244,7 @@ bars, run:
     gmt pshistogram errors.xy -W1 -R-10/10/0/0 -Jxc/0.01c \
                     -Bx2+lError -By100+lCounts -Gblack -i1 -V > plot.ps
 
-Since no y-range was specified, pshistogram will calculate ymax in even
+Since no y-range was specified, **pshistogram** will calculate *ymax* in even
 increments of 100.
 
 Bugs

@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: GMT_App_G.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#	$Id: GMT_App_G.sh 18069 2017-04-29 22:43:25Z pwessel $
 #
 #	Makes the insert for Appendix G (fonts)
 #
@@ -7,8 +7,8 @@
 
 dy=-0.2222
 y0=4.3
-grep -v '^#' "${GMT_SHAREDIR}"/postscriptlight/PSL_standard_fonts.txt | $AWK '{print $1}' > tt.d
-gmt gmtset MAP_FRAME_PEN thinner
+tr '",' '  ' < "${GMT_SOURCE_DIR}"/src/standard_adobe_fonts.h | awk '{print $2}' > tt.d
+gmt set MAP_FRAME_PEN thinner
 gmt psxy -R0/5.4/0/$y0 -Jx1i -P -K -B0 <<EOF > GMT_App_G.ps
 >
 0.3	0

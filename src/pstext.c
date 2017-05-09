@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pstext.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: pstext.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,14 +26,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"pstext"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot or typeset text on maps"
 #define THIS_MODULE_KEYS	"<T{,>X}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>BJKOPRUVXYacfhptxy" GMT_OPT("E")
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "-:>BJKOPRUVXYaefhptxy" GMT_OPT("Ec")
 
 EXTERN_MSC void gmtlib_enforce_rgb_triplets (struct GMT_CTRL *GMT, char *text, unsigned int size);
 
@@ -272,11 +272,11 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level, int show_fonts) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: pstext [<table>] %s %s [-A] [%s]\n", GMT_J_OPT, GMT_Rgeoz_OPT, GMT_B_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-C<dx>/<dy>] [-D[j|J]<dx>[/<dy>][v[<pen>]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-C<dx>/<dy>] [-D[j|J]<dx>[/<dy>][+v[<pen>]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F[+a[<angle>]][+c[<justify>]][+f[<font>]][+h|l|r[<first>]|t|z[<fmt>]][+j[<justify>]]] [-G<color>|c|C] [%s] [-K]\n", GMT_Jz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-M] [-N] [-O] [-P] [-Q<case>] [-To|O|c|C] [%s] [%s]\n", GMT_U_OPT, GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-W[<pen>] [%s] [%s] [-Z[<zlevel>|+]]\n", GMT_X_OPT, GMT_Y_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s]\n", GMT_a_OPT, GMT_c_OPT, GMT_f_OPT, GMT_h_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s]\n", GMT_a_OPT, GMT_e_OPT, GMT_f_OPT, GMT_h_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s]\n\n", GMT_p_OPT, GMT_t_OPT, GMT_colon_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\tReads (x,y[,fontinfo,angle,justify],text) from <table> [or stdin].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\tOR (with -M) one or more text paragraphs with formatting info in the segment header.\n");
@@ -316,7 +316,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level, int show_fonts) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Add <add_x>,<add_y> to the text origin AFTER projecting with -J [0/0].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Dj to move text origin away from point (direction determined by text's justification).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Upper case -DJ will shorten diagonal shifts at corners by sqrt(2).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append v[<pen>] to draw line from text to original point.  If <add_y> is not given it equal <add_x>.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append +v[<pen>] to draw line from text to original point.  If <add_y> is not given it equals <add_x>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Specify values for text attributes that apply to all text records:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +a[<angle>] specifies the baseline angle for all text [0].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     Use +A to force text-baselines in the -90/+90 range.\n");
@@ -355,7 +355,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level, int show_fonts) {
 	GMT_Option (API, "X");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z For 3-D plots: expect records to have a z value in the 3rd column (i.e., x y z size ...).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Note that -Z+ also sets -N.\n");
-	GMT_Option (API, "a,c,f,h,p,t,:,.");
+	GMT_Option (API, "a,e,f,h,p,t,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -405,10 +405,13 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSTEXT_CTRL *Ctrl, struct GMT_
 				if (opt->arg[k] == 'j') { Ctrl->D.justify = 1, k++; }
 				else if (opt->arg[k] == 'J') { Ctrl->D.justify = 2, k++; }
 				for (j = k; opt->arg[j] && opt->arg[j] != 'v'; j++);
-				if (opt->arg[j] == 'v') {
+				if (opt->arg[j] == 'v') {	/* Want to draw a line from point to offset point */
 					Ctrl->D.line = true;
-					n_errors += gmt_M_check_condition (GMT, opt->arg[j+1] && gmt_getpen (GMT, &opt->arg[j+1], &Ctrl->D.pen), "Syntax error -D option: Give pen after c\n");
-					opt->arg[j] = 0;
+					n_errors += gmt_M_check_condition (GMT, opt->arg[j+1] && gmt_getpen (GMT, &opt->arg[j+1], &Ctrl->D.pen), "Syntax error -D option: Give pen after +v\n");
+					if (opt->arg[j-1] == '+')	/* New-style syntax */
+						opt->arg[j-1] = 0;
+					else
+						opt->arg[j] = 0;
 				}
 				j = sscanf (&opt->arg[k], "%[^/]/%s", txt_a, txt_b);
 				Ctrl->D.dx = gmt_M_to_inch (GMT, txt_a);
@@ -418,7 +421,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSTEXT_CTRL *Ctrl, struct GMT_
 				Ctrl->F.active = true;
 				pos = 0;
 
-				while (gmt_getmodopt (GMT, opt->arg, "Aafjclhrtz", &pos, p) && Ctrl->F.nread < 4) {	/* Looking for +f, +a|A, +j, +c, +l|h */
+				while (gmt_getmodopt (GMT, 'F', opt->arg, "Aafjclhrtz", &pos, p, &n_errors) && n_errors == 0 && Ctrl->F.nread < 4) {	/* Looking for +f, +a|A, +j, +c, +l|h */
 					switch (p[0]) {
 						case 'A':	/* orientation. Deliberate fall-through to next case */
 							Ctrl->F.orientation = true;
@@ -488,9 +491,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSTEXT_CTRL *Ctrl, struct GMT_
 								Ctrl->F.text = (p[1]) ? strdup (&p[1]) : strdup (GMT->current.setting.format_float_map);
 							Ctrl->F.get_text = GET_CMD_FORMAT;
 							break;
-						default:
-							n_errors++;
-							break;
+						default: break;	/* These are caught in gmt_getmodopt so break is just for Coverity */
 					}
 				}
 				break;
@@ -567,7 +568,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSTEXT_CTRL *Ctrl, struct GMT_
 
 	/* Check that the options selected are mutually consistent */
 
-	n_errors += gmt_M_check_condition (GMT, !Ctrl->L.active && !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !Ctrl->L.active && !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->L.active && !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->C.dx < 0.0 || Ctrl->C.dy < 0.0, "Syntax error -C option: clearances cannot be negative!\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->C.dx == 0.0 && Ctrl->C.dy == 0.0 && Ctrl->T.mode && Ctrl->T.mode != 'o', "Warning: non-rectangular text boxes require a non-zero -C\n");
@@ -669,8 +670,8 @@ int GMT_pstext (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	if (Ctrl->L.active) Return (usage (API, GMT_SYNOPSIS, true));	/* Return the synopsis with font listing */
@@ -738,9 +739,10 @@ int GMT_pstext (void *V_API, int mode, void *args) {
 			}
 			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			/* Note: Blank lines may call through below - this is OK; hence no extra continue here */
 		}
 
-		/* Data record or segment header to process */
+		/* Data record or segment header (line == NULL) to process */
 
 		if (Ctrl->M.active) {	/* Paragraph mode */
 			if (gmt_M_rec_is_segment_header (GMT)) {
@@ -822,7 +824,6 @@ int GMT_pstext (void *V_API, int mode, void *args) {
 					if (fabs (T.paragraph_angle - tmp) > 179.0) T.block_justify -= 2 * (T.block_justify%4 - 2);	/* Flip any L/R code */
 				}
 				if (Ctrl->F.orientation) {
-					tmp = T.paragraph_angle;
 					if (T.paragraph_angle > 180.0) T.paragraph_angle -= 360.0;
 					if (T.paragraph_angle > 90.0) T.paragraph_angle -= 180.0;
 					else if (T.paragraph_angle < -90.0) T.paragraph_angle += 180.0;
@@ -830,6 +831,7 @@ int GMT_pstext (void *V_API, int mode, void *args) {
 				master_record = true;
 			}
 			else {	/* Text block record */
+				assert (line != NULL);	/* Sanity check */
 				if (skip_text_records) continue;	/* Skip all records for this paragraph */
 				if (!master_record) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Text record line %d not preceded by paragraph information, skipped)\n", n_read);
@@ -866,10 +868,11 @@ int GMT_pstext (void *V_API, int mode, void *args) {
 			n_read++;
 		}
 		else {	/* Plain style pstext input */
-			if (gmt_M_rec_is_segment_header (GMT)) continue;	/* Skip segment headers */
+			if (gmt_M_rec_is_segment_header (GMT)) continue;	/* Skip segment headers (line == NULL) */
+			assert (line != NULL);
 			if (gmt_is_a_blank_line (line)) continue;	/* Skip blank lines or # comments */
 
-			strncpy (cp_line, line, GMT_BUFSIZ);	/* Make a copy because in_line may be pointer to a strdup-ed line that we cannot enlarge */
+			strncpy (cp_line, line, GMT_BUFSIZ-1);	/* Make a copy because in_line may be pointer to a strdup-ed line that we cannot enlarge */
 			line = cp_line;
 
 			if ((nscan = validate_coord_and_text (GMT, Ctrl, n_read, line, buffer)) == -1) continue;	/* Failure */
@@ -972,7 +975,6 @@ int GMT_pstext (void *V_API, int mode, void *args) {
 				if (fabs (T.paragraph_angle - tmp) > 179.0) T.block_justify -= 2 * (T.block_justify%4 - 2);	/* Flip any L/R code */
 			}
 			if (Ctrl->F.orientation) {
-				tmp = T.paragraph_angle;
 				if (T.paragraph_angle > 180.0) T.paragraph_angle -= 360.0;
 				if (T.paragraph_angle > 90.0) T.paragraph_angle -= 180.0;
 				else if (T.paragraph_angle < -90.0) T.paragraph_angle += 180.0;

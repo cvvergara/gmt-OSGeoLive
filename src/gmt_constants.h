@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_constants.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_constants.h 18171 2017-05-07 02:37:02Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -65,6 +65,7 @@
 #ifndef M_EULER
 #define M_EULER		0.577215664901532860606512	/* Euler's constant (gamma) */
 #endif
+#define MAD_NORMALIZE	1.4826	/*  1/N^{-1}(0.75), where z = \N^{-1}(p) is the inverse cumulative normal distribution */
 
 #define GMT_CONV15_LIMIT 1.0e-15	/* Very tight convergence limit or "close to zero" limit */
 #define GMT_CONV12_LIMIT 1.0e-12	/* Tight limit for gaps/overlaps in CPT z-values */
@@ -76,6 +77,7 @@
 
 /*! Various allocation-length parameters */
 enum GMT_enum_length {
+	GMT_DIM_SIZE	= 4U,	/* Length of dim array used in Read|Creat Data */
 	GMT_TINY_CHUNK  = 8U,
 	GMT_SMALL_CHUNK = 64U,
 	GMT_CHUNK       = 2048U,
@@ -200,6 +202,11 @@ enum GMT_enum_index {
 	GMT_PRIMARY = 0, GMT_SECONDARY = 1
 	};
 
+/*! Various mode for auto-download */
+enum GMT_enum_download {
+	GMT_NO_DOWNLOAD = 0, GMT_YES_DOWNLOAD = 1
+	};
+
 /*! Various options for FFT calculations [Default is 0] */
 enum FFT_implementations {
 	k_fft_auto = 0,    /* Automatically select best FFT algorithm */
@@ -209,6 +216,22 @@ enum FFT_implementations {
 	k_fft_brenner,     /* Select Brenner FFT (Legacy*/
 	k_n_fft_algorithms /* Number of FFT implementations available in GMT */
 };
+
+/*! Selections for run mode */
+enum GMT_enum_runmode {
+	GMT_CLASSIC = 0, /* Select Classic GMT behavior with -O -K -R -J */
+	GMT_MODERN};  /* Select Modern behavior where -O -K are disabled and -R -J optional if possible */
+
+/*! Selections for workflow mode */
+enum GMT_enum_workflowmode {
+	GMT_USE_WORKFLOW = 0, 	/* Default is to use current workflow if initiated and ignore if otherwise */
+	GMT_BEGIN_WORKFLOW = 1,	/* Initiate a new workflow via gmt begin */
+	GMT_END_WORKFLOW = 2};  /* Terminate current workflow via gmt begin */
+
+/*! Selections for pen/fill color replacements in custom symbol macros */
+enum GMT_enum_colorswap {
+	GMT_USE_FILL_RGB  = 1,	/* Take pen color from that of the current fill */
+	GMT_USE_PEN_RGB = 2};	/* Take fill color from that of the current pen */
 
 /*! Various algorithms for triangulations */
 enum GMT_enum_tri {
@@ -349,5 +372,17 @@ enum GMT_enum_sph {GMT_DIST_M = 10,	/* 2-D lon, lat data, convert distance to me
 #define GMT_BIGENDIAN	false
 #define GMT_ENDIAN		'L'
 #endif
+
+/* Constants used for automatic data download via curl */
+enum GMT_enum_curl {GMT_REGULAR_FILE = 0,	/* Regular file the may or may not exist */
+	GMT_CACHE_FILE = 1,	/* Temporary GMT test data file destined for the cache */
+	GMT_DATA_FILE  = 2,	/* Official GMT data file destined for the user's user dir */
+	GMT_URL_FILE   = 3,	/* Data given by an URL destined for the cache */
+	GMT_URL_CMD    = 4,	/* Data given by an URL CGI command destined for the cache */
+	GMT_CACHE_DIR  = 0,	/* Use the cache directory */
+	GMT_DATA_DIR   = 1};	/* Use the data directory */
+
+#define GMT_DATA_URL "ftp://ftp.soest.hawaii.edu/gmt/data"	/* URL to GMT data distribution site */
+#define GMT_DATA_PREFIX "earth_relief_"				/* Special prefix for global relief data sets */
 
 #endif  /* _GMT_CONSTANTS_H */

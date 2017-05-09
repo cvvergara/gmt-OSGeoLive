@@ -1,4 +1,4 @@
-#       $Id$
+#       $Id: earth.cpt 17597 2017-02-24 02:49:00Z pwessel $
 #
 # Color table for Earth's relief combining the bathy
 # and dem4 CPTs with a hinge at 0.

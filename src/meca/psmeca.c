@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: psmeca.c 17326 2016-11-08 20:28:56Z pwessel $
+ *    $Id: psmeca.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Donated to the GMT project by G. Patau upon her retirement from IGPG
@@ -20,17 +20,16 @@ PostScript code is written to stdout.
  Roots:		based on psxy.c, ported to GMT 5 by P. Wessel
  */
 
+#include "gmt_dev.h"
+#include "meca.h"
+#include "utilmeca.h"
+
 #define THIS_MODULE_NAME	"psmeca"
 #define THIS_MODULE_LIB		"meca"
 #define THIS_MODULE_PURPOSE	"Plot focal mechanisms on maps"
 #define THIS_MODULE_KEYS	"<T{,>X}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>BHJKOPRUVXYcdhit"
-
-#include "meca.h"
-#include "utilmeca.h"
+#define THIS_MODULE_NEEDS	"dJ"
+#define THIS_MODULE_OPTIONS "-:>BHJKOPRUVXYdehit" GMT_OPT("c")
 
 #define DEFAULT_FONTSIZE	9.0	/* In points */
 #define DEFAULT_OFFSET		3.0	/* In points */
@@ -157,7 +156,7 @@ GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a n
 	C->S.offset = DEFAULT_OFFSET * GMT->session.u2u[GMT_PT][GMT_INCH];
 	C->S.justify = PSL_BC;
 	C->A2.size = DEFAULT_SIZE * GMT->session.u2u[GMT_PT][GMT_INCH];
-	C->A2.P_symbol = C->A2.T_symbol = GMT_SYMBOL_CIRCLE;
+	C->A2.P_symbol = C->A2.T_symbol = PSL_CIRCLE;
 	return (C);
 }
 
@@ -177,8 +176,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t[-C[<pen>][P<pointsize>]] [-D<depmin>/<depmax>] [-E<fill>] [-G<fill>] [-K] [-L<pen>] [-M]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Fa[<size>[/<Psymbol>[<Tsymbol>]]] [-Fe<fill>] [-Fg<fill>] [-Fo] [-Fr<fill>] [-Fp[<pen>]] [-Ft[<pen>]] [-Fz[<pen>]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-N] [-O] [-P] [-T<nplane>[/<pen>]] [%s] [%s] [-W<pen>]\n", GMT_U_OPT, GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-Z<cpt>] [-z[<pen>]]\n", GMT_X_OPT, GMT_Y_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_c_OPT, GMT_di_OPT, GMT_h_OPT, GMT_i_OPT, GMT_t_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-Z<cpt>]\n", GMT_X_OPT, GMT_Y_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_di_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_t_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -248,7 +247,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Option (API, "U,V");
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Set pen attributes [%s].\n", gmt_putpen (API->GMT, &API->GMT->current.setting.map_default_pen));
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Use CPT to assign colors based on depth-value in 3rd column.\n");
-	GMT_Option (API, "X,c,di,h,i,t,:,.");
+	GMT_Option (API, "X,di,e,h,i,t,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -464,7 +463,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSMECA_CTRL *Ctrl, struct GMT_
 
 	no_size_needed = (Ctrl->S.readmode == READ_CMT || Ctrl->S.readmode == READ_PLANES || Ctrl->S.readmode == READ_AKI ||
 	                  Ctrl->S.readmode == READ_TENSOR || Ctrl->S.readmode == READ_AXIS);
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !no_size_needed && (Ctrl->S.active && Ctrl->S.scale <= 0.0),
 	                                   "Syntax error: -S must specify scale\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->Z.active && Ctrl->O2.active, "Syntax error: -Z cannot be combined with -Fo\n");
@@ -524,8 +523,8 @@ int GMT_psmeca (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -533,6 +532,9 @@ int GMT_psmeca (void *V_API, int mode, void *args) {
 
 	gmt_M_memset (event_title, GMT_BUFSIZ, char);
 	gmt_M_memset (&meca, 1, st_me);
+	gmt_M_memset (&T, 1, struct AXIS);
+	gmt_M_memset (&N, 1, struct AXIS);
+	gmt_M_memset (&P, 1, struct AXIS);
 	gmt_M_memset (col, GMT_LEN64*15, char);
 
 	if (Ctrl->Z.active) {
@@ -567,6 +569,7 @@ int GMT_psmeca (void *V_API, int mode, void *args) {
 				continue;
 			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			assert (line != NULL);						/* Should never get here */
 		}
 
 		/* Data record to process */
@@ -754,7 +757,7 @@ int GMT_psmeca (void *V_API, int mode, void *args) {
 				gmt_setpen (GMT, &Ctrl->C.pen);
 				gmt_geo_to_xy (GMT, xynew[GMT_X], xynew[GMT_Y], &plot_xnew, &plot_ynew);
 				gmt_setfill (GMT, &Ctrl->G.fill, true);
-				PSL_plotsymbol (PSL, plot_x, plot_y, &Ctrl->C.size, GMT_SYMBOL_CIRCLE);
+				PSL_plotsymbol (PSL, plot_x, plot_y, &Ctrl->C.size, PSL_CIRCLE);
 				PSL_plotsegment (PSL, plot_x, plot_y, plot_xnew, plot_ynew);
 				plot_x = plot_xnew;
 				plot_y = plot_ynew;

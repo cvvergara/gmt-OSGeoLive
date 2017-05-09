@@ -1,5 +1,5 @@
 #
-#	$Id: CMakeLists.txt 17449 2017-01-16 21:27:04Z pwessel $
+#	$Id: CMakeLists.txt 18037 2017-04-25 04:04:41Z pwessel $
 #
 #	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 #	See LICENSE.TXT file for copying and redistribution conditions.
@@ -182,6 +182,8 @@ message(
 	"*  Found DCW-GMT database     : ${DCW_PATH}\n"
 	"*  NetCDF library             : ${NETCDF_LIBRARY}\n"
 	"*  NetCDF include dir         : ${NETCDF_INCLUDE_DIR}\n"
+	"*  Curl library               : ${CURL_LIBRARY}\n"
+	"*  Curl include dir           : ${CURL_INCLUDE_DIR}\n"
 	"*  GDAL library               : ${GDAL_LIBRARY}\n"
 	"*  GDAL include dir           : ${GDAL_INCLUDE_DIR}\n"
 	"*  FFTW library               : ${FFTW3F_LIBRARY}\n"

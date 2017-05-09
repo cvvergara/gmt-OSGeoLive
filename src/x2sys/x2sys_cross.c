@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_cross.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: x2sys_cross.c 18144 2017-05-06 03:36:15Z pwessel $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -28,14 +28,16 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "mgd77/mgd77.h"
+#include "x2sys.h"
+
 #define THIS_MODULE_NAME	"x2sys_cross"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Calculate crossovers between track data files"
 #define THIS_MODULE_KEYS	">D}"
-
-#include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->JRVbd"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->JRVbd"
 
 /* Control structure for x2sys_cross */
 
@@ -338,7 +340,7 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 	struct GMT_OPTION *options = NULL;
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
-/*----------------------------------END OF VARIBLE DECLARATIONS---------------------------------------------*/
+/*----------------------------------END OF VARIABLE DECLARATIONS---------------------------------------------*/
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
@@ -351,8 +353,8 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -415,6 +417,7 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 
 			if (sscanf (line, "%s %s", name1, name2) != 2) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Error decoding combinations file for pair %" PRIu64 "!\n", n_pairs);
+				fclose (fp);
 				Return (GMT_RUNTIME_ERROR);
 			}
 			pair[n_pairs].id1 = strdup (name1);
@@ -484,11 +487,16 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 	gmt_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
 	gmt_set_tableheader (GMT, GMT_OUT, true);	/* Turn on -ho explicitly */
 
-	if (GMT->common.R.active && GMT->current.proj.projection != GMT_NO_PROJ) {
+	if (GMT->common.R.active[RSET] && GMT->current.proj.projection != GMT_NO_PROJ) {
 		do_project = true;
 		s->geographic = false;	/* Since we then have x,y projected coordinates, not lon,lat */
 		s->dist_flag = 0;
-		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_PROJECTION_ERROR);
+		if (fpC) fclose (fpC);
+		x2sys_free_list (GMT, trk_name, n_tracks);
+		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) {
+			gmt_M_free (GMT, duplicate);
+			Return (GMT_PROJECTION_ERROR);
+		}
 	}
 
 	gmt_init_distaz (GMT, s->dist_flag ? GMT_MAP_DIST_UNIT : 'X', s->dist_flag, GMT_MAP_DIST);
@@ -521,18 +529,26 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 			break;
 	}
 	t_scale = GMT->current.setting.time_system.scale;	/* Convert user's TIME_UNIT to seconds */
-	wrap = (gmt_M_is_geographic (GMT, GMT_IN) && GMT->common.R.active && gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]));
+	wrap = (gmt_M_is_geographic (GMT, GMT_IN) && GMT->common.R.active[RSET] && gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]));
 	
 	if ((error = gmt_set_cols (GMT, GMT_OUT, n_output)) != GMT_NOERROR) {
+		gmt_M_free (GMT, duplicate);
+		x2sys_free_list (GMT, trk_name, n_tracks);
 		Return (error);
 	}
 	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
+		gmt_M_free (GMT, duplicate);
+		x2sys_free_list (GMT, trk_name, n_tracks);
 		Return (API->error);
 	}
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
+		gmt_M_free (GMT, duplicate);
+		x2sys_free_list (GMT, trk_name, n_tracks);
 		Return (API->error);
 	}
 	if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_POINT) != GMT_NOERROR) {	/* Sets output geometry */
+		gmt_M_free (GMT, duplicate);
+		x2sys_free_list (GMT, trk_name, n_tracks);
 		Return (API->error);
 	}
 
@@ -541,6 +557,7 @@ int GMT_x2sys_cross (void *V_API, int mode, void *args) {
 
 		if (s->x_col < 0 || s->y_col < 0) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: x and/or y column not found for track %s!\n", trk_name[A]);
+			x2sys_free_list (GMT, trk_name, n_tracks);
 			Return (GMT_RUNTIME_ERROR);
 		}
 

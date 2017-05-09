@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2rgb.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grd2rgb.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,14 +26,14 @@
  *
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grd2rgb"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Write r/g/b grid files from a grid file, a raw RGB file, or SUN rasterfile"
 #define THIS_MODULE_KEYS	"<G{,CC("
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->RVh"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->RVh"
 
 struct GRD2RGB_CTRL {
 	struct In {
@@ -48,10 +48,6 @@ struct GRD2RGB_CTRL {
 		bool active;
 		char *name;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct L {	/* -L<layer> */
 		bool active;
 		char layer;
@@ -254,10 +250,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<infile> can be one of three different intput files:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t  (1) An 8, 24, or 32-bit Sun rasterfile.  Use -I, -R, and -F to change the\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t  (1) An 8, 24, or 32-bit Sun rasterfile.  Use -I, -R, and -r to change the\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      the default values of dx = dy = 1 and region 1/ncols/1/nrows.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t  (2) A regular z grid file.  Use -C to provide a CPT with which\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t      to convert z to r/g/b triplets. -R, -I, and -F are ignored.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t      to convert z to r/g/b triplets. -R, -I, and -r are ignored.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t  (3) A RGB or RGBA raw rasterfile. Since raw rasterfiles have no header, you have to\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      give the image dimensions via -W.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      However, you may take the chance of letting the program try to\n");
@@ -315,11 +311,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRD2RGB_CTRL *Ctrl, struct GMT
 				Ctrl->G.name = strdup (opt->arg);
 				break;
 			case 'I':	/* Get grid spacings */
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
-				Ctrl->I.active = true;
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'L':	/* Select one layer */
 				Ctrl->L.layer = opt->arg[0];
@@ -353,11 +345,11 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRD2RGB_CTRL *Ctrl, struct GMT
 
 	/* Check that the options selected are mutually consistent */
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	if (!Ctrl->C.active) {
 		n_errors += gmt_M_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input raster file\n");
-		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] == 0.0 || Ctrl->I.inc[GMT_Y] == 0.0), "Syntax error: increments must be positive\n");
+		n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] == 0.0 || GMT->common.R.inc[GMT_Y] == 0.0), "Syntax error: increments must be positive\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->W.size != 3 && Ctrl->W.size != 4, "Syntax error: byte_per_pixel must be either 3 or 4\n");
 		if (guess) guess_width (GMT, Ctrl->In.file, Ctrl->W.size, &Ctrl->W.n_columns, &Ctrl->W.n_rows);
 
@@ -369,7 +361,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRD2RGB_CTRL *Ctrl, struct GMT
 		n_errors += gmt_M_check_condition (GMT, !Ctrl->C.file, "Syntax error: Must specify CPT\n");
 	}
 	n_errors += gmt_M_check_condition (GMT, !strstr (Ctrl->G.name, "%c"), "Syntax error: output template must contain %%c\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && !strchr ("rgb", Ctrl->L.layer), "Syntax error: -L layer must be one of r, g, or b\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && !strchr ("rgb", Ctrl->L.layer), "Syntax error: -L layer must be one of r, g, or b\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
@@ -412,8 +404,8 @@ int GMT_grd2rgb (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	PSL = GMT->PSL;	/* This module also needs PSL */
@@ -433,7 +425,7 @@ int GMT_grd2rgb (void *V_API, int mode, void *args) {
 		for (channel = 0; channel < 3; channel++) {	/* Do the r, g, and b channels */
 			if (Ctrl->L.active && Ctrl->L.layer != rgb[channel]) continue;	/* Only do one of the layers */
 			GMT_Report (API, GMT_MSG_VERBOSE, "Processing the %s components\n", comp[channel]);
-			if ((Grid = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {
+			if ((Grid = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->In.file, NULL)) == NULL) {
 				Return (API->error);
 			}
 			gmt_grd_init (GMT, Grid->header, options, true);
@@ -447,7 +439,7 @@ int GMT_grd2rgb (void *V_API, int mode, void *args) {
 				(void)gmt_get_rgb_from_z (GMT, P, Grid->data[ij], f_rgb);
 				Out->data[ij] = (float)gmt_M_s255 (f_rgb[channel]);
 			}
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, grdfile, Out) != GMT_NOERROR) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, grdfile, Out) != GMT_NOERROR) {
 				Return (API->error);
 			}
 			gmt_M_str_free (grdfile);
@@ -486,25 +478,25 @@ int GMT_grd2rgb (void *V_API, int mode, void *args) {
 			Return (GMT_DIM_TOO_SMALL);
 		}
 
-		if (!Ctrl->I.active) {
+		if (!GMT->common.R.active[ISET]) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Assign default dx = dy = 1\n");
-			Ctrl->I.inc[GMT_X] = Ctrl->I.inc[GMT_Y] = 1.0;	Ctrl->I.active = true;
+			GMT->common.R.inc[GMT_X] = GMT->common.R.inc[GMT_Y] = 1.0;	GMT->common.R.active[ISET] = true;
 		}
-		if (!GMT->common.R.active) {	/* R not given, provide default */
+		if (!GMT->common.R.active[RSET]) {	/* R not given, provide default */
 			GMT->common.R.wesn[XLO] = GMT->common.R.wesn[YLO] = 0.0;
-			GMT->common.R.wesn[XHI] = header.width  - 1 + GMT->common.r.registration;
-			GMT->common.R.wesn[YHI] = header.height - 1 + GMT->common.r.registration;
-			GMT->common.R.active = true;
+			GMT->common.R.wesn[XHI] = header.width  - 1 + GMT->common.R.registration;
+			GMT->common.R.wesn[YHI] = header.height - 1 + GMT->common.R.registration;
+			GMT->common.R.active[RSET] = true;
 			GMT_Report (API, GMT_MSG_VERBOSE, "Assign default -R0/%g/0/%g\n", GMT->common.R.wesn[XHI], GMT->common.R.wesn[YHI]);
 		}
 
-		n_columns = (int)gmt_M_get_n (GMT, GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI], Ctrl->I.inc[GMT_X], GMT->common.r.registration);
-		n_rows = (int)gmt_M_get_n (GMT, GMT->common.R.wesn[YLO], GMT->common.R.wesn[YHI], Ctrl->I.inc[GMT_Y], GMT->common.r.registration);
-		if (Ctrl->W.active && !Ctrl->I.active) {		/* This isn't correct because it doesn't deal with -r */
+		n_columns = (int)gmt_M_get_n (GMT, GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI], GMT->common.R.inc[GMT_X], GMT->common.R.registration);
+		n_rows = (int)gmt_M_get_n (GMT, GMT->common.R.wesn[YLO], GMT->common.R.wesn[YHI], GMT->common.R.inc[GMT_Y], GMT->common.R.registration);
+		if (Ctrl->W.active && !GMT->common.R.active[ISET]) {		/* This isn't correct because it doesn't deal with -r */
 			n_columns = Ctrl->W.n_columns;
 			n_rows = Ctrl->W.n_rows;
-			Ctrl->I.inc[GMT_X] = gmt_M_get_inc (GMT, GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI], n_columns, GMT->common.r.registration);
-			Ctrl->I.inc[GMT_Y] = gmt_M_get_inc (GMT, GMT->common.R.wesn[YLO], GMT->common.R.wesn[YHI], n_rows, GMT->common.r.registration);
+			GMT->common.R.inc[GMT_X] = gmt_M_get_inc (GMT, GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI], n_columns, GMT->common.R.registration);
+			GMT->common.R.inc[GMT_Y] = gmt_M_get_inc (GMT, GMT->common.R.wesn[YLO], GMT->common.R.wesn[YHI], n_rows, GMT->common.R.registration);
 		}
 		if (header.width != n_columns) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Sun rasterfile width and -R -I do not match (%d versus %d)  Need -r?\n", header.width, n_columns);
@@ -517,7 +509,7 @@ int GMT_grd2rgb (void *V_API, int mode, void *args) {
 			Return (GMT_RUNTIME_ERROR);
 		}
 
-		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc,
+		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, NULL, NULL,
 		                             GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) {
 				PSL_free (picture);
 				Return (API->error);
@@ -543,8 +535,12 @@ int GMT_grd2rgb (void *V_API, int mode, void *args) {
 					k3 += 3;
 				}
 			}
-			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, grdfile, Grid) != GMT_NOERROR) {
+			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) {
+				gmt_M_str_free (grdfile);
+				Return (API->error);
+			}
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, grdfile, Grid) != GMT_NOERROR) {
+				gmt_M_str_free (grdfile);
 				Return (API->error);
 			}
 			gmt_M_str_free (grdfile);

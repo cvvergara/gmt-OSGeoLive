@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- *	$Id: mgd77_init.h 17496 2017-01-28 23:56:41Z pwessel $
+ *	$Id: mgd77_init.h 17497 2017-01-28 23:57:39Z pwessel $
  *
  *    Copyright (c) 2005-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
