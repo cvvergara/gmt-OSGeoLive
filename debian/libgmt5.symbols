@@ -19,6 +19,7 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_Destroy_Options@Base 5.1.2
  GMT_Destroy_Session@Base 5.1.2
  GMT_Duplicate_Data@Base 5.1.2
+ GMT_Duplicate_Options@Base 5.4.0
  GMT_Duplicate_String@Base 5.2.1
  GMT_Encode_ID@Base 5.1.2
  GMT_Encode_Options@Base 5.2.1
@@ -36,6 +37,7 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_FFT_Parse@Base 5.1.2
  GMT_FFT_Wavenumber@Base 5.1.2
  GMT_Find_Option@Base 5.1.2
+ GMT_Free_Option@Base 5.4.0
  GMT_Get_Common@Base 5.1.2
  GMT_Get_Coord@Base 5.1.2
  GMT_Get_Data@Base 5.1.2
@@ -133,6 +135,7 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_grdview@Base 5.1.2
  GMT_grdvolume@Base 5.1.2
  GMT_greenspline@Base 5.1.2
+ GMT_keywords_updated@Base 5.4.0
  GMT_kml2gmt@Base 5.1.2
  GMT_makecpt@Base 5.1.2
  GMT_mapproject@Base 5.1.2
@@ -152,6 +155,7 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_psrose@Base 5.1.2
  GMT_psscale@Base 5.1.2
  GMT_pssolar@Base 5.3.1
+ GMT_psternary@Base 5.4.0
  GMT_pstext@Base 5.1.2
  GMT_pswiggle@Base 5.1.2
  GMT_psxy@Base 5.1.2
@@ -170,6 +174,8 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_trend2d@Base 5.1.2
  GMT_triangulate@Base 5.1.2
  GMT_xyz2grd@Base 5.1.2
+ KML_plot_object@Base 5.4.0
+ api_alloc_datasegment@Base 5.4.0
  api_destroy_datasets@Base 5.3.1
  api_destroy_grids@Base 5.3.1
  api_destroy_images@Base 5.3.1
@@ -202,6 +208,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_UTMzone_to_wesn@Base 5.3.1
  gmt_access@Base 5.3.1
  gmt_add3v@Base 5.3.1
+ gmt_add_R_if_modern_and_true@Base 5.4.0
  gmt_add_label_record@Base 5.3.1
  gmt_add_to_record@Base 5.3.1
  gmt_adjust_dataset@Base 5.3.1
@@ -218,6 +225,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_alloc_textsegment@Base 5.3.1
  gmt_api_error_string@Base 5.3.1
  gmt_ascii_format_col@Base 5.3.1
+ gmt_ascii_format_one@Base 5.4.0
  gmt_ascii_output_col@Base 5.3.1
  gmt_assemble_br@Base 5.3.1
  gmt_assemble_shore@Base 5.3.1
@@ -257,7 +265,6 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_chebyshev@Base 5.3.1
  gmt_check_binary_io@Base 5.3.1
  gmt_check_filearg@Base 5.3.1
- gmt_check_lattice@Base 5.3.1
  gmt_check_region@Base 5.3.1
  gmt_check_scalingopt@Base 5.3.1
  gmt_check_z_io@Base 5.3.1
@@ -319,6 +326,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_distance_type@Base 5.3.1
  gmt_dot2v@Base 5.3.1
  gmt_dot3v@Base 5.3.1
+ gmt_download_file_if_not_found@Base 5.4.0
  gmt_draw_custom_symbol@Base 5.3.1
  gmt_draw_front@Base 5.3.1
  gmt_draw_map_insert@Base 5.3.1
@@ -363,6 +371,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_fgets@Base 5.3.1
  gmt_fill_syntax@Base 5.3.1
  gmt_find_macro@Base 5.1.2
+ gmt_first_modifier@Base 5.4.0
  gmt_fix_up_path@Base 5.3.1
  gmt_flip_angle_d@Base 5.3.1
  gmt_flip_azim_d@Base 5.3.1
@@ -370,6 +379,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_fopen@Base 5.3.1
  gmt_format_abstime_output@Base 5.1.2
  gmt_format_calendar@Base 5.3.1
+ gmt_format_duration_output@Base 5.4.0
  gmt_free_br@Base 5.3.1
  gmt_free_dataset@Base 5.3.1
  gmt_free_func@Base 5.3.1
@@ -414,6 +424,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_get_api_ptr@Base 5.3.1
  gmt_get_aspatial_value@Base 5.3.1
  gmt_get_br_bin@Base 5.3.1
+ gmt_get_cellarea@Base 5.4.0
  gmt_get_cols@Base 5.3.1
  gmt_get_cpt@Base 5.3.1
  gmt_get_distance@Base 5.3.1
@@ -435,9 +446,9 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_get_rgb_from_z@Base 5.3.1
  gmt_get_rgb_lookup@Base 5.3.1
  gmt_get_rgbtxt_from_z@Base 5.3.1
+ gmt_get_segtext_selection@Base 5.4.0
  gmt_get_shore_bin@Base 5.3.1
  gmt_get_smallcircle@Base 5.3.1
- gmt_get_text_selection@Base 5.3.1
  gmt_get_time_system@Base 5.3.1
  gmt_getdatapath@Base 5.3.1
  gmt_getdefaults@Base 5.3.1
@@ -464,8 +475,14 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_grd_detrend@Base 5.3.1
  gmt_grd_format_decoder@Base 5.3.1
  gmt_grd_get_format@Base 5.3.1
+ gmt_grd_info_syntax@Base 5.4.0
  gmt_grd_init@Base 5.3.1
+ gmt_grd_lmsscl@Base 5.4.0
+ gmt_grd_mad@Base 5.4.0
+ gmt_grd_mean@Base 5.4.0
+ gmt_grd_median@Base 5.4.0
  gmt_grd_minmax@Base 5.3.1
+ gmt_grd_mode@Base 5.4.0
  gmt_grd_mux_demux@Base 5.3.1
  gmt_grd_pad_off@Base 5.3.1
  gmt_grd_pad_on@Base 5.3.1
@@ -473,9 +490,11 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_grd_pad_zero@Base 5.3.1
  gmt_grd_prep_io@Base 5.3.1
  gmt_grd_project@Base 5.3.1
+ gmt_grd_rms@Base 5.4.0
  gmt_grd_set_ij_inc@Base 5.3.1
  gmt_grd_setregion@Base 5.3.1
  gmt_grd_shift@Base 5.3.1
+ gmt_grd_std@Base 5.4.0
  gmt_grd_zminmax@Base 5.3.1
  gmt_grdformats_sorted@Base 5.3.1
  gmt_grdio_init@Base 5.3.1
@@ -515,10 +534,12 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_imollweide@Base 5.3.1
  gmt_in@Base 5.3.1
  gmt_inc_syntax@Base 5.3.1
+ gmt_init_B@Base 5.4.0
  gmt_init_br@Base 5.3.1
  gmt_init_distaz@Base 5.3.1
  gmt_init_fill@Base 5.3.1
  gmt_init_io_columns@Base 5.3.1
+ gmt_init_module@Base 5.4.0
  gmt_init_pen@Base 5.3.1
  gmt_init_scales@Base 5.3.1
  gmt_init_shore@Base 5.3.1
@@ -528,6 +549,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_init_z_io@Base 5.3.1
  gmt_inonout@Base 5.3.1
  gmt_input_is_bin@Base 5.3.1
+ gmt_input_is_nan_proxy@Base 5.4.0
  gmt_intpol@Base 5.3.1
  gmt_invert_cpt@Base 5.3.1
  gmt_iobl@Base 5.3.1
@@ -654,6 +676,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_parse_d_option@Base 5.2.1
  gmt_parse_g_option@Base 5.1.2
  gmt_parse_i_option@Base 5.1.2
+ gmt_parse_inc_option@Base 5.4.0
  gmt_parse_inv_cpt@Base 5.3.2
  gmt_parse_model@Base 5.3.1
  gmt_parse_o_option@Base 5.1.2
@@ -664,6 +687,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_parse_symbol_option@Base 5.3.1
  gmt_parse_vector@Base 5.3.1
  gmt_parse_z_io@Base 5.3.1
+ gmt_pclose2@Base 5.4.0
  gmt_pen_syntax@Base 5.3.1
  gmt_permutation@Base 5.3.1
  gmt_pickdefaults@Base 5.3.1
@@ -684,6 +708,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_polyconic@Base 5.3.1
  gmt_polygon_centroid@Base 5.3.1
  gmt_polygon_is_open@Base 5.3.1
+ gmt_popen2@Base 5.4.0
  gmt_prep_nodesearch@Base 5.3.1
  gmt_prep_shore_polygons@Base 5.3.1
  gmt_prep_tmp_arrays@Base 5.3.1
@@ -713,6 +738,9 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_read_img@Base 5.3.1
  gmt_reenable_i_opt@Base 5.3.1
  gmt_refpoint_syntax@Base 5.3.1
+ gmt_remove_dir@Base 5.4.0
+ gmt_remove_file@Base 5.4.0
+ gmt_rename_file@Base 5.4.0
  gmt_resample_data@Base 5.3.1
  gmt_resample_path@Base 5.3.1
  gmt_reset_meminc@Base 5.3.1
@@ -733,6 +761,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_scanf_arg@Base 5.3.1
  gmt_segmentize_data@Base 5.3.1
  gmt_segmentize_syntax@Base 5.3.1
+ gmt_set_V@Base 5.4.0
  gmt_set_cartesian@Base 5.3.1
  gmt_set_cols@Base 5.3.1
  gmt_set_datum@Base 5.3.1
@@ -744,8 +773,10 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_set_line_resampling@Base 5.3.1
  gmt_set_measure_unit@Base 5.3.1
  gmt_set_meminc@Base 5.3.1
+ gmt_set_missing_options@Base 5.4.0
  gmt_set_outgrid@Base 5.3.1
  gmt_set_pad@Base 5.3.1
+ gmt_set_psfilename@Base 5.4.0
  gmt_set_refpoint@Base 5.3.1
  gmt_set_resolution@Base 5.3.1
  gmt_set_seg_minmax@Base 5.3.1
@@ -791,6 +822,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_stripack_lists@Base 5.3.1
  gmt_strlcmp@Base 5.3.1
  gmt_strlshift@Base 5.3.1
+ gmt_strncpy@Base 5.4.0
  gmt_strrepc@Base 5.3.1
  gmt_strstrip@Base 5.3.1
  gmt_strtok@Base 5.3.1
@@ -869,7 +901,6 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_y_out_of_bounds@Base 5.3.1
  gmt_y_to_yy@Base 5.3.1
  gmt_z_input@Base 5.3.1
- gmt_z_input_is_nan_proxy@Base 5.3.1
  gmt_z_output@Base 5.3.1
  gmt_z_to_zz@Base 5.3.1
  gmt_zcrit@Base 5.3.1
@@ -885,6 +916,9 @@ libgmt.so.5 libgmt5 #MINVER#
  gmtgrdio_free_grid_ptr@Base 5.3.1
  gmtgrdio_init_grdheader@Base 5.3.1
  gmtinit_backwards_SQ_parsing@Base 5.3.1
+ gmtinit_conf@Base 5.4.0
+ gmtinit_conf_US@Base 5.4.0
+ gmtinit_update_keys@Base 5.4.0
  gmtio_ascii_textinput@Base 5.3.1
  gmtlib_akima@Base 5.3.1
  gmtlib_alloc_textset@Base 5.3.1
@@ -898,6 +932,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmtlib_change_dataset@Base 5.3.1
  gmtlib_check_url_name@Base 5.3.1
  gmtlib_clock_C_format@Base 5.3.1
+ gmtlib_compare_observation@Base 5.4.0
  gmtlib_contract_headerpad@Base 5.3.1
  gmtlib_contract_pad@Base 5.3.1
  gmtlib_conv_distance@Base 5.3.1
@@ -930,6 +965,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmtlib_enforce_rgb_triplets@Base 5.3.1
  gmtlib_expand_headerpad@Base 5.3.1
  gmtlib_explain_options@Base 5.3.1
+ gmtlib_file_is_downloadable@Base 5.4.0
  gmtlib_file_unitscale@Base 5.3.1
  gmtlib_free_cpt_ptr@Base 5.3.1
  gmtlib_free_custom_symbols@Base 5.3.1
@@ -965,7 +1001,9 @@ libgmt.so.5 libgmt5 #MINVER#
  gmtlib_get_lon_minmax@Base 5.3.1
  gmtlib_get_map_interval@Base 5.3.1
  gmtlib_get_num_processors@Base 5.3.1
+ gmtlib_get_option_id@Base 5.4.0
  gmtlib_get_point_from_r_az@Base 5.3.1
+ gmtlib_get_pos_of_filename@Base 5.4.0
  gmtlib_get_time_label@Base 5.3.1
  gmtlib_get_unit_number@Base 5.3.1
  gmtlib_getrgb_index@Base 5.3.1
@@ -1066,13 +1104,12 @@ libgmt.so.5 libgmt5 #MINVER#
  kiss_fft_stride@Base 5.1.2
  kiss_fftnd@Base 5.1.2
  kiss_fftnd_alloc@Base 5.1.2
- mem_rewind@Base 5.3.1
+ plot_cycle@Base 5.4.0
  sig_handler@Base 5.1.2
  stresep@Base 5.1.2
  strsepz@Base 5.1.2
  void3_to_void2@Base 5.3.1
 libpostscriptlight.so.5 libgmt5 #MINVER#
- GMT_runtime_bindir@Base 5.1.2
  New_PSL_Ctrl@Base 5.1.2
  PSL_beginaxes@Base 5.1.2
  PSL_beginclipping@Base 5.1.2
@@ -1092,6 +1129,7 @@ libpostscriptlight.so.5 libgmt5 #MINVER#
  PSL_endlayer@Base 5.1.2
  PSL_endplot@Base 5.1.2
  PSL_endsession@Base 5.1.2
+ PSL_fclose@Base 5.4.0
  PSL_fopen@Base 5.1.2
  PSL_free_nonmacro@Base 5.1.2
  PSL_getplot@Base 5.3.1
@@ -1133,22 +1171,7 @@ libpostscriptlight.so.5 libgmt5 #MINVER#
  PSL_setparagraph@Base 5.1.2
  PSL_setpattern@Base 5.1.2
  PSL_settransparencymode@Base 5.1.2
- gmt_chop@Base 5.3.1
- gmt_chop_ext@Base 5.3.1
- gmt_get_ext@Base 5.3.1
- gmt_get_modifier@Base 5.3.1
- gmt_guess_sharedir@Base 5.3.1
- gmt_match_string_in_file@Base 5.3.1
- gmt_runtime_libdir@Base 5.3.1
- gmt_strlcmp@Base 5.3.1
- gmt_strlshift@Base 5.3.1
- gmt_strrepc@Base 5.3.1
- gmt_strstrip@Base 5.3.1
- gmt_strtok@Base 5.3.1
- gmt_strtok_m@Base 5.3.1
- gmt_verify_sharedir_version@Base 5.3.1
  psl_gray_encode@Base 5.1.2
  psl_set_int_array@Base 5.1.2
  psl_set_txt_array@Base 5.1.2
- stresep@Base 5.1.2
- strsepz@Base 5.1.2
+ psl_vector_v4@Base 5.4.0
