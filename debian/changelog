@@ -1,4 +1,4 @@
-gmt (5.4.0+dfsg-1) UNRELEASED; urgency=medium
+gmt (5.4.0+dfsg-1~exp1) experimental; urgency=medium
 
   * New upstream release.
   * Add libcurl4-gnutls-dev | libcurl-ssl-dev to build dependencies.
@@ -6,7 +6,7 @@ gmt (5.4.0+dfsg-1) UNRELEASED; urgency=medium
   * Update symbols for 5.4.0.
   * Drop gmt_url.c from copyright file, removed upstream.
 
- -- Bas Couwenberg <sebastic@debian.org>  Tue, 09 May 2017 07:41:11 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Tue, 09 May 2017 07:53:39 +0200
 
 gmt (5.3.3+dfsg-1~exp1) experimental; urgency=medium
 
