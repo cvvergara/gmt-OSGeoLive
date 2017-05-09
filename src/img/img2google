@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# $Id: img2google 17450 2017-01-16 21:34:35Z pwessel $
+# $Id: img2google 17451 2017-01-16 21:36:06Z pwessel $
 #
 # Copyright (c) 2009-2017 by David Sandwell and Paul Wessel
 # Credit to Joaquim Luis for adding KML output from ps2raster

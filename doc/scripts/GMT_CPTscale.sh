@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: GMT_CPTscale.sh 17346 2016-11-14 17:04:02Z pwessel $
+#	$Id: GMT_CPTscale.sh 17347 2016-11-14 17:04:33Z pwessel $
 #
 ps=GMT_CPTscale.ps
 gmt psxy -R0/6/0/6 -Jx1i -P -K -W0.25p << EOF > $ps

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: libspotter.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: libspotter.c 17780 2017-03-25 20:54:11Z pwessel $
  *
  *   Copyright (c) 1999-2017 by P. Wessel
  *
@@ -49,6 +49,7 @@
  * latitudes are usually implied to be geocentric.
  */
 
+#include "gmt_dev.h"
 #include "spotter.h"
 
 EXTERN_MSC void gmtlib_get_point_from_r_az (struct GMT_CTRL *GMT, double lon0, double lat0, double r, double azim, double *lon1, double *lat1);

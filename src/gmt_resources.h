@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_resources.h 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: gmt_resources.h 18140 2017-05-05 22:21:02Z pwessel $
  *
  *	Copyright (c) 2012-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -52,7 +52,8 @@ enum GMT_enum_session {
 	GMT_SESSION_NORMAL   = 0,	/* Typical mode to GMT_Create_Session */
 	GMT_SESSION_NOEXIT   = 1,	/* Call return and not exit when error */
 	GMT_SESSION_EXTERNAL = 2,	/* Called by an external API (e.g., MATLAB, Python). */
-	GMT_SESSION_COLMAJOR = 4};	/* External API uses column-major formats (e.g., MATLAB, FORTRAN). [Row-major format] */
+	GMT_SESSION_COLMAJOR = 4,	/* External API uses column-major formats (e.g., MATLAB, FORTRAN). [Row-major format] */
+	GMT_SESSION_RUNMODE  = 8};	/* If set enable GMT's modern runmode. [Classic] */
 
 /*! Miscellaneous settings */
 enum GMT_enum_api {
@@ -84,13 +85,20 @@ enum GMT_enum_method {
 	GMT_IS_STREAM = 1,	/* Entity is an open stream */
 	GMT_IS_FDESC = 2,	/* Entity is an open file descriptor */
 	GMT_IS_DUPLICATE = 3,	/* Entity is a memory location that should be duplicated */
-	GMT_IS_REFERENCE = 4};	/* Entity is a memory location and we just pass the ref (no copying) */
+	GMT_IS_REFERENCE = 4,	/* Entity is a memory location and we just pass the ref (no copying) */
+	GMT_IS_OUTPUT = 1024};	/* When creating a resource as a container for output */
 
 /* A Grid can come from a grid OR User Matrix, and Data can come from DATASET or via Vectors|Matrix, and Text from TEXTSET or Matrix */
 
 enum GMT_enum_via {
 	GMT_VIA_NONE = 0,	/* No via anything */
 	GMT_VIA_MODULE_INPUT = 64};	/* To flag resources destined for another module's "command-line" input */
+
+/* We may allocate just a container, just the data (if container was allocated earlier), or both: */
+enum GMT_enum_container {
+	GMT_CONTAINER_AND_DATA	= 0U,    /* Create|Read|write both container and the data array */
+	GMT_CONTAINER_ONLY	= 1U,    /* Create|read|write the container but no data array */
+	GMT_DATA_ONLY		= 2U};   /* Create|Read|write the container's array only */
 
 /*! These are the 6 families of data types, + a coordinate array + 3 help containers for vector, matrix, and coordinates */
 enum GMT_enum_family {
@@ -105,20 +113,21 @@ enum GMT_enum_family {
 	GMT_IS_COORD,		/* Entity is a double coordinate array */
 	GMT_N_FAMILIES};	/* Total number of families [API Developers only]  */
 
-#define GMT_IS_CPT	GMT_IS_PALETTE		/* Backwardness for now */
+#define GMT_IS_CPT	GMT_IS_PALETTE		/* Backwards compatibility for < 5.3.3; */
 
 /*! These are modes for handling comments */
 enum GMT_enum_comment {
-	GMT_COMMENT_IS_TEXT	= 0,	/* Comment is a text string */
-	GMT_COMMENT_IS_OPTION	= 1U,	/* Comment is a linked list of GMT_OPTION structures */
-	GMT_COMMENT_IS_COMMAND	= 2U,	/* Comment replaces header->command */
-	GMT_COMMENT_IS_REMARK	= 4U,	/* Comment replaces header->remark */
-	GMT_COMMENT_IS_TITLE	= 8U,	/* Comment replaces header->title */
-	GMT_COMMENT_IS_NAME_X	= 16U,	/* Comment replaces header->x_units [grids only] */
-	GMT_COMMENT_IS_NAME_Y	= 32U,	/* Comment replaces header->y_units [grids only] */
-	GMT_COMMENT_IS_NAME_Z	= 64U,	/* Comment replaces header->z_units [grids only] */
-	GMT_COMMENT_IS_COLNAMES	= 128U,	/* Comment replaces header->colnames [tables only] */
-	GMT_COMMENT_IS_RESET	= 256U};	/* Wipe existing header first [append] */
+	GMT_COMMENT_IS_TEXT	= 0,        /* Comment is a text string */
+	GMT_COMMENT_IS_OPTION	= 1U,   /* Comment is a linked list of GMT_OPTION structures */
+	GMT_COMMENT_IS_COMMAND	= 2U,   /* Comment replaces header->command */
+	GMT_COMMENT_IS_REMARK	= 4U,   /* Comment replaces header->remark */
+	GMT_COMMENT_IS_TITLE	= 8U,   /* Comment replaces header->title */
+	GMT_COMMENT_IS_NAME_X	= 16U,  /* Comment replaces header->x_units [grids only] */
+	GMT_COMMENT_IS_NAME_Y	= 32U,  /* Comment replaces header->y_units [grids only] */
+	GMT_COMMENT_IS_NAME_Z	= 64U,  /* Comment replaces header->z_units [grids only] */
+	GMT_COMMENT_IS_COLNAMES	= 128U, /* Comment replaces header->colnames [tables only] */
+	GMT_COMMENT_IS_RESET	= 256U, /* Wipe existing header first [append] */
+	GMT_COMMENT_IS_MULTISEG = 512U};/* Comment is in fact a multisegment record */
 
 enum GMT_enum_apierr {
 	GMT_NOTSET  = -1,	/* When something is not set */
@@ -255,9 +264,6 @@ enum GMT_enum_dimindex {
 enum GMT_enum_gridio {
 	GMT_GRID_IS_CARTESIAN	   = 0U,    /* Grid is not geographic but Cartesian */
 	GMT_GRID_IS_REAL	   = 0U,    /* Read|write a normal real-valued grid */
-	GMT_GRID_ALL		   = 0U,    /* Read|write both grid header and the entire grid (no subset) */
-	GMT_GRID_HEADER_ONLY	   = 1U,    /* Just read|write the grid header */
-	GMT_GRID_DATA_ONLY	   = 2U,    /* Read|write the grid array given w/e/s/n set in the header */
 	GMT_GRID_IS_COMPLEX_REAL   = 4U,    /* Read|write the real component to/from a complex grid */
 	GMT_GRID_IS_COMPLEX_IMAG   = 8U,    /* Read|write the imaginary component to/from a complex grid */
 	GMT_GRID_IS_COMPLEX_MASK   = 12U,   /* To mask out the real|imag flags */
@@ -266,6 +272,10 @@ enum GMT_enum_gridio {
 	GMT_GRID_ROW_BY_ROW_MANUAL = 64U,   /* Read|write the grid array one row at the time in any order */
 	GMT_GRID_XY		   = 128U,  /* Allocate and initialize x,y vectors */
 	GMT_GRID_IS_GEO		   = 256U}; /* Grid is a geographic grid, not Cartesian */
+
+#define GMT_GRID_ALL		0U   /* Backwards compatibility for < 5.3.3; See GMT_CONTAINER_AND_DATA */
+#define GMT_GRID_HEADER_ONLY	1U   /* Backwards compatibility for < 5.3.3; See GMT_CONTAINER_ONLY */
+#define GMT_GRID_DATA_ONLY	2U   /* Backwards compatibility for < 5.3.3; See GMT_DATA_ONLY */
 
 /* These lengths (except GMT_GRID_VARNAME_LEN80) must NOT be changed as they are part of grd definition */
 enum GMT_enum_grdlen {
@@ -325,7 +335,7 @@ struct GMT_GRID_HEADER {
 	unsigned int n_bands;            /* Number of bands [1]. Used with IMAGE containers and macros to get ij index from row,col, band */
 	unsigned int pad[4];             /* Padding on west, east, south, north sides [2,2,2,2] */
 	unsigned int BC[4];              /* Boundary condition applied on each side via pad [0 = not set, 1 = natural, 2 = periodic, 3 = data] */
-	unsigned int grdtype;            /* 0 for Cartesian, > 0 for geographic and depends on 360 periodicity [see GMT_enum_grdtype above] */
+	unsigned int grdtype;            /* 0 for Cartesian, > 0 for geographic and depends on 360 periodicity [see GMT_enum_grdtype in gmt_grd.h] */
 	unsigned int reset_pad;          /* true in cases where we need a subset from a memory grid and must compute node index separately */
 	char name[GMT_GRID_NAME_LEN256]; /* Actual name of the file after any ?<varname> and =<stuff> has been removed */
 	char varname[GMT_GRID_VARNAME_LEN80];/* NetCDF: variable name */
@@ -645,6 +655,7 @@ struct GMT_PALETTE {		/* Holds all pen, color, and fill-related parameters */
 	unsigned int alloc_level;	/* The level it was allocated at */
 	unsigned int auto_scale;	/* If 1 then we must resample to fit actual data range */
 	unsigned int model;		/* RGB, HSV, CMYK */
+	unsigned int is_wrapping;	/* If 1 then we must wrap around to find color - can never be F or B */
 	unsigned int is_gray;		/* true if only grayshades are needed */
 	unsigned int is_bw;		/* true if only black and white are needed */
 	unsigned int is_continuous;	/* true if continuous color tables have been given */
@@ -659,6 +670,7 @@ struct GMT_PALETTE {		/* Holds all pen, color, and fill-related parameters */
 	double z_unit_to_meter[2];	/* Scale, given z_unit, to convert z from <unit> to meters */
 	double minmax[2];		/* Min/max z-value for a default range, if given */
 	double hinge;			/* z-value for hinged CPTs */
+	double wrap_length;		/* z-length of active CPT */
 #ifdef GMT_BACKWARDS_API
 	struct GMT_LUT *range;
 	struct GMT_BFN *patch;

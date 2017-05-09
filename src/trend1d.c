@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: trend1d.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: trend1d.c 18171 2017-05-07 02:37:02Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -77,14 +77,14 @@
  * the appropriate method.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"trend1d"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Fit a [weighted] [robust] polynomial [and/or Fourier] model for y = f(x) to xy[w] data"
 #define THIS_MODULE_KEYS	"<D{,>D}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdfhis" GMT_OPT("H")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vbdefhis" GMT_OPT("H")
 
 #define TREND1D_N_OUTPUT_CHOICES 5
 
@@ -145,6 +145,7 @@ GMT_LOCAL int read_data_trend1d (struct GMT_CTRL *GMT, struct TREND1D_DATA **dat
 				continue;
 			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			assert (in != NULL);						/* Should never get here */
 		}
 
 		/* Data record to process */
@@ -287,7 +288,7 @@ GMT_LOCAL void recompute_weights_1d (struct GMT_CTRL *GMT, struct TREND1D_DATA *
 	gmt_sort_array (GMT, work, n_data, GMT_DOUBLE);
 
 	if (n_data%2)
-		*scale = 1.4826 * work[n_data/2];
+		*scale = MAD_NORMALIZE * work[n_data/2];
 	else
 		*scale = 0.7413 * (work[n_data/2 - 1] + work[n_data/2]);
 
@@ -512,7 +513,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: trend1d [<table>] -F<xymrw|p|P|c> -N[p|P|f|F|c|C|s|S|x|X]<list-of-terms>[,...][+l<length>][+o<origin>][+r]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-C<condition_#>] [-I[<confidence>]] [%s] [-W] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-C<condition_#>] [-I[<confidence>]] [%s] [-W] [%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -543,7 +544,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Weighted input given, weights in 3rd column [Default is unweighted].\n");
 	GMT_Option (API, "bi");
 	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is 2 (or 3 if -W is set) input columns.\n");
-	GMT_Option (API, "bo,d,h,i,s,:,.");
+	GMT_Option (API, "bo,d,e,h,i,s,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -663,8 +664,8 @@ int GMT_trend1d (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 

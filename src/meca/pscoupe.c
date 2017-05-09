@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: pscoupe.c 17326 2016-11-08 20:28:56Z pwessel $
+ *    $Id: pscoupe.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *    Copyright (c) 1996-2012 by G. Patau
  *    Donated to the GMT project by G. Patau upon her retirement from IGPG
@@ -21,17 +21,16 @@ PostScript code is written to stdout.
 
  */
 
+#include "gmt_dev.h"
+#include "meca.h"
+#include "utilmeca.h"
+
 #define THIS_MODULE_NAME	"pscoupe"
 #define THIS_MODULE_LIB		"meca"
 #define THIS_MODULE_PURPOSE	"Plot cross-sections of focal mechanisms"
 #define THIS_MODULE_KEYS	"<T{,>X}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>BHJKOPRUVXYcdhit"
-
-#include "meca.h"
-#include "utilmeca.h"
+#define THIS_MODULE_NEEDS	"dJ"
+#define THIS_MODULE_OPTIONS "-:>BHJKOPRUVXYdehit" GMT_OPT("c")
 
 #define DEFAULT_FONTSIZE	9.0	/* In points */
 #define DEFAULT_OFFSET		3.0	/* In points */
@@ -155,7 +154,7 @@ GMT_LOCAL void *New_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a n
 	C->S.offset = DEFAULT_OFFSET * GMT->session.u2u[GMT_PT][GMT_INCH];
 	C->S.justify = PSL_BC;
 	C->A2.size = DEFAULT_SIZE * GMT->session.u2u[GMT_PT][GMT_INCH];
-	C->A2.P_symbol = C->A2.T_symbol = GMT_SYMBOL_CIRCLE;
+	C->A2.P_symbol = C->A2.T_symbol = PSL_CIRCLE;
 	return (C);
 }
 
@@ -434,7 +433,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t[-S<format><scale>[/<fontsize>[/<justify>/<offset>/<angle>/<form>]]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-T<nplane>[/<pen>]] [%s] [%s] [-W<pen>] \n", GMT_U_OPT, GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-Z<cpt>]\n", GMT_X_OPT, GMT_Y_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_c_OPT, GMT_di_OPT, GMT_h_OPT, GMT_i_OPT, GMT_t_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_di_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_t_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -505,7 +504,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Set pen attributes [%s]\n", gmt_putpen (API->GMT, &API->GMT->current.setting.map_default_pen));
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Use CPT to assign colors based on depth-value in 3rd column.\n");
 
-	GMT_Option (API, "X,c,di,h,i,t,:,.");
+	GMT_Option (API, "X,di,e,h,i,t,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -751,7 +750,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCOUPE_CTRL *Ctrl, struct GMT
 	/* Check that the options selected are mutually consistent */
 
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->A.active, "Syntax error: Must specify -A option\n");
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->S.symbol && gmt_M_is_zero (Ctrl->S.scale), "Syntax error: -S must specify scale\n");
 
 	/* Set to default pen where needed */
@@ -805,8 +804,8 @@ int GMT_pscoupe (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -871,12 +870,16 @@ int GMT_pscoupe (void *V_API, int mode, void *args) {
 
 	do {	/* Keep returning records until we reach EOF */
 		if ((line = GMT_Get_Record (API, GMT_READ_TEXT, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
+				fclose (pnew);
+				fclose (pext);
 				Return (GMT_RUNTIME_ERROR);
+			}
 			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
 				continue;
 			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			assert (line != NULL);						/* Should never get here */
 		}
 
 		/* Data record to process */
@@ -1141,7 +1144,12 @@ Definition of scalar moment.
 				Ctrl->S.justify, form);
 		}
 	} while (true);
-
+	
+	if (!Ctrl->Q.active) {
+		fclose (pnew);
+		fclose (pext);
+	}
+	
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
 		Return (API->error);
 	}

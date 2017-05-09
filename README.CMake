@@ -1,5 +1,5 @@
 ////
-$Id: README.CMake 17449 2017-01-16 21:27:04Z pwessel $
+$Id: README.CMake 18132 2017-05-05 03:05:46Z pwessel $
 
 Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis
 and F. Wobbe. See LICENSE.TXT file for copying and redistribution conditions.
@@ -86,9 +86,9 @@ CMake supports out-of-source builds and puts generated files in a completely
 separate directory, so that the source tree is unchanged. Trying to run CMake
 in the source tree will result in an error. CMake will first check for the
 minimal required version and then search for required and optional libraries
-(netCDF, PCRE, GDAL, LAPACK) in the default locations. The configuration step
-will fail if dependencies are not met. You have to ensure that CMake can find
-the required resources by configuring *cmake/ConfigUser.cmake*.
+(netCDF, CURL, PCRE, GDAL, LAPACK) in the default locations. The configuration
+step will fail if dependencies are not met. You have to ensure that CMake can
+find the required resources by configuring *cmake/ConfigUser.cmake*.
 
 Finding GSHHG:
 ~~~~~~~~~~~~~~

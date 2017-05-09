@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 17449 2017-01-16 21:27:04Z pwessel $
+# $Id: CMakeLists.txt 17451 2017-01-16 21:36:06Z pwessel $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -35,7 +35,7 @@ endif (NOT DEFINED CPACK_PACKAGE_INSTALL_DIRECTORY)
 set (CPACK_PACKAGE_DESCRIPTION_FILE
 	"${CMAKE_CURRENT_SOURCE_DIR}/cpack_package_description.txt")
 
-if (GMT_BUNDLE_ACCEPT_BUTTON)
+if (GMT_BUNDLE_ACCEPT_BUTTON AND FALSE)
 	# A license with an accept button will only be displayed if
 	# GMT_BUNDLE_ACCEPT_BUTTON is set.
 	set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_BINARY_DIR}/COPYING.COMBINED")
@@ -73,7 +73,7 @@ if (GMT_BUNDLE_ACCEPT_BUTTON)
 
 	# Append to COPYING.COMBINED or create new combined license file
 	file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/COPYING.COMBINED "${_license_combined}")
-endif (GMT_BUNDLE_ACCEPT_BUTTON)
+endif (GMT_BUNDLE_ACCEPT_BUTTON AND FALSE)
 
 # Install components:
 set (CPACK_COMPONENTS_ALL Runtime Documentation DCW GSHHG)
@@ -167,13 +167,6 @@ if (WIN32 AND NOT CYGWIN)
 		install (PROGRAMS ${OMP_DLL_LOC} DESTINATION ${GMT_BINDIR} COMPONENT Runtime)
 	endif (OMP_DLL_LOC)
 
-	# Install the gmtmex
-	if (BITAGE EQUAL 64)
-		install (PROGRAMS "C:/progs_cygw/GMTdev/gmt-mex/trunk/src/gmtmex.mexw64" DESTINATION ${GMT_BINDIR} COMPONENT Runtime)
-	else ()
-		install (PROGRAMS "C:/progs_cygw/GMTdev/gmt-mex/trunk/src/gmtmex.mexw32" DESTINATION ${GMT_BINDIR} COMPONENT Runtime)
-	endif ()
-	install (PROGRAMS "C:/progs_cygw/GMTdev/gmt-mex/trunk/src/gmt.m" DESTINATION ${GMT_BINDIR} COMPONENT Runtime)
 	if (WIN32 AND TRUE) 
 		# Install the gmtmex on Windows. Need to make this work via variables in ConfigUser.cmake
 		if (BITAGE EQUAL 64)

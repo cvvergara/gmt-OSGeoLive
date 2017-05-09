@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psimage.c 17733 2017-03-20 20:03:03Z pwessel $
+ *	$Id: psimage.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -25,14 +25,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"psimage"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Place images or EPS files on maps"
 #define THIS_MODULE_KEYS	"<I{,>X}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcptxy"
+#define THIS_MODULE_NEEDS	"rj"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYptxy" GMT_OPT("c")
 
 struct PSIMAGE_CTRL {
 	struct PSIMG_In {
@@ -95,7 +95,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s]\n", GMT_PANEL);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-G[b|f|t]<color>] [-I] [%s] [%s] [-K] [-M] [-O]\n", GMT_J_OPT, GMT_Jz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-P] [%s] [%s]\n", GMT_Rgeoz_OPT, GMT_U_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_p_OPT, GMT_t_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -116,7 +116,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Invert 1-bit images (does not affect 8 or 24-bit images).\n");
 	GMT_Option (API, "J-Z,K");
 	GMT_Message (API, GMT_TIME_NONE, "\t-M Force color -> monochrome image using gmt_M_yiq-transformation.\n");
-	GMT_Option (API, "O,P,R,U,V,X,c,p");
+	GMT_Option (API, "O,P,R,U,V,X,p");
 	GMT_Message (API, GMT_TIME_NONE, "\t   (Requires -R and -J for proper functioning).\n");
 	GMT_Option (API, "t,.");
 
@@ -288,6 +288,11 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *Ctrl, struct GMT
 	}
 	/* Check that the options selected are mutually consistent */
 
+	if (Ctrl->D.refpoint && Ctrl->D.refpoint->mode != GMT_REFPOINT_PLOT) {	/* Anything other than -Dx need -R -J; other cases don't */
+		static char *kind = "gjJnx";	/* The five types of refpoint specifications */
+		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: -D%c requires the -R option\n", kind[Ctrl->D.refpoint->mode]);
+		n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active, "Syntax error: -D%c requires the -J option\n", kind[Ctrl->D.refpoint->mode]);
+	}
 	n_errors += gmt_M_check_condition (GMT, n_files != 1, "Syntax error: Must specify a single input raster or EPS file\n");
 	n_errors += gmt_M_check_condition (GMT, !p_fail && Ctrl->D.dim[GMT_X] <= 0.0 && Ctrl->D.dpi <= 0.0, "Syntax error -D option: Must specify image width (+w) or dpi (+r)\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->D.n_columns < 1 || Ctrl->D.n_rows < 1,
@@ -304,6 +309,7 @@ GMT_LOCAL int file_is_known (struct GMT_CTRL *GMT, char *file) {	/* Returns 1 if
 	unsigned char c[4], magic_ras[4] = {0x59, 0xa6, 0x6a, 0x95}, magic_ps[4] = {'%', '!', 'P', 'S'};
 	int j;
 
+	if (file == NULL || file[0] == '\0') return -1;	/* Nothing given */
 	if (gmt_M_file_is_memory (file)) return (0);	/* Special passing of image */
 	j = (int)strlen(file) - 1;
 	while (j && file[j] && file[j] != '+') j--;	/* See if we have a band request */
@@ -410,8 +416,8 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -441,7 +447,7 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 	else  {	/* Read a raster image */
 		GMT_Report (API, GMT_MSG_VERBOSE, "Processing input raster via GDAL\n");
 		gmt_set_pad (GMT, 0U);	/* Temporary turn off padding (and thus BC setting) since we will use image exactly as is */
-		if ((I = GMT_Read_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {
+		if ((I = GMT_Read_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);
 		}
 		gmt_set_pad (GMT, API->pad);	/* Reset to GMT default */
@@ -455,7 +461,7 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 
 			/* Expand 8-bit indexed image to 24-bit image */
 			I->data = gmt_M_memory (GMT, I->data, 3 * I->header->nm, unsigned char);
-			n = (int)(3 * I->header->nm - 1);
+			n = 3 * I->header->nm - 1;
 			for (j = (int)I->header->nm - 1; j >= 0; j--) {
 				k = 4 * I->data[j] + 3;
 				if (has_trans && colormap[k] == 0)
@@ -467,7 +473,7 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 		}
 		else if (I->header->n_bands == 4) { /* RGBA image, with a color map */
 			uint64_t n4, j4;
-			if (!Ctrl->G.active) has_trans = find_unique_color (GMT, I->data, (int)I->header->nm, &r, &g, &b);
+			if (!Ctrl->G.active) has_trans = find_unique_color (GMT, I->data, I->header->nm, &r, &g, &b);
 			for (j4 = n4 = 0; j4 < 4 * I->header->nm; j4++) { /* Reduce image from 32- to 24-bit */
 				if (has_trans && I->data[j4+3] == 0)
 					I->data[n4++] = (unsigned char)r, I->data[n4++] = (unsigned char)g, I->data[n4++] = (unsigned char)b, j4 += 3;
@@ -541,8 +547,8 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 	/* The following is needed to have psimage work correctly in perspective */
 
 	gmt_M_memset (wesn, 4, double);
-	if (!(GMT->common.R.active && GMT->common.J.active)) {	/* When no projection specified, use fake linear projection */
-		GMT->common.R.active = true;
+	if (!(GMT->common.R.active[RSET] && GMT->common.J.active)) {	/* When no projection specified, use fake linear projection */
+		GMT->common.R.active[RSET] = true;
 		GMT->common.J.active = false;
 		gmt_parse_common_options (GMT, "J", 'J', "X1i");
 		gmt_adjust_refpoint (GMT, Ctrl->D.refpoint, Ctrl->D.dim, Ctrl->D.off, Ctrl->D.justify, PSL_BL);	/* Adjust refpoint to BL corner */
@@ -588,7 +594,7 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 		gmt_parse_common_options (GMT, "J", 'J', "X1i");
 		wesn[XHI] = Ctrl->D.refpoint->x + Ctrl->D.n_columns * Ctrl->D.dim[GMT_X];
 		wesn[YHI] = Ctrl->D.refpoint->y + Ctrl->D.n_rows * Ctrl->D.dim[GMT_Y];
-		GMT->common.R.active = GMT->common.J.active = true;
+		GMT->common.R.active[RSET] = GMT->common.J.active = true;
 		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, wesn), "")) {
 			if (free_GMT)
 				gmt_M_free (GMT, picture);

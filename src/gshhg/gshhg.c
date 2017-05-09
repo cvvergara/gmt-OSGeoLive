@@ -1,4 +1,4 @@
-/*	$Id: gshhg.c 17543 2017-02-09 14:14:29Z jluis $
+/*	$Id: gshhg.c 18024 2017-04-23 20:44:58Z pwessel $
  *
  *	Copyright (c) 1996-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -22,15 +22,15 @@
  *
  *	Contact info: www.soest.hawaii.edu/pwessel */
 
+#include "gmt_dev.h"
+#include "gmt_gshhg.h"
+
 #define THIS_MODULE_NAME	"gshhg"
 #define THIS_MODULE_LIB		"gshhg"
 #define THIS_MODULE_PURPOSE	"Extract data tables from binary GSHHS or WDBII data files"
 #define THIS_MODULE_KEYS	">D},>TL"
-
-#include "gmt_dev.h"
-#include "gmt_gshhg.h"
-
-#define GMT_PROG_OPTIONS "-:Vbdo"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:Vbdo"
 
 struct GSHHG_CTRL {
 	struct In {	/* <file> */
@@ -195,7 +195,7 @@ int GMT_gshhg (void *V_API, int mode, void *args) {
 	static const bool must_swab = true;
 #endif
 
-	uint64_t dim[4] = {1, 0, 0, 2};
+	uint64_t dim[GMT_DIM_SIZE] = {1, 0, 0, 2};
 
 	size_t n_alloc = 0;
 
@@ -227,8 +227,8 @@ int GMT_gshhg (void *V_API, int mode, void *args) {
 	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));		/* Return the synopsis */
 
 	/* Parse the command-line arguments */
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -300,7 +300,6 @@ int GMT_gshhg (void *V_API, int mode, void *args) {
 		greenwich = (h.flag >> 16) & 3;			/* Greenwich is 0-3 */
 		src = (h.flag >> 24) & 1;			/* Source is 0 (WDBII) or 1 (WVS) */
 		is_river = (h.flag >> 25) & 1;			/* River is 0 (not river) or 1 (is river) */
-		m = h.flag >> 26;				/* Magnitude for area scale */
 		w = h.west  * GSHHG_SCL;			/* Convert region from microdegrees to degrees */
 		e = h.east  * GSHHG_SCL;
 		s = h.south * GSHHG_SCL;

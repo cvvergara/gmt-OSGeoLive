@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_types.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_types.h 18041 2017-04-26 23:09:48Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -217,6 +217,7 @@ struct GMT_INIT { /* Holds misc run-time parameters */
 	/* The rest of the struct contains pointers that may point to memory not included by this struct */
 	char *runtime_bindir;         /* Directory that contains the main exe at run-time */
 	char *runtime_libdir;         /* Directory that contains the main shared lib at run-time */
+	char *runtime_library;        /* Name of the main shared library at run-time */
 	char *runtime_plugindir;      /* Directory that contains the main supplemental plugins at run-time */
 	char *history[GMT_N_UNIQUE];  /* The internal gmt.history information */
 	struct GMT_CUSTOM_SYMBOL **custom_symbol; /* For custom symbol plotting in psxy[z]. */
@@ -310,7 +311,8 @@ struct GMT_SESSION {
 	char *GSHHGDIR;			/* Path to the GSHHG directory */
 	char *SHAREDIR;			/* Path to the GMT share directory */
 	char *HOMEDIR;			/* Path to the user's home directory */
-	char *USERDIR;			/* Path to the user's GMT settings directory */
+	char *USERDIR;			/* Path to the user's GMT data directory */
+	char *CACHEDIR;			/* Path to the user's GMT cache directory for downloaded files */
 	char *DATADIR;			/* Path to one or more directories with data sets */
 	char *TMPDIR;			/* Path to the directory directory for isolation mode */
 	char *CUSTOM_LIBS;		/* Names of one or more comma-separated GMT-compatible shared libraries */

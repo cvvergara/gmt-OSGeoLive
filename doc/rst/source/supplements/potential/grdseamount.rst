@@ -30,6 +30,7 @@ Synopsis
 [ |-Z|\ *level* ]
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-bi| ]
+[ |SYN_OPT-e| ]
 [ **-fg** ]
 [ |SYN_OPT-i| ]
 [ **-r** ] 
@@ -43,7 +44,7 @@ Description
 parameters.  We read a list with seamount locations and sizes and can evaluate either
 Gaussian, parabolic, conical, or disc shapes, which may be circular or elliptical, and optionally truncated.
 Various scaling options are available to modify the result, including an option to add in
-a background depth (more complicated backgrounds may be added via **grdmath**).
+a background depth (more complicated backgrounds may be added via :doc:`grdmath </grdmath>`).
 The input must contain *lon*, *lat*, *radius*, *height* for each seamount.
 For elliptical features (**-E**) we expect *lon*, *lat*, *azimuth*, *semi-major*, *semi-minor*,
 *height* instead. If flattening is specified (**-F**) with no value appended
@@ -160,6 +161,9 @@ Optional Arguments
 
 .. |Add_-bi| replace:: [Default is 4 input columns]. 
 .. include:: ../../explain_-bi.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: ../../explain_-e.rst_
 
 **-fg**
     Geographic grids (dimensions of longitude, latitude) will be converted to

@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 17449 2017-01-16 21:27:04Z pwessel $
+# $Id: CMakeLists.txt 18128 2017-05-05 01:37:24Z pwessel $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -19,7 +19,7 @@
 # share CMakeLists.txt
 #
 
-set (_gmt_share_dirs conf cpt custom dbase localization mgd77 mgg
+set (_gmt_share_dirs cpt custom dbase localization mgd77 mgg
 	postscriptlight spotter x2sys)
 
 # install target for data
@@ -41,7 +41,7 @@ if (GSHHG_PATH AND COPY_GSHHG)
 	install (DIRECTORY ${GSHHG_PATH}/
 		DESTINATION ${GMT_DATADIR}/coast
 		COMPONENT GSHHG)
-	# location must be blank in share/conf/gmt.conf
+	# location must be blank in gmt.conf
 	set (GSHHG_INSTALL_PATH)
 	# create coastline.conf which is needed for in-build-dir ctest
 	configure_file (coastline.conf.in coastline.conf @ONLY)
@@ -55,7 +55,7 @@ if (DCW_PATH AND COPY_DCW)
 	install (DIRECTORY ${DCW_PATH}/
 		DESTINATION ${GMT_DATADIR}/dcw
 		COMPONENT DCW)
-	# location must be blank in share/conf/gmt.conf
+	# location must be blank in gmt.conf
 	set (DCW_INSTALL_PATH)
 else (DCW_PATH AND COPY_DCW)
 	# set installed location
@@ -63,7 +63,6 @@ else (DCW_PATH AND COPY_DCW)
 endif (DCW_PATH AND COPY_DCW)
 
 # add subtrees
-add_subdirectory (conf)
 add_subdirectory (tools)
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

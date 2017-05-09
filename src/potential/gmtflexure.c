@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtflexure.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmtflexure.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -24,14 +24,14 @@
  *
  * */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"gmtflexure"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute flexural deformation of 2-D loads, forces, and bending moments"
 #define THIS_MODULE_KEYS	"ED(,QD(,TD(,>D}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-Vfhio"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-Vdefhio"
 
 #define	YOUNGS_MODULUS	7.0e10		/* Pascal = Nt/m**2  */
 #define	NORMAL_GRAVITY	9.806199203	/* Moritz's 1980 IGF value for gravity at 45 degrees latitude (m/s) */
@@ -237,7 +237,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTFLEXURE_CTRL *Ctrl, struct 
 					case 'z': side = 1; break;
 					default:  both = true; break;
 				}
-				k = (both) ? 0 : 1;	/* Offset in string */
 				Ctrl->M.active[side] = true;
 				if (both) Ctrl->M.active[1] = Ctrl->M.active[0];
 				break;
@@ -298,7 +297,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: gmtflexure -D<rhom>/<rhol>[/<rhoi>]/<rhow> -E<te> -Q<loadinfo> [-A[l|r]<bc>[/<args>]]\n");
-	GMT_Message (API, GMT_TIME_NONE,"\t[-C[p|y]<value] [-F<force>] [-S] [-T<wpre>] [%s] [-W<w0>] [-Z<zm>]\n\t[%s] [%s] [%s]\n\n", GMT_V_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT);
+	GMT_Message (API, GMT_TIME_NONE,"\t[-C[p|y]<value] [-F<force>] [-S] [-T<wpre>] [%s] [-W<w0>] [-Z<zm>]\n\t[%s] [%s] [%s] [%s] [%s]\n\n", GMT_V_OPT, GMT_e_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -332,7 +331,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Specify water depth in m; append k for km.  Must be positive.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Subaerial topography will be scaled by -D to account for density differences.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Specify reference depth to flexed surface in m; append k for km.  Must be positive [0].\n");
-	GMT_Option (API, "h,i,o,.");
+	GMT_Option (API, "d,e,h,i,o,.");
 	return (GMT_MODULE_USAGE);
 }
 
@@ -641,7 +640,6 @@ GMT_LOCAL int flx1d (struct GMT_CTRL *GMT, double *w, double *d, double *p, int 
 
 	/* Solve for w */
 
-	off = 5 * n;
 	error = lu_solver (GMT, work, n, w, p);
 	gmt_M_free (GMT, work);
 	if (error == 1) {
@@ -958,7 +956,6 @@ GMT_LOCAL int flx1dw0 (struct GMT_CTRL *GMT, double *w, double *w0, double *d, d
 
 	/* Solve for w */
 
-	off = 5 * n;
 	error = lu_solver (GMT, work, n, w, p);
 	gmt_M_free (GMT, work);
 	gmt_M_free (GMT, squeeze);
@@ -1254,8 +1251,8 @@ int GMT_gmtflexure (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -1337,7 +1334,7 @@ int GMT_gmtflexure (void *V_API, int mode, void *args) {
 			}
 		}
 		else {	/* No input files given, create single equidistant profile */
-			uint64_t dim[4] = {1, 1, 0, 2};
+			uint64_t dim[GMT_DIM_SIZE] = {1, 1, 0, 2};
 			dim[2] = urint ((Ctrl->Q.max - Ctrl->Q.min)/Ctrl->Q.inc) + 1;
 			GMT_Report (API, GMT_MSG_VERBOSE, "Create empty load table data\n");
 			if ((Q = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_LINE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {

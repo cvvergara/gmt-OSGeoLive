@@ -17,6 +17,7 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
 [ |SYN_OPT-h| ]
@@ -66,6 +67,9 @@ Optional Arguments
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
 
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
+
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
 
@@ -106,7 +110,7 @@ write the reduced lines to file new_xylines.d, run
 Notes
 -----
 
-There is a slight difference in how gmtsimplify processes lines versus
+There is a slight difference in how **gmtsimplify** processes lines versus
 closed polygons.  Segments that are explicitly closed will be considered
 polygons, otherwise we treat them as line segments.  Hence, segments
 recognized as polygons may reduce to a 3-point polygon with no area;

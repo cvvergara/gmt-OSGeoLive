@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 21
-#		$Id: example_21.sh 17434 2017-01-12 22:59:32Z pwessel $
+#		$Id: example_21.sh 17435 2017-01-12 23:07:10Z pwessel $
 #
 # Purpose:	Plot a time-series
 # GMT modules:	gmtset, gmtconvert, gmtinfo, psbasemap, psxy 

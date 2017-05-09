@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_texture.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_texture.h 18069 2017-04-29 22:43:25Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -78,10 +78,12 @@ struct GMT_FONT {
 	struct GMT_PEN pen;		/* Font outline pen [none] */
 };
 
-/*! Holds information for each predefined font */
+/*! Holds information for each predefined font [Matches PSL_FONT structure] */
 struct GMT_FONTSPEC {
-	double height;			/* Height of letter "A" for unit fontsize */
-	char *name;			/* Name of the font */
+	char name[GMT_LEN32];	/* Name of the font */
+	double height;		/* Height of letter "A" for unit fontsize */
+	int encode;
+	int encode_orig;
 };
 
 /*! Holds information about paper sizes in points */

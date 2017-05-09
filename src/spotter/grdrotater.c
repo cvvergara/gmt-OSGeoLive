@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdrotater.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdrotater.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *   Copyright (c) 1999-2017 by P. Wessel
  *
@@ -23,14 +23,15 @@
  * Ver:		1
  */
 
+#include "gmt_dev.h"
+#include "spotter.h"
+
 #define THIS_MODULE_NAME	"grdrotater"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Finite rotation reconstruction of geographic grid"
 #define THIS_MODULE_KEYS	"<G{,FD(,GG},TD("
-
-#include "spotter.h"
-
-#define GMT_PROG_OPTIONS "-:>RVbdfghno" GMT_OPT("HMmQ")
+#define THIS_MODULE_NEEDS	"g"
+#define THIS_MODULE_OPTIONS "-:>RVbdfghno" GMT_OPT("HMmQ")
 
 #define PAD 3	/* Used to polish up a rotated grid by checking near neighbor nodes */
 
@@ -93,7 +94,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdrotater <grid> %s -G<outgrid> [-F<polygontable>]\n", SPOTTER_E_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-D<rotoutline>] [-N] [%s] [-S] [-T<time(s)>] [%s]\n", GMT_Rgeo_OPT, GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s]\n\t[%s] [%s] > projpol\n\n", GMT_b_OPT, GMT_d_OPT, GMT_g_OPT, GMT_h_OPT, GMT_n_OPT, GMT_o_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s]\n\t[%s] [%s]\n\n", GMT_b_OPT, GMT_d_OPT, GMT_g_OPT, GMT_h_OPT, GMT_n_OPT, GMT_o_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -273,7 +274,7 @@ GMT_LOCAL struct GMT_DATASET *get_grid_path (struct GMT_CTRL *GMT, struct GMT_GR
 	 */
 
 	unsigned int np = 0, add, col, row;
-	uint64_t dim[4] = {1, 1, 0, 2};
+	uint64_t dim[GMT_DIM_SIZE] = {1, 1, 0, 2};
 	struct GMT_DATASET *D = NULL;
 	struct GMT_DATASEGMENT *S = NULL;
 
@@ -397,9 +398,9 @@ int GMT_grdrotater (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -410,11 +411,11 @@ int GMT_grdrotater (void *V_API, int mode, void *args) {
 	/* Check limits and get data file */
 
 	if (Ctrl->In.file) {	/* Provided an input grid */
-		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
+		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
 
-		if (!GMT->common.R.active) gmt_M_memcpy (GMT->common.R.wesn, G->header->wesn, 4, double);	/* -R was not set so we use the grid domain */
+		if (!GMT->common.R.active[RSET]) gmt_M_memcpy (GMT->common.R.wesn, G->header->wesn, 4, double);	/* -R was not set so we use the grid domain */
 
 		/* Determine the wesn to be used to read the Ctrl->In.file; or exit if file is outside -R */
 
@@ -424,13 +425,13 @@ int GMT_grdrotater (void *V_API, int mode, void *args) {
 		}
 		global = (doubleAlmostEqual (GMT->common.R.wesn[XHI] - GMT->common.R.wesn[XLO], 360.0)
 							&& doubleAlmostEqual (GMT->common.R.wesn[YHI] - GMT->common.R.wesn[YLO], 180.0));
-		if (!GMT->common.R.active) global = gmt_M_grd_is_global (GMT, G->header);
+		if (!GMT->common.R.active[RSET]) global = gmt_M_grd_is_global (GMT, G->header);
 	}
 	not_global = !global;
 
 	if (!Ctrl->S.active) {	/* Read the input grid */
 		GMT_Report (API, GMT_MSG_VERBOSE, "Allocates memory and read grid file\n");
-		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, GMT->common.R.wesn, Ctrl->In.file, G) == NULL) {
+		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, GMT->common.R.wesn, Ctrl->In.file, G) == NULL) {
 			Return (API->error);
 		}
 	}
@@ -564,9 +565,9 @@ int GMT_grdrotater (void *V_API, int mode, void *args) {
 			gmt_lon_range_adjust (GMT->current.io.geo.range, &GMT->common.R.wesn[XHI]);
 			if (GMT->common.R.wesn[XLO] >= GMT->common.R.wesn[XHI]) GMT->common.R.wesn[XHI] += 360.0;
 		}
-		GMT->common.R.active = true;
+		GMT->common.R.active[RSET] = true;
 
-		if ((G_rot = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, G->header->inc, \
+		if ((G_rot = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, NULL, G->header->inc, \
 			GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 		/* Precalculate node coordinates in both degrees and radians */
@@ -654,7 +655,7 @@ int GMT_grdrotater (void *V_API, int mode, void *args) {
 			sprintf (gfile, Ctrl->G.file, Ctrl->T.value[t]);
 		else
 			strcpy (gfile, Ctrl->G.file);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, gfile, G_rot) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, gfile, G_rot) != GMT_NOERROR) {
 			Return (API->error);
 		}
 		if (G_rot && GMT_Destroy_Data (API, &G_rot) != GMT_NOERROR)

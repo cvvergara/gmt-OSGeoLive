@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: originator.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: originator.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *   Copyright (c) 2000-2017 by P. Wessel
  *
@@ -104,14 +104,15 @@
  * 212		-18	SOC	Society
  */
  
+#include "gmt_dev.h"
+#include "spotter.h"
+
 #define THIS_MODULE_NAME	"originator"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Associate seamounts with nearest hotspot point sources"
 #define THIS_MODULE_KEYS	"<D{,FD(,>D}"
-
-#include "spotter.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdhis" GMT_OPT("HMm")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vbdehis" GMT_OPT("HMm")
 
 EXTERN_MSC int gmtlib_great_circle_intersection (struct GMT_CTRL *GMT, double A[], double B[], double C[], double X[], double *CX_dist);
 EXTERN_MSC double gmtlib_great_circle_dist_degree (struct GMT_CTRL *GMT, double lon1, double lat1, double lon2, double lat2);
@@ -210,7 +211,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: originator [<table>] -E[+]<rottable> -F[+]<hotspottable> [-D<d_km>] [-H] [-L[<flag>]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-N<upper_age>] [-Qr/t] [-S<n_hs>] [-T] [%s] [-W<maxdist>] [-Z]\n", GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_bi_OPT, GMT_d_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_bi_OPT, GMT_d_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -235,7 +236,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Report seamounts whose closest encounter to a hotspot is less than <maxdist> km\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default reports for all seamounts].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Write hotspot ID number rather than hotspot TAG.\n");
-	GMT_Option (API, "bi5,d,h,i,s,:,.");
+	GMT_Option (API, "bi5,d,e,h,i,s,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -387,9 +388,9 @@ int GMT_originator (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -492,6 +493,7 @@ int GMT_originator (void *V_API, int mode, void *args) {
 				continue;
 			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			assert (false);						/* Should never get here */
 		}
 
 		/* Data record to process */

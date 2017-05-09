@@ -26,7 +26,6 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-p| ]
 [ |SYN_OPT-t| ]
 
@@ -129,8 +128,6 @@ Optional Arguments
 
 .. include:: explain_-XY.rst_
 
-.. include:: explain_-c.rst_
-
 .. |Add_perspective| unicode:: 0x20 .. just an invisible code
 .. include:: explain_perspective.rst_
 
@@ -157,6 +154,8 @@ Pslegend Codes
 **B** *cptname offset height* [ *optional arguments* ]
     The **B** record will plot a horizontal color bar, :doc:`psscale`-style
     in the middle, starting at *offset* from the left edge, and of the
+    given *height*. You may add any additional :doc:`psscale` options as well.
+    Any of the modifiers [+e[b|f][<length>]][+h][+ma|c|l|u][+n[<txt>]] may be
     given *height*. You may add any additional :doc:`psscale` options as well.
     Any of the modifiers
     [**+e**\ [**b**\ \|\ **f**][*length*]][**+h**][**+m**\ [**a**\ \|\ **c**\ \|\ **l**\ \|\ **u**]][**+n**\ [*txt*]] may be
@@ -234,7 +233,7 @@ Pslegend Codes
     *n_columns* to 1.
 **P** *paragraph-mode-header-for-pstext*
     Start a new text paragraph by specifying all the parameters needed
-    (see **pstext -M** record description). Note that **pslegend** knows
+    (see :doc:`pstext` **-M** record description). Note that **pslegend** knows
     what all those values should be, so normally you can leave the
     entire record (after P) blank or leave it out all together. If you
     need to set at least one of the parameters directly, you must

@@ -1,5 +1,5 @@
 #
-# $Id: CMakeLists.txt 17449 2017-01-16 21:27:04Z pwessel $
+# $Id: CMakeLists.txt 18086 2017-04-30 22:55:10Z pwessel $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
@@ -45,10 +45,11 @@ set (_scr_other GMT_-B_geo_1.sh GMT_-B_geo_2.sh GMT_-B_linear.sh GMT_-B_log.sh
 	GMT_App_G.sh GMT_App_J_1.sh GMT_App_J_2.sh GMT_App_J_3.sh GMT_App_M_1a.sh GMT_App_M_1b.sh
 	GMT_App_N_1.sh GMT_arrows.sh GMT_arrows_types.sh GMT_atan.sh GMT_color_interpolate.sh
 	GMT_chunking.sh GMT_coverlogo.sh GMT_Defaults_1a.sh GMT_Defaults_1b.sh GMT_Defaults_1c.sh
-	GMT_bezier.sh GMT_linecap.sh GMT_lineoffset.sh GMT_nearneighbor.sh GMT_anchor.sh
-	GMT_pstext_clearance.sh GMT_pstext_justify.sh GMT_registration.sh GMT_obl_nz.sh
+	GMT_bezier.sh GMT_linecap.sh GMT_lineoffset.sh GMT_nearneighbor.sh GMT_anchor.sh GMT_API_use.sh
+	GMT_API_flow.sh GMT_pstext_clearance.sh GMT_pstext_justify.sh GMT_registration.sh GMT_obl_nz.sh
 	GMT_utm_zones.sh GMT_volcano.sh GMT_panel.sh GMT_mapscale.sh GMT_insert.sh GMT_linearrow.sh
-	GMT_dir_rose.sh GMT_images.sh GMT_colorbar.sh GMT_legend.sh GMT_mag_rose.sh GMT_hinge.sh GMT_CPTscale.sh
+	GMT_dir_rose.sh GMT_images.sh GMT_colorbar.sh GMT_cyclic.sh GMT_legend.sh GMT_mag_rose.sh
+	GMT_hinge.sh GMT_CPTscale.sh
 	GMT_tut_1.sh GMT_tut_2.sh GMT_tut_3.sh GMT_tut_4.sh GMT_tut_5.sh
 	GMT_tut_6.sh GMT_tut_7.sh GMT_tut_8.sh GMT_tut_9.sh GMT_tut_10.sh
 	GMT_tut_11.sh GMT_tut_12.sh GMT_tut_13.sh GMT_tut_14.sh GMT_tut_15.sh

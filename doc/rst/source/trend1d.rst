@@ -13,15 +13,15 @@ Synopsis
 
 .. include:: common_SYN_OPTs.rst_
 
-**trend1d** [ *table* ] |-F|\ **xymrw\|p\|P\|c**
-|-N|\ [**p**\ \|\ **P**\ \|\ **f**\ \|\ **F**\ \|\ **c**\ \|\ **C**\ \|\ **s**\ \|\ **S**\ \|\ **x**\ ]\ *n*\ [,...][**+l**\ *length*][**+o**\ *origin*][**+r**]
+**trend1d** [ *table* ] |-F|\ **xymrw\|p\|P\|c** |-N|\ *params*
 [ *xy[w]file* ]
-[ |-C|\ *condition\_number* ]
-[ |-I|\ [*confidence\_level*] ]
+[ |-C|\ *condition_number* ]
+[ |-I|\ [*confidence_level*] ]
 [ |SYN_OPT-V| ]
 [ |-W| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
@@ -85,7 +85,7 @@ Optional Arguments
 
 .. _-C:
 
-**-C**\ *condition\_number*
+**-C**\ *condition_number*
     Set the maximum allowed condition number for the matrix solution.
     **trend1d** fits a damped least squares model, retaining only that
     part of the eigenvalue spectrum such that the ratio of the largest
@@ -94,7 +94,7 @@ Optional Arguments
 
 .. _-I:
 
-**-I**\ [*confidence\_level*\ ]
+**-I**\ [*confidence_level*]
     Iteratively increase the number of model parameters, starting at
     one, until *n\_model* is reached or the reduction in variance of the
     model is not significant at the *confidence\_level* level. You may
@@ -124,6 +124,9 @@ Optional Arguments
 
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_

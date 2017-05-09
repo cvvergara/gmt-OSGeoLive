@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psbasemap.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: psbasemap.c 18055 2017-04-28 17:46:38Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,14 +26,14 @@
  * the specified map projection.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"psbasemap"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot base maps and frames"
 #define THIS_MODULE_KEYS	">X},>DA"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcfptxy" GMT_OPT("EZ")
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYfptxy" GMT_OPT("EZc")
 
 /* Control structure for psbasemap */
 
@@ -42,7 +42,7 @@ struct PSBASEMAP_CTRL {
 		bool active;
 		char *file;
 	} A;
-	struct D {	/* -D[g|j|n|x]<refpoint>+w<width>[<unit>][/<height>[<unit>]][+j<justify>[+o<dx>[/<dy>]][+s<file>] or [<unit>]<xmin>/<xmax>/<ymin>/<ymax>[r][+s<file>] */
+	struct D {	/* -D[g|j|n|x]<refpoint>+w<width>[<unit>][/<height>[<unit>]][+j<justify>[+o<dx>[/<dy>]][+s<file>][+t] or [<unit>]<xmin>/<xmax>/<ymin>/<ymax>[r][+s<file>][+t] */
 		bool active;
 		struct GMT_MAP_INSERT insert;
 	} D;
@@ -90,8 +90,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L%s]\n", GMT_SCALE);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-O] [-P] [-Td%s]\n", GMT_TROSE_DIR);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Tm%s]\n", GMT_TROSE_MAG);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT,
-		GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_f_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT,
+		GMT_X_OPT, GMT_Y_OPT, GMT_f_OPT, GMT_p_OPT, GMT_t_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -109,7 +109,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_mapscale_syntax (API->GMT, 'L', "Draw a map scale at specified reference point.");
 	GMT_Option (API, "O,P");
 	gmt_maprose_syntax (API->GMT, 'T', "Draw a north-pointing map rose at specified reference point.");
-	GMT_Option (API, "U,V,X,c,f,p,t,.");
+	GMT_Option (API, "U,V,X,f,p,t,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -198,7 +198,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSBASEMAP_CTRL *Ctrl, struct G
 
 	n_errors += gmt_M_check_condition (GMT, Ctrl->F.active && Ctrl->L.scale.old_style, "Syntax error: Cannot specify -F and use old-style -L settings\n");
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, !(GMT->current.map.frame.init || Ctrl->A.active || Ctrl->D.active || Ctrl->L.active || Ctrl->T.active), "Syntax error: Must specify at least one of -A, -B, -D, -L, -T\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && (GMT->current.map.frame.init || Ctrl->D.active || Ctrl->L.active || Ctrl->T.active), "Syntax error: Cannot use -B, -D, -L, -T with -A\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->L.active && !gmt_M_is_geographic (GMT, GMT_IN), "Syntax error: -L applies to geographical data only\n");
@@ -231,8 +231,8 @@ int GMT_psbasemap (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -246,7 +246,7 @@ int GMT_psbasemap (void *V_API, int mode, void *args) {
 	
 	if (Ctrl->A.active) {	/* Just save outline in geographic coordinates */
 		/* Loop counter-clockwise around the rectangular projected domain, recovering the lon/lat points */
-		uint64_t nx, ny, k = 0, i, dim[4] = {1, 1, 0, 2};
+		uint64_t nx, ny, k = 0, i, dim[GMT_DIM_SIZE] = {1, 1, 0, 2};
 		char msg[GMT_BUFSIZ] = {""}, *kind[2] = {"regular", "oblique"};
 		struct GMT_DATASET *D = NULL;
 		struct GMT_DATASEGMENT *S = NULL;
@@ -285,9 +285,9 @@ int GMT_psbasemap (void *V_API, int mode, void *args) {
 
 	gmt_map_basemap (GMT);	/* Plot base map */
 
-	if (Ctrl->D.active) gmt_draw_map_insert (GMT, &Ctrl->D.insert);
 	if (Ctrl->L.active) gmt_draw_map_scale (GMT, &Ctrl->L.scale);
 	if (Ctrl->T.active) gmt_draw_map_rose (GMT, &Ctrl->T.rose);
+	if (Ctrl->D.active) gmt_draw_map_insert (GMT, &Ctrl->D.insert);
 
 	gmt_plane_perspective (GMT, -1, 0.0);
 

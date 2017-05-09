@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdsample.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdsample.c 18117 2017-05-03 23:47:18Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -29,14 +29,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdsample"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Resample a grid onto a new lattice"
 #define THIS_MODULE_KEYS	"<G{,GG}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-RVfnr" GMT_ADD_x_OPT GMT_OPT("FQ")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-RVfnr" GMT_ADD_x_OPT GMT_OPT("FQ")
 
 struct GRDSAMPLE_CTRL {
 	struct In {
@@ -47,10 +47,6 @@ struct GRDSAMPLE_CTRL {
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct T {	/* -T */
 		bool active;
 	} T;
@@ -82,17 +78,17 @@ GMT_LOCAL void adjust_R (struct GMTAPI_CTRL *API, struct GRDSAMPLE_CTRL *Ctrl, s
 		GMT_Report (API, GMT_MSG_NORMAL,
 		            "Warning: Selected region exceeds the Y-boundaries of the grid file by more than one y-increment! Adjusting it.\n");
 		if (wesn[YHI] > (Gin->header->wesn[YHI] + Gin->header->inc[GMT_Y]))  {
-			n = gmt_M_x_to_col(Gin->header->wesn[YHI], wesn[YLO], Ctrl->I.inc[GMT_Y], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
-			y = wesn[YLO] + n * Ctrl->I.inc[GMT_Y];
+			n = gmt_M_x_to_col(Gin->header->wesn[YHI], wesn[YLO], API->GMT->common.R.inc[GMT_Y], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
+			y = wesn[YLO] + n * API->GMT->common.R.inc[GMT_Y];
 			d = y - Gin->header->wesn[YLO];
-			wesn[YHI] = d >= 0 ? y : wesn[YLO] + (n - 1) * Ctrl->I.inc[GMT_Y]; 
+			wesn[YHI] = d >= 0 ? y : wesn[YLO] + (n - 1) * API->GMT->common.R.inc[GMT_Y]; 
 		}
 
 		if (wesn[YLO] < (Gin->header->wesn[YLO] - Gin->header->inc[GMT_Y])) {
-			n = gmt_M_x_to_col(Gin->header->wesn[YLO], wesn[YLO], Ctrl->I.inc[GMT_Y], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
-			y = wesn[YLO] + n * Ctrl->I.inc[GMT_Y];
+			n = gmt_M_x_to_col(Gin->header->wesn[YLO], wesn[YLO], API->GMT->common.R.inc[GMT_Y], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
+			y = wesn[YLO] + n * API->GMT->common.R.inc[GMT_Y];
 			d = Gin->header->wesn[YLO] - y;
-			wesn[YLO] = d > 0 ? wesn[YLO] + (n + 1) * Ctrl->I.inc[GMT_Y] : y; 
+			wesn[YLO] = d > 0 ? wesn[YLO] + (n + 1) * API->GMT->common.R.inc[GMT_Y] : y; 
 		}
 	}
 	if (gmt_M_is_geographic (API->GMT, GMT_IN)) {	/* Must carefully check the longitude overlap */
@@ -108,17 +104,17 @@ GMT_LOCAL void adjust_R (struct GMTAPI_CTRL *API, struct GRDSAMPLE_CTRL *Ctrl, s
 		GMT_Report (API, GMT_MSG_NORMAL,
 		            "Warning: Selected region exceeds the X-boundaries of the grid file by more than one x-increment! Adjusting it.\n");
 		if (wesn[XHI] > (Gin->header->wesn[XHI] + Gin->header->inc[GMT_X]))  {
-			n = gmt_M_x_to_col(Gin->header->wesn[XHI], wesn[XLO], Ctrl->I.inc[GMT_X], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
-			x = wesn[XLO] + n * Ctrl->I.inc[GMT_X];
+			n = gmt_M_x_to_col(Gin->header->wesn[XHI], wesn[XLO], API->GMT->common.R.inc[GMT_X], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
+			x = wesn[XLO] + n * API->GMT->common.R.inc[GMT_X];
 			d = x - Gin->header->wesn[XHI];
-			wesn[XHI] = d >= 0 ? x : wesn[XLO] + (n - 1) * Ctrl->I.inc[GMT_X]; 
+			wesn[XHI] = d >= 0 ? x : wesn[XLO] + (n - 1) * API->GMT->common.R.inc[GMT_X]; 
 		}
 
 		if (wesn[XLO] < (Gin->header->wesn[XLO] - Gin->header->inc[GMT_X])) {
-			n = gmt_M_x_to_col(Gin->header->wesn[XLO], wesn[XLO], Ctrl->I.inc[GMT_X], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
-			x = wesn[XLO] + n * Ctrl->I.inc[GMT_X];
+			n = gmt_M_x_to_col(Gin->header->wesn[XLO], wesn[XLO], API->GMT->common.R.inc[GMT_X], 0, 0);	/* First 0 is ref grid's xy_off. So it could != 0 */
+			x = wesn[XLO] + n * API->GMT->common.R.inc[GMT_X];
 			d = Gin->header->wesn[XLO] - x;
-			wesn[XLO] = d > 0 ? wesn[XLO] + (n + 1) * Ctrl->I.inc[GMT_X] : x; 
+			wesn[XLO] = d > 0 ? wesn[XLO] + (n + 1) * API->GMT->common.R.inc[GMT_X] : x; 
 		}
 	}
 }
@@ -177,17 +173,13 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDSAMPLE_CTRL *Ctrl, struct G
 					n_errors++;
 				break;
 			case 'I':	/* Grid spacings */
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'L':	/* BCs */
 				if (gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -L is deprecated; -n+b%s was set instead, use this in the future.\n", opt->arg);
 					/* coverity[buffer_size_warning] */	/* Do not remove this comment */
-					strncpy (GMT->common.n.BC, opt->arg, 4U);
+					gmt_strncpy (GMT->common.n.BC, opt->arg, 4U);
 					/* We turn on geographic coordinates if -Lg is given by faking -fg */
 					/* But since GMT_parse_f_option is private to gmt_init and all it does */
 					/* in this case are 2 lines below we code it here */
@@ -202,21 +194,17 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDSAMPLE_CTRL *Ctrl, struct G
 			case 'N':	/* Backwards compatible.  n_columns/n_rows can now be set with -I */
 				if (gmt_M_compat_check (GMT, 4)) {
 					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -N<n_columns>/<n_rows> is deprecated; use -I<n_columns>+/<n_rows>+ instead.\n");
-					Ctrl->I.active = true;
 					sscanf (opt->arg, "%d/%d", &ii, &jj);
 					if (jj == 0) jj = ii;
 					sprintf (format, "%d+/%d+", ii, jj);
-					if (gmt_getinc (GMT, format, Ctrl->I.inc)) {
-						gmt_inc_syntax (GMT, 'I', 1);
-						n_errors++;
-					}
+					n_errors += gmt_parse_inc_option (GMT, 'I', format);
 				}
 				else
 					n_errors += gmt_default_error (GMT, opt->option);
 				break;
 			case 'T':	/* Convert from pixel file <-> gridfile */
 				Ctrl->T.active = true;
-				if (GMT->current.io.grd_info.active) GMT->common.r.active = false;	/* Override any implicit -r via -Rgridfile */
+				if (GMT->common.R.active[FSET]) GMT->common.R.active[GSET] = false;	/* Override any implicit -r via -Rgridfile */
 				break;
 
 			default:	/* Report bad options */
@@ -225,13 +213,13 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDSAMPLE_CTRL *Ctrl, struct G
 		}
 	}
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	n_errors += gmt_M_check_condition (GMT, (n_files != 1), "Syntax error: Must specify a single input grid file\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
-	n_errors += gmt_M_check_condition (GMT, GMT->common.r.active && Ctrl->T.active && !GMT->current.io.grd_info.active, 
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[GSET] && Ctrl->T.active && !GMT->common.R.active[FSET], 
 	                                   "Syntax error: Only one of -r, -T may be specified\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), 
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0), 
 	                                   "Syntax error -I: Must specify positive increments\n");
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
@@ -267,8 +255,8 @@ int GMT_grdsample (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -277,29 +265,30 @@ int GMT_grdsample (void *V_API, int mode, void *args) {
 	gmt_enable_threads (GMT);	/* Set number of active threads, if supported */
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid\n");
 	gmt_set_pad (GMT, 2U);	/* Ensure space for BCs in case an API passed pad == 0 */
-	if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
+	if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 		Return (API->error);
 	}
 
-	gmt_M_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : Gin->header->wesn), 4, double);
-	gmt_M_memcpy (inc, (Ctrl->I.active ? Ctrl->I.inc : Gin->header->inc), 2, double);
+	gmt_M_memcpy (wesn, (GMT->common.R.active[RSET] ? GMT->common.R.wesn : Gin->header->wesn), 4, double);
+	gmt_M_memcpy (inc, (GMT->common.R.active[ISET] ? GMT->common.R.inc : Gin->header->inc), 2, double);
 
 	if (Ctrl->T.active)
 		registration = !Gin->header->registration;
-	else if (GMT->common.r.active)
-		registration = GMT->common.r.registration;
+	else if (GMT->common.R.active[GSET])
+		registration = GMT->common.R.registration;
 	else
 		registration = Gin->header->registration;
 
-	if (GMT->common.R.active) {		/* Make sure input grid and output -R has an overlap */
+	if (GMT->common.R.active[RSET]) {		/* Make sure input grid and output -R has an overlap */
 		if ((wesn[YLO] < (Gin->header->wesn[YLO] - Gin->header->inc[GMT_Y]) ||
 		     wesn[YHI] > (Gin->header->wesn[YHI] + Gin->header->inc[GMT_Y]) ||
 		     wesn[XLO] < (Gin->header->wesn[XLO] - Gin->header->inc[GMT_X]) ||
-		     wesn[XHI] > (Gin->header->wesn[XHI] + Gin->header->inc[GMT_X])) && GMT->current.io.grd_info.active) {
+		     wesn[XHI] > (Gin->header->wesn[XHI] + Gin->header->inc[GMT_X])) && GMT->common.R.active[FSET]) {
 			/* If the limits were specified via -R<grid> adjust those limits to maximum allowed by resampling grid */
 			adjust_R (API, Ctrl, Gin, wesn);
 		}
 		else {
+			bool geo = gmt_M_360_range (Gin->header->wesn[XLO], Gin->header->wesn[XHI]);
 			if (wesn[YLO] < (Gin->header->wesn[YLO] - Gin->header->inc[GMT_Y]) || wesn[YHI] > (Gin->header->wesn[YHI] + Gin->header->inc[GMT_Y])) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Selected region exceeds the Y-boundaries of the grid file by more than one y-increment!\n");
 				Return (GMT_RUNTIME_ERROR);
@@ -307,20 +296,22 @@ int GMT_grdsample (void *V_API, int mode, void *args) {
 			if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must carefully check the longitude overlap */
 				int shift = 0;
 				if (Gin->header->wesn[XHI] < wesn[XLO]) shift += 360;
-				if (Gin->header->wesn[XLO] > wesn[XHI]) shift -= 360;
+				else if (Gin->header->wesn[XLO] > wesn[XHI]) shift -= 360;
+				else if (geo && wesn[XHI] > Gin->header->wesn[XHI]) shift += 360;
+				else if (geo && wesn[XLO] < Gin->header->wesn[XLO]) shift -= 360;
 				if (shift) {	/* Must modify header */
 					Gin->header->wesn[XLO] += shift, Gin->header->wesn[XHI] += shift;
 					GMT_Report (API, GMT_MSG_LONG_VERBOSE, "File %s region needed longitude adjustment to fit final grid region\n", Ctrl->In.file);
 				}
 			}
-			if (wesn[XLO] < (Gin->header->wesn[XLO] - Gin->header->inc[GMT_X]) || wesn[XHI] > (Gin->header->wesn[XHI] + Gin->header->inc[GMT_X])) {
+			if (!geo && (wesn[XLO] < (Gin->header->wesn[XLO] - Gin->header->inc[GMT_X]) || wesn[XHI] > (Gin->header->wesn[XHI] + Gin->header->inc[GMT_X]))) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Selected region exceeds the X-boundaries of the grid file by more than one x-increment!\n");
 				return (GMT_RUNTIME_ERROR);
 			}
 		}
 	}
 
-	if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc, \
+	if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, wesn, inc, \
 		registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 	sprintf (format, "Input  grid (%s/%s/%s/%s) n_columns = %%d n_rows = %%d dx = %s dy = %s registration = %%d\n", 
@@ -337,7 +328,7 @@ int GMT_grdsample (void *V_API, int mode, void *args) {
 		Gout->header->wesn[YLO], Gout->header->wesn[YHI], Gout->header->n_columns, Gout->header->n_rows,
 		Gout->header->inc[GMT_X], Gout->header->inc[GMT_Y], Gout->header->registration);
 
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->In.file, Gin) == NULL) {	/* Get subset */
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn, Ctrl->In.file, Gin) == NULL) {	/* Get subset */
 		Return (API->error);
 	}
 
@@ -391,7 +382,7 @@ int GMT_grdsample (void *V_API, int mode, void *args) {
 	gmt_set_pad (GMT, API->pad);	/* Reset to session default pad before output */
 
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Gout)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
 		Return (API->error);
 	}
 

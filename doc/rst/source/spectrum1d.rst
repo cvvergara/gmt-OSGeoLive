@@ -18,6 +18,7 @@ Synopsis
 [ |-N|\ [\ *name_stem* ] ] [ |-T| ] [ |-W| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
 [ |SYN_OPT-h| ]
@@ -119,7 +120,8 @@ Optional Arguments
 
 **-N**\ [*name\_stem*]
     Supply an alternate name stem to be used for output files [Default = "spectrum"].
-    Giving no argument will disable the writing of individual output files.
+    If **-N** is given with no argument then we disable the writing of individual
+    output files and instead write a single table to standard output.
 
 .. _-V:
 
@@ -145,6 +147,9 @@ Optional Arguments
 
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_

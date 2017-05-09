@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: spectrum1d.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: spectrum1d.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -36,14 +36,14 @@
  *    	June, 1967.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"spectrum1d"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Compute auto- [and cross-] spectra from one [or two] time series"
 #define THIS_MODULE_KEYS	"<D{,>D},T-)"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-Vbdfghis"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-Vbdefghis"
 
 #define SPECTRUM1D_N_OUTPUT_CHOICES 8
 
@@ -543,7 +543,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: spectrum1d [<table>] -S<segment_size> [-C[<xycnpago>]] [-D<dt>] [-L[m|h]] [-N[<name_stem>]] [-T]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-W] [%s] [%s] [%s]\n\t[%s]\n\t[%s] [%s]\n\t[%s]\n\n", GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-W] [%s] [%s] [%s] [%s]\n\t[%s]\n\t[%s] [%s]\n\t[%s]\n\n", GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -565,7 +565,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Disable writing the single output to stdout.\n");
 	GMT_Option (API, "V");
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Write Wavelength of spectral estimate in col 1 [Default = frequency].\n");
-	GMT_Option (API, "bi2,bo,d,f,g,h,i,s,.");
+	GMT_Option (API, "bi2,bo,d,e,f,g,h,i,s,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -707,8 +707,8 @@ int GMT_spectrum1d (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -745,7 +745,7 @@ int GMT_spectrum1d (void *V_API, int mode, void *args) {
 	alloc_arrays (GMT, &C);
 
 	if (!Ctrl->T.active) {	/* Write single data file with 17 columns to stdout (or specified name) */
-		uint64_t dim[4];
+		uint64_t dim[GMT_DIM_SIZE];
 		n_cols_tot = 1 + 2 * n_outputs;
 		dim[GMT_TBL] = Din->n_tables;	/* Same number of tables as input */
 		dim[GMT_SEG] = 0;		/* Don't know about segments yet */

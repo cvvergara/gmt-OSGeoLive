@@ -16,13 +16,14 @@ Synopsis
 **grdtrack** [ *xyfile* ] |-G|\ *grd1* |-G|\ *grd2* ...
 [ |-A|\ **f**\ \|\ **p**\ \|\ **m**\ \|\ **r**\ \|\ **R**\ [**+l**] ]
 [ |-C|\ *length*\ [**u**]/\ *ds*\ [*/spacing*][**+a**][**+v**] ] [|-D|\ *dfile* ]
-[ |-E|\ *line*\ [,\ *line*,...][**+a**\ *az*][**+d**][**+i**\ *inc*\ [**u**]][**+l**\ *length*\ [**u**]][**+n**\ *np*][**+o**\ *az*][**+r**\ *radius*\ [**u**] ]
+[ |-E|\ *line* ]
 [ |-N| ] 
 [ |SYN_OPT-R| ]
 [ |-S|\ *method*/*modifiers* ] [ |-T|\ [*radius*\ [**u**]][**+e**\ \|\ **p**]]
 [ |-V|\ [*level*] ] [ |-Z| ]
 [ |SYN_OPT-b| ] 
 [ |SYN_OPT-d| ] 
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ] 
 [ |SYN_OPT-g| ] 
 [ |SYN_OPT-h| ] 
@@ -129,7 +130,7 @@ Optional Arguments
     Instead of reading input track coordinates, specify profiles via
     coordinates and modifiers. The format of each *line* is
     *start*/*stop*, where *start* or *stop* are either *lon*/*lat* (*x*/*y* for
-    Cartesian data) or a 2-character XY key that uses the "pstext"-style
+    Cartesian data) or a 2-character XY key that uses the :doc:`pstext`-style
     justification format format to specify a point on the map as
     [LCR][BMT]. In addition, you can use Z-, Z+ to mean the global
     minimum and maximum locations in the grid (only available if only
@@ -226,6 +227,9 @@ Optional Arguments
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
 
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
+
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
 
@@ -307,5 +311,6 @@ See Also
 
 :doc:`gmt`,
 :doc:`gmtconvert`,
+:doc:`pstext`,
 :doc:`sample1d`,
 :doc:`surface`

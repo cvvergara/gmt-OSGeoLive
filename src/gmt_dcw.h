@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dcw.h 17488 2017-01-26 02:21:14Z pwessel $
+ *	$Id: gmt_dcw.h 17489 2017-01-26 02:22:01Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.

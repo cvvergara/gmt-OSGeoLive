@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *    $Id: gmtinfo.c 17560 2017-02-17 22:05:42Z pwessel $
+ *    $Id: gmtinfo.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -24,14 +24,14 @@
  * Version:	 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"gmtinfo"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Get information about data tables"
 #define THIS_MODULE_KEYS	"<D{,>T},>DC"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdfghiors" GMT_OPT("HMm")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vbdefghiors" GMT_OPT("HMm")
 
 EXTERN_MSC int gmtlib_geo_C_format (struct GMT_CTRL *GMT);
 EXTERN_MSC unsigned int gmtlib_log_array (struct GMT_CTRL *GMT, double min, double max, double delta, double **array);
@@ -43,6 +43,10 @@ EXTERN_MSC unsigned int gmtlib_log_array (struct GMT_CTRL *GMT, double min, doub
 #define BEST_FOR_SURF	1
 #define BEST_FOR_FFT	2
 #define ACTUAL_BOUNDS	3
+
+#define GMT_INFO_TOTAL		1
+#define GMT_INFO_TABLEINFO	2
+#define GMT_INFO_DATAINFO	3
 
 struct MINMAX_CTRL {	/* All control options for this program (except common args) */
 	/* active is true if the option has been activated */
@@ -65,6 +69,10 @@ struct MINMAX_CTRL {	/* All control options for this program (except common args
 		int mode;	/* -1, 0, +1 */
 		uint64_t col;
 	} E;
+	struct F {	/* -F<i|d|t> */
+		bool active;
+		int mode;	/*  */
+	} F;
 	struct I {	/* -I[f|p|s]dx[/dy[/<dz>..]] */
 		bool active;
 		unsigned int ncol;
@@ -113,9 +121,9 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MINMAX_CTRL *C) {	/* Deal
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: gmtinfo [<table>] [-Aa|f|s] [-C] [-D[<dx>[/<dy>]] [-E<L|l|H|h><col>] [-I[p|f|s]<dx>[/<dy>[/<dz>..]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-S[x][y]] [-T<dz>[/<col>]] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n",
-		GMT_V_OPT, GMT_bi_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: gmtinfo [<table>] [-Aa|f|s] [-C] [-D[<dx>[/<dy>]] [-E<L|l|H|h><col>] [-Fi|d|t] [-I[p|f|s]<dx>[/<dy>[/<dz>..]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-S[x][y]] [-T<dz>[+c<col>]] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n\n",
+		GMT_V_OPT, GMT_bi_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -128,6 +136,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-E Return the record with extreme value in specified column <col> [last column].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Specify l or h for min or max value, respectively.  Upper case L or H\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   means we operate instead on the absolute values of the data.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-F Return various counts of tables, segments, headers, and records, depending on mode:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   i: One record with the number of tables, segments, data records, headers, and overall records.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   d: Dataset: One record per segment with tbl_no, seg_no, nrows, start_rec, stop_rec.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   t: Tables:  Same as D but the counts resets per table.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Return textstring -Rw/e/s/n to nearest multiple of dx/dy (assumes at least 2 columns).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Give -I- to just report the min/max extent in the -Rw/e/s/n string (no multiples).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If -C is set then no -R string is issued.  Instead, the number of increments\n");
@@ -145,8 +157,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Sy leaves space for vertical error bar using value in third (2) column.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -S or -Sxy leaves space for both error bars using values in third&fourth (2&3) columns.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Return textstring -Tzmin/zmax/dz to nearest multiple of the given dz.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Calculations are based on the first (0) column only.  Append /<col> to use another column.\n");
-	GMT_Option (API, "V,bi2,d,f,g,h,i,o,r,s,:,.");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Calculations are based on the first (0) column; append +c<col> to use another column.\n");
+	GMT_Option (API, "V,bi2,d,e,f,g,h,i,o,r,s,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -161,6 +173,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GMT_
 	int j;
 	unsigned int n_errors = 0, k;
 	bool special = false;
+	char *c = NULL;
 	struct GMT_OPTION *opt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
 
@@ -199,7 +212,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GMT_
 				if (opt->arg[0]) {
 					Ctrl->D.ncol = gmt_getincn (GMT, opt->arg, Ctrl->D.inc, GMT_MAX_COLUMNS);
 					Ctrl->D.mode = 1;
-					gmt_check_lattice (GMT, Ctrl->D.inc, NULL, &Ctrl->D.active);
 				}
 				break;
 			case 'E':	/* Extrema reporting */
@@ -221,6 +233,18 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GMT_
 						break;
 				}
 				if (opt->arg[1]) Ctrl->E.col = atoi (&opt->arg[1]);
+				break;
+			case 'F':	/* Record/segment reporting only */
+				Ctrl->F.active = true;
+				switch (opt->arg[0]) {
+					case '\0': case 'i': Ctrl->F.mode = GMT_INFO_TOTAL; break;
+					case 'd': Ctrl->F.mode = GMT_INFO_DATAINFO; break;
+					case 't': Ctrl->F.mode = GMT_INFO_TABLEINFO; break;
+					default:
+						n_errors++;
+						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -F. Flags are i|d|t.\n");
+						break;
+				}
 				break;
 			case 'I':	/* Granularity */
 				Ctrl->I.active = true;
@@ -247,10 +271,25 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GMT_
 				}
 				if (j == 2) Ctrl->S.xbar = Ctrl->S.ybar = true;
 				break;
-			case 'T':	/* makecpt range/inc string */
+			case 'T':	/* makecpt inc string */
 				Ctrl->T.active = true;
-				j = sscanf (opt->arg, "%lf/%d", &Ctrl->T.inc, &Ctrl->T.col);
-				if (j == 1) Ctrl->T.col = 0;
+				if ((c = strchr (opt->arg, '/')) && gmt_M_compat_check (GMT, 5)) {	/* Let it slide for now */
+					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -T<inc>[/<col>] syntax is deprecated; use -T<inc>[+c<col>] instead.\n");
+					j = sscanf (opt->arg, "%lf/%d", &Ctrl->T.inc, &Ctrl->T.col);
+					if (j == 1) Ctrl->T.col = 0;
+				}
+				else if (c || opt->arg[0] == '\0') {
+					GMT_Report (API, GMT_MSG_NORMAL, "Error -T: Syntax is -T<inc>[+c<col>].\n");
+					n_errors++;
+				}
+				else {	/* Modern syntax and parsing */
+					if ((c = strstr (opt->arg, "+c"))) {
+						Ctrl->T.col = atoi (&c[2]);
+						c[0] = '\0';	/* Temporarily hide the modifier */
+					}
+					Ctrl->T.inc = atof (opt->arg);
+					if (c) c[0] = '+';	/* Restore the modifier */
+				}
 				break;
 
 			case 'b':	/* -b[i]c will land here */
@@ -262,7 +301,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MINMAX_CTRL *Ctrl, struct GMT_
 		}
 	}
 
-	if (Ctrl->I.mode != ACTUAL_BOUNDS) gmt_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
 	if (Ctrl->I.active && special && Ctrl->I.ncol > 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -Ip. Only a single increment is expected.\n");
 		n_errors++;
@@ -323,18 +361,82 @@ int GMT_gmtinfo (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the gmtinfo main code ----------------------------*/
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
+	
+	if (Ctrl->F.active) {	/* Special case of reporting on record numbers */
+		/* This is best done by reading the whole thing in */
+		struct GMT_DATASET *D = NULL;
+		struct GMT_DATATABLE *T = NULL;
+		struct GMT_DATASEGMENT *S = NULL;
+		double out[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+		uint64_t tbl, seg, start_rec = 0;
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {
+			Return (API->error);	/* Establishes data files or stdin */
+		}
+		if ((D = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, 0, GMT_READ_NORMAL, NULL, NULL, NULL)) == NULL) {
+			Return (API->error);
+		}
+		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Establishes data output */
+			Return (API->error);
+		}
+		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_OFF) != GMT_NOERROR) {
+			Return (API->error);
+		}
+		if ((error = gmt_set_cols (GMT, GMT_OUT, 5)) != 0) Return (error);
+		switch (Ctrl->F.mode) {
+			case GMT_INFO_TOTAL:	/* Report total number of tables */
+				out[0] = (double)D->n_tables;
+				out[1] = (double)D->n_segments;
+				out[2] = (double)D->n_records;
+				for (tbl = 0; tbl < D->n_tables; tbl++)
+					out[3] += (double)(D->table[tbl]->n_headers);
+				if (D->n_segments == 1) out[4] -= 1.0;	/* Still unsure about this.  How do we know file actually had a segment header? */
+				out[4] = out[3] + out[1] + out[2];
+				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				break;
+			case GMT_INFO_TABLEINFO:	/* Virtual data set or individual tables */
+			case GMT_INFO_DATAINFO:
+				for (tbl = 0; tbl < D->n_tables; tbl++) {
+					T = D->table[tbl];
+					if (Ctrl->F.mode == GMT_INFO_TABLEINFO) {
+						out[0] = (double)tbl;
+						start_rec = T->n_headers;	/* Start fresh for each table */
+					}
+					else
+						start_rec += T->n_headers;
+					for (seg = 0; seg < T->n_segments; seg++) {
+						S = T->segment[seg];
+						start_rec++;	/* The segment header */
+						out[1] = (double)seg;
+						out[2] = (double)S->n_rows;
+						out[3] = (double)start_rec;
+						out[4] = (double)(start_rec + S->n_rows - 1);
+						GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+						start_rec += S->n_rows;
+					}
+				}
+				break;
+		}
+		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_NOERROR) {	/* Disables further data output */
+			Return (API->error);
+		}
+		if (GMT_Destroy_Data (API, &D) != GMT_NOERROR) {	/* Remove the dataset */
+			Return (API->error);
+		}
+		Return (GMT_NOERROR);	/* We are done */
+	}
+	
 	give_r_string = (Ctrl->I.active && !Ctrl->C.active);
 	delimiter[0] = (Ctrl->C.active) ? '\t' : '/';
 	delimiter[1] = '\0';
-	off = (GMT->common.r.active) ? 0.5 : 0.0;
+	off = (GMT->common.R.active[GSET]) ? 0.5 : 0.0;
 
 	brackets = !Ctrl->C.active;
 	work_on_abs_value = (Ctrl->E.active && Ctrl->E.abs);
@@ -383,7 +485,6 @@ int GMT_gmtinfo (void *V_API, int mode, void *args) {
 	done = false;
 	while (!done) {	/* Keep returning records until we reach EOF of last file */
 		in = GMT_Get_Record (API, GMT_READ_DATA | GMT_READ_FILEBREAK, NULL);
-		do_report = false;
 
 		if (gmt_M_rec_is_error (GMT)) Return (GMT_RUNTIME_ERROR);
 		if (gmt_M_rec_is_table_header (GMT)) continue;	/* Skip table headers */
@@ -413,7 +514,7 @@ int GMT_gmtinfo (void *V_API, int mode, void *args) {
 				}
 				else {	/* Data not on grid, just return bounding box rounded off to nearest inc */
 					buffer[0] = '.';	buffer[1] = 0;
-					if (GMT->common.r.active) strcpy (buffer, " (-r is ignored).");
+					if (GMT->common.R.active[GSET]) strcpy (buffer, " (-r is ignored).");
 					GMT_Report (API, GMT_MSG_LONG_VERBOSE,
 					            "Input (x,y) data are irregularly distributed; phase shifts set to 0/0%s\n", buffer);
 					phase[GMT_X] = phase[GMT_Y] = off = 0.0;
@@ -470,8 +571,8 @@ int GMT_gmtinfo (void *V_API, int mode, void *args) {
 				if (Ctrl->I.mode == BEST_FOR_FFT || Ctrl->I.mode == BEST_FOR_SURF) {	/* Wish to extend the region to optimize the resulting n_columns/n_rows */
 					unsigned int sub, add, in_dim[2], out_dim[2];
 					double ww, ee, ss, nn;
-					in_dim[GMT_X] = gmt_M_get_n (GMT, west, east, Ctrl->I.inc[GMT_X], GMT->common.r.active);
-					in_dim[GMT_Y] = gmt_M_get_n (GMT, south, north, Ctrl->I.inc[GMT_Y], GMT->common.r.active);
+					in_dim[GMT_X] = gmt_M_get_n (GMT, west, east, Ctrl->I.inc[GMT_X], GMT->common.R.active[GSET]);
+					in_dim[GMT_Y] = gmt_M_get_n (GMT, south, north, Ctrl->I.inc[GMT_Y], GMT->common.R.active[GSET]);
 					ww = west;	ee = east; ss = south;	nn = north;
 					gmt_best_dim_choice (GMT, Ctrl->I.mode, in_dim, out_dim);
 					sub = (out_dim[GMT_X] - in_dim[GMT_X]) / 2;	add = out_dim[GMT_X] - in_dim[GMT_X] - sub;

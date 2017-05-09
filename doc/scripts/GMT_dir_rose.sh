@@ -1,5 +1,5 @@
 #!/bin/bash
-#	$Id: GMT_dir_rose.sh 17373 2016-12-02 20:43:05Z pwessel $
+#	$Id: GMT_dir_rose.sh 17377 2016-12-03 03:20:52Z jluis $
 # Showing map directional roses
 ps=GMT_dir_rose.ps
 gmt set FONT_LABEL 10p FONT_TITLE 12p MAP_ANNOT_OBLIQUE 34 MAP_TITLE_OFFSET 5p \

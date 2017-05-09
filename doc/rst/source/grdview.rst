@@ -17,7 +17,8 @@ Synopsis
 [ |SYN_OPT-B| ]
 [ |-C|\ [*cpt*]]
 [ |-G|\ *drapefile* \| |-G|\ *grd_r* |-G|\ *grd_g* |-G|\ *grd_b* ]
-[ |-I|\ *intensfile*\ \|\ *intensity* ] [ **-Jz**\ \|\ **Z**\ *parameters* ] [ **-K** ]
+[ |-I|\ [*intensfile*\ \|\ *intensity*\ \|\ *modifiers*] ]
+[ **-Jz**\ \|\ **Z**\ *parameters* ] [ **-K** ]
 [ |-N|\ *level*\ [**+g**\ *fill*] ] [ **-O** ] [ **-P** ]
 [ |-Q|\ *args*\ [**+m**] ]
 [ |SYN_OPT-Rz| ]
@@ -27,7 +28,6 @@ Synopsis
 [ |-W|\ **type**\ *pen* ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-n| ]
 [ |SYN_OPT-p| ]
 [ |SYN_OPT-t| ]
@@ -72,8 +72,8 @@ Optional Arguments
     (1) mesh plot with contours (**-Qm**), or
     (2) shaded/colored perspective image (**-Qs** or
     **-Qi**). For **-Qs**: You can specify that you want to skip a
-    z-slice by setting red = -; to use a pattern give red =
-    **P\|p**\ *dpi/pattern*\ [:**F**\ *color*\ [**B**\ *color*]].
+    z-slice by setting the red r/g/b component to -; to use a pattern give red =
+    **P\|p**\ *pattern*\ [**+b**\ *color*\ ][**+f**\ *color*\ ][**+r**\ *dpi*\ ].
     Alternatively,
     supply the name of a GMT color master dynamic CPT [rainbow] to
     automatically determine a continuous CPT from
@@ -94,10 +94,15 @@ Optional Arguments
 
 .. _-I:
 
-**-I**\ *intensfile*\ \|\ *intensity*
+**-I**\ [*intensfile*\ \|\ *intensity*\ \|\ *modifiers*]
     Gives the name of a grid file with intensities in the (-1,+1) range,
-    or a constant intensity to apply everywhere.
-    [Default is no illumination]. 
+    or a constant intensity to apply everywhere; this simply affects the
+    ambient light.  If no argument is given then we derive an intensity
+    grid from the input data grid *grd_z* via a call to :doc:`grdgradient`
+    using the arguments **-A**\ -45 and **-Nt**\ 1 for that module. You can
+    append **+a**\ *azimuth and **+n**\ *args* to override those values.  If you want
+    more specific intensities then run :doc:`grdgradient` separately first.
+    [Default is no illumination].
 
 .. _-K:
 
@@ -191,8 +196,6 @@ Optional Arguments
 
 .. include:: explain_-XY.rst_
 
-.. include:: explain_-c.rst_
-
 .. include:: explain_-n.rst_
 
 .. |Add_perspective| unicode:: 0x20 .. just an invisible code
@@ -263,7 +266,7 @@ For the **-Qs** option: PostScript provides no way of smoothly varying
 colors within a polygon, so colors can only vary from polygon to
 polygon. To obtain smooth images this way you may resample the grid
 file(s) using :doc:`grdsample` or use a finer grid size when running
-gridding programs like **surface** or :doc:`nearneighbor`. Unfortunately,
+gridding programs like :doc:`surface` or :doc:`nearneighbor`. Unfortunately,
 this produces huge PostScript files. The alternative is to use the
 **-Qi** option, which computes bilinear or bicubic continuous color
 variations within polygons by using scanline conversion to image the polygons.

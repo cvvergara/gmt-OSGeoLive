@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_datalist.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: x2sys_datalist.c 17831 2017-03-31 22:28:43Z pwessel $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,14 +26,16 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "mgd77/mgd77.h"
+#include "x2sys.h"
+
 #define THIS_MODULE_NAME	"x2sys_datalist"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Extract content of track data files"
 #define THIS_MODULE_KEYS	">D}"
-
-#include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->RVbd"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->RVbd"
 
 struct X2SYS_DATALIST_CTRL {
 	struct A {	/* -A */
@@ -260,8 +262,8 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -284,7 +286,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 
 	s->ascii_out = !GMT->common.b.active[1];
 
-	if (!GMT->common.R.active) gmt_M_memcpy (GMT->common.R.wesn, B.wesn, 4, double);
+	if (!GMT->common.R.active[RSET]) gmt_M_memcpy (GMT->common.R.wesn, B.wesn, 4, double);
 
 	if (Ctrl->S.active) {	/* Must count output data columns (except t, x, y) */
 		for (ocol = n_data_col_out = 0; ocol < s->n_out_columns; ocol++) {
@@ -406,7 +408,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 
 	if (GMT->common.b.active[GMT_OUT]) gmt_formatting = false;		/* The above lime might very well had set it to true */
 
-	if (GMT->common.R.active) {	/* Restrict output to given domain */
+	if (GMT->common.R.active[RSET]) {	/* Restrict output to given domain */
 		if (xpos == -1 || ypos == -1) {
 			GMT_Report (API, GMT_MSG_NORMAL, "The -R option was selected but lon,lat not included in -F\n");
 			x2sys_end (GMT, s);
@@ -427,7 +429,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 		}
 	}
 
-	if (API->mode && gmt_formatting) {
+	if (API->external && gmt_formatting) {
 		GMT_Report (API, GMT_MSG_DEBUG, "Disabling text formatting for external interface\n");
 		gmt_formatting = false;
 	}
@@ -483,7 +485,7 @@ int GMT_x2sys_datalist (void *V_API, int mode, void *args) {
 
 		cumulative_dist = 0.0;
 		for (row = 0; row < p.n_rows; row++) {	/* Process all records in this file */
-			if (GMT->common.R.active && gmt_map_outside (GMT, data[xpos][row], data[ypos][row])) continue;	/* Point is outside region */
+			if (GMT->common.R.active[RSET] && gmt_map_outside (GMT, data[xpos][row], data[ypos][row])) continue;	/* Point is outside region */
 			if (Ctrl->S.active) {	/* Skip record if all data columns are NaN (not considering lon,lat,time) */
 				for (ocol = bad = 0; ocol < s->n_out_columns; ocol++) {
 					this_col = s->out_order[ocol];

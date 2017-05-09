@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: sphtriangulate.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: sphtriangulate.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 2008-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -30,15 +30,15 @@
  *
  */
 
+#include "gmt_dev.h"
+#include "gmt_sph.h"
+
 #define THIS_MODULE_NAME	"sphtriangulate"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Delaunay or Voronoi construction of spherical data"
 #define THIS_MODULE_KEYS	"<D{,>D},ND)"
-
-#include "gmt_dev.h"
-#include "gmt_sph.h"
-
-#define GMT_PROG_OPTIONS "-:RVbdhis"
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:RVbdehis"
 
 struct SPHTRIANGULATE_CTRL {
 	struct SPHTRI_Out {	/* -> */
@@ -89,8 +89,8 @@ GMT_LOCAL int stripack_delaunay_output (struct GMT_CTRL *GMT, double *lon, doubl
 	/* Prints out the Delaunay triangles either as polygons (for filling) or arcs (lines). */
 	uint64_t i, ij;
 	bool do_authalic;
-	uint64_t dim[4] = {1, 0, 0, 0}, k;
-	double area_sphere = 0.0, area_triangle = GMT->session.d_NaN, V[3][3], R2, y, dist = GMT->session.d_NaN;
+	uint64_t dim[GMT_DIM_SIZE] = {1, 0, 0, 0}, k;
+	double area_sphere = 0.0, area_triangle = GMT->session.d_NaN, V[3][3], R2, y, dist;
 	char segment_header[GMT_BUFSIZ];
 	struct GMT_DATASEGMENT *S[2] = {NULL, NULL};
 	if (get_area == 2) /* Return area in steradians */
@@ -206,12 +206,12 @@ GMT_LOCAL int stripack_voronoi_output (struct GMT_CTRL *GMT, uint64_t n, double 
 	unsigned int geometry;
 
 	uint64_t i, j, k, node, vertex, node_stop, node_new, vertex_new, node_last, vertex_last, n_arcs = 0;
-	uint64_t dim[4] = {1, 0, 0, 0};
+	uint64_t dim[GMT_DIM_SIZE] = {1, 0, 0, 0};
 	size_t n_alloc = GMT_INITIAL_MEM_ROW_ALLOC, p_alloc = GMT_TINY_CHUNK;
 
 	char segment_header[GMT_BUFSIZ];
 
-	double area_sphere = 0.0, area_polygon, area_triangle, area_km2 = GMT->session.d_NaN, dist = GMT->session.d_NaN;
+	double area_sphere = 0.0, area_polygon, area_triangle, area_km2 = GMT->session.d_NaN, dist;
 	double y[3], V1[3], V2[3], V3[3];
 	double *plat = NULL, *plon = NULL, R2;
 
@@ -423,7 +423,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "==> The hard work is done by algorithms 772 (STRIPACK) & 773 (SSRFPACK) by R. J. Renka [1997] <==\n\n");
 	GMT_Message (API, GMT_TIME_NONE, "usage: sphtriangulate [<table>] [-A] [-C] [-D] [-L<unit>] [-N<nodetable>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-Qd|v] [-T] [%s] [%s] [%s]\n\t[%s] [%s]\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_h_OPT, GMT_i_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-Qd|v] [-T] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_e_OPT, GMT_h_OPT, GMT_i_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\n", GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -446,7 +446,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   If -bo is used then -N may be used to specify a separate file where the\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   polygon information normally is written.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Write arcs [Default writes polygons].\n");
-	GMT_Option (API, "V,bi2,bo,di,h,i,s,:,.");
+	GMT_Option (API, "V,bi2,bo,di,e,h,i,s,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -556,9 +556,9 @@ int GMT_sphtriangulate (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	gmt_parse_common_options (GMT, "f", 'f', "g"); /* Implicitly set -fg since this is spherical triangulation */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -599,14 +599,11 @@ int GMT_sphtriangulate (void *V_API, int mode, void *args) {
 				gmt_M_free (GMT,  zz);
 				Return (GMT_RUNTIME_ERROR);
 			}
-			if (gmt_M_rec_is_table_header (GMT)) 	/* Skip all table headers */
-				continue;
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
-			else if (gmt_M_rec_is_segment_header (GMT)) {			/* Parse segment headers */
+			else if (gmt_M_rec_is_segment_header (GMT))			/* Parse segment headers */
 				first = true;
-				continue;
-			}
+			continue;	/* Go back and read the next record */
 		}
 
 		/* Data record to process */
@@ -673,7 +670,7 @@ int GMT_sphtriangulate (void *V_API, int mode, void *args) {
 	sprintf (header, "# sphtriangulate %s output via STRPACK", tmode[Ctrl->Q.mode]);
 	if (Ctrl->A.active) {
 		strcat (header, (Ctrl->T.active) ? ".  Arc lengths in " : ".  Areas in ");
-		strcat (header, unit_name (Ctrl->L.unit, Ctrl->T.active));
+		strncat (header, unit_name (Ctrl->L.unit, Ctrl->T.active), GMT_BUFSIZ-1);
 	}
 	strcat (header, ".");
 	Dout[0]->table[0]->n_headers = 1;

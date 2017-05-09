@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 24
-#		$Id: example_24.sh 17434 2017-01-12 22:59:32Z pwessel $
+#		$Id: example_24.sh 17435 2017-01-12 23:07:10Z pwessel $
 #
 # Purpose:	Extract subsets of data based on geospatial criteria
 # GMT modules:	gmtselect, pscoast, psxy, gmtinfo

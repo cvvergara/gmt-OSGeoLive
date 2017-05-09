@@ -26,6 +26,9 @@ end point of the segment:
     **+g**-\ \|\ *fill* turns off vector head fill (if -) or sets the vector
     head fill [Default fill is used, which may be no fill].
 
+    **+h**\ *shape* sets the shape of the vector head (range -2/2). Default
+    is controlled by :ref:`MAP_VECTOR_SHAPE <MAP_VECTOR_SHAPE>` [0].
+ 
     **+l** draws half-arrows, using only the left side of specified heads [both sides].
 
     **+m** places a vector head at the mid-point the vector path [none].
@@ -52,7 +55,7 @@ end point of the segment:
 
     **+r** draws half-arrows, using only the right side of specified heads [both sides].
 
-    **t**\ [**b**\ \|\ **e**]\ *trim* will shift the beginning or end point (or both)
+    **+t**\ [**b**\ \|\ **e**]\ *trim* will shift the beginning or end point (or both)
     along the vector segment by the given *trim*; append suitable unit. If the modifiers
     **b**\ \|\ **e** are not used then *trim* may be two values separated by a slash,
     which is used to specify different trims for the two ends.  Positive trims

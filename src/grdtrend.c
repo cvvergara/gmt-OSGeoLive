@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdtrend.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdtrend.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -81,14 +81,14 @@
  * are conveniently sized near 0 or 1.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdtrend"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Fit trend surface to grids and compute residuals"
 #define THIS_MODULE_KEYS	"<G{,DG),TG),WG)"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-RV"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-RV"
 
 struct GRDTREND_CTRL {	/* All control options for this program (except common args) */
 	struct In {
@@ -136,14 +136,14 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *C) {	/* De
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: grdtrend <ingrid> -N<n_model>[r] [-D<diffgrid>] [%s]\n", GMT_Rgeo_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: grdtrend <ingrid> -N<n_model>[+r] [-D<diffgrid>] [%s]\n", GMT_Rgeo_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-T<trendgrid>] [%s] [-W<weightgrid>]\n\n", GMT_V_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<ingrid> is name of grid file to fit trend to.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3r.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Model parameters order is given as follows:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3+r.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Model parameters order is given as follows; append +r for robust solution:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   z = m1 + m2*x + m3*y + m4*x*y + m5*x^2 + m6*y^2 + m7*x^3 + m8*x^2*y + m9*x*y^2 + m10*y^3.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Supply filename to write grid file of differences (input - trend).\n");
@@ -194,7 +194,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDTREND_CTRL *Ctrl, struct GM
 				/* Must check for both -N[r]<n_model> and -N<n_model>[r] due to confusion */
 				Ctrl->N.active = true;
 				if (strchr (opt->arg, 'r')) Ctrl->N.robust = true;
-				j = (opt->arg[0] == 'r') ? 1 : 0;
+				j = (opt->arg[0] == 'r') ? 1 : 0;	/* GMT4 backwardness */
 				if (opt->arg[j]) Ctrl->N.value = atoi(&opt->arg[j]);
 				break;
 			case 'T':
@@ -510,8 +510,8 @@ int GMT_grdtrend (void *V_API, int mode, void *args) {
 	if (!options || options->option == GMT_OPT_USAGE) bailout (usage (API, GMT_USAGE));	/* Return the usage message */
 	if (options->option == GMT_OPT_SYNOPSIS) bailout (usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -522,11 +522,11 @@ int GMT_grdtrend (void *V_API, int mode, void *args) {
 	trivial = (Ctrl->N.value < 5 && !weighted);
 
 	gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Current -R setting, if any */
-	if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
+	if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
 		Return (API->error);
 	}
 	if (gmt_M_is_subset (GMT, G->header, wesn)) gmt_M_err_fail (GMT, gmt_adjust_loose_wesn (GMT, wesn, G->header), "");	/* Subset requested; make sure wesn matches header spacing */
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, Ctrl->In.file, G) == NULL) {	/* Get subset */
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn, Ctrl->In.file, G) == NULL) {	/* Get subset */
 		Return (API->error);
 	}
 
@@ -552,7 +552,7 @@ int GMT_grdtrend (void *V_API, int mode, void *args) {
 
 	if (weighted) {
 		if (!gmt_access (GMT, Ctrl->W.file, R_OK)) {	/* We have weights on input  */
-			if ((W = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->W.file, NULL)) == NULL) {	/* Get header only */
+			if ((W = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->W.file, NULL)) == NULL) {	/* Get header only */
 				gmt_M_free (GMT, gtd);		gmt_M_free (GMT, gtg);
 				gmt_M_free (GMT, xval);		gmt_M_free (GMT, yval);
 				gmt_M_free (GMT, old);		gmt_M_free (GMT, pstuff);
@@ -561,7 +561,7 @@ int GMT_grdtrend (void *V_API, int mode, void *args) {
 			if (W->header->n_columns != G->header->n_columns || W->header->n_rows != G->header->n_rows)
 				GMT_Report (API, GMT_MSG_NORMAL, "Error: Input weight file does not match input data file.  Ignoring.\n");
 			else {
-				if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->W.file, W) == NULL) {	/* Get data */
+				if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, Ctrl->W.file, W) == NULL) {	/* Get data */
 					Return (API->error);
 				}
 				set_ones = false;
@@ -638,7 +638,7 @@ int GMT_grdtrend (void *V_API, int mode, void *args) {
 	if (Ctrl->T.file) {
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "trend surface", T)) Return (API->error);
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, T)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->T.file, T) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->T.file, T) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}
@@ -648,7 +648,7 @@ int GMT_grdtrend (void *V_API, int mode, void *args) {
 	if (Ctrl->D.file) {
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "trend residuals", R)) Return (API->error);
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, R)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->D.file, R) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->D.file, R) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}
@@ -660,7 +660,7 @@ int GMT_grdtrend (void *V_API, int mode, void *args) {
 	if (Ctrl->W.file && Ctrl->N.robust) {
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_REMARK, "trend weights", W)) Return (API->error);
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, W)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->W.file, W) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->W.file, W) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}

@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 12
-#		$Id: example_12.sh 16652 2016-06-28 21:02:26Z pwessel $
+#		$Id: example_12.sh 17782 2017-03-25 21:56:33Z pwessel $
 #
 # Purpose:	Illustrates Delaunay triangulation of points, and contouring
 # GMT modules:	makecpt, gmtinfo, pscontour, pstext, psxy, triangulate
@@ -23,7 +23,7 @@ gmt pstext table_5.11 -R -J -F+f6p+jLM -O -K -Gwhite -W -C0.01i -D0.08i/0i -N >>
 # Then contour the data and draw triangles using dashed pen; use "gmt gmtinfo" and "gmt makecpt" to make a
 # color palette (.cpt) file
 #
-T=`gmt info -T25/2 table_5.11`
+T=`gmt info -T25+c2 table_5.11`
 gmt makecpt -Cjet $T > topo.cpt
 gmt pscontour -R -J table_5.11 -B2f1 -BWSne -Wthin -Ctopo.cpt -Lthinnest,- -Gd1i -X-3.25i -Y-3.65i \
 	-O -K >> $ps

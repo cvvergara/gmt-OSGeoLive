@@ -31,7 +31,6 @@ Synopsis
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
 [ |SYN_OPT-bo| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-o| ]
 [ |SYN_OPT-p| ]
@@ -70,7 +69,7 @@ Optional Arguments
 
 **-G**\ *fill*\ \|\ **c**
     Select color or pattern for filling of terminators; or use **-Gc** for clipping [Default is no fill].
-    Deactivate clipping by appending the output of gmt psclip **-C**.
+    Deactivate clipping by appending the output of gmt :doc:`psclip` **-C**.
 
 .. _-I:
 
@@ -143,8 +142,6 @@ Optional Arguments
 .. |Add_-bo| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-bo.rst_
 
-.. include:: explain_-c.rst_
-
 .. |Add_-h| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-h.rst_
 
@@ -183,4 +180,4 @@ Set up a clip path overlay based on the day/night terminator:
 See Also
 --------
 
-:doc:`gmt`, :doc:`pscoast`, :doc:`psxy`
+:doc:`gmt`, :doc:`psclip`, :doc:`pscoast`, :doc:`psxy`

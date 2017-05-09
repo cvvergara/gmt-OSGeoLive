@@ -1,5 +1,5 @@
 REM             GMT EXAMPLE 36
-REM             $Id$
+REM             $Id: example_36.bat 17597 2017-02-24 02:49:00Z pwessel $
 REM
 REM Purpose:    Illustrate sphinterpolate with Mars radii data
 REM GMT progs:  psxy, makecpt, grdimage, sphinterpolate

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77path.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: mgd77path.c 17798 2017-03-27 04:50:17Z pwessel $
  *
  *    Copyright (c) 2004-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -15,15 +15,15 @@
  *
  */
  
+#include "gmt_dev.h"
+#include "mgd77.h"
+
 #define THIS_MODULE_NAME	"mgd77path"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Return paths to MGD77 cruises and directories"
 #define THIS_MODULE_KEYS	">T}"
-
-#include "gmt_dev.h"
-#include "mgd77.h"
-
-#define GMT_PROG_OPTIONS "-V"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-V"
 
 struct MGD77PATH_CTRL {	/* All control options for this program (except common args) */
 	/* active is true if the option has been activated */
@@ -164,8 +164,8 @@ int GMT_mgd77path (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	

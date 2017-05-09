@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegy.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: pssegy.c 17798 2017-03-27 04:50:17Z pwessel $
  *
  *    Copyright (c) 1999-2017 by T. Henstock
  *    See README file for copying and redistribution conditions.
@@ -30,15 +30,15 @@
  * of the GNU LGPL license.
  */
 
+#include "gmt_dev.h"
+#include "segy_io.h"
+
 #define THIS_MODULE_NAME	"pssegy"
 #define THIS_MODULE_LIB		"segy"
 #define THIS_MODULE_PURPOSE	"Plot a SEGY file on a map"
 #define THIS_MODULE_KEYS	">X}"
-
-#include "gmt_dev.h"
-#include "segy_io.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcpt"
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYpt" GMT_OPT("c")
 
 #define B_ID	0	/* Indices into Q values */
 #define I_ID	1
@@ -135,7 +135,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "usage: pssegy [<segyfile>] -D<dev> -F<color> | -W %s\n", GMT_Jx_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [-A] [-C<clip>] [-E<slop>] [-I] [-K] [-L<nsamp>]\n", GMT_Rx_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-M<ntraces>] [-N] [-O] [-P] [-Q<mode><value>] [-S<header>] [-T<tracefile>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W] [%s]\n\t[%s] [-Z] [%s]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W] [%s]\n\t[%s] [-Z]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_p_OPT, GMT_t_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -169,7 +169,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Pot wiggle trace (must specify either -W or -F).\n");
 	GMT_Option (API, "X");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Suppress plotting traces whose rms amplitude is 0.\n");
-	GMT_Option (API, "c,p,t,.");
+	GMT_Option (API, "p,t,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -484,8 +484,8 @@ int GMT_pssegy (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 

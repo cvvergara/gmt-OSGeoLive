@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------
- *	$Id: x2sys_solve.c 17503 2017-01-30 23:14:43Z pwessel $
+ *	$Id: x2sys_solve.c 17798 2017-03-27 04:50:17Z pwessel $
  *
  *      Copyright (c) 1999-2017 by P. Wessel
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -32,14 +32,16 @@
 
 /* #define DEBUGX */	/* Uncomment for testing */
 
+#include "gmt_dev.h"
+#include "mgd77/mgd77.h"
+#include "x2sys.h"
+
 #define THIS_MODULE_NAME	"x2sys_solve"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Determine least-squares systematic correction from crossovers"
 #define THIS_MODULE_KEYS	">T}"
-
-#include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->Vbd" GMT_ADD_x_OPT
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->Vbd" GMT_ADD_x_OPT
 
 #define N_COE_PARS	12	/* Total number of items that might be known at each crossover */
 #define COL_COE		0	/* The crossover value in whatever field we are studying */
@@ -346,10 +348,10 @@ GMT_LOCAL uint64_t next_unused_track (uint64_t *cluster, uint64_t n) {
 }
 
 int GMT_x2sys_solve (void *V_API, int mode, void *args) {
-	char **trk_list = NULL, text[GMT_BUFSIZ] = {""};
+	char **trk_list = NULL, text[GMT_BUFSIZ] = {""}, frmt_name[8] = {""};
 	char trk[2][GMT_LEN64], t_txt[2][GMT_LEN64], z_txt[GMT_LEN64] = {""}, w_txt[GMT_LEN64] = {""}, line[GMT_BUFSIZ] = {""};
 	bool grow_list = false, normalize = false, active_col[N_COE_PARS];
-	int *ID[2] = {NULL, NULL}, ks, t, error = 0, expect;
+	int *ID[2] = {NULL, NULL}, ks, t, error = 0, expect, max_len;
 	uint64_t n_par = 0, n, m, n_tracks = 0, n_active, n_expected_fields, n_constraints = 0;
 	uint64_t i, p, j, k, r, s, row_off, row, n_COE = 0, *R = NULL, *col_off = NULL, *cluster = NULL;
 	size_t n_alloc = GMT_INITIAL_MEM_ROW_ALLOC, n_alloc_t = GMT_CHUNK;
@@ -379,8 +381,8 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -904,9 +906,15 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 
+	/* Calculate the format string for the cruise name so that the printed table is better formatted */
+	max_len = 0;
+	for (p = 0; p < n_tracks; p++)
+		max_len = MAX(max_len, (int)strlen(trk_list[p])+1);
+	sprintf (frmt_name, "%%-%ds", max_len+2);
+
 	for (p = 0; p < n_tracks; p++) {
 		if (normalize) a[col_off[p]+1] /= range;	/* Unnormalize slopes */
-		(GMT->common.b.active[GMT_IN]) ? sprintf (line, "%" PRIu64, p) : sprintf (line, "%s", trk_list[p]);
+		(GMT->common.b.active[GMT_IN]) ? sprintf (line, "%" PRIu64, p) : sprintf (line, frmt_name, trk_list[p]);
 		strcat (line, "\t");
 		strcat (line, Ctrl->C.col);
 		gmt_M_memset (var, N_BASIS, double);	/* Reset all parameters to zero */
@@ -919,7 +927,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 				sprintf (text, "\t%g\t%g*((time-T))\n", var[0], var[1]);
 				break;
 			case F_IS_DRIFT_D:
-				sprintf (text, "\t%g\t%g*((dist))\n", var[0], var[1]);
+				sprintf (text, "\t% 10.4f\t% g*((dist))\n", var[0], var[1]);
 				break;
 			case F_IS_GRAV1930:
 				sprintf (text, "\t%g\t%g*sin((lat))^2\n", var[0], var[1]);

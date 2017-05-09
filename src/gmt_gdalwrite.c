@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalwrite.c 17467 2017-01-23 01:57:23Z pwessel $
+ *	$Id: gmt_gdalwrite.c 17468 2017-01-23 01:58:14Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.

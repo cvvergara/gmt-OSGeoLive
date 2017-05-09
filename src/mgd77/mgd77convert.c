@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77convert.c 17496 2017-01-28 23:56:41Z pwessel $
+ *	$Id: mgd77convert.c 17811 2017-03-28 20:21:14Z pwessel $
  *
  *    Copyright (c) 2005-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -21,17 +21,17 @@
  *
  */
  
+#include "gmt_dev.h"
+#include "mgd77.h"
+
 #define THIS_MODULE_NAME	"mgd77convert"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Convert MGD77 data to other file formats"
 #define THIS_MODULE_KEYS	""
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-V"
 
-#include "gmt_dev.h"
-#include "mgd77.h"
-
-#define GMT_PROG_OPTIONS "-V"
-
-void MGD77_select_high_resolution (struct GMT_CTRL *GMT);
+EXTERN_MSC void MGD77_select_high_resolution (struct GMT_CTRL *GMT);
 
 struct MGD77CONVERT_CTRL {	/* All control options for this program (except common args) */
 	/* active is true if the option has been activated */
@@ -232,8 +232,8 @@ int GMT_mgd77convert (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 	
@@ -333,7 +333,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args) {
 		}
 		if (!access (file, R_OK)) {	/* File exists */
 			if (Ctrl->T.mode) {	/* Must delete the file first */
-				if (remove (file)) {	/* Oops, removal failed */
+				if (gmt_remove_file (GMT, file)) {	/* Oops, removal failed */
 					GMT_Report (API, GMT_MSG_NORMAL, "Unable to remove existing file %s - skipping the conversion\n", file);
 					MGD77_Close_File (GMT, &M);
 					MGD77_Free_Dataset (GMT, &D);	/* Free memory allocated by MGD77_Read_File */

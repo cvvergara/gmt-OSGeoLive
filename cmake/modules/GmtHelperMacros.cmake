@@ -1,5 +1,5 @@
 #
-# $Id: GmtHelperMacros.cmake 17449 2017-01-16 21:27:04Z pwessel $
+# $Id: GmtHelperMacros.cmake 17451 2017-01-16 21:36:06Z pwessel $
 #
 # - Useful CMake macros
 #

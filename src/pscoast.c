@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pscoast.c 17630 2017-03-07 20:45:58Z pwessel $
+ *	$Id: pscoast.c 17831 2017-03-31 22:28:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -51,15 +51,14 @@
  *
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"pscoast"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot continents, countries, shorelines, rivers, and borders on maps"
 #define THIS_MODULE_KEYS	">X},>DM,>TE+w-rR"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYbcdptxy" GMT_OPT("Z")
-
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYbdptxy" GMT_OPT("Zc")
 
 #define LAKE	0
 #define RIVER	1
@@ -177,8 +176,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: pscoast %s %s [%s]\n", GMT_B_OPT, GMT_J_OPT, GMT_A_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-C[<feature>/]<fill>]\n\t[-D<resolution>][+] [-E%s] -G[<fill>]]\n", GMT_Rgeoz_OPT, DCW_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: pscoast %s [%s] [%s]\n", GMT_J_OPT, GMT_A_OPT, GMT_B_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-C[<feature>/]<fill>]\n\t[-D<resolution>][+] [-E%s] [-G[<fill>]]\n", GMT_Rgeoz_OPT, DCW_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s]\n", GMT_PANEL);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-I<feature>[/<pen>]] [%s] [-K]\n", GMT_Jz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L%s]\n", GMT_SCALE);
@@ -186,7 +185,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Td%s]\n\t[-Tm%s]\n", GMT_TROSE_DIR, GMT_TROSE_MAG);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W[<feature>/][<pen>]]\n", GMT_U_OPT, GMT_V_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n", GMT_X_OPT, GMT_Y_OPT, GMT_bo_OPT, GMT_do_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n", GMT_c_OPT, GMT_p_OPT, GMT_t_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n", GMT_p_OPT, GMT_t_OPT, GMT_colon_OPT);
 #ifdef DEBUG
 	GMT_Message (API, GMT_TIME_NONE, "\t[-+<bin>]\n");
 #endif
@@ -258,7 +257,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t      3 = Island in lakes shores.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      4 = Lake in island in lake shores.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   When feature-specific pens are used, those not set are deactivated.\n");
-	GMT_Option (API, "X,bo,do,c,p,t");
+	GMT_Option (API, "X,bo,do,p,t");
 #ifdef DEBUG
 	GMT_Message (API, GMT_TIME_NONE, "\t-+ Print only a single bin (debug option).\n");
 #endif
@@ -505,13 +504,13 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCOAST_CTRL *Ctrl, struct GMT
 	if (Ctrl->C.active && !(Ctrl->G.active || Ctrl->S.active || Ctrl->W.active)) {	/* Just lakes, fix -A */
 		if (Ctrl->A.info.low < 2) Ctrl->A.info.low = 2;
 	}
-	if (!GMT->common.R.active && Ctrl->E.active && Ctrl->M.active && !Ctrl->E.info.region) Ctrl->E.info.region = true;	/* For -M and -E with no plotting, get -R from pols */
+	if (!GMT->common.R.active[RSET] && Ctrl->E.active && Ctrl->M.active && !Ctrl->E.info.region) Ctrl->E.info.region = true;	/* For -M and -E with no plotting, get -R from pols */
 	if (Ctrl->E.info.region) {	/* Must pick up region from chosen polygons */
-		if (GMT->common.R.active)
+		if (GMT->common.R.active[RSET])
 			GMT_Report (API, GMT_MSG_VERBOSE, "Warning -E option: The -R option overrides the region found via -E.\n");
 		else {	/* Pick up region from chosen polygons */
 			(void) gmt_DCW_operation (GMT, &Ctrl->E.info, GMT->common.R.wesn, GMT_DCW_REGION);
-			GMT->common.R.active = true;
+			GMT->common.R.active[RSET] = true;
 			if (Ctrl->E.info.report || (!GMT->common.J.active && !Ctrl->M.active)) {	/* +w OR No plotting or no dumping means just return the -R string */
 				char record[GMT_BUFSIZ] = {"-R"}, text[GMT_LEN64] = {""};
 				size_t i, j;
@@ -547,10 +546,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCOAST_CTRL *Ctrl, struct GMT
 
 	clipping = (Ctrl->G.clip || Ctrl->S.clip);
 	if (Ctrl->M.active) {	/* Need -R only */
-		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	}
 	else if (!Ctrl->Q.active) {	/* Need -R -J */
-		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 		n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
 	}
 	for (k = 0; k < GSHHS_MAX_LEVEL; k++) {
@@ -711,8 +710,8 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);		/* Allocate and initialize defaults in a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) {
 		if (error == NOT_REALLY_AN_ERROR) Return (0);

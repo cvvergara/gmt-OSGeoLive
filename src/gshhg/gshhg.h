@@ -1,4 +1,4 @@
-/*	$Id: gshhg.h 17449 2017-01-16 21:27:04Z pwessel $
+/*	$Id: gshhg.h 17451 2017-01-16 21:36:06Z pwessel $
  *
  * Include file defining structures used in the binary GSHHG files
  *

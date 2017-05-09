@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_esri_io.c 17480 2017-01-23 04:14:33Z pwessel $
+ *	$Id: gmt_esri_io.c 18123 2017-05-04 17:44:37Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -329,10 +329,12 @@ GMT_LOCAL int esri_read_info (struct GMT_CTRL *GMT, FILE *fp, struct GMT_GRID_HE
 
 		header->bits = 32;	/* Those float binary files */
 		/* Ok, now as mentioned above undo the file pointer swapping (point again to data file) */
+		gmt_fclose (GMT, fp);
 		fp = fpBAK;
 		gmt_fclose (GMT, fp2);
 	}
 
+	if (fp2) gmt_fclose(GMT, fp2);
 	return (GMT_NOERROR);
 }
 

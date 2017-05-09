@@ -1,5 +1,5 @@
 /*
- * $Id: dimfilter.c 17560 2017-02-17 22:05:42Z pwessel $
+ * $Id: dimfilter.c 18171 2017-05-07 02:37:02Z pwessel $
  *
  * dimfilter.c  reads a grdfile and creates filtered grd file
  *
@@ -20,14 +20,14 @@
  * 9(Q03005), doi:10.1029/2007GC001850.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"dimfilter"
 #define THIS_MODULE_LIB		"misc"
 #define THIS_MODULE_PURPOSE	"Directional filtering of grids in the space domain"
 #define THIS_MODULE_KEYS	"<G{,GG},>DQ"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:RVfh"
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:RVfh"
 
 struct DIMFILTER_INFO {
 	int n_columns;			/* The max number of filter weights in x-direction */
@@ -67,10 +67,6 @@ struct DIMFILTER_CTRL {
 		bool active;
 		char *file;
 	} G;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct N {	/* -N */
 		bool active;
 		unsigned int n_sectors;
@@ -227,11 +223,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, struct G
 					n_errors++;
 				break;
 			case 'I':
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'N':	/* Scan: Option to set the number of sections and how to reduce the sector results to a single value */
 				Ctrl->N.active = true;
@@ -281,8 +273,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct DIMFILTER_CTRL *Ctrl, struct G
 
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->In.file, "Syntax error: Must specify input file\n");
 	if (!Ctrl->Q.active) {
-		gmt_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
-		n_errors += gmt_M_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");
+		//gmt_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
+		n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");
 		n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G option: Must specify output file\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->F.width <= 0.0, "Syntax error -F option: Correct syntax: -FX<width>, with X one of bcgmp, width is filter fullwidth\n");
 		n_errors += gmt_M_check_condition (GMT, Ctrl->N.n_sectors == 0, "Syntax error -N option: Correct syntax: -NX<nsectors>, with X one of luamp, nsectors is number of sectors\n");
@@ -419,8 +411,8 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy);	/* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error);	/* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -431,7 +423,7 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 
 	if (!Ctrl->Q.active) {
 
-		if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
+		if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
 		gmt_grd_init (GMT, Gin->header, options, true);	/* Update command history only */
@@ -445,11 +437,11 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 			one_or_zero = (Gin->header->registration == GMT_GRID_PIXEL_REG) ? 0 : 1;
 
 		/* Use the -R region for output if set; otherwise match grid domain */
-		gmt_M_memcpy (wesn, (GMT->common.R.active ? GMT->common.R.wesn : Gin->header->wesn), 4, double);
+		gmt_M_memcpy (wesn, (GMT->common.R.active[RSET] ? GMT->common.R.wesn : Gin->header->wesn), 4, double);
 		full_360 = (Ctrl->D.mode && gmt_M_grd_is_global (GMT, Gin->header));	/* Periodic geographic grid */
 
-		if (Ctrl->I.active)
-			gmt_M_memcpy (inc, Ctrl->I.inc, 2, double);
+		if (GMT->common.R.active[ISET])
+			gmt_M_memcpy (inc, GMT->common.R.inc, 2, double);
 		else
 			gmt_M_memcpy (inc, Gin->header->inc, 2, double);
 
@@ -468,7 +460,7 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 		last_median = 0.5 * (Gin->header->z_min + Gin->header->z_max);
 		z_min = Gin->header->z_min;	z_max = Gin->header->z_max;
 
-		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc, \
+		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, wesn, inc, \
 			!one_or_zero, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 		/* We can save time by computing a weight matrix once [or once pr scanline] only
@@ -916,14 +908,14 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Write filtered grid\n");
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Gout)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Gout) != GMT_NOERROR) {
 			Return (API->error);
 		}
 #ifdef OBSOLETE
 		if (Ctrl->S.active) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Write scale grid\n");
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Sout)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->S.file, Sout) != GMT_NOERROR) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->S.file, Sout) != GMT_NOERROR) {
 				Return (API->error);
 			}
 		}
@@ -1012,7 +1004,7 @@ int GMT_dimfilter (void *V_API, int mode, void *args) {
 				if (err_workarray[i] > err_max) err_max=err_workarray[i];
 			}
 			gmt_median (GMT, err_workarray, Ctrl->Q.err_cols, err_min, err_max, err_null_median, &err_mad);
-			err_mad *= 1.4826;
+			err_mad *= MAD_NORMALIZE;
 
 			/* calculate MEAN for each row */
 			out[0] = err_median;

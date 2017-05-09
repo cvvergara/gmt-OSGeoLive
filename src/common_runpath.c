@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: common_runpath.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: common_runpath.c 17916 2017-04-13 15:44:29Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -60,6 +60,10 @@
 #include "common_runpath.h"
 
 /* #define DEBUG_RUNPATH */
+
+#ifndef gmt_M_unused
+#	define gmt_M_unused(x) (void)(x)
+#endif
 
 #define gmt_M_str_free(ptr) (free((void *)(ptr)),(ptr)=NULL)
 
@@ -375,14 +379,15 @@ char *gmt_guess_sharedir (char *sharedir, const char *runtime_bindir) {
 
 /* Verifies the correct version of the share directory */
 int gmt_verify_sharedir_version (const char *dir) {
-	static char *required_version = GMT_PACKAGE_VERSION_WITH_SVN_REVISION;
-	char version_file[PATH_MAX+1];
 
 #ifdef NO_SHAREDIR_VERIFY
 	/* For Mirone and probably other future external program call one cannot impose
 	 * a certain sharedir version. */
+	gmt_M_unused(dir);
 	return true;
 #else
+	static char *required_version = GMT_PACKAGE_VERSION_WITH_SVN_REVISION;
+	char version_file[PATH_MAX+1];
 
 #ifdef DEBUG_RUNPATH
 	fprintf (stderr, "gmt_verify_sharedir_version: got dir '%s'.\n", dir);

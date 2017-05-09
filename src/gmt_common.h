@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_common.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_common.h 18133 2017-05-05 04:30:51Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -50,6 +50,11 @@ enum GMT_enum_gaps {GMT_NEGGAP_IN_COL = 0,	/* Check if previous minus current co
 #define GMT_SHORTHAND_OPTIONS	"BJRXYcp"	/* All of the shorthand options */
 #define GMT_CRITICAL_OPT_ORDER	"V-JfrRb"	/* If given options among these must be parsed first and in this order */
 
+#define RSET	0	/* Index into R.active[] for -R */
+#define ISET	1	/* Index into R.active[] for -I (or similar option) */
+#define GSET	2	/* Index into R.active[] for -r */
+#define FSET	3	/* Index into R.active[] for "got -R -I -r from a grid file" */
+
 /*! Structure with all information given via the common GMT command-line options -R -J .. */
 struct GMT_COMMON {
 	struct synopsis {	/* \0 (zero) or ^ */
@@ -61,15 +66,12 @@ struct GMT_COMMON {
 		int mode;	/* 5 = GMT 5 syntax, 4 = GMT 4 syntax, 1 = Either, -1 = mix (error), 0 = not set yet */
 		char string[2][GMT_LEN256];
 	} B;
-	struct API_I {	/* -I<xinc>[/<yinc>] grids only, and for API use only */
-		bool active;
-		double inc[2];
-	} API_I;
 	struct J {	/* -J<params> */
 		bool active, zactive;
 		unsigned int id;
 		double par[6];
 		char string[GMT_LEN256];
+		char zstring[GMT_LEN256];	/* For -Jz|Z */
 	} J;
 	struct K {	/* -K */
 		bool active;
@@ -80,11 +82,13 @@ struct GMT_COMMON {
 	struct P {	/* -P */
 		bool active;
 	} P;
-	struct R {	/* -Rw/e/s/n[/z_min/z_max][r] */
-		bool active;
+	struct R {	/* -Rw/e/s/n[/z_min/z_max][r] or -Rgridfile */
+		bool active[4];	/* 0 = -R, 1 = inc, 2 = -r, 3 = read grid */
 		bool oblique;	/* true when -R...r was given (oblique map, probably), else false (map borders are meridians/parallels) */
+		uint32_t registration;	/* Registration mode of a grid given via -Rgrid; only consulted if active[FSET] == true */
 		double wesn[6];		/* Boundaries of west, east, south, north, low-z and hi-z */
 		double wesn_orig[4];	/* Original Boundaries of west, east, south, north (oblique projection may reset wesn above) */
+		double inc[2];	/* For grid increments set via -Idx/dy or implicitly via -Ggrid */
 		char string[GMT_LEN256];
 	} R;
 	struct U {	/* -U */
@@ -127,6 +131,7 @@ struct GMT_COMMON {
 						   0 means it will be determined by program */
 		char type[2];			/* Default column type, if set [d for double] */
 		char varnames[GMT_BUFSIZ];	/* List of variable names to be input/output in netCDF mode [GMT4 COMPATIBILITY ONLY] */
+		char string[GMT_LEN256];
 	} b;
 	struct c {	/* -c */
 		bool active;
@@ -136,9 +141,16 @@ struct GMT_COMMON {
 		bool active[2];
 		bool is_zero[2];
 		double nan_proxy[2];
+		char string[GMT_LEN64];
 	} d;
+	struct e {	/* -e[~]\"search string\"] */
+		bool active;
+		char string[GMT_LEN256];
+		struct GMT_TEXT_SELECTION *select;
+	} e;
 	struct f {	/* -f[i|o]<col>|<colrange>[t|T|g],.. */
 		bool active[2];	/* For GMT_IN|OUT */
+		char string[GMT_LEN64];
 	} f;
 	struct g {	/* -g[+]x|x|y|Y|d|Y<gap>[unit]  */
 		bool active;
@@ -149,19 +161,24 @@ struct GMT_COMMON {
 		int64_t col[GMT_N_GAP_METHODS];		/* Which column to use (-1 for x,y distance) */
 		double gap[GMT_N_GAP_METHODS];		/* The critical distances for each criteria */
 		double (*get_dist[GMT_N_GAP_METHODS]) (struct GMT_CTRL *GMT, uint64_t);	/* Pointers to functions that compute those distances */
+		char string[GMT_LEN64];
 	} g;
-	struct h {	/* -h[i|o][<nrecs>][+d][+c][+r<remark>][+t<title>] */
+	struct h {	/* -h[i|o][<nrecs>][+d][+c][+m[<text>]][+r<remark>][+t<title>] */
 		bool active;
 		bool add_colnames;
 		unsigned int mode;
 		unsigned int n_recs;
 		char *title;
 		char *remark;
-		char *colnames;	/* Not set by -h but maintained here */
+		char *colnames;         /* Not set by -h but maintained here */
+		char *multi_segment;    /* To hold a multi-segment string */
+		char string[GMT_LEN256];
 	} h;
 	struct i {	/* -i<col>|<colrange>,... */
 		bool active, orig;
 		uint64_t n_cols;
+		uint64_t n_actual_cols;
+		char string[GMT_LEN64];
 	} i;
 	struct n {	/* -n[b|c|l|n][+a][+b<BC>][+c][+t<threshold>] */
 		bool active;
@@ -177,15 +194,14 @@ struct GMT_COMMON {
 		bool active;
 		uint64_t n_cols;
 	} o;
-	struct p {	/* -p<az>/<el>[+wlon0/lat0[/z0]][+vx0[cip]/y0[cip]] */
+	struct p {	/* -p<az>[/<el>[/<z0>]]+wlon0/lat0[/z0]][+vx0[cip]/y0[cip]] */
 		bool active;
+		bool do_z_rotation;	/* true if rotating plot about a vertical axis */
+		double z_rotation;	/* Rotation of <angle> about vertical axis */
 	} p;
-	struct r {	/* -r */
-		bool active;
-		unsigned int registration;
-	} r;
 	struct s {	/* -s[r] */
 		bool active;
+		char string[GMT_LEN64];
 	} s;
 	struct t {	/* -t<transparency> */
 		bool active;
@@ -198,6 +214,7 @@ struct GMT_COMMON {
 	struct colon {	/* -:[i|o] */
 		bool active;
 		bool toggle[2];
+		char string[2][GMT_LEN16];
 	} colon;
 };
 

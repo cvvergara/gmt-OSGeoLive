@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: greenspline.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: greenspline.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -46,14 +46,14 @@
  * support in greenspline and the matrix solvers in gmt_vector.c.  Requires open MP support and use of -x.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"greenspline"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Interpolate using Green's functions for splines in 1-3 dimensions"
 #define THIS_MODULE_KEYS	"<D{,AD(=,ED),ND(,TG(,CD)=f,G?},GDN"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdfghiors" GMT_OPT("FH") GMT_ADD_x_OPT
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:>Vbdefghiors" GMT_OPT("FH") GMT_ADD_x_OPT
 
 EXTERN_MSC int gmtlib_cspline (struct GMT_CTRL *GMT, double *x, double *y, uint64_t n, double *c);
 
@@ -65,8 +65,9 @@ struct GREENSPLINE_CTRL {
 		unsigned int mode;	/* 0 = azimuths, 1 = directions, 2 = dx,dy components, 3 = dx, dy, dz components */
 		char *file;
 	} A	;
-	struct C {	/* -C[n|v]<cutoff>[+f<file>] */
+	struct C {	/* -C[n|r|v]<cutoff>[+f<file>] */
 		bool active;
+		unsigned int movie;	/* Undocumented and not-yet-working movie mode +m incremental grids, +M total grids vs eigenvalue */
 		unsigned int mode;
 		double value;
 		char *file;
@@ -215,8 +216,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "usage: greenspline [<table>] -G<outfile> [-A<gradientfile>+f<format>] [-E[<misfittable>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-I<dx>[/<dy>[/<dz>]] [-C[n|r|v]<val>[+f<file>]] [-D<mode>] [-L] [-N<nodefile>] [-Q<az>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-R<xmin>/<xmax[/<ymin>/<ymax>[/<zmin>/<zmax>]]][-Sc|l|t|r|p|q[<pars>]] [-T<maskgrid>] [%s]\n", GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-W[w]] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]%s[%s]\n\n",
-		GMT_bi_OPT, GMT_d_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-W[w]] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]%s[%s]\n\n",
+		GMT_bi_OPT, GMT_d_OPT, GMT_e_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -286,7 +287,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Note this will only have an effect if -C is used.\n");
 	GMT_Option (API, "V,bi");
 	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is 2-5 input columns depending on dimensionality (see -D) and weights (see -W).\n");
-	GMT_Option (API, "d,g,h,i,o,r,s,x,:,.");
+	GMT_Option (API, "d,e,g,h,i,o,r,s,x,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -312,7 +313,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 				break;
 
 			case 'R':	/* Normally processed internally but must be handled separately since it can take 1,2,3 dimensions */
-				GMT->common.R.active = true;
+				GMT->common.R.active[RSET] = true;
 				Ctrl->R3.dimension = 1;	/* At least */
 
 				if (opt->arg[0] == 'g' && opt->arg[1] == '\0') {	/* Got -Rg */
@@ -347,7 +348,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 				}
 				if (!gmt_access (GMT, opt->arg, R_OK)) {	/* Gave a readable file, presumably a grid */
 					struct GMT_GRID *G = NULL;
-					if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, opt->arg, NULL)) == NULL) {	/* Get header only */
+					if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, opt->arg, NULL)) == NULL) {	/* Get header only */
 						return (API->error);
 					}
 					Ctrl->R3.range[0] = G->header->wesn[XLO]; Ctrl->R3.range[1] = G->header->wesn[XHI];
@@ -385,13 +386,11 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 
 			case 'A':	/* Gradient data: -A<gradientfile>+f<format> */
 				Ctrl->A.active = true;
-				k = 0;
 				if (strchr (opt->arg, ',')) {	/* Old syntax: Specified a particular format with -A<mode>,<file> */
 					if (gmt_M_compat_check (API->GMT, 5)) {
 						GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -A<format>,<gradientfile> is deprecated; use -A<gradientfile>+f<format> instead\n");
 						Ctrl->A.mode = (int)(opt->arg[0] - '0');
-						k = 2;
-						Ctrl->A.file = strdup (&opt->arg[k]);
+						Ctrl->A.file = strdup (&opt->arg[2]);
 					}
 					else {
 						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -A option: Expect -A>gradientfile>+f<format>\n");
@@ -424,6 +423,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 				k = (Ctrl->C.mode) ? 1 : 0;
 				if (gmt_get_modifier (opt->arg, 'f', p))
 					Ctrl->C.file = strdup (p);
+				if (gmt_get_modifier (opt->arg, 'm', p))
+					Ctrl->C.movie = 1;
+				else if (gmt_get_modifier (opt->arg, 'M', p))
+					Ctrl->C.movie = 2;
 				if (strchr (opt->arg, '/')) {	/* Old-style file specification */
 					if (gmt_M_compat_check (API->GMT, 5)) {	/* OK */
 						sscanf (&opt->arg[k], "%lf/%s", &Ctrl->C.value, p);
@@ -563,7 +566,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 				if ((Ctrl->T.active = gmt_check_filearg (GMT, 'T', opt->arg, GMT_IN, GMT_IS_GRID)) != 0) {	/* Obtain -R -I -r from file */
 					struct GMT_GRID *G = NULL;
 					Ctrl->T.file = strdup (opt->arg);
-					if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, opt->arg, NULL)) == NULL) {	/* Get header only */
+					if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, opt->arg, NULL)) == NULL) {	/* Get header only */
 						return (API->error);
 					}
 					Ctrl->R3.range[0] = G->header->wesn[XLO]; Ctrl->R3.range[1] = G->header->wesn[XHI];
@@ -575,7 +578,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 					if (GMT_Destroy_Data (API, &G) != GMT_NOERROR) {
 						return (API->error);
 					}
-					GMT->common.R.active = true;
+					GMT->common.R.active[RSET] = true;
 				}
 				else
 					n_errors++;
@@ -617,19 +620,19 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 			Ctrl->I.active = true;
 		}
 		/* Here, -r means toggle the grids registration */
-		if (GMT->common.r.active) {
-			GMT->common.r.active = !Ctrl->R3.offset;
-			GMT->common.r.registration = !Ctrl->R3.offset;
+		if (GMT->common.R.active[GSET]) {
+			GMT->common.R.active[GSET] = !Ctrl->R3.offset;
+			GMT->common.R.registration = !Ctrl->R3.offset;
 		}
 		else {
-			GMT->common.r.active = Ctrl->R3.offset;
-			GMT->common.r.registration = Ctrl->R3.offset;
+			GMT->common.R.active[GSET] = Ctrl->R3.offset;
+			GMT->common.R.registration = Ctrl->R3.offset;
 		}
 	}
 
 	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && gmt_access (GMT, Ctrl->A.file, R_OK), "Syntax error -A: Cannot read file %s!\n", Ctrl->A.file);
 	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && Ctrl->A.mode > 5, "Syntax error -A: format must be in 0-5 range\n");
-	n_errors += gmt_M_check_condition (GMT, !(GMT->common.R.active || Ctrl->N.active || Ctrl->T.active), "Syntax error: No output locations specified (use either [-R -I], -N, or -T)\n");
+	n_errors += gmt_M_check_condition (GMT, !(GMT->common.R.active[RSET] || Ctrl->N.active || Ctrl->T.active), "Syntax error: No output locations specified (use either [-R -I], -N, or -T)\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->R3.mode && dimension != 2, "Syntax error: The -R<gridfile> or -T<gridfile> option only applies to 2-D gridding\n");
 #ifdef DEBUG
 	n_errors += gmt_M_check_condition (GMT, !TEST && !Ctrl->N.active && Ctrl->R3.dimension != dimension, "Syntax error: The -R and -D options disagree on the dimension\n");
@@ -648,7 +651,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GREENSPLINE_CTRL *Ctrl, struct
 	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && dimension != 2, "Syntax error -T option: Only applies to 2-D gridding\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->N.active && !Ctrl->N.file, "Syntax error -N option: Must specify node file name\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->N.active && Ctrl->N.file && gmt_access (GMT, Ctrl->N.file, R_OK), "Syntax error -N: Cannot read file %s!\n", Ctrl->N.file);
-	n_errors += gmt_M_check_condition (GMT, (Ctrl->I.active + GMT->common.R.active) == 1 && dimension == 2, "Syntax error: Must specify -R, -I, [-r], -G for gridding\n");
+	n_errors += gmt_M_check_condition (GMT, (Ctrl->I.active + GMT->common.R.active[RSET]) == 1 && dimension == 2, "Syntax error: Must specify -R, -I, [-r], -G for gridding\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
@@ -666,7 +669,6 @@ GMT_LOCAL void dump_green (struct GMT_CTRL *GMT, double (*G) (struct GMT_CTRL *,
 	dx = (x1 - x0) / (N - 1);
 	for (i = 0; i < N; i++) {
 		x = x0 + i * dx;
-		t = (x0 < 0.0) ? acosd (x) : x;
 		y = G (GMT, x, par, Lz);
 		dy = D (GMT, x, par, Lg);
 		if (y < min_y) min_y = y;
@@ -1367,9 +1369,9 @@ GMT_LOCAL double get_dircosine (struct GMT_CTRL *GMT, double *D, double *X0, dou
 
 int GMT_greenspline (void *V_API, int mode, void *args) {
 	uint64_t col, row, n_read, p, k, i, j, seg, m, n, nm, n_ok = 0, ij, ji, ii, n_duplicates = 0, n_skip = 0;
-	unsigned int dimension = 0, normalize = 0, unit = 0, n_cols, w_col, L_Max = 0;
+	unsigned int dimension = 0, normalize = 0, n_cols, w_col, L_Max = 0;
 	size_t old_n_alloc, n_alloc;
-	int error, out_ID, way, n_columns;
+	int error, out_ID, way, n_columns, n_use;
 	bool delete_grid = false, check_longitude, skip;
 
 	char *method[N_METHODS] = {"minimum curvature Cartesian spline [1-D]",
@@ -1384,8 +1386,8 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 		"continuous curvature spherical spline in tension",
 		"linear Cartesian spline [1-D]",
 		"bilinear Cartesian spline [2-D]"};
-	char *mem_unit[3] = {"kb", "Mb", "Gb"};
 
+	double *v = NULL, *s = NULL, *b = NULL, *ssave = NULL, eig_max = 0.0, limit;
 	double *obs = NULL, **D = NULL, **X = NULL, *alpha = NULL, *in = NULL, *orig_obs = NULL;
 	double mem, part, C, p_val, r, par[N_PARAMS], norm[GSP_LENGTH], az = 0, grad, weight_col, weight_row;
 	double *A = NULL, r_min, r_max, err_sum = 0.0;
@@ -1421,8 +1423,8 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -1512,10 +1514,9 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 				gmt_M_free (GMT, X);	gmt_M_free (GMT, obs);
 				Return (GMT_RUNTIME_ERROR);
 			}
-			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
-				continue;
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			continue;							/* Go back and read the next record */
 		}
 
 		/* Data record to process */
@@ -1769,7 +1770,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 		            PRIu64 " set of linear equations\n", n, m, nm, nm);
 
 	if (Ctrl->T.file) {	/* Existing grid that will have zeros and NaNs, only */
-		if ((Grid = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->T.file, NULL)) == NULL) {	/* Get header only */
+		if ((Grid = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->T.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
 		if (!(Grid->header->wesn[XLO] == Ctrl->R3.range[0] && Grid->header->wesn[XHI] == Ctrl->R3.range[1] &&
@@ -1781,11 +1782,11 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: The mask grid resolution does not match your specified grid spacing\n");
 			Return (GMT_RUNTIME_ERROR);
 		}
-		if (! (Grid->header->registration == GMT->common.r.registration)) {
+		if (! (Grid->header->registration == GMT->common.R.registration)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error: The mask grid registration does not match your specified grid registration\n");
 			Return (GMT_RUNTIME_ERROR);
 		}
-		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->T.file, Grid) == NULL) {	/* Get data */
+		if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, Ctrl->T.file, Grid) == NULL) {	/* Get data */
 			Return (API->error);
 		}
 		(void)gmt_set_outgrid (GMT, Ctrl->T.file, false, Grid, &Out);	/* true if input is a read-only array; otherwise Out is just a pointer to Grid */
@@ -1808,8 +1809,8 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 	}
 	else {	/* Fill in an equidistant output table or grid */
 		if (dimension == 2) {	/* Need a full-fledged Grid creation since we are writing it to who knows where */
-			if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->R3.range, Ctrl->I.inc, \
-				GMT->common.r.registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
+			if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->R3.range, Ctrl->I.inc, \
+				GMT->common.R.registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 			n_ok = Grid->header->nm;
 			Z.nz = 1;	/* So that output logic will work for 1-D */
 		}
@@ -1817,7 +1818,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 			if ((Grid = gmt_create_grid (GMT)) == NULL) Return (API->error);
 			delete_grid = true;
 			Grid->header->wesn[XLO] = Ctrl->R3.range[0];	Grid->header->wesn[XHI] = Ctrl->R3.range[1];
-			Grid->header->registration = GMT->common.r.registration;
+			Grid->header->registration = GMT->common.R.registration;
 			Grid->header->inc[GMT_X] = Ctrl->I.inc[GMT_X];
 			Z.nz = Grid->header->n_rows = 1;	/* So that output logic will work for 1-D */
 			if (dimension == 3) {
@@ -1979,10 +1980,8 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 	 * are scaled by weight_row.
 	 */
 
-	mem = ((double)nm * (double)nm * (double)sizeof (double)) / 1024.0;	/* In kb */
-	unit = 0;
-	while (mem > 1024.0 && unit < 2) { mem /= 1024.0; unit++; }	/* Select next unit */
-	GMT_Report (API, GMT_MSG_VERBOSE, "Square matrix requires %.1f %s\n", mem, mem_unit[unit]);
+	mem = (double)nm * (double)nm * (double)sizeof (double);	/* In bytes */
+	GMT_Report (API, GMT_MSG_VERBOSE, "Square matrix requires %s\n", gmt_memory_use ((size_t)mem, 1));
 	A = gmt_M_memory (GMT, NULL, nm * nm, double);
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Build linear system using %s\n", method[Ctrl->S.mode]);
@@ -2051,8 +2050,7 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 	}
 
 	if (Ctrl->C.active) {		/* Solve using svd decomposition */
-		int n_use, error;
-		double *v = NULL, *s = NULL, *b = NULL, eig_max = 0.0, limit;
+		int error;
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Solve linear equations by SVD\n");
 #ifndef HAVE_LAPACK
@@ -2062,10 +2060,13 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 		v = gmt_M_memory (GMT, NULL, nm * nm, double);
 		s = gmt_M_memory (GMT, NULL, nm, double);
 		if ((error = gmt_svdcmp (GMT, A, (unsigned int)nm, (unsigned int)nm, s, v)) != 0) Return (error);
-
+		if (Ctrl->C.movie) {	/* Keep copy of original eigenvalues */
+			ssave = gmt_M_memory (GMT, NULL, nm, double);
+			gmt_M_memcpy (ssave, s, nm, double);
+		}
 		if (Ctrl->C.file) {	/* Save the eigen-values for study */
 			double *eig = gmt_M_memory (GMT, NULL, nm, double);
-			uint64_t e_dim[4] = {1, 1, nm, 2};
+			uint64_t e_dim[GMT_DIM_SIZE] = {1, 1, nm, 2};
 			unsigned int col_type[3];
 			struct GMT_DATASET *E = NULL;
 			for (i = 0; i < nm; i++) eig[i] = fabs (s[i]);
@@ -2110,9 +2111,11 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 		if (n_use == -1) Return (GMT_RUNTIME_ERROR);
 		GMT_Report (API, GMT_MSG_VERBOSE, "[%d of %" PRIu64 " eigen-values used to explain %.1f %% of data variance]\n", n_use, nm, limit);
 
-		gmt_M_free (GMT, s);
-		gmt_M_free (GMT, v);
-		gmt_M_free (GMT, b);
+		if (Ctrl->C.movie == 0) {
+			gmt_M_free (GMT, s);
+			gmt_M_free (GMT, v);
+			gmt_M_free (GMT, b);
+		}
 	}
 	else {				/* Gauss-Jordan elimination */
 		int error;
@@ -2134,11 +2137,11 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 	for (p = 0; p < nm; p++) fprintf (fp, "%g\n", alpha[p]);
 	fclose (fp);
 #endif
-	gmt_M_free (GMT, A);
+	if (Ctrl->C.movie == 0) gmt_M_free (GMT, A);
 
 	if (Ctrl->E.active) {
 		double here[4], mean = 0.0, std = 0.0, rms = 0.0, dev;
-		uint64_t e_dim[4] = {1, 1, nm, dimension+3};
+		uint64_t e_dim[GMT_DIM_SIZE] = {1, 1, nm, dimension+3};
 		unsigned int m = 0;
 		struct GMT_DATASET *E = NULL;
 		struct GMT_DATASEGMENT *S = NULL;
@@ -2273,67 +2276,120 @@ int GMT_greenspline (void *V_API, int mode, void *args) {
 
 		} /* Else we are writing a grid */
 		gmt_M_memset (V, 4, double);
-		for (layer = 0, nz_off = 0; layer < Z.nz; layer++, nz_off += nxy) {	/* Might be dummy loop of 1 layer unless 3-D */
-			int64_t col, row, p; /* On Windows 'for' index variables must be signed, so redefine these 3 inside this block only */
-			double z_level = 0.0;
-			if (dimension == 3) z_level = gmt_M_col_to_x (GMT, layer, Z.z_min, Z.z_max, Z.z_inc, Grid->header->xy_off, Z.nz);
-#ifdef _OPENMP
-#pragma omp parallel for private(V,row,col,ij,p,r,C,part,wp) shared(Z,dimension,yp,Grid,xp,X,Ctrl,GMT,alpha,Lz,norm,Out,par,nz_off,z_level,nm,normalize)
-#endif
-			for (row = 0; row < Grid->header->n_rows; row++) {	/* This would be a dummy loop for 1 row if 1-D data */
-				if (dimension > 1) {
-					V[GMT_Y] = yp[row];
-					if (dimension == 3) V[GMT_Z] = z_level;
-				}
-				for (col = 0; col < Grid->header->n_columns; col++) {	/* This loop is always active for 1,2,3D */
-					ij = gmt_M_ijp (Grid->header, row, col) + nz_off;
-					if (dimension == 2 && gmt_M_is_fnan (Grid->data[ij])) continue;	/* Only do solution where mask is not NaN */
-					V[GMT_X] = xp[col];
-					/* Here, V holds the current output coordinates */
-					for (p = 0, wp = 0.0; p < (int64_t)nm; p++) {
-						r = get_radius (GMT, V, X[p], dimension);
-						if (Ctrl->Q.active) {
-							C = get_dircosine (GMT, Ctrl->Q.dir, V, X[p], dimension, false);
-							part = dGdr (GMT, r, par, Lz) * C;
-						}
-						else
-							part = G (GMT, r, par, Lz);
-						wp += alpha[p] * part;
-					}
-					V[dimension] = (float)undo_normalization (V, wp, normalize, norm, dimension);
-					if (dimension > 1)	/* Special 2-D grid output */
-						Out->data[ij] = (float)V[dimension];
-					else	/* Crude dump for now for both 1-D and 3-D */
-						GMT->hidden.mem_coord[GMT_X][col] = V[dimension];
-				}
-			}
-			/* Write output, in case of 3-D just a single slice */
-			if (dimension == 1) {	/* Must dump 1-D table */
-				for (col = 0; col < Grid->header->n_columns; col++) {
-					V[GMT_X] = xp[col];
-					V[dimension] = GMT->hidden.mem_coord[GMT_X][col];
-					GMT_Put_Record (API, GMT_WRITE_DATA, V);
-				}
-			}
-			else if (dimension == 3) {	/* Must dump 3-D grid as ASCII slices for now */
-				V[GMT_Z] = z_level;
+		if (Ctrl->C.movie) {	/* Write out grid after adding contribution for each eigenvalue separately */
+			float *tmp = NULL;
+			char file[GMT_LEN256] = {""};
+			if (Ctrl->C.movie == 1) tmp = gmt_M_memory_aligned (GMT, NULL, Out->header->size, float);
+			gmt_grd_init (GMT, Out->header, options, true);
+			snprintf (Out->header->remark, GMT_GRID_REMARK_LEN160, "Method: %s (%s)", method[Ctrl->S.mode], Ctrl->S.arg);
+			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Out))
+				Return (API->error);
+			for (k = 0; k < nm; k++) {
+				fprintf (stderr, "Eigen # %d\n", (int)k+1);
+				limit = (double)k;
+				/* Update solution for k eigenvalues only */
+				gmt_M_memcpy (s, ssave, nm, double);
+				(void)gmt_solve_svd (GMT, A, (unsigned int)nm, (unsigned int)nm, v, s, b, 1U, obs, &limit, 2);
 				for (row = 0; row < Grid->header->n_rows; row++) {
 					V[GMT_Y] = yp[row];
 					for (col = 0; col < Grid->header->n_columns; col++) {
+						ij = gmt_M_ijp (Grid->header, row, col);
+						if (gmt_M_is_fnan (Grid->data[ij])) continue;	/* Only do solution where mask is not NaN */
 						V[GMT_X] = xp[col];
+						/* Here, V holds the current output coordinates */
+						for (p = 0, wp = 0.0; p < nm; p++) {
+							r = get_radius (GMT, V, X[p], 2U);
+							if (Ctrl->Q.active) {
+								C = get_dircosine (GMT, Ctrl->Q.dir, V, X[p], 2U, false);
+								part = dGdr (GMT, r, par, Lz) * C;
+							}
+							else
+								part = G (GMT, r, par, Lz);
+							wp += alpha[p] * part;
+						}
+						V[GMT_Z] = undo_normalization (V, wp, normalize, norm, 2U);
+						Out->data[ij] = (float)V[GMT_Z];
+					}
+				}
+				sprintf (file, Ctrl->G.file, (int)k+1);
+				if (Ctrl->C.movie == 1) {
+					gmt_M_grd_loop (GMT, Out, row, col, ij) Out->data[ij] -= tmp[ij];	/* Incremental improvement since last time */
+					gmt_M_grd_loop (GMT, Out, row, col, ij) tmp[ij] += Out->data[ij];	/* Current solution */
+				}
+				if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, file, Out) != GMT_NOERROR) {
+					Return (API->error);
+				}
+			}
+			if (Ctrl->C.movie == 1) gmt_M_free_aligned (GMT, tmp);	/* Free original column-oriented grid */
+			gmt_M_free (GMT, A);
+			gmt_M_free (GMT, s);
+			gmt_M_free (GMT, v);
+			gmt_M_free (GMT, b);
+			gmt_M_free (GMT, ssave);
+		}
+		else {
+			for (layer = 0, nz_off = 0; layer < Z.nz; layer++, nz_off += nxy) {	/* Might be dummy loop of 1 layer unless 3-D */
+				int64_t col, row, p; /* On Windows 'for' index variables must be signed, so redefine these 3 inside this block only */
+				double z_level = 0.0;
+				if (dimension == 3) z_level = gmt_M_col_to_x (GMT, layer, Z.z_min, Z.z_max, Z.z_inc, Grid->header->xy_off, Z.nz);
+#ifdef _OPENMP
+#pragma omp parallel for private(V,row,col,ij,p,r,C,part,wp) shared(Z,dimension,yp,Grid,xp,X,Ctrl,GMT,alpha,Lz,norm,Out,par,nz_off,z_level,nm,normalize)
+#endif
+				for (row = 0; row < Grid->header->n_rows; row++) {	/* This would be a dummy loop for 1 row if 1-D data */
+					if (dimension > 1) {
+						V[GMT_Y] = yp[row];
+						if (dimension == 3) V[GMT_Z] = z_level;
+					}
+					for (col = 0; col < Grid->header->n_columns; col++) {	/* This loop is always active for 1,2,3D */
 						ij = gmt_M_ijp (Grid->header, row, col) + nz_off;
-						V[dimension] = Out->data[ij];
+						if (dimension == 2 && gmt_M_is_fnan (Grid->data[ij])) continue;	/* Only do solution where mask is not NaN */
+						V[GMT_X] = xp[col];
+						/* Here, V holds the current output coordinates */
+						for (p = 0, wp = 0.0; p < (int64_t)nm; p++) {
+							r = get_radius (GMT, V, X[p], dimension);
+							if (Ctrl->Q.active) {
+								C = get_dircosine (GMT, Ctrl->Q.dir, V, X[p], dimension, false);
+								part = dGdr (GMT, r, par, Lz) * C;
+							}
+							else
+								part = G (GMT, r, par, Lz);
+							wp += alpha[p] * part;
+						}
+						V[dimension] = (float)undo_normalization (V, wp, normalize, norm, dimension);
+						if (dimension > 1)	/* Special 2-D grid output */
+							Out->data[ij] = (float)V[dimension];
+						else	/* Crude dump for now for both 1-D and 3-D */
+							GMT->hidden.mem_coord[GMT_X][col] = V[dimension];
+					}
+				}
+				/* Write output, in case of 3-D just a single slice */
+				if (dimension == 1) {	/* Must dump 1-D table */
+					for (col = 0; col < Grid->header->n_columns; col++) {
+						V[GMT_X] = xp[col];
+						V[dimension] = GMT->hidden.mem_coord[GMT_X][col];
 						GMT_Put_Record (API, GMT_WRITE_DATA, V);
 					}
 				}
+				else if (dimension == 3) {	/* Must dump 3-D grid as ASCII slices for now */
+					V[GMT_Z] = z_level;
+					for (row = 0; row < Grid->header->n_rows; row++) {
+						V[GMT_Y] = yp[row];
+						for (col = 0; col < Grid->header->n_columns; col++) {
+							V[GMT_X] = xp[col];
+							ij = gmt_M_ijp (Grid->header, row, col) + nz_off;
+							V[dimension] = Out->data[ij];
+							GMT_Put_Record (API, GMT_WRITE_DATA, V);
+						}
+					}
+				}
 			}
-		}
-		if (dimension == 2) {	/* Write the grid */
-			gmt_grd_init (GMT, Out->header, options, true);
-			snprintf (Out->header->remark, GMT_GRID_REMARK_LEN160, "Method: %s (%s)", method[Ctrl->S.mode], Ctrl->S.arg);
-			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Out)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Out) != GMT_NOERROR) {
-				Return (API->error);
+			if (dimension == 2) {	/* Write the grid */
+				gmt_grd_init (GMT, Out->header, options, true);
+				snprintf (Out->header->remark, GMT_GRID_REMARK_LEN160, "Method: %s (%s)", method[Ctrl->S.mode], Ctrl->S.arg);
+				if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Out)) Return (API->error);
+				if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, Out) != GMT_NOERROR) {
+					Return (API->error);
+				}
 			}
 		}
 		if (delete_grid) /* No longer required for 1-D and 3-D */

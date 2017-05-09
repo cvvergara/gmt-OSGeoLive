@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalread.c 17543 2017-02-09 14:14:29Z jluis $
+ *	$Id: gmt_gdalread.c 17998 2017-04-18 21:37:11Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -246,15 +246,15 @@ int get_attrib_from_string(struct GMT_GDALREAD_OUT_CTRL *Ctrl, GDALRasterBandH h
 	for (i = 0; i < nCounterBand; i++) {
 		if ((pch = strstr(papszMetadataBand[i], "add_offset")) != NULL) {
 			/* Fish the value from a string of the type "geophysical_data_sst_add_offset=0" */
-			if ((pch2 = strstr(pch, "=")) != NULL)
+			if ((pch2 = strchr(pch, '=')) != NULL)
 				Ctrl->band_field_names[nBand].ScaleOffset[1] = atof(&pch2[1]);
 		}
 		else if ((pch = strstr(papszMetadataBand[i], "scale_factor")) != NULL) {
-			if ((pch2 = strstr(pch, "=")) != NULL)
+			if ((pch2 = strchr(pch, '=')) != NULL)
 				Ctrl->band_field_names[nBand].ScaleOffset[0] = atof(&pch2[1]);
 		}
 		else if ((pch = strstr(papszMetadataBand[i], "_FillValue")) != NULL) {
-			if ((pch2 = strstr(pch, "=")) != NULL) {
+			if ((pch2 = strchr(pch, '=')) != NULL) {
 				*dfNoDataValue = atof(&pch2[1]);
 				Ctrl->band_field_names[nBand].nodata = *dfNoDataValue;
 			}
@@ -692,7 +692,7 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 	bool   topdown = false, rowmajor = true;               /* arrays from GDAL have this order */
 	bool   just_copy = false, copy_flipud = false;
 	int	   *whichBands = NULL, *rowVec = NULL, *colVec = NULL;
-	int     off, pad = 0, i_x_nXYSize, startColPos = 0, startRow = 0, nXSize_withPad = 0;
+	int     off, pad = 0, i_x_nXYSize, startColPos = 0, startRow = 0, nXSize_withPad = 0, nYSize_withPad;
 	int     pad_w = 0, pad_e = 0, pad_s = 0, pad_n = 0;    /* Different pads for when sub-regioning near the edges */
 	unsigned int nn, mm;
 	uint64_t ij;
@@ -752,6 +752,12 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 		/* Send back the info that I->header->mem_layout must be updated */
 		strncpy(prhs->O.mem_layout, GMT->current.gdal_read_in.O.mem_layout, 4);
 	}
+	if (!metadata_only && !prhs->O.mem_layout[0]) {	/* If caller did not ask the layout, assign it to the true one used here. */
+		prhs->O.mem_layout[0] = topdown  ? 'T' : 'B';
+		prhs->O.mem_layout[1] = rowmajor ? 'R' : 'C';
+		prhs->O.mem_layout[2] = do_BIP   ? 'P' : 'B';
+		prhs->O.mem_layout[3] = 'a';
+	}
 
 	if (prhs->p.active) pad = prhs->p.pad;
 	pad_w = pad_e = pad_s = pad_n = pad;
@@ -761,7 +767,7 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 		got_R = true;
 		wesn[XLO] = GMT->common.R.wesn[XLO];		wesn[XHI] = GMT->common.R.wesn[XHI];
 		wesn[YLO] = GMT->common.R.wesn[YLO];		wesn[YHI] = GMT->common.R.wesn[YHI];
-		GMT->common.R.active = false;	/* Reset because -R was already parsed when reading header info */
+		GMT->common.R.active[RSET] = false;	/* Reset because -R was already parsed when reading header info */
 		error += gmt_parse_common_options (GMT, "R", 'R', prhs->R.region);
 		if (!error) {
 			double dx = 0, dy = 0;
@@ -784,7 +790,7 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 
 	if (prhs->r.active) { 		/* Region is given in pixels */
 		got_r = true;
-		GMT->common.R.active = false;
+		GMT->common.R.active[RSET] = false;
 		error += gmt_parse_common_options (GMT, "R", 'R', prhs->r.region);
 		if (!error) {
 			dfULX = GMT->common.R.wesn[XLO];	dfLRX = GMT->common.R.wesn[XHI];
@@ -1049,6 +1055,7 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 
 		startColPos = pad_w + i_x_nXYSize + (complex_mode > 1);	/* Take into account nBands, Padding and Complex */
 		nXSize_withPad = nXSize + pad_w + pad_e;
+		nYSize_withPad = nYSize + pad_n + pad_s;
 
 		if (prhs->mini_hdr.active) {
 			if (prhs->mini_hdr.side[0] == 'l' || prhs->mini_hdr.side[0] == 'r') {
@@ -1078,10 +1085,19 @@ int gmt_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GMT_GDALREAD
 				Ctrl->UInt8.active = true;
 				if (do_BIP || !GMT->current.gdal_read_in.O.mem_layout[0]) {
 					/* Currently all calls to send image to GMT (BIP case) must come through here */
-					for (m = 0; m < nYSize; m++) {
-						off = nRGBA * pad_w + (pad_w+m) * (nRGBA * (nXSize_withPad)); /* Remember, nRGBA is variable */
-						for (n = 0; n < nXSize; n++)
-							Ctrl->UInt8.data[colVec[n] + off] = tmp[rowVec[m]+n];
+					if (rowmajor) {
+						for (m = 0; m < nYSize; m++) {
+							off = nRGBA * pad_w + (pad_w+m) * (nRGBA * (nXSize_withPad)); /* Remember, nRGBA is variable */
+							for (n = 0; n < nXSize; n++)
+								Ctrl->UInt8.data[colVec[n] + off] = tmp[rowVec[m]+n];
+						}
+					}
+					else {
+						for (n = 0; n < nXSize; n++) {
+							off = nRGBA * pad_n + (pad_n+n) * (nRGBA * nYSize_withPad) + i;
+							for (m = 0; m < nYSize; m++)
+								Ctrl->UInt8.data[m * nRGBA + off] = tmp[rowVec[m] + n];
+						}
 					}
 				}
 				else {

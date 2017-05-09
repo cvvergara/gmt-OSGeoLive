@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: project.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: project.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,14 +26,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"project"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Project table data onto lines or great circles, generate tracks, or translate coordinates"
 #define THIS_MODULE_KEYS	"<D{,>D},G-("
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdfghis" GMT_OPT("HMm")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vbdefghis" GMT_OPT("HMm")
 
 #define PROJECT_N_FARGS	7
 
@@ -55,7 +55,7 @@ struct PROJECT_CTRL {	/* All control options for this program (except common arg
 		bool active;
 		char col[PROJECT_N_FARGS];	/* Character codes for desired output in the right order */
 	} F;
-	struct G {	/* -G<inc>[/<colat>][+] */
+	struct G {	/* -G<inc>[/<colat>][+h] */
 		bool active;
 		unsigned int header;
 		unsigned int mode;
@@ -325,9 +325,9 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct PROJECT_CTRL *C) {	/* Dea
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: project [<table>] -C<ox>/<oy> [-A<azimuth>] [-E<bx>/<by>] [-F<flags>] [-G<dist>[/<colat>][+]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "usage: project [<table>] -C<ox>/<oy> [-A<azimuth>] [-E<bx>/<by>] [-F<flags>] [-G<dist>[/<colat>][+h]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L[w][<l_min>/<l_max>]] [-N] [-Q] [-S] [-T<px>/<py>] [%s] [-W<w_min>/<w_max>]\n", GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n", GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n", GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -362,7 +362,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Generate (r,s,p) points along profile every <dist> units. (No input data used.)\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If E given, will generate from C to E; else must give -L<l_min>/<l_max> for length.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally, append /<colat> for a small circle path through C and E (requires -C -E) [90].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Finally, append + if you want information about the pole in a segment header [no header].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Finally, append +h if you want information about the pole in a segment header [no header].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Check the Length along the projected track and use only certain points.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Lw will use only those points Within the span from C to E (Must have set -E).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -L<l_min>/<l_max> will only use points whose p is [l_min <= p <= l_max].\n");
@@ -377,7 +377,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Check the width across the projected track and use only certain points.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   This will use only those points whose q is [w_min <= q <= w_max].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Note that q is positive to your LEFT as you walk from C toward E in <azimuth> direction.\n");
-	GMT_Option (API, "bi2,bo,d,f,g,h,i,s,:,.");
+	GMT_Option (API, "bi2,bo,d,e,f,g,h,i,s,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -462,8 +462,12 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PROJECT_CTRL *Ctrl, struct GMT
 			case 'G':
 				Ctrl->G.active = true;
 				len = strlen (opt->arg) - 1;
-				if (len > 0 && opt->arg[len] == '+') {	/* Old-style + only */
-					Ctrl->G.header = len;	/* Wish to place a segment header on output */
+				if (len > 1 && opt->arg[len-1] == '+' && opt->arg[len] == 'h') {
+					Ctrl->G.header = (int)len-1;	/* Wish to place a segment header on output via +h */
+					opt->arg[len-1] = 0;	/* Temporarily remove the trailing + sign */
+				}
+				else if (len > 0 && opt->arg[len] == '+') {
+					Ctrl->G.header = true;	/* Wish to place a segment header on output */
 					opt->arg[len] = 0;	/* Temporarily remove the trailing + sign */
 				}
 				if (sscanf (opt->arg, "%[^/]/%s", txt_a, txt_b) == 2) {	/* Got dist/colat */
@@ -653,8 +657,8 @@ int GMT_project (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -901,6 +905,7 @@ int GMT_project (void *V_API, int mode, void *args) {
 		}
 		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data output and sets access mode */
 			if (GMT_Set_Geometry (API, GMT_OUT, GMT_IS_LINE) != GMT_NOERROR) {	/* Sets output geometry */
+				gmt_M_free (GMT, p_data);
 				Return (API->error);
 			}
 			for (rec = 0; rec < P.n_used; rec++) {
@@ -961,23 +966,22 @@ int GMT_project (void *V_API, int mode, void *args) {
 
 		do {	/* Keep returning records until we reach EOF */
 			if ((in = GMT_Get_Record (API, rmode, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-				if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+				if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 					Return (GMT_RUNTIME_ERROR);
-				if (gmt_M_rec_is_table_header (GMT)) {	/* Echo table headers */
-					GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, NULL);
-					continue;
 				}
-				if (gmt_M_rec_is_segment_header (GMT)) {			/* Echo segment headers */
+				else if (gmt_M_rec_is_table_header (GMT))	/* Echo table headers */
+					GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, NULL);
+				else if (gmt_M_rec_is_segment_header (GMT)) {			/* Echo segment headers */
 					if (P.n_used) {	/* Write out previous segment */
 						if ((error = write_one_segment (GMT, Ctrl, theta, p_data, pure_ascii, &P)) != 0) Return (error);
 						n_total_used += P.n_used;
 						P.n_used = 0;
 					}
 					GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);
-					continue;
 				}
-				if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+				else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 					break;
+				continue;							/* Go back and read the next record */
 			}
 
 			/* Data record to process */

@@ -81,6 +81,7 @@ Core modules
    psmask
    psrose
    psscale
+   psternary
    pstext
    pswiggle
    psxy
@@ -113,6 +114,7 @@ Supplementary modules
    supplements/meca/psvelo
    supplements/meca/pssac
    supplements/mgd77/mgd77convert
+   supplements/mgd77/mgd77header
    supplements/mgd77/mgd77info
    supplements/mgd77/mgd77list
    supplements/mgd77/mgd77magref

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_fft.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_fft.h 17451 2017-01-16 21:36:06Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -88,6 +88,7 @@ struct GMT_FFT_INFO {
 	unsigned int n_rows;		/* Desired hard FFT n_rows dimensionl or 0 if free to adjust */
 	unsigned int taper_mode;	/* One of the GMT_FFT_EXTEND for extension/mirroring */
 	unsigned int info_mode;		/* One of the GMT_FFT_INFO for setting n_columns/n_rows or inquire */
+	unsigned int suggest;		/* Index into dimension suggestions [0 = pick best] */
 	int trend_mode;			/* One of the GMT_FFT_TREND for handling detrending */
 	double taper_width;		/* Amount of tapering in percent */
 	struct GMT_FFT_WAVENUMBER *K;	/* Pointer to wavenumber structure */

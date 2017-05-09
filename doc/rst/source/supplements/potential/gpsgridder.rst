@@ -28,6 +28,7 @@ Synopsis
 [ |-W|\ [**w**]]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-o| ]
@@ -163,11 +164,20 @@ Optional Arguments
    Append **w** if weights are given instead of uncertainties.  This results in
    a weighted least squares fit.  Note that **-W** only has an effect if **-C** is used.
    [Default uses no weights or uncertainties].
+   Note: At present the **-W** option is *unstable*.  We do not yet know if it reflects
+   a coding bug or a theoretical limitation.  Users beware, and make sure you compare
+   the results with non-weighted output for basic sanity checking.
 
 .. _-V:
 
 .. |Add_-V| unicode:: 0x20 .. just an invisible code
 .. include:: ../../explain_-V.rst_
+
+.. |Add_-d| unicode:: 0x20 .. just an invisible code
+.. include:: ../../explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: ../../explain_-e.rst_
 
 **-fg**
    Geographic grids (dimensions of longitude, latitude) will be converted to

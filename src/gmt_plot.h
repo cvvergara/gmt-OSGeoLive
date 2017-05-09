@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_plot.h 17670 2017-03-14 15:58:06Z pwessel $
+ *	$Id: gmt_plot.h 17671 2017-03-14 16:14:46Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -28,41 +28,21 @@
 
 #define GMT_ZW	3
 
-/* GMT symbol identifiers. Mostly the same as PSL_<symbol> but with
-   extensions for custom symbols, psxy and psxyz */
+/* GMT symbol identifiers. In addition to those in PSL we have
+   extensions for custom symbols in psxy and psxyz and 3-D symbols
+   as well as special line symbols (fronts, decorated or quoted lines) */
 
-#define GMT_SYMBOL_STAR		((int)'a')
-#define GMT_SYMBOL_BARX		((int)'B')
-#define GMT_SYMBOL_BARY		((int)'b')
-#define GMT_SYMBOL_CIRCLE	((int)'c')
-#define GMT_SYMBOL_DIAMOND	((int)'d')
-#define GMT_SYMBOL_ELLIPSE	((int)'e')
-#define GMT_SYMBOL_FRONT	((int)'f')
-#define GMT_SYMBOL_OCTAGON	((int)'g')
-#define GMT_SYMBOL_HEXAGON	((int)'h')
-#define GMT_SYMBOL_INVTRIANGLE	((int)'i')
-#define GMT_SYMBOL_ROTRECT	((int)'j')
-#define GMT_SYMBOL_CUSTOM	((int)'k')
-#define GMT_SYMBOL_TEXT		((int)'l')
-#define GMT_SYMBOL_MARC		((int)'m')
-#define GMT_SYMBOL_PENTAGON	((int)'n')
-#define GMT_SYMBOL_COLUMN	((int)'o')
-#define GMT_SYMBOL_DOT		((int)'p')
-#define GMT_SYMBOL_QUOTED_LINE	((int)'q')
-#define GMT_SYMBOL_RECT		((int)'r')
-#define GMT_SYMBOL_RNDRECT	((int)'R')
-#define GMT_SYMBOL_SQUARE	((int)'s')
-#define GMT_SYMBOL_TRIANGLE	((int)'t')
-#define GMT_SYMBOL_CUBE		((int)'u')
-#define GMT_SYMBOL_VECTOR	((int)'v')
-#define GMT_SYMBOL_VECTOR_V4	999
-#define GMT_SYMBOL_WEDGE	((int)'w')
-#define GMT_SYMBOL_CROSS	((int)'x')
-#define GMT_SYMBOL_YDASH	((int)'y')
-#define GMT_SYMBOL_ZDASH	((int)'z')
-#define GMT_SYMBOL_PLUS		((int)'+')
-#define GMT_SYMBOL_XDASH	((int)'-')
+#define GMT_SYMBOL_BARX			((int)'B')
+#define GMT_SYMBOL_BARY			((int)'b')
+#define GMT_SYMBOL_FRONT		((int)'f')
+#define GMT_SYMBOL_CUSTOM		((int)'k')
+#define GMT_SYMBOL_TEXT			((int)'l')
+#define GMT_SYMBOL_COLUMN		((int)'o')
+#define GMT_SYMBOL_QUOTED_LINE		((int)'q')
+#define GMT_SYMBOL_CUBE			((int)'u')
+#define GMT_SYMBOL_ZDASH		((int)'z')
 #define GMT_SYMBOL_DECORATED_LINE	((int)'~')
+#define GMT_SYMBOL_VECTOR_V4		999
 
 #define GMT_SYMBOL_MOVE		((int)'M')
 #define GMT_SYMBOL_DRAW		((int)'D')
@@ -110,50 +90,6 @@ struct GMT_FRONTLINE {
 
 /* Vector symbols */
 
-/* NOTE: GMT_enum_vecattr must mirror similar settings in postscriptlight.h: PSL_enum_vecattr */
-
-enum GMT_enum_vecattr {
-	GMT_VEC_ARROW		= 0,		/* Default head symbol is arrow */
-	GMT_VEC_TERMINAL	= 1,		/* Cross-bar normal to vector */
-	GMT_VEC_CIRCLE		= 2,		/* Circle as vector head */
-	GMT_VEC_SQUARE		= 3,		/* Square as vector head */
-	GMT_VEC_TAIL		= 4,		/* Vector tail */
-	GMT_VEC_ARROW_PLAIN	= 5,		/* Stylized vector head (just triangle lines; cannot be filled) */
-	GMT_VEC_TAIL_PLAIN	= 6,		/* Stylized vector tail (just inward triangle lines; cannot be filled) */
-	GMT_VEC_BEGIN		= 1,		/* Place vector head at beginning of vector. Add GMT_VEC_BEGIN_L for left only, GMT_VEC_BEGIN_R for right only */
-	GMT_VEC_END		= 2,		/* Place vector head at end of vector.  Add GMT_VEC_END_L for left only, and GMT_VEC_END_R for right only */
-	GMT_VEC_HEADS		= 3,		/* Mask for either head end */
-	GMT_VEC_BEGIN_L		= 4,		/* Left-half head at beginning */
-	GMT_VEC_BEGIN_R		= 8,		/* Right-half head at beginning */
-	GMT_VEC_END_L		= 16,		/* Left-half head at end */
-	GMT_VEC_END_R		= 32,		/* Right-half head at end */
-	GMT_VEC_JUST_B		= 0,		/* Align vector beginning at (x,y) */
-	GMT_VEC_JUST_C		= 64,		/* Align vector center at (x,y) */
-	GMT_VEC_JUST_E		= 128,		/* Align vector end at (x,y) */
-	GMT_VEC_JUST_S		= 256,		/* Align vector center at (x,y) */
-	GMT_VEC_ANGLES		= 512,		/* Got start/stop angles instead of az, length */
-	GMT_VEC_POLE		= 1024,		/* Got pole of small/great circle */
-	GMT_VEC_OUTLINE		= 2048,		/* Draw vector head outline using default pen */
-	GMT_VEC_OUTLINE2	= 4096,		/* Draw vector head outline using supplied v_pen */
-	GMT_VEC_FILL		= 8192,		/* Fill vector head using default fill */
-	GMT_VEC_FILL2		= 16384,	/* Fill vector head using supplied v_fill) */
-	GMT_VEC_MARC90		= 32768,	/* Matharc only: if angles subtend 90, draw straight angle symbol */
-	GMT_VEC_OFF_BEGIN	= 65536,	/* Starting point of vector should be moved a distance along the line */
-	GMT_VEC_OFF_END		= 131072,	/* End point of vector should be moved a distance along the line */
-	GMT_VEC_MID_FWD		= 262144,	/* Place mid-point vector head facing forwards  */
-	GMT_VEC_MID_BWD		= 524288,	/* Place mid-point vector head facing backwards  */
-	GMT_VEC_COMPONENTS	= 1048576,	/* Not needed in postscriptlight: Got vector dx, dy Cartesian components */
-	GMT_VEC_SCALE		= 2097152};	/* Not needed in postscriptlight: If not set we determine the required inch-to-degree scale */
-
-/* Make sure the next three macros are in sync with any changes to GMT_enum_vecattr above! */
-
-#define gmt_M_vec_justify(status) ((status>>6)&3)			/* Return justification as 0-3 */
-#define gmt_M_vec_head(status) ((status)&3)			/* Return head selection as 0-3 */
-#define gmt_M_vec_side(status,head) (((status>>(2+2*head))&3) ? 2*((status>>(2+2*head))&3)-3 : 0)	/* Return side selection for this head as 0,-1,+1 */
-
-#define gmt_M_vec_outline(status) ((status&GMT_VEC_OUTLINE) || (status&GMT_VEC_OUTLINE2))	/* Return true if outline is currently selected */
-#define gmt_M_vec_fill(status) ((status&GMT_VEC_FILL) || (status&GMT_VEC_FILL2))		/* Return true if fill is currently selected */
-
 struct GMT_VECT_ATTR {
 	/* Container for common attributes for plot attributes of vectors */
 	unsigned int status;	/* Bit flags for vector information (see GMT_enum_vecattr above) */
@@ -163,6 +99,7 @@ struct GMT_VECT_ATTR {
 	float v_norm;		/* shrink when lengths are smaller than this */
 	float v_stem;		/* Min length in % of visible vector when head is large [10%] */
 	float v_width;		/* Width of vector stem in inches */
+	float v_shape;		/* Shape of vector head [MAP_VECTOR_SHAPE] */
 	float h_length;		/* Length of vector head in inches */
 	float h_width;		/* Width of vector head in inches */
 	float pole[2];		/* Longitude and latitude of geovector pole */

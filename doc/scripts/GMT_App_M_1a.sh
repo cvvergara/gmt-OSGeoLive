@@ -1,24 +1,25 @@
 #!/bin/bash
-#	$Id: GMT_App_M_1a.sh 16674 2016-06-29 21:24:14Z pwessel $
+#	$Id: GMT_App_M_1a.sh 18106 2017-05-01 23:55:05Z jluis $
 #
 #	Makes the inserts for Appendix M(cpt)
 #
 # Use the knowledge that we need 2 pages.
 
-grep -v '#' "${GMT_SHAREDIR}"/conf/gmt_cpt.conf | cut -d: -f1 | sort -r > tt.lis
+sed -e 's/"//g' "${GMT_SOURCE_DIR}"/src/gmt_cpt_masters.h | awk '{print $1}' | sort -r > tt.lis
 
 ps=GMT_App_M_1a.ps
 n=`cat tt.lis | wc -l`
 let n2=n/2
 # dy is line spacing and y0 is total box height
+dy=0.75
+y0=`echo "$n2 * $dy * 0.5" | bc`
 
 gmt gmtset MAP_FRAME_PEN thinner FONT_ANNOT_PRIMARY 8p MAP_TICK_LENGTH_PRIMARY 0.1i MAP_ANNOT_OFFSET_PRIMARY 0.04i
-gmt psbasemap -R0/6.1/0/7.5 -Jx1i -P -K -B0 > $ps
+gmt psbasemap -R0/6.1/0/$y0 -Jx1i -P -K -B0 > $ps
 
 let i=1+n2
 y=0.475
 y2=0.35
-dy=0.75
 while [ $i -le $n ]
 do
 	j=`expr $i + 1`

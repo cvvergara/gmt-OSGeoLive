@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------
- *	$Id: mgd77magref.h 17449 2017-01-16 21:27:04Z pwessel $	
+ *	$Id: mgd77magref.h 17451 2017-01-16 21:36:06Z pwessel $	
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *    Copyright (c) 2005-2017 by P. Wessel and M. T. Chandler

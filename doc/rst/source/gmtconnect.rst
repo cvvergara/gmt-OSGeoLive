@@ -19,6 +19,7 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
 [ |SYN_OPT-h| ]
@@ -123,6 +124,9 @@ Optional Arguments
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
 
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
+
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
 
@@ -169,8 +173,8 @@ Bugs
 ----
 
 The line connection does not work if a line only has a single point.
-However, gmtconnect will correctly add the point to the nearest segment.
-Running gmtconnect again on the new set of lines will eventually connect
+However, **gmtconnect** will correctly add the point to the nearest segment.
+Running **gmtconnect** again on the new set of lines will eventually connect
 all close lines.
 
 See Also

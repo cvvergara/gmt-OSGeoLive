@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_symbol.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_symbol.h 18055 2017-04-28 17:46:38Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -63,12 +63,14 @@ struct GMT_REFPOINT {	/* Used to hold items relevant for a reference point */
 	char *args;		/* Text representation of any additional arguments */
 };
 
+#define CUSTOM_SYMBOL_MAXVAR	3	/* So we can check in the code if we exceed this */
+
 struct GMT_CUSTOM_SYMBOL_ITEM {
-	double x, y, p[3], const_val[3];
-	int action, operator, var[3];	/* var[0] refers to variable on left hand side of operator, var[1] and var[2] to the right hand */
+	double x, y, p[CUSTOM_SYMBOL_MAXVAR], const_val[CUSTOM_SYMBOL_MAXVAR];
+	int action, operator, var_pen, var[CUSTOM_SYMBOL_MAXVAR];	/* For conditionals: var[0] refers to variable on left hand side of operator, var[1] and var[2] to the right hand */
 	unsigned int conditional;
 	unsigned int justify;	/* For macro code l text justification [PSL_MC] */
-	bool negate, is_var[3];
+	bool negate, is_var[CUSTOM_SYMBOL_MAXVAR];
 	struct GMT_FILL *fill;
 	struct GMT_PEN *pen;
 	struct GMT_CUSTOM_SYMBOL_ITEM *next;
@@ -105,10 +107,11 @@ struct GMT_MAP_PANEL {
 
 /*! Plot a map insert box in psbasemap */
 struct GMT_MAP_INSERT {
-	/* -D[unit]xmin/xmax/ymin/ymax|width[/height][+c<clon>/<clat>][+p<pen>][+g<fill>] */
+	/* -D[g|j|n|x]<refpoint>+w<width>[<unit>][/<height>[<unit>]][+j<justify>[+o<dx>[/<dy>]][+s<file>][+t] or [<unit>]<xmin>/<xmax>/<ymin>/<ymax>[r][+s<file>][+t] */
 	int justify;		/* Gave center of insert */
 	bool plot;		/* true if we want to draw the insert */
 	bool oblique;		/* true if we want got <w/s/e/n>r instead of <w/e/s/n> */
+	bool translate;		/* true if we want to translate plot origin to the LL corner of insert */
 	char unit;		/* Unit of projected coordinates or 0 for geographic */
 	struct GMT_REFPOINT *refpoint;
 	double wesn[4];		/* Geographic or projected boundaries */

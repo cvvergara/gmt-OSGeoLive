@@ -18,10 +18,11 @@ Synopsis
 [ |-E|\ *eigen* ] [ |-I| ]
 [ |-N|\ *n\_col*\ [/*t_col*] ]
 [ |-Q| ] [ |-S|\ [**f**\ \|\ **l**] ]
-[ |-T|\ *t\_min*/*t_max*/*t_inc*\ [**+**\ ]\|\ *tfile* ]
+[ |-T|\ *t\_min*/*t_max*/*t_inc*\ [**+n**\ ]\|\ *tfile* ]
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
 [ |SYN_OPT-h| ]
@@ -121,6 +122,8 @@ Optional Arguments
 
 **-Q**
     Quick mode for scalar calculation. Shorthand for **-Ca** **-N**\ 1/0  **-T**\ 0/0/1.
+    In this mode, constants may have plot units (i.e., c, i, p) and if so the final
+    answer will be reported in the unit set by :ref:`PROJ_LENGTH_UNIT <PROJ_LENGTH_UNIT>`.
 
 .. _-S:
 
@@ -133,10 +136,10 @@ Optional Arguments
 
 .. _-T:
 
-**-T**\ *t_min*/*t_max*/*t_inc*\ [**+**\ ]\|\ *tfile*
+**-T**\ *t_min*/*t_max*/*t_inc*\ [**+n**\ ]\|\ *tfile*
     Required when no input files are given. Sets the t-coordinates of
     the first and last point and the equidistant sampling interval for
-    the "time" column (see **-N**). Append **+** if you are specifying
+    the "time" column (see **-N**). Append **+n** if you are specifying
     the number of equidistant points instead. If there is no time column
     (only data columns), give **-T** with no arguments; this also
     implies **-Ca**. Alternatively, give the name of a file whose first
@@ -155,6 +158,9 @@ Optional Arguments
 
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
 
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
@@ -176,7 +182,7 @@ Optional Arguments
 Operators
 ---------
 
-Choose among the following 183 operators. "args" are the number of input
+Choose among the following 185 operators. "args" are the number of input
 and output arguments.
 
 +-----------------+--------+--------------------------------------------------------------------------------------------+
@@ -452,6 +458,8 @@ and output arguments.
 +-----------------+--------+--------------------------------------------------------------------------------------------+
 | **RMS**         | 1 1    | Root-mean-square of A                                                                      |
 +-----------------+--------+--------------------------------------------------------------------------------------------+
+| **RMSW**        | 1 1    | Weighted root-mean-square of A for weights in B                                            |
++-----------------+--------+--------------------------------------------------------------------------------------------+
 | **RPDF**        | 1 1    | Rayleigh probability density function for z = A                                            |
 +-----------------+--------+--------------------------------------------------------------------------------------------+
 | **ROLL**        | 2 0    | Cyclicly shifts the top A stack items by an amount B                                       |
@@ -652,6 +660,12 @@ columns will have been loaded but are then ignored until you undo the effect of 
 Examples
 --------
 
+To add two plot dimensions of different units, we can run
+
+   ::
+   
+    length=`gmt math -Q 15c 2i SUB =`
+   
 To take the square root of the content of the second data column being
 piped through **gmtmath** by process1 and pipe it through a 3rd process, use
 
@@ -702,7 +716,7 @@ trigonometric argument (2\*pi\*T/360):
     gmt math -T0/360/1 2 PI MUL 360 DIV T MUL STO@kT COS @kT 2 MUL COS ADD \
                 @kT 3 MUL COS ADD = harmonics.d
 
-To use gmtmath as a RPN Hewlett-Packard calculator on scalars (i.e., no
+To use **gmtmath** as a RPN Hewlett-Packard calculator on scalars (i.e., no
 input files) and calculate arbitrary expressions, use the **-Q** option.
 As an example, we will calculate the value of Kei (((1 + 1.75)/2.2) +
 cos (60)) and store the result in the shell variable z:

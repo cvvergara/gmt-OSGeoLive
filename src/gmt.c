@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.c 17644 2017-03-12 02:09:29Z pwessel $
+ *	$Id: gmt.c 18188 2017-05-08 05:24:15Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -52,11 +52,11 @@
 #endif
 
 int main (int argc, char *argv[]) {
-	int status = GMT_NOT_A_VALID_MODULE;	/* Default status code */
-	int k, v_mode = GMT_MSG_COMPAT;		/* Default verbosity */
+	int k, status = GMT_NOT_A_VALID_MODULE;	/* Default status code */
 	bool gmt_main = false;			/* Set to true if no module was specified */
 	unsigned int modulename_arg_n = 0;	/* Argument index in argv[] that contains module name */
 	unsigned int mode = GMT_SESSION_NORMAL;	/* Default API mode */
+	unsigned int v_mode = GMT_MSG_COMPAT;		/* Default verbosity */
 	struct GMTAPI_CTRL *api_ctrl = NULL;	/* GMT API control structure */
 	char *progname = NULL;			/* Last component from the pathname */
 	char *module = NULL;			/* Module name */
@@ -78,9 +78,9 @@ int main (int argc, char *argv[]) {
 #endif /* !(defined(WIN32) || defined(NO_SIGHANDLER)) */
 
 	/* Look for and process any -V[flag] so we may use GMT_Report_Error early on for debugging.
-	 * Note: Because first 2 bits of mode is used for other things we must left-shift by 2 */
+	 * Note: Because first 16 bits of mode may be used for other things we must left-shift by 16 */
 	for (k = 1; k < argc; k++) if (!strncmp (argv[k], "-V", 2U)) v_mode = gmt_get_V (argv[k][2]);
-	if (v_mode) mode = ((unsigned int)v_mode) << 2;	/* Left-shift the mode by 2 */
+	if (v_mode) mode = (v_mode << 16);	/* Left-shift the mode by 16 */
 	/* Initialize new GMT session */
 	if ((api_ctrl = GMT_Create_Session (argv[0], GMT_PAD_DEFAULT, mode, NULL)) == NULL)
 		return GMT_RUNTIME_ERROR;
@@ -92,6 +92,35 @@ int main (int argc, char *argv[]) {
 	/* Test if argv[0] contains a valid module name: */
 	module = progname;	/* Try this module name unless it equals PROGRAM_NAME in which case we just enter the test if argc > 1 */
 	gmt_main = !strcmp (module, PROGRAM_NAME);	/* true if running the main program, false otherwise */
+	if (gmt_main && argc == 3 && !strcmp (argv[1], "clear")) {	/* Clear something. */
+		if (!strcmp (argv[2], "cache") || !strcmp (argv[2], "all")) {	/* Clear the cache, then recreate empty directory */
+			if (gmt_remove_dir (api_ctrl, api_ctrl->GMT->session.CACHEDIR, true))
+				return GMT_RUNTIME_ERROR;
+		}
+		if (!strcmp (argv[2], "history") || !strcmp (argv[2], "all")) {	/* Clear the history */
+			if (gmt_remove_file (api_ctrl->GMT, "gmt.history"))
+				return GMT_RUNTIME_ERROR;
+		}
+		if (!strcmp (argv[2], "conf") || !strcmp (argv[2], "all")) {	/* Clear the configuration */
+			if (gmt_remove_file (api_ctrl->GMT, "gmt.conf"))
+				return GMT_RUNTIME_ERROR;
+		}
+		return GMT_NOERROR;
+	}
+#ifdef TEST_MODERN
+	if (gmt_main && argc == 2 && !strcmp (argv[1], "begin")) {	/* Initiating a GMT Work Flow. */
+		gmt_manage_workflow (api_ctrl, GMT_BEGIN_WORKFLOW);
+		if (GMT_Destroy_Session (api_ctrl))	/* Destroy GMT session */
+			return GMT_RUNTIME_ERROR;
+		return GMT_NOERROR;
+	}
+	else if (gmt_main && argc == 2 && !strcmp (argv[1], "end")) {	/* Terminating a GMT Work Flow. */
+		gmt_manage_workflow (api_ctrl, GMT_END_WORKFLOW);
+		if (GMT_Destroy_Session (api_ctrl))	/* Destroy GMT session */
+			return GMT_RUNTIME_ERROR;
+		return GMT_NOERROR;
+	}
+#endif
 	if (gmt_main && argc > 1 && (!strcmp (argv[1], "gmtread") || !strcmp (argv[1], "read") || !strcmp (argv[1], "gmtwrite") || !strcmp (argv[1], "write"))) {
 		/* Cannot call [gmt]read or [gmt]write module from the command-line - only external APIs can do that. */
 		module = argv[1];	/* Name of module that does not exist, but will give reasonable message */
@@ -174,6 +203,12 @@ int main (int argc, char *argv[]) {
 				status = GMT_NOERROR;
 			}
 
+			/* Show the shared library */
+			else if (!strncmp (argv[arg_n], "--show-library", 10U)) {
+				fprintf (stdout, "%s\n", api_ctrl->GMT->init.runtime_library);
+				status = GMT_NOERROR;
+			}
+
 			/* Show share directory */
 			else if (!strncmp (argv[arg_n], "--show-sharedir", 12U)) {
 				fprintf (stdout, "%s\n", api_ctrl->GMT->session.SHAREDIR);
@@ -200,12 +235,20 @@ int main (int argc, char *argv[]) {
 		fprintf (stderr, "For more information about legal matters, see the file named LICENSE.TXT.\n\n");
 		fprintf (stderr, "usage: %s [options]\n", PROGRAM_NAME);
 		fprintf (stderr, "       %s <module name> [<module-options>]\n\n", PROGRAM_NAME);
+		fprintf (stderr, "Session management:\n");
+#ifdef TEST_MODERN
+		fprintf (stderr, "  gmt begin         Initiate a new GMT session.\n");
+		fprintf (stderr, "  gmt end           Terminate the current GMT session.\n\n");
+#endif
+		fprintf (stderr, "  gmt clear history | conf | cache | all\n");
+		fprintf (stderr, "                    Deletes gmt.history, gmt.conf, the user cache dir, or all of them\n\n");
 		fprintf (stderr, "options:\n");
 		fprintf (stderr, "  --help            List descriptions of available GMT modules.\n");
 		fprintf (stderr, "  --show-bindir     Show directory with GMT executables.\n");
 		fprintf (stderr, "  --show-cores      Print number of available cores.\n");
 		fprintf (stderr, "  --show-datadir    Show directory/ies with user data.\n");
 		fprintf (stderr, "  --show-modules    List all module names.\n");
+		fprintf (stderr, "  --show-library    Show path of the shared GMT library.\n");
 		fprintf (stderr, "  --show-plugindir  Show directory for plug-ins.\n");
 		fprintf (stderr, "  --show-sharedir   Show directory for shared GMT resources.\n");
 		fprintf (stderr, "  --version         Print GMT version number.\n\n");

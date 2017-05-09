@@ -1,6 +1,6 @@
 REM		GMT EXAMPLE 16
 REM
-REM		$Id: example_16.bat 16750 2016-07-09 05:44:02Z pwessel $
+REM		$Id: example_16.bat 17775 2017-03-25 03:36:02Z pwessel $
 REM
 REM Purpose:	Illustrates interpolation methods using same data as Example 12.
 REM GMT progs:	gmtset, grdview, grdfilter, pscontour, psscale, pstext, surface, triangulate
@@ -31,7 +31,7 @@ gmt grdfilter rawt.nc -Gfiltered.nc -D0 -Fc1
 gmt grdview filtered.nc -R -J -B -Cex16.cpt -Qs -O -K -X3.5i >> %ps%
 echo 3.25 7 triangulate @~\256@~ gmt grdfilter | gmt pstext -R -J -O -K -N -F+f18p,Times-Roman+jCB >> %ps%
 echo 3.2125 7.5 Gridding of Data | gmt pstext -R0/10/0/10 -Jx1i -O -K -N -F+f32p,Times-Roman+jCB -X-3.5i >> %ps%
-gmt psscale -Dx3.25i/0.35i+jTC+w5i/0.25i+h -Cex16.cpt -O -Y-0.75i >> %ps%
+gmt psscale -Dx3.25i/-0.4i+jTC+w5i/0.25i+h -Cex16.cpt -O >> %ps%
 del *.nc
 del .gmt*
 del gmt.conf

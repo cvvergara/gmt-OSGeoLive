@@ -30,7 +30,6 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-p| ]
 [ |SYN_OPT-t| ]
@@ -80,7 +79,7 @@ Optional Arguments
 
 .. _-D:
 
-**-D**\ [*unit*]\ *xmin/xmax/ymin/ymax*\ [**r**][**+s**\ *file*] \| **-D**\ [**g**\ \|\ **j**\ \|\ **J**\ \|\ **n**\ \|\ **x**]\ *refpoint*\ **+w**\ *width*\ [/*height*][**+j**\ *justify*][**+o**\ *dx*\ [/*dy*]][**+s**\ *file*]
+**-D**\ [*unit*]\ *xmin/xmax/ymin/ymax*\ [**r**][**+s**\ *file*] \| **-D**\ [**g**\ \|\ **j**\ \|\ **J**\ \|\ **n**\ \|\ **x**]\ *refpoint*\ **+w**\ *width*\ [/*height*][**+j**\ *justify*][**+o**\ *dx*\ [/*dy*]][**+s**\ *file*][**+t**]
     Draw a simple map insert box on the map.  Requires **-F**.  Specify the box in one of three ways:
     (a) Give *west/east/south/north* of geographic rectangle bounded by parallels
     and meridians; append **r** if the coordinates instead are the lower left and
@@ -96,11 +95,12 @@ Optional Arguments
     can be changed by appending **+j** followed by a 2-char justification code *justify* (see :doc:`pstext`).
     Note: If **-Dj** is used then *justify* defaults to the same as *refpoint*,
     if **-DJ** is used then *justify* defaults to the mirror opposite of *refpoint*.
-    Add **+o** to offset the color scale by *dx*/*dy* away from the *refpoint* point in
+    Add **+o** to offset the inset fig by *dx*/*dy* away from the *refpoint* point in
     the direction implied by *justify* (or the direction implied by **-Dj** or **-DJ**).
     If you need access to the placement of the lower left corner of the map insert and
-    its dimensions in the current map unit, use **s**\ *file* to write this information
-    to *file*.
+    its dimensions in the current map unit, use **+s**\ *file* to write this information
+    to *file*.  Alternatively, you could append **+t** to translate the plot origin to
+    the lower left corner of the map insert.
     Specify insert box attributes via the **-F** option [outline only].
 
 .. _-F:
@@ -160,8 +160,6 @@ Optional Arguments
 .. _-X:
 
 .. include:: explain_-XY.rst_
-
-.. include:: explain_-c.rst_
 
 .. |Add_-f| replace:: This applies only to the coordinates specified in the **-R** option.
 .. include:: explain_-f.rst_
@@ -526,6 +524,17 @@ thus the spherical form is used. To get a 18-cm-wide world map centered on the D
    ::
 
     gmt psbasemap -Rg -JV180/18c -Bafg -B+t"Van der Grinten" > grinten.ps
+
+Arbitrary rotation
+~~~~~~~~~~~~~~~~~~
+
+If you need to plot a map but have it rotated about a vertical axis then
+use the **-p** option.  For instance, the rotate the basemap below 90
+degrees about an axis centered on the map, try
+
+   ::
+
+    gmt psbasemap -R10/40/10/40 -JM10c -P -Bafg -B+t"I am rotated" -p90+w25/25 -Xc > rotated.ps
 
 Custom Labels or Intervals
 --------------------------

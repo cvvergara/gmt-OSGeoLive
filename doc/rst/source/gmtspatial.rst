@@ -27,6 +27,7 @@ Synopsis
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-g| ]
 [ |SYN_OPT-h| ]
@@ -66,7 +67,9 @@ Optional Arguments
    averaged) coordinates and the updated NN distances and point IDs.  A
    negative point number means the original point was replaced by a weighted
    average (the absolute ID value gives the ID of the first original point
-   ID to be included in the average.)
+   ID to be included in the average.).  Note: The input data are assumed to
+   contain (*lon, lat*) or (*x, y*), optionally followed by a *z* and a *weight* [1] column.
+   We compute a weighted average of the location and *z* (if present).
 
 .. _-C:
 
@@ -205,6 +208,9 @@ Optional Arguments
 .. |Add_-d| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-d.rst_
 
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-e.rst_
+
 .. |Add_-f| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-f.rst_
 
@@ -276,7 +282,7 @@ Notes
 OGR/GMT files are considered complete datasets and thus you cannot specify more than one
 at a given time. This causes problems if you want to examine the intersections of
 two OGR/GMT files.  The solution is to convert them to regular datasets via
-gmtconvert and then run gmtspatial on the converted files.
+:doc:`gmtconvert` and then run **gmtspatial** on the converted files.
 
 See Also
 --------

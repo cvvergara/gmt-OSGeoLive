@@ -1,12 +1,12 @@
 #!/bin/bash
-#	$Id: GMT_App_N_1.sh 11490 2013-05-16 06:26:21Z pwessel $
+#	$Id: GMT_App_N_1.sh 18128 2017-05-05 01:37:24Z pwessel $
 #
 #	Makes the insert for Appendix N(custom symbols)
 #	Note that this script also assembles App N tex
 #	file since the number of figures must be calculated.
 #	Dimensions are in inches
 #
-grep -v '^#' "${GMT_SOURCE_DIR}"/share/conf/gmt_custom_symbols.conf | $AWK '{print $1}' > tt.lis
+grep -v '^#' "${GMT_SOURCE_DIR}"/share/custom/gmt_custom_symbols.conf | $AWK '{print $1}' > tt.lis
 n=`cat tt.lis | wc -l`
 
 # Because of text, the first page figure will contain less symbol rows than

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_internals.h 17736 2017-03-20 22:54:42Z pwessel $
+ *	$Id: gmt_internals.h 18041 2017-04-26 23:09:48Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -49,6 +49,8 @@ struct GMT_XINGS {
         unsigned int nx;	/* Number of intersections (1 or 2) */
 };
 
+EXTERN_MSC bool gmtlib_file_is_downloadable (struct GMT_CTRL *GMT, const char *file, unsigned int *kind);
+EXTERN_MSC unsigned int gmtlib_get_pos_of_filename (const char *url);
 EXTERN_MSC bool gmtlib_is_color (struct GMT_CTRL *GMT, char *word);
 EXTERN_MSC char * gmtlib_putfill (struct GMT_CTRL *GMT, struct GMT_FILL *F);
 EXTERN_MSC char * gmtlib_putcmyk (struct GMT_CTRL *GMT, double *cmyk);
@@ -56,7 +58,7 @@ EXTERN_MSC char * gmtlib_puthsv (struct GMT_CTRL *GMT, double *hsv);
 EXTERN_MSC enum gmt_enum_units gmtlib_get_unit_number (struct GMT_CTRL *GMT, char unit);
 EXTERN_MSC void gmtlib_explain_options (struct GMT_CTRL *GMT, char *options);
 EXTERN_MSC char * gmtlib_putparameter (struct GMT_CTRL *GMT, const char *keyword);
-EXTERN_MSC unsigned int gmtlib_setparameter (struct GMT_CTRL *GMT, const char *keyword, char *value);
+EXTERN_MSC unsigned int gmtlib_setparameter (struct GMT_CTRL *GMT, const char *keyword, char *value, bool core);
 EXTERN_MSC int gmtlib_report_func (struct GMT_CTRL *GMT, unsigned int level, const char *source_line, const char *format, ...);
 EXTERN_MSC int gmtlib_get_num_processors ();
 EXTERN_MSC int gmtlib_bcr_get_img (struct GMT_CTRL *GMT, struct GMT_IMAGE *G, double xx, double yy, unsigned char *z);		/* Compute z(x,y) from bcr structure and image */
@@ -218,6 +220,7 @@ EXTERN_MSC void gmtlib_contract_headerpad (struct GMT_CTRL *GMT, struct GMT_GRID
 EXTERN_MSC void gmtlib_contract_pad (struct GMT_CTRL *GMT, void *object, int family, unsigned int *orig_pad, double *orig_wesn);
 EXTERN_MSC uint64_t gmtlib_glob_list (struct GMT_CTRL *GMT, const char *pattern, char ***list);
 EXTERN_MSC void gmtlib_change_dataset (struct GMT_CTRL *GMT, struct GMT_DATASET *D);
+EXTERN_MSC int gmtlib_get_option_id (int start, char *this_option);
 
 #ifdef HAVE_GDAL
 EXTERN_MSC int gmtlib_read_image (struct GMT_CTRL *GMT, char *file, struct GMT_IMAGE *I, double *wesn,

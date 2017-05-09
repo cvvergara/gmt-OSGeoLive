@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtdefaults.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmtdefaults.c 18018 2017-04-22 00:35:39Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -25,14 +25,14 @@
  *
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"gmtdefaults"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"List current GMT default parameters"
 #define THIS_MODULE_KEYS	""
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-V"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-V"
 
 /* Control structure for gmtdefaults */
 
@@ -62,9 +62,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
-	GMT_Message (API, GMT_TIME_NONE, "\t-D Print the GMT default settings.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append s to see the SI version of the defaults.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append u to see the US version of the defaults.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-D Print the current GMT default settings.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append s to print the SI version of the system defaults.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append u to print the US version of the system defaults.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\n\tALL settings will be written to standard output.\n");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -115,10 +116,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTDEFAULTS_CTRL *Ctrl, struct
 #define bailout(code) {gmt_M_free_options (mode); return (code);}
 #define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
+EXTERN_MSC void gmtinit_update_keys (struct GMT_CTRL *GMT, bool arg);
+
 int GMT_gmtdefaults (void *V_API, int mode, void *args) {
 	int error;
-
-	char path[GMT_LEN256] = {""};
 
 	struct GMTDEFAULTS_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
@@ -138,17 +139,23 @@ int GMT_gmtdefaults (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the gmtdefaults main code ----------------------------*/
 
-	if (Ctrl->D.active) {
-		gmt_getsharepath (GMT, "conf", "gmt", (Ctrl->D.mode == 's') ? "_SI.conf" : (Ctrl->D.mode == 'u') ? "_US.conf" : ".conf", path, R_OK);
-		gmt_loaddefaults (GMT, path);
+	if (Ctrl->D.active) {	/* Start with default params using SI settings */
+		if (Ctrl->D.mode == 'u')
+			gmtinit_conf_US (GMT);	/* Change a few to US defaults */
 	}
+	else
+		gmt_getdefaults (GMT, NULL);	/* Get local GMT default settings (if any) [and PSL if selected] */
+		
+	/* To ensure that all is written to stdout we must set updated to true */
+
+	gmtinit_update_keys (GMT, true);
 
 	gmt_putdefaults (GMT, "-");
 

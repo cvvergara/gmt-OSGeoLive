@@ -1,5 +1,5 @@
 REM             GMT EXAMPLE 41
-REM             $Id$
+REM             $Id: example_41.bat 17597 2017-02-24 02:49:00Z pwessel $
 REM
 REM Purpose:      Illustrate typesetting of legend with table
 REM GMT progs:    gmtset, pscoast, pslegend, psxy

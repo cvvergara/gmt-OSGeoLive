@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- * $Id: gmt_notposix.h 17449 2017-01-16 21:27:04Z pwessel $
+ * $Id: gmt_notposix.h 17937 2017-04-15 02:51:15Z pwessel $
  *
  * Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
@@ -197,6 +197,10 @@
 
 #ifndef PATH_SEPARATOR
 #	define PATH_SEPARATOR ':' /* Win uses ; while Unix uses : */
+#endif
+
+#ifndef S_ISDIR
+#	define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR) 	/* Copied from linux libc sys/stat.h */
 #endif
 
 /* Misc. ANSI-C math functions used by grdmath and gmtmath.
@@ -485,11 +489,25 @@
 #	define fileno _fileno
 #endif
 
+/* rmdir is usually in unistd.h; we use a macro here
+ * since the same function under WIN32 is prefixed with _
+ * and defined in direct.h */
+#ifdef HAVE__GETCWD
+#	define rmdir _rmdir
+#endif
+
 /* getcwd is usually in unistd.h; we use a macro here
  * since the same function under WIN32 is prefixed with _
  * and defined in direct.h */
 #ifdef HAVE__GETCWD
 #	define getcwd _getcwd
+#endif
+
+/* mktemp is usually in unistd.h; we use a macro here
+ * since the same function under WIN32 is prefixed with _
+ * and defined in io.h */
+#if defined HAVE__MKTEMP && !defined HAVE_MKTEMP
+#	define mktemp _mktemp
 #endif
 
 /* getpid is usually in unistd.h; we use a macro here

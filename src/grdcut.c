@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdcut.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdcut.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,14 +26,14 @@
  * to a new file.
  */
  
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdcut"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Extract subregion from a grid"
 #define THIS_MODULE_KEYS	"<G{,GG}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-RVf"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-RVf"
 
 /* Control structure for grdcontour */
 
@@ -188,7 +188,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDCUT_CTRL *Ctrl, struct GMT_
 		}
 	}
 	
-	n_errors += gmt_M_check_condition (GMT, (GMT->common.R.active + Ctrl->S.active + Ctrl->Z.active) != 1, "Syntax error: Must specify only one of the -R, -S or the -Z options\n");
+	n_errors += gmt_M_check_condition (GMT, (GMT->common.R.active[RSET] + Ctrl->S.active + Ctrl->Z.active) != 1, "Syntax error: Must specify only one of the -R, -S or the -Z options\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G option: Must specify output grid file\n");
 	n_errors += gmt_M_check_condition (GMT, n_files != 1, "Syntax error: Must specify one input grid file\n");
 
@@ -250,8 +250,8 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -262,7 +262,7 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 		unsigned int row0 = 0, row1 = 0, col0 = 0, col1 = 0, row, col, sum, side, count[4];
 		bool go;
 		
-		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {
+		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);	/* Get entire grid */
 		}
 		row1 = G->header->n_rows - 1;	col1 = G->header->n_columns - 1;
@@ -354,7 +354,7 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 		int row, col;
 		bool wrap;
 		
-		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
+		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);	/* Get header only */
 		}
 		if (!gmt_M_is_geographic (GMT, GMT_IN)) {
@@ -439,7 +439,7 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 		}
 	}
 	else {	/* Just the usual subset selection via -R.  First get the header */
-		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
+		if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);	/* Get header only */
 		}
 		gmt_M_memcpy (wesn_new, GMT->common.R.wesn, 4, double);
@@ -523,7 +523,7 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 			gmt_set_grddim (GMT, G->header);	/* Update dimensions given the change of pad */
 		}
 	}
-	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY | add_mode, wesn_new, Ctrl->In.file, G) == NULL) {	/* Get subset (unless memory file) */
+	if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY | add_mode, wesn_new, Ctrl->In.file, G) == NULL) {	/* Get subset (unless memory file) */
 		Return (API->error);
 	}
 	if (gmt_M_file_is_memory (Ctrl->In.file) && (Ctrl->N.active || gmt_M_file_is_memory (Ctrl->G.file))) {
@@ -540,10 +540,10 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 		gmt_M_grd_setpad (GMT, G->header, GMT->current.io.pad);	/* Set the default pad */
 		gmt_set_grddim (GMT, G->header);			/* Update dimensions given the change of wesn and pad */
 		gmt_M_memcpy (wesn_new, wesn_requested, 4, double);	/* So reporting below is accurate */
-		xlo = outside[XLO] ? gmt_M_grd_x_to_col (GMT, wesn_old[XLO], G->header) : 0;
-		xhi = outside[XHI] ? gmt_M_grd_x_to_col (GMT, wesn_old[XHI], G->header) : G->header->n_columns - 1;
-		ylo = outside[YLO] ? gmt_M_grd_y_to_row (GMT, wesn_old[YLO], G->header) : G->header->n_rows - 1;
-		yhi = outside[YHI] ? gmt_M_grd_y_to_row (GMT, wesn_old[YHI], G->header) : 0;
+		xlo = outside[XLO] ? (unsigned int)gmt_M_grd_x_to_col (GMT, wesn_old[XLO], G->header) : 0;
+		xhi = outside[XHI] ? (unsigned int)gmt_M_grd_x_to_col (GMT, wesn_old[XHI], G->header) : G->header->n_columns - 1;
+		ylo = outside[YLO] ? (unsigned int)gmt_M_grd_y_to_row (GMT, wesn_old[YLO], G->header) : G->header->n_rows - 1;
+		yhi = outside[YHI] ? (unsigned int)gmt_M_grd_y_to_row (GMT, wesn_old[YHI], G->header) : 0;
 		if (outside[XLO]) {
 			for (row = 0; row < G->header->n_rows; row++) for (col = 0; col < xlo; col++) G->data[gmt_M_ijp(G->header,row,col)] = Ctrl->N.value;
 		}
@@ -592,7 +592,7 @@ int GMT_grdcut (void *V_API, int mode, void *args) {
 	/* Send the subset of the grid to the destination. */
 	
 	if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, G)) Return (API->error);
-	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, G) != GMT_NOERROR) {
+	if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Ctrl->G.file, G) != GMT_NOERROR) {
 		Return (API->error);
 	}
 

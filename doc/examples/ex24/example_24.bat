@@ -1,7 +1,7 @@
 REM
 REM             GMT EXAMPLE 24
 REM
-REM             $Id: example_24.bat 17434 2017-01-12 22:59:32Z pwessel $
+REM             $Id: example_24.bat 17435 2017-01-12 23:07:10Z pwessel $
 REM
 REM Purpose:    Extract subsets of data based on geospatial criteria
 REM

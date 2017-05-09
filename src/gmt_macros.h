@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_macros.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_macros.h 18041 2017-04-26 23:09:48Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -109,14 +109,19 @@
 #define gmt_M_cpy3v(to,from) memcpy(to, from, 3*sizeof(double))
 
 /*! Macros for printing a tic/toc elapsed time message*/
-#define gmt_M_tic(C) {if (C->current.setting.verbose >= GMT_MSG_TICTOC) GMT_Message(C->parent,GMT_TIME_RESET,"");}
-#define gmt_M_toc(C,...) {if (C->current.setting.verbose >= GMT_MSG_TICTOC) GMT_Message(C->parent,GMT_TIME_ELAPSED, \
+#define gmt_M_tic(C) {if (C->current.setting.verbose == GMT_MSG_TICTOC) GMT_Message(C->parent,GMT_TIME_RESET,"");}
+#define gmt_M_toc(C,...) {if (C->current.setting.verbose == GMT_MSG_TICTOC) GMT_Message(C->parent,GMT_TIME_ELAPSED, \
 		"(%s) | %s\n", C->init.module_name, __VA_ARGS__);}
 
 /*! Cleaner check to see if a line is associated with the extended syntax or not */
 #define gmt_M_showusage(API) (!API->GMT->common.synopsis.extended)
 
 /* COLOR MACROS */
+
+/* Determine if fill is in fact a pattern */
+/* Old: always starts with integer dpi.
+ * New: Either start with pattern 1-88 or a file which should have an extension */
+#define gmt_M_is_pattern(txt) ((txt[0] == 'p' || txt[0] == 'P') && (isdigit((int)txt[1]) || strchr(txt,'.')))
 
 /*! Copy two RGB[T] arrays (a = b) */
 #define gmt_M_rgb_copy(a,b) memcpy (a, b, 4 * sizeof(double))
@@ -152,5 +157,10 @@
 
 /*! Determine default justification for box item */
 #define gmt_M_just_default(GMT,refpoint,just) (refpoint->mode == GMT_REFPOINT_JUST_FLIP ? gmt_flip_justify(GMT,refpoint->justify) : refpoint->mode == GMT_REFPOINT_JUST ? refpoint->justify : just)
+
+/*! Determine if we have a special downloadable file */
+#define gmt_M_file_is_cache(file) (file && file[0] == '@' && strncmp (file, "@GMTAPI@-", 9U))
+#define gmt_M_file_is_url(file) (!strncmp (file, "http:", 5U) || !strncmp (file, "https:", 6U) || !strncmp (file, "ftp:", 4U))
+
 
 #endif  /* _GMT_MACROS_H */

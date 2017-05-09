@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grd2cpt.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grd2cpt.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -33,14 +33,14 @@
  *
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grd2cpt"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Make linear or histogram-equalized color palette table from grid"
 #define THIS_MODULE_KEYS	"<G{+,>C}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->RVh"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "->RVh"
 
 #define GRD2CPT_N_LEVELS	11	/* The default number of levels if nothing is specified */
 
@@ -107,8 +107,9 @@ struct GRD2CPT_CTRL {
 		bool active;
 		int kind; /* -1 symmetric +-zmin, +1 +-zmax, -2 = +-Minx(|zmin|,|zmax|), +2 = +-Max(|zmin|,|zmax|), 0 = min to max [Default] */
 	} T;
-	struct W {	/* -W */
+	struct W {	/* -W[w] */
 		bool active;
+		bool wrap;
 	} W;
 	struct Z {	/* -Z */
 		bool active;
@@ -137,7 +138,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grd2cpt <grid> [-A[+]<transparency>] [-C<cpt>] [-D[i]] [-E[<nlevels>]] [-F[R|r|h|c][+c]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-G<zlo>/<zhi>] [-I[c][z]] [-L<min_limit>/<max_limit>] [-M] [-N] [-Q[i|o]]\n\t[%s] [-S<z_start>/<z_stop>/<z_inc> or -S<n>]\n\t[-T<-|+|=|_>] [%s] [-W] [-Z]\n\n", GMT_Rgeo_OPT, GMT_V_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-G<zlo>/<zhi>] [-I[c][z]] [-L<min_limit>/<max_limit>] [-M] [-N] [-Q[i|o]]\n\t[%s] [-S<z_start>/<z_stop>/<z_inc> or -S<n>]\n\t[-T<-|+|=|_>] [%s] [-W[w]] [-Z]\n\n", GMT_Rgeo_OPT, GMT_V_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -176,7 +177,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   _ for values symmetric about zero -+min(|zmin|,|zmax|).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   = for values symmetric about zero -+max(|zmin|,|zmax|).\n");
 	GMT_Option (API, "V");
-	GMT_Message (API, GMT_TIME_NONE, "\t-W Do not interpolate color palette.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-W Do not interpolate color palette. Alternatively, append w for a wrapped CPT.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Create a continuous color palette [Default is discontinuous, i.e., constant color intervals].\n");
 	GMT_Option (API, "h,.");
 
@@ -312,7 +313,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRD2CPT_CTRL *Ctrl, struct GMT
 				}
 				break;
 			case 'W':	/* Do not interpolate colors */
-				Ctrl->W.active = true;
+				if (opt->arg[0] == 'w')
+					Ctrl->W.wrap = true;
+				else
+					Ctrl->W.active = true;
 				break;
 			case 'Z':	/* Continuous colors */
 				Ctrl->Z.active = true;
@@ -392,8 +396,8 @@ int GMT_grd2cpt (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -424,11 +428,12 @@ int GMT_grd2cpt (void *V_API, int mode, void *args) {
 			Return (EXIT_FAILURE);
 		Pin = Ptrunc;
 	}
+	if (Ctrl->W.wrap) Pin->is_wrapping = true;	/* A cyclic CPT has been requested */
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid(s)\n");
 
 	gmt_M_memset (wesn, 4, double);
-	if (GMT->common.R.active) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Subset */
+	if (GMT->common.R.active[RSET]) gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Subset */
 
 	G = gmt_M_memory (GMT, NULL, n_alloc, struct GMT_GRID *);	/* Potentially an array of grids */
 	grdfile = gmt_M_memory (GMT, NULL, n_alloc, char *);	/* Potentially an array of gridfile names */
@@ -436,7 +441,7 @@ int GMT_grd2cpt (void *V_API, int mode, void *args) {
 	for (opt = options, k = 0; opt; opt = opt->next) {
 		if (opt->option != '<') continue;	/* We are only processing input files here */
 
-		if ((G[k] = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, wesn, opt->arg, NULL)) == NULL) {
+		if ((G[k] = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, wesn, opt->arg, NULL)) == NULL) {
 			error = free_them_grids (API, G, grdfile, k);
 			gmt_M_free (GMT, G);
 			gmt_M_free (GMT, grdfile);
@@ -527,7 +532,7 @@ int GMT_grd2cpt (void *V_API, int mode, void *args) {
 		if (GMT_Write_Data (API, GMT_IS_PALETTE, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->Out.file, Pout) != GMT_NOERROR) {
 			Return (API->error);
 		}
-		error = free_them_grids (API, G, grdfile, ngrd);
+		free_them_grids (API, G, grdfile, ngrd);
 		gmt_M_free (GMT, G);
 		gmt_M_free (GMT, grdfile);
 

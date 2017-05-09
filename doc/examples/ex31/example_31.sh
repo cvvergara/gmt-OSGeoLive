@@ -1,6 +1,6 @@
 #!/bin/bash
 #		GMT EXAMPLE 31
-#		$Id: example_31.sh 16750 2016-07-09 05:44:02Z pwessel $
+#		$Id: example_31.sh 17436 2017-01-13 00:22:07Z pwessel $
 #
 # Purpose:	Illustrate usage of non-default fonts in PostScript
 # GMT modules:	gmtset, pscoast, psxy, pstext, pslegend
@@ -32,7 +32,7 @@ FONT_TITLE 24p,LinLibertineOB \
 MAP_ANNOT_OBLIQUE 42
 
 # map of countries
-gmt pscoast -Dl -R-7/31/64/66/r -JL15/50/40/60/16c -P \
+gmt pscoast -Dl -R-7/31/64/66+r -JL15/50/40/60/16c -P \
 	-Bx10g10 -By5g5 -B+t"Europe\072 Countries and Capital Cities" -A250 \
 	-Slightblue -Glightgreen -W0.25p -N1/1p,white -K > $ps
 

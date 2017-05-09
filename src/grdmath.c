@@ -1,5 +1,5 @@
  /*--------------------------------------------------------------------
- *	$Id: grdmath.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdmath.c 18176 2017-05-07 21:13:59Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -26,14 +26,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdmath"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Reverse Polish Notation (RPN) calculator for grids (element by element)"
 #define THIS_MODULE_KEYS	"<G(,=G}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:RVbdfghinrs" GMT_OPT("F") GMT_ADD_x_OPT
+#define THIS_MODULE_NEEDS	"r"
+#define THIS_MODULE_OPTIONS "-:RVbdefghinrs" GMT_OPT("F") GMT_ADD_x_OPT
 
 EXTERN_MSC int gmt_load_macros (struct GMT_CTRL *GMT, char *mtype, struct GMT_MATH_MACRO **M);
 EXTERN_MSC int gmt_find_macro (char *arg, unsigned int n_macros, struct GMT_MATH_MACRO *M);
@@ -71,8 +71,9 @@ EXTERN_MSC struct GMT_OPTION * gmt_substitute_macros (struct GMT_CTRL *GMT, stru
 #define GRDMATH_ARG_IS_y_MATRIX		-20
 #define GRDMATH_ARG_IS_XCOL_MATRIX	-21
 #define GRDMATH_ARG_IS_YROW_MATRIX	-22
-#define GRDMATH_ARG_IS_ASCIIFILE	-23
-#define GRDMATH_ARG_IS_SAVE		-24
+#define GRDMATH_ARG_IS_NODE_MATRIX	-23
+#define GRDMATH_ARG_IS_ASCIIFILE	-24
+#define GRDMATH_ARG_IS_SAVE		-25
 #define GRDMATH_ARG_IS_STORE		-50
 #define GRDMATH_ARG_IS_RECALL		-51
 #define GRDMATH_ARG_IS_CLEAR		-52
@@ -103,10 +104,6 @@ struct GRDMATH_CTRL {	/* All control options for this program (except common arg
 		bool force;	/* if true, select next highest level if current set is not available */
 		char set;	/* One of f, h, i, l, c */
 	} D;
-	struct I {	/* -Idx[/dy] */
-		bool active;
-		double inc[2];
-	} I;
 	struct M {	/* -M */
 		bool active;
 	} M;
@@ -161,8 +158,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdmath [%s]\n\t[%s]\n\t[-D<resolution>][+] [%s]\n\t[-M] [-N] [%s] [%s] [%s] [%s]\n\t[%s]"
-		" [%s]\n\t[%s] [%s] [%s] [%s]\n\t%s",	GMT_Rgeo_OPT, GMT_A_OPT, GMT_I_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT,
-		GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_n_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT);
+		" [%s]\n\t[%s] [%s] [%s] [%s] [%s]\n\t%s",	GMT_Rgeo_OPT, GMT_A_OPT, GMT_I_OPT, GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT,
+		GMT_e_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_n_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT);
 	GMT_Message (API, GMT_TIME_NONE, " A B op C op D op ... = <outgrd>\n\n");
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -210,7 +207,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 		"\t-N Do not perform strict domain check if several grids are involved.\n"
 		"\t   [Default checks that domain is within %g * [xinc or yinc] of each other].\n", GMT_CONV4_LIMIT);
 	GMT_Option (API, "R,V");
-	GMT_Option (API, "bi2,di,f,g,h,i");
+	GMT_Option (API, "bi2,di,e,f,g,h,i");
 	GMT_Message (API, GMT_TIME_NONE, "\t   (Only applies to the input files for operators LDIST, PDIST, POINT and INSIDE).\n");
 	GMT_Option (API, "n,r,s,x,.");
 
@@ -260,11 +257,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct GMT
 				Ctrl->D.force = (opt->arg[1] == '+');
 				break;
 			case 'I':	/* Grid spacings */
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'M':	/* Map units */
 				Ctrl->M.active = true;
@@ -278,17 +271,13 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct GMT
 		}
 	}
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	if (missing_equal) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Usage is <operations> = [outfile]\n");
 		n_errors++;
 	}
-	if (Ctrl->I.active && !GMT->common.R.active) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: -I requires the -R option\n");
-		n_errors++;
-	}
-	if (Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0)) {
+	if (GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0)) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -I option: Must specify positive increment(s)\n");
 		n_errors++;
 	}
@@ -298,7 +287,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct GMT
 
 GMT_LOCAL struct GMT_GRID *alloc_stack_grid (struct GMT_CTRL *GMT, struct GMT_GRID *Template) {
 	/* Allocate a new GMT_GRID structure based on dimensions etc of the Template */
-	struct GMT_GRID *New = GMT_Create_Data (GMT->parent, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Template->header->wesn, Template->header->inc, \
+	struct GMT_GRID *New = GMT_Create_Data (GMT->parent, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, Template->header->wesn, Template->header->inc, \
 		Template->header->registration, GMT_NOTSET, NULL);
 	return (New);
 }
@@ -333,7 +322,7 @@ GMT_LOCAL void grd_ACOS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	uint64_t node;
 	float a = 0.0f;
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ACOS!\n");
 	if (stack[last]->constant) a = (float)d_acos (stack[last]->factor);
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : d_acosf (stack[last]->G->data[node]);
@@ -358,7 +347,7 @@ GMT_LOCAL void grd_ACOT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	uint64_t node;
 	float a = 0.0f;
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0)
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ACOT!\n");
 	if (stack[last]->constant) a = (float)atan (1.0 / stack[last]->factor);
@@ -383,7 +372,7 @@ GMT_LOCAL void grd_ACSC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	uint64_t node;
 	float a = 0.0f;
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0)
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ACSC!\n");
 	if (stack[last]->constant) a = (float)d_asin (1.0 / stack[last]->factor);
@@ -447,7 +436,7 @@ GMT_LOCAL void grd_ARC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	double a, b;
 	gmt_M_unused(GMT);
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	for (node = 0; node < info->size; node++) {
 
 		a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
@@ -461,77 +450,10 @@ GMT_LOCAL void grd_ARC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	}
 }
 
-GMT_LOCAL void get_geo_cellarea (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G) {
-	/* Calculate geographic SPHERICAL area in km^2.
-	 * Integrating the area between two parallels +/- yinc/2 to either side of latitude y on a sphere
-	 * and partition it amount all cells in longitude yields the exact area (angles in radians)
-	 *     A(y) = 2 * R^2 * xinc * sin (0.5 * yinc) * cos(y)
-	 * except at the points at the pole (gridline registration) or near the pole (pixel reg).
-	 * There, the integration yields
-	 *     A(pole) = R^2 * xinc * (1.0 - cos (f * yinc))
-	 * where f = 0.5 for gridline-registered and f = 1 for pixel-registered grids.
-	 * P.Wessel, July 2016.
-	 */
-	uint64_t node;
-	unsigned int row, col, j, first_row = 0, last_row = G->header->n_rows - 1, last_col = G->header->n_columns - 1;
-	double lat, area, f, row_weight, col_weight = 1.0, R2 = pow (0.001 * GMT->current.proj.mean_radius, 2.0);	/* squared mean radius in km */
-	char *aux[6] = {"geodetic", "authalic", "conformal", "meridional", "geocentric", "parametric"};
-	char *rad[5] = {"mean (R_1)", "authalic (R_2)", "volumetric (R_3)", "meridional", "quadratic"};
-
-	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Compute spherical gridnode areas using %s radius [R = %.12g km] and %s latitudes\n",
-		rad[GMT->current.setting.proj_mean_radius], GMT->current.proj.mean_radius, aux[1+GMT->current.setting.proj_aux_latitude/2]);
-	/* May need special treatment of pole points */
-	f = (G->header->registration == GMT_GRID_NODE_REG) ? 0.5 : 1.0;	/* Half pizza-slice for gridline regs with node at pole, full slice for grids */
-	area = R2 * (G->header->inc[GMT_X] * D2R);
-	if (doubleAlmostEqualZero (G->header->wesn[YHI], 90.0)) {	/* North pole row */
-		row_weight = 1.0 - cosd (f * G->header->inc[GMT_Y]);
-		gmt_M_col_loop (GMT, info->G, first_row, col, node) {
-			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;
-			G->data[node] = (float)(row_weight * col_weight * area);
-		}
-		first_row++;
-	}
-	if (doubleAlmostEqualZero (G->header->wesn[YLO], -90.0)) {	/* South pole row */
-		row_weight = 1.0 - cosd (f * G->header->inc[GMT_Y]);
-		gmt_M_col_loop (GMT, info->G, last_row, col, node) {
-			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;
-			G->data[node] = (float)(row_weight * col_weight * area);
-		}
-		last_row--;
-	}
-	/* Below we just use the standard graticule equation. Must use j instead of row in d_grd_y due to pad */
-	area *= 2.0 * sind (0.5 * G->header->inc[GMT_Y]);	/* Since no longer any special cases with poles below */
-	for (row = first_row, j = first_row + G->header->pad[YHI]; row <= last_row; row++, j++) {
-		lat = gmt_lat_swap (GMT, info->d_grd_y[j], GMT->current.setting.proj_aux_latitude);	/* Convert to selected auxiliary latitude */
-		row_weight = cosd (lat);
-		gmt_M_col_loop (GMT, info->G, row, col, node) {	/* Loop over cols; always save the next left before we update the array at that col */
-			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;
-			G->data[node] = (float)(row_weight * col_weight * area);
-		}
-	}
-}
-
-GMT_LOCAL void get_cart_cellarea (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G) {
-	/* Calculate Cartesian cell areas in user units */
-	uint64_t node;
-	unsigned int row, col, last_row = G->header->n_rows - 1, last_col = G->header->n_columns - 1;
-	double row_weight = 1.0, col_weight = 1.0, area = G->header->inc[GMT_X] * G->header->inc[GMT_Y];	/* All whole cells have same area */
-	gmt_M_unused(GMT);
-	gmt_M_row_loop (GMT, info->G, row) {	/* Loop over the rows */
-		if (G->header->registration == GMT_GRID_NODE_REG) row_weight = (row == 0 || row == last_row) ? 0.5 : 1.0;	/* half-cells in y */
-		gmt_M_col_loop (GMT, info->G, row, col, node) {	/* Now loop over the columns */
-			if (G->header->registration == GMT_GRID_NODE_REG) col_weight = (col == 0 || col == last_col) ? 0.5 : 1.0;	/* half-cells in x */
-			G->data[node] = (float)(row_weight * col_weight * area);
-		}
-	}
-}
-
 GMT_LOCAL void grd_AREA (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: AREA 0 1 Area of each gridnode cell (spherical calculation in km^2 if geographic).  */
-	if (gmt_M_is_geographic (GMT, GMT_IN))
-		get_geo_cellarea (GMT, info, stack[last]->G);
-	else
-		get_cart_cellarea (GMT, info, stack[last]->G);
+	gmt_M_unused(info);
+	gmt_get_cellarea (GMT, stack[last]->G);
 }
 
 GMT_LOCAL void grd_ASEC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
@@ -539,7 +461,7 @@ GMT_LOCAL void grd_ASEC (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	uint64_t node;
 	float a = 0.0f;
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ASEC!\n");
 	if (stack[last]->constant) a = (float)d_acos (1.0 / stack[last]->factor);
 	for (node = 0; node < info->size; node++)
@@ -564,7 +486,7 @@ GMT_LOCAL void grd_ASIN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	uint64_t node;
 	float a = 0.0f;
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant && fabs (stack[last]->factor) > 1.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, |operand| > 1 for ASIN!\n");
 	if (stack[last]->constant) a = (float)d_asin (stack[last]->factor);
 	for (node = 0; node < info->size; node++)
@@ -589,7 +511,7 @@ GMT_LOCAL void grd_ATAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	float a = 0.0f;
 	gmt_M_unused(GMT);
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant) a = (float)atan (stack[last]->factor);
 	for (node = 0; node < info->size; node++)
 		stack[last]->G->data[node] = (stack[last]->constant) ? a : atanf (stack[last]->G->data[node]);
@@ -602,7 +524,7 @@ GMT_LOCAL void grd_ATAN2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 	unsigned int prev = last - 1;
 	double a, b;
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0 for ATAN2!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0 for ATAN2!\n");
 	for (node = 0; node < info->size; node++) {
@@ -939,7 +861,7 @@ GMT_LOCAL void grd_CAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	double x, y, az;
 	gmt_M_unused(GMT);
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		x = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		y = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
@@ -958,7 +880,7 @@ GMT_LOCAL void grd_CBAZ (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	double x, y, az;
 	gmt_M_unused(GMT);
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	grdmath_grd_padloop (GMT, info->G, row, col, node) {
 		x = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
 		y = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
@@ -1425,7 +1347,7 @@ GMT_LOCAL void grd_D2R (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	double a = 0.0;
 	gmt_M_unused(GMT);
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant) a = stack[last]->factor * D2R;
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : (stack[last]->G->data[node] * D2R));
 }
@@ -1539,7 +1461,6 @@ GMT_LOCAL void grd_DIV (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	double a, b;
 
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Divide by zero gives NaNs\n");
-	prev = last - 1;
 	if (stack[prev]->constant && stack[prev]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand one == 0!\n");
 	if (stack[last]->constant && stack[last]->factor == 0.0) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning, operand two == 0!\n");
 	for (node = 0; node < info->size; node++) {
@@ -2106,7 +2027,8 @@ GMT_LOCAL void grd_INRANGE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, str
 GMT_LOCAL void grd_INSIDE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: INSIDE 1 1 1 when inside or on polygon(s) in A, else 0.  */
 {	/* Suitable for geographic (lon, lat) data and polygons */
-	uint64_t node, seg, row, col;
+	int64_t row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
+	uint64_t node, seg;
 	unsigned int inside;
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_DATASET *D = NULL;
@@ -2125,6 +2047,10 @@ GMT_LOCAL void grd_INSIDE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 	}
 	gmt_skip_xy_duplicates (GMT, false);	/* Reset */
 	T = D->table[0];	/* Only one table in a single file */
+
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,seg,node,inside,S) shared(info,stack,last,GMT,T)
+#endif 
 	for (row = 0; row < info->G->header->my; row++) {
 		node = row * info->G->header->mx;
 		for (col = 0; col < info->G->header->mx; col++, node++) {
@@ -2421,7 +2347,7 @@ GMT_LOCAL void grd_LCRIT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 GMT_LOCAL void grd_LDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LDIST 1 1 Compute minimum distance (in km if -fg) from lines in multi-segment ASCII file A.  */
 {
-	int64_t node, row, col;
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
 	double d;
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_DATASET *D = NULL;
@@ -2429,6 +2355,9 @@ GMT_LOCAL void grd_LDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 	if ((D = ASCII_read (GMT, info, GMT_IS_LINE, "LDIST")) == NULL) return;
 	T = D->table[0];	/* Only one table in a single file */
 
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,d) shared(info,stack,last,GMT,T)
+#endif 
 	for (row = 0; row < info->G->header->my; row++) {
 		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Row %d\n", row);
 		for (col = 0; col < info->G->header->mx; col++) {	/* Visit each node */
@@ -2500,7 +2429,7 @@ GMT_LOCAL void grd_LDISTG (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 GMT_LOCAL void grd_LDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: LDIST2 2 1 As LDIST, from lines in ASCII file B but only to nodes where A != 0.  */
 {
-	uint64_t node, row, col;
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
 	unsigned int prev;
 	double d;
 	struct GMT_DATATABLE *T = NULL;
@@ -2510,6 +2439,9 @@ GMT_LOCAL void grd_LDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 	T = D->table[0];	/* Only one table in a single file */
 	prev = last - 1;
 
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,d) shared(info,stack,prev,GMT,T)
+#endif 
 	for (row = 0; row < info->G->header->my; row++) {
 		node = row * info->G->header->mx;
 		for (col = 0; col < info->G->header->mx; col++, node++) {
@@ -2589,72 +2521,26 @@ GMT_LOCAL void grd_LOG2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : d_logf (GMT, fabsf (stack[last]->G->data[node])) * M_LN2_INV);
 }
 
-GMT_LOCAL float grd_wlmsscl_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
-	uint64_t node, n = 0;
-	unsigned int row, col;
-	float wmode, lmsscl;
-	double w = 1.0;
-	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
-	/* 1. Create array of value,weight pairs, skipping NaNs */
-	if (!use_grid) w = weight;
-	gmt_M_grd_loop (GMT, info->G, row, col, node) {
-		if (gmt_M_is_fnan (G->data[node])) continue;
-		if (use_grid) {
-			if (gmt_M_is_dnan (W->data[node]))
-				continue;
-			else
-				w = W->data[node];
-		}
-		pair[n].value    = G->data[node];
-		pair[n++].weight = (float)w;
-	}
-	/* 2. Find the weighted mode */
-	wmode = (float)gmt_mode_weighted (GMT, pair, n);
-	/* 3. Compute the absolute deviations from this mode */
-	for (node = 0; node < n; node++) pair[node].value = (float)fabs (pair[node].value - wmode);
-	/* 4. Find the weighted median absolue deviation and scale it */
-	lmsscl = (float)(1.4826 * gmt_median_weighted (GMT, pair, n));
-	gmt_M_free (GMT, pair);
-	return lmsscl;
-}
-
 GMT_LOCAL void grd_LMSSCL (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: LMSSCL 1 1 LMS scale estimate (LMS STD) of A.  */
 	uint64_t node;
 	float lmsscl_f;
+	struct GMT_GRID *W = NULL;
 
 	if (stack[last]->constant) {	/* Trivial case: lmsscale = 0 */
 		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
+	
 	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
-		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
-		lmsscl_f = grd_wlmsscl_sub (GMT, info, stack[last]->G, W, true, 0.0);
-		gmt_free_grid (GMT, &W, true);
+		W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		gmt_get_cellarea (GMT, W);
 	}
-	else {
-		uint64_t n;
-		unsigned int gmt_mode_selection = 0, GMT_n_multiples = 0, pad[4];
-		double mode, lmsscl;
-		/* Sort will put any NaNs to the end - we then count to find the real data */
+	
+	lmsscl_f = (float)gmt_grd_lmsscl (GMT, stack[last]->G, W, NULL, true);
 
-		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
-		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
-		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
-		if (n) {
-			gmt_mode_f (GMT, stack[last]->G->data, n, n/2, 0, gmt_mode_selection, &GMT_n_multiples, &mode);
-			gmt_getmad_f (GMT, stack[last]->G->data, n, mode, &lmsscl);
-			lmsscl_f = (float)lmsscl;
-		}
-		else
-			lmsscl_f = GMT->session.f_NaN;
-
-		gmt_M_memset (stack[last]->G->data, info->size, float);	/* Wipes everything */
-		gmt_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
-		if (GMT_n_multiples > 0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: %d Multiple modes found\n", GMT_n_multiples);
-	}
+	if (W) gmt_free_grid (GMT, &W, true);
+	
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = lmsscl_f;
 }
 
@@ -2669,7 +2555,7 @@ GMT_LOCAL void grd_LMSSCLW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, str
 		return;
 	}
 
-	lmsscl = grd_wlmsscl_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	lmsscl = (float)gmt_grd_lmsscl (GMT, stack[prev]->G, stack[last]->G, NULL, true);
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = lmsscl;
 }
 
@@ -2734,39 +2620,11 @@ GMT_LOCAL void grd_LT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct G
 	}
 }
 
-GMT_LOCAL float grd_wmad_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
-	uint64_t node, n = 0;
-	unsigned int row, col;
-	double med, w = 1.0;
-	float wmad;
-	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
-	/* 1. Create array of value,weight pairs, skipping NaNs */
-	if (!use_grid) w = weight;
-	gmt_M_grd_loop (GMT, info->G, row, col, node) {
-		if (gmt_M_is_fnan (G->data[node])) continue;
-		if (use_grid) {
-			if (gmt_M_is_dnan (W->data[node]))
-				continue;
-			else
-				w = W->data[node];
-		}
-		pair[n].value    = G->data[node];
-		pair[n++].weight = (float)w;
-	}
-	/* 2. Find the weighted median */
-	med = gmt_median_weighted (GMT, pair, n);
-	/* 3. Compute the absolute deviations from this median */
-	for (node = 0; node < n; node++) pair[node].value = (float)fabs (pair[node].value - med);
-	/* 4. Find the weighted median absolue deviation */
-	wmad = (float)gmt_median_weighted (GMT, pair, n);
-	gmt_M_free (GMT, pair);
-	return wmad;
-}
-
 GMT_LOCAL void grd_MAD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MAD 1 1 Median Absolute Deviation (L1 STD) of A.  */
 	uint64_t node;
 	float mad_f;
+	struct GMT_GRID *W = NULL;
 
 	if (stack[last]->constant) {	/* Trivial case: mad = 0 */
 		gmt_M_memset (stack[last]->G->data, info->size, float);
@@ -2774,31 +2632,14 @@ GMT_LOCAL void grd_MAD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	}
 
 	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
-		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
-		mad_f = grd_wmad_sub (GMT, info, stack[last]->G, W, true, 0.0);
-		gmt_free_grid (GMT, &W, true);
+		W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		gmt_get_cellarea (GMT, W);
 	}
-	else {
-		uint64_t n;
-		unsigned int pad[4];
-		double mad, med;
-		/* Sort will put any NaNs to the end - we then count to find the real data */
 
-		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4U, unsigned int);	/* Save original pad */
-		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
-		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
-		if (n) {
-			med = (n%2) ? stack[last]->G->data[n/2] : 0.5 * (stack[last]->G->data[(n-1)/2] + stack[last]->G->data[n/2]);
-			gmt_getmad_f (GMT, stack[last]->G->data, n, med, &mad);
-			mad_f = (float)mad;
-		}
-		else
-			mad_f = GMT->session.f_NaN;
+	mad_f = (float)gmt_grd_mad (GMT, stack[last]->G, W, NULL, true);
 
-		gmt_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
-	}
+	if (W) gmt_free_grid (GMT, &W, true);
+
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = mad_f;
 }
 
@@ -2809,11 +2650,11 @@ GMT_LOCAL void grd_MADW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	float wmad;
 
 	if (stack[prev]->constant) {	/* Trivial case if data are constant: mad = 0 */
-		for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = (float)stack[prev]->factor;
+		gmt_M_memset (stack[last]->G->data, info->size, float);
 		return;
 	}
 
-	wmad = grd_wmad_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	wmad = (float)gmt_grd_mad (GMT, stack[prev]->G, stack[last]->G, NULL, true);
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = wmad;
 }
 
@@ -2831,53 +2672,27 @@ GMT_LOCAL void grd_MAX (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	}
 }
 
-GMT_LOCAL float grd_wmean_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
-	uint64_t node, n = 0;
-	unsigned int row, col;
-	double sum_zw = 0.0, sum_w = 0.0, w = 1.0;
-	if (!use_grid) w = weight;
-	gmt_M_grd_loop (GMT, info->G, row, col, node) {
-		if (gmt_M_is_fnan (G->data[node])) continue;
-		if (use_grid) {
-			if (gmt_M_is_dnan (W->data[node]))
-				continue;
-			else
-				w = W->data[node];
-		}
-		sum_zw += G->data[node] * w;
-		sum_w  += w;
-		n++;
-	}
-	return (n == 0 || sum_w == 0.0) ? GMT->session.f_NaN : (float)(sum_zw / sum_w);
-}
-
 GMT_LOCAL void grd_MEAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MEAN 1 1 Mean value of A.  */
 	uint64_t node;
 	float zm;
+	struct GMT_GRID *W = NULL;
 	gmt_M_unused(GMT);
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
+
 	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
-		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
-		zm = grd_wmean_sub (GMT, info, stack[last]->G, W, true, 0.0);
-		gmt_free_grid (GMT, &W, true);
+		W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		gmt_get_cellarea (GMT, W);
 	}
-	else {	/* Cartesian calculation */
-		uint64_t n_a = 0;
-		unsigned int row, col;
-		double sum_a = 0.0;
-		gmt_M_grd_loop (GMT, info->G, row, col, node) {
-			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
-			sum_a += stack[last]->G->data[node];
-			n_a++;
-		}
-		zm = (n_a) ? (float)(sum_a / n_a) : 0.0f;
-	}
+	
+	zm = (float)gmt_grd_mean (GMT, stack[last]->G, W);	/* Compute the [weighted] mean */
+
+	if (W) gmt_free_grid (GMT, &W, true);
+	
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = zm;
 }
 
@@ -2896,63 +2711,28 @@ GMT_LOCAL void grd_MEANW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 		return;
 	}
 
-	zm = grd_wmean_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	zm = (float)gmt_grd_mean (GMT, stack[prev]->G, stack[last]->G);
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = zm;
-}
-
-GMT_LOCAL float grd_wmedian_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
-	uint64_t node, n = 0;
-	unsigned int row, col;
-	float wmed;
-	double w = 1.0;
-	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
-	/* 1. Create array of value,weight pairs, skipping NaNs */
-	if (!use_grid) w = weight;
-	gmt_M_grd_loop (GMT, info->G, row, col, node) {
-		if (gmt_M_is_fnan (G->data[node])) continue;
-		if (use_grid) {
-			if (gmt_M_is_dnan (W->data[node]))
-				continue;
-			else
-				w = W->data[node];
-		}
-		pair[n].value    = G->data[node];
-		pair[n++].weight = (float)w;
-	}
-	/* 2. Find the weighted median */
-	wmed = (float)gmt_median_weighted (GMT, pair, n);
-	gmt_M_free (GMT, pair);
-	return wmed;
 }
 
 GMT_LOCAL void grd_MEDIAN (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MEDIAN 1 1 Median value of A.  */
 	uint64_t node;
 	float med;
+	struct GMT_GRID *W = NULL;
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
 	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
-		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
-		med = grd_wmedian_sub (GMT, info, stack[last]->G, W, true, 0.0);
-		gmt_free_grid (GMT, &W, true);
+		W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		gmt_get_cellarea (GMT, W);
 	}
-	else {
-		uint64_t n;
-		unsigned int pad[4];
-		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
-		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
-		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
-		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
-		if (n)
-			med = (n%2) ? stack[last]->G->data[n/2] : 0.5f * (stack[last]->G->data[(n-1)/2] + stack[last]->G->data[n/2]);
-		else
-			med = GMT->session.f_NaN;
-		gmt_grd_pad_on (GMT, stack[last]->G, pad);	/* Reinstate the original pad */
-	}
+
+	med = (float) gmt_grd_median (GMT, stack[last]->G, W, true);
+
+	if (W) gmt_free_grid (GMT, &W, true);
 
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = med;
 }
@@ -2968,7 +2748,7 @@ GMT_LOCAL void grd_MEDIANW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, str
 		return;
 	}
 
-	wmed = grd_wmedian_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	wmed = gmt_grd_median (GMT, stack[prev]->G, stack[last]->G, true);
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = wmed;
 }
 
@@ -3001,63 +2781,25 @@ GMT_LOCAL void grd_MOD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	}
 }
 
-GMT_LOCAL float grd_wmode_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
-	uint64_t node, n = 0;
-	unsigned int row, col;
-	float wmode;
-	double w = 1.0;
-	struct GMT_OBSERVATION *pair = gmt_M_memory (GMT, NULL, info->nm, struct GMT_OBSERVATION);
-	/* 1. Create array of value,weight pairs, skipping NaNs */
-	if (!use_grid) w = weight;
-	gmt_M_grd_loop (GMT, info->G, row, col, node) {
-		if (gmt_M_is_fnan (G->data[node])) continue;
-		if (use_grid) {
-			if (gmt_M_is_dnan (W->data[node]))
-				continue;
-			else
-				w = W->data[node];
-		}
-		pair[n].value    = G->data[node];
-		pair[n++].weight = (float)w;
-	}
-	/* 2. Find the weighted mode */
-	wmode = (float)gmt_mode_weighted (GMT, pair, n);
-	gmt_M_free (GMT, pair);
-	return wmode;
-}
-
 GMT_LOCAL void grd_MODE (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: MODE 1 1 Mode value (Least Median of Squares) of A.  */
 	uint64_t node;
 	float mode = 0.0f;
+	struct GMT_GRID *W = NULL;
 
 	if (stack[last]->constant) {	/* Trivial case */
 		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)stack[last]->factor;
 		return;
 	}
 	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
-		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
-		mode = grd_wmode_sub (GMT, info, stack[last]->G, W, true, 0.0);
-		gmt_free_grid (GMT, &W, true);
+		W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		gmt_get_cellarea (GMT, W);
 	}
-	else {
-		unsigned int gmt_mode_selection = 0, GMT_n_multiples = 0, pad[4];
-		uint64_t n;
-		double dmode;
-		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4, unsigned int);	/* Save original pad */
-		gmt_grd_pad_off (GMT, stack[last]->G);	/* Undo pad if one existed so we can sort */
-		gmt_sort_array (GMT, stack[last]->G->data, info->nm, GMT_FLOAT);
-		for (n = info->nm; n > 1 && gmt_M_is_fnan (stack[last]->G->data[n-1]); n--);
-		if (n) {
-			gmt_mode_f (GMT, stack[last]->G->data, n, n/2, 0, gmt_mode_selection, &GMT_n_multiples, &dmode);
-			mode = (float)dmode;
-		}
-		else
-			mode = GMT->session.f_NaN;
-		gmt_grd_pad_on (GMT, stack[last]->G, pad);	/* Reinstate the original pad */
-		if (GMT_n_multiples > 0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: %d Multiple modes found\n", GMT_n_multiples);
-	}
+	
+	mode = (float)gmt_grd_mode (GMT, stack[last]->G, W, true);
+
+	if (W) gmt_free_grid (GMT, &W, true);
+	
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = mode;
 }
 
@@ -3072,7 +2814,7 @@ GMT_LOCAL void grd_MODEW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 		return;
 	}
 
-	wmode = grd_wmode_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+	wmode = (float)gmt_grd_mode (GMT, stack[prev]->G, stack[last]->G, true);
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = wmode;
 }
 
@@ -3199,7 +2941,8 @@ GMT_LOCAL void grd_OR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct G
 
 GMT_LOCAL void grd_PDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: PDIST 1 1 Compute minimum distance (in km if -fg) from points in ASCII file A.  */
-	uint64_t dummy[2], node, row, col;
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
+	uint64_t dummy[2];
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_DATASET *D = NULL;
 
@@ -3207,6 +2950,9 @@ GMT_LOCAL void grd_PDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 
 	T = D->table[0];	/* Only one table in a single file */
 
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,dummy) shared(info,stack,last,GMT,T)
+#endif 
 	for (row = 0; row < info->G->header->my; row++) {
 		node = row * info->G->header->mx;
 		for (col = 0; col < info->G->header->mx; col++, node++) {
@@ -3218,7 +2964,8 @@ GMT_LOCAL void grd_PDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 
 GMT_LOCAL void grd_PDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: PDIST2 2 1 As PDIST, from points in ASCII file B but only to nodes where A != 0.  */
-	uint64_t dummy[2], node, row, col;
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
+	uint64_t dummy[2];
 	unsigned int prev;
 	struct GMT_DATATABLE *T = NULL;
 	struct GMT_DATASET *D = NULL;
@@ -3228,6 +2975,9 @@ GMT_LOCAL void grd_PDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 	T = D->table[0];	/* Only one table in a single file */
 	prev = last - 1;
 
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,dummy) shared(info,stack,prev,GMT,T)
+#endif 
 	for (row = 0; row < info->G->header->my; row++) {
 		node = row * info->G->header->mx;
 		for (col = 0; col < info->G->header->mx; col++, node++) {
@@ -3344,23 +3094,30 @@ GMT_LOCAL void grd_POINT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 	/* Read a table and compute mean location */
 	if ((D = ASCII_read (GMT, info, GMT_IS_POINT, "POINT")) == NULL) return;
 	T = D->table[0];	/* Only one table in a single file */
-	if (T->n_segments > 1) {	/* Must build a single table for gmt_centroid */
-		uint64_t seg;
-		size_t n_alloc = 0;
-		gmt_M_malloc2 (GMT, x, y, T->n_records, &n_alloc, double);		/* Allocate one long array for each */
-		for (seg = 0; seg < T->n_segments; seg++) {
-			gmt_M_memcpy (&x[n], T->segment[seg]->data[GMT_X], T->segment[seg]->n_rows, double);
-			gmt_M_memcpy (&y[n], T->segment[seg]->data[GMT_Y], T->segment[seg]->n_rows, double);
-			n += T->segment[seg]->n_rows;
+	if (T->n_records == 1) {	/* Got a single point record; no need to average etc */
+		pos[GMT_X] = T->segment[0]->data[GMT_X][0];
+		pos[GMT_Y] = T->segment[0]->data[GMT_Y][0];
+		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "[Single point reported as %g %g]\n", pos[GMT_X], pos[GMT_Y]);
+	}
+	else {	/* Must compute averate point */
+		if (T->n_segments > 1) {	/* Must build a single table for gmt_centroid */
+			uint64_t seg;
+			size_t n_alloc = 0;
+			gmt_M_malloc2 (GMT, x, y, T->n_records, &n_alloc, double);		/* Allocate one long array for each */
+			for (seg = 0; seg < T->n_segments; seg++) {
+				gmt_M_memcpy (&x[n], T->segment[seg]->data[GMT_X], T->segment[seg]->n_rows, double);
+				gmt_M_memcpy (&y[n], T->segment[seg]->data[GMT_Y], T->segment[seg]->n_rows, double);
+				n += T->segment[seg]->n_rows;
+			}
 		}
+		else {	/* Just a single segment, use pointers */
+			x = T->segment[0]->data[GMT_X];
+			y = T->segment[0]->data[GMT_Y];
+			n = T->segment[0]->n_rows;
+		}
+		gmt_centroid (GMT, x, y, n, pos, geo);	/* Get mean location */
+		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "[Centroid computed as %g %g]\n", pos[GMT_X], pos[GMT_Y]);
 	}
-	else {	/* Just a single segment, use pointers */
-		x = T->segment[0]->data[GMT_X];
-		y = T->segment[0]->data[GMT_Y];
-		n = T->segment[0]->n_rows;
-	}
-	gmt_centroid (GMT, x, y, n, pos, geo);	/* Get mean location */
-	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "[Centroid computed as %g %g]\n", pos[GMT_X], pos[GMT_Y]);
 	/* Place mean x and y on the stack */
 	stack[last]->constant = true;
 	stack[last]->factor = pos[GMT_X];
@@ -3442,7 +3199,7 @@ GMT_LOCAL void grd_PQUANT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 	}
 	else if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
 		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[prev]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
+		gmt_get_cellarea (GMT, W);
 		p = grd_wquant_sub (GMT, info, stack[prev]->G, W, stack[last]->factor, true, 0.0);
 		gmt_free_grid (GMT, &W, true);
 	}
@@ -3574,7 +3331,7 @@ GMT_LOCAL void grd_R2D (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 	double a = 0.0;
 	gmt_M_unused(GMT);
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_ANGLE;
 	if (stack[last]->constant) a = R2D * stack[last]->factor;
 	for (node = 0; node < info->size; node++)
 		stack[last]->G->data[node] = (float)((stack[last]->constant) ? a : R2D * stack[last]->G->data[node]);
@@ -3635,22 +3392,45 @@ GMT_LOCAL void grd_RMS (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 /*OPERATOR: RMS 1 1 Root-mean-square of A.  */
 {
 	uint64_t node;
-	double sum2 = 0.0;
+	float rms = 0.0;
+	struct GMT_GRID *W = NULL;
 	gmt_M_unused(GMT);
 
-	if (stack[last]->constant)	/* Trivial case */
-		sum2 = stack[last]->factor;
-	else {
-		unsigned int row, col;
-		uint64_t n = 0;
-		gmt_M_grd_loop (GMT, info->G, row, col, node) {
-			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
-			n++;
-			sum2 += (stack[last]->G->data[node] * stack[last]->G->data[node]);
-		}
-		sum2 = (n > 0) ? sqrt (sum2 / n) : GMT->session.d_NaN;
+	if (stack[last]->constant) {	/* Trivial case */
+		rms = (float)stack[last]->factor;
+		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = rms;
+		return;
 	}
-	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (float)sum2;
+	
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		gmt_get_cellarea (GMT, W);
+	}
+
+	rms = (float)gmt_grd_std (GMT, stack[last]->G, W);
+
+	if (W) gmt_free_grid (GMT, &W, true);
+	
+	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = rms;
+}
+
+GMT_LOCAL void grd_RMSW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: RMSW 2 1 Weighted Root-mean-square of A for weights in B.  */
+{
+	uint64_t node;
+	unsigned int prev = last - 1;
+	float rms;
+	gmt_M_unused(GMT);
+
+	if (stack[prev]->constant) {	/* Trivial case */
+		rms = (float)stack[prev]->factor;
+		for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = rms;
+		return;
+	}
+
+	rms = (float)gmt_grd_rms (GMT, stack[prev]->G, stack[last]->G);
+
+	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = rms;
 }
 
 GMT_LOCAL void grd_RPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
@@ -3798,9 +3578,9 @@ GMT_LOCAL void grd_SDIST (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struc
 
 GMT_LOCAL void grd_SDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last) {
 /*OPERATOR: SDIST2 2 1 As SDIST but only to nodes that are != 0.  */
-	uint64_t node, row, col;
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
 	unsigned int prev = last - 1;
-	double a, b;
+	double x0, y0;
 
 	if (gmt_M_is_geographic (GMT, GMT_IN))
 		gmt_init_distaz (GMT, 'k', gmt_M_sph_mode (GMT), GMT_MAP_DIST);
@@ -3809,15 +3589,18 @@ GMT_LOCAL void grd_SDIST2 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 		return;
 	}
 
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,x0,y0) shared(info,stack,prev,last,GMT)
+#endif 
 	for (row = 0; row < info->G->header->my; row++) {
 		node = row * info->G->header->mx;
 		for (col = 0; col < info->G->header->mx; col++, node++) {
 			if (stack[prev]->G->data[node] == 0.0)
 				stack[prev]->G->data[node] = GMT->session.f_NaN;
 			else {
-				a = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
-				b = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
-				stack[prev]->G->data[node] = (float) gmt_distance (GMT, a, b, info->d_grd_x[col], info->d_grd_y[row]);
+				x0 = (stack[prev]->constant) ? stack[prev]->factor : stack[prev]->G->data[node];
+				y0 = (stack[last]->constant) ? stack[last]->factor : stack[last]->G->data[node];
+				stack[prev]->G->data[node] = (float) gmt_distance (GMT, x0, y0, info->d_grd_x[col], info->d_grd_y[row]);
 			}
 		}
 	}
@@ -3828,7 +3611,7 @@ GMT_LOCAL void grd_AZ_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 	unsigned int prev = last - 1;
 	double x0 = 0.0, y0 = 0.0, az;
 
-	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_GEOANGLE;
+	GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_AZIMUTH;
 	gmt_init_distaz (GMT, 'd', gmt_M_sph_mode (GMT), GMT_MAP_DIST);
 #ifdef _OPENMP
 #pragma omp parallel for private(row,col,node,x0,y0,az) shared(info,stack,prev,last,GMT,reverse)
@@ -4010,60 +3793,28 @@ GMT_LOCAL void grd_SQRT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = (stack[last]->constant) ? a : sqrtf (stack[last]->G->data[node]);
 }
 
-GMT_LOCAL float grd_wstd_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GMT_GRID *G, struct GMT_GRID *W, bool use_grid, double weight) {
-	/* Use West (1979) algorithm to compute mean and corrected sum of squares.
-	 * https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance */
-	uint64_t node, n = 0;
-	unsigned int row, col;
-	double temp, mean = 0.0, sumw = 0.0, delta, R, M2 = 0.0, w = 1.0;
-	if (!use_grid) w = weight;
-	gmt_M_grd_loop (GMT, info->G, row, col, node) {
-		if (gmt_M_is_fnan (G->data[node])) continue;
-		if (use_grid) {
-			if (gmt_M_is_dnan (W->data[node]))
-				continue;
-			else
-				w = W->data[node];
-		}
-		temp  = w + sumw;
-		delta = G->data[node] - mean;
-		R = delta * w / temp;
-		mean += R;
-		M2 += sumw * delta * R;
-		sumw = temp;
-		n++;
-	}
-	return (n <= 1 || sumw == 0.0) ? GMT->session.f_NaN : (float)sqrt ((n * M2) / (sumw * (n - 1.0)));
-}
-
 GMT_LOCAL void grd_STD (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: STD 1 1 Standard deviation of A.  */
 {
 	uint64_t node;
 	float std;
+	struct GMT_GRID *W = NULL;
 	gmt_M_unused(GMT);
 
-	if (stack[last]->constant)	/* Trivial case: std is undefined */
-		std = GMT->session.f_NaN;
-	else if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
-		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
-		std = grd_wstd_sub (GMT, info, stack[last]->G, W, true, 0.0);
-		gmt_free_grid (GMT, &W, true);
+	if (stack[last]->constant) {	/* Trivial case: std of a constant grid is zero */
+		for (node = 0; node < info->size; node++) stack[last]->G->data[node] = 0.0;
+		return;
 	}
-	else {	/* Use Welford (1962) algorithm to compute mean and corrected sum of squares */
-		uint64_t n = 0;
-		unsigned int row, col;
-		double mean = 0.0, sum2 = 0.0, delta;
-		gmt_M_grd_loop (GMT, info->G, row, col, node) {
-			if (gmt_M_is_fnan (stack[last]->G->data[node])) continue;
-			n++;
-			delta = stack[last]->G->data[node] - mean;
-			mean += delta / n;
-			sum2 += delta * (stack[last]->G->data[node] - mean);
-		}
-		std = (n > 1) ? (float)sqrt (sum2 / (n - 1.0)) : GMT->session.f_NaN;
+	
+	if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
+		W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
+		gmt_get_cellarea (GMT, W);
 	}
+
+	std = (float)gmt_grd_std (GMT, stack[last]->G, W);
+
+	if (W) gmt_free_grid (GMT, &W, true);
+	
 	for (node = 0; node < info->size; node++) stack[last]->G->data[node] = std;
 }
 
@@ -4075,10 +3826,10 @@ GMT_LOCAL void grd_STDW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	float std;
 	gmt_M_unused(GMT);
 
-	if (stack[prev]->constant)	/* Trivial case: std is undefined */
-		std = GMT->session.f_NaN;
+	if (stack[prev]->constant)	/* Trivial case: std of constant grid is zero */
+		std = 0.0;
 	else
-		std = grd_wstd_sub (GMT, info, stack[prev]->G, stack[last]->G, !stack[last]->constant, stack[last]->factor);
+		std = (float)gmt_grd_std (GMT, stack[prev]->G, stack[last]->G);
 
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = std;
 }
@@ -4329,6 +4080,52 @@ GMT_LOCAL void grd_TPDF (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct
 	}
 }
 
+GMT_LOCAL void grd_TRIM (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
+/*OPERATOR: TRIM 3 1 Alpha-trimming for %-left = A, %-right = B, and grid = C.  */
+{
+	/* Determine cumulative distribution and find left and right tail z cutoffs,
+	 * then set grid values in the tails to NaN */
+	uint64_t node;
+	unsigned int prev1, prev2, row, col;
+	float global_zmin, global_zmax, *tmp_grid = NULL;
+
+	prev1 = last - 1;
+	prev2 = last - 2;
+	if (stack[last]->constant) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: 3rd operand for TRIM must be a grid!\n");
+		return;
+	}
+	if (!stack[prev1]->constant) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: 1st operand for TRIM must be constants!\n");
+		return;
+	}
+	if (stack[prev1]->factor <= 0.0 || stack[prev1]->factor > 100.0) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: Right alpha for TRIM must be in 0-100%% range!\n");
+		return;
+	}
+	if (!stack[prev2]->constant) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: 2nd operand for TRIM must be constants!\n");
+		return;
+	}
+	if (stack[prev2]->factor <= 0.0 || stack[prev2]->factor > 100.0) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: Left alpha for TRIM must be in 0-100%% range!\n");
+		return;
+	}
+	if (stack[prev1]->factor <= stack[prev2]->factor) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: Right alpha for TRIM must exceed left alpha!\n");
+		return;
+	}
+	tmp_grid = gmt_M_memory_aligned (GMT, NULL, stack[last]->G->header->size, float);
+	gmt_M_memcpy (tmp_grid, stack[last]->G->data, stack[last]->G->header->size, float);
+	gmt_sort_array (GMT, tmp_grid, stack[last]->G->header->size, GMT_FLOAT);	/* Sort so we can find quantiles */
+	global_zmin = (float)gmt_quantile_f (GMT, tmp_grid, stack[prev2]->factor, stack[last]->G->header->size);	/* "Left" quantile */
+	global_zmax = (float)gmt_quantile_f (GMT, tmp_grid, stack[prev1]->factor, stack[last]->G->header->size);	/* "Right" quantile */
+	gmt_M_free (GMT, tmp_grid);
+	gmt_M_grd_loop (GMT, info->G, row, col, node) {
+		stack[prev2]->G->data[node] = (stack[last]->G->data[node] < global_zmin || stack[last]->G->data[node] > global_zmax) ? GMT->session.f_NaN : stack[last]->G->data[node];
+	}
+}
+
 GMT_LOCAL void grd_UPPER (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last)
 /*OPERATOR: UPPER 1 1 The highest (maximum) value of A.  */
 {
@@ -4387,7 +4184,7 @@ GMT_LOCAL void grd_VAR (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct 
 		var = GMT->session.f_NaN;
 	else if (gmt_M_is_geographic (GMT, GMT_IN)) {	/* Must use spherical weights */
 		struct GMT_GRID *W = gmt_duplicate_grid (GMT, stack[last]->G, GMT_DUPLICATE_ALLOC);
-		get_geo_cellarea (GMT, info, W);
+		gmt_get_cellarea (GMT, W);
 		var = grd_wvar_sub (GMT, info, stack[last]->G, W, true, 0.0);
 		gmt_free_grid (GMT, &W, true);
 	}
@@ -4558,7 +4355,7 @@ GMT_LOCAL void grd_Y1 (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct G
 GMT_LOCAL void grd_YLM_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, struct GRDMATH_STACK *stack[], unsigned int last, bool ortho)
 {
 	/* Returns geophysical normalization, unless M < 0, then orthonormalized form */
-	uint64_t node, row, col;
+	int64_t node, row, col;			/* int since VS 2013/OMP 2.0 doesn't allow unsigned index variables */
 	unsigned int prev = last - 1;
 	int L, M;
 	double x, z, P, C, S;
@@ -4572,6 +4369,9 @@ GMT_LOCAL void grd_YLM_sub (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, str
 	M = irint (stack[last]->factor);
 	z = abs (M) * D2R;	/* abs() just in case routine is called with -M to add (-1)^M */
 
+#ifdef _OPENMP
+#pragma omp parallel for private(row,col,node,x,P,S,C) shared(info,stack,prev,GMT,L,M,ortho,z)
+#endif 
 	for (row = 0; row < info->G->header->my; row++) {	/* For each latitude */
 		node = row * info->G->header->mx;
 
@@ -4696,6 +4496,8 @@ GMT_LOCAL int decode_grd_argument (struct GMT_CTRL *GMT, struct GMT_OPTION *opt,
 	bool possible_number = false;
 	double tmp = 0.0;
 
+	if (opt == NULL || opt->arg == NULL || opt->arg[0] == '\0') return GRDMATH_ARG_IS_BAD;
+	
 	grdmath_backwards_fixing (GMT, &(opt->arg));	/* Possibly exchange obsolete operator name for new one unless compatibility is off */
 
 	if (opt->option == GMT_OPT_OUTFILE2) return GRDMATH_ARG_IS_SAVE;	/* Time to save stack; arg is filename */
@@ -4732,6 +4534,7 @@ GMT_LOCAL int decode_grd_argument (struct GMT_CTRL *GMT, struct GMT_OPTION *opt,
 	if (!strcmp (opt->arg, "YNORM")) return GRDMATH_ARG_IS_y_MATRIX;
 	if (!strcmp (opt->arg, "XCOL")) return GRDMATH_ARG_IS_XCOL_MATRIX;
 	if (!strcmp (opt->arg, "YROW")) return GRDMATH_ARG_IS_YROW_MATRIX;
+	if (!strcmp (opt->arg, "NODE")) return GRDMATH_ARG_IS_NODE_MATRIX;
 	if (!strcmp (opt->arg, "NaN")) {*value = GMT->session.d_NaN; return GRDMATH_ARG_IS_NUMBER;}
 
 	/* Preliminary test-conversion to a number */
@@ -4864,10 +4667,10 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if ((list = gmt_substitute_macros (GMT, options, "grdmath.macros")) == NULL) Return1 (GMT_RUNTIME_ERROR);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return1 (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return1 (API->error);
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return1 (error);
 
 	/*---------------------------- This is the grdmath main code ----------------------------*/
@@ -4915,25 +4718,28 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 		if (status != GRDMATH_ARG_IS_FILE) continue;				/* Skip operators and numbers */
 		in_file = opt->arg;
 		/* Read but request IO reset since the file (which may be a memory reference) will be read again later */
-		if ((G_in = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY | GMT_IO_RESET, NULL, in_file, NULL)) == NULL) {	/* Get header only */
+		if ((G_in = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY | GMT_IO_RESET, NULL, in_file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
 		}
 	}
 
-	subset = GMT->common.R.active;
+	if (gmt_add_R_if_modern_and_true (GMT, THIS_MODULE_NEEDS, G_in == NULL))
+		Return (API->error);
+
+	subset = GMT->common.R.active[RSET];
 
 	if (G_in) {	/* We read a gridfile header above, now update columns */
-		if (GMT->common.R.active && Ctrl->I.active) {
+		if (GMT->common.R.active[RSET] && GMT->common.R.active[ISET]) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Cannot use -I together with -R<gridfile>\n");
 			Return (GMT_RUNTIME_ERROR);
 		}
-		else if  (GMT->common.r.active) {
+		else if  (GMT->common.R.active[GSET]) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Cannot use -r when grid files are specified\n");
 			Return (GMT_RUNTIME_ERROR);
 		}
 		if (subset) {	/* Gave -R and files: Read the subset to set the header properly */
 			gmt_M_memcpy (wesn, GMT->common.R.wesn, 4, double);
-			if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, in_file, G_in) == NULL) {	/* Get subset only */
+			if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn, in_file, G_in) == NULL) {	/* Get subset only */
 				Return (API->error);
 			}
 		}
@@ -4942,11 +4748,11 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 	}
-	else if (GMT->common.R.active && Ctrl->I.active) {	/* Must create from -R -I [-r] */
+	else if (GMT->common.R.active[RSET] && GMT->common.R.active[ISET]) {	/* Must create from -R -I [-r] */
 		/* Completely determine the header for the new grid; croak if there are issues.  No memory is allocated here. */
-		if ((info.G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
+		if ((info.G = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, NULL, NULL, \
 			GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
-		GMT->current.io.inc_code[GMT_X]	= GMT->current.io.inc_code[GMT_Y] = 0;	/* Must reset this since later we don't use Ctrl->I.inc but G->header->inc */
+		GMT->current.io.inc_code[GMT_X]	= GMT->current.io.inc_code[GMT_Y] = 0;	/* Must reset this since later we don't use GMT->common.R.inc but G->header->inc */
 	}
 	else {
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Expression must contain at least one grid file or -R, -I\n");
@@ -5028,6 +4834,7 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 		if (strchr ("ADIMNRVbfnr-" GMT_OPT("F") GMT_ADD_x_OPT, opt->option)) continue;
 
 		op = decode_grd_argument (GMT, opt, &value, localhashnode);
+		if (op == GRDMATH_ARG_IS_BAD) Return (GMT_RUNTIME_ERROR);		/* Horrible way to go... */
 
 		if (op == GRDMATH_ARG_IS_SAVE) {	/* Time to save the current stack to output and pop the stack */
 			if (nstack <= 0) {
@@ -5050,7 +4857,7 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 			gmt_set_pad (GMT, API->pad);	/* Reset to session default pad before output */
 
 			if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, stack[this_stack]->G)) Return (API->error);
-			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, opt->arg, stack[this_stack]->G) != GMT_NOERROR) {
+			if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, opt->arg, stack[this_stack]->G) != GMT_NOERROR) {
 				Return (API->error);
 			}
 			gmt_set_pad (GMT, 2U);			/* Ensure space for BCs in case an API passed pad == 0 */
@@ -5193,6 +5000,11 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
 				grdmath_grd_padloop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = (float)(row - stack[nstack]->G->header->pad[YHI]);
 			}
+			else if (op == GRDMATH_ARG_IS_NODE_MATRIX) {		/* Need to set up matrix of node numbers (pad will be zero)*/
+				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "NODE ");
+				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
+				gmt_M_grd_loop (GMT, info.G, row, col, node) stack[nstack]->G->data[node] = (float)gmt_M_ij0(stack[nstack]->G->header,row,col);
+			}
 			else if (op == GRDMATH_ARG_IS_ASCIIFILE) {
 				gmt_M_str_free (info.ASCII_file);
 				if (!stack[nstack]->G) stack[nstack]->G = alloc_stack_grid (GMT, info.G);
@@ -5201,7 +5013,7 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 			}
 			else if (op == GRDMATH_ARG_IS_FILE) {		/* Filename given */
 				if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) GMT_Message (API, GMT_TIME_NONE, "%s ", opt->arg);
-				if ((stack[nstack]->G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, wesn, opt->arg, NULL)) == NULL) {	/* Get header only */
+				if ((stack[nstack]->G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, wesn, opt->arg, NULL)) == NULL) {	/* Get header only */
 					Return (API->error);
 				}
 				if (!subset && !gmt_M_grd_same_shape (GMT, stack[nstack]->G, info.G)) {
@@ -5213,7 +5025,7 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 					GMT_Report (API, GMT_MSG_NORMAL, "grid files do not cover the same area!\n");
 					Return (GMT_RUNTIME_ERROR);
 				}
-				if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, wesn, opt->arg, stack[nstack]->G) == NULL) {	/* Get data */
+				if (GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, wesn, opt->arg, stack[nstack]->G) == NULL) {	/* Get data */
 					Return (API->error);
 				}
 			}

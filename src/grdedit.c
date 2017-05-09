@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdedit.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: grdedit.c 18174 2017-05-07 05:33:44Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -32,14 +32,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdedit"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Modify header or content of a grid"
 #define THIS_MODULE_KEYS	"<G{,ND(,GG}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:JRVbdfh" GMT_OPT("H")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:JRVbdefh" GMT_OPT("H")
 
 struct GRDEDIT_CTRL {
 	struct In {
@@ -52,7 +52,7 @@ struct GRDEDIT_CTRL {
 	struct C {	/* -C */
 		bool active;
 	} C;
-	struct D {	/* -D<xname>/<yname>/<zname>/<scale>/<offset>/<invalid>/<title>/<remark> */
+	struct D {	/* -D[+x<xname>][+yyname>][+z<zname>][+s<scale>][+ooffset>][+n<invalid>][+t<title>][+r<remark>] */
 		bool active;
 		char *information;
 	} D;
@@ -101,7 +101,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdedit <grid> [-A] [-C] [%s]\n", GMT_GRDEDIT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-E[a|h|l|r|t|v]] [-G<outgrid>] [-N<table>] [%s] [-S] [-T]\n", GMT_Rgeo_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s]\n\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s]\n\n", GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_e_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -109,7 +109,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-A Adjust dx/dy to be compatible with the file domain or -R.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Remove the command history from the header.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-D Enter grid information; leave field blank to get default value.\n");
+	gmt_grd_info_syntax (API->GMT, 'D');
 	GMT_Message (API, GMT_TIME_NONE, "\t-E Transpose or rotate the entire grid (this may exchange x and y).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t  a Rotate grid around 180 degrees.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t  h Flip grid left-to-right (as grdmath FLIPLR).\n");
@@ -126,7 +126,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Toggle header from grid-line to pixel-registered grid or vice versa.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   This shrinks -R by 0.5*{dx,dy} going from pixel to grid-line registration\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   and expands  -R by 0.5*{dx,dy} going from grid-line to pixel registration.\n");
-	GMT_Option (API, "J,V,bi3,di,f,h,:,.");
+	GMT_Option (API, "J,V,bi3,di,e,f,h,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -213,7 +213,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDEDIT_CTRL *Ctrl, struct GMT
 	                                 "Syntax error -S option: Incompatible with -T\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && Ctrl->N.active,
 	                                 "Syntax error -S option: Incompatible with -N\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && !GMT->common.R.active,
+	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && !GMT->common.R.active[RSET],
 	                                 "Syntax error -S option: Must also specify -R\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->S.active && !gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]),
 	                                 "Syntax error -S option: -R longitudes must span exactly 360 degrees\n");
@@ -258,14 +258,14 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the grdedit main code ----------------------------*/
 
-	if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, Ctrl->G.active ? GMT_GRID_ALL : GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
+	if ((G = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, Ctrl->G.active ? GMT_CONTAINER_AND_DATA : GMT_CONTAINER_ONLY, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get header only */
 		Return (API->error);
 	}
 	grid_was_read = Ctrl->G.active;
@@ -297,10 +297,12 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 		scale_factor = G->header->z_scale_factor;
 		add_offset = G->header->z_add_offset;
 		nan_value = G->header->nan_value;
-		gmt_decode_grd_h_info (GMT, Ctrl->D.information, G->header);
+		if (gmt_decode_grd_h_info (GMT, Ctrl->D.information, G->header))
+			Return (GMT_PARSE_ERROR);
+		
 		if (nan_value != G->header->nan_value) {
 			/* Must read data */
-			if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL)
+			if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL)
 				Return (API->error);
 			grid_was_read = true;
 			/* Recalculate z_min/z_max */
@@ -319,15 +321,14 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 	if (Ctrl->S.active) {
 		shift_amount = GMT->common.R.wesn[XLO] - G->header->wesn[XLO];
 		GMT_Report (API, GMT_MSG_VERBOSE, "Shifting longitudes in file %s by %g degrees\n", out_file, shift_amount);
-		if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL) {	/* Get data */
+		if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL) {	/* Get data */
 			Return (API->error);
 		}
-		grid_was_read = true;
 		if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
 			Return (API->error);
 		}
 		gmt_grd_shift (GMT, G, shift_amount);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, out_file, G) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, out_file, G) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}
@@ -335,10 +336,9 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 		int in_ID;
 		GMT_Report (API, GMT_MSG_VERBOSE, "Replacing nodes using xyz values from file %s\n", Ctrl->N.file);
 
-		if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL) {	/* Get data */
+		if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL) {	/* Get data */
 			Return (API->error);
 		}
-		grid_was_read = true;
 		/* Must register Ctrl->N.file first since we are going to read rec-by-rec from all available sources */
 		if ((in_ID = GMT_Register_IO (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POINT, GMT_IN, NULL, Ctrl->N.file)) == GMT_NOTSET) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Unable to register file %s\n", Ctrl->N.file);
@@ -355,12 +355,12 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 		n_data = n_use = 0;
 		do {	/* Keep returning records until we reach EOF */
 			if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-				if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+				if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 					Return (GMT_RUNTIME_ERROR);
-				if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
-					continue;
-				if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+				}
+				else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 					break;
+				continue;	/* Go back and read the next record */
 			}
 
 			/* Data record to process */
@@ -385,7 +385,7 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, out_file, G) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, out_file, G) != GMT_NOERROR) {
 			Return (API->error);
 		}
 		GMT_Report (API, GMT_MSG_VERBOSE, "Read %" PRIu64 " new data points, updated %" PRIu64 ".\n", n_data, n_use);
@@ -395,10 +395,9 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 		uint64_t ij, ij_tr = 0;
 		float *a_tr = NULL, *save_grid_pointer = NULL;
 
-		if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL) {	/* Get data */
+		if (!grid_was_read && GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY, NULL, Ctrl->In.file, G) == NULL) {	/* Get data */
 			Return (API->error);
 		}
-		grid_was_read = true;
 
 		switch (Ctrl->E.mode) {
 			case 'a': /* Rotate grid around 180 degrees */
@@ -465,7 +464,7 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 		G->data = a_tr;
 		gmt_M_memcpy (G->header, h_tr, 1, struct GMT_GRID_HEADER);	/* Update to the new header */
 		gmt_M_free (GMT, h_tr);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, out_file, G) != GMT_NOERROR) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, out_file, G) != GMT_NOERROR) {
 			Return (API->error);
 		}
 		G->data = save_grid_pointer;
@@ -482,7 +481,7 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Reset region in file %s to %g/%g/%g/%g\n",
 				out_file, G->header->wesn[XLO], G->header->wesn[XHI], G->header->wesn[YLO], G->header->wesn[YHI]);
 		}
-		if (GMT->common.R.active) {
+		if (GMT->common.R.active[RSET]) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Reset region in file %s to %g/%g/%g/%g\n",
 				out_file, GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI], GMT->common.R.wesn[YLO], GMT->common.R.wesn[YHI]);
 			gmt_M_memcpy (G->header->wesn, GMT->common.R.wesn, 4, double);
@@ -494,7 +493,12 @@ int GMT_grdedit (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Reset grid-spacing in file %s to %g/%g\n",
 				out_file, G->header->inc[GMT_X], G->header->inc[GMT_Y]);
 		}
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, Ctrl->G.active ? GMT_GRID_ALL : GMT_GRID_HEADER_ONLY, NULL, out_file, G) != GMT_NOERROR) {
+		if (gmt_M_is_geographic (GMT, GMT_IN) && !gmt_M_is_geographic (GMT, GMT_OUT)) {	/* Force a switch from geographic to Cartesian */
+			G->header->grdtype = GMT_GRID_CARTESIAN;
+			strcpy (G->header->x_units, "x_units");
+			strcpy (G->header->y_units, "y_units");
+		}
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, Ctrl->G.active ? GMT_CONTAINER_AND_DATA : GMT_CONTAINER_ONLY, NULL, out_file, G) != GMT_NOERROR) {
 			Return (API->error);
 		}
 	}

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_map.c 17543 2017-02-09 14:14:29Z jluis $
+ *	$Id: gmt_map.c 18081 2017-04-30 20:32:34Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -2180,7 +2180,7 @@ GMT_LOCAL void map_setinfo (struct GMT_CTRL *GMT, double xmin, double xmax, doub
 
 /*! . */
 GMT_LOCAL double map_mean_radius (struct GMT_CTRL *GMT, double a, double f) {
-	double r, b = a * (1 - f);
+	double r = 0, b = a * (1 - f);
 
 	if (f == 0.0) return a;	/* Not that hard */
 
@@ -2202,7 +2202,7 @@ GMT_LOCAL double map_mean_radius (struct GMT_CTRL *GMT, double a, double f) {
 			break;
 		default:	/* Cannot get here! Safety valve */
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal ERROR: GMT mean radius not specified\n");
-			exit (GMT_RUNTIME_ERROR);
+			GMT_exit (GMT, GMT_RUNTIME_ERROR);
 			break;
 	}
 
@@ -3862,9 +3862,6 @@ GMT_LOCAL bool map_init_genper (struct GMT_CTRL *GMT) {
 	GMT->common.R.wesn[XHI] = 360.0;
 	GMT->common.R.wesn[YLO] = -90.0;
 	GMT->common.R.wesn[YHI] = 90.0;
-
-	xmin = ymin = -GMT->current.proj.g_rmax;
-	xmax = ymax = -xmin;
 
 	xmin = GMT->current.proj.g_xmin;
 	xmax = GMT->current.proj.g_xmax;
@@ -6004,7 +6001,7 @@ GMT_LOCAL void map_set_distaz (struct GMT_CTRL *GMT, unsigned int mode, unsigned
 			break;
 		default:	/* Cannot happen unless we make a bug */
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Mode (=%d) for distance function is unknown. Must be bug.\n", mode);
-			exit (GMT_PROJECTION_ERROR);
+			GMT_exit (GMT, GMT_PROJECTION_ERROR);
 			break;
 	}
 	if (type > 0) return;	/* Contour-related assignments end here */
@@ -6522,8 +6519,6 @@ void gmt_xy_to_geo_noshift (struct GMT_CTRL *GMT, double *lon, double *lat, doub
 
 	if (gmt_M_is_dnan (x) || gmt_M_is_dnan (y)) {(*lon) = (*lat) = GMT->session.d_NaN; return;}	/* Quick and safe way to ensure NaN-input results in NaNs */
 	(*GMT->current.proj.inv) (GMT, lon, lat, x, y);
-	x = x * GMT->current.proj.i_scale[GMT_X];
-	y = y * GMT->current.proj.i_scale[GMT_Y];
 }
 
 /*! . */
@@ -7770,7 +7765,6 @@ double gmt_azim_to_angle (struct GMT_CTRL *GMT, double lon, double lat, double c
 	dx = x1 - x0;
 	if (gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]) && fabs (dx) > (width = gmtlib_half_map_width (GMT, y0))) {
 		width *= 2.0;
-		dx = copysign (width - fabs (dx), -dx);
 		if (x1 < width)
 			x0 -= width;
 		else
@@ -8201,10 +8195,12 @@ int gmt_set_datum (struct GMT_CTRL *GMT, char *text, struct GMT_DATUM *D) {
 	double t;
 
 	if (text[0] == '\0' || text[0] == '-') {	/* Shortcut for WGS-84 */
-		gmt_M_memset (D->xyz, 3, double);
-		D->a = GMT->current.setting.ref_ellipsoid[0].eq_radius;
-		D->f = GMT->current.setting.ref_ellipsoid[0].flattening;
-		D->ellipsoid_id = 0;
+		if ((i = gmt_get_ellipsoid (GMT, "WGS-84")) >= 0) {	/* For Coverity's benefit */
+			gmt_M_memset (D->xyz, 3, double);
+			D->a = GMT->current.setting.ref_ellipsoid[i].eq_radius;
+			D->f = GMT->current.setting.ref_ellipsoid[i].flattening;
+			D->ellipsoid_id = i;
+		}
 	}
 	else if (strchr (text, ':')) {	/* Has colons, must get ellipsoid and dr separately */
 		char ellipsoid[GMT_LEN256] = {""}, dr[GMT_LEN256] = {""};
@@ -8535,8 +8531,19 @@ int gmt_map_setup (struct GMT_CTRL *GMT, double wesn[]) {
 	bool search, double_auto[6];
 	double scale, i_scale;
 
-	if (!GMT->common.J.active) Return (GMT_MAP_NO_PROJECTION);
 	if (wesn[XHI] == wesn[XLO] && wesn[YHI] == wesn[YLO]) Return (GMT_MAP_NO_REGION);	/* Since -R may not be involved if there are grids */
+
+	if (!GMT->common.J.active) {
+		char *def_args[2] = {"X15c", "Q15c"};
+		if (GMT->current.setting.run_mode == GMT_CLASSIC)	/* This is a fatal error in classic mode */
+			Return (GMT_MAP_NO_PROJECTION);
+		if (!GMT->current.ps.active)
+			Return (GMT_MAP_NO_PROJECTION);	/* Only auto-setup a projection for mapping and plots */
+		/* Here we are in modern mode starting a new plot without a map projection.  The rules says use -JQ15c (geo) or -JX15c (Cartesian) */
+		i = gmt_M_is_geographic (GMT, GMT_IN);
+		gmt_parse_common_options (GMT, "J", 'J', def_args[i]);
+		GMT->common.J.active = true;
+	}
 
 	gmtlib_init_ellipsoid (GMT);	/* Set parameters depending on the ellipsoid since the latter could have been set explicitly */
 

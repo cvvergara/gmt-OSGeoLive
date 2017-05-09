@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77track.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: mgd77track.c 18024 2017-04-23 20:44:58Z pwessel $
  *
  *    Copyright (c) 2004-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -21,15 +21,15 @@
  *
  */
  
+#include "gmt_dev.h"
+#include "mgd77.h"
+
 #define THIS_MODULE_NAME	"mgd77track"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Plot track-line map of MGD77 cruises"
 #define THIS_MODULE_KEYS	">X}"
-
-#include "gmt_dev.h"
-#include "mgd77.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcptxy"
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYptxy" GMT_OPT("c")
 
 #define MGD77TRACK_ANSIZE 0.125
 #define MGD77TRACK_MARK_NEWDAY	0
@@ -155,10 +155,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level, struct MGD77TRACK_CTRL 
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: mgd77track cruise(s) %s %s\n\t[-A[c][<size>]][,<inc><unit>] [%s] ", GMT_Rgeo_OPT, GMT_J_OPT, GMT_B_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-Cf|g|e] [-Da<startdate>] [-Db<stopdate>] [-F]\n\t[-Gt|d|n<gap>] [-I<code>] [-K] [-L<trackticks>] [-N] [-O] [-P] [-Sa<startdist>[<unit>]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "[-Cf|g|e] [-Da<startdate>] [-Db<stopdate>] [-F]\n\t[-Gt|d|n<gap>] [-I<code>] [-K] [-L<trackticks>] [-N] [-O] [-P] [-Sa<startdist>[<unit>]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Sb<stopdist>[<unit>]] [-TT|t|d<ms,mc,mfs,mf,mfc>] [%s]\n\t[%s] [-W<pen>] [%s] [%s]\n",
 	             GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s]\n\n", GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\n", GMT_p_OPT, GMT_t_OPT);
      
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
              
@@ -204,7 +204,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level, struct MGD77TRACK_CTRL 
 	             Ctrl->T.marker[MGD77TRACK_MARK_DIST].font.id);
 	GMT_Option (API, "U,V");
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Set track pen attributes [%s].\n", gmt_putpen (API->GMT, &Ctrl->W.pen));
-	GMT_Option (API, "X,c,p,t,.");
+	GMT_Option (API, "X,p,t,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -498,7 +498,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77TRACK_CTRL *Ctrl, struct 
 	                                 "Syntax error -Gd: Must specify a positive gap distance in km!\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->G.active[GAP_T] && Ctrl->G.value[GAP_T] <= 0.0,
 	                                 "Syntax error -Gt: Must specify a positive gap distance in minutes!\n");
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Region is not set\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Region is not set\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
 }
@@ -592,14 +592,14 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 	if (mode == GMT_MODULE_PURPOSE) return (usage (API, GMT_MODULE_PURPOSE, NULL));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if (!options || options->option == GMT_OPT_USAGE) Return (usage (API, GMT_USAGE, Ctrl));	/* Return the usage message */
 	if (options->option == GMT_OPT_SYNOPSIS) Return (usage (API, GMT_SYNOPSIS, Ctrl));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
 	/*---------------------------- This is the mgd77track main code ----------------------------*/
@@ -658,7 +658,6 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error reading header sequence for cruise %s\n", list[argno]);
 			continue;
 		}
-		rec = 0;
 		last_julian = -1;
 		
 		if (abs (Ctrl->A.mode) == 2)	/* Use MGD77 cruise ID */
@@ -809,7 +808,7 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 						sprintf (label, "+%s", the_clock);
 					}
 					gmt_setfill (GMT, &Ctrl->T.marker[mrk].s, true);
-					PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), GMT_SYMBOL_CIRCLE);
+					PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), PSL_CIRCLE);
 					form = gmt_setfont (GMT, &Ctrl->T.marker[mrk].font);
 					plot_x = x;	plot_y = y;
 					gmt_smart_justify (GMT, 5, angle, 0.5 * Ctrl->T.marker[mrk].font_size, 0.5 * Ctrl->T.marker[mrk].font_size,
@@ -822,7 +821,7 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 					mrk = MGD77TRACK_MARK_DIST;
 					sprintf (label, "%d km  ", (int)((annot_dist[ANNOT] - Ctrl->L.info.annot_int_dist) * factor));
 					gmt_setfill (GMT, &Ctrl->T.marker[mrk].s, true);
-					PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), GMT_SYMBOL_SQUARE);
+					PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), PSL_SQUARE);
 					form = gmt_setfont (GMT, &Ctrl->T.marker[mrk].font);
 					plot_x = x;	plot_y = y;
 					gmt_smart_justify (GMT, 7, angle, 0.5 * Ctrl->T.marker[mrk].font_size, 0.5 *
@@ -834,17 +833,17 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 			if (both && !(annot_tick[ANNOT] & 1) && (draw_tick[ANNOT] & 1)) {
 				mrk = (this_julian != last_julian) ? MGD77TRACK_MARK_NEWDAY : MGD77TRACK_MARK_SAMEDAY;
 				gmt_setfill (GMT, &Ctrl->T.marker[mrk].s, true);
-				PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), GMT_SYMBOL_CIRCLE);
+				PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), PSL_CIRCLE);
 			}
 			if (both && !(annot_tick[ANNOT] & 2) && (draw_tick[ANNOT] & 2)) {
 				mrk = (this_julian != last_julian) ? MGD77TRACK_MARK_NEWDAY : MGD77TRACK_MARK_SAMEDAY;
 				gmt_setfill (GMT, &Ctrl->T.marker[mrk].s, true);
-				PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), GMT_SYMBOL_SQUARE);
+				PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), PSL_SQUARE);
 			}
 			if (draw_tick[ANNOT]) {
 				mrk = MGD77TRACK_MARK_DIST;
 				PSL_setcolor (PSL, Ctrl->T.marker[mrk].s.rgb, PSL_IS_STROKE);
-				PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), GMT_SYMBOL_CROSS);
+				PSL_plotsymbol (PSL, x, y, &(Ctrl->T.marker[mrk].marker_size), PSL_CROSS);
 			}
 			if (annot_tick[ANNOT] || draw_tick[ANNOT]) annot_tick[ANNOT] = draw_tick[ANNOT] = false;
 			if (annot_tick[LABEL]) {

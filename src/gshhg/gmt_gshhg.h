@@ -1,4 +1,4 @@
-/*	$Id: gmt_gshhg.h 17449 2017-01-16 21:27:04Z pwessel $
+/*	$Id: gmt_gshhg.h 17451 2017-01-16 21:36:06Z pwessel $
  *
  * Include file defining macros, functions and structures used in gshhg.c
  *

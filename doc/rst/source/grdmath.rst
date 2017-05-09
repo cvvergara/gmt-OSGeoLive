@@ -137,7 +137,7 @@ Optional Arguments
 Operators
 ---------
 
-Choose among the following 200 operators. "args" are the number of input
+Choose among the following 209 operators. "args" are the number of input
 and output arguments.
 
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
@@ -445,6 +445,8 @@ and output arguments.
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **RMS**       | 1 1   | Root-mean-square of A                                                                                  |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **RMSW**      | 1 1   | Root-mean-square of A for weights in B                                                                 |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **RPDF**      | 1 1   | Rayleigh probability density function for z = A                                                        |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **ROLL**      | 2 0   | Cyclicly shifts the top A stack items by an amount B                                                   |
@@ -510,6 +512,8 @@ and output arguments.
 | **TN**        | 2 1   | Chebyshev polynomial Tn(-1<t<+1,n), with t = A, and n = B                                              |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **TPDF**      | 2 1   | Student's t probability density function for t = A, and nu = B                                         |
++---------------+-------+--------------------------------------------------------------------------------------------------------+
+| **TRIM**      | 3 1   | Alpha-trim C to NaN if values fall in tails A and B (in percentage)                                    |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
 | **UPPER**     | 1 1   | The highest (maximum) value of A                                                                       |
 +---------------+-------+--------------------------------------------------------------------------------------------------------+
@@ -590,12 +594,14 @@ The following symbols have special meaning:
 +-------------+-------------------------------------------------+
 | **YROW**    | Grid with row numbers 0, 1, ..., NY-1           |
 +-------------+-------------------------------------------------+
+| **NODE**    | Grid with node numbers 0, 1, ..., (NX*NY)-1     |
++-------------+-------------------------------------------------+
 
 Notes On Operators
 ------------------
 
 #. For Cartesian grids the operators **MEAN**, **MEDIAN**, **MODE**,
-   **LMSSCL**, **MAD**, **OQUANT**, **STD**, and **VAR** return the
+   **LMSSCL**, **MAD**, **PQUANT**, **RMS**, **STD**, and **VAR** return the
    expected value from the given matrix.  However, for geographic grids
    we perform a spherically weighted calculation where each node value
    is weighted by the geographic area represented by that node.
@@ -666,7 +672,8 @@ Notes On Operators
 
 #. When OpenMP support is compiled in, a few operators will take advantage
    of the ability to spread the load onto several cores.  At present, the
-   list of such operators is: **LDIST**.
+   list of such operators is: **LDIST**, **LDIST2**, **PDIST**, **PDIST2**,
+   **SAZ**, **SBAZ**, **SDIST**, **YLM**, and **grd_YLMg**.
 
 .. include:: explain_float.rst_
 

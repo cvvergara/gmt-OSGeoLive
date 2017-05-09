@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: blockmean.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: blockmean.c 18134 2017-05-05 08:34:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -29,23 +29,24 @@
 
 #define BLOCKMEAN	/* Since mean, median, mode share near-similar macros we require this setting */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"blockmean"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Block average (x,y,z) data tables by L2 norm"
 #define THIS_MODULE_KEYS	"<D{,>D}"
+#define THIS_MODULE_NEEDS	"R"
+#define THIS_MODULE_OPTIONS "-:>RVabdefghior" GMT_OPT("FH")
 
-#include "gmt_dev.h"
 #include "block_subs.h"
-
-#define GMT_PROG_OPTIONS "-:>RVabdfghior" GMT_OPT("FH")
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: blockmean [<table>] %s\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [-C] [-E[p]] [-S[m|n|s|w]] [%s] [-W[i][o][+s]]\n", GMT_Rgeo_OPT, GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
-		GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n",
+		GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_r_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -69,7 +70,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t     Append +s read/write standard deviations instead, with w = 1/s.\n");
 	GMT_Option (API, "a,bi");
 	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is 3 columns (or 4 if -W is set), or 2 for -Sn.\n");
-	GMT_Option (API, "bo,d,f,h,i,o,r,:,.");
+	GMT_Option (API, "bo,d,e,f,h,i,o,r,:,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -103,11 +104,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct BLOCKMEAN_CTRL *Ctrl, struct G
 				if (opt->arg[0] == 'p') Ctrl->E.mode = 1;
 				break;
 			case 'I':	/* Get block dimensions */
-				Ctrl->I.active = true;
-				if (gmt_getinc (GMT, opt->arg, Ctrl->I.inc)) {
-					gmt_inc_syntax (GMT, 'I', 1);
-					n_errors++;
-				}
+				n_errors += gmt_parse_inc_option (GMT, 'I', opt->arg);
 				break;
 			case 'S':	/* Set report mode for z */
 				Ctrl->S.active = true;
@@ -160,11 +157,11 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct BLOCKMEAN_CTRL *Ctrl, struct G
 		}
 	}
 
-	gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);	/* If -R<grdfile> was given we may get incs unless -I was used */
+	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);	/* If -R<grdfile> was given we may get incs unless -I was used */
 
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->E.mode && !Ctrl->W.weighted[GMT_IN], "Syntax error: The -Ep option requires weights (= 1/sigma^2) on input\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_check_binary_io (GMT, (Ctrl->W.weighted[GMT_IN]) ? 4 : 3);
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_NOERROR);
@@ -203,8 +200,8 @@ int GMT_blockmean (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
@@ -212,7 +209,7 @@ int GMT_blockmean (void *V_API, int mode, void *args) {
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
 
-	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
+	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, NULL, NULL, \
 		GMT_GRID_DEFAULT_REG, 0, NULL)) == NULL) Return (API->error);	/* Note: 0 for pad since no BC work needed */
 
 	duplicate_col = (gmt_M_360_range (Grid->header->wesn[XLO], Grid->header->wesn[XHI]) && Grid->header->registration == GMT_GRID_NODE_REG);	/* E.g., lon = 0 column should match lon = 360 column */
@@ -252,7 +249,7 @@ int GMT_blockmean (void *V_API, int mode, void *args) {
 		if (Ctrl->E.active)  n_bytes_per_record += sizeof (struct BLK_SLHG);
 		if (Ctrl->W.weighted[GMT_IN] && Ctrl->E.active) n_bytes_per_record += sizeof (uint64_t);
 		n_bytes = n_bytes_per_record * Grid->header->nm;	/* Report kbytes unless it is too much */
-		GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Using a total of %s for all arrays.\n", gmt_memory_use (n_bytes));
+		GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Using a total of %s for all arrays.\n", gmt_memory_use (n_bytes, 1));
 	}
 
 	/* Initialize the i/o for doing record-by-record reading/writing */
@@ -270,12 +267,12 @@ int GMT_blockmean (void *V_API, int mode, void *args) {
 
 	do {	/* Keep returning records until we reach EOF */
 		if ((in = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
-			if (gmt_M_rec_is_error (GMT)) 		/* Bail if there are any read errors */
+			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
 				Return (GMT_RUNTIME_ERROR);
-			if (gmt_M_rec_is_any_header (GMT)) 	/* Skip all table and segment headers */
-				continue;
-			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
+			}
+			else if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
+			continue;							/* Go back and read the next record */
 		}
 		
 		if (gmt_M_is_dnan (in[GMT_Z])) 		/* Skip if z = NaN */

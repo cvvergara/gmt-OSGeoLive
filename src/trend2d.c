@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: trend2d.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: trend2d.c 18171 2017-05-07 02:37:02Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -32,14 +32,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"trend2d"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Fit a [weighted] [robust] polynomial for z = f(x,y) to xyz[w] data"
 #define THIS_MODULE_KEYS	"<D{,>D}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vbdfhis" GMT_OPT("H")
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vbdefhis" GMT_OPT("H")
 
 #define TREND2D_N_OUTPUT_CHOICES 6
 
@@ -94,7 +94,10 @@ GMT_LOCAL int read_data_trend2d (struct GMT_CTRL *GMT, struct TREND2D_DATA **dat
 			if (gmt_M_rec_is_eof (GMT)) 		/* Reached end of file */
 				break;
 		}
-
+		if (in == NULL) {	/* Crazy safety valve but it should never get here*/
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal error: input pointer is NULL where it should not be, aborting\n");
+			return (GMT_PTR_IS_NULL);
+		}
 		/* Data record to process */
 	
 		(*data)[i].x = in[GMT_X];
@@ -243,7 +246,7 @@ GMT_LOCAL void recompute_weights_2d (struct GMT_CTRL *GMT, struct TREND2D_DATA *
 	gmt_sort_array (GMT, work, n_data, GMT_DOUBLE);
 
 	if (n_data%2)
-		*scale = 1.4826 * work[n_data/2];
+		*scale = MAD_NORMALIZE * work[n_data/2];
 	else
 		*scale = 0.7413 * (work[n_data/2 - 1] + work[n_data/2]);
 
@@ -406,15 +409,15 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct TREND2D_CTRL *C) {	/* Dea
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: trend2d [<table>] -F<xyzmrw> -N<n_model>[r] [-C<condition_#>] [-I[<confidence>]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-W] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: trend2d [<table>] -F<xyzmrw> -N<n_model>[+r] [-C<condition_#>] [-I[<confidence>]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-W] [%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_s_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Choose at least 1, up to 6, any order, of xyzmrw for ASCII output to stdout.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   x=x, y=y, z=z, m=model, r=residual=z-m, w=weight (determined iteratively if robust fit used).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3r.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Model parameters order is given as follows:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-N Fit a [robust] model with <n_model> terms.  <n_model> in [1,10].  E.g., robust planar = -N3+r.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Model parameters order is given as follows; append +r for robust solution:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   z = m1 + m2*x + m3*y + m4*x*y + m5*x^2 + m6*y^2 + m7*x^3 + m8*x^2*y + m9*x*y^2 + m10*y^3.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t<table> is one or more data files (in ASCII, binary, netCDF) with (x,y,z[,w]) data.\n");
@@ -427,7 +430,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Weighted input given, weights in 4th column [Default is unweighted].\n");
 	GMT_Option (API, "bi");
 	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is 3 (or 4 if -W is set) columns.\n");
-	GMT_Option (API, "bo,d,f,h,i,s,:,.");
+	GMT_Option (API, "bo,d,e,f,h,i,s,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -474,7 +477,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct TREND2D_CTRL *Ctrl, struct GMT
 			case 'N':
 				Ctrl->N.active = true;
 				if (strchr (opt->arg, 'r')) Ctrl->N.robust = true;
-				j = (opt->arg[0] == 'r') ? 1 : 0;
+				j = (opt->arg[0] == 'r') ? 1 : 0;	/* GMT4 backwardness */
 				Ctrl->N.value = (opt->arg[j]) ? atoi (&opt->arg[j]) : 0;
 				break;
 			case 'W':
@@ -541,8 +544,8 @@ int GMT_trend2d (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 

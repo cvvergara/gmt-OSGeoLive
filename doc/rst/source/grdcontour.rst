@@ -29,9 +29,8 @@ Synopsis
 [ |-W|\ [*type*]\ *pen* ][**+c**\ [**l**\ \|\ **f**]]
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
-[ |-Z|\ [\*factor*\ [/*offset*]][**p**] ]
+[ |-Z|\ [**+s** \*factor*\ ][**+o**\ *shift*][**+p**] ]
 [ |SYN_OPT-bo| ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-do| ]
 [ **-ho**\ [*n*] ]
 [ |SYN_OPT-p| ]
@@ -221,19 +220,17 @@ Optional Arguments
 
 .. _-Z:
 
-**-Z**\ [\ *factor*\ [/*offset*]][**p**]
-    Use to subtract *offset* from the data and multiply the results by
+**-Z**\ [**+s** \*factor*\ ][**+o**\ *shift*][**+p**]
+    Use to subtract *shift* from the data and multiply the results by
     *factor* before contouring starts [1/0]. (Numbers in **-A**, **-C**,
     **-L** refer to values after this scaling has occurred.) Append
-    **p** to indicate that this grid file contains z-values that are
+    **+p** to indicate that this grid file contains z-values that are
     periodic in 360 degrees (e.g., phase data, angular distributions)
     and that special precautions must be taken when determining
     0-contours. 
 
 .. |Add_-bo| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-bo.rst_
-
-.. include:: explain_-c.rst_
 
 .. |Add_-do| unicode:: 0x20 .. just an invisible code
 .. include:: explain_-do.rst_

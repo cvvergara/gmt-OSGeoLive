@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdfft.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: grdfft.c 18110 2017-05-03 01:29:16Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -27,14 +27,15 @@
  *		in gmt_fft.c, called GMT_fft_*.
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"grdfft"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Mathematical operations on grids in the wavenumber (or frequency) domain"
 #define THIS_MODULE_KEYS	"<G{+,GG},GDE"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-Vfh" GMT_OPT("T")
 
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-Vfh" GMT_OPT("T")
 #define GMT_FFT_DIM	2	/* Dimension of FFT needed */
 
 #ifdef DEBUG
@@ -313,7 +314,7 @@ GMT_LOCAL int do_spectrum (struct GMT_CTRL *GMT, struct GMT_GRID *GridX, struct 
 	 * then just XPower[f] and its 1-std dev error estimate are returned, hence just 3 columns.
 	 * Equations based on spectrum1d.c */
 
-	uint64_t dim[4] = {1, 1, 0, 0};	/* One table and one segment, with either 1 + 1*2 = 3 or 1 + 8*2 = 17 columns and yet unknown rows */
+	uint64_t dim[GMT_DIM_SIZE] = {1, 1, 0, 0};	/* One table and one segment, with either 1 + 1*2 = 3 or 1 + 8*2 = 17 columns and yet unknown rows */
 	uint64_t k, nk, ifreq, *nused = NULL;
 	unsigned int col;
 	float *X = GridX->data, *Y = NULL;	/* Short-hands */
@@ -571,7 +572,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdfft <ingrid> [<ingrid2>] [-G<outgrid>|<table>] [-A<azimuth>] [-C<zlevel>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-D[<scale>|g]] [-E[r|x|y][w[k]][n] [-F[r|x|y]<parameters>] [-I[<scale>|g]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-D[<scale>|g]] [-E[r|x|y][+w[k]][+n]] [-F[r|x|y]<parameters>] [-I[<scale>|g]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-N%s] [-S<scale>]\n", GMT_FFT_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-fg] [%s]\n\n", GMT_V_OPT, GMT_ho_OPT);
 
@@ -587,9 +588,9 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Given two grids X and Y, write f, Xpower[f], Ypower[f], coherent power[f],\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   noise power[f], phase[f], admittance[f], gain[f], coherency[f].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Each quantity is followed by a column of 1 std dev. error estimates.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append w to write wavelength instead of frequency; append k to report\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Give +w to write wavelength instead of frequency; append k to report\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   wavelength in km (geographic grids only) [m].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Finally, append n to yield mean power instead of total power per frequency.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append +n to yield mean power instead of total power per frequency.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-F Filter r [x] [y] freq according to one of three kinds of filter specifications:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   a) Cosine band-pass: Append four wavelengths <lc>/<lp>/<hp>/<hc>.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t      frequencies outside <lc>/<hc> are cut; inside <lp>/<hp> are passed, rest are tapered.\n");
@@ -633,10 +634,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDFFT_CTRL *Ctrl, struct F_IN
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int j, k, n_errors = 0, filter_type = 0;
+	unsigned int j, k, pos, n_errors = 0, filter_type = 0;
 	int n_scan;
 	double par[5];
-	char combined[GMT_BUFSIZ] = {""}, argument[GMT_LEN16] = {""};
+	char combined[GMT_BUFSIZ] = {""}, argument[GMT_LEN16] = {""}, p[GMT_LEN64] = {""}, *c = NULL;
 	struct GMT_OPTION *opt = NULL, *ptr = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
 
@@ -693,18 +694,34 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDFFT_CTRL *Ctrl, struct F_IN
 				add_operation (GMT, Ctrl, GRDFFT_DIFFERENTIATE, 1, par);
 				break;
 			case 'E':	/* x,y,or radial spectrum, w for wavelength; k for km if geographical, n for normalize */
+				/* Old syntax: -E[x|y|r][w[k]][n]  new syntax: -E[x|y|r][+w[k]][+n] */
 				Ctrl->E.active = true;
 				j = 0;
-				while (opt->arg[j]) {
-					switch (opt->arg[j]) {
-						case 'r': Ctrl->E.mode =  0; break;
-						case 'x': Ctrl->E.mode = +1; break;
-						case 'y': Ctrl->E.mode = -1; break;
-						case 'w': Ctrl->E.give_wavelength = true; break;
-						case 'k': if (Ctrl->E.give_wavelength) Ctrl->E.km = true; break;
-						case 'n': Ctrl->E.normalize = true; break;
+				switch (opt->arg[0]) {	/* Determine direction for spectrum or default to radial */
+					case 'r': Ctrl->E.mode =  0; j = 1; break;
+					case 'x': Ctrl->E.mode = +1; j = 1;  break;
+					case 'y': Ctrl->E.mode = -1; j = 1;  break;
+					default :Ctrl->E.mode =  0;  break;
+				}
+				if ((c = gmt_first_modifier (GMT, opt->arg, "wn"))) {	/* Process new modifiers [+w[k]][+n] */
+					pos = 0;	/* Reset to start of new word */
+					while (gmt_getmodopt (GMT, 'E', c, "wn", &pos, p, &n_errors) && n_errors == 0) {
+						switch (p[0]) {
+							case 'w': Ctrl->E.give_wavelength = true; if (p[1] == 'k') Ctrl->E.km = true; break;
+							case 'n': Ctrl->E.normalize = true; break;
+							default: break;	/* These are caught in gmt_getmodopt so break is just for Coverity */
+						}
 					}
-					j++;
+				}
+				else {	/* Old-style modifiers [w[k]][n] */
+					while (opt->arg[j]) {
+						switch (opt->arg[j]) {
+							case 'w': Ctrl->E.give_wavelength = true; break;
+							case 'k': if (Ctrl->E.give_wavelength) Ctrl->E.km = true; break;
+							case 'n': Ctrl->E.normalize = true; break;
+						}
+						j++;
+					}
 				}
 				par[0] = Ctrl->E.mode;
 				add_operation (GMT, Ctrl, GRDFFT_SPECTRUM, 1, par);
@@ -826,8 +843,8 @@ int GMT_grdfft (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, &f_info, options)) != 0) Return (error);
 
@@ -835,7 +852,7 @@ int GMT_grdfft (void *V_API, int mode, void *args) {
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid(s)\n");
 	for (k = 0; k < Ctrl->In.n_grids; k++) {	/* First read the grid header(s) */
-		if ((Orig[k] = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, Ctrl->In.file[k], NULL)) == NULL)
+		if ((Orig[k] = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->In.file[k], NULL)) == NULL)
 			Return (API->error);
 	}
 
@@ -947,7 +964,7 @@ int GMT_grdfft (void *V_API, int mode, void *args) {
 
 		/* The data are in the middle of the padded array; only the interior (original dimensions) will be written to file */
 		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid[0])) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY |
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_DATA_ONLY |
 		                    GMT_GRID_IS_COMPLEX_REAL, NULL, Ctrl->G.file, Grid[0]) != GMT_NOERROR) {
 			Return (API->error);
 		}

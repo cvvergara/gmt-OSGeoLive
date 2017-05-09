@@ -1,4 +1,4 @@
-# $Id: gmt_completion.bash 17450 2017-01-16 21:34:35Z pwessel $
+# $Id: gmt_completion.bash 17451 2017-01-16 21:36:06Z pwessel $
 #
 # Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo,
 # J. Luis, and F. Wobbe

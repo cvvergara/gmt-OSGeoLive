@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight.c 17670 2017-03-14 15:58:06Z pwessel $
+ *	$Id: postscriptlight.c 18069 2017-04-29 22:43:25Z pwessel $
  *
  *	Copyright (c) 2009-2017 by P. Wessel and R. Scharroo
  *
@@ -91,14 +91,14 @@
  * PSL_deftextdim	: Sets variables for text height and width in the PS output
  * PSL_defunits:	: Encodes a dimension by name in the PS output
  *
- * For information about usage, syntax etc, see the PSL.l manual pages
+ * For information about usage, syntax etc, see the postscriptlight documentation
  *
  * Authors:	Paul Wessel, Dept. of Geology and Geophysics, SOEST, U Hawaii
  *			   pwessel@hawaii.edu
  *		Remko Scharroo, EUMETSAT, Darmstadt, Germany
  *			   Remko.Scharroo@eumetsat.int
  * Date:	15-OCT-2009
- * Version:	5.0 [64-bit enabled API edition]
+ * Version:	5.4 [64-bit enabled API edition, decoupled from GMT]
  *
  * Thanks to J. Goff and L. Parkes for their contributions to an earlier version.
  *
@@ -116,10 +116,30 @@
 #include <string.h>
 #include <time.h>
 #include <stdarg.h>
-#include "gmt_notposix.h"
-#include "common_string.h"
-#include "common_byteswap.h"
+#include <stdbool.h>
+#include <inttypes.h>         /* Exact-width integer types */
 #include "postscriptlight.h"
+#ifdef HAVE_CTYPE_H_
+#	include <ctype.h>
+#endif
+#ifdef HAVE_ASSERT_H_
+#	include <assert.h>
+#else
+#	define assert(e) ((void)0)
+#endif
+
+/*
+ * Windows headers
+ */
+
+#ifdef HAVE_IO_H_
+#	include <io.h>
+#endif
+
+#ifdef HAVE_PROCESS_H_
+#	include <process.h>
+#endif
+
 
 #ifdef HAVE_ZLIB
 #	include <zlib.h>
@@ -131,6 +151,45 @@
 #ifndef PATH_MAX
 #	define PATH_MAX 1024
 #endif
+/* Size prefixes for printf/scanf for size_t and ptrdiff_t */
+#ifdef _MSC_VER
+#	define PRIuS "Iu"  /* printf size_t */
+#else
+#	define PRIuS "zu"  /* printf size_t */
+#endif
+
+/* Define bswap32 */
+#undef bswap32
+#ifdef HAVE___BUILTIN_BSWAP32
+#	define bswap32 __builtin_bswap32
+#elif defined __GNUC__ && (defined __i386__ || defined __x86_64__)
+#	define bswap32 gnuc_bswap32
+static inline uint32_t inline_bswap32 (uint32_t x) {
+	return
+		(((x & 0xFF000000U) >> 24) |
+		 ((x & 0x00FF0000U) >>  8) |
+		 ((x & 0x0000FF00U) <<  8) |
+		 ((x & 0x000000FFU) << 24));
+}
+	static inline uint32_t gnuc_bswap32(uint32_t x) {
+		if (__builtin_constant_p(x))
+			x = inline_bswap32(x);
+		else
+			__asm__("bswap %0" : "+r" (x));
+		return x;
+	}
+#elif defined HAVE__BYTESWAP_ULONG /* HAVE___BUILTIN_BSWAP32 */
+#	define bswap32 _byteswap_ulong
+#else /* HAVE___BUILTIN_BSWAP32 */
+	static inline uint32_t inline_bswap32 (uint32_t x) {
+		return
+			(((x & 0xFF000000U) >> 24) |
+			 ((x & 0x00FF0000U) >>  8) |
+			 ((x & 0x0000FF00U) <<  8) |
+			 ((x & 0x000000FFU) << 24));
+	}
+#	define bswap32 inline_bswap32
+#endif /* HAVE___BUILTIN_BSWAP32 */
 
 /* Macro for exit since this should be returned when called from Matlab */
 #ifdef DO_NOT_EXIT
@@ -138,6 +197,58 @@
 #else
 #define PSL_exit(code) exit(code)
 #endif
+
+/* ISO Font encodings.  Ensure that the order of PSL_ISO_names matches order of includes below */
+
+static char *PSL_ISO_name[] = {
+	"PSL_Standard",
+	"PSL_Standard+",
+	"PSL_ISOLatin1",
+	"PSL_ISOLatin1+",
+	"PSL_ISO-8859-1",
+	"PSL_ISO-8859-2",
+	"PSL_ISO-8859-3",
+	"PSL_ISO-8859-4",
+	"PSL_ISO-8859-5",
+	"PSL_ISO-8859-6",
+	"PSL_ISO-8859-7",
+	"PSL_ISO-8859-8",
+	"PSL_ISO-8859-9",
+	"PSL_ISO-8859-10",
+	"PSL_ISO-8859-13",
+	"PSL_ISO-8859-14",
+	"PSL_ISO-8859-15",
+	NULL
+};
+
+static char *PSL_ISO_encoding[] = {
+#include "PSL_Standard.h"
+#include "PSL_Standard+.h"
+#include "PSL_ISOLatin1.h"
+#include "PSL_ISOLatin1+.h"
+#include "PSL_ISO-8859-1.h"
+#include "PSL_ISO-8859-2.h"
+#include "PSL_ISO-8859-3.h"
+#include "PSL_ISO-8859-4.h"
+#include "PSL_ISO-8859-5.h"
+#include "PSL_ISO-8859-6.h"
+#include "PSL_ISO-8859-7.h"
+#include "PSL_ISO-8859-8.h"
+#include "PSL_ISO-8859-9.h"
+#include "PSL_ISO-8859-10.h"
+#include "PSL_ISO-8859-13.h"
+#include "PSL_ISO-8859-14.h"
+#include "PSL_ISO-8859-15.h"
+NULL
+};
+
+/* Listing of "Standard" 35 PostScript fonts found on most PS printers.
+ * The fontheight is the height of A for unit fontsize. */
+
+#define PSL_N_STANDARD_FONTS 35
+static struct PSL_FONT PSL_standard_fonts[PSL_N_STANDARD_FONTS] = {
+#include "standard_adobe_fonts.h"
+};
 
 /*--------------------------------------------------------------------
  *		     STANDARD CONSTANTS MACRO DEFINITIONS
@@ -166,6 +277,38 @@
 #endif
 #ifndef MAX
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#endif
+
+/* GMT normally gets these macros from unistd.h */
+#ifndef HAVE_UNISTD_H_
+#	define R_OK 4
+#	define W_OK 2
+#	ifdef WIN32
+#		define X_OK R_OK /* X_OK == 1 crashes on Windows */
+#	else
+#		define X_OK 1
+#	endif
+#	define F_OK 0
+#endif /* !HAVE_UNISTD_H_ */
+
+/* access is usually in unistd.h; we use a macro here
+ * since the same function under WIN32 is prefixed with _
+ * and defined in io.h */
+#if defined HAVE__ACCESS && !defined HAVE_ACCESS
+#	define access _access
+#endif
+
+#if defined HAVE_STRTOK_S && !defined HAVE_STRTOK_R
+#	define strtok_r strtok_s
+#elif !defined HAVE_STRTOK_R
+/* define custom function */
+#endif
+
+/* getpid is usually in unistd.h; we use a macro here
+ * since the same function under WIN32 is prefixed with _
+ * and defined in process.h */
+#if defined HAVE__GETPID && !defined HAVE_GETPID
+#	define getpid _getpid
 #endif
 
 /*--------------------------------------------------------------------
@@ -271,6 +414,85 @@ static const char *PDF_transparency_modes[N_PDF_TRANSPARENCY_MODES] = {
 	"Overlay", "Saturation", "SoftLight", "Screen"
 };
 
+#ifdef WIN32
+/* SUpport for differences between UNIX and DOS paths */
+
+static void psl_strlshift (char *string, size_t n) {
+	/* Left shift a string by n characters */
+	size_t len;
+	assert (string != NULL); /* NULL pointer */
+
+	if ((len = strlen(string)) <= n ) {
+		/* String shorter than shift width */
+		*string = '\0'; /* Truncate entire string */
+		return;
+	}
+
+	/* Move entire string back */
+	memmove(string, string + n, len + 1);
+}
+
+static void psl_strrepc (char *string, int c, int r) {
+	/* Replaces all occurrences of c in the string with r */
+	assert (string != NULL); /* NULL pointer */
+	do {
+		if (*string == c)
+			*string = (char)r;
+	} while (*(++string)); /* repeat until \0 reached */
+}
+
+/* Turn '/c/dir/...' paths into 'c:/dir/...'
+ * Must do it in a loop since dir may be several ';'-separated dirs */
+static void psl_dos_path_fix (char *dir) {
+	size_t n, k;
+
+	if (!dir || (n = strlen (dir)) < 2U)
+		/* Given NULL or too short dir to work */
+		return;
+
+	if (!strncmp (dir, "/cygdrive/", 10U))
+		/* May happen for example when Cygwin sets GMT_SHAREDIR */
+		psl_strlshift (dir, 9); /* Chop '/cygdrive' */
+
+	/* Replace dumb backslashes with slashes */
+	psl_strrepc (dir, '\\', '/');
+
+	/* If dir begins with '/' and is 2 long, as in '/c', replace with 'c:' */
+	if (n == 2U && dir[0] == '/') {
+		dir[0] = dir[1];
+		dir[1] = ':';
+		return;
+	}
+
+	/* If dir is longer than 2 and, e.g., '/c/', replace with 'c:/' */
+	if (n > 2U && dir[0] == '/' && dir[2] == '/' && isalpha ((int)dir[1])) {
+		dir[0] = dir[1];
+		dir[1] = ':';
+	}
+
+	/* Do the same with dirs separated by ';' but do not replace '/c/j/...' with 'c:j:/...' */
+	for (k = 4; k < n-2; k++) {
+		if ( (dir[k-1] == ';' && dir[k] == '/' && dir[k+2] == '/' && isalpha ((int)dir[k+1])) ) {
+			dir[k] = dir[k+1];
+			dir[k+1] = ':';
+		}
+	}
+
+	/* Replace ...:C:/... by ...;C:/... as that was a multi-path set by a e.g. bash shell (msys or cygwin) */
+	for (k = 4; k < n-2; k++) {
+		if ((dir[k-1] == ':' && dir[k+1] == ':' && dir[k+2] == '/' && isalpha ((int)dir[k])) )
+			dir[k-1] = ';';
+		else if ((dir[k-1] == ':' && dir[k] == '/' && dir[k+2] == '/' && isalpha ((int)dir[k+1])) ) {
+			/* The form ...:/C/... will become ...;C:/... */
+			dir[k-1] = ';';
+			dir[k] = dir[k+1];
+			dir[k+1] = ':';
+		}
+	}
+}
+#else
+# define psl_dos_path_fix(e) ((void)0) /* dummy function */
+#endif
 
 /* ----------------------------------------------------------------------
  * Support functions used in PSL_* functions.
@@ -1118,7 +1340,7 @@ static int psl_encodefont (struct PSL_CTRL *PSL, int font_no) {
 	/* Re-encode fonts with Standard+ or ISOLatin1[+] encodings */
 	PSL_command (PSL, "PSL_font_encode %d get 0 eq {%s_Encoding /%s /%s PSL_reencode PSL_font_encode %d 1 put} if", font_no, PSL->init.encoding, PSL->internal.font[font_no].name, PSL->internal.font[font_no].name, font_no);
 	(PSL->internal.comments) ? PSL_command (PSL, "\t%% Set this font\n") : PSL_command (PSL, "\n");
-	PSL->internal.font[font_no].encoded = true;
+	PSL->internal.font[font_no].encoded = 1;
 	return (PSL_NO_ERROR);
 }
 
@@ -1355,6 +1577,18 @@ static char *psl_getsharepath (struct PSL_CTRL *PSL, const char *subdir, const c
 	if (!access (path, R_OK)) return (path);
 
 	return (NULL);	/* No file found, give up */
+}
+
+static void psl_place_encoding (struct PSL_CTRL *PSL, const char *encoding) {
+	/* Write the specified encoding string to file */
+	int k = 0, match = 0;
+	while (PSL_ISO_name[k] && (match = strcmp (encoding, PSL_ISO_name[k])) != 0) k++;
+	if (match == 0)
+		PSL_command (PSL, "%s", PSL_ISO_encoding[k]);
+	else {
+		PSL_message (PSL, PSL_MSG_NORMAL, "Fatal Error: Could not find ISO encoding %s\n", encoding);
+		PSL_exit (EXIT_FAILURE);
+	}
 }
 
 /* This function copies a file called $PSL_SHAREDIR/postscriptlight/<fname>.ps
@@ -1672,7 +1906,6 @@ static int psl_paragraphprocess (struct PSL_CTRL *PSL, double y, double fontsize
 
 			} /* End loop over word with @ in it */
 
-			last_k = k - 1;
 			if (!plain_word && (last_k = k - 1) >= 0) {	/* Allow space if text ends with @ commands only */
 				word[last_k]->flag &= 60;
 				word[last_k]->flag |= 1;
@@ -2041,6 +2274,10 @@ static int psl_pattern_init (struct PSL_CTRL *PSL, int image_no, char *imagefile
 
 		for (i = 0, found = false; !found && i < PSL->internal.n_userimages; i++) found = !strcmp (PSL->internal.user_image[i], imagefile);
 		if (found) return (PSL_N_PATTERNS + i - 1);
+		if (PSL->internal.n_userimages > (PSL_N_PATTERNS-1)) {
+			PSL_message (PSL, PSL_MSG_NORMAL, "Error: Already maintaining %d user images and cannot accept any more\n", PSL->internal.n_userimages+1);
+			PSL_exit (EXIT_FAILURE);
+		}
 		psl_getsharepath (PSL, NULL, imagefile, "", file);
 		PSL->internal.user_image[PSL->internal.n_userimages] = PSL_memory (PSL, NULL, strlen (imagefile)+1, char);
 		strcpy (PSL->internal.user_image[PSL->internal.n_userimages], imagefile);
@@ -2070,7 +2307,10 @@ static int psl_pattern_init (struct PSL_CTRL *PSL, int image_no, char *imagefile
 	return (image_no);
 }
 
-#if 0
+#ifdef PSL_WITH_GMT4_SUPPORT
+/* This code is included so we may offer backwards compatibility with GMT 4 old-school
+ * polygon vectors.  It is not documented and should not be used by non-GMT developers.
+ */
 void psl_vector_v4 (struct PSL_CTRL *PSL, double x, double y, double param[], double rgb[], int outline)
 {
 	/* Old GMT4 vector symbol:
@@ -2080,39 +2320,39 @@ void psl_vector_v4 (struct PSL_CTRL *PSL, double x, double y, double param[], do
 	 * param[3] = headlength;
 	 * param[4] = headwidth;
 	 * param[5] = headshape;
-	/* Will make sure that arrow has a finite width in PS coordinates */
+	 * Will make sure that arrow has a finite width in PS coordinates */
 
-	double angle, xtail, ytail, tailwidth, headlength, headwidth, headshape;
+	double angle, xtail, ytail, xtip, ytip, tailwidth, headlength, headwidth, headshape;
 	int w2, length, hw, hl, hl2, hw2, l2;
 
 	xtail = x;	ytail = y;	xtip = param[0];	ytip = param[1];
-	length = psl_iz (PSL, hypot (xtail-xtip, ytail-ytip));					/* Vector length in PS units */
-	if (length == 0) return;					/* NULL vector */
+	length = psl_iz (PSL, hypot (xtail-xtip, ytail-ytip));	/* Vector length in PS units */
+	if (length == 0) return;	/* NULL vector */
 
 	tailwidth  = param[2];
 	headlength = param[3];
 	headwidth  = param[4];
 	headshape  = param[5];
 	if (outline & 8)
-		ps_setfill (rgb, outline - 8);
+		PSL_setfill (PSL, rgb, outline - 8);
 	else
-		ps_setfill (rgb, outline);
-	angle = atan2 ((ytip-ytail),(xtip-xtail)) * R2D;					/* Angle vector makes with horizontal, in radians */
-	fprintf (PSL->internal.fp, "V %ld %ld T ", (PSL_LONG)irint (xtail * PSL->internal.scale), (PSL_LONG)irint (ytail * PSL->internal.scale));	/* Temporarily set tail point the local origin (0, 0) */
-	if (angle != 0.0) fprintf (PSL->internal.fp, "%g R ", angle);					/* Rotate so vector is horizontal in local coordinate system */
-	w2 = (PSL_LONG)irint (0.5 * tailwidth * PSL->internal.scale);	if (w2 == 0) w2 = 1;			/* Half-width of vector tail */
-	hw = (PSL_LONG)irint (headwidth * PSL->internal.scale);	if (hw == 0) hw = 1;				/* Width of vector head */
-	hl = (PSL_LONG)irint (headlength * PSL->internal.scale);							/* Length of vector head */
-	hl2 = (PSL_LONG)irint (0.5 * headshape * headlength * PSL->internal.scale);					/* Cut-in distance due to slanted back-side of arrow head */
-	hw2 = hw - w2;										/* Distance from tail side to head side (vertically) */
+		PSL_setfill (PSL, rgb, outline);
+	angle = atan2 ((ytip-ytail),(xtip-xtail)) * R2D;			/* Angle vector makes with horizontal, in radians */
+	PSL_command (PSL, "V %d %d T ", psl_ix (PSL, xtail), psl_ix (PSL, ytail));	/* Temporarily set tail point the local origin (0, 0) */
+	if (angle != 0.0) PSL_command (PSL, "%g R ", angle);		/* Rotate so vector is horizontal in local coordinate system */
+	w2 = psl_ix (PSL, 0.5 * tailwidth);	if (w2 == 0) w2 = 1;	/* Half-width of vector tail */
+	hw = psl_ix (PSL, headwidth);	if (hw == 0) hw = 1;		/* Width of vector head */
+	hl = psl_ix (PSL, headlength);								/* Length of vector head */
+	hl2 = psl_ix (PSL, 0.5 * headshape * headlength);			/* Cut-in distance due to slanted back-side of arrow head */
+	hw2 = hw - w2;		/* Distance from tail side to head side (vertically) */
 	if (outline & 8) {	/* Double-headed vector */
 		l2 = length - 2 * hl + 2 * hl2;							/* Inside length between start of heads */
-		fprintf (PSL->internal.fp, "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld Sv U\n",
+		PSL_command (PSL, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d Sv U\n",
 				hl2, hw2, -l2, hl2, -hw2, -hl, hw, hl, hw, -hl2, -hw2, l2, -hl2, hw2, hl, -hw);
 	}
 	else {			/* Single-headed vector */
 		l2 = length - hl + hl2;								/* Length from tail to start of slanted head */
-		fprintf (PSL->internal.fp, "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld SV U\n",
+		PSL_command (PSL, "%d %d %d %d %d %d %d %d %d %d %d SV U\n",
 			-l2, hl2, -hw2, -hl, hw, hl, hw, -hl2, -hw2, l2, -w2);
 	}
 }
@@ -2926,20 +3166,19 @@ static int psl_load_eps (struct PSL_CTRL *PSL, FILE *fp, struct imageinfo *h, un
 
 	/* Fill header struct with appropriate values */
 	h->magic = EPS_MAGIC;
-	h->width = (int)(trx - llx);
-	h->height = (int)(try - lly);
+	h->width = trx - llx;
+	h->height = try - lly;
 	h->depth = 0;
-	h->length = (int)n;
+	h->length = n;
 	h->type = RT_EPS;
 	h->maptype = RMT_NONE;
 	h->maplength = 0;
-	h->xorigin = (int)llx;
-	h->yorigin = (int)lly;
+	h->xorigin = llx;
+	h->yorigin = lly;
 
 	*picture = buffer;
 	return (0);
 }
-
 
 static void psl_init_fonts (struct PSL_CTRL *PSL) {
 	FILE *in = NULL;
@@ -2949,43 +3188,18 @@ static void psl_init_fonts (struct PSL_CTRL *PSL) {
 	char buf[PSL_BUFSIZ];
 	char fullname[PSL_BUFSIZ];
 
+	PSL->internal.font = PSL_memory (PSL, NULL, n_alloc, struct PSL_FONT);
+
 	/* Loads the available fonts for this installation */
 
 	/* First the standard 35 PostScript fonts from Adobe */
-
-	psl_getsharepath (PSL, "postscriptlight", "PSL_standard_fonts", ".txt", fullname);
-	if ((in = fopen (fullname, "r")) == NULL) {
-		PSL_message (PSL, PSL_MSG_NORMAL, "Fatal Error: ");
-		perror (fullname);
-		PSL_exit (EXIT_FAILURE);
-	}
-
-	PSL->internal.font = PSL_memory (PSL, NULL, n_alloc, struct PSL_FONT);
-
-	while (fgets (buf, PSL_BUFSIZ, in)) {
-		if (buf[0] == '#' || buf[0] == '\n' || buf[0] == '\r') continue;
-		if (sscanf (buf, "%s %lf %d", fullname, &PSL->internal.font[i].height, &PSL->internal.font[i].encoded) != 3) {
-			PSL_message (PSL, PSL_MSG_NORMAL, "Fatal Error: Trouble decoding font info for font %d\n", i);
-			PSL_exit (EXIT_FAILURE);
-		}
-		PSL->internal.font[i].name = PSL_memory (PSL, NULL, strlen (fullname)+1, char);
-		strcpy (PSL->internal.font[i].name, fullname);
-		i++;
-		if (i == n_alloc) {
-			n_alloc <<= 1;
-			PSL->internal.font = PSL_memory (PSL, PSL->internal.font, n_alloc, struct PSL_FONT);
-		}
-	}
-	fclose (in);
-	PSL->internal.N_FONTS = n_PSL_fonts = i;
+	memcpy (PSL->internal.font, PSL_standard_fonts, PSL_N_STANDARD_FONTS * sizeof (struct PSL_FONT));
+	PSL->internal.N_FONTS = n_PSL_fonts = i = PSL_N_STANDARD_FONTS;
 
 	/* Then any custom fonts */
 
-	psl_getsharepath (PSL, "postscriptlight", "PSL_custom_fonts", ".txt", fullname);
-	if (!access (fullname, R_OK)) {	/* Decode Custom font file */
-
-		if ((in = fopen (fullname, "r")) == NULL)
-		{
+	if (psl_getsharepath (PSL, "postscriptlight", "PSL_custom_fonts", ".txt", fullname)) {
+		if ((in = fopen (fullname, "r")) == NULL) {	/* File exist but opening fails? WTF! */
 			PSL_message (PSL, PSL_MSG_NORMAL, "Fatal Error: ");
 			perror (fullname);
 			PSL_exit (EXIT_FAILURE);
@@ -2993,11 +3207,15 @@ static void psl_init_fonts (struct PSL_CTRL *PSL) {
 
 		while (fgets (buf, PSL_BUFSIZ, in)) {
 			if (buf[0] == '#' || buf[0] == '\n' || buf[0] == '\r') continue;
-			PSL->internal.font[i].name = PSL_memory (PSL, NULL, strlen (buf), char);
-			if (sscanf (buf, "%s %lf %d", PSL->internal.font[i].name, &PSL->internal.font[i].height, &PSL->internal.font[i].encoded) != 3) {
-				PSL_message (PSL, PSL_MSG_NORMAL, "Fatal Error: Trouble decoding custom font info for font %d\n", i - n_PSL_fonts);
-				PSL_exit (EXIT_FAILURE);
+			if (sscanf (buf, "%s %lf %d", fullname, &PSL->internal.font[i].height, &PSL->internal.font[i].encoded) != 3) {
+				PSL_message (PSL, PSL_MSG_NORMAL, "Warning: Trouble decoding custom font info [%s].  Skipping this font\n", buf);
+				continue;
 			}
+			if (strlen (fullname) >= PSL_NAME_LEN) {
+				PSL_message (PSL, PSL_MSG_NORMAL, "Warning: Font name %s exceeds %d characters and will be truncated\n", fullname, PSL_NAME_LEN);
+				fullname[PSL_NAME_LEN-1] = '\0';
+			}
+			strncpy (PSL->internal.font[i].name, fullname, PSL_NAME_LEN-1);
 			i++;
 			if (i == n_alloc) {
 				n_alloc <<= 1;
@@ -3007,6 +3225,7 @@ static void psl_init_fonts (struct PSL_CTRL *PSL) {
 		fclose (in);
 		PSL->internal.N_FONTS = i;
 	}
+	/* Final allocation of font array */
 	PSL->internal.font = PSL_memory (PSL, PSL->internal.font, PSL->internal.N_FONTS, struct PSL_FONT);
 }
 
@@ -3260,7 +3479,7 @@ int PSL_beginsession (struct PSL_CTRL *PSL, unsigned int flags, char *sharedir, 
 	if ((this_c = sharedir) == NULL && search) this_c = getenv ("PSL_SHAREDIR");
 	if (this_c) {	/* Did find a sharedir */
 		PSL->internal.SHAREDIR = strdup (this_c);
-		gmt_dos_path_fix (PSL->internal.SHAREDIR);
+		psl_dos_path_fix (PSL->internal.SHAREDIR);
 		if (access(PSL->internal.SHAREDIR, R_OK)) {
 			PSL_message (PSL, PSL_MSG_NORMAL, "Error: Could not access PSL_SHAREDIR %s.\n", PSL->internal.SHAREDIR);
 			PSL_exit (EXIT_FAILURE);
@@ -3276,7 +3495,7 @@ int PSL_beginsession (struct PSL_CTRL *PSL, unsigned int flags, char *sharedir, 
 	if ((this_c = userdir) == NULL && search) this_c = getenv ("PSL_USERDIR");
 	if (this_c) {	/* Did find a userdir */
 		PSL->internal.USERDIR = strdup (this_c);
-		gmt_dos_path_fix (PSL->internal.USERDIR);
+		psl_dos_path_fix (PSL->internal.USERDIR);
 		if (access (PSL->internal.USERDIR, R_OK)) {
 			PSL_message (PSL, PSL_MSG_NORMAL, "Warning: Could not access PSL_USERDIR %s.\n", PSL->internal.USERDIR);
 			PSL_free (PSL->internal.USERDIR);
@@ -3294,7 +3513,6 @@ int PSL_endsession (struct PSL_CTRL *PSL) {
 	if (!PSL) return (PSL_NO_SESSION);	/* Never was allocated */
 
 	psl_freeplot (PSL);
-	for (i = 0; i < PSL->internal.N_FONTS; i++) PSL_free (PSL->internal.font[i].name);
 	PSL_free (PSL->internal.font);
 	for (i = 0; i < PSL->internal.n_userimages; i++) PSL_free (PSL->internal.user_image[i]);
 	PSL_free (PSL->internal.SHAREDIR);
@@ -3421,7 +3639,7 @@ int PSL_plotbitimage (struct PSL_CTRL *PSL, double x, double y, double xsize, do
 	/* Correct origin (x,y) in case of justification */
 	if (justify > 1) {      /* Move the new origin so (0,0) is lower left of box */
 		x -= 0.5 * ((justify + 3) % 4) * xsize;
-		y -= 0.5 * (justify / 4) * ysize;
+		y -= 0.5 * (int)(justify / 4) * ysize;
 	}
 
 	PSL_comment (PSL, "Start of 1-bit image\n");
@@ -3521,7 +3739,7 @@ int PSL_plotcolorimage (struct PSL_CTRL *PSL, double x, double y, double xsize, 
 	/* Correct origin (x,y) in case of justification */
 	if (justify > 1) {      /* Move the new origin so (0,0) is lower left of box */
 		x -= 0.5 * ((justify + 3) % 4) * xsize;
-		y -= 0.5 * (justify / 4) * ysize;
+		y -= 0.5 * (int)(justify / 4) * ysize;
 	}
 
 	/* Gray scale, CMYK or RGB encoding/colorspace */
@@ -3827,7 +4045,7 @@ int PSL_plotepsimage (struct PSL_CTRL *PSL, double x, double y, double xsize, do
 	/* Correct origin (x,y) in case of justification */
 	if (justify > 1) {      /* Move the new origin so (0,0) is lower left of box */
 		x -= 0.5 * ((justify + 3) % 4) * xsize;
-		y -= 0.5 * (justify / 4) * ysize;
+		y -= 0.5 * (int)(justify / 4) * ysize;
 	}
 
 	PSL_command (PSL, "PSL_eps_begin\n");
@@ -4039,8 +4257,10 @@ int PSL_endplot (struct PSL_CTRL *PSL, int lastpage) {
 		if (lastpage) PSL->internal.pmode |= 2;	/* We provided a trailer */
 	}
 	else {	/* Dealing with files or stdout */
-		if (PSL->internal.fp != stdout && PSL->internal.call_level == 1)
+		if (PSL->internal.fp != stdout && PSL->internal.call_level == 1) {
 			fclose (PSL->internal.fp);	/* Only level 1 can close the file (if not stdout) */
+			PSL->internal.fp = NULL;
+		}
 	}
 	PSL->internal.call_level--;	/* Done with this module call */
 	return (PSL_NO_ERROR);
@@ -4176,8 +4396,7 @@ int PSL_beginplot (struct PSL_CTRL *PSL, FILE *fp, int orientation, int overlay,
 		PSL_command (PSL, "%%%%BeginProlog\n");
 		psl_bulkcopy (PSL, "PSL_prologue");	/* General PS code */
 		sprintf (PSL_encoding, "PSL_%s", PSL->init.encoding);	/* Prepend the PSL_ prefix */
-		psl_bulkcopy (PSL, PSL_encoding);
-
+		psl_place_encoding (PSL, PSL_encoding);
 		psl_def_font_encoding (PSL);		/* Initialize book-keeping for font encoding and write font macros */
 
 		psl_bulkcopy (PSL, "PSL_label");	/* PS code for label line annotations and clipping */
@@ -5126,7 +5345,6 @@ int PSL_plottextline (struct PSL_CTRL *PSL, double x[], double y[], int np[], in
 
 		if (justify < 0) psl_remove_spaces (label, n_segments, nlabel_per_seg);	/* Strip leading and trailing spaces */
 		for (i = 0; i < n_segments; i++) n_labels += nlabel_per_seg[i];	/* Count number of labels */
-		justify = abs (justify);
 
 		/* Set clearance and text height parameters */
 		PSL_comment (PSL, "Set constants for textbox clearance:\n");
@@ -5432,13 +5650,13 @@ int PSL_loadimage (struct PSL_CTRL *PSL, char *file, struct imageinfo *h, unsign
 			sprintf (cmd, "convert %s %s 2> %s", file, tmp_file, null_dev);
 			if (system (cmd)) {	/* convert failed, give up */
 				PSL_message (PSL, PSL_MSG_NORMAL, "Error: Automatic conversion of file %s to Sun rasterfile failed\n", file);
-				remove (tmp_file);	/* Remove the temp file */
+				if (remove (tmp_file)){};	/* Remove the temp file */
 				return (PSL_READ_FAILURE);
 			}
 		}
 		if ((fp = fopen (tmp_file, "rb")) == NULL) {
 			PSL_message (PSL, PSL_MSG_NORMAL, "Error: Cannot open image file %s!\n", tmp_file);
-			remove (tmp_file);
+			if (remove (tmp_file)){};		/* ... and shut up Coverity */
 			return (PSL_READ_FAILURE);
 		}
 		if (psl_read_rasheader (PSL, fp, h, 0, 0)) {
@@ -5464,8 +5682,8 @@ int PSL_command (struct PSL_CTRL *C, const char *format, ...) {
 	va_list args;
 	va_start (args, format);
 	if (C->internal.memory) {	/* Send command to memory buffer */
-		char tmp_buffer[PSL_BUFSIZ] = {""};
-		size_t len = vsnprintf (tmp_buffer, PSL_BUFSIZ, format, args);
+		char tmp_buffer[4096] = {""};		/* Have to use this large array because sometimes we get the char encoding array, which is large. */
+		size_t len = vsnprintf (tmp_buffer, 4096, format, args);
 		psl_prepare_buffer (C, len);
 		C->internal.buffer[C->internal.n] = '\0';	/* Play safe before the strcat of next line. Otherwise trash in the middle may occur */
 		strncat (&(C->internal.buffer[C->internal.n]), tmp_buffer, len);
@@ -5524,8 +5742,21 @@ int PSL_message (struct PSL_CTRL *C, int level, const char *format, ...) {
 	return (0);
 }
 
-FILE *PSL_fopen (char *file, char *mode) {
-	return (fopen (file, mode));
+FILE *PSL_fopen (struct PSL_CTRL *C, char *file, char *mode) {
+	if (C->internal.fp == NULL) {	/* Open the plot file unless fp already set */
+		if ((C->internal.fp = fopen (file, mode)) == NULL) {
+			PSL_message (C, PSL_MSG_NORMAL, "PSL_fopen error: Unable to open file %s with mode %s!\n", file, mode);
+		}
+	}
+	return (C->internal.fp);
+}
+
+int PSL_fclose (struct PSL_CTRL *C) {
+	/* Close except if stdout */
+	if (C->internal.fp != stdout)
+		return (fclose (C->internal.fp));
+	else
+		return 0;
 }
 #ifndef HAVE_RINT
 #include "s_rint.c"

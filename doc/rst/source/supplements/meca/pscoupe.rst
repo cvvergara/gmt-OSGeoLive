@@ -32,8 +32,8 @@ Synopsis
 [ |SYN_OPT-X| ]
 [ |SYN_OPT-Y| ]
 [ |-Z|\ *cpt* ]
-[ |SYN_OPT-c| ]
 [ |SYN_OPT-di| ]
+[ |SYN_OPT-e| ]
 [ |SYN_OPT-h| ]
 [ |SYN_OPT-i| ]
 [ |SYN_OPT-t| ]
@@ -131,7 +131,7 @@ Required Arguments
       **7**:
         magnitude
       **8**,\ **9**:
-        not used; can be 0 0; allows use of the psmeca file format
+        not used; can be 0 0; allows use of the :doc:`psmeca` file format
       **10**:
         text string to appear above the beach ball (default) or under (add **u**).
 
@@ -160,7 +160,7 @@ Required Arguments
         mantissa and exponent of moment in dyne-cm (if magnitude is uses
         instead of scalar moment, magnitude is in column 10 and 0 must be in column 11)
       **12**,\ **13**:
-        not used; can be 0 0; allows use of the psmeca file format
+        not used; can be 0 0; allows use of the :doc:`psmeca` file format
       **14**:
         text string to appear above the beach ball (default) or under (add **u**).
 
@@ -188,7 +188,7 @@ Required Arguments
       **8**:
         magnitude
       **9**,\ **10**:
-        not used; can be 0 0; allows use of the psmeca file format
+        not used; can be 0 0; allows use of the :doc:`psmeca` file format
       **11**:
         text string to appear above the beach ball (default) or under (add **u**).
 
@@ -219,7 +219,7 @@ Required Arguments
       **10**:
          exponent
       **11**,\ **12**:
-         Not used; can be 0 0; allows use of the psmeca file format 
+         Not used; can be 0 0; allows use of the :doc:`psmeca` file format 
       **13**:
          Text string to appear above the beach ball (default) or under (add **u**).
 
@@ -386,10 +386,11 @@ Optional Arguments
     Give a CPT and let compressive part color be
     determined by the z-value in the third column.
 
-.. include:: ../../explain_-c.rst_
-
 .. |Add_-di| unicode:: 0x20 .. just an invisible code
 .. include:: ../../explain_-di.rst_
+
+.. |Add_-e| unicode:: 0x20 .. just an invisible code
+.. include:: ../../explain_-e.rst_
 
 .. |Add_-h| unicode:: 0x20 .. just an invisible code
 .. include:: ../../explain_-h.rst_

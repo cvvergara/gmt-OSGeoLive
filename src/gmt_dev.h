@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_dev.h 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: gmt_dev.h 17865 2017-04-04 15:05:54Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -106,6 +106,7 @@ extern "C" {
 #include <float.h>
 #include <math.h>
 #include <limits.h>
+#include <errno.h>
 
 #include <time.h>
 

@@ -1,5 +1,5 @@
 /*
- *	$Id: gmtregress.c 17560 2017-02-17 22:05:42Z pwessel $
+ *	$Id: gmtregress.c 18171 2017-05-07 02:37:02Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -24,14 +24,14 @@
  * Version:	5 API
  */
 
+#include "gmt_dev.h"
+
 #define THIS_MODULE_NAME	"gmtregress"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Linear regression of 1-D data sets"
 #define THIS_MODULE_KEYS	"<D{,>D}"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vabdfghios"
+#define THIS_MODULE_NEEDS	""
+#define THIS_MODULE_OPTIONS "-:>Vabdefghios"
 
 /* Various integer constants for flags and modes */
 
@@ -132,7 +132,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: gmtregress [<table>] [-A[<min>/<max>/<inc>]] [-C<level>] [-Ex|y|o|r] [-F<flags>] [-N1|2|r|w]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-S[r]] [-T<min>/<max>/<inc> | -T<n>] [%s] [-W[w][x][y][r]] [%s]\n", GMT_V_OPT, GMT_a_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_b_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n", GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -178,7 +178,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Given a sigma, the weight will be computed via weight = 1/sigma.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use -Ww if weights are precomputed and not given as 1-sigma values.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Except for -N1 we square the weights when computing misfits.\n");
-	GMT_Option (API, "V,a,bi,bo,g,h,i,o,.");
+	GMT_Option (API, "V,a,bi,bo,d,e,g,h,i,o,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -479,7 +479,7 @@ GMT_LOCAL double LMS_scale (struct GMT_CTRL *GMT, double *ey, double *W, uint64_
 	/* LMS scale estimate as per Rousseuuw & Leroy [1987] */
 	double scale;
 	gmt_M_unused(GMT); gmt_M_unused(ey); gmt_M_unused(W);
-	scale = 1.4826 * (1.0 + 5.0 / (n - 2.0)) * sqrt (par[GMTREGRESS_MISFT]);
+	scale = MAD_NORMALIZE * (1.0 + 5.0 / (n - 2.0)) * sqrt (par[GMTREGRESS_MISFT]);
 	return (scale);
 }
 
@@ -978,7 +978,7 @@ GMT_LOCAL double *do_regression (struct GMT_CTRL *GMT, double *x_in, double *y_i
 			}
 		}
 		for (k = 0; k < n; k++) {	/* Modify weights based on z-score threshold (correlations are not modified) */
-			w_k = (fabs (z[k]) < GMTREGRESS_ZSCORE_LIMIT) ? 1.0 : 0.0;
+			w_k = (mode == 0 && fabs (z[k]) < GMTREGRESS_ZSCORE_LIMIT) ? 1.0 : 0.0;
 			if (www[GMT_X]) www[GMT_X][k] *= w_k;
 			if (www[GMT_Y]) www[GMT_Y][k] *= w_k;
 		}
@@ -986,7 +986,7 @@ GMT_LOCAL double *do_regression (struct GMT_CTRL *GMT, double *x_in, double *y_i
 		for (col = first_col; col <= GMT_Y; col++)	/* Free any arrays we allocated */
 			if (made[col]) gmt_M_free (GMT, www[col]);
 	}
-	return (z);	/* Return those z-scoores, calling unit must free this array when done */
+	return (z);	/* Return those z-scores, calling unit must free this array when done */
 }
 
 /* Must free allocated memory before returning */
@@ -1027,8 +1027,8 @@ int GMT_gmtregress (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 

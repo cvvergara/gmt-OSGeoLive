@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pssegyz.c 17449 2017-01-16 21:27:04Z pwessel $
+ *	$Id: pssegyz.c 18018 2017-04-22 00:35:39Z pwessel $
  *
  *    Copyright (c) 1999-2017 by T. Henstock
  *    See README file for copying and redistribution conditions.
@@ -33,15 +33,15 @@
  * under the terms of the GNU LGPL license, see http://www.gnu.org
  */
 
+#include "gmt_dev.h"
+#include "segy_io.h"
+
 #define THIS_MODULE_NAME	"pssegyz"
 #define THIS_MODULE_LIB		"segy"
 #define THIS_MODULE_PURPOSE	"Plot a SEGY file on a map in 3-D"
 #define THIS_MODULE_KEYS	">X}"
-
-#include "gmt_dev.h"
-#include "segy_io.h"
-
-#define GMT_PROG_OPTIONS "->BJKOPRUVXYcpt"
+#define THIS_MODULE_NEEDS	"RJ"
+#define THIS_MODULE_OPTIONS "->BJKOPRUVXYpt" GMT_OPT("c")
 
 #define B_ID	0	/* Indices into Q values */
 #define I_ID	1
@@ -140,7 +140,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "usage: pssegyz [<segyfile>] -D<dev> -F<color> | -W %s\n", GMT_Jx_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [-A] [-C<clip>] [-E<slop>] [-I] [-K] [-L<nsamp>]\n", GMT_Rx_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-M<ntraces>] [-N] [-O] [-P] [-Q<mode><value>] [-S<header>] [-T<tracefile>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W] [%s]\n\t[%s] [-Z] [%s]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W] [%s]\n\t[%s] [-Z]\n\t[%s] [%s]\n\n", GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_p_OPT, GMT_t_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -172,7 +172,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-W Plot wiggle trace (must specify either -W or -F).\n");
 	GMT_Option (API, "X");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Suppress plotting traces whose rms amplitude is 0.\n");
-	GMT_Option (API, "c,p,t,.");
+	GMT_Option (API, "p,t,.");
 
 	return (GMT_MODULE_USAGE);
 }
@@ -315,7 +315,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSSEGYZ_CTRL *Ctrl, struct GMT
 				break;
 		}
 	}
-	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active, "Syntax error: Must specify the -R option\n");
+	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify the -R option\n");
 	n_errors += gmt_M_check_condition (GMT, GMT->common.R.wesn[ZLO]  == GMT->common.R.wesn[ZHI], "Syntax error: Must specify z range in -R option\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && !Ctrl->T.file, "Syntax error: Option -T requires a file name\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->T.active && Ctrl->T.file && access (Ctrl->T.file, R_OK), "Syntax error: Cannot file file %s\n", Ctrl->T.file);
@@ -485,7 +485,6 @@ GMT_LOCAL void segyz_shade_bmap (struct GMT_CTRL *GMT, double x0, double y0, flo
 
 	if (data0 == 0.0 && data1 == 0.0) return; /* probably shouldn't strictly, but pathological enough I don't really want to deal with it! */
 
-	interp = 0.0;
 	if ((data0 * data1) < 0.0) {
 		/* points to plot are on different sides of zero - interpolate to find out where zero is */
 		interp = z0 + data0 * ((z0 - z1) / (data1 - data0));
@@ -607,8 +606,8 @@ int GMT_pssegyz (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = gmt_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
 
