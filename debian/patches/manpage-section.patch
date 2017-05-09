@@ -5,7 +5,7 @@ Forwarded: not-needed
 
 --- a/doc/rst/conf.py.in
 +++ b/doc/rst/conf.py.in
-@@ -232,141 +232,141 @@ latex_elements = {
+@@ -232,143 +232,143 @@ latex_elements = {
  # One entry per manual page. List of tuples
  # (source start file, name, description, authors, manual section).
  man_pages = [
@@ -82,6 +82,7 @@ Forwarded: not-needed
 -('psmask', 'psmask', 'Use data tables to clip or mask map areas with no coverage', '', 1),
 -('psrose', 'psrose', 'Plot a polar histogram (rose, sector, windrose diagrams)', '', 1),
 -('psscale', 'psscale', 'Plot a gray or color scale-bar on maps', '', 1),
+-('psternary', 'psternary', 'Plot data on ternary diagrams', '', 1),
 -('pstext', 'pstext', 'Plot or typeset text on maps', '', 1),
 -('pswiggle', 'pswiggle', 'Plot z = f(x,y) anomalies along tracks', '', 1),
 -('psxy', 'psxy', 'Plot lines, polygons, and symbols on maps', '', 1),
@@ -105,6 +106,7 @@ Forwarded: not-needed
 -('supplements/meca/pspolar', 'pspolar', 'Plot polarities on the inferior focal half-sphere on maps', '', 1),
 -('supplements/meca/psvelo', 'psvelo', 'Plot velocity vectors, crosses, and wedges on maps', '', 1),
 -('supplements/mgd77/mgd77convert', 'mgd77convert', 'Convert MGD77 data to other file formats', '', 1),
+-('supplements/mgd77/mgd77header', 'mgd77header', 'Create MGD77 headers from A77 files', '', 1),
 -('supplements/mgd77/mgd77info', 'mgd77info', 'Extract information about MGD77 files', '', 1),
 -('supplements/mgd77/mgd77list', 'mgd77list', 'Extract data from MGD77 files', '', 1),
 -('supplements/mgd77/mgd77magref', 'mgd77magref', 'Evaluate the IGRF or CM4 magnetic field models', '', 1),
@@ -217,6 +219,7 @@ Forwarded: not-needed
 +('psmask', 'psmask', 'Use data tables to clip or mask map areas with no coverage', '', '1gmt'),
 +('psrose', 'psrose', 'Plot a polar histogram (rose, sector, windrose diagrams)', '', '1gmt'),
 +('psscale', 'psscale', 'Plot a gray or color scale-bar on maps', '', '1gmt'),
++('psternary', 'psternary', 'Plot data on ternary diagrams', '', '1gmt'),
 +('pstext', 'pstext', 'Plot or typeset text on maps', '', '1gmt'),
 +('pswiggle', 'pswiggle', 'Plot z = f(x,y) anomalies along tracks', '', '1gmt'),
 +('psxy', 'psxy', 'Plot lines, polygons, and symbols on maps', '', '1gmt'),
@@ -240,6 +243,7 @@ Forwarded: not-needed
 +('supplements/meca/pspolar', 'pspolar', 'Plot polarities on the inferior focal half-sphere on maps', '', '1gmt'),
 +('supplements/meca/psvelo', 'psvelo', 'Plot velocity vectors, crosses, and wedges on maps', '', '1gmt'),
 +('supplements/mgd77/mgd77convert', 'mgd77convert', 'Convert MGD77 data to other file formats', '', '1gmt'),
++('supplements/mgd77/mgd77header', 'mgd77header', 'Create MGD77 headers from A77 files', '', '1gmt'),
 +('supplements/mgd77/mgd77info', 'mgd77info', 'Extract information about MGD77 files', '', '1gmt'),
 +('supplements/mgd77/mgd77list', 'mgd77list', 'Extract data from MGD77 files', '', '1gmt'),
 +('supplements/mgd77/mgd77magref', 'mgd77magref', 'Evaluate the IGRF or CM4 magnetic field models', '', '1gmt'),
