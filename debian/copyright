@@ -47,10 +47,6 @@ Files: src/getopt.c
 Copyright: 1987, 1993-1994, The Regents of the University of California
 License: BSD-4-Clause
 
-Files: src/gmt_url.c
-Copyright: Simtec Electronics
-License: BSD-3-Clause
-
 Files: src/s_rint.c
  src/s_rint.h
 Copyright: 1993, Sun Microsystems, Inc.
