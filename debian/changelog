@@ -1,8 +1,8 @@
-gmt (5.4.1+dfsg-1) UNRELEASED; urgency=medium
+gmt (5.4.1+dfsg-1~exp1) experimental; urgency=medium
 
   * New upstream release.
 
- -- Bas Couwenberg <sebastic@debian.org>  Wed, 10 May 2017 07:33:12 +0200
+ -- Bas Couwenberg <sebastic@debian.org>  Wed, 10 May 2017 07:34:20 +0200
 
 gmt (5.4.0+dfsg-1~exp1) experimental; urgency=medium
 
