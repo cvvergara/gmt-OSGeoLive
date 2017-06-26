@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_common.h 18133 2017-05-05 04:30:51Z pwessel $
+ *	$Id: gmt_common.h 18304 2017-06-02 04:58:28Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -83,9 +83,9 @@ struct GMT_COMMON {
 		bool active;
 	} P;
 	struct R {	/* -Rw/e/s/n[/z_min/z_max][r] or -Rgridfile */
-		bool active[4];	/* 0 = -R, 1 = inc, 2 = -r, 3 = read grid */
+		bool active[4];	/* RSET = 0: -R, ISET = 1: inc, GSET = 2: -r, FSET = 3: read grid */
 		bool oblique;	/* true when -R...r was given (oblique map, probably), else false (map borders are meridians/parallels) */
-		uint32_t registration;	/* Registration mode of a grid given via -Rgrid; only consulted if active[FSET] == true */
+		uint32_t registration;	/* Registration mode of a grid given via -r or -Rgrid */
 		double wesn[6];		/* Boundaries of west, east, south, north, low-z and hi-z */
 		double wesn_orig[4];	/* Original Boundaries of west, east, south, north (oblique projection may reset wesn above) */
 		double inc[2];	/* For grid increments set via -Idx/dy or implicitly via -Ggrid */
@@ -186,8 +186,10 @@ struct GMT_COMMON {
 		bool truncate;	/* Defaults to false */
 		unsigned int interpolant;	/* Defaults to BCR_BICUBIC */
 		bool bc_set;	/* true if +b was parsed */
+		bool periodic[2];	/* For periodic non-geographic grids */
 		char BC[4];		/* For BC settings via +bg|n[x|y]|p[x|y] */
 		double threshold;	/* Defaults to 0.5 */
+		double range[2], half_range[2];	/* For periodic non-geographic grids */
 		char string[GMT_LEN64];	/* Copy of argument */
 	} n;
 	struct o {	/* -o<col>|<colrange>,... */

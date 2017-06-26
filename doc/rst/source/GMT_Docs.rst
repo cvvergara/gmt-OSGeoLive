@@ -569,7 +569,7 @@ as well. For specific enhancements, we have:
    **RMS**, **DENAN**, as well as the weighted statistical operators
    **LMSSCLW**, **MADW**, **MEANW**, **MEDIANW**, **MODEW**, **PQUANTW**,
    **STDW**, and **VARW**.  In addition it gains a new
-   **AREA** operator which computes the gridcell area (in km^2 if the
+   **AREA** operator which computes the gridcell area (in km\ :sup:`2` if the
    grid is geographic).  Finally, operators **MEAN**, **MEDIAN**, etc.,
    when working on a geographic grid, will weight the result using the
    **AREA** function for proper spherical statistics.
@@ -2103,37 +2103,37 @@ Introduction
 Most scientists are familiar with the sequence: *raw data* →
 *processing* → *final illustration*.
 In order to finalize papers for submission to scientific journals,
-prepare proposals, and create overheads and slides for various
+prepare proposals, and create illustrations for various
 presentations, many scientists spend large amounts of time and money to
-create camera-ready figures. This process can be tedious and is often
+create high-quality figures. This process can be tedious and is often
 done manually, since available commercial or in-house software usually
 can do only part of the job. To expedite this process we introduce the
-Generic Mapping Tools (GMT for short), which is a free [2]_, software
+Generic Mapping Tools (GMT for short), which is a free [2]_ software
 package that can be used to manipulate columns of tabular data,
 time-series, and gridded data sets, and display these data in a variety
-of forms ranging from simple *x*--*y* plots to maps and color,
+of forms ranging from simple *x*--*y* plots to maps and color-coded,
 perspective, and shaded-relief illustrations. GMT uses the
 *PostScript* page description language [*Adobe Systems Inc.*, 1990].
 With *PostScript*, multiple plot files can easily be superimposed to
-create arbitrarily complex images in gray tones or 24-bit true color.
+create arbitrarily complex images in gray tones or full color.
 Line drawings, bitmapped images, and text can be easily combined in one
 illustration. *PostScript* plot files are device-independent: The same
-file can be printed at 300 dots per inch (dpi) on an ordinary
-laserwriter or at 2470 dpi on a phototypesetter when ultimate quality is
-needed. GMT software is written as a set of UNIX tools [3]_ and is
+file can be printed at 300 dots per inch (dpi) on a cheap
+printer or converted to a high-resolution PNG image for online usage.
+GMT software is written as a set of UNIX tools [3]_ and is
 totally self-contained and fully documented. The system is offered free
-of charge and is distributed over the computer network (Internet)
-[*Wessel and Smith, 1991; 1995; 1998*].
+of charge and is distributed over the Internet
+[*Wessel and Smith, 1991; 1995; 1998*; *Wessel et al., 2013*].
 
 The original version 1.0 of GMT was released in the summer of 1988
 when the authors were graduate students at Lamont-Doherty Earth
 Observatory of Columbia University. During our tenure as graduate
-students, L-DEO changed its computing environment to a distributed
+students, LDEO changed its computing environment to a distributed
 network of UNIX workstations, and we wrote GMT to run in this
-environment. It became a success at L-DEO, and soon spread to numerous
+environment. It became a success at LDEO, and soon spread to numerous
 other institutions in the US, Canada, Europe, and Japan. The current
 version benefits from the many suggestions contributed by users of the
-earlier versions, and now includes more than 50 tools, more than 30
+earlier versions, and now includes more than 100 tools, more than 30
 projections, and many other new, more flexible features. GMT provides
 scientists with a variety of tools for data manipulation and display,
 including routines to sample, filter, compute spectral estimates, and
@@ -2150,8 +2150,8 @@ and 3-D perspective illustrations.
 
 GMT is written in the highly portable ANSI C programming language
 [*Kernighan and Ritchie*, 1988], is fully POSIX compliant [*Lewine*,
-1991], has no Year 2000 problems, and may be used with any hardware
-running some flavor of UNIX, possibly with minor modifications. In
+1991], and may be used with any hardware
+running some flavor of UNIX. In
 writing GMT, we have followed the modular design philosophy of UNIX:
 The *raw data* → *processing* → *final illustration* flow is broken
 down to a series of elementary steps; each
@@ -2168,24 +2168,6 @@ formats. To use GMT with custom data bases, one has only to write a
 data extraction tool which will put out data in a form readable by
 GMT (discussed below). After writing the extractor, all other
 GMT modules will work as they are.
-
-GMT makes full use of the *PostScript* page description language, and
-can produce color illustrations if a color *PostScript* device is
-available. One does not necessarily have to have access to a
-top-of-the-line color printer to take advantage of the color
-capabilities offered by GMT: Several companies offer imaging services
-where the customer provides a *PostScript* plot file and gets color
-slides or hardcopies in return. Furthermore, general-purpose
-*PostScript* raster image processors (RIPs) are now becoming available,
-letting the user create raster images from *PostScript* and plot these
-bitmaps on raster devices like computer screens, dot-matrix printers,
-large format raster plotters, and film writers [4]_. Because the
-publication costs of color illustrations are high, GMT offers 90
-common bit and hachure patterns, including many geologic map symbol
-types, as well as complete graytone shading operations. Additional bit
-and hachure patterns may also be designed by the user. With these tools,
-it is possible to generate publication-ready monochrome originals on a
-common laserwriter.
 
 GMT is thoroughly documented and comes with a technical reference and
 cookbook which explains the purpose of the package and its many
@@ -2205,18 +2187,18 @@ The processing and display routines within GMT are completely general
 and will handle any (*x,y*) or (*x,y,z*) data as input. For many
 purposes the (*x,y*) coordinates will be (longitude, latitude) but in
 most cases they could equally well be any other variables (e.g.,
-wavelength, power spectral density). Since the GMT\ plot tools will
+wavelength, power spectral density). Since the GMT plot tools will
 map these (*x,y*) coordinates to positions on a plot or map using a
 variety of transformations (linear, log-log, and several map
 projections), they can be used with any data that are given by two or
 three coordinates. In order to simplify and standardize input and
-output, GMT uses two file formats only. Arbitrary sequences of (*x,y*)
+output, by default GMT uses two file formats only. Arbitrary sequences of (*x,y*)
 or (*x,y,z*) data are read from multi-column ASCII tables, i.e., each
 file consists of several records, in which each coordinate is confined
 to a separate column [5]_. This format is straightforward and allows the
 user to perform almost any simple (or complicated) reformatting or
-processing task using standard UNIX utilities such as **cut**,
-**paste**, **grep**, **sed** and **awk**. Two-dimensional data
+processing task using GMT processing tools (and in a pinch standard UNIX utilities such as **cut**,
+**paste**, **grep**, **sed** and **awk**). Two-dimensional data
 that have been sampled on an equidistant grid are read and written by
 GMT in a binary grid file using the functions provided with the netCDF
 library (a free, public-domain software library available separately
@@ -2227,7 +2209,9 @@ binary data files from one computer system to another [6]_.
 GMT contains programs that will read ASCII (*x,y,z*) files and produce
 grid files. One such program, :doc:`surface`,
 includes new modifications to the gridding algorithm developed by *Smith
-and Wessel* [1990] using continuous splines in tension.
+and Wessel* [1990] using continuous splines in tension. Optionally, GMT
+can also read various binary and netCDF tables, as well as a variety of
+grid formats, especially if built with GDAL support.
 
 Most of the programs will produce some form of output, which falls into
 four categories. Several of the programs may produce more than one of
@@ -2256,14 +2240,8 @@ these types of output:
 
 GMT is available over the Internet at no charge. To obtain a copy,
 goto GMT home page http://gmt.soest.hawaii.edu/ and follow instructions.
-We also maintain two electronic
-mailing lists you may subscribe to in order to stay informed about bug
-fixes and upgrades.
-
-For those without net-access that need to obtain GMT: Geoware makes
-and distributes CD-R and DVD-R media with the GMT package, compatible
-supplements, and several Gb of useful Earth and ocean science data sets.
-For more information send e-mail to geoware@geoware-online.com.
+We also maintain user forums and a bug and feature tracking system on
+the same page.
 
 GMT has served a multitude of scientists very well, and their
 responses have prompted us to develop these programs even further. It is
@@ -3235,7 +3213,7 @@ annotations, ask for a 12-hour clock, and let time go from right to left:
 
    ::
 
-     gmt set FORMAT_CLOCK_MAP=-hham FONT_ANNOT_PRIMARY +9p
+     gmt set FORMAT_CLOCK_MAP=-hham FONT_ANNOT_PRIMARY +9p TIME_UNIT d
      gmt psbasemap -R0.2t/0.35t/0/1 -JX-5i/0.2i -Bpa15mf5m -Bsa1H -BS -P > GMT_-B_time4.ps
 
 .. _cartesian_axis4:
@@ -4599,15 +4577,15 @@ of gray-shades. You must specify the pattern as in Section `Specifying area fill
 some programs let you skip features whose *z*-slice in the CPT
 file has gray-shades set to -. As an example, consider
 
-+-----+----------+-------------+-------+
-| 30  | p16+r200 | 80          | \-    |
-+-----+----------+-------------+-------+
-| 80  | \-       | 100         | \-    |
-+-----+----------+-------------+-------+
-| 100 | 200/0/0  | 200/255/255 | 0     |
-+-----+----------+-------------+-------+
-| 200 | yellow   | 300         | green |
-+-----+----------+-------------+-------+
++-----+----------+------+-----------+
+| 30  | p16+r200 | 80   | \-        |
++-----+----------+------+-----------+
+| 80  | \-       | 100  | \-        |
++-----+----------+------+-----------+
+| 100 | 200/0/0  | 200  | 255/255/0 |
++-----+----------+------+-----------+
+| 200 | yellow   | 300  | green     |
++-----+----------+------+-----------+
 
 where slice 30 < z < 80 is painted with pattern # 16 at 200 dpi,
 slice 80 < z < 100 is skipped, slice 100 < z < 200 is
@@ -8694,10 +8672,10 @@ way:
    ::
 
      gs -q -dNOCACHE -dSAFER -dNOPAUSE -dBATCH -dNOPLATFONTS \
-        -sDEVICE=pswrite -sFONTPATH="/path/to/fontdir" \
+        -sDEVICE=ps2write -sFONTPATH="/path/to/fontdir" \
         -sOutputFile=mapWithOutlinedFonts.ps map.ps
 
-Note, that this only works with the *pswrite* device. If you need
+Note, that this only works with the *ps2write* device. If you need
 outlined fonts in PDF, create the PDF from the converted
 *PostScript* file. Also, :doc:`psconvert`
 cannot correctly crop Ghostscript converted *PostScript* files
@@ -9302,7 +9280,7 @@ Dampier. The edges of the map are all 9000 km true distance from the
 projection center. At this scale (and for global maps) the crude
 resolution data will usually be adequate to capture the main geographic
 features. To avoid cluttering the map with insignificant detail we only
-plot features (i.e., polygons) that exceed 500 km^2 in area.
+plot features (i.e., polygons) that exceed 500 km\ :sup:`2` in area.
 Smaller features would only occupy a few pixels on the plot and make the
 map look "dirty". We also add national borders to the plot. The crude
 database is heavily decimated and simplified by the DP-routine: The
@@ -9335,7 +9313,7 @@ We have now reduced the map area by zooming in on the map center. Now,
 the edges of the map are all 2000 km true distance from the projection
 center. At this scale we choose the low resolution data that faithfully
 reproduce the dominant geographic features in the region. We cut back on
-minor features less than 100 km^2 in area. We still add
+minor features less than 100 km\ :sup:`2` in area. We still add
 national borders to the plot. The low database is less decimated and
 simplified by the DP-routine: The total file size of the coastlines,
 rivers, and borders combined grows to 907 kbytes; it is the default
@@ -9362,7 +9340,7 @@ map are all 500 km true distance from the projection center. We abandon
 the low resolution data set as it would look too jagged at this scale
 and instead employ the intermediate resolution data that faithfully
 reproduce the dominant geographic features in the region. This time, we
-ignore features less than 20 km^2 in area. Although the script
+ignore features less than 20 km\ :sup:`2` in area. Although the script
 still asks for national borders none exist within our region. The
 intermediate database is moderately decimated and simplified by the
 DP-routine: The combined file size of the coastlines, rivers, and
@@ -9392,7 +9370,7 @@ The relentless zooming continues! Now, the edges of the map are all 100
 km true distance from the projection center. We step up to the high
 resolution data set as it is needed to accurately portray the detailed
 geographic features within the region. Because of the small scale we
-only ignore features less than 1 km^2 in area. The high
+only ignore features less than 1 km\ :sup:`2` in area. The high
 resolution database has undergone minor decimation and simplification by
 the DP-routine: The combined file size of the coastlines, rivers, and
 borders now swells to 12.3 Mbytes. The map and the final outline box are
@@ -10387,6 +10365,7 @@ so that the label is more readable. We choose the place the labels every
 are placed normal to the line:
 
     ::
+
      gmt pscoast -R50/160/-15/15 -JM5.3i -Gburlywood -Sazure -A500 -K -P > GMT_App_O_6.ps
      gmt grdcontour geoid.nc -J -O -K -B20f10 -BWSne -C10 -A20+d+f8p -Gl50/10S/160/10S -S10 \
      -T+l"-+" >> GMT_App_O_6.ps
@@ -10630,7 +10609,7 @@ OGC SFS specification). This specification provides for non-topological
 point, line and polygon (area) features, as well as multipoint,
 multiline and multipolygon features, and was written by
 `Brent Wood <http://www.niwa.co.nz/key-contacts/brent-wood/>`_
-based on input from Paul Wessel and others on the GMT list.
+based on input from Paul Wessel and others on the GMT team.
 
 The OGR/GMT format
 ------------------

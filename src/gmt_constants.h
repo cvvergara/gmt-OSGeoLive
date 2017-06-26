@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_constants.h 18171 2017-05-07 02:37:02Z pwessel $
+ *	$Id: gmt_constants.h 18304 2017-06-02 04:58:28Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -74,6 +74,9 @@
 #define GMT_CONV4_LIMIT	 1.0e-4		/* Less tight convergence limit or "close to zero" limit */
 
 #define GMT_PAD_DEFAULT	2U		/* Default is 2 rows and 2 cols for grid padding */
+
+#define GMT_ASCII_GS	29	/* ASCII code for group separator (temporarily replacing tabs) */
+#define GMT_ASCII_US	31	/* ASCII code for unit separator (temporarily replacing spaces in quoted text) */
 
 /*! Various allocation-length parameters */
 enum GMT_enum_length {
@@ -351,6 +354,7 @@ enum GMT_enum_stairpath {GMT_STAIRS_OFF = 0,	/* Default: No stairclimbing */
 	GMT_STAIRS_X};	/* Move horizontally (parallel) to next point along x, then vertically along y */
 
 enum GMT_enum_cdist {GMT_CARTESIAN_DIST	 = 0,	/* Cartesian 2-D x,y data, r = hypot */
+	GMT_CARTESIAN_DIST_PERIODIC,		/* Cartesian 2-D x,y data,but with periodic BCs */
 	GMT_CARTESIAN_DIST2,		/* Cartesian 2-D x,y data, return r^2 to avoid hypot */
 	GMT_CARTESIAN_DIST_PROJ,	/* Project lon,lat to Cartesian 2-D x,y data, then get distance */
 	GMT_CARTESIAN_DIST_PROJ2,	/* Same as --"-- but return r^2 to avoid hypot */
@@ -378,7 +382,7 @@ enum GMT_enum_curl {GMT_REGULAR_FILE = 0,	/* Regular file the may or may not exi
 	GMT_CACHE_FILE = 1,	/* Temporary GMT test data file destined for the cache */
 	GMT_DATA_FILE  = 2,	/* Official GMT data file destined for the user's user dir */
 	GMT_URL_FILE   = 3,	/* Data given by an URL destined for the cache */
-	GMT_URL_CMD    = 4,	/* Data given by an URL CGI command destined for the cache */
+	GMT_URL_QUERY  = 4,	/* Data given by an URL CGI command destined for the cache */
 	GMT_CACHE_DIR  = 0,	/* Use the cache directory */
 	GMT_DATA_DIR   = 1};	/* Use the data directory */
 

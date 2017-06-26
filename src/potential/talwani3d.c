@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: talwani3d.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: talwani3d.c 18404 2017-06-20 18:10:00Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -209,7 +209,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct TALWANI3D_CTRL *Ctrl, struct G
 		}
 	}
 	if (GMT->common.R.active[RSET]) {
-		//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);	/* If -R<grdfile> was given we may get incs unless -I was used */
 		n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[ISET],
 		                                 "Syntax error -R option: Must specify both -R and -I (and optionally -r)\n");
 	}
@@ -754,14 +753,14 @@ int GMT_talwani3d (void *V_API, int mode, void *args) {
 		if (gmt_M_is_geographic (GMT, GMT_IN)) lat = 0.5 * (G->header->wesn[YLO] + G->header->wesn[YHI]);
 	}
 	else {	/* Got a dataset with output locations via -N */
-		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from the -N file */
+		gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from the -N file */
 		if ((D = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POINT, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL)
 			Return (API->error);
 		if (D->n_columns < 2) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Input file %s has %d column(s) but at least 2 are needed\n", Ctrl->N.file, (int)D->n_columns);
 			Return (GMT_DIM_TOO_SMALL);
 		}
-		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+		gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 		if (gmt_M_is_geographic (GMT, GMT_IN)) lat = 0.5 * (D->min[GMT_Y] + D->max[GMT_Y]);
 	}
 	

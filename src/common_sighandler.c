@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: common_sighandler.c 17985 2017-04-18 14:37:51Z jluis $
+ *	$Id: common_sighandler.c 18448 2017-06-24 18:48:17Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -83,6 +83,8 @@ void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.arm_pc)
 # elif defined( __hppa__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.sc_iaoq[0])
+# elif defined(__m68k__)
+#  define UC_IP(uc) ((void *) (uc)->uc_mcontext.gregs[R_PC])
 # elif defined(__s390__)
 #  define UC_IP(uc) ((void *) (uc)->uc_mcontext.psw.addr)
 # elif defined(__sparc__)

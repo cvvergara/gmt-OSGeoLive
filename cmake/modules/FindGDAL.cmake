@@ -1,5 +1,5 @@
 #
-# $Id: FindGDAL.cmake 18202 2017-05-09 10:22:12Z remko $
+# $Id: FindGDAL.cmake 18235 2017-05-23 18:32:26Z remko $
 #
 # Locate gdal
 #

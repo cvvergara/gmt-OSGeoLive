@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtconvert.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: gmtconvert.c 18363 2017-06-12 01:30:50Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -400,6 +400,10 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 
+	if (D[GMT_IN]->n_records == 0) {
+		GMT_Report (API, GMT_MSG_NORMAL, "No data records provided\n");
+		Return (GMT_NOERROR);
+	}
 	if (GMT->common.a.active && D[GMT_IN]->n_tables > 1) {
 		GMT_Report (API, GMT_MSG_NORMAL, "The -a option requires a single table only.\n");
 		Return (GMT_RUNTIME_ERROR);

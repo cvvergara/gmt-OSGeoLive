@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight.h 18068 2017-04-29 21:40:52Z pwessel $
+ *	$Id: postscriptlight.h 18428 2017-06-21 23:51:36Z pwessel $
  *
  *	Copyright (c) 2009-2017 by P. Wessel and R. Scharroo
  *
@@ -140,6 +140,7 @@ enum PSL_enum_const {PSL_CM	= 0,
 	PSL_RLE			= 1,
 	PSL_LZW			= 2,
 	PSL_DEFLATE		= 3,
+	PSL_EO_CLIP		= 4,
 	PSL_NO			= 0,
 	PSL_YES			= 1,
 	PSL_FWD			= 0,

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
-*    $Id: gmtspatial.c 18144 2017-05-06 03:36:15Z pwessel $
+*    $Id: gmtspatial.c 18404 2017-06-20 18:10:00Z pwessel $
 *
 *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -198,7 +198,6 @@ GMT_LOCAL unsigned int area_size (struct GMT_CTRL *GMT, double x[], double y[], 
 		GMT->common.R.oblique = false;
 		GMT->common.J.active = true;
 		GMT->current.setting.map_line_step = 1.0e7;	/* To avoid nlon/nlat being huge */
-		gmt_set_geographic (GMT, GMT_IN);
 		GMT->current.proj.pars[0] = out[GMT_X];
 		GMT->current.proj.pars[1] = out[GMT_Y];
 		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, wesn), "")) {
@@ -1286,7 +1285,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 			gmt_parse_common_options (GMT, "f", 'f', "g"); /* Set -fg if -Q uses unit */
 		}
 		geo = gmt_M_is_geographic (GMT, GMT_IN);
-		if (gmt_M_is_geographic (GMT, GMT_IN)) gmt_init_distaz (GMT, Ctrl->Q.unit, Ctrl->Q.dmode, GMT_MAP_DIST);	/* Default is m using great-circle distances */
+		if (geo) gmt_init_distaz (GMT, Ctrl->Q.unit, Ctrl->Q.dmode, GMT_MAP_DIST);	/* Default is m using great-circle distances */
 
 		if (Ctrl->Q.header) {	/* Add line length or polygon area stuff to segment header */
 			qmode = Ctrl->Q.mode;	/* Don't know if line or polygon but passing GMT_IS_POLY would close any open polygon, which we want with +p */
@@ -1417,7 +1416,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 		
 		if (Ctrl->S.mode == POL_CLIP) {	/* Need to set up a separate table with the clip polygon */
 			if (Ctrl->T.file) {
-				gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
+				gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
 				if ((C = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POLY, GMT_READ_NORMAL, NULL, Ctrl->T.file, NULL)) == NULL) {
 					Return (API->error);
 				}
@@ -1425,7 +1424,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Input data have %d column(s) but at least 2 are needed\n", (int)C->n_columns);
 					Return (GMT_DIM_TOO_SMALL);
 				}
-				gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+				gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 			}
 			else {	/* Design a table based on -Rw/e/s/n */
 				uint64_t dim[GMT_DIM_SIZE] = {1, 1, 5, 2};
@@ -1620,7 +1619,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 		struct DUP_INFO **Info = NULL, *I = NULL;
 		
 		if (Ctrl->D.file) {	/* Get trial features via a file */
-			gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -D files */
+			gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -D files */
 			if ((C = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_LINE|GMT_IS_POLY, GMT_READ_NORMAL, NULL, Ctrl->D.file, NULL)) == NULL) {
 				Return (API->error);
 			}
@@ -1628,7 +1627,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Input data have %d column(s) but at least 2 are needed\n", (int)C->n_columns);
 				Return (GMT_DIM_TOO_SMALL);
 			}
-			gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+			gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 			from = Ctrl->D.file;
 		}
 		else {
@@ -1766,7 +1765,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 		struct GMT_DATATABLE *T = NULL;
 		struct GMT_DATASEGMENT *S = NULL, *S2 = NULL;
 		
-		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -CN files */
+		gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -CN files */
 		if ((C = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POLY, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL) {
 			Return (API->error);
 		}
@@ -1774,7 +1773,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Input data have %d column(s) but at least 2 are needed\n", (int)C->n_columns);
 			Return (GMT_DIM_TOO_SMALL);
 		}
-		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+		gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 		if (Ctrl->N.mode == 1) {	/* Just report on which polygon contains each feature */
 			if (GMT_Init_IO (API, GMT_IS_TEXTSET, GMT_IS_NONE, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Registers default output destination, unless already set */
 				Return (API->error);

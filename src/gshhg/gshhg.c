@@ -1,4 +1,4 @@
-/*	$Id: gshhg.c 18024 2017-04-23 20:44:58Z pwessel $
+/*	$Id: gshhg.c 18435 2017-06-22 04:01:50Z pwessel $
  *
  *	Copyright (c) 1996-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -258,7 +258,7 @@ int GMT_gshhg (void *V_API, int mode, void *args) {
 		if ((X = GMT_Create_Data (API, GMT_IS_TEXTSET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a text set for GSHHG header features.\n");
 			gmt_fclose (GMT, fp);
-			return (API->error);
+			Return (API->error);
 		}
 	}
 	else {
@@ -266,7 +266,7 @@ int GMT_gshhg (void *V_API, int mode, void *args) {
 		if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a data set for GSHHG features.\n");
 			gmt_fclose (GMT, fp);
-			return (API->error);
+			Return (API->error);
 		}
 	}
 	sprintf (header, "# Data extracted from GSHHG file %s", Ctrl->In.file);

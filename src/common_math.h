@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- * $Id: common_math.h 17451 2017-01-16 21:36:06Z pwessel $
+ * $Id: common_math.h 18342 2017-06-08 18:29:17Z pwessel $
  *
  * Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
@@ -64,6 +64,12 @@ extern "C" {
 #	define int64_abs llabs
 #else
 #	define int64_abs(x) ((int64_t)(((x) >= 0) ? (x) : -(x)))
+#endif
+
+#ifdef __CYGWIN__	/* See http://gmt.soest.hawaii.edu/boards/1/topics/5428 */
+#ifdef __x86_64
+#define lrint(x) ((long int)(int)lrint(x))
+#endif
 #endif
 
 	/* Limit casting to one place (here) for dropping lrint output to signed or unsigned ints */

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_prototypes.h 18188 2017-05-08 05:24:15Z pwessel $
+ *	$Id: gmt_prototypes.h 18404 2017-06-20 18:10:00Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -103,8 +103,8 @@ EXTERN_MSC unsigned int gmt_setdefaults (struct GMT_CTRL *GMT, struct GMT_OPTION
 EXTERN_MSC int gmt_loaddefaults (struct GMT_CTRL *GMT, char *file);
 EXTERN_MSC int gmt_parse_symbol_option (struct GMT_CTRL *GMT, char *text, struct GMT_SYMBOL *p, unsigned int mode, bool cmd);
 EXTERN_MSC int gmt_message (struct GMT_CTRL *GMT, char *format, ...);
-EXTERN_MSC void gmt_disable_i_opt (struct GMT_CTRL *GMT);
-EXTERN_MSC void gmt_reenable_i_opt (struct GMT_CTRL *GMT);
+EXTERN_MSC void gmt_disable_ih_opts (struct GMT_CTRL *GMT);
+EXTERN_MSC void gmt_reenable_ih_opts (struct GMT_CTRL *GMT);
 #ifdef WIN32
 EXTERN_MSC void gmt_setmode (struct GMT_CTRL *GMT, int direction);
 #endif
@@ -275,6 +275,7 @@ EXTERN_MSC bool gmt_this_alloc_level (struct GMT_CTRL *GMT, unsigned int alloc_l
 
 /* gmt_support.c: */
 
+EXTERN_MSC char *gmt_assign_text (struct GMT_CTRL *GMT, char *p);
 EXTERN_MSC char *gmt_first_modifier (struct GMT_CTRL *GMT, char *string, const char *sep);
 EXTERN_MSC unsigned int gmt_getmodopt (struct GMT_CTRL *GMT, const char option, const char *string, const char *sep, unsigned int *pos, char *token, unsigned int *err);
 EXTERN_MSC void gmt_init_pen (struct GMT_CTRL *GMT, struct GMT_PEN *pen, double width);

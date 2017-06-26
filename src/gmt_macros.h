@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_macros.h 18041 2017-04-26 23:09:48Z pwessel $
+ *	$Id: gmt_macros.h 18328 2017-06-07 04:43:45Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -98,7 +98,7 @@
 #define gmt_M_float_swap(x, y) {float float_tmp; float_tmp = x, x = y, y = float_tmp;}
 
 /*! Macro to ensure proper value and sign of a change in longitude from lon1 to lon2 */
-#define gmt_M_set_delta_lon(lon1,lon2,delta) {delta = lon2 - lon1; if (fabs (delta) > 180.0) delta = copysign (360.0 - fabs (delta), -delta);}
+#define gmt_M_set_delta_lon(lon1,lon2,delta) {delta = fmod ((lon2) - (lon1), 360.0); if (fabs (delta) > 180.0) delta = copysign (360.0 - fabs (delta), -delta);}
 
 /*! Macro to simplify call to memcpy when duplicating values and memset when zeroing out */
 #define gmt_M_memcpy(to,from,n,type) memcpy(to, from, (n)*sizeof(type))
@@ -122,6 +122,15 @@
 /* Old: always starts with integer dpi.
  * New: Either start with pattern 1-88 or a file which should have an extension */
 #define gmt_M_is_pattern(txt) ((txt[0] == 'p' || txt[0] == 'P') && (isdigit((int)txt[1]) || strchr(txt,'.')))
+
+/* Determine if this CPT slice requires a pattern */
+#define gmt_M_cptslice_is_pattern(P,index) ((index >= 0 && P->data[index].fill != NULL) || (index < 0 && P->bfn[index+3].fill != NULL))
+
+/* Determine if this CPT slice requires a pattern */
+#define gmt_M_get_cptslice_pattern(P,index) ((index >= 0) ? P->data[index].fill : P->bfn[index+3].fill)
+
+/* Determine if we should skip this CPT slice */
+#define gmt_M_skip_cptslice(P,index) ((index >= 0 && P->data[index].skip) || (index < 0 && P->bfn[index+3].skip))
 
 /*! Copy two RGB[T] arrays (a = b) */
 #define gmt_M_rgb_copy(a,b) memcpy (a, b, 4 * sizeof(double))
@@ -160,7 +169,7 @@
 
 /*! Determine if we have a special downloadable file */
 #define gmt_M_file_is_cache(file) (file && file[0] == '@' && strncmp (file, "@GMTAPI@-", 9U))
-#define gmt_M_file_is_url(file) (!strncmp (file, "http:", 5U) || !strncmp (file, "https:", 6U) || !strncmp (file, "ftp:", 4U))
+#define gmt_M_file_is_url(file) (file && (!strncmp (file, "http:", 5U) || !strncmp (file, "https:", 6U) || !strncmp (file, "ftp:", 4U)))
 
 
 #endif  /* _GMT_MACROS_H */

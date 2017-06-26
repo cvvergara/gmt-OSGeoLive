@@ -1,4 +1,4 @@
-/*	$Id: gshhg.h 17451 2017-01-16 21:36:06Z pwessel $
+/*	$Id: gshhg.h 18382 2017-06-15 20:50:02Z pwessel $
  *
  * Include file defining structures used in the binary GSHHG files
  *
@@ -48,6 +48,7 @@
  *	1-JAN-2015.   PW: Data version is now 2.3.4. [no change to format]
  *	12-APR-2016.  PW: Data version is now 2.3.5. [no change to format]
  *	17-AUG-2016.  PW: Data version is now 2.3.6. [no change to format]
+ *	15-JUN-2017.  PW: Data version is now 2.3.7. [no change to format]
  *
  * The format of binary GSHHG files are simply sequential:
  * [ Item Header 0 ]

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_support.c 18188 2017-05-08 05:24:15Z pwessel $
+ *	$Id: gmt_support.c 18319 2017-06-04 00:57:38Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -2932,11 +2932,9 @@ GMT_LOCAL int support_inonout_sphpol_count (double plon, double plat, const stru
 		if (gmt_same_longitude (plon, lon1)) {	/* Line goes through the 1st node */
 			/* Must check that the two neighboring points are on either side; otherwise it is just a tangent line */
 			ip = support_getprevpoint (plon, P->data[GMT_X], P->n_rows, i);	/* Index of previous point != plon */
-			dx1 = P->data[GMT_X][ip] - lon1;
-			if (fabs (dx1) > 180.0) dx1 += copysign (360.0, -dx1);	/* Allow for jumps across discontinuous 0 or 180 boundary */
+			gmt_M_set_delta_lon (lon1, P->data[GMT_X][ip], dx1);	/* Allow for jumps across discontinuous 0 or 180 boundary */
 			if (dx1 == 0.0) continue;	/* Points ip and i forms a meridian, we a tangent line */
-			dx2 = lon2 - lon1;
-			if (fabs (dx2) > 180.0) dx2 += copysign (360.0, -dx2);	/* Allow for jumps across discontinuous 0 or 180 boundary */
+			gmt_M_set_delta_lon (lon1, lon2, dx2);				/* Allow for jumps across discontinuous 0 or 180 boundary */
 			if (dx1*dx2 > 0.0) continue;	/* Both on same side since signs are the same */
 			cut = (P->data[GMT_Y][i] > plat) ? 0 : 1;	/* node is north (0) or south (1) of P */
 			count[cut]++;
@@ -10192,6 +10190,16 @@ int gmt_BC_init (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *h) {
 		if (h->nyp != 0) h->nyp = (h->registration == GMT_GRID_PIXEL_REG) ? h->n_rows : h->n_rows - 1;
 	}
 
+	if (h->BC[XLO] == GMT_BC_IS_PERIODIC && h->BC[XHI] == GMT_BC_IS_PERIODIC) {	/* Parameters needed for x-periodic, non-geographic grids */
+		GMT->common.n.periodic[GMT_X] = true;
+		GMT->common.n.range[GMT_X] = h->wesn[XHI] - h->wesn[XLO];
+		GMT->common.n.half_range[GMT_X] = 0.5 * GMT->common.n.range[GMT_X];
+	}
+	if (h->BC[YLO] == GMT_BC_IS_PERIODIC && h->BC[YHI] == GMT_BC_IS_PERIODIC) {	/* Parameters needed for y-periodic, non-geographic grids */
+		GMT->common.n.periodic[GMT_Y] = true;
+		GMT->common.n.range[GMT_Y] = h->wesn[YHI] - h->wesn[YLO];
+		GMT->common.n.half_range[GMT_Y] = 0.5 * GMT->common.n.range[GMT_Y];
+	}
 	for (i = 1, same = true; same && i < 4; i++) if (h->BC[i] != h->BC[i-1]) same = false;
 
 	if (same)
@@ -11877,6 +11885,21 @@ void gmt_testing (struct GMT_CTRL *GMT, char *string) {
 	}
 }
 #endif
+
+/*! . */
+char *gmt_assign_text (struct GMT_CTRL *GMT, char *p) {
+	/* Deals with duplicating a string and skipping any enclosing quotes.
+	 * Note: p is expected to be the result from gmt_getmodopt, hence the p[1] stuff */
+	char *txt = NULL;
+	gmt_M_unused(GMT);
+	if (strchr ("\"\'", p[1]) && p[1] == p[strlen(p)-1]) { /* Eliminate quotes */
+		txt = strdup (&p[2]);
+		txt[strlen(txt)-1] = '\0';
+	}
+	else	/* Normal title */
+		txt = strdup (&p[1]);
+	return (txt);
+}
 
 /*! . */
 unsigned int gmt_getmodopt (struct GMT_CTRL *GMT, const char option, const char *string, const char *sep, unsigned int *pos, char *token, unsigned int *err) {

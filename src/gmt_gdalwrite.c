@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_gdalwrite.c 17468 2017-01-23 01:58:14Z pwessel $
+ *	$Id: gmt_gdalwrite.c 18223 2017-05-17 20:44:05Z remko $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -416,7 +416,7 @@ int gmt_gdalwrite (struct GMT_CTRL *GMT, char *fname, struct GMT_GDALWRITE_CTRL 
 	hOutDS = GDALCreateCopy(hDriverOut, fname, hDstDS, bStrict, papszOptions, pfnProgress, NULL);
 	if (hOutDS != NULL) GDALClose(hOutDS);
 
-	OGRFree(pszSRS_WKT);
+	CPLFree(pszSRS_WKT);
 	GDALClose(hDstDS);
 	GDALDestroyDriverManager();
 	gmt_M_free(GMT, outByte);

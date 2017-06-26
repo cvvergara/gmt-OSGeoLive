@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdlandmask.c 18110 2017-05-03 01:29:16Z pwessel $
+ *	$Id: grdlandmask.c 18426 2017-06-21 23:39:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -204,8 +204,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDLANDMASK_CTRL *Ctrl, struct
 		}
 	}
 
-	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
-
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify an output file\n");
@@ -218,11 +216,11 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDLANDMASK_CTRL *Ctrl, struct
 #define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_grdlandmask (void *V_API, int mode, void *args) {
-	bool temp_shift = false, wrap, used_polygons;
+	bool temp_shift = false, wrap, used_polygons, double_dip;
 	unsigned int base = 3, k, bin, np, side, np_new;
 	int row, row_min, row_max, ii, col, col_min, col_max, i, direction, err, ind, nx1, ny1, error = 0;
 	
-	uint64_t ij;
+	uint64_t ij, count[GRDLANDMASK_N_CLASSES];
 
 	char line[GMT_LEN256] = {""};
 	char *shore_resolution[5] = {"full", "high", "intermediate", "low", "crude"};
@@ -274,6 +272,7 @@ int GMT_grdlandmask (void *V_API, int mode, void *args) {
 
 	if (Ctrl->D.force) Ctrl->D.set = gmt_shore_adjust_res (GMT, Ctrl->D.set);
 	base = gmt_set_resolution (GMT, &Ctrl->D.set, 'D');
+	gmt_M_memset (count, GRDLANDMASK_N_CLASSES, uint64_t);		/* Counts of each level */
 	
 	if (Ctrl->N.mode) {
 		Ctrl->N.mask[3] = Ctrl->N.mask[1];
@@ -312,6 +311,7 @@ int GMT_grdlandmask (void *V_API, int mode, void *args) {
 	if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, Grid->header->wesn), "")) Return (GMT_PROJECTION_ERROR);
 	GMT->current.map.parallel_straight = GMT->current.map.meridian_straight = 2;	/* No resampling along bin boundaries */
 	wrap = GMT->current.map.is_world = gmt_M_grd_is_global (GMT, Grid->header);
+	double_dip = (wrap && Grid->header->registration == GMT_GRID_NODE_REG);	/* Must duplicate the west nodes to east */
 	/* Using -Jx1d means output is Cartesian but we want to force geographic */
 	gmt_set_geographic (GMT, GMT_OUT);
 	/* All data nodes are thus initialized to 0 */
@@ -466,12 +466,15 @@ int GMT_grdlandmask (void *V_API, int mode, void *args) {
 #ifdef _OPENMP
 #pragma omp parallel for private(row,col,k,ij) shared(GMT,Grid,Ctrl)
 #endif
+	
 	gmt_M_grd_loop (GMT, Grid, row, col, ij) {	/* Turn levels into mask values */
 		k = urint (Grid->data[ij]);
 		Grid->data[ij] = Ctrl->N.mask[k];
+		count[k]++;
+		if (col == 0 && double_dip) count[k]++;	/* CoOunt these guys twice */
 	}
 
-	if (wrap && Grid->header->registration == GMT_GRID_NODE_REG) { /* Copy over values to the repeating right column */
+	if (double_dip) { /* Copy over values to the repeating right column */
 		unsigned int row_l;
 		for (row_l = 0, ij = gmt_M_ijp (Grid->header, row_l, 0); row_l < Grid->header->n_rows; row_l++, ij += Grid->header->mx) Grid->data[ij+nx1] = Grid->data[ij];
 	}
@@ -488,6 +491,10 @@ int GMT_grdlandmask (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 
+	if (gmt_M_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+		for (k = 0; k < GRDLANDMASK_N_CLASSES; k++)
+			if (count[k]) GMT_Report (API, GMT_MSG_VERBOSE, "Level %d contained %" PRIu64 " nodes\n", k, count[k]);
+	}
 	GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
 
 	Return (GMT_NOERROR);

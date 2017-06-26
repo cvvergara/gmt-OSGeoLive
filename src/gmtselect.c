@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtselect.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: gmtselect.c 18404 2017-06-20 18:10:00Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -669,7 +669,7 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 	else	/* Cartesian data */
 		gmt_init_distaz (GMT, 'R', 0, GMT_MAP_DIST);	/* Compute r-squared instead of r to avoid hypot  */
 	
-	gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
+	gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
 
 	if (Ctrl->C.active) { 	/* Initialize point structure used in test for proximity to points [use Ctrl->C.dist ]*/
 		if ((Cin = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POINT, GMT_IO_ASCII, NULL, Ctrl->C.file, NULL)) == NULL) {
@@ -773,7 +773,7 @@ int GMT_gmtselect (void *V_API, int mode, void *args) {
 		}
 	}
 	
-	gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+	gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 
 	/* Specify input and output expected columns */
 	if ((error = gmt_set_cols (GMT, GMT_IN,  0)) != 0) Return (error);

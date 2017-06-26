@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_map.c 18081 2017-04-30 20:32:34Z jluis $
+ *	$Id: gmt_map.c 18426 2017-06-21 23:39:43Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -235,6 +235,7 @@ EXTERN_MSC double gmt_right_sinusoidal (struct GMT_CTRL *GMT, double y);	/* For 
 EXTERN_MSC double gmt_left_polyconic (struct GMT_CTRL *GMT, double y);	/* For polyconic maps	*/
 EXTERN_MSC double gmt_right_polyconic (struct GMT_CTRL *GMT, double y);	/* For polyconic maps	*/
 EXTERN_MSC double gmt_cartesian_dist (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1);
+EXTERN_MSC double gmt_cartesian_dist_periodic (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1);
 EXTERN_MSC double gmt_cartesian_dist_proj (struct GMT_CTRL *GMT, double lon1, double lat1, double lon2, double lat2);
 
 /*! CCW order of side in some tests */
@@ -365,6 +366,16 @@ GMT_LOCAL void map_set_polar (struct GMT_CTRL *GMT) {
 	}
 }
 
+GMT_LOCAL bool central_meridian_not_set (struct GMT_CTRL *GMT) {
+	/* Just to make it clearer to understand the code.  If NaN then we were never given a central meridian */
+	return (gmt_M_is_dnan (GMT->current.proj.pars[0]));
+}
+
+GMT_LOCAL void set_default_central_meridian (struct GMT_CTRL *GMT) {
+	GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);	/* Not set at all, set to middle lon */
+	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Central meridian not given, default to %g\n", GMT->current.proj.pars[0]);
+}
+
 /*! . */
 GMT_LOCAL void map_cyl_validate_clon (struct GMT_CTRL *GMT, unsigned int mode) {
 	/* Make sure that for global (360-range) cylindrical projections, the central meridian is neither west nor east.
@@ -372,8 +383,8 @@ GMT_LOCAL void map_cyl_validate_clon (struct GMT_CTRL *GMT, unsigned int mode) {
 	 * mode == 0: <clon> should be reset based on w/e mid-point
 	 * mode == 1: -J<clon> is firm so w/e is centered on <c.lon>
 	 */
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0]))
-		GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);	/* Not set at all, set to middle lon */
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	else if (GMT->current.map.is_world && (GMT->current.proj.pars[0] == GMT->common.R.wesn[XLO] || GMT->current.proj.pars[0] == GMT->common.R.wesn[XHI])) {
 		/* Reset central meridian since cannot be 360 away from one of the boundaries since that gives xmin == xmax below */
 		if (mode == 1) {	/* Change -R to fit central meridian */
@@ -1115,9 +1126,7 @@ GMT_LOCAL int map_jump_x (struct GMT_CTRL *GMT, double x0, double y0, double x1,
 		double last_lon, this_lon, dummy, dlon;
 		gmt_xy_to_geo (GMT, &last_lon, &dummy, x0, y0);
 		gmt_xy_to_geo (GMT, &this_lon, &dummy, x1, y1);
-		dlon = this_lon - last_lon;
-		if (fabs (dlon) > 360.0) dlon += copysign (360.0, -dlon);
-
+		gmt_M_set_delta_lon (last_lon, this_lon, dlon);	/* Beware of jumps due to sign differences */
 		if (fabs (dlon) < 180.0) /* Not going the long way so we judge this to be no jump */
 			return (0);
 		/* Jump it is */
@@ -4114,7 +4123,8 @@ GMT_LOCAL bool map_init_mollweide (struct GMT_CTRL *GMT) {
 	GMT->current.proj.GMT_convert_latitudes = !gmt_M_is_spherical (GMT);
 	if (GMT->current.proj.GMT_convert_latitudes) gmtlib_scale_eqrad (GMT);
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->current.proj.units_pr_degree) GMT->current.proj.pars[1] /= GMT->current.proj.M_PR_DEG;
@@ -4170,7 +4180,8 @@ GMT_LOCAL bool map_init_hammer (struct GMT_CTRL *GMT) {
 	GMT->current.proj.GMT_convert_latitudes = !gmt_M_is_spherical (GMT);
 	if (GMT->current.proj.GMT_convert_latitudes) gmtlib_scale_eqrad (GMT);
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->current.proj.units_pr_degree) GMT->current.proj.pars[1] /= GMT->current.proj.M_PR_DEG;
@@ -4224,7 +4235,8 @@ GMT_LOCAL bool map_init_grinten (struct GMT_CTRL *GMT) {
 
 	map_set_spherical (GMT, true);
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->current.proj.units_pr_degree) GMT->current.proj.pars[1] /= GMT->current.proj.M_PR_DEG;
@@ -4279,7 +4291,8 @@ GMT_LOCAL bool map_init_winkel (struct GMT_CTRL *GMT) {
 
 	map_set_spherical (GMT, true);	/* PW: Force spherical for now */
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->current.proj.units_pr_degree) GMT->current.proj.pars[1] /= GMT->current.proj.M_PR_DEG;
@@ -4331,7 +4344,8 @@ GMT_LOCAL bool map_init_eckert4 (struct GMT_CTRL *GMT) {
 	GMT->current.proj.GMT_convert_latitudes = !gmt_M_is_spherical (GMT);
 	if (GMT->current.proj.GMT_convert_latitudes) gmtlib_scale_eqrad (GMT);
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->current.proj.units_pr_degree) GMT->current.proj.pars[1] /= GMT->current.proj.M_PR_DEG;
@@ -4384,7 +4398,8 @@ GMT_LOCAL bool map_init_eckert6 (struct GMT_CTRL *GMT) {
 	GMT->current.proj.GMT_convert_latitudes = !gmt_M_is_spherical (GMT);
 	if (GMT->current.proj.GMT_convert_latitudes) gmtlib_scale_eqrad (GMT);
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->current.proj.units_pr_degree) GMT->current.proj.pars[1] /= GMT->current.proj.M_PR_DEG;
@@ -4436,7 +4451,8 @@ GMT_LOCAL bool map_init_robinson (struct GMT_CTRL *GMT) {
 
 	map_set_spherical (GMT, true);	/* PW: Force spherical for now */
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->current.proj.units_pr_degree) GMT->current.proj.pars[1] /= GMT->current.proj.M_PR_DEG;
@@ -4489,7 +4505,8 @@ GMT_LOCAL bool map_init_sinusoidal (struct GMT_CTRL *GMT) {
 	GMT->current.proj.GMT_convert_latitudes = !gmt_M_is_spherical (GMT);
 	if (GMT->current.proj.GMT_convert_latitudes) gmtlib_scale_eqrad (GMT);
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if (GMT->current.proj.pars[0] < 0.0) GMT->current.proj.pars[0] += 360.0;
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->common.R.wesn[YLO] <= -90.0) GMT->current.proj.edge[0] = false;
@@ -4544,7 +4561,8 @@ GMT_LOCAL bool map_init_cassini (struct GMT_CTRL *GMT) {
 	bool too_big;
 	double xmin, xmax, ymin, ymax;
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	if ((GMT->current.proj.pars[0] - GMT->common.R.wesn[XLO]) > 90.0 || (GMT->common.R.wesn[XHI] - GMT->current.proj.pars[0]) > 90.0) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "ERROR: Max longitude extension away from central meridian is limited to +/- 90 degrees\n");
 		GMT_exit (GMT, GMT_PROJECTION_ERROR); return false;
@@ -4711,7 +4729,8 @@ GMT_LOCAL bool map_init_polyconic (struct GMT_CTRL *GMT) {
 
 	map_set_spherical (GMT, true);	/* PW: Force spherical for now */
 
-	if (gmt_M_is_dnan (GMT->current.proj.pars[0])) GMT->current.proj.pars[0] = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+	if (central_meridian_not_set (GMT))
+		set_default_central_meridian (GMT);
 	GMT->current.map.is_world = gmt_M_360_range (GMT->common.R.wesn[XLO], GMT->common.R.wesn[XHI]);
 	if (GMT->common.R.wesn[YLO] <= -90.0) GMT->current.proj.edge[0] = false;
 	if (GMT->common.R.wesn[YHI] >= 90.0) GMT->current.proj.edge[2] = false;
@@ -5925,6 +5944,11 @@ GMT_LOCAL void map_set_distaz (struct GMT_CTRL *GMT, unsigned int mode, unsigned
 	GMT->current.map.dist[type].scale = 1.0;	/* Default scale */
 
 	switch (mode) {	/* Set pointers to distance functions */
+		case GMT_CARTESIAN_DIST_PERIODIC:	/* Cartesian 2-D x,y data but with one or two periodic dimensions */
+			GMT->current.map.dist[type].func = &gmt_cartesian_dist_periodic;
+			GMT->current.map.azimuth_func = &map_az_backaz_cartesian;
+			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "%s distance calculation will be Cartesian [periodic]\n", type_name[type]);
+			break;
 		case GMT_CARTESIAN_DIST:	/* Cartesian 2-D x,y data */
 			GMT->current.map.dist[type].func = &gmt_cartesian_dist;
 			GMT->current.map.azimuth_func = &map_az_backaz_cartesian;
@@ -6268,6 +6292,8 @@ void gmt_auto_frame_interval (struct GMT_CTRL *GMT, unsigned int axis, unsigned 
 	/* Finally set grid interval (if annotation set as well, use major, otherwise minor interval) */
 	T = &A->item[item+4];
 	if (T->active && T->interval == 0.0) T->interval = set_a ? d : f, T->generated = true;
+	
+	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Auto-frame interval for axis %d item %d: d = %g  f = %g\n", axis, item, d, f);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -6731,6 +6757,15 @@ bool gmt_near_a_line (struct GMT_CTRL *GMT, double lon, double lat, uint64_t seg
 }
 
 /* Specific functions that are accessed via pointer only */
+
+/*! . */
+double gmt_cartesian_dist_periodic (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1) {
+	/* Calculates the good-old straight line distance in users units */
+	double dx = x1 - x0, dy = y1 - y0;
+	if (GMT->common.n.periodic[GMT_X] && (dx = fabs (dx)) > GMT->common.n.half_range[GMT_X]) dx = GMT->common.n.range[GMT_X] - dx;
+	if (GMT->common.n.periodic[GMT_Y] && (dy = fabs (dy)) > GMT->common.n.half_range[GMT_Y]) dy = GMT->common.n.range[GMT_Y] - dy;
+	return (hypot (dx, dy));
+}
 
 /*! . */
 double gmt_cartesian_dist (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1) {
@@ -7204,13 +7239,29 @@ uint64_t gmtlib_latpath (struct GMT_CTRL *GMT, double lat, double lon1, double l
 	return (n);
 }
 
+GMT_LOCAL bool accept_the_jump (struct GMT_CTRL *GMT, double lon1, double lon0, double xx[], bool cartesian) {
+	/* Carefully examine if we really want to draw line from left to right boundary.
+	 * We want to avoid E-W wrapping lines for near-global areas where points simply move
+	 * from being > 180 degres from the map area to < -180 even though the points do not
+	 * really reflect motion across the area */
+	double dlon;
+	gmt_M_unused(GMT);
+	gmt_M_unused(xx);
+	if (!cartesian) return true;	/* No wrap issues if Cartesian x,y */
+	if (cartesian) return true;	/* No wrap issues if Cartesian x,y */
+	gmt_M_set_delta_lon (lon1, lon0, dlon);
+	//fprintf (stderr, "lon0 = %g lon1 = %g dlon = %g xx0 = %g xx1 = %g\n", lon0, lon1, dlon, xx[0], xx[1]);
+	if (fabs (dlon) > 1.0 && fabs (dlon) < 90.0) return true;
+	return false;
+}
+
 /*! . */
 uint64_t gmt_geo_to_xy_line (struct GMT_CTRL *GMT, double *lon, double *lat, uint64_t n) {
 	/* Traces the lon/lat array and returns x,y plus appropriate pen moves
 	 * Pen moves are caused by breakthroughs of the map boundary or when
 	 * a point has lon = NaN or lat = NaN (this means "pick up pen") */
 	uint64_t j, k, np, n_sections;
- 	bool inside;
+ 	bool last_inside = false, this_inside, jump, cartesian = !gmt_M_is_geographic (GMT, GMT_IN);
 	unsigned int sides[4];
 	unsigned int nx;
 	double xlon[4], xlat[4], xx[4], yy[4];
@@ -7223,35 +7274,41 @@ uint64_t gmt_geo_to_xy_line (struct GMT_CTRL *GMT, double *lon, double *lat, uin
 	if (!gmt_map_outside (GMT, lon[0], lat[0])) {
 		GMT->current.plot.x[0] = last_x;	GMT->current.plot.y[0] = last_y;
 		GMT->current.plot.pen[np++] = PSL_MOVE;
+		last_inside = true;
 	}
 	for (j = 1; j < n; j++) {
 		gmt_geo_to_xy (GMT, lon[j], lat[j], &this_x, &this_y);
-		inside = !gmt_map_outside (GMT, lon[j], lat[j]);
+		this_inside = !gmt_map_outside (GMT, lon[j], lat[j]);
 		if (gmt_M_is_dnan (lon[j]) || gmt_M_is_dnan (lat[j])) continue;	/* Skip NaN point now */
 		if (gmt_M_is_dnan (lon[j-1]) || gmt_M_is_dnan (lat[j-1])) {		/* Point after NaN needs a move */
 			GMT->current.plot.x[np] = this_x;	GMT->current.plot.y[np] = this_y;
 			GMT->current.plot.pen[np++] = PSL_MOVE;
 			if (np == GMT->current.plot.n_alloc) gmt_get_plot_array (GMT);
-			last_x = this_x;	last_y = this_y;
+			last_x = this_x;	last_y = this_y;	last_inside = this_inside;
 			continue;
 		}
-		if ((nx = map_crossing (GMT, lon[j-1], lat[j-1], lon[j], lat[j], xlon, xlat, xx, yy, sides))) { /* Nothing */ }
-		else if (GMT->current.map.is_world)
+		if ((nx = map_crossing (GMT, lon[j-1], lat[j-1], lon[j], lat[j], xlon, xlat, xx, yy, sides))) { /* Do nothing if we get crossings*/ }
+		else if (GMT->current.map.is_world)	/* Check global wrapping if 360 range */
 			nx = (*GMT->current.map.wrap_around_check) (GMT, dummy, last_x, last_y, this_x, this_y, xx, yy, sides);
 		if (nx == 1) {	/* inside-outside or outside-inside */
 			GMT->current.plot.x[np] = xx[0];	GMT->current.plot.y[np] = yy[0];
-			GMT->current.plot.pen[np++] = (inside) ? PSL_MOVE : PSL_DRAW;
+			GMT->current.plot.pen[np++] = (this_inside) ? PSL_MOVE : PSL_DRAW;
 			if (np == GMT->current.plot.n_alloc) gmt_get_plot_array (GMT);
 		}
 		else if (nx == 2) {	/* outside-inside-outside or (with wrapping) inside-outside-inside */
-			GMT->current.plot.x[np] = xx[0];	GMT->current.plot.y[np] = yy[0];
-			GMT->current.plot.pen[np++] = (inside) ? PSL_DRAW : PSL_MOVE;
-			if (np == GMT->current.plot.n_alloc) gmt_get_plot_array (GMT);
-			GMT->current.plot.x[np] = xx[1];	GMT->current.plot.y[np] = yy[1];
-			GMT->current.plot.pen[np++] = (inside) ? PSL_MOVE : PSL_DRAW;
-			if (np == GMT->current.plot.n_alloc) gmt_get_plot_array (GMT);
+			/* PW: I will be working on things here to solve the polygon wrap problem reported by Nicky */
+			jump = accept_the_jump (GMT, lon[j], lon[j-1], xx, cartesian);
+			if (jump) {
+			//if ((this_inside && last_inside) || cartesian || dy > 0.1) {	/* outside-inside-outside or (with wrapping) inside-outside-inside */
+				GMT->current.plot.x[np] = xx[0];	GMT->current.plot.y[np] = yy[0];
+				GMT->current.plot.pen[np++] = (this_inside) ? PSL_DRAW : PSL_MOVE;
+				if (np == GMT->current.plot.n_alloc) gmt_get_plot_array (GMT);
+				GMT->current.plot.x[np] = xx[1];	GMT->current.plot.y[np] = yy[1];
+				GMT->current.plot.pen[np++] = (this_inside) ? PSL_MOVE : PSL_DRAW;
+				if (np == GMT->current.plot.n_alloc) gmt_get_plot_array (GMT);
+			}
 		}
-		if (inside) {
+		if (this_inside) {
 			if ( np >= GMT->current.plot.n_alloc ) {
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "bad access: cannot access current.plot.x[%" PRIu64 "], np=%" PRIu64 ", GMT->current.plot.n=%" PRIu64 "\n", np, np, GMT->current.plot.n);
 			}
@@ -7261,7 +7318,7 @@ uint64_t gmt_geo_to_xy_line (struct GMT_CTRL *GMT, double *lon, double *lat, uin
 			}
 			if (np == GMT->current.plot.n_alloc) gmt_get_plot_array (GMT);
 		}
-		last_x = this_x;	last_y = this_y;
+		last_x = this_x;	last_y = this_y;	last_inside = this_inside;
 	}
 	if (np) GMT->current.plot.pen[0] = PSL_MOVE;	/* Sanity override: Gotta start off with new start point */
 
@@ -7848,8 +7905,8 @@ uint64_t gmt_map_clip_path (struct GMT_CTRL *GMT, double **x, double **y, bool *
 		}
 	}
 
-	work_x = gmt_M_memory (GMT, NULL, np, double);
-	work_y = gmt_M_memory (GMT, NULL, np, double);
+	work_x = gmt_M_memory (GMT, NULL, np+1, double);	/* Add one for manual closure */
+	work_y = gmt_M_memory (GMT, NULL, np+1, double);
 
 	if (GMT->common.R.oblique) {
 		work_x[0] = work_x[3] = GMT->current.proj.rect[XLO];	work_y[0] = work_y[1] = GMT->current.proj.rect[YLO];
@@ -8005,6 +8062,10 @@ uint64_t gmt_map_clip_path (struct GMT_CTRL *GMT, double **x, double **y, bool *
 		}
 	}
 
+	/* CLose the clipping polygon */
+	work_x[np] = work_x[0];
+	work_y[np] = work_y[0];
+	np++;
 	if (!(*donut)) np = gmt_compact_line (GMT, work_x, work_y, np, false, NULL);
 
 	*x = work_x;
@@ -8846,7 +8907,10 @@ unsigned int gmt_init_distaz (struct GMT_CTRL *GMT, char unit, unsigned int mode
 
 		case 'X':	/* Cartesian distances in user units */
 			proj_type = GMT_CARTESIAN;
-			map_set_distaz (GMT, GMT_CARTESIAN_DIST, type, "");
+			if (GMT->common.n.periodic[GMT_X] || GMT->common.n.periodic[GMT_Y])
+				map_set_distaz (GMT, GMT_CARTESIAN_DIST_PERIODIC, type, "");
+			else	
+				map_set_distaz (GMT, GMT_CARTESIAN_DIST, type, "");
 			break;
 		case 'C':	/* Cartesian distances (in PROJ_LENGTH_UNIT) after first projecting input coordinates with -J */
 			map_set_distaz (GMT, GMT_CARTESIAN_DIST_PROJ, type, "");

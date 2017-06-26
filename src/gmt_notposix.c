@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *      $Id: gmt_notposix.c 17451 2017-01-16 21:36:06Z pwessel $
+ *      $Id: gmt_notposix.c 18340 2017-06-08 02:50:06Z pwessel $
  *
  *      Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *      See LICENSE.TXT file for copying and redistribution conditions.
@@ -17,7 +17,7 @@
  *--------------------------------------------------------------------*/
 /*
  *      Replacement non-POSIX functions. We will use these if your installation does not
- *      have these non-POSIX implementations itself.
+ *      have these non-POSIX implementations in its libc.
  *
  * Author:      Walter H. F. Smith, P. Wessel, R. Scharroo
  * Date:        1-JAN-2010
@@ -25,27 +25,32 @@
  *
  * PUBLIC functions:
  *
- *      sincos: Sine and cosine
+ *      sincos:			Both sine and cosine
  *      j0:             Bessel function 1st kind order 0
  *      j1:             Bessel function 1st kind order 1
  *      jn:             Bessel function 1st kind order N
  *      y0:             Bessel function 2nd kind order 0
  *      y1:             Bessel function 2nd kind order 1
  *      yn:             Bessel function 2nd kind order N
- *      erf:    Error function
- *      erfc:   Complementary error function
- *      strdup: Save copy of a string
- *      strtod: Convert ASCII string to floating point
- *  hypot:      sqrt(x^2 + y^2)
- *      log1p:  log(x+1)
- *      atanh:  inverse hyperbolic tangent
+ *      erf:			Error function
+ *      erfc:			Complementary error function
+ *      strdup:			Save copy of a string
+ *      strndup:		Save copy of a string up to specified length
+ *      strtod:			Convert ASCII string to floating point
+ *		hypot:      	sqrt(x^2 + y^2)
+ *      log1p:  		log(x+1)
+ *      atanh:  		inverse hyperbolic tangent
  */
 
 #include "gmt_dev.h"
 #include "gmt_internals.h"
 
+/* Note: If any new ifndef HAVE_***** sections are added, remember
+ * to add a check for that macro in ConfigureChecks.cmake.
+ */
+
 /*
- * POSIX replacements
+ * POSIX replacements for missing functions
  */
 
 #ifndef HAVE_STRDUP
@@ -59,6 +64,21 @@ char *strdup (const char *s) {
 	return (p);
 }
 #endif /* HAVE_STRDUP */
+
+#ifndef HAVE_STRNDUP
+char *strndup (const char *str, size_t chars) {
+	char *buffer;
+	size_t n;
+
+	buffer = (char *) malloc (chars + 1);
+	if (buffer) {
+		for (n = 0; ((n < chars) && (str[n] != 0)) ; n++) buffer[n] = str[n];
+		buffer[n] = 0;
+	}
+
+	return buffer;
+}
+#endif /* HAVE_STRNDUP */
 
 #ifndef HAVE_STRTOD
 double strtod (const char *s, char **ends) {
@@ -581,7 +601,7 @@ double yn (int n, double x) {
 	for (j = 1; j < n; j++) {
 		byp = (double)j * tox * by - bym;
 		bym = by;
-		by = byp;
+		by  = byp;
 	}
 
 	return (by);

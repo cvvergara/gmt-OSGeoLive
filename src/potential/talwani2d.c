@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: talwani2d.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: talwani2d.c 18404 2017-06-20 18:10:00Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -28,15 +28,15 @@
  * Based on methods by:
  *
  * Chapman, M. E. (1979), Techniques for interpretation of geoid
- *    anomalies, J. Geophys. Res., 84(B8), 3793–3801.
+ *    anomalies, J. Geophys. Res., 84(B8), 3793-3801.
  * Kim, S.-S., and P. Wessel, New analytic solutions for modeling
  *    vertical gravity gradient anomalies, Geochem. Geophys. Geosyst.,
  *    17, 2016, doi:10.1002/2016GC006263. [for VGG]
  * Rasmussen, R., and L. B. Pedersen (1979), End corrections in
- *   potential field modeling, Geophys. Prospect., 27, 749–760.
+ *   potential field modeling, Geophys. Prospect., 27, 749-760.
  * Talwani, M., J. L. Worzel, and M. Landisman (1959), Rapid gravity
  *    computations for two-dimensional bodies with application to
- *    the Mendocino submarine fracture zone, J. Geophys. Res., 64, 49–59.
+ *    the Mendocino submarine fracture zone, J. Geophys. Res., 64, 49-59.
  *
  * Accelerated with OpenMP; see -x.
  */
@@ -590,7 +590,7 @@ int GMT_talwani2d (void *V_API, int mode, void *args) {
 	}
 	else {	/* Got a dataset with output locations */
 		geometry = GMT_IS_PLP;	/* We don't really know */
-		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
+		gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
 		if ((Out = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_PLP, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL) {
 			Return (API->error);
 		}
@@ -598,7 +598,7 @@ int GMT_talwani2d (void *V_API, int mode, void *args) {
 			gmt_adjust_dataset (GMT, Out, 2U);
 			geometry = GMT_IS_LINE;	/* Since we are making from scratch */
 		}
-		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+		gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 	}
 
 	/* Specify input expected columns to be at least 2 */

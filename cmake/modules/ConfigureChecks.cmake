@@ -1,5 +1,5 @@
 #
-# $Id: ConfigureChecks.cmake 17487 2017-01-24 04:44:14Z pwessel $
+# $Id: ConfigureChecks.cmake 18344 2017-06-08 21:51:52Z pwessel $
 #
 
 if(NOT DEFINED _INCLUDED_CHECK_MACROS_)
@@ -159,6 +159,7 @@ check_function_exists (strncasecmp      HAVE_STRNCASECMP)
 check_function_exists (stricmp          HAVE_STRICMP)
 check_function_exists (strnicmp         HAVE_STRNICMP)
 check_function_exists (strdup           HAVE_STRDUP)
+check_function_exists (strndup          HAVE_STRNDUP)
 check_function_exists (strsep           HAVE_STRSEP)
 check_function_exists (strtod           HAVE_STRTOD)
 # Note: trailing underscore = GDAL workaround
@@ -417,26 +418,6 @@ if (WIN32)
 	check_symbol_exists (_fpclass  "${_math_h}" HAVE__FPCLASS)
 	check_symbol_exists (_isnan    "${_math_h}" HAVE__ISNAN)
 endif (WIN32)
-
-# test if sincos is buggy
-if (HAVE_SINCOS)
-	check_c_source_runs (
-		"
-		#define _GNU_SOURCE
-		#define __EXTENSIONS__
-		#include <math.h>
-		int main () {
-		double s = 0.1, c = 0.2;
-		double s1, c1;
-		s1 = s; c1 = c;
-		sincos (0.5, &s, &c);
-		return !(s == s1 || c == c1);} /* return TRUE if sincos fails */
-		"
-		HAVE_BUGGY_SINCOS)
-	if (HAVE_BUGGY_SINCOS)
-		set (HAVE_SINCOS "" CACHE INTERNAL "disable sincos because it is buggy" FORCE)
-	endif (HAVE_BUGGY_SINCOS)
-endif (HAVE_SINCOS)
 
 # restore state of CMAKE_REQUIRED_*
 cmake_pop_check_state()

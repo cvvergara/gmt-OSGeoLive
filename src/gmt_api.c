@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_api.c 18186 2017-05-08 04:43:29Z pwessel $
+ *	$Id: gmt_api.c 18435 2017-06-22 04:01:50Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -111,9 +111,9 @@
  *
  * Finally, three low-level F77-callable functions for grid i/o are given:
  *
- * GMT_F77_readgrdinfo_	  : Read the header of a GMT grid
- * GMT_F77_readgrd_		  : Read a GMT grid from file
- * GMT_F77_writegrd_	  : Write a GMT grid to file
+ * gmt_f77_readgrdinfo_	  : Read the header of a GMT grid
+ * gmt_f77_readgrd_		  : Read a GMT grid from file
+ * gmt_f77_writegrd_	  : Write a GMT grid to file
  *
  * --------------------------------------------------------------------------------------------
  * Guru notes on memory management: Paul Wessel, June 2013.
@@ -592,10 +592,10 @@ GMT_LOCAL int api_get_ppid (struct GMTAPI_CTRL *API) {
 	/* Return the parent process ID [i.e., shell for command line use or gmt app for API] */
 	int ppid = -1;
 	gmt_M_unused(API);
-#if defined(WIN32) || defined(DEBUG_MODERN)
+#if defined(WIN32)
 	/* OK, the trouble is the following. On Win if the executables are run from within MSYS
-	   gmt_get_ppid returns different values for each call, and this completely breaks the idea
-	   using the PPID (parent PID) to create unique file names. 
+	   api_get_ppid returns different values for each call, and this completely breaks the idea
+	   using the PPID (parent PID) to create unique file names.
 	   So, given that we didn't yet find a way to make this work from within MSYS (and likely Cygwin)
 	   we are forcing PPID = 0 in all Windows variants. */
 	ppid = 0;
@@ -832,71 +832,118 @@ GMT_LOCAL void api_free_sharedlibs (struct GMTAPI_CTRL *API) {
  * this check by first calling gmt_download_file_if_not_found.
  */
 
+struct FtpFile {
+	const char *filename;
+	FILE *fp;
+};
+
+static size_t fwrite_callback (void *buffer, size_t size, size_t nmemb, void *stream) {
+	struct FtpFile *out = (struct FtpFile *)stream;
+	if (out && !out->fp) { /* open file for writing */
+		out->fp = fopen (out->filename, "wb");
+		if (!out->fp)
+			return -1; /* failure, can't open file to write */
+	}
+	return fwrite (buffer, size, nmemb, out->fp);
+}
+
 unsigned int gmt_download_file_if_not_found (struct GMT_CTRL *GMT, const char* file_name) {
 	/* Downloads a file if not found locally.  Returns the position in file_name of the
  	 * start of the actual file (e.g., if given an URL). */
 	unsigned int kind = 0, dir = 0, pos = 0;
 	int curl_err = 0;
 	CURL *Curl = NULL;
-	FILE *fp = NULL;
-	static char *ftp_dir[2] = {"/cache", ""};
+	static char *ftp_dir[2] = {"/cache", ""}, *name[2] = {"CACHE", "USER"};
 	char *user_dir[2] = {GMT->session.CACHEDIR, GMT->session.USERDIR};
-	char url[PATH_MAX] = {""}, local_path[PATH_MAX] = {""}, *c = NULL;
-	
+	char url[PATH_MAX] = {""}, local_path[PATH_MAX] = {""}, *c = NULL, *file = strdup (file_name);
+	struct FtpFile ftpfile = {NULL, NULL};
+
 	/* Because file_name may be <file>, @<file>, or URL/<file> we must find start of <file> */
-	if (gmt_M_file_is_cache (file_name)) pos = 1;	/* A leading '@' was found */
-	else if (gmt_M_file_is_url (file_name)) pos = gmtlib_get_pos_of_filename (file_name);	/* Start of file in URL (> 0) */
-	/* else pos == 0 */
-	
+	if (gmt_M_file_is_cache (file)) {	/* A leading '@' was found */
+		pos = 1;
+		if ((c = strchr (file, '?')))	/* Netcdf directive since URL was handled above */
+			c[0] = '\0';
+		else if ((c = strchr (file, '=')))	/* Grid attributes */
+			c[0] = '\0';
+	}
+	else if (gmt_M_file_is_url (file)) {	/* A remote file given via an URL */
+		pos = gmtlib_get_pos_of_filename (file);	/* Start of file in URL (> 0) */
+		if ((c = strchr (file, '?')) && !strchr (file, '='))	/* Must be a netCDF sliced URL file so chop off the layer/variable specifications */
+			c[0] = '\0';
+		else if ((c = strchr (file, '=')))	/* Grid attributes */
+			c[0] = '\0';
+	}
+	else if ((c = strchr (file, '?')))	/* Netcdf directive since URLs and caches were handled above */
+		c[0] = '\0';	/* and pos = 0 */
+
 	/* Return immediately if cannot be downloaded (for various reasons) */
-	if (!gmtlib_file_is_downloadable (GMT, file_name, &kind))
+	if (!gmtlib_file_is_downloadable (GMT, file, &kind)) {
+		gmt_M_str_free (file);
 		return (pos);
-	
+	}
+	dir = (kind == GMT_DATA_FILE) ? GMT_DATA_DIR : GMT_CACHE_DIR;	/* Only GMT datasets should go data dir; all else in cache */
+	if (user_dir[dir] == NULL) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "The GMT_%s directory is not defined - download file to current directory\n", name[dir]);
+		sprintf (local_path, "%s", &file[pos]);
+	}
 	/* Here we will try to download a file */
-	
+
   	if ((Curl = curl_easy_init ()) == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to initiate curl - cannot obtain %s\n", &file_name[pos]);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to initiate curl - cannot obtain %s\n", &file[pos]);
+		gmt_M_str_free (file);
 		return 0;
 	}
-	curl_easy_setopt(Curl, CURLOPT_SSL_VERIFYPEER, FALSE);		/* Tell libcurl to not verify the peer */
-	dir = (kind == GMT_DATA_FILE) ? GMT_DATA_DIR : GMT_CACHE_DIR;	/* Only GMT datasets should go data dir; all else in cache */
-	sprintf (local_path, "%s/%s", user_dir[dir], &file_name[pos]);
-	if (kind == GMT_URL_CMD) {	/* Cannot have ?para=value etc in filename */
+	if (curl_easy_setopt (Curl, CURLOPT_SSL_VERIFYPEER, 0L)) {		/* Tell libcurl to not verify the peer */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to set curl option to not verify the peer\n");
+		gmt_M_str_free (file);
+		return 0;
+	}
+	if (curl_easy_setopt (Curl, CURLOPT_FOLLOWLOCATION, 1L)) {		/* Tell libcurl to follow 30x redirects */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to set curl option to follow redirects\n");
+		gmt_M_str_free (file);
+		return 0;
+	}
+	if (user_dir[dir]) sprintf (local_path, "%s/%s", user_dir[dir], &file[pos]);
+	if (kind == GMT_URL_QUERY) {	/* Cannot have ?para=value etc in filename */
 		c = strchr (local_path, '?');
 		if (c) c[0] = '\0';	/* Chop off ?CGI parameters from local_path */
 	}
-	if ((fp = fopen (local_path, "wb")) == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to create file %s\n", local_path);
-		return 0;
-	}
-	if (kind == GMT_URL_FILE || kind == GMT_URL_CMD)	/* General URL given */
-		sprintf (url, "%s", file_name);
+	if (kind == GMT_URL_FILE || kind == GMT_URL_QUERY)	/* General URL given */
+		sprintf (url, "%s", file);
 	else			/* Use GMT ftp dir, possible from subfolder cache */
-		sprintf (url, "%s%s/%s", GMT_DATA_URL, ftp_dir[dir], &file_name[pos]);
+		sprintf (url, "%s%s/%s", GMT_DATA_URL, ftp_dir[dir], &file[pos]);
 
  	if (curl_easy_setopt (Curl, CURLOPT_URL, url)) {	/* Set the URL to copy */
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to set curl option to read from %s\n", url);
-		fclose (fp);
+		gmt_M_str_free (file);
 		return 0;
 	}
-	if (curl_easy_setopt (Curl, CURLOPT_WRITEDATA, fp)) {	/* Set output file */
+	ftpfile.filename = local_path;	/* Set pointer to local filename */
+	/* Define our callback to get called when there's data to be written */
+	if (curl_easy_setopt (Curl, CURLOPT_WRITEFUNCTION, fwrite_callback)) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to set curl output callback function\n");
+		gmt_M_str_free (file);
+		return 0;
+	}
+	/* Set a pointer to our struct to pass to the callback */
+	if (curl_easy_setopt (Curl, CURLOPT_WRITEDATA, &ftpfile)) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Failed to set curl option to write to %s\n", local_path);
-		fclose (fp);
+		gmt_M_str_free (file);
 		return 0;
 	}
 	GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Downloading file %s ...\n", url);
 	if ((curl_err = curl_easy_perform (Curl))) {	/* Failed, give error message */
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Libcurl Error: %s\n", curl_easy_strerror (curl_err));
-		fclose (fp);
-		fp = NULL;
+		fclose (ftpfile.fp);
+		ftpfile.fp = NULL;
 		if (gmt_remove_file (GMT, local_path))
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Could not even remove file %s\n", local_path);
 	}
 	curl_easy_cleanup (Curl);
+	if (ftpfile.fp) /* close the local file */
+		fclose (ftpfile.fp);
 
-	if (fp) fclose (fp);
-	
-	if (kind == GMT_URL_CMD) {	/* Cannot have ?para=value etc in local filename */
+	if (kind == GMT_URL_QUERY) {	/* Cannot have ?para=value etc in local filename */
 		c = strchr (file_name, '?');
 		if (c) c[0] = '\0';	/* Chop off ?CGI parameters from local_path */
 	}
@@ -907,6 +954,7 @@ unsigned int gmt_download_file_if_not_found (struct GMT_CTRL *GMT, const char* f
 		else
 			GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Download complete [Got %s].\n", gmt_memory_use (buf.st_size, 3));
 	}
+	gmt_M_str_free (file);
 
 	return (pos);
 }
@@ -1302,7 +1350,7 @@ GMT_LOCAL char **api_process_keys (void *API, const char *string, char type, str
 		}
 		else if (!strchr ("{}()-", s[k][K_DIR])) {	/* Key letter Z not in {|(|}|)|-: which means that option -Z, if given, changes the type of primary output to Y */
 			/* E.g, pscoast has >DM and this turns >X} to >D} only when -M is used.  Also, modifiers may be involved.
-			   e.g, gmtspatial : New key “”>TN+r” means if -N+r is given then set >T}.  Just giving -N will not trigger the change.
+			   e.g, gmtspatial : New key ">TN+r" means if -N+r is given then set >T}.  Just giving -N will not trigger the change.
 			   e.g., pscoast ">TE+w-rR" means if -E is given with modifier +w _and_ one of +r or +R is then set to >T}.
 			   If X is not - then we will find the other KEY with X and select that as the one to change; this could
 			   be used to change the primary INPUT type.  For instance, grdimage expects grid input (<G{+) but with
@@ -1407,7 +1455,7 @@ GMT_LOCAL unsigned int api_determine_dimension (struct GMTAPI_CTRL *API, char *t
 	/* Examine greenspline's -R option to learn the dimensionality of the domain (1, 2, or 3) */
 	unsigned int n_slashes = 0;
 	size_t k;
-	const size_t s_length = strlen(text); 
+	const size_t s_length = strlen(text);
 
 	/* First catch the simple -R? which means a grid is passed by the API, hence dimension is 2 */
 	if (text[0] == '?' && text[1] == '\0') return 2;	/* A marker means a grid only, so done */
@@ -1885,7 +1933,7 @@ GMT_LOCAL int api_open_grd (struct GMT_CTRL *GMT, char *file, struct GMT_GRID *G
 		gmt_M_err_trap (nc_open (G->header->name, cdf_mode[r_w], &R->fid));
 		R->edge[0] = 1;
 		R->edge[1] = G->header->n_columns;
-		R->start[0] = G->header->n_rows-1;
+		R->start[0] = G->header->row_order == k_nc_start_north ? 0 : G->header->n_rows-1;
 		R->start[1] = 0;
 	}
 	else {		/* Regular binary file with/w.o standard GMT header, or Sun rasterfile */
@@ -3508,7 +3556,7 @@ GMT_LOCAL struct GMT_DATASET *api_import_dataset (struct GMTAPI_CTRL *API, int o
 				n_columns = (GMT->common.i.active) ? GMT->common.i.n_cols : M_obj->n_columns;
 				D_obj->table[D_obj->n_tables] = gmt_M_memory (GMT, NULL, 1, struct GMT_DATATABLE);
 				D_obj->table[D_obj->n_tables]->segment = gmt_M_memory (GMT, NULL, s_alloc, struct GMT_DATASEGMENT *);
-				S = D_obj->table[D_obj->n_tables]->segment[0] = 
+				S = D_obj->table[D_obj->n_tables]->segment[0] =
 				    GMT_Alloc_Segment (API, GMT_IS_DATASET, M_obj->n_rows, n_columns, NULL, NULL);
 				GMT_2D_to_index = api_get_2d_to_index (API, M_obj->shape, GMT_GRID_IS_REAL);
 				api_get_val = api_select_get_function (API, M_obj->type);
@@ -5423,7 +5471,7 @@ GMT_LOCAL int api_colors2cpt (struct GMTAPI_CTRL *API, char **str, unsigned int 
 	if (!(pch = strchr (*str, ','))) {	/* No comma so presumably a regular CPT name, but check for single color entry */
 		bool gray = true;
 		size_t k;
-		const size_t s_length = strlen(*str); 
+		const size_t s_length = strlen(*str);
 		 /* Since "gray" is both a master CPT and a shade we must let the CPT take precedence */
 		if (!strcmp (*str, "gray"))
 			return (0);
@@ -5837,7 +5885,7 @@ void *GMT_Create_Session (const char *session, unsigned int pad, unsigned int mo
 	}
 
 	/* Set temp directory used by GMT */
-	
+
 #ifdef WIN32
 	if ((dir = getenv ("TEMP")))	/* Standard Windows temp directory designation */
 		API->tmp_dir = strdup (dir);
@@ -6731,7 +6779,7 @@ void *GMT_Read_VirtualFile_ (char *string, int len) {
  /*! . */
 int GMT_Init_VirtualFile (void *V_API, unsigned int mode, const char *name) {
 	/* Reset a virtual file back to its original configuration so that it can be
-	 * repurposed for reading or writing again. 
+	 * repurposed for reading or writing again.
 	 */
 	int object_ID = GMT_NOTSET, item;
 	struct GMTAPI_DATA_OBJECT *S = NULL;
@@ -6788,7 +6836,7 @@ void *GMT_Read_Data (void *V_API, unsigned int family, unsigned int method, unsi
 	module_input = (family & GMT_VIA_MODULE_INPUT);	/* Are we reading a resource that should be considered a module input? */
 	family -= module_input;
 	API->module_input = (module_input) ? true : false;
-	if (infile && strpbrk (infile, "*?[]") && !api_file_with_netcdf_directive (API, infile)) {	/* Gave a wildcard filename */
+	if (!gmt_M_file_is_cache(infile) && !gmt_M_file_is_url(infile) && infile && strpbrk (infile, "*?[]") && !api_file_with_netcdf_directive (API, infile)) {	/* Gave a wildcard filename */
 		uint64_t n_files;
 		unsigned int k;
 		char **filelist = NULL;
@@ -7598,7 +7646,7 @@ int GMT_Put_Record (void *V_API, unsigned int mode, void *record) {
 						D_obj->n_columns = T_obj->n_columns = API->GMT->common.b.ncol[GMT_OUT];
 					else {
 						GMT_Report (API, GMT_MSG_DEBUG, "GMTAPI: Error: GMT_Put_Record does not know the number of columns\n");
-						return_error (API, GMT_N_COLS_NOT_SET); 
+						return_error (API, GMT_N_COLS_NOT_SET);
 					}
 				}
 				count = API->GMT->current.io.curr_pos[GMT_OUT];	/* Short hand to counters for table (not used as == 0), segment, row */
@@ -7895,15 +7943,15 @@ int GMT_Get_Row (void *V_API, int row_no, struct GMT_GRID *G, float *row) {
 	else if (fmt[0] == 'n') {	/* Get one NetCDF row, COARDS-compliant format */
 		if (row_no < 0) {	/* Special seek instruction */
 			R->row = abs (row_no);
-			R->start[0] = G->header->n_rows - 1 - R->row;
+			R->start[0] = G->header->row_order == k_nc_start_north ? R->row : G->header->n_rows - 1 - R->row;
 			return (GMT_NOERROR);
 		}
 		else if (!R->auto_advance) {
 			R->row = row_no;
-			R->start[0] = G->header->n_rows - 1 - R->row;
+			R->start[0] = G->header->row_order == k_nc_start_north ? R->row : G->header->n_rows - 1 - R->row;
 		}
 		gmt_M_err_trap (nc_get_vara_float (R->fid, G->header->z_id, R->start, R->edge, row));
-		if (R->auto_advance) R->start[0] --;	/* Advance to next row if auto */
+		if (R->auto_advance) R->start[0] -= G->header->row_order;	/* Advance to next row if auto */
 	}
 	else {			/* Get a native binary row */
 		size_t n_items;
@@ -7980,9 +8028,9 @@ int GMT_Put_Row (void *V_API, int rec_no, struct GMT_GRID *G, float *row) {
 			if (R->auto_advance) R->start[0] += R->edge[0];
 			break;
 		case 'n':
-			if (!R->auto_advance) R->start[0] = G->header->n_rows - 1 - rec_no;
+			if (!R->auto_advance) R->start[0] = G->header->row_order = k_nc_start_north ? rec_no : G->header->n_rows - 1 - rec_no;
 			gmt_M_err_trap (nc_put_vara_float (R->fid, G->header->z_id, R->start, R->edge, row));
-			if (R->auto_advance) R->start[0] --;
+			if (R->auto_advance) R->start[0] -= G->header->row_order;
 			break;
 		default:
 			if (!R->auto_advance && fseek (R->fp, (off_t)(GMT_GRID_HEADER_SIZE + rec_no * R->n_byte), SEEK_SET)) return (GMT_GRDIO_SEEK_FAILED);
@@ -9645,8 +9693,8 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 	 *   the primary input and hence we read that as well.
 	 *
 	 *   A few modules will specify Z as some letter not in {|(|}|)|-, which means that normally these modules
-	 *   will produce whatever output is specified by the primary setting, but if the "-Z" option is given the primary
-	 *   output will be changed to the given type Y.  Also, modifiers may be involved. 	The full syntax for this is
+	 *   will expect/produce whatever input/output is specified by the primary setting, but if the "-Z" option is given the primary
+	 *   input/output will be changed to the given type Y.  Also, modifiers may be involved. The full syntax for this is
 	 *   XYZ+abc...-def...: We do the substitution of output type to Y only if
 	 *      1. -Z is given
 	 *      2. -Z contains ALL the modifiers +a, +b, +c, ...
@@ -9660,7 +9708,7 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 	 *   3. grdcontour normally writes PostScript but grdcontour -D will instead export data to a file set by -D, so its key
 	 *      contains the entry "DDD": When -D is active then the PostScript key ">X}" morphs into "DD}" and
 	 *      thus allows for a data set export instead.
-	 *   4. gmtspatial : New key “”>TN+r” means if -N[...]+r is given then set >T}.  Just giving -N without the given
+	 *   4. gmtspatial : New key ">TN+r" means if -N[...]+r is given then set >T}.  Just giving -N without the given
 	 *      modifier +r will not trigger the change.
 	 *   5. pscoast ">TE+w-rR" means if -E given with modifier +w and one of +r or +R are then set to >T}.
 	 *
@@ -9697,7 +9745,8 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 	strcpy (module, module_name);			/* This string can grow by 3 if need be */
 	/* 0. Get the keys for the module, possibly prepend "gmt" to module if required, or list modules and return NULL if unknown module */
 	if ((keys = api_get_moduleinfo (V_API, module)) == NULL) {	/* Gave an unknown module */
-		GMT_Call_Module (V_API, NULL, GMT_MODULE_PURPOSE, NULL);	/* List the available modules */
+		if (GMT_Call_Module (V_API, NULL, GMT_MODULE_PURPOSE, NULL))	/* List the available modules */
+			return_null (NULL, GMT_NOT_A_VALID_MODULE);
 		gmt_M_str_free (module);
 		return_null (NULL, GMT_NOT_A_VALID_MODULE);	/* Unknown module code */
 	}
@@ -9724,7 +9773,7 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 				}
 			}
 		}
-		if (delete != *head) GMT_Delete_Option (API, delete);
+		GMT_Delete_Option (API, delete, head);
 	}
 	/* 1c. Check if this is the grdconvert module, which uses the syntax "infile outfile" without any option flags */
 	else if (!strncmp (module, "grdconvert", 10U) && (opt = GMT_Find_Option (API, GMT_OPT_INFILE, *head))) {
@@ -10392,7 +10441,9 @@ int GMT_Get_Values_ (char *arg, double par[], int len) {
 
 /* Here lies the very basic F77 support for grid read and write only. It is assumed that no grid padding is required */
 
-int GMT_F77_readgrdinfo_ (unsigned int dim[], double limit[], double inc[], char *title, char *remark, const char *name) {
+#define F_STRNCPY(dst,src,ldst,lsrc) { int l = MIN(ldst-1, lsrc); strncpy (dst, src, l); dst[l] = '\0'; }
+
+int gmt_f77_readgrdinfo_ (unsigned int dim[], double limit[], double inc[], char *title, char *remark, const char *name, int ltitle, int lremark, int lname) {
 	/* Note: When returning, dim[2] holds the registration (0 = gridline, 1 = pixel).
 	 * limit[4-5] holds zmin/zmax. limit must thus at least have a length of 6.
 	 */
@@ -10406,10 +10457,11 @@ int GMT_F77_readgrdinfo_ (unsigned int dim[], double limit[], double inc[], char
 		return GMT_ARG_IS_NULL;
 	}
 	if ((API = GMT_Create_Session (argv, 0U, 0U, NULL)) == NULL) return GMT_MEMORY_ERROR;
-	file = strdup (name);
+	file = strndup (name, lname);
 
 	/* Read the grid header */
 
+	gmt_M_memset (&header, 1, struct GMT_GRID_HEADER);	/* To convince Coverity that header->index_function has been initialized */
 	if (gmtlib_read_grd_info (API->GMT, file, &header)) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error opening file %s\n", file);
 		gmt_M_str_free (file);
@@ -10425,14 +10477,14 @@ int GMT_F77_readgrdinfo_ (unsigned int dim[], double limit[], double inc[], char
 	limit[ZLO] = header.z_min;
 	limit[ZHI] = header.z_max;
 	dim[GMT_Z] = header.registration;
-	if (title) strncpy (title, header.title, GMT_GRID_TITLE_LEN80);
-	if (remark) strncpy (remark, header.remark, GMT_GRID_REMARK_LEN160);
+	if (title) F_STRNCPY (title, header.title, ltitle, GMT_GRID_TITLE_LEN80);
+	if (remark) F_STRNCPY (remark, header.remark, lremark, GMT_GRID_REMARK_LEN160);
 
 	if (GMT_Destroy_Session (API) != GMT_NOERROR) return GMT_RUNTIME_ERROR;
 	return GMT_NOERROR;
 }
 
-int GMT_F77_readgrd_ (float *array, unsigned int dim[], double limit[], double inc[], char *title, char *remark, const char *name) {
+int gmt_f77_readgrd_ (float *array, unsigned int dim[], double limit[], double inc[], char *title, char *remark, const char *name, int ltitle, int lremark, int lname) {
 	/* Note: When called, dim[2] is 1 we allocate the array, otherwise we assume it has enough space
 	 * Also, if dim[3] == 1 then we transpose the array before writing.
 	 * When returning, dim[2] holds the registration (0 = gridline, 1 = pixel).
@@ -10450,10 +10502,10 @@ int GMT_F77_readgrd_ (float *array, unsigned int dim[], double limit[], double i
 		return GMT_ARG_IS_NULL;
 	}
 	if ((API = GMT_Create_Session (argv, 0U, 0U, NULL)) == NULL) return GMT_MEMORY_ERROR;
-	file = strdup (name);
+	file = strndup (name, lname);
 
 	/* Read the grid header */
-	memset (&header, 0, sizeof(struct GMT_GRID_HEADER));	/* To convince Coverity that header->index_function has been initialized */
+	gmt_M_memset (&header, 1, struct GMT_GRID_HEADER);	/* To convince Coverity that header->index_function has been initialized */
 	gmt_grd_init (API->GMT, &header, NULL, false);
 	if (gmtlib_read_grd_info (API->GMT, file, &header)) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error opening file %s\n", file);
@@ -10481,14 +10533,14 @@ int GMT_F77_readgrd_ (float *array, unsigned int dim[], double limit[], double i
 	limit[ZLO] = header.z_min;
 	limit[ZHI] = header.z_max;
 	dim[GMT_Z] = header.registration;
-	if (title) strncpy (title, header.title, GMT_GRID_TITLE_LEN80);
-	if (remark) strncpy (remark, header.remark, GMT_GRID_REMARK_LEN160);
+	if (title) F_STRNCPY (title, header.title, ltitle, GMT_GRID_TITLE_LEN80);
+	if (remark) F_STRNCPY (remark, header.remark, lremark, GMT_GRID_REMARK_LEN160);
 
 	if (GMT_Destroy_Session (API) != GMT_NOERROR) return GMT_RUNTIME_ERROR;
 	return GMT_NOERROR;
 }
 
-int GMT_F77_writegrd_ (float *array, unsigned int dim[], double limit[], double inc[], const char *title, const char *remark, const char *name) {
+int gmt_f77_writegrd_ (float *array, unsigned int dim[], double limit[], double inc[], const char *title, const char *remark, const char *name, int ltitle, int lremark, int lname) {
 	/* Note: When called, dim[2] holds the registration (0 = gridline, 1 = pixel).
 	 * Also, if dim[3] == 1 then we transpose the array before writing.  */
  	unsigned int no_pad[4] = {0, 0, 0, 0};
@@ -10505,9 +10557,9 @@ int GMT_F77_writegrd_ (float *array, unsigned int dim[], double limit[], double 
 		return GMT_ARG_IS_NULL;
 	}
 	if ((API = GMT_Create_Session (argv, 0U, 0U, NULL)) == NULL) return GMT_MEMORY_ERROR;
-	file = strdup (name);
+	file = strndup (name, lname);
 
-	memset (&header, 0, sizeof(struct GMT_GRID_HEADER));	/* To convince Coverity that header->index_function has been initialized */
+	gmt_M_memset (&header, 1, struct GMT_GRID_HEADER);	/* To convince Coverity that header->index_function has been initialized */
 	gmt_grd_init (API->GMT, &header, NULL, false);
 	if (full_region (limit)) {	/* Here that means limit was not properly given */
 		GMT_Report (API, GMT_MSG_NORMAL, "Grid domain not specified for %s\n", file);
@@ -10529,8 +10581,8 @@ int GMT_F77_writegrd_ (float *array, unsigned int dim[], double limit[], double 
 	header.n_columns = dim[GMT_X];	header.n_rows = dim[GMT_Y];
 	header.registration = dim[GMT_Z];
 	gmt_set_grddim (API->GMT, &header);
-	if (title) strncpy (header.title, title, GMT_GRID_TITLE_LEN80-1);
-	if (remark) strncpy (header.remark, remark, GMT_GRID_REMARK_LEN160-1);
+	if (title) F_STRNCPY (header.title, title, GMT_GRID_TITLE_LEN80, ltitle);
+	if (remark) F_STRNCPY (header.remark, remark, GMT_GRID_REMARK_LEN160, lremark);
 
 	if (dim[3] == 1) gmtlib_inplace_transpose (array, header.n_rows, header.n_columns);
 
@@ -10547,6 +10599,32 @@ int GMT_F77_writegrd_ (float *array, unsigned int dim[], double limit[], double 
 	if (GMT_Destroy_Session (API) != GMT_NOERROR) return GMT_MEMORY_ERROR;
 	return GMT_NOERROR;
 }
+
+/* wrappers for several Fortran compilers */
+#define F77_ARG1 unsigned int dim[], double limit[], double inc[], char *title, char *remark, const char *name, int ltitle, int lremark, int lname
+#define F77_ARG2 dim, limit, inc, title, remark, name, ltitle, lremark, lname
+int gmt_f77_readgrdinfo__(F77_ARG1) { return gmt_f77_readgrdinfo_ (F77_ARG2); }
+int gmt_f77_readgrdinfo  (F77_ARG1) { return gmt_f77_readgrdinfo_ (F77_ARG2); }
+int GMT_F77_READGRDINFO_ (F77_ARG1) { return gmt_f77_readgrdinfo_ (F77_ARG2); }
+int GMT_F77_READGRDINFO  (F77_ARG1) { return gmt_f77_readgrdinfo_ (F77_ARG2); }
+#undef  F77_ARG1
+#undef  F77_ARG2
+
+#define F77_ARG1 float *array, unsigned int dim[], double limit[], double inc[], char *title, char *remark, const char *name, int ltitle, int lremark, int lname
+#define F77_ARG2 array, dim, limit, inc, title, remark, name, ltitle, lremark, lname
+int gmt_f77_readgrd__ (F77_ARG1) { return gmt_f77_readgrd_ (F77_ARG2); }
+int gmt_f77_readgrd   (F77_ARG1) { return gmt_f77_readgrd_ (F77_ARG2); }
+int GMT_F77_READGRD_  (F77_ARG1) { return gmt_f77_readgrd_ (F77_ARG2); }
+int GMT_F77_READGRD   (F77_ARG1) { return gmt_f77_readgrd_ (F77_ARG2); }
+#undef  F77_ARG1
+
+#define F77_ARG1 float *array, unsigned int dim[], double limit[], double inc[], const char *title, const char *remark, const char *name, int ltitle, int lremark, int lname
+int gmt_f77_writegrd__ (F77_ARG1) { return gmt_f77_writegrd_ (F77_ARG2); }
+int gmt_f77_writegrd   (F77_ARG1) { return gmt_f77_writegrd_ (F77_ARG2); }
+int GMT_F77_WRITEGRD_  (F77_ARG1) { return gmt_f77_writegrd_ (F77_ARG2); }
+int GMT_F77_WRITEGRD   (F77_ARG1) { return gmt_f77_writegrd_ (F77_ARG2); }
+#undef  F77_ARG1
+#undef  F77_ARG2
 
 char *GMT_Duplicate_String (void *API, const char* string) {
 	/* Duplicate a string. The interest of this function is to make the memory allocation
