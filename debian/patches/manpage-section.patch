@@ -5,7 +5,7 @@ Forwarded: not-needed
 
 --- a/doc/rst/conf.py.in
 +++ b/doc/rst/conf.py.in
-@@ -232,143 +232,143 @@ latex_elements = {
+@@ -232,144 +232,144 @@ latex_elements = {
  # One entry per manual page. List of tuples
  # (source start file, name, description, authors, manual section).
  man_pages = [
@@ -104,6 +104,7 @@ Forwarded: not-needed
 -('supplements/meca/pscoupe', 'pscoupe', 'Plot cross-sections of focal mechanisms', '', 1),
 -('supplements/meca/psmeca', 'psmeca', 'Plot focal mechanisms on maps', '', 1),
 -('supplements/meca/pspolar', 'pspolar', 'Plot polarities on the inferior focal half-sphere on maps', '', 1),
+-('supplements/meca/pssac', 'pssac', 'Plot seismograms in SAC format on maps', '', 1),
 -('supplements/meca/psvelo', 'psvelo', 'Plot velocity vectors, crosses, and wedges on maps', '', 1),
 -('supplements/mgd77/mgd77convert', 'mgd77convert', 'Convert MGD77 data to other file formats', '', 1),
 -('supplements/mgd77/mgd77header', 'mgd77header', 'Create MGD77 headers from A77 files', '', 1),
@@ -241,6 +242,7 @@ Forwarded: not-needed
 +('supplements/meca/pscoupe', 'pscoupe', 'Plot cross-sections of focal mechanisms', '', '1gmt'),
 +('supplements/meca/psmeca', 'psmeca', 'Plot focal mechanisms on maps', '', '1gmt'),
 +('supplements/meca/pspolar', 'pspolar', 'Plot polarities on the inferior focal half-sphere on maps', '', '1gmt'),
++('supplements/meca/pssac', 'pssac', 'Plot seismograms in SAC format on maps', '', '1gmt'),
 +('supplements/meca/psvelo', 'psvelo', 'Plot velocity vectors, crosses, and wedges on maps', '', '1gmt'),
 +('supplements/mgd77/mgd77convert', 'mgd77convert', 'Convert MGD77 data to other file formats', '', '1gmt'),
 +('supplements/mgd77/mgd77header', 'mgd77header', 'Create MGD77 headers from A77 files', '', '1gmt'),
