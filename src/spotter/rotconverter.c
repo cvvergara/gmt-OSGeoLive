@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: rotconverter.c 17819 2017-03-30 18:16:09Z pwessel $
+ *	$Id: rotconverter.c 18435 2017-06-22 04:01:50Z pwessel $
  *
  *   Copyright (c) 1999-2017 by P. Wessel
  *
@@ -425,6 +425,10 @@ int GMT_rotconverter (void *V_API, int mode, void *args) {
 		}
 	}
 
+	if (a == NULL) {
+		GMT_Report (API, GMT_MSG_NORMAL, "Error: No rotation resulting from operation\n");
+		Return (GMT_RUNTIME_ERROR);
+	}
 	n_out = 3 + ((Ctrl->F.mode) ? 1 - no_time : 2);
 	if (online_rot && n_out > 3) n_out--;
 	if (a[0].has_cov) n_out += 9;

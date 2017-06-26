@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdhisteq.c 18174 2017-05-07 05:33:44Z pwessel $
+ *	$Id: grdhisteq.c 18212 2017-05-09 23:16:30Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -299,9 +299,9 @@ GMT_LOCAL int do_hist_equalization_geo (struct GMT_CTRL *GMT, struct GMT_GRID *G
 	qsort (pair, nxy, sizeof (struct GMT_OBSERVATION), gmtlib_compare_observation);
 	/* Compute normalized cumulative weights */
 	wsum = 1.0 / wsum;	/* Do avoid division later */
-	pair[0].weight *= wsum;
+	pair[0].weight *= (float)wsum;
 	for (i = 1; i < nxy; i++) {
-		pair[i].weight *= wsum;
+		pair[i].weight *= (float)wsum;
 		pair[i].weight += pair[i-1].weight;
 	}
 	

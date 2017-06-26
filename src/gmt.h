@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt.h 17854 2017-04-03 19:44:56Z pwessel $
+ *	$Id: gmt.h 18391 2017-06-17 21:24:36Z pwessel $
  *
  *	Copyright (c) 1991-2017
  *	P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
@@ -142,7 +142,7 @@ EXTERN_MSC int    GMT_Destroy_Args                  (void *API, int argc, char *
 EXTERN_MSC int    GMT_Destroy_Cmd                   (void *API, char **cmd);
 EXTERN_MSC int    GMT_Update_Option                 (void *API, struct GMT_OPTION *current, const char *arg);
 EXTERN_MSC int    GMT_Free_Option                   (void *API, struct GMT_OPTION **current);
-EXTERN_MSC int    GMT_Delete_Option                 (void *API, struct GMT_OPTION *current);
+EXTERN_MSC int    GMT_Delete_Option                 (void *API, struct GMT_OPTION *current, struct GMT_OPTION **head);
 EXTERN_MSC int    GMT_Parse_Common                  (void *API, const char *given_options, struct GMT_OPTION *options);
 EXTERN_MSC char  *GMT_Duplicate_String              (void *API, const char* string);
 
@@ -159,9 +159,9 @@ EXTERN_MSC int          GMT_FFT_2D         (void *API, float *data, unsigned int
 
 /* 3 F77 basic grid i/o functions.  These give basic Fortran programs the ability to read and write any GMT-accessible grid */
 
-EXTERN_MSC int GMT_F77_readgrdinfo_ (unsigned int dim[], double wesn[], double inc[], char *title, char *remark, const char *file);
-EXTERN_MSC int GMT_F77_readgrd_	    (float *array, unsigned int dim[], double wesn[], double inc[], char *title, char *remark, const char *file);
-EXTERN_MSC int GMT_F77_writegrd_    (float *array, unsigned int dim[], double wesn[], double inc[], const char *title, const char *remark, const char *file);
+EXTERN_MSC int gmt_f77_readgrdinfo_ (unsigned int dim[], double wesn[], double inc[], char *title, char *remark, const char *file, int ltitle, int lremark, int lfile);
+EXTERN_MSC int gmt_f77_readgrd_	    (float *array, unsigned int dim[], double wesn[], double inc[], char *title, char *remark, const char *file, int ltitle, int lremark, int lfile);
+EXTERN_MSC int gmt_f77_writegrd_    (float *array, unsigned int dim[], double wesn[], double inc[], const char *title, const char *remark, const char *file, int ltitle, int lremark, int lfile);
 
 /* 2 for external API developers only */
 EXTERN_MSC struct GMT_RESOURCE *GMT_Encode_Options (void *API, const char *module, int n_in, struct GMT_OPTION **head, unsigned int *n);

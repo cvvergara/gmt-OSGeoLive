@@ -115,10 +115,12 @@ Tutorial setup
    consult the GMT Technical Reference and Cookbook for more
    detailed explanations.
 
-#. The tutorial uses some subsets of global gridded data
-   sets.  For your convenience these subsets are provided in
-   the tutorial directory.  If you install the global data sets
-   then you can extract your own subsets with the :doc:`grdcut` module.
+#. The tutorial data sets are distributed via the GMT cache server.
+   You will therefore find that all those files have @ prepended to
+   their names.  This will ensure the file is copied from the server
+   before being used, hence you do not need to download any of the
+   data manually.  The downside is that you need an Internet
+   connection to run the examples by cut and paste.
 
 #. For all but the simplest GMT jobs it is recommended that
    you place all the GMT (and UNIX) commands in a shell script
@@ -270,7 +272,7 @@ to another module.  This is achieved with *pipes*:
 
    ::
 
-    Someprogram | gmt module1 | gmt module1 > OutputFile (or | lp) 
+    Someprogram | gmt module1 | gmt module1 > OutputFile (or | lp)
 
 Standard error (*stderr*)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -290,7 +292,7 @@ separate files we use the following syntax:
 
    ::
 
-    gmt module > output.d 2> errors.log
+    gmt module > output.txt 2> errors.log
 
 File name expansion or "wild cards"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -316,11 +318,11 @@ files using the UNIX wild card notation.
 
 Examples:
 
-#. gmt module data\_*.d operates on all files starting with
-   "data\_" and ending in ".d".
+#. gmt module data\_*.txt operates on all files starting with
+   "data\_" and ending in ".txt".
 
-#. gmt module line\_?.d works on all files starting with
-   "line\_" followed by any single character and ending in ".d".
+#. gmt module line\_?.txt works on all files starting with
+   "line\_" followed by any single character and ending in ".txt".
 
 #. gmt module section\_1[0-9]0.part\_[12] only processes data
    from sections 100 through 190, only using every 10th profile, and
@@ -379,9 +381,9 @@ no data set yet but we will
 imagine that the raw *x* data range from 3 to 9613 and that *y*
 ranges from 3.2 10^20 to 6.8 10^24.  One possibility is
 
-   :: 
+   ::
 
-    gmt psbasemap -R1/10000/1e20/1e25 -JX9il/6il -Bxa2+l"Wavelength (m)" -Bya1pf3+l"Power (W)" -BWS > GMT_tut_2.ps 
+    gmt psbasemap -R1/10000/1e20/1e25 -JX9il/6il -Bxa2+l"Wavelength (m)" -Bya1pf3+l"Power (W)" -BWS > GMT_tut_2.ps
 
 Make sure your plot looks like :ref:`our example 2 below <gmt_tut_2>`
 
@@ -445,7 +447,7 @@ example is from Latin America:
 
    ::
 
-    gmt pscoast -R-90/-70/0/20 -JM6i -P -Ba -Gchocolate > GMT_tut_3.ps 
+    gmt pscoast -R-90/-70/0/20 -JM6i -P -Ba -Gchocolate > GMT_tut_3.ps
 
 Your plot should look like :ref:`our example 3 below <gmt_tut_3>`
 
@@ -590,7 +592,7 @@ GMT map projections as well as how to select a data domain
 and boundary annotations.
 
   +-------------+----------------------------------------------------------------------+
-  | Program     |   Purpose                                                            | 
+  | Program     |   Purpose                                                            |
   +=============+======================================================================+
   |             |   **BASEMAPS**                                                       |
   +-------------+----------------------------------------------------------------------+
@@ -646,27 +648,27 @@ used modules in GMT.  In addition to the common command line switches
 it has numerous specific options, and expects different file formats
 depending on what action has been selected.  These circumstances make
 :doc:`psxy` harder to master than most GMT tools.  The table below
-shows a complete list of the options:
+shows a abbreviated list of the options:
 
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | Option                                                      | Purpose                                                           | 
-  +=============================================================+===================================================================+
-  | **-A**                                                      | Suppress line interpolation along great circles                   |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | **-C**\ *cpt*                                               | Let symbol color be determined from *z*-values and the *cpt* file |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | **-E**\ [**x**\ \|\ **X**][**y**\ \|\ **Y**][*cap*][/*pen*] | Draw selected error bars with specified attributes                |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | **-G**\ *fill*                                              | Set color for symbol or fill for polygons                         |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | **-L**\ [*options*]                                         | Explicitly close polygons or create polygon (see :doc:`psxy`)     |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | **-N**\ [**c**\ \|\ **r**]                                  | Do Not clip symbols at map borders                                |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | **-S**\ [*symbol*][*size*]                                  | Select one of several symbols                                     |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
-  | **-W**\ *pen*                                               | Set *pen* for line or symbol outline                              |
-  +-------------------------------------------------------------+-------------------------------------------------------------------+
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | Option                                                                     | Purpose                                                           |
+  +============================================================================+===================================================================+
+  | **-A**                                                                     | Suppress line interpolation along great circles                   |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-C**\ *cpt*                                                              | Let symbol color be determined from *z*-values and the *cpt* file |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-E**\ [**x**\ \|\ **X**][**y**\ \|\ **Y**][**+w**\ *cap*][**+p**\ *pen*] | Draw selected error bars with specified attributes                |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-G**\ *fill*                                                             | Set color for symbol or fill for polygons                         |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-L**\ [*options*]                                                        | Explicitly close polygons or create polygon (see :doc:`psxy`)     |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-N**\ [**c**\ \|\ **r**]                                                 | Do Not clip symbols at map borders                                |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-S**\ [*symbol*][*size*]                                                 | Select one of several symbols                                     |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-W**\ *pen*                                                              | Set *pen* for line or symbol outline                              |
+  +----------------------------------------------------------------------------+-------------------------------------------------------------------+
 
 The symbols can either be transparent (using **-W** only, not **-G**)
 or solid (**-G**, with optional outline using **-W**).  The **-S**
@@ -677,7 +679,7 @@ symbols may also be provided by the input data.  The main symbols available to
 us are shown in the table below:
 
 +-----------------------------------+-------------------------------------------------------------------------------------------+
-| Option                            | Symbol                                                                                    | 
+| Option                            | Symbol                                                                                    |
 +===================================+===========================================================================================+
 | **-S-**\ *size*                   | horizontal dash; *size* is length of dash                                                 |
 +-----------------------------------+-------------------------------------------------------------------------------------------+
@@ -691,7 +693,7 @@ us are shown in the table below:
 +-----------------------------------+-------------------------------------------------------------------------------------------+
 | **-Sd**\ *size*                   | **d**\ iamond; *size* is its side                                                         |
 +-----------------------------------+-------------------------------------------------------------------------------------------+
-| **-Se**                           | **e**\ llipse; *direction* (CCW from horizontal), *major*, and *minor* axes               |    
+| **-Se**                           | **e**\ llipse; *direction* (CCW from horizontal), *major*, and *minor* axes               |
 +-----------------------------------+-------------------------------------------------------------------------------------------+
 |                                   | are read from the input file                                                              |
 +-----------------------------------+-------------------------------------------------------------------------------------------+
@@ -707,7 +709,7 @@ us are shown in the table below:
 +-----------------------------------+-------------------------------------------------------------------------------------------+
 | **-Sk**\ *symbol*/*size*          | **k**\ ustom symbol; *size* is its side                                                   |
 +-----------------------------------+-------------------------------------------------------------------------------------------+
-| **-Sl**\ *size*/*string*\         | **l**\ etter; *size* is fontsize.   *string* can be a letter or a text string             |
+| **-Sl**\ *size*\ **+t**\ *string* | **l**\ etter; *size* is fontsize. The *string* can be a letter or a text string           |
 +-----------------------------------+-------------------------------------------------------------------------------------------+
 |                                   | Append **+f**\ *font* to set font and **+j**\ *just* for justification                    |
 +-----------------------------------+-------------------------------------------------------------------------------------------+
@@ -788,21 +790,21 @@ with the examples below.
 
 Examples:
 
-We will start off using the file data in your directory.
+We will start off using the file tut_data.txt in your directory.
 Using the GMT utility :doc:`gmtinfo` we find the extent of the
 data region:
 
    ::
 
-    gmt info data
+    gmt info @tut_data.txt
 
 which returns
 
    ::
 
-    data: N = 7   <1/5>   <1/5>
+    tut_data.txt: N = 7   <1/5>   <1/5>
 
-telling us that the file data has 7 records and gives the
+telling us that the file tut_data.txt has 7 records and gives the
 minimum and maximum values for the first two columns.  Given our
 knowledge of how to set up linear projections with **-R** and **-JX**,
 try the following:
@@ -818,7 +820,7 @@ To simply plot the data as a line we choose no symbol and specify a pen thicknes
 
    ::
 
-    gmt psxy data -R0/6/0/6 -Jx1i -P -Baf -Wthinner > GMT_tut_7.ps
+    gmt psxy @tut_data.txt -R0/6/0/6 -Jx1i -P -Baf -Wthinner > GMT_tut_7.ps
 
 Your plot should look like :ref:`our example 7 below <gmt_tut_7>`
 
@@ -845,10 +847,10 @@ Symbols, on the other hand, can be plotted one at the time so there
 is no limit to how many symbols one may plot.  Therefore, to connect
 symbols with a line we must use the overlay approach:
 
-   :: 
+   ::
 
-    gmt psxy data -R0/6/0/6 -Jx1i -Baf -P -K -Wthinner > GMT_tut_8.ps
-    gmt psxy data -R -J -O -W -Si0.2i >> GMT_tut_8.ps
+    gmt psxy @tut_data.txt -R0/6/0/6 -Jx1i -Baf -P -K -Wthinner > GMT_tut_8.ps
+    gmt psxy tut_data.txt -R -J -O -W -Si0.2i >> GMT_tut_8.ps
 
 Your plot should look like :ref:`our example 8 below <gmt_tut_8>`. The
 two-step procedure also makes it easy to plot the line over the symbols
@@ -866,10 +868,8 @@ Our final :doc:`psxy` example involves a more complicated scenario
 in which we want to plot the epicenters of several earthquakes over
 the background of a coastline basemap.  We want the symbols to have a
 size that reflects the magnitude of the earthquakes, and that their
-color should reflect the depth of the hypocenter.  You will find the
-two files quakes.ngdc and quakes.cpt in your
-directory.  The first few lines in the quakes.ngdc looks
-like this:
+color should reflect the depth of the hypocenter.  The first few
+lines in the tut_quakes.ngdc looks like this:
 
    ::
 
@@ -915,13 +915,15 @@ governs the color of a symbol whose *z* value falls in the range between
 then an intermediate color will be linearly interpolated given the *z*
 value.  Here, we have chosen constant color intervals.  You may wish
 to consult the :ref:`Color palette tables <CPT_section>` section in the Cookbook.
+This color table was generated as part of the script (below).
 
 We may now complete our example using the Mercator projection:
 
-   :: 
+   ::
 
+    gmt makecpt -Cred,green,blue -T0,70,300,10000 > quakes.cpt
     gmt pscoast -R130/150/35/50 -JM6i -B5 -P -Ggray -K > GMT_tut_9.ps
-    gmt psxy -R -J -O quakes.ngdc -Wfaint -i4,3,5,6s0.1 -h3 -Scc -Cquakes.cpt >> GMT_tut_9.ps
+    gmt psxy -R -J -O @tut_quakes.ngdc -Wfaint -i4,3,5,6s0.1 -h3 -Scc -Cquakes.cpt >> GMT_tut_9.ps
 
 where the **c** appended to the **-Sc** option ensures that symbols
 sizes are interpreted to be in cm.  Your plot should look like :ref:`our example 9 below <gmt_tut_9>`
@@ -950,7 +952,7 @@ in GMT this is done using :doc:`pstext`.  Apart from the common
 switches, there are 9 options that are particularly useful.
 
   +-------------------+----------------------------------------------------+
-  | Option            | Purpose                                            | 
+  | Option            | Purpose                                            |
   +===================+====================================================+
   | **-C**\ *dx*/*dy* | Spacing between text and the text box (see **-W**) |
   +-------------------+----------------------------------------------------+
@@ -992,25 +994,25 @@ fonts. The escape sequences that are recognized by GMT are given below:
   +----------------+--------------------------------------------------------------+
   | Code           |  Effect                                                      |
   +================+==============================================================+
-  | @\~	           | Turns symbol font on or off                                  | 
+  | @\~	           | Turns symbol font on or off                                  |
   +----------------+--------------------------------------------------------------+
-  | @+	           | Turns superscript on or off                                  | 
+  | @+	           | Turns superscript on or off                                  |
   +----------------+--------------------------------------------------------------+
-  | @-	           | Turns subscript on or off                                    | 
+  | @-	           | Turns subscript on or off                                    |
   +----------------+--------------------------------------------------------------+
-  | @\#	           | Turns small caps on or off                                   | 
+  | @\#	           | Turns small caps on or off                                   |
   +----------------+--------------------------------------------------------------+
-  | @\_	           | Turns underline on or off                                    | 
+  | @\_	           | Turns underline on or off                                    |
   +----------------+--------------------------------------------------------------+
-  | @\%\ *font*\ % | Switches to another font; @\%\% resets to previous font      | 
+  | @\%\ *font*\ % | Switches to another font; @\%\% resets to previous font      |
   +----------------+--------------------------------------------------------------+
-  | @:\ *size*:	   | Switches to another font size; @:: resets to previous size   | 
+  | @:\ *size*:	   | Switches to another font size; @:: resets to previous size   |
   +----------------+--------------------------------------------------------------+
   | @;\ *color*;   | Switches to another font color; @;; resets to previous color |
   +----------------+--------------------------------------------------------------+
-  | @!	           | Creates one composite character of the next two characters   | 
+  | @!	           | Creates one composite character of the next two characters   |
   +----------------+--------------------------------------------------------------+
-  | @@	           | Prints the @ sign itself                                     | 
+  | @@	           | Prints the @ sign itself                                     |
   +----------------+--------------------------------------------------------------+
 
 Note that these escape sequences (as well as octal codes) can be
@@ -1021,7 +1023,7 @@ set :ref:`PS_CHAR_ENCODING <PS_CHAR_ENCODING>` to ISOLatin1 in your :doc:`gmt.co
 
 We will demonstrate :doc:`pstext` with the following script:
 
-   :: 
+   ::
 
     gmt pstext -R0/7/0/5 -Jx1i -P -Ba -F+f30p,Times-Roman,DarkOrange+jBL << EOF > GMT_tut_10.ps
     1  1  It's P@al, not Pal!
@@ -1078,14 +1080,14 @@ Contouring gridded data sets
 
 GMT comes with several utilities that can create gridded data
 sets; we will discuss two such modules later this session.  First,
-we will assume that we already have gridded data sets.  
+we will assume that we already have gridded data sets.
 Among these data are ETOPO5, crustal ages, gravity and geoid,
 and DEM for the continental US.  Here, we will use :doc:`grdcut`
 to extract a GMT-ready grid that we will next use for contouring:
 
    ::
 
-    gmt grdcut etopo5m.nc -R-66/-60/30/35 -Gbermuda.nc -V
+    gmt grdcut earth_relief_05m.grd -R-66/-60/30/35 -Gtut_bathy.nc -V
 
 Here we use the file extension .nc instead of the generic .grd
 to indicate that this is a netCDF file. It is good form, but not essential,
@@ -1094,14 +1096,14 @@ other programs installed on your system to recognize these files and might
 give it an identifiable icon in your file browser.
 Learn about other programs that read netCDF files at the
 netCDF website (http://www.unidata.ucar.edu/software/netcdf/)
-You can find bermuda.nc also in the *tutorial* directory of your GMT
-installation.  Feel free to open it in any other program and compare results with GMT.
+You can also obtain tut_bathy.nc from the GMT cache server as we are doing below.
+Feel free to open it in any other program and compare results with GMT.
 
 We first use the GMT module :doc:`grdinfo` to see what's in this file:
 
-   :: 
+   ::
 
-    gmt grdinfo bermuda.nc
+    gmt grdinfo @tut_bathy.nc
 
 The file contains bathymetry for the Bermuda region and has depth
 values from -5475 to -89 meters.  We want to make a contour map of
@@ -1116,7 +1118,7 @@ spin on this situation by touting its flexibility.  Here are the most
 useful options:
 
   +----------------------------------------------------------------------+----------------------------------------------------------------------+
-  | Option                                                               |  Purpose                                                             | 
+  | Option                                                               |  Purpose                                                             |
   +======================================================================+======================================================================+
   | **-A**\ *annot\_int*                                                 | Annotation interval and attributes                                   |
   +----------------------------------------------------------------------+----------------------------------------------------------------------+
@@ -1138,7 +1140,7 @@ useful options:
   +----------------------------------------------------------------------+----------------------------------------------------------------------+
   | **-W**\ [**a**\ \|\ **c**\ ]\ *pen*                                  | Set contour and annotation pens                                      |
   +----------------------------------------------------------------------+----------------------------------------------------------------------+
-  | **-Z**\ *factor*\ [*offset*]                                         | Subtract *offset* and multiply data by *factor* prior to processing  |
+  | **-Z**\ [**+s** \*factor*\ ][**+o**\ *offset*]                       | Subtract *offset* and multiply data by *factor* prior to processing  |
   +----------------------------------------------------------------------+----------------------------------------------------------------------+
 
 We will first make a plain contour map using 1 km as annotation
@@ -1147,7 +1149,7 @@ Mercator plot and annotate the borders every 2º:
 
    ::
 
-    gmt grdcontour bermuda.nc -JM7i -C250 -A1000 -P -Ba > GMT_tut_11.ps
+    gmt grdcontour @tut_bathy.nc -JM7i -C250 -A1000 -P -Ba > GMT_tut_11.ps
 
 Your plot should look like :ref:`our example 11 below <gmt_tut_11>`
 
@@ -1220,7 +1222,7 @@ The GMT module :doc:`nearneighbor` implements a simple
 "nearest neighbor" averaging operation.  It is the preferred
 way to grid data when the data density is high.  :doc:`nearneighbor`
 is a local procedure which means it will only consider the control
-data that is close to the desired output grid node.  
+data that is close to the desired output grid node.
 Only data points inside a specified search radius will
 be used, and we may also impose the condition that each of the *n*
 sectors must have at least one data point in order to assign the nodal
@@ -1241,20 +1243,20 @@ The most important switches are listed below.
   | **-W**                    | Read relative weights from the 4th column of input data                          |
   +---------------------------+----------------------------------------------------------------------------------+
 
-We will grid the data in the file ship.xyz which contains
+We will grid the data in the file tut_ship.xyz which contains
 ship observations of bathymetry off Baja California.  You can find the
 file in the sub-directory for example 15.
 We desire to make a 5' by 5' grid.  Running gmt info on the file yields
 
    ::
 
-    ship.xyz: N = 82970     <245/254.705>   <20/29.99131>   <-7708/-9>
+    tut_ship.xyz: N = 82970     <245/254.705>   <20/29.99131>   <-7708/-9>
 
 so we choose the region accordingly, and get a view of the contour map using
 
    ::
 
-    gmt nearneighbor -R245/255/20/30 -I5m -S40k -Gship.nc -V ship.xyz
+    gmt nearneighbor -R245/255/20/30 -I5m -S40k -Gship.nc -V @tut_ship.xyz
     gmt grdcontour ship.nc -JM6i -P -Ba -C250 -A1000 > GMT_tut_12.ps
 
 
@@ -1301,7 +1303,7 @@ and we do not have the time to explain it all here, please see
 switches for this module are indicated below.
 
   +-------------------+-----------------------------------------------------------+
-  | Option            | Purpose                                                   | 
+  | Option            | Purpose                                                   |
   +===================+===========================================================+
   | **-A**\ *aspect*  | Sets aspect ratio for anisotropic grids.                  |
   +-------------------+-----------------------------------------------------------+
@@ -1326,7 +1328,7 @@ to the required **-R** and **-I** switches, these preprocessors
 all take the same options shown below:
 
   +----------------------------+--------------------------------------------------------------------+
-  | Option                     | Purpose                                                            | 
+  | Option                     | Purpose                                                            |
   +============================+====================================================================+
   | **-r**                     | Choose pixel node registration [Default is gridline]               |
   +----------------------------+--------------------------------------------------------------------+
@@ -1337,7 +1339,7 @@ With respect to our ship data we preprocess it using the median method:
 
    ::
 
-    gmt blockmedian -R245/255/20/30 -I5m -V ship.xyz > ship_5m.xyz
+    gmt blockmedian -R245/255/20/30 -I5m -V @tut_ship.xyz > ship_5m.xyz
 
 The output data can now be used with surface:
 
@@ -1425,7 +1427,7 @@ shown if you run the module with no arguments) and the equidistant
 *z*-values to go with it.  The main options are given below.
 
   +---------+----------------------------------------------+
-  | Option  | Purpose                                      | 
+  | Option  | Purpose                                      |
   +=========+==============================================+
   | **-C**  | Set the name of the master CPT to use        |
   +---------+----------------------------------------------+
@@ -1454,7 +1456,7 @@ and unit label (and optionally to set the annotation-, tick-,
 and grid-line intervals for the color bars.)
 
   +--------------------------------------------------------+------------------------------------------------+
-  | Option                                                 | Purpose                                        | 
+  | Option                                                 | Purpose                                        |
   +========================================================+================================================+
   | **-C**\ *cpt*                                          | The required CPT                               |
   +--------------------------------------------------------+------------------------------------------------+
@@ -1543,14 +1545,12 @@ Color images
 
 Once a CPT has been made it is relatively straightforward to generate
 a color image of a gridded data.  Here, we will extract a subset of the
-global 30" DEM (data id 9) from USGS:
+global 30" DEM called SRTM30+:
 
    ::
 
-    gmt grdcut globe30s.nc -R-108/-103/35/40 -Gus.nc
+    gmt grdcut earth_relief_30s.grd -R-108/-103/35/40 -Gtut_relief.nc
 
-You can find the grid us.nc also in the *tutorial* directory
-of your GMT installation.
 Using :doc:`grdinfo` we find that the data ranges from about 1000m to
 about 4300m so we make a CPT accordingly:
 
@@ -1563,7 +1563,7 @@ common command options (by default the **-R** is taken from the data set)
 and a CPT; the main other options are:
 
   +---------------------+-----------------------------------------------------------------------+
-  | Option              | Purpose                                                               | 
+  | Option              | Purpose                                                               |
   +=====================+=======================================================================+
   | **-E**\ *dpi*       | Sets the desired resolution of the image [Default is data resolution] |
   +---------------------+-----------------------------------------------------------------------+
@@ -1577,8 +1577,8 @@ the plot.  We try
 
    ::
 
-    gmt grdimage us.nc -JM6i -P -Ba -Ctopo.cpt -V -K > GMT_tut_15.ps
-    gmt psscale -DjTC+w5i/0.25i+h+o0/-1i -Rus.nc -J -Ctopo.cpt -I0.4 -By+lm -O >> GMT_tut_15.ps
+    gmt grdimage @tut_relief.nc -JM6i -P -Ba -Ctopo.cpt -V -K > GMT_tut_15.ps
+    gmt psscale -DjTC+w5i/0.25i+h+o0/-1i -Rtut_relief.nc -J -Ctopo.cpt -I0.4 -By+lm -O >> GMT_tut_15.ps
 
 Your plot should look like :ref:`our example 15 below <gmt_tut_15>`
 
@@ -1597,19 +1597,19 @@ hence we derive the required intensities from the gradients of the
 topography in the N90ºE direction using :doc:`grdgradient`.  Other than the
 required input and output filenames, the available options are
 
-  +-------------------------------------------------+-------------------------------------------------------------------+
-  | Option                                          | Purpose                                                           | 
-  +=================================================+===================================================================+
-  | **-A**\ *azimuth*                               | Azimuthal direction for gradients                                 |
-  +-------------------------------------------------+-------------------------------------------------------------------+
-  | **-fg**                                         | Indicates that this is a geographic grid                          |
-  +-------------------------------------------------+-------------------------------------------------------------------+
-  | **-N**\ [**t**\ \|\ **e**][*norm*\ [/*offset*]] | Normalize gradients by *norm/offset* [= 1/0 by default].          |
-  +-------------------------------------------------+-------------------------------------------------------------------+
-  |                                                 | Insert **t** to normalize by the inverse tangent transformation.  |
-  +-------------------------------------------------+-------------------------------------------------------------------+
-  |                                                 | Insert **e** to normalize by the cumulative Laplace distribution. |
-  +-------------------------------------------------+-------------------------------------------------------------------+
+  +------------------------------------------------------------------+-------------------------------------------------------------------+
+  | Option                                                           | Purpose                                                           |
+  +==================================================================+===================================================================+
+  | **-A**\ *azimuth*                                                | Azimuthal direction for gradients                                 |
+  +------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-fg**                                                          | Indicates that this is a geographic grid                          |
+  +------------------------------------------------------------------+-------------------------------------------------------------------+
+  | **-N**\ [**t**\ \|\ **e**][**+s**\ *norm*\ ][**+o**\ *offset*\ ] | Normalize gradients by *norm/offset* [= 1/0 by default].          |
+  +------------------------------------------------------------------+-------------------------------------------------------------------+
+  |                                                                  | Insert **t** to normalize by the inverse tangent transformation.  |
+  +------------------------------------------------------------------+-------------------------------------------------------------------+
+  |                                                                  | Insert **e** to normalize by the cumulative Laplace distribution. |
+  +------------------------------------------------------------------+-------------------------------------------------------------------+
 
 The :ref:`GMT inverse tangent transformation <gmt_atan>`  shows that raw slopes from bathymetry tend to be
 far from normally distributed (left).  By using the inverse tangent
@@ -1636,15 +1636,15 @@ we prefer to use the **-Ne** option; the value of
 
     ::
 
-     gmt grdgradient us.nc -Ne0.8 -A100 -fg -Gus_i.nc
+     gmt grdgradient @tut_relief.nc -Ne0.8 -A100 -fg -Gus_i.nc
 
 Given the CPT and the two gridded data sets we can
 create the shaded relief image:
 
    ::
 
-    gmt grdimage us.nc -Ius_i.nc -JM6i -P -Ba -Ctopo.cpt -K > GMT_tut_16.ps
-    gmt psscale -DjTC+w5i/0.25i+h+o0/-1i -Rus.nc -J -Ctopo.cpt -I0.4 -By+lm -O >> GMT_tut_16.ps
+    gmt grdimage @tut_relief.nc -Ius_i.nc -JM6i -P -Ba -Ctopo.cpt -K > GMT_tut_16.ps
+    gmt psscale -DjTC+w5i/0.25i+h+o0/-1i -Rtut_relief.nc -J -Ctopo.cpt -I0.4 -By+lm -O >> GMT_tut_16.ps
 
 Your plot should look like :ref:`our example 16 below <gmt_tut_16>`
 
@@ -1673,7 +1673,7 @@ slices (spanning latitude and longitude) of such grids without much effort.
 
 As an example we will download the Seasonal Analysed Mean Temperature from the
 World Ocean Atlas 1998 (http://www.cdc.noaa.gov/cdc/data.nodc.woa98.html).
-The file in question is named 
+The file in question is named
 otemp.anal1deg.nc (ftp://ftp.cdc.noaa.gov/Datasets/nodc.woa98/temperat/seasonal/otemp.anal1deg.nc).
 
 You can look at the information pertained in this file using the program ncdump and
@@ -1697,7 +1697,7 @@ use:
 
    ::
 
-    gmt grdimage -Rg -JW180/9i "otemp.anal1deg.nc?otemp[2,0]" -Cotemp.cpt -Bag > GMT_tut_17.ps
+    gmt grdimage -Rg -JW180/9i "@otemp.anal1deg.nc?otemp[2,0]" -Cotemp.cpt -Bag > GMT_tut_17.ps
 
 The addition "?otemp[2,0]" indicates which variable to retrieve from the netCDF
 file (otemp) and that we need the third time step and first level. The numbering of the
@@ -1748,7 +1748,7 @@ Regardless of plot type, some arguments must be specified; these are
 In addition, some options may be required:
 
   +-------------------------+-------------------------------------------------------------------------------------------------------------+
-  | Option                  | Purpose                                                                                                     | 
+  | Option                  | Purpose                                                                                                     |
   +=========================+=============================================================================================================+
   | **-C**\ *cpt*           | The *cpt* is required for color-coded surfaces and for contoured mesh plots                                 |
   +-------------------------+-------------------------------------------------------------------------------------------------------------+
@@ -1758,7 +1758,7 @@ In addition, some options may be required:
   +-------------------------+-------------------------------------------------------------------------------------------------------------+
   | **-Qm**                 | Selects mesh plot                                                                                           |
   +-------------------------+-------------------------------------------------------------------------------------------------------------+
-  | **-Qs**\ [**m**]        | Surface plot using polygons; append **m** to show mesh.  This option allows for **-W**                      |
+  | **-Qs**\ [**+m**]       | Surface plot using polygons; append **+m** to show mesh.  This option allows for **-W**                     |
   +-------------------------+-------------------------------------------------------------------------------------------------------------+
   | **-Qi**\ *dpi*\ [**g**] | Image by scan-line conversion.  Specify *dpi*; append **g** to force gray-shade image.  **-B** is disabled. |
   +-------------------------+-------------------------------------------------------------------------------------------------------------+
@@ -1774,13 +1774,13 @@ CPT:
 
    ::
 
-    gmt grd2cpt bermuda.nc -Cocean > bermuda.cpt
+    gmt grd2cpt @tut_bathy.nc -Cocean > bermuda.cpt
 
 A simple mesh plot can therefore be obtained with
 
    ::
 
-    gmt grdview bermuda.nc -JM5i -P -JZ2i -p135/30 -Ba -Cbermuda.cpt > GMT_tut_18.ps
+    gmt grdview @tut_bathy.nc -JM5i -P -JZ2i -p135/30 -Ba -Cbermuda.cpt > GMT_tut_18.ps
 
 Your plot should look like :ref:`our example 18 below <gmt_tut_18>`
 
@@ -1804,7 +1804,7 @@ from the southeast.  This is done using
 
    ::
 
-    gmt grdview us.nc -JM6i -p135/35 -Qi50 -Ius_i.nc -Ctopo.cpt -V -Ba -JZ0.5i > GMT_tut_19.ps
+    gmt grdview @tut_relief.nc -JM6i -p135/35 -Qi50 -Ius_i.nc -Ctopo.cpt -V -Ba -JZ0.5i > GMT_tut_19.ps
 
 
 Your plot should look like :ref:`our example 19 below <gmt_tut_19>`
@@ -1826,6 +1826,6 @@ Exercises:
 
 #. Choose another vantage point and scaling.
 
-#. Redo :doc:`grdgradient` with another illumination direction and replot.
+#. Redo :doc:`grdgradient` with another illumination direction and plot again.
 
 #. Select a higher *dpi*, e.g., 200.

@@ -1,7 +1,7 @@
 #!/bin/bash
-#	$Id: GMT_tut_13.sh 15178 2015-11-06 10:45:03Z fwobbe $
+#	$Id: GMT_tut_13.sh 18314 2017-06-03 03:26:22Z pwessel $
 #
-gmt blockmedian -R245/255/20/30 -I5m -V "${tut:-../tutorial}"/ship.xyz > ship_5m.xyz
+gmt blockmedian -R245/255/20/30 -I5m -V @tut_ship.xyz > ship_5m.xyz
 gmt surface ship_5m.xyz -R245/255/20/30 -I5m -Gship.nc
 gmt psmask -R245/255/20/30 -I5m ship_5m.xyz -JM6i -Ba -P -K > GMT_tut_13.ps
 gmt grdcontour ship.nc -J -O -K -C250 -A1000 >> GMT_tut_13.ps

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_vector.c 17622 2017-03-06 00:07:57Z pwessel $
+ *	$Id: gmt_vector.c 18396 2017-06-19 21:05:48Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -1412,8 +1412,7 @@ uint64_t gmt_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 			boost = 1.0;
 
 		if (mode == GMT_STAIRS_Y) {	/* First follow meridian, then parallel */
-			dlon = lon[i]-lon[i-1];	/* Beware of jumps due to sign differences */
-			if (fabs (dlon) > 180.0) dlon += copysign (360.0, -dlon);	/* Never more than 180 to next point */
+			gmt_M_set_delta_lon (lon[i-1], lon[i], dlon);	/* Beware of jumps due to sign differences */
 			lon_i = lon[i-1] + dlon;	/* Use lon_i instead of lon[i] in the marching since this avoids any jumping */
 			theta = fabs (dlon) * cosd (lat[i-1]);
 			n_step = lrint (theta / step);
@@ -1446,8 +1445,7 @@ uint64_t gmt_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i-1] * (1 - c) + lat[i] * c;
 				n_new++;
 			}
-			dlon = lon[i]-lon[i-1];	/* Beware of jumps due to sign differences */
-			if (fabs (dlon) > 180.0) dlon += copysign (360.0, -dlon);	/* Never more than  180 to next point */
+			gmt_M_set_delta_lon (lon[i-1], lon[i], dlon);	/* Beware of jumps due to sign differences */
 			lon_i = lon[i-1] + dlon;	/* Use lon_i instead of lon[i] in the marching since this avoids any jumping */
 			theta = fabs (dlon) * cosd(lat[i]);
 			n_step = lrint (theta / step);
@@ -1465,7 +1463,7 @@ uint64_t gmt_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 		else if ((theta = d_acosd (gmt_dot3v (GMT, a, b))) == 180.0) {	/* trouble, no unique great circle */
 			if (gmt_M_is_spherical (GMT) || ((lat[i] + lat[i-1]) == 0.0)) {
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Two points in input list are antipodal - great circle resampling is not unique!\n");
-				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Fix input data or use project -A to generate athe desired great circle by providing an azimuth.\n");
+				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Fix input data or use project -A to generate the desired great circle by providing an azimuth.\n");
 			}
 			else {
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Two points in input list are antipodal - great circle resampling is not unique!\n");

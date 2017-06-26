@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
-*	$Id: mapproject.c 18134 2017-05-05 08:34:43Z pwessel $
+*	$Id: mapproject.c 18404 2017-06-20 18:10:00Z pwessel $
 *
 *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
 *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -898,7 +898,7 @@ int GMT_mapproject (void *V_API, int mode, void *args) {
 			Return (API->error);
 		}
 
-		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -L files */
+		gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -L files */
 		if ((Lin = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_LINE, GMT_READ_NORMAL, NULL, Ctrl->L.file, NULL)) == NULL) {
 			Return (API->error);
 		}
@@ -906,7 +906,7 @@ int GMT_mapproject (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Input data have %d column(s) but at least 2 are needed\n", (int)Lin->n_columns);
 			Return (GMT_DIM_TOO_SMALL);
 		}
-		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+		gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 		gmt_set_segmentheader (GMT, GMT_OUT, false);	/* Since processing of -L file might have turned it on [should be determined below] */
 		xyline = Lin->table[0];			/* Can only be one table since we read a single file */
 		if (proj_type == GMT_GEO2CART) {	/* Must convert the line points first */
@@ -1228,16 +1228,16 @@ int GMT_mapproject (void *V_API, int mode, void *args) {
 							d = GMT->session.d_NaN;
 						else {
 							d = gmt_az_backaz (GMT, lon_prev, lat_prev, in[GMT_X], in[GMT_Y], Ctrl->A.reverse);
-							if (Ctrl->A.orient) {	/* Want orientations in -90/90 instead */
-								d = fmod (2.0 * d, 360.0) * 0.5;	/* Get orientation */
-								if (d > 90.0) d-= 180.0;
-							}
 						}
 						lon_prev = in[GMT_X];	/* Update previous point */
 						lat_prev = in[GMT_Y];
 					}
 					else	/* Azimuths with respect to a fixed point */
 						d = gmt_az_backaz (GMT, Ctrl->A.lon, Ctrl->A.lat, in[GMT_X], in[GMT_Y], Ctrl->A.reverse);
+					if (Ctrl->A.orient) {	/* Want orientations in -90/90 instead */
+						d = fmod (2.0 * d, 360.0) * 0.5;	/* Get orientation */
+						if (d > 90.0) d-= 180.0;
+					}
 					extra[MP_COL_AZ] = d;
 				}
 				if (Ctrl->Z.active) {	/* Time calculations */

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: postscriptlight.c 18205 2017-05-09 21:01:41Z pwessel $
+ *	$Id: postscriptlight.c 18428 2017-06-21 23:51:36Z pwessel $
  *
  *	Copyright (c) 2009-2017 by P. Wessel and R. Scharroo
  *
@@ -129,6 +129,12 @@
 #endif
 #ifdef HAVE_UNISTD_H_
 #	include <unistd.h>
+#endif
+
+#ifdef __CYGWIN__	/* See http://gmt.soest.hawaii.edu/boards/1/topics/5428 */
+#ifdef __x86_64
+#define lrint(x) ((long int)(int)lrint(x))
+#endif
 #endif
 
 /*
@@ -366,6 +372,8 @@ static struct PSL_FONT PSL_standard_fonts[PSL_N_STANDARD_FONTS] = {
 #define PSL_COMPOSITE_2		16
 #define PSL_SYMBOL_FONT		12
 #define PSL_CHUNK		2048
+
+#define PSL_CLOSE_INTERIOR	16
 
 /* Indices for use with PSL->current.sup_up[] */
 #define PSL_LC	0
@@ -1252,7 +1260,8 @@ static unsigned char *psl_deflate_encode (struct PSL_CTRL *PSL, size_t *nbytes, 
 
 	/* Return number of output bytes and output buffer */
 	olen = olen - strm.avail_out; /* initial size - size left */
-	PSL_message (PSL, PSL_MSG_LONG_VERBOSE, "DEFLATE compressed %" PRIu64 " to %" PRIu64 " bytes (%.1f%% savings at compression level %d)\n", ilen, olen, 100.0f*(1.0f-(float)olen/ilen), level == Z_DEFAULT_COMPRESSION ? 6 : level);
+	PSL_message (PSL, PSL_MSG_LONG_VERBOSE, "DEFLATE compressed %" PRIuS " to %" PRIuS " bytes (%.1f%% savings at compression level %d)\n",
+		ilen, olen, 100.0f*(1.0f-(float)olen/ilen), level == Z_DEFAULT_COMPRESSION ? 6 : level);
 	*nbytes = olen;
 	return output;
 
@@ -3379,7 +3388,7 @@ static psl_indexed_image_t psl_makecolormap (struct PSL_CTRL *PSL, unsigned char
 		return (NULL);
 	}
 
-	PSL_message (PSL, PSL_MSG_VERBOSE, "Colormap of %" PRIu64 " colors created\n", colormap->ncolors);
+	PSL_message (PSL, PSL_MSG_VERBOSE, "Colormap of %" PRIuS " colors created\n", colormap->ncolors);
 	return (image);
 }
 
@@ -3694,18 +3703,21 @@ int PSL_beginclipping (struct PSL_CTRL *PSL, double *x, double *y, int n, double
 	 *        3 = this is the complete clipping path (start to end)
 	 * 	  Add 4 to omit use even-odd clipping [nonzero-winding rule].
 	 */
-
 	if (flag & 1) {	/* First segment in (possibly multi-segmented) clip-path */
 		PSL_comment (PSL, "Start of polygon clip path\n");
 		PSL_command (PSL, "clipsave\n");
 	}
 
-	if (n > 0) PSL_plotline (PSL, x, y, n, PSL_MOVE);	/* Must not close path since first point not given ! */
+	if (n > 0) {
+		int close_interior = 0;
+		if ((flag & 3) != 3) close_interior = PSL_CLOSE_INTERIOR;
+		PSL_plotline (PSL, x, y, n, PSL_MOVE | close_interior);	/* Must not close path since first point not given ! */
+	}
 
 	if (flag & 2) {	/* End path and [optionally] fill */
 		if (!PSL_eq(rgb[0],-1.0)) PSL_command (PSL, "V %s eofill U ", psl_putcolor (PSL, rgb));
 		PSL->current.nclip++;
-		PSL_command (PSL, (flag & 4) ? "PSL_eoclip\n" : "PSL_clip N\n");
+		PSL_command (PSL, (flag & 4) ? "PSL_eoclip N\n" : "PSL_clip N\n");
 		PSL_comment (PSL, "End of polygon clip path.  Polygon clipping is currently ON\n");
 	}
 	return (PSL_NO_ERROR);
@@ -3759,7 +3771,7 @@ int PSL_plotcolorimage (struct PSL_CTRL *PSL, double x, double y, double xsize, 
 		nbits = psl_bitreduce (PSL, image->buffer, nx, ny, image->colormap->ncolors);
 
 		PSL_comment (PSL, "Start of indexed %s image [%d bit]\n", colorspace[id], nbits);
-		PSL_command (PSL, "V N %d %d T %d %d scale [/Indexed /Device%s %" PRIu64 " <\n", psl_ix(PSL, x), psl_iy(PSL, y), psl_iz (PSL, xsize), psl_iz (PSL, ysize), colorspace[id], image->colormap->ncolors - 1);
+		PSL_command (PSL, "V N %d %d T %d %d scale [/Indexed /Device%s %" PRIuS " <\n", psl_ix(PSL, x), psl_iy(PSL, y), psl_iz (PSL, xsize), psl_iz (PSL, ysize), colorspace[id], image->colormap->ncolors - 1);
 		psl_stream_dump (PSL, &image->colormap->colors[0][0], (int)image->colormap->ncolors, 1, 24, 0, PSL_HEX, 2);
 		PSL_command (PSL, ">] setcolorspace\n<< /ImageType %s /Decode [0 %d] ", type[it], (1<<nbits)-1);
 		psl_stream_dump (PSL, image->buffer, nx, ny, nbits, PSL->internal.compress, PSL_ASCII85, 0);
@@ -4098,7 +4110,7 @@ int PSL_plotline (struct PSL_CTRL *PSL, double *x, double *y, int n, int type) {
 	 * (but only if this segment runs start to finish)
 	 */
 
-	if (n > 1 && (type & PSL_MOVE) && (ix[0] == ix[n-1] && iy[0] == iy[n-1])) {n--; type |= PSL_CLOSE;}
+	if (n > 1 && (type & PSL_MOVE) && (ix[0] == ix[n-1] && iy[0] == iy[n-1]) && (type & PSL_CLOSE_INTERIOR) == 0) {n--; type |= PSL_CLOSE;}
 
 	if (type & PSL_MOVE) {
 		PSL_command (PSL, "%d %d M\n", ix[0], iy[0]);

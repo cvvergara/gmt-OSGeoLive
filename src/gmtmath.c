@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtmath.c 18178 2017-05-07 23:38:12Z pwessel $
+ *	$Id: gmtmath.c 18404 2017-06-20 18:10:00Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -5060,12 +5060,12 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Cannot have data files when -A is specified\n");
 			Return (GMT_RUNTIME_ERROR);
 		}
-		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -A files */
+		gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -A files */
 		if ((A_in = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->A.file, NULL)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error reading file %s\n", Ctrl->A.file);
 			Return (API->error);
 		}
-		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+		gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 		rhs = A_in->table[0];	/* Only one table */
 		if (Ctrl->A.w_mode) {	/* Need at least 3 columns */
 			if (rhs->n_columns < 3) {
@@ -5238,7 +5238,7 @@ int GMT_gmtmath (void *V_API, int mode, void *args) {
 
 		op = decode_gmt_argument (GMT, opt->arg, &value, &dimension, localhashnode);
 
-		if (op != GMTMATH_ARG_IS_FILE && !gmt_access (GMT, opt->arg, R_OK)) GMT_Message (API, GMT_TIME_NONE, "Warning: The number or operator %s may be confused with an existing file %s!\n", opt->arg, opt->arg);
+		if (op != GMTMATH_ARG_IS_FILE && !gmt_access (GMT, opt->arg, R_OK)) GMT_Message (API, GMT_TIME_NONE, "Warning: The number or operator %s may be confused with an existing file %s!  The file will be ignored.\n", opt->arg, opt->arg);
 
 		if (op < GMTMATH_ARG_IS_OPERATOR) {	/* File name or factor */
 

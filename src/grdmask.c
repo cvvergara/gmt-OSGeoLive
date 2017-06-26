@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdmask.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: grdmask.c 18432 2017-06-22 00:20:07Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -33,7 +33,7 @@
 #define THIS_MODULE_PURPOSE	"Create mask grid from polygons or point coverage"
 #define THIS_MODULE_KEYS	"<D{,GG}"
 #define THIS_MODULE_NEEDS	"R"
-#define THIS_MODULE_OPTIONS "-:RVabdefghirs" GMT_ADD_x_OPT GMT_OPT("FHMm")
+#define THIS_MODULE_OPTIONS "-:RVabdefghinrs" GMT_ADD_x_OPT GMT_OPT("FHMm")
 
 #define GRDMASK_N_CLASSES	3	/* outside, on edge, and inside */
 
@@ -82,9 +82,9 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdmask [<table>] -G<outgrid> %s\n", GMT_I_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t%s [-A[m|p|x|y]] [-N[z|Z|p|P][<values>]]\n", GMT_Rgeo_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-S%s] [%s] [%s]\n\t[%s] [%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]%s[%s]\n\n",
+	GMT_Message (API, GMT_TIME_NONE, "\t[-S%s] [%s] [%s]\n\t[%s] [%s] [%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\t[%s] [%s]%s[%s]\n\n",
 		GMT_RADIUS_OPT, GMT_V_OPT, GMT_a_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT,
-		GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT, GMT_colon_OPT);
+		GMT_h_OPT, GMT_i_OPT, GMT_n_OPT, GMT_r_OPT, GMT_s_OPT, GMT_x_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
@@ -108,9 +108,19 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_dist_syntax (API->GMT, 'S', "Set search radius to identify inside points.");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Mask nodes are set to <in> or <out> depending on whether they are\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   inside the circle of specified radius [0] from the nearest data point.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Give radius as 'z' if individual radii are provided via the 3rd data column.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Give radius as 'z' if individual radii are provided via the 3rd data column\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   and append a fixed unit unless Cartesian.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   [Default is to assume <table> contains polygons and use inside/outside searching].\n");
-	GMT_Option (API, "V,a,bi2,di,e,f,g,h,i,r,s,x,:,.");
+	GMT_Option (API, "V,a,bi2,di,e,f,g,h,i");
+	if (gmt_M_showusage (API)) {
+		GMT_Message (API, GMT_TIME_NONE, "\t-n+b<BC> Set boundary conditions.  <BC> can be either:\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t   g for geographic, p for periodic, and n for natural boundary conditions.\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t   For p and n you may optionally append x or y [default is both]:\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t     x applies the boundary condition for x only\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t     y applies the boundary condition for y only\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t   [Default: Natural conditions, unless grid is geographic].\n");
+	}
+	GMT_Option (API, "r,s,x,:,.");
 	
 	return (GMT_MODULE_USAGE);
 }
@@ -208,8 +218,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMASK_CTRL *Ctrl, struct GMT
 		}
 	}
 
-	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
-
+	if (Ctrl->S.mode && !gmt_M_is_geographic (GMT, GMT_IN))	/* Gave a geographic search radius but not -fg so do that automatically */
+		gmt_parse_common_options (GMT, "f", 'f', "g");
+		
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->G.file, "Syntax error -G: Must specify output file\n");
@@ -227,9 +238,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMASK_CTRL *Ctrl, struct GMT
 
 int GMT_grdmask (void *V_API, int mode, void *args) {
 	bool periodic = false, periodic_grid = false, do_test = true;
-	unsigned int side = 0, known_side, *d_col = NULL, d_row = 0, col_0, row_0;
-	unsigned int tbl, gmode, n_pol = 0, max_d_col = 0, n_cols = 2;
-	int row, col, n_columns, n_rows, error = 0;
+	bool wrap_180, replicate_x, replicate_y;
+	unsigned int side = 0, known_side, *d_col = NULL, d_row = 0;
+	unsigned int tbl, gmode, n_pol = 0, max_d_col = 0, n_cols = 2, rowu, colu, x_wrap, y_wrap;
+	int row, col, row_end, col_end, ii, jj, n_columns, n_rows, error = 0, col_0, row_0;
 	
 	uint64_t ij, k, seg;
 	
@@ -301,6 +313,11 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 	}
 
 	n_columns = Grid->header->n_columns;	n_rows = Grid->header->n_rows;	/* Signed versions */
+	replicate_x = (Grid->header->nxp && Grid->header->registration == GMT_GRID_NODE_REG);	/* Gridline registration has duplicate column */
+	replicate_y = (Grid->header->nyp && Grid->header->registration == GMT_GRID_NODE_REG);	/* Gridline registration has duplicate row */
+	x_wrap = Grid->header->n_columns - 1;				/* Add to node index to go to right column */
+	y_wrap = (Grid->header->n_rows - 1) * Grid->header->n_columns;	/* Add to node index to go to bottom row */
+
 	if (Ctrl->S.active) {	/* Need distance calculations in correct units, and the d_row/d_col machinery */
 		gmt_init_distaz (GMT, Ctrl->S.unit, Ctrl->S.mode, GMT_MAP_DIST);
 		grd_x0 = gmt_grd_coord (GMT, Grid->header, GMT_X);
@@ -360,7 +377,7 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 
 	for (tbl = n_pol = 0; tbl < D->n_tables; tbl++) {
 		for (seg = 0; seg < D->table[tbl]->n_segments; seg++, n_pol++) {	/* For each segment in the table */
-			S = D->table[tbl]->segment[seg];		/* Current segment */
+			S = D->table[tbl]->segment[seg];		/* Current data segment */
 			if (Ctrl->S.active) {	/* Assign 'inside' to nodes within given distance of data constraints */
 				for (k = 0; k < S->n_rows; k++) {
 					if (gmt_M_y_is_outside (GMT, S->data[GMT_Y][k], Grid->header->wesn[YLO], Grid->header->wesn[YHI])) continue;	/* Outside y-range */
@@ -399,13 +416,15 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 
 					/* OK, not a pole and this point is within bounds, but may be exactly on the border */
 
-					col_0 = (unsigned int)gmt_M_grd_x_to_col (GMT, xtmp, Grid->header);
-					if (col_0 == Grid->header->n_columns) col_0--;	/* Was exactly on the xmax edge */
-					row_0 = (unsigned int)gmt_M_grd_y_to_row (GMT, S->data[GMT_Y][k], Grid->header);
-					if (row_0 == Grid->header->n_rows) row_0--;	/* Was exactly on the ymin edge */
+					row_0 = gmt_M_grd_y_to_row (GMT, S->data[GMT_Y][k], Grid->header);
+					if (row_0 == (int)Grid->header->n_rows) row_0--;	/* Was exactly on the ymin edge */
+					if (gmt_y_out_of_bounds (GMT, &row_0, Grid->header, &wrap_180)) continue;	/* Outside y-range.  This call must happen BEFORE gmt_x_out_of_bounds as it sets wrap_180 */
+					col_0 = gmt_M_grd_x_to_col (GMT, xtmp, Grid->header);
+					if (col_0 == (int)Grid->header->n_columns) col_0--;	/* Was exactly on the xmax edge */
+					if (gmt_x_out_of_bounds (GMT, &col_0, Grid->header, wrap_180)) continue;	/* Outside x-range,  This call must happen AFTER gmt_y_out_of_bounds which sets wrap_180 */ 
 					ij = gmt_M_ijp (Grid->header, row_0, col_0);
 					Grid->data[ij] = mask_val[GMT_INSIDE];	/* This is the nearest node */
-					if (Grid->header->registration == GMT_GRID_NODE_REG && (col_0 == 0 || col_0 == (Grid->header->n_columns-1)) && periodic_grid) {	/* Must duplicate the entry at periodic point */
+					if (Grid->header->registration == GMT_GRID_NODE_REG && (col_0 == 0 || col_0 == (int)(Grid->header->n_columns-1)) && periodic_grid) {	/* Must duplicate the entry at periodic point */
 						col = (col_0 == 0) ? Grid->header->n_columns-1 : 0;
 						ij = gmt_M_ijp (Grid->header, row_0, col);
 						Grid->data[ij] = mask_val[GMT_INSIDE];	/* This is also the nearest node */
@@ -418,22 +437,45 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 						last_radius = radius;
 					}
 					
+					row_end = row_0 + d_row;
 #ifdef _OPENMP
-#pragma omp parallel for private(row,col,ij,distance) shared(Grid,row_0,d_row,n_rows,col_0,d_col,n_columns,xtmp,S,grd_x0,grd_y0,radius,mask_val)
+#pragma omp parallel for private(row,col,rowu,colu,col_end,jj,ii,ij,wrap_180,distance) shared(Grid,row_0,d_row,col_0,d_col,row_end,xtmp,S,grd_x0,grd_y0,replicate_x,replicate_y,x_wrap,y_wrap,radius,mask_val)
 #endif
-					for (row = row_0 - d_row; row <= (int)(row_0 + d_row); row++) {
-						if (row < 0 || row >= n_rows) continue;
-						for (col = col_0 - d_col[row]; col <= (int)(col_0 + d_col[row]); col++) {
-							if (col < 0 || col >= n_columns) continue;
-							ij = gmt_M_ijp (Grid->header, row, col);
-							distance = gmt_distance (GMT, xtmp, S->data[GMT_Y][k], grd_x0[col], grd_y0[row]);
+					for (row = row_0 - d_row; row <= row_end; row++) {
+						jj = row;
+						if (gmt_y_out_of_bounds (GMT, &jj, Grid->header, &wrap_180)) continue;	/* Outside y-range.  This call must happen BEFORE gmt_x_out_of_bounds as it sets wrap_180 */
+						rowu = jj;
+						col_end = col_0 + d_col[jj];
+						for (col = col_0 - d_col[row]; col <= col_end; col++) {
+							ii = col;
+							if (gmt_x_out_of_bounds (GMT, &ii, Grid->header, wrap_180)) continue;	/* Outside x-range,  This call must happen AFTER gmt_y_out_of_bounds which sets wrap_180 */ 
+							colu = ii;
+							ij = gmt_M_ijp (Grid->header, rowu, colu);
+							distance = gmt_distance (GMT, xtmp, S->data[GMT_Y][k], grd_x0[colu], grd_y0[rowu]);
 							if (distance > radius) continue;	/* Clearly outside */
 							Grid->data[ij] = (doubleAlmostEqualZero (distance, radius)) ? mask_val[GMT_ONEDGE] : mask_val[GMT_INSIDE];	/* The onedge or inside value */
+							/* With periodic, gridline-registered grids there are duplicate rows and/or columns
+							   so we may have to assign the point to more than one node.  The next section deals
+							   with this situation.
+							*/
+
+							if (replicate_x) {	/* Must check if we have to replicate a column */
+								if (colu == 0) 	/* Must replicate left to right column */
+									Grid->data[ij+x_wrap] = Grid->data[ij];
+								else if (colu == Grid->header->nxp)	/* Must replicate right to left column */
+									Grid->data[ij-x_wrap] = Grid->data[ij];
+							}
+							if (replicate_y) {	/* Must check if we have to replicate a row */
+								if (rowu == 0)	/* Must replicate top to bottom row */
+									Grid->data[ij+y_wrap] = Grid->data[ij];
+								else if (rowu == Grid->header->nyp)	/* Must replicate bottom to top row */
+									Grid->data[ij-y_wrap] = Grid->data[ij];
+							}
 						}
 					}
 				}
 			}
-			else if (S->n_rows > 2) {	/* Assign 'inside' to nodes if they are inside any of the given polygons */
+			else if (S->n_rows > 2) {	/* Assign 'inside' to nodes if they are inside any of the given polygons (Need at least 3 vertices) */
 				if (gmt_M_polygon_is_hole (S)) continue;	/* Holes are handled within gmt_inonout */
 				if (Ctrl->N.mode == 1 || Ctrl->N.mode == 2) {	/* Look for z-values in the data headers */
 					if (S->ogr)	/* OGR data */
@@ -448,7 +490,7 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 				else if (Ctrl->N.mode)	/* 3 or 4; Increment running polygon ID */
 					z_value += 1.0;
 
-				for (row = 0; row < n_rows; row++) {
+				for (row = 0; row < n_rows; row++) {	/* Loop over grid rows */
 
 					yy = gmt_M_grd_row_to_y (GMT, row, Grid->header);
 					
@@ -477,7 +519,7 @@ int GMT_grdmask (void *V_API, int mode, void *args) {
 #ifdef _OPENMP
 #pragma omp parallel for private(col,xx,side,ij) shared(Grid,n_columns,do_test,known_side,yy,S,row,Ctrl,z_value,mask_val)
 #endif
-					for (col = 0; col < n_columns; col++) {
+					for (col = 0; col < n_columns; col++) {	/* Loop over grid columns */
 						xx = gmt_M_grd_col_to_x (GMT, col, Grid->header);
 						if (do_test) {	/* Must consider xx to determine if we are inside */
 							if ((side = gmt_inonout (GMT, xx, yy, S)) == GMT_OUTSIDE)

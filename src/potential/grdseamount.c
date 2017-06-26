@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdseamount.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: grdseamount.c 18282 2017-05-30 01:57:05Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -311,7 +311,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, struct
 		}
 	}
 
-	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 	n_errors += gmt_M_check_condition (GMT, Ctrl->C.mode == SHAPE_DISC && Ctrl->F.active, "Warning: Cannot specify -F for discs; ignored\n");
 	n_errors += gmt_M_check_condition (GMT, Ctrl->A.active && (Ctrl->N.active || Ctrl->Z.active || Ctrl->L.active || Ctrl->T.active), "Syntax error -A option: Cannot use -L, -N, -T or -Z with -A\n");
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");

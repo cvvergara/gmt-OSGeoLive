@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- * $Id: gmt_notposix.h 17937 2017-04-15 02:51:15Z pwessel $
+ * $Id: gmt_notposix.h 18459 2017-06-25 01:14:06Z pwessel $
  *
  * Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
  * See LICENSE.TXT file for copying and redistribution conditions.
@@ -37,7 +37,9 @@
 
 /* HAVE_<func> is undefined or defined as 1 depending on
  * whether or not <func> is available on this system.
- * The definitions are stored in gmt_config.h */
+ * The definitions are stored in gmt_config.h.
+ * For adding more HAVE_**** checks see ConfigureChecks.cmake.
+ */
 #include "gmt_config.h"
 
 /* Declaration modifiers for DLL support (MSC et al) */
@@ -562,6 +564,10 @@
 
 #ifndef DECLARED_STRDUP
 	EXTERN_MSC char *strdup(const char *s);
+#endif
+
+#ifndef HAVE_STRNDUP
+	EXTERN_MSC char *strndup(const char *s, size_t chars);
 #endif
 
 #ifndef HAVE_STRTOD

@@ -1,5 +1,5 @@
 /*
- * $Id: gmt_config.h.in 17451 2017-01-16 21:36:06Z pwessel $
+ * $Id: gmt_config.h.in 18340 2017-06-08 02:50:06Z pwessel $
  *
  *  Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
@@ -29,6 +29,8 @@
  *
  * HAVE_<func> is undefined or defined as 1 depending on
  * whether or not <func> is available on this system.
+ *
+ * For adding more HAVE_**** checks, see ConfigureChecks.cmake.
  *
  * Version: @GMT_VERSION_STRING@
  */
@@ -120,7 +122,7 @@
 #cmakedefine HAVE__PCLOSE
 #cmakedefine HAVE_POPEN
 #cmakedefine HAVE__POPEN
-#cmakedefine HAVE_POSIX_MEMALIGN
+#cmakedefine HAVE_POSIX_MEMALIGN 1
 #cmakedefine HAVE_QSORT_R_GLIBC
 #cmakedefine HAVE_SETLOCALE
 #cmakedefine HAVE__SETMODE
@@ -135,6 +137,7 @@
 #cmakedefine HAVE_STRICMP
 #cmakedefine HAVE_STRNICMP
 #cmakedefine HAVE_STRDUP
+#cmakedefine HAVE_STRNDUP
 #cmakedefine HAVE_STRSEP
 #cmakedefine HAVE_STRTOD
 #cmakedefine HAVE_STRTOF_

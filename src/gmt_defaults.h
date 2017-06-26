@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_defaults.h 18041 2017-04-26 23:09:48Z pwessel $
+ *	$Id: gmt_defaults.h 18404 2017-06-20 18:10:00Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -108,6 +108,7 @@ struct GMT_DEFAULTS {
 	unsigned int io_nc4_deflation_level;/* NetCDF deflation level on output [0] */
 	bool io_gridfile_shorthand;         /* Use shorthand suffix notation for embedded grid file formats [false] */
 	bool io_header[2];                  /* Input & Output data has header records [false, false] */
+	bool io_header_orig;                /* Copy of Input io_header */
 	bool io_nan_records;                /* Determines what NaNs in input records should mean (beyond skipping the record) */
 	bool io_lonlat_toggle[2];           /* true means read/write I/O as lat/lon instead of lon/lat [false,false] */
 	bool io_blankline[2];               /* true means blank lines should be treated as segment breaks [false,false] */

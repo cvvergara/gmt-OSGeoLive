@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_parse.c 17911 2017-04-13 05:45:46Z pwessel $
+ *	$Id: gmt_parse.c 18391 2017-06-17 21:24:36Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -379,9 +379,6 @@ int GMT_List_Args (void *V_API, struct GMT_OPTION *head) {
 }
 #endif
 
-#define ASCII_GS	29	/* ASCII code for group separator (temporarily replacing tabs) */
-#define ASCII_US	31	/* ASCII code for unit separator (temporarily replacing spaces in quoted text) */
-
 /*! . */
 struct GMT_OPTION *GMT_Create_Options (void *V_API, int n_args_in, const void *in) {
 	/* This function will loop over the n_args_in supplied command line arguments (in) and
@@ -421,12 +418,12 @@ struct GMT_OPTION *GMT_Create_Options (void *V_API, int n_args_in, const void *i
 		 * space, and then replace all ASCII 31 with space at the end (we do the same for tab using ASCII 29 GS (group separator) */
 		for (k = 0, quoted = false; txt_in[k]; k++) {
 			if (txt_in[k] == '\"') quoted = !quoted;	/* Initially false, becomes true at start of quote, then false when exit quote */
-			else if (quoted && txt_in[k] == '\t') txt_in[k] = ASCII_GS;
-			else if (quoted && txt_in[k] == ' ')  txt_in[k] = ASCII_US;
+			else if (quoted && txt_in[k] == '\t') txt_in[k] = GMT_ASCII_GS;
+			else if (quoted && txt_in[k] == ' ')  txt_in[k] = GMT_ASCII_US;
 		}
 		while ((gmt_strtok (txt_in, " ", &pos, p))) {	/* Break up string into separate words, and strip off double quotes */
 			unsigned int i, o;
-			for (k = 0; p[k]; k++) if (p[k] == ASCII_GS) p[k] = '\t'; else if (p[k] == ASCII_US) p[k] = ' ';	/* Replace spaces and tabs masked above */
+			for (k = 0; p[k]; k++) if (p[k] == GMT_ASCII_GS) p[k] = '\t'; else if (p[k] == GMT_ASCII_US) p[k] = ' ';	/* Replace spaces and tabs masked above */
 			for (i = o = 0; p[i]; i++) if (p[i] != '\"') p[o++] = p[i];	/* Ignore double quotes */
 			p[o] = '\0';
 			new_args[new_n_args++] = strdup (p);
@@ -436,7 +433,7 @@ struct GMT_OPTION *GMT_Create_Options (void *V_API, int n_args_in, const void *i
 			}
 		}
 		for (k = 0; txt_in[k]; k++)	/* Restore input string to prestine condition */
-			if (txt_in[k] == ASCII_GS) txt_in[k] = '\t'; else if (txt_in[k] == ASCII_US) txt_in[k] = ' ';	/* Replace spaces and tabs masked above */
+			if (txt_in[k] == GMT_ASCII_GS) txt_in[k] = '\t'; else if (txt_in[k] == GMT_ASCII_US) txt_in[k] = ' ';	/* Replace spaces and tabs masked above */
 		args = new_args;
 		n_args = new_n_args;
 		gmt_M_str_free (txt_in);
@@ -814,7 +811,7 @@ struct GMT_OPTION *GMT_Append_Option (void *V_API, struct GMT_OPTION *new_opt, s
 }
 
 /*! . */
-int GMT_Delete_Option (void *V_API, struct GMT_OPTION *current) {
+int GMT_Delete_Option (void *V_API, struct GMT_OPTION *current, struct GMT_OPTION **head) {
 	/* Remove the specified entry from the linked list.  It is assumed that current
 	 * points to the correct option in the linked list. */
 	struct GMTAPI_CTRL *API = NULL;
@@ -823,9 +820,12 @@ int GMT_Delete_Option (void *V_API, struct GMT_OPTION *current) {
 	if (!current) return_error (V_API, GMT_OPTION_IS_NULL);		/* No option was passed */
 	API = parse_get_api_ptr (V_API);	/* Cast void pointer to a GMTAPI_CTRL pointer */
 
-	/* Remove the current option and bypass via the enx/prev pointers in the linked list */
-	if (current->previous) current->previous->next = current->next;
+	/* Remove the current option and bypass via the next/prev pointers in the linked list */
 	if (current->next) current->next->previous = current->previous;
+	if (current->previous)	/* Reset pointer from previous entry to current's next entry */
+		current->previous->next = current->next;
+	else	/* current == *head so there is no previous; must update head */
+		*head = current->next;
 	gmt_M_str_free (current->arg);	/* Option arguments were created by strdup, so we must use free */
 	gmt_M_free (API->GMT, current);		/* Option structure was created by gmt_M_memory, hence gmt_M_free */
 

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmt_calclock.c 17451 2017-01-16 21:36:06Z pwessel $
+ *	$Id: gmt_calclock.c 18312 2017-06-02 17:21:39Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -276,7 +276,8 @@ int64_t gmt_rd_from_gymd (struct GMT_CTRL *GMT, int gy, int gm, int gd) {
 	int day_offset, yearm1;
 
 	if (gm < 1 || gm > 12 || gd < 1 || gd > 31) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error: gmt_rd_from_gymd given bad month or day.\n");
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error: gmt_rd_from_gymd given bad month (%d) or day (%d).\n", gm, gd);
+		return 0;
 	}
 
 	if (gm <= 2)

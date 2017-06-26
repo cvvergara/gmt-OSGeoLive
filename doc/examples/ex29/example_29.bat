@@ -1,5 +1,5 @@
 REM             GMT EXAMPLE 29
-REM             $Id: example_29.bat 17806 2017-03-27 22:18:01Z pwessel $
+REM             $Id: example_29.bat 18334 2017-06-07 19:25:56Z pwessel $
 REM
 REM Purpose:	Illustrates spherical surface gridding with Green's function of splines
 REM GMT progs:	makecpt, grdcontour, grdimage, grdmath greenspline, psscale, pstext
@@ -11,7 +11,7 @@ set ps=example_29.ps
 
 REM This example uses 370 radio occultation data for Mars to grid the topography.
 REM Data and information from Smith, D. E., and M. T. Zuber (1996), The shape of
-REM Mars and the topographic signature of the hemispheric dichotomy, Science, 271, 184–187.
+REM Mars and the topographic signature of the hemispheric dichotomy, Science, 271, 184-187.
 
 REM Make Mars PROJ_ELLIPSOID given their three best-fitting axes:
 set a=3399.472

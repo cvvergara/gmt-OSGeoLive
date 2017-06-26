@@ -1,5 +1,5 @@
  /*--------------------------------------------------------------------
- *	$Id: grdmath.c 18176 2017-05-07 21:13:59Z pwessel $
+ *	$Id: grdmath.c 18391 2017-06-17 21:24:36Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -270,8 +270,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDMATH_CTRL *Ctrl, struct GMT
 				n_errors += gmt_default_error (GMT, opt->option);
 		}
 	}
-
-	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	if (missing_equal) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Usage is <operations> = [outfile]\n");
@@ -2748,7 +2746,7 @@ GMT_LOCAL void grd_MEDIANW (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, str
 		return;
 	}
 
-	wmed = gmt_grd_median (GMT, stack[prev]->G, stack[last]->G, true);
+	wmed = (float)gmt_grd_median (GMT, stack[prev]->G, stack[last]->G, true);
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = wmed;
 }
 
@@ -3204,12 +3202,12 @@ GMT_LOCAL void grd_PQUANT (struct GMT_CTRL *GMT, struct GRDMATH_INFO *info, stru
 		gmt_free_grid (GMT, &W, true);
 	}
 	else {
-		gmt_M_memcpy (pad, stack[last]->G->header->pad, 4U, unsigned int);	/* Save original pad */
-		gmt_grd_pad_off (GMT, stack[last]->G);				/* Undo pad if one existed so we can sort */
+		gmt_M_memcpy (pad, stack[prev]->G->header->pad, 4U, unsigned int);	/* Save original pad */
+		gmt_grd_pad_off (GMT, stack[prev]->G);				/* Undo pad if one existed so we can sort */
 		gmt_sort_array (GMT, stack[prev]->G->data, info->nm, GMT_FLOAT);
 		p = (float) gmt_quantile_f (GMT, stack[prev]->G->data, stack[last]->factor, info->nm);
-		gmt_M_memset (stack[last]->G->data, info->size, float);	/* Wipes everything */
-		gmt_grd_pad_on (GMT, stack[last]->G, pad);		/* Reinstate the original pad */
+		gmt_M_memset (stack[prev]->G->data, info->size, float);	/* Wipes everything */
+		gmt_grd_pad_on (GMT, stack[prev]->G, pad);		/* Reinstate the original pad */
 	}
 
 	for (node = 0; node < info->size; node++) stack[prev]->G->data[node] = p;
@@ -4693,7 +4691,7 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 				/* Bypass the current opt in the linked list */
 				opt->next->previous = opt->previous;
 				opt->previous->next = opt->next;
-				GMT_Delete_Option (API, opt);
+				GMT_Delete_Option (API, opt, &list);
 				opt = list;	/* GO back to start to avoid bad pointer */
 			}
 			else {	/* Standard output */
@@ -4866,7 +4864,7 @@ int GMT_grdmath (void *V_API, int mode, void *args) {
 			continue;
 		}
 
-		if (op != GRDMATH_ARG_IS_FILE && !gmt_access (GMT, opt->arg, R_OK)) GMT_Message (API, GMT_TIME_NONE, "Warning: The number or operator %s may be confused with an existing file %s!\n", opt->arg, opt->arg);
+		if (op != GRDMATH_ARG_IS_FILE && !gmt_access (GMT, opt->arg, R_OK)) GMT_Message (API, GMT_TIME_NONE, "Warning: The number or operator %s may be confused with an existing file %s!  The file will be ignored.\n", opt->arg, opt->arg);
 
 		if (op < GRDMATH_ARG_IS_OPERATOR) {	/* File name or factor */
 

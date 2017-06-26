@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: xyz2grd.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: xyz2grd.c 18282 2017-05-30 01:57:05Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -252,7 +252,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct XYZ2GRD_CTRL *Ctrl, struct GMT
 		}
 	}
 
-	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 	if (Ctrl->Z.active) {
 		if (Ctrl->S.active) Ctrl->Z.not_grid = true;	/* The row/col organization does not apply */
 		n_errors += gmt_parse_z_io (GMT, ptr_to_arg, &Ctrl->Z);

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77convert.c 17811 2017-03-28 20:21:14Z pwessel $
+ *	$Id: mgd77convert.c 18435 2017-06-22 04:01:50Z pwessel $
  *
  *    Copyright (c) 2005-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -297,7 +297,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args) {
 	
 	n_paths = MGD77_Path_Expand (GMT, &M, options, &list);	/* Get list of requested IDs */
 
-	if (n_paths == 0) {
+	if (n_paths <= 0) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: No cruises given\n");
 		Return (GMT_RUNTIME_ERROR);
 	}
@@ -388,7 +388,7 @@ int GMT_mgd77convert (void *V_API, int mode, void *args) {
 	
 	GMT_Report (API, GMT_MSG_VERBOSE, "Converted %d MGD77 files\n", n_cruises);
 	
-	MGD77_Path_Free (GMT, n_paths, list);
+	MGD77_Path_Free (GMT, (uint64_t)n_paths, list);
 	MGD77_end (GMT, &M);
 
 	Return (GMT_NOERROR);

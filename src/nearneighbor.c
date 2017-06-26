@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: nearneighbor.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: nearneighbor.c 18432 2017-06-22 00:20:07Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -149,9 +149,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Option (API, "di,e,f,h,i");
 	if (gmt_M_showusage (API)) {
 		GMT_Message (API, GMT_TIME_NONE, "\t-n+b<BC> Set boundary conditions.  <BC> can be either:\n");
-		GMT_Message (API, GMT_TIME_NONE, "\t   g for geographic boundary conditions, or one or both of\n");
-		GMT_Message (API, GMT_TIME_NONE, "\t   x for periodic boundary conditions on x,\n");
-		GMT_Message (API, GMT_TIME_NONE, "\t   y for periodic boundary conditions on y.\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t   g for geographic, p for periodic, and n for natural boundary conditions.\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t   For p and n you may optionally append x or y [default is both]:\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t     x applies the boundary condition for x only\n");
+		GMT_Message (API, GMT_TIME_NONE, "\t     y applies the boundary condition for y only\n");
 		GMT_Message (API, GMT_TIME_NONE, "\t   [Default: Natural conditions, unless grid is geographic].\n");
 	}
 	GMT_Option (API, "r,s,:,.");
@@ -239,8 +240,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct NEARNEIGHBOR_CTRL *Ctrl, struc
 				break;
 		}
 	}
-
-	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.R.active[RSET], "Syntax error: Must specify -R option\n");
 	n_errors += gmt_M_check_condition (GMT, GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0, "Syntax error -I option: Must specify positive increment(s)\n");
@@ -426,13 +425,13 @@ int GMT_nearneighbor (void *V_API, int mode, void *args) {
 		for (row = row_0 - d_row; row <= row_end; row++) {
 
 			jj = row;
-			if (gmt_y_out_of_bounds (GMT, &jj, Grid->header, &wrap_180)) continue;	/* Outside y-range */
+			if (gmt_y_out_of_bounds (GMT, &jj, Grid->header, &wrap_180)) continue;	/* Outside y-range.  This call must happen BEFORE gmt_x_out_of_bounds as it sets wrap_180 */
 			rowu = jj;
 			col_end = col_0 + d_col[jj];
 			for (col = col_0 - d_col[jj]; col <= col_end; col++) {
 
 				ii = col;
-				if (gmt_x_out_of_bounds (GMT, &ii, Grid->header, wrap_180)) continue;	/* Outside x-range */ 
+				if (gmt_x_out_of_bounds (GMT, &ii, Grid->header, wrap_180)) continue;	/* Outside x-range,  This call must happen AFTER gmt_y_out_of_bounds which sets wrap_180 */  
 
 				/* Here, (ii,jj) [both are >= 0] is index of a node (kk) inside the grid */
 				colu = ii;

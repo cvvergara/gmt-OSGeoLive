@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gmtread.c 17798 2017-03-27 04:50:17Z pwessel $
+ *	$Id: gmtread.c 18236 2017-05-23 22:50:38Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -31,7 +31,7 @@
 #define THIS_MODULE_PURPOSE	"Read GMT objects into external API"
 #define THIS_MODULE_KEYS	"-T-,<?{,>?}"
 #define THIS_MODULE_NEEDS	""
-#define THIS_MODULE_OPTIONS "->RVf"
+#define THIS_MODULE_OPTIONS "->RVbf"
 
 /* Control structure for read */
 
@@ -138,9 +138,14 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTREAD_CTRL *Ctrl, struct GMT
 		}
 	}
 	
-	n_errors += gmt_M_check_condition (GMT, !(Ctrl->IO.active[GMT_IN] && Ctrl->IO.active[GMT_OUT]), "Syntax error: Must specify both input and output filenames\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->IO.active[GMT_IN] && (!Ctrl->IO.file[GMT_IN] || !Ctrl->IO.file[GMT_IN][0]), "Syntax error: Must specify input filename\n");
-	n_errors += gmt_M_check_condition (GMT, Ctrl->IO.active[GMT_OUT] && (!Ctrl->IO.file[GMT_OUT] || !Ctrl->IO.file[GMT_OUT][0]), "Syntax error: Must specify output filename\n");
+	n_errors += gmt_M_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0,
+	                                 "Syntax error: Must specify number of columns in binary input data (-bi)\n");
+	n_errors += gmt_M_check_condition (GMT, !(Ctrl->IO.active[GMT_IN] && Ctrl->IO.active[GMT_OUT]),
+	                                 "Syntax error: Must specify both input and output filenames\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->IO.active[GMT_IN] && (!Ctrl->IO.file[GMT_IN] || !Ctrl->IO.file[GMT_IN][0]),
+	                                 "Syntax error: Must specify input filename\n");
+	n_errors += gmt_M_check_condition (GMT, Ctrl->IO.active[GMT_OUT] && (!Ctrl->IO.file[GMT_OUT] || !Ctrl->IO.file[GMT_OUT][0]),
+	                                 "Syntax error: Must specify output filename\n");
 	n_errors += gmt_M_check_condition (GMT, n_files != 2, "Syntax error: Must specify only two filenames (input and output)\n");
 	n_errors += gmt_M_check_condition (GMT, !Ctrl->T.active, "Syntax error -T option: Must specify a valid datatype\n");
 	

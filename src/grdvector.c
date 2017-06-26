@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdvector.c 18110 2017-05-03 01:29:16Z pwessel $
+ *	$Id: grdvector.c 18282 2017-05-30 01:57:05Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -294,8 +294,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDVECTOR_CTRL *Ctrl, struct G
 		}
 	}
 
-	//gmt_check_lattice (GMT, Ctrl->I.inc, NULL, &Ctrl->I.active);
-
 	n_errors += gmt_M_check_condition (GMT, !GMT->common.J.active, "Syntax error: Must specify a map projection with the -J option\n");
 	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0),
 	                                 "Syntax error -I option: Must specify positive increments\n");
@@ -315,9 +313,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDVECTOR_CTRL *Ctrl, struct G
 #define Return(code) {Free_Ctrl (GMT, Ctrl); gmt_end_module (GMT, GMT_cpy); bailout (code);}
 
 int GMT_grdvector (void *V_API, int mode, void *args) {
-	unsigned int row, col, col_0, row_0, d_col, d_row, k, n_warn[3] = {0, 0, 0}, warn;
+	unsigned int justify, row, col, col_0, row_0, d_col, d_row, k, n_warn[3] = {0, 0, 0}, warn;
 	int error = 0;
-	bool justify, Geographic;
+	bool Geographic;
 	
 	uint64_t ij;
 

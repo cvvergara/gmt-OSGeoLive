@@ -1,5 +1,5 @@
  /*--------------------------------------------------------------------
- *	$Id: triangulate.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: triangulate.c 18282 2017-05-30 01:57:05Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -264,8 +264,6 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct TRIANGULATE_CTRL *Ctrl, struct
 	}
 
 	n_errors += gmt_add_R_if_modern_and_true (GMT, THIS_MODULE_NEEDS, Ctrl->G.active || Ctrl->Q.active);
-
-	//gmt_check_lattice (GMT, Ctrl->I.inc, &GMT->common.R.registration, &Ctrl->I.active);
 
 	n_errors += gmt_check_binary_io (GMT, 2);
 	n_errors += gmt_M_check_condition (GMT, GMT->common.R.active[ISET] && (GMT->common.R.inc[GMT_X] <= 0.0 || GMT->common.R.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");

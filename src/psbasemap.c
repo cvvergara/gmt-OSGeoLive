@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psbasemap.c 18055 2017-04-28 17:46:38Z pwessel $
+ *	$Id: psbasemap.c 18304 2017-06-02 04:58:28Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -85,7 +85,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: psbasemap %s %s [%s]\n", GMT_J_OPT, GMT_Rgeoz_OPT, GMT_B_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-A[<file>]] [-D%s |\n\t-D%s] [%s]\n", GMT_INSERT_A, GMT_INSERT_A, GMT_Jz_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-A[<file>]] [-D%s |\n\t-D%s] [%s]\n", GMT_INSERT_A, GMT_INSERT_B, GMT_Jz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-K]\n", GMT_PANEL);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L%s]\n", GMT_SCALE);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-O] [-P] [-Td%s]\n", GMT_TROSE_DIR);

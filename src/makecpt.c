@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: makecpt.c 17897 2017-04-10 03:16:23Z pwessel $
+ *	$Id: makecpt.c 18447 2017-06-24 16:25:54Z jluis $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -470,7 +470,7 @@ int GMT_makecpt (void *V_API, int mode, void *args) {
 		Pout = gmt_sample_cpt (GMT, Pin, z, nz, Ctrl->Z.active, Ctrl->I.mode & GMT_CPT_C_REVERSE, Ctrl->Q.mode, Ctrl->W.active);
 	}
 
-	gmt_M_free (GMT, z);	/* It may also have been allocated inside gmtlib_log_array() */
+	if (!Ctrl->T.file) gmt_M_free (GMT, z);	/* It may also have been allocated inside gmtlib_log_array() */
 
 	if (Ctrl->A.active) gmt_cpt_transparency (GMT, Pout, Ctrl->A.value, Ctrl->A.mode);	/* Set transparency */
 

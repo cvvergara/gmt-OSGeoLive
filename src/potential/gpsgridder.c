@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: gpsgridder.c 18134 2017-05-05 08:34:43Z pwessel $
+ *	$Id: gpsgridder.c 18404 2017-06-20 18:10:00Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -719,7 +719,7 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 		}
 	}
 	else if (Ctrl->N.active) {	/* Read output locations from file */
-		gmt_disable_i_opt (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
+		gmt_disable_ih_opts (GMT);	/* Do not want any -i to affect the reading from -C,-F,-L files */
 		if ((Nin = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_POINT, GMT_READ_NORMAL, NULL, Ctrl->N.file, NULL)) == NULL) {
 			Return (API->error);
 		}
@@ -727,7 +727,7 @@ int GMT_gpsgridder (void *V_API, int mode, void *args) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Input file %s has %d column(s) but at least 2 are needed\n", Ctrl->N.file, (int)Nin->n_columns);
 			Return (GMT_DIM_TOO_SMALL);
 		}
-		gmt_reenable_i_opt (GMT);	/* Recover settings provided by user (if -i was used at all) */
+		gmt_reenable_ih_opts (GMT);	/* Recover settings provided by user (if -i was used at all) */
 		T = Nin->table[0];
 	}
 	else {	/* Fill in an equidistant output table or grid */

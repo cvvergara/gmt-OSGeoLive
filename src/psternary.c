@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: psternary.c 18144 2017-05-06 03:36:15Z pwessel $
+ *	$Id: psternary.c 18391 2017-06-17 21:24:36Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -121,7 +121,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Option (API, "O,P,R");
 	//GMT_Message (API, GMT_TIME_NONE, "\t-Q Selects contouring.  Optionally append <cut>.  If given, then we do not draw\n");
 	//GMT_Message (API, GMT_TIME_NONE, "\t   closed contours with less than <cut> points [Draw all contours].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Select symbol type and symbol size (in %s).  See psxy for full list of symbols.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-S Select symbol type and symbol size (in %s).  See psxy for full list of symbols.\n",
+		API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
 	GMT_Option (API, "U,V");
 	gmt_pen_syntax (API->GMT, 'W', "Set pen attributes [Default pen is %s]:", 15);
 	GMT_Option (API, "X,bi2,di,e,f,g,h,i,p,t,:,.");
@@ -249,7 +250,7 @@ GMT_LOCAL unsigned int prep_options (struct GMTAPI_CTRL *API, struct GMT_OPTION 
 		if ((boptions[GMT_Y] = GMT_Make_Option (API, 'B', string)) == NULL) return (GMT_PARSE_ERROR);
 		string[0] = 'c';	/* Finally -Bc */
 		if ((boptions[GMT_Z] = GMT_Make_Option (API, 'B', string)) == NULL) return (GMT_PARSE_ERROR);
-		GMT_Delete_Option (API, bopt);	/* Remove the single -B setting now that we added 3 separate */
+		GMT_Delete_Option (API, bopt, options);	/* Remove the single -B setting now that we added 3 separate */
 		return GMT_NOERROR;
 	}
 	else if (n_axis != 3) {

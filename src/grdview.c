@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: grdview.c 18110 2017-05-03 01:29:16Z pwessel $
+ *	$Id: grdview.c 18257 2017-05-28 21:57:30Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -358,7 +358,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Apply directional illumination. Append name of intensity grid file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   For a constant intensity (i.e., change the ambient light), append a value.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   To derive intensities from <grd_z> instead, append +a<azim> [-45] and +n<method> [t1].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   (see grdgradient for details).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Use -I+ to accept the default values (see grdgradient for details).\n");
 	GMT_Option (API, "K");
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Draw a horizontal plane at z = <level>. Append +g<fill> to paint\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   the facade between the plane and the data perimeter.\n");
@@ -474,7 +474,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDVIEW_CTRL *Ctrl, struct GMT
 					}
 					c[0] = '\0';	/* Chop off all modifiers so range can be determined */
 				}
-				else if (!opt->arg[0])	/* No argument, so derive intensities from input grid using default settings */
+				else if (!opt->arg[0] || strstr (opt->arg, "+"))	/* No argument or just +, so derive intensities from input grid using default settings */
 					Ctrl->I.derive = true;
 				else if (!gmt_access (GMT, opt->arg, R_OK))	/* Got a file */
 					Ctrl->I.file = strdup (opt->arg);
@@ -677,7 +677,7 @@ int GMT_grdview (void *V_API, int mode, void *args) {
 	float *saved_data_pointer = NULL;
 	
 	double cval, x_left, x_right, y_top, y_bottom, small = GMT_CONV4_LIMIT, z_ave;
-	double inc2[2], wesn[4], z_val, x_pixel_size, y_pixel_size;
+	double inc2[2], wesn[4] = {0.0, 0.0, 0.0, 0.0}, z_val, x_pixel_size, y_pixel_size;
 	double this_intensity = 0.0, next_up = 0.0, xmesh[4], ymesh[4], rgb[4];
 	double *x_imask = NULL, *y_imask = NULL, x_inc[4], y_inc[4], *x = NULL, *y = NULL;
 	double *z = NULL, *v = NULL, *xx = NULL, *yy = NULL, *xval = NULL, *yval = NULL;
@@ -728,28 +728,11 @@ int GMT_grdview (void *V_API, int mode, void *args) {
 	}
 	get_contours = (Ctrl->Q.mode == GRDVIEW_MESH && Ctrl->W.contour) || (Ctrl->Q.mode == GRDVIEW_SURF && P->n_colors > 1);
 
-	if (Ctrl->I.derive) {	/* Auto-create intensity grid from data grid */
-		char int_grd[GMT_LEN16] = {""}, l_args[GMT_LEN256] = {""};
-		GMT_Report (API, GMT_MSG_VERBOSE, "Derive intensity grid from data grid\n");
-		/* Create a virtual file to hold the intensity grid */
-		if (GMT_Open_VirtualFile (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_OUT, NULL, int_grd))
+	if (use_intensity_grid && !Ctrl->I.derive) {
+		GMT_Report (API, GMT_MSG_VERBOSE, "Read intensity grid header from file %s\n", Ctrl->I.file);
+		if ((Intens = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->I.file, NULL)) == NULL) {	/* Get header only */
 			Return (API->error);
-		/* Prepare the grdgradient arguments using selected -A -N */
-		sprintf (l_args, "%s -G%s -A%s -N%s --GMT_HISTORY=false", Ctrl->In.file, int_grd, Ctrl->I.azimuth, Ctrl->I.method);
-		if (GMT->common.R.active[RSET] && !GMT->common.R.oblique) { strcat (l_args, " -R"); strcat (l_args, GMT->common.R.string); }
-		/* Call the grdgradient module */
-		GMT_Report (API, GMT_MSG_VERBOSE, "Calling grdgradient with args %s\n", l_args);
-		if (GMT->common.R.oblique) GMT->common.R.active[RSET] = false;	/* Must turn -R off temporarily */
-		if (GMT_Call_Module (API, "grdgradient", GMT_MODULE_CMD, l_args))
-			Return (API->error);
-		/* Obtain the data from the virtual file */
-		if ((Intens = GMT_Read_VirtualFile (API, int_grd)) == NULL)
-			Return (API->error);
-		if (GMT->common.R.oblique) GMT->common.R.active[RSET] = true;	/* Reset -R */
-		i_reg = gmt_change_grdreg (GMT, Intens->header, GMT_GRID_NODE_REG);	/* Ensure gridline registration */
-	}
-	else if (use_intensity_grid && (Intens = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_ONLY, NULL, Ctrl->I.file, NULL)) == NULL) {	/* Get header only */
-		Return (API->error);
+		}
 	}
 
 	if (Ctrl->G.active) {
@@ -776,7 +759,7 @@ int GMT_grdview (void *V_API, int mode, void *args) {
 
 	if (!gmt_grd_setregion (GMT, Topo->header, wesn, BCR_BILINEAR))
 		nothing_inside = true;
-	else if (use_intensity_grid && !gmt_grd_setregion (GMT, Intens->header, wesn, BCR_BILINEAR))
+	else if (use_intensity_grid && !Ctrl->I.derive && !gmt_grd_setregion (GMT, Intens->header, wesn, BCR_BILINEAR))
 		nothing_inside = true;
 
 	if (nothing_inside) {
@@ -789,6 +772,25 @@ int GMT_grdview (void *V_API, int mode, void *args) {
 		gmt_plane_perspective (GMT, -1, 0.0);
 		gmt_plotend (GMT);
 		Return (GMT_NOERROR);
+	}
+
+	if (Ctrl->I.derive) {	/* Auto-create intensity grid from data grid */
+		char int_grd[GMT_LEN16] = {""}, cmd[GMT_LEN256] = {""};
+		GMT_Report (API, GMT_MSG_VERBOSE, "Derive intensity grid from data grid\n");
+		/* Create a virtual file to hold the intensity grid */
+		if (GMT_Open_VirtualFile (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_OUT, NULL, int_grd))
+			Return (API->error);
+		/* Prepare the grdgradient arguments using selected -A -N */
+		sprintf (cmd, "%s -G%s -A%s -N%s -R%.16g/%.16g/%.16g/%.16g --GMT_HISTORY=false",
+			Ctrl->In.file, int_grd, Ctrl->I.azimuth, Ctrl->I.method, wesn[XLO], wesn[XHI], wesn[YLO], wesn[YHI]);
+		/* Call the grdgradient module */
+		GMT_Report (API, GMT_MSG_VERBOSE, "Calling grdgradient with args %s\n", cmd);
+		if (GMT_Call_Module (API, "grdgradient", GMT_MODULE_CMD, cmd))
+			Return (API->error);
+		/* Obtain the data from the virtual file */
+		if ((Intens = GMT_Read_VirtualFile (API, int_grd)) == NULL)
+			Return (API->error);
+		i_reg = gmt_change_grdreg (GMT, Intens->header, GMT_GRID_NODE_REG);	/* Ensure gridline registration */
 	}
 
 	/* Read data */

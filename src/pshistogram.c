@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: pshistogram.c 18189 2017-05-08 09:26:48Z pwessel $
+ *	$Id: pshistogram.c 18328 2017-06-07 04:43:45Z pwessel $
  *
  *	Copyright (c) 1991-2017 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
@@ -301,7 +301,8 @@ GMT_LOCAL double plot_boxes (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struct 
 			}
 			else if (cpt) {
 				index = gmt_get_rgb_from_z (GMT, P, xval, rgb);
-				if ((index >= 0 && (f = P->data[index].fill) != NULL) || (index < 0 && (f = P->bfn[index+3].fill) != NULL))	/* Pattern */
+				f = gmt_M_get_cptslice_pattern (P,index);
+				if (f)	/* Pattern */
 					gmt_setfill (GMT, f, draw_outline);
 				else
 					PSL_setfill (PSL, rgb, draw_outline);
@@ -833,6 +834,7 @@ int GMT_pshistogram (void *V_API, int mode, void *args) {
 			if ((D = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_NONE, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) {
 				GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a data set for histogram\n");
 				gmt_M_free (GMT, data);		gmt_M_free (GMT, F.boxh);
+				if (F.weights) gmt_M_free (GMT, weights);	
 				Return (API->error);
 			}
 			if ((error = gmt_set_cols (GMT, GMT_OUT, 2)) != GMT_NOERROR) {
@@ -935,6 +937,7 @@ int GMT_pshistogram (void *V_API, int mode, void *args) {
 		if (GMT->current.proj.pars[0] == 0.0 && GMT->current.proj.pars[1] == 0.0) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Need to provide both x- and y-scale.\n");
 			gmt_M_free (GMT, data);
+			if (F.weights) gmt_M_free (GMT, weights);	
 			Return (GMT_RUNTIME_ERROR);
 		}
 	}
@@ -971,6 +974,7 @@ int GMT_pshistogram (void *V_API, int mode, void *args) {
 	else {
 		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, F.wesn), "")) {
 			gmt_M_free (GMT, data);
+			if (F.weights) gmt_M_free (GMT, weights);	
 			Return (GMT_PROJECTION_ERROR);
 		}
 	}

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------
- *	$Id: mgd77track.c 18024 2017-04-23 20:44:58Z pwessel $
+ *	$Id: mgd77track.c 18435 2017-06-22 04:01:50Z pwessel $
  *
  *    Copyright (c) 2004-2017 by P. Wessel
  *    See README file for copying and redistribution conditions.
@@ -623,7 +623,7 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 	
 	n_paths = MGD77_Path_Expand (GMT, &M, options, &list);	/* Get list of requested IDs */
 
-	if (n_paths == 0) {
+	if (n_paths <= 0) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Error: No cruises given\n");
 		Return (GMT_NO_INPUT);
 	}
@@ -631,7 +631,7 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 	use = (M.original) ? MGD77_ORIG : MGD77_REVISED;
 		
 	if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) {
-		MGD77_Path_Free (GMT, n_paths, list);
+		MGD77_Path_Free (GMT, (uint64_t)n_paths, list);
 		Return (GMT_PROJECTION_ERROR);
 	}
 	
@@ -794,10 +794,10 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 					angle += 90.0;
 				else
 					angle -= 90.0;
-				if (annot_tick[ANNOT] & 1) {	/* Time mark */
-					gmtlib_gcal_from_dt (GMT, annot_time[ANNOT], &calendar);			/* Convert t to a complete calendar structure */
+				if (annot_tick[ANNOT] & 1) {	/* Time mark: Must subtack the annot_int_time since we already incremented it above */
+					gmtlib_gcal_from_dt (GMT, annot_time[ANNOT]-info[ANNOT]->annot_int_time, &calendar);	/* Convert t to a complete calendar structure */
 					gmt_format_calendar (GMT, the_date, the_clock, &GMT->current.plot.calclock.date, &GMT->current.plot.calclock.clock,
-					                     false, 1, annot_time[ANNOT]);
+					                     false, 1, annot_time[ANNOT]-info[ANNOT]->annot_int_time);
 					this_julian = calendar.day_y;
 					if (this_julian != last_julian) {
 						mrk = MGD77TRACK_MARK_NEWDAY;
@@ -880,7 +880,7 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 	
 	GMT_Report (API, GMT_MSG_VERBOSE, "Plotted %d cruises\n", n_cruises);
 
-	MGD77_Path_Free (GMT, n_paths, list);
+	MGD77_Path_Free (GMT, (uint64_t)n_paths, list);
 	MGD77_end (GMT, &M);
 	
 	Return (GMT_NOERROR);
