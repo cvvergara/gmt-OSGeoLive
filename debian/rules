@@ -14,7 +14,7 @@ endif
 
 UPSTREAM_VERSION=$(shell echo $(DEB_VERSION_UPSTREAM) | sed -e 's/\+.*//')
 
-BUILD_DATE=$(shell $(SOURCE_DATE_EPOCH) | LC_ALL=C date -u "+%d %B %Y" -f -)
+BUILD_DATE=$(shell LC_ALL=C date -u "+%d %B %Y" -d "@$(SOURCE_DATE_EPOCH)")
 
 MANPAGES:=$(wildcard debian/man/*.*.xml)
 

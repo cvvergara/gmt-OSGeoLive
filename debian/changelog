@@ -1,3 +1,9 @@
+gmt (5.4.1+dfsg-3) UNRELEASED; urgency=medium
+
+  * Fix SOURCE_DATE_EPOCH use.
+
+ -- Bas Couwenberg <sebastic@debian.org>  Mon, 26 Jun 2017 19:38:50 +0200
+
 gmt (5.4.1+dfsg-2) unstable; urgency=medium
 
   * Add patch by John Paul Adrian Glaubitz for m68k support.
