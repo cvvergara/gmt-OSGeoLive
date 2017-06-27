@@ -25,9 +25,12 @@ libgmt.so.5 libgmt5 #MINVER#
  GMT_Encode_Options@Base 5.2.1
  GMT_End_IO@Base 5.1.2
  GMT_Expand_Option@Base 5.2.1
- GMT_F77_readgrd_@Base 5.1.2
- GMT_F77_readgrdinfo_@Base 5.1.2
- GMT_F77_writegrd_@Base 5.1.2
+ GMT_F77_READGRD@Base 5.4.2
+ GMT_F77_READGRDINFO@Base 5.4.2
+ GMT_F77_READGRDINFO_@Base 5.4.2
+ GMT_F77_READGRD_@Base 5.4.2
+ GMT_F77_WRITEGRD@Base 5.4.2
+ GMT_F77_WRITEGRD_@Base 5.4.2
  GMT_FFT@Base 5.1.2
  GMT_FFT_1D@Base 5.1.2
  GMT_FFT_2D@Base 5.1.2
@@ -229,6 +232,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_ascii_output_col@Base 5.3.1
  gmt_assemble_br@Base 5.3.1
  gmt_assemble_shore@Base 5.3.1
+ gmt_assign_text@Base 5.4.2
  gmt_auto_frame_interval@Base 5.3.1
  gmt_az_backaz@Base 5.3.1
  gmt_azeqdist@Base 5.3.1
@@ -250,6 +254,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_cart_to_geo@Base 5.3.1
  gmt_cart_to_polar@Base 5.3.1
  gmt_cartesian_dist@Base 5.3.1
+ gmt_cartesian_dist_periodic@Base 5.4.2
  gmt_cartesian_dist_proj@Base 5.3.1
  gmt_cassini@Base 5.3.1
  gmt_cassini_sph@Base 5.3.1
@@ -318,7 +323,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_delaunay@Base 5.3.1
  gmt_delaunay_free@Base 5.3.1
  gmt_dilog@Base 5.3.1
- gmt_disable_i_opt@Base 5.3.1
+ gmt_disable_ih_opts@Base 5.4.2
  gmt_dist_array@Base 5.3.1
  gmt_dist_array_2@Base 5.3.1
  gmt_dist_syntax@Base 5.3.1
@@ -359,6 +364,15 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_export_image@Base 5.3.1
  gmt_extract_label@Base 5.3.1
  gmt_extreme@Base 5.3.1
+ gmt_f77_readgrd@Base 5.4.2
+ gmt_f77_readgrd_@Base 5.4.2
+ gmt_f77_readgrd__@Base 5.4.2
+ gmt_f77_readgrdinfo@Base 5.4.2
+ gmt_f77_readgrdinfo_@Base 5.4.2
+ gmt_f77_readgrdinfo__@Base 5.4.2
+ gmt_f77_writegrd@Base 5.4.2
+ gmt_f77_writegrd_@Base 5.4.2
+ gmt_f77_writegrd__@Base 5.4.2
  gmt_f_cdf@Base 5.3.1
  gmt_f_pdf@Base 5.3.1
  gmt_factorial@Base 5.3.1
@@ -736,7 +750,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmt_rd_from_gymd@Base 5.3.1
  gmt_rdc2dt@Base 5.3.1
  gmt_read_img@Base 5.3.1
- gmt_reenable_i_opt@Base 5.3.1
+ gmt_reenable_ih_opts@Base 5.4.2
  gmt_refpoint_syntax@Base 5.3.1
  gmt_remove_dir@Base 5.4.0
  gmt_remove_file@Base 5.4.0
@@ -1043,6 +1057,7 @@ libgmt.so.5 libgmt5 #MINVER#
  gmtlib_nc_get_att_text@Base 5.3.1
  gmtlib_ogr_get_geometry@Base 5.3.1
  gmtlib_ogr_get_type@Base 5.3.1
+ gmtlib_parse_B_option@Base 5.4.2
  gmtlib_plot_C_format@Base 5.3.1
  gmtlib_pow_array@Base 5.3.1
  gmtlib_prepare_label@Base 5.3.1

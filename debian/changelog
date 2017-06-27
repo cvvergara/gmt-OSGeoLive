@@ -3,6 +3,7 @@ gmt (5.4.2+dfsg-1) UNRELEASED; urgency=medium
   * New upstream release.
   * Drop m68k-support.patch, applied upstream.
     Refresh manpage-section.patch.
+  * Update symbols for 5.4.2.
 
  -- Bas Couwenberg <sebastic@debian.org>  Tue, 27 Jun 2017 00:24:31 +0200
 
